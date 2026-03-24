@@ -67,6 +67,7 @@ export function ProblemSolutionSection() {
     <section
       ref={sectionRef}
       className="relative py-20 md:py-28 lg:py-32 px-4 overflow-hidden"
+      data-aos="fade-up"
     >
       <div className="max-w-5xl mx-auto">
         {/* Header */}

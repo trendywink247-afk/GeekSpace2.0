@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from './sections/HeroSection';
@@ -19,6 +21,15 @@ import { FooterSection } from './sections/FooterSection';
 export function LandingPage() {
   const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      easing: 'ease-out',
+      offset: 80,
+    });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

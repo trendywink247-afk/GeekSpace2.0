@@ -28,7 +28,7 @@ import { agentService, userService, type ActivityEntry } from '@/services/api';
 import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
-import { LogoutConfirmDialog } from '@/components/LogoutConfirmDialog';
+// LogoutConfirmDialog replaced by SweetAlert2 via useLogoutBlocker
 
 const personalityEmojis: Record<AgentPersonality, string> = {
   edith: '🔷', jarvis: '🟣', weebo: '💚',
@@ -224,7 +224,7 @@ export function DashboardApp() {
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { showDialog, handleStay, handleSignOut } = useLogoutBlocker(logout);
+  useLogoutBlocker(logout);
   const compactMode = useAuthStore((s) => s.compactMode);
   const onboarding = useAuthStore((s) => s.onboarding);
   const usage = useDashboardStore((s) => s.usage);
@@ -1159,13 +1159,7 @@ export function DashboardApp() {
           onSkip={() => setShowOnboardingWizard(false)}
         />
       )}
-      <LogoutConfirmDialog
-        open={showDialog}
-        userName={user?.name || user?.username}
-        userEmail={user?.email}
-        onStay={handleStay}
-        onSignOut={handleSignOut}
-      />
+      {/* Logout confirmation now handled by SweetAlert2 inside useLogoutBlocker */}
     </div>
   );
 }

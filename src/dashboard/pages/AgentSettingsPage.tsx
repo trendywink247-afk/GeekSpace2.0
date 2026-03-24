@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { confirmAction, showSuccess, showError } from '@/utils/alerts';
 import { agentService, memoryService, integrationService } from '@/services/api';
 import type { Personality, AgentPersonality } from '@/types';
 
@@ -118,7 +119,6 @@ export function AgentSettingsPage() {
   // Memory state
   const [memoryEnabled, setMemoryEnabled] = useState(true);
   const [memoryCount, setMemoryCount] = useState(0);
-  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
   // Tools state
@@ -221,20 +221,22 @@ export function AgentSettingsPage() {
   }, [agentName, tone, verbosity, creativity, humor, empathy, customInstructions, updateAgent]);
 
   const handleClearAllMemories = useCallback(async () => {
+    const confirmed = await confirmAction(
+      'Clear All Memories?',
+      `This will permanently delete ${memoryCount} ${memoryCount === 1 ? 'memory' : 'memories'}. This cannot be undone.`,
+    );
+    if (!confirmed) return;
     setIsClearing(true);
     try {
       const { data } = await memoryService.clearAll();
       setMemoryCount(0);
-      setClearConfirmOpen(false);
-      setSaveToast(`Cleared ${data.deleted} memories`);
-      setTimeout(() => setSaveToast(''), 2500);
+      await showSuccess('Memories Cleared', `Deleted ${data.deleted} memories`);
     } catch {
-      setSaveToast('Failed to clear memories');
-      setTimeout(() => setSaveToast(''), 2500);
+      await showError('Clear Failed', 'Failed to clear memories. Try again.');
     } finally {
       setIsClearing(false);
     }
-  }, []);
+  }, [memoryCount]);
 
   const toggleTool = useCallback((toolId: string) => {
     setToolStates(prev => ({ ...prev, [toolId]: !prev[toolId] }));
@@ -705,46 +707,22 @@ export function AgentSettingsPage() {
             <p className="text-sm text-[#8892A4] mb-4">
               Permanently delete all memories your agent has stored. This cannot be undone.
             </p>
-            {!clearConfirmOpen ? (
-              <Button
-                variant="outline"
-                onClick={() => setClearConfirmOpen(true)}
-                className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78]"
-                disabled={memoryCount === 0}
-              >
+            <Button
+              variant="outline"
+              onClick={handleClearAllMemories}
+              className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78]"
+              disabled={memoryCount === 0 || isClearing}
+            >
+              {isClearing ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              ) : (
                 <Trash2 className="w-4 h-4 mr-2" />
-                Clear All Memories
-                {memoryCount > 0 && (
-                  <span className="ml-2 text-xs opacity-70">({memoryCount})</span>
-                )}
-              </Button>
-            ) : (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FF2D78]/5 border border-[#FF2D78]/20">
-                <p className="text-sm text-[#F4F6FF] flex-1">
-                  Are you sure? This will delete <strong>{memoryCount}</strong> {memoryCount === 1 ? 'memory' : 'memories'} permanently.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setClearConfirmOpen(false)}
-                  className="border-[#8892A4]/30 text-[#8892A4] hover:bg-[#8892A4]/10"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleClearAllMemories}
-                  disabled={isClearing}
-                  className="bg-[#FF2D78] hover:bg-[#FF2D78]/80 text-white"
-                >
-                  {isClearing ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    'Yes, Clear All'
-                  )}
-                </Button>
-              </div>
-            )}
+              )}
+              Clear All Memories
+              {memoryCount > 0 && (
+                <span className="ml-2 text-xs opacity-70">({memoryCount})</span>
+              )}
+            </Button>
           </div>
         </TabsContent>
 

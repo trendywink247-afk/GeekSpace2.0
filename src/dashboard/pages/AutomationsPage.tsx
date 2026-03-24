@@ -38,6 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { automationLogService, automationService } from '@/services/api';
+import { confirmAction } from '@/utils/alerts';
 import type { AutomationTrigger, AutomationAction, AutomationLog, Automation } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -294,8 +295,7 @@ export function AutomationsPage() {
   }>>([]);
   const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<string | null>(null);
 
-  // --- Confirm delete ---
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Delete confirmation is now handled by SweetAlert2 (confirmAction)
 
   // ---------------------------------------------------------------------------
   // Data loading
@@ -488,8 +488,12 @@ export function AutomationsPage() {
     await updateAutomation(id, { enabled: !enabled });
   };
 
-  const handleDelete = async (id: string) => {
-    setConfirmDeleteId(null);
+  const handleDelete = async (id: string, name: string) => {
+    const confirmed = await confirmAction(
+      'Delete Automation?',
+      `"${name}" will be permanently removed. This cannot be undone.`,
+    );
+    if (!confirmed) return;
     await deleteAutomation(id);
     automationService.getStats().then((r) => setAutomationStats(r.data)).catch(() => {});
   };
@@ -823,7 +827,7 @@ export function AutomationsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setConfirmDeleteId(auto.id)}
+                        onClick={() => handleDelete(auto.id, auto.name)}
                         title="Delete"
                         className="text-[#8892B0] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
                       >
@@ -831,29 +835,6 @@ export function AutomationsPage() {
                       </Button>
                     </div>
                   </div>
-
-                  {/* Confirm delete inline */}
-                  {confirmDeleteId === auto.id && (
-                    <div className="mt-3 flex items-center gap-3 bg-[#FF2D78]/5 border border-[#FF2D78]/20 rounded-xl px-4 py-3">
-                      <span className="text-sm text-[#FF2D78]">Delete this automation?</span>
-                      <div className="flex-1" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-[#9CA3AF] hover:text-[#E8E8F0] min-h-[44px]"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleDelete(auto.id)}
-                        className="bg-[#FF2D78] hover:bg-[#FF2D78]/80 text-white min-h-[44px]"
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  )}
 
                   {/* Test result inline */}
                   {testResult?.id === auto.id && (

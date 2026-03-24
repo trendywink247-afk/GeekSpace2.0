@@ -41,6 +41,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
       ref={sectionRef}
       id="persona"
       className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
+      data-aos="fade-up"
     >
       {/* Spotlight Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

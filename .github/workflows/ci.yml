@@ -2,17 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, master, live-production]
+    branches: [main, dev, staging, live-production]
   pull_request:
-    branches: [main, master, live-production]
+    branches: [main, dev, staging, live-production]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '20'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   # ============================================
-  # Static Checks (Lint + TypeCheck)
+  # Static Checks (Lint + TypeCheck + Build)
   # ============================================
   static-checks:
     name: Static Checks
@@ -25,31 +29,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Install root dependencies
       - name: Install root dependencies
         run: npm ci
 
-      # Install server dependencies
       - name: Install server dependencies
         run: npm --prefix server ci
 
-      # Install picoclaw dependencies (if exists)
       - name: Install picoclaw dependencies
         if: hashFiles('picoclaw/package-lock.json') != ''
         run: npm --prefix picoclaw ci
 
-      # Install bridge dependencies (if exists)
       - name: Install bridge dependencies
         if: hashFiles('bridge/edith-bridge/package-lock.json') != ''
         run: npm --prefix bridge/edith-bridge ci
-
-      # Install smoke test dependencies (if exists)
-      - name: Install smoke test dependencies
-        if: hashFiles('scripts/smoke/package-lock.json') != ''
-        run: npm --prefix scripts/smoke ci
 
       # Security audit — blocks on critical vulnerabilities
       - name: Audit root dependencies
@@ -58,10 +53,9 @@ jobs:
       - name: Audit server dependencies
         run: npm --prefix server audit --audit-level=critical
 
-      # Run lint on changed files only
+      # Lint changed files only (faster than full lint)
       - name: Run lint on changed files
         run: |
-          # Determine the base and head for comparison
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             BASE="origin/${{ github.base_ref }}"
             HEAD="HEAD"
@@ -71,8 +65,6 @@ jobs:
           fi
 
           echo "Comparing $BASE...$HEAD"
-
-          # Get changed JS/TS files
           CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE $HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
@@ -82,26 +74,20 @@ jobs:
 
           echo "Linting changed files:"
           echo "$CHANGED_FILES"
-
-          # Run eslint on changed files
           npx eslint --max-warnings=0 $CHANGED_FILES
 
-      # Run typecheck on root
-      - name: Run typecheck (root)
+      - name: Typecheck (root)
         run: npm run typecheck
 
-      # Run typecheck on server
-      - name: Run typecheck (server)
+      - name: Typecheck (server)
         run: npm --prefix server run typecheck
 
-      # Run build on root
-      - name: Run build (root)
+      - name: Build frontend
         run: npm run build
         env:
           VITE_TEST_MODE: 'true'
 
-      # Run build on server
-      - name: Run build (server)
+      - name: Build server
         run: npm --prefix server run build
 
   # ============================================
@@ -117,32 +103,30 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Install dependencies
       - name: Install root dependencies
         run: npm ci
 
       - name: Install server dependencies
         run: npm --prefix server ci
 
-      # Run frontend unit tests (if any exist)
       - name: Run frontend unit tests
         run: npm run test || echo "No frontend tests configured"
 
-      # Run server unit tests
       - name: Run server unit tests
         run: npm --prefix server run test
 
   # ============================================
   # E2E Tests (Playwright)
+  # Playwright config manages server lifecycle
   # ============================================
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: static-checks
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
       TEST_MODE: '1'
       CI: 'true'
@@ -152,21 +136,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Install dependencies
       - name: Install root dependencies
         run: npm ci
 
       - name: Install server dependencies
         run: npm --prefix server ci
 
-      # Install Playwright browsers
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # Build the application
       - name: Build frontend
         run: npm run build
         env:
@@ -176,31 +157,14 @@ jobs:
       - name: Build server
         run: npm --prefix server run build
 
-      # Start server in background
-      - name: Start server
-        run: |
-          cd server
-          TEST_MODE=1 PORT=3001 node dist/index.js &
-          echo $! > /tmp/server.pid
-          # Wait for server to be ready
-          npx wait-on http://localhost:3001/api/health --timeout 60000
-
-      # Run Playwright tests
+      # Playwright webServer config handles starting/stopping the server
+      # No manual server start needed — playwright.config.ts defines webServer
       - name: Run Playwright tests
         run: npm run test:e2e
         env:
           API_URL: http://localhost:3001
           VITE_API_TARGET: http://localhost:3001
 
-      # Stop server
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f /tmp/server.pid ]; then
-            kill $(cat /tmp/server.pid) || true
-          fi
-
-      # Upload test results on failure
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -211,7 +175,6 @@ jobs:
             test-results/
           retention-days: 7
 
-      # Upload screenshots on failure
       - name: Upload test screenshots
         if: failure()
         uses: actions/upload-artifact@v4
@@ -219,15 +182,17 @@ jobs:
           name: test-screenshots
           path: test-results/**/*.png
           retention-days: 7
+          if-no-files-found: ignore
 
   # ============================================
-  # Smoke Tests
+  # Smoke Tests (independent of E2E)
   # ============================================
   smoke-tests:
     name: Smoke Tests
     runs-on: ubuntu-latest
-    needs: [unit-tests, e2e-tests]
+    needs: static-checks
     timeout-minutes: 10
+    if: hashFiles('scripts/smoke/package-lock.json') != ''
     env:
       TEST_MODE: '1'
     steps:
@@ -236,10 +201,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Install dependencies
       - name: Install root dependencies
         run: npm ci
 
@@ -247,29 +211,23 @@ jobs:
         run: npm --prefix server ci
 
       - name: Install smoke test dependencies
-        if: hashFiles('scripts/smoke/package-lock.json') != ''
         run: npm --prefix scripts/smoke ci
 
-      # Build the application
       - name: Build server
         run: npm --prefix server run build
 
-      # Start server in background
       - name: Start server
         run: |
           cd server
           TEST_MODE=1 PORT=3001 node dist/index.js &
           echo $! > /tmp/server.pid
-          # Wait for server to be ready
           npx wait-on http://localhost:3001/api/health --timeout 60000
 
-      # Run smoke tests
       - name: Run smoke tests
         run: npm --prefix scripts/smoke run smoke
         env:
           API_URL: http://localhost:3001
 
-      # Stop server
       - name: Stop server
         if: always()
         run: |
@@ -278,7 +236,7 @@ jobs:
           fi
 
   # ============================================
-  # Summary
+  # Summary — gate for branch protection
   # ============================================
   summary:
     name: Summary
@@ -286,20 +244,37 @@ jobs:
     needs: [static-checks, unit-tests, e2e-tests, smoke-tests]
     if: always()
     steps:
-      - name: Check all jobs passed
+      - name: Check required jobs passed
         run: |
           echo "Static checks: ${{ needs.static-checks.result }}"
-          echo "Unit tests: ${{ needs.unit-tests.result }}"
-          echo "E2E tests: ${{ needs.e2e-tests.result }}"
-          echo "Smoke tests: ${{ needs.smoke-tests.result }}"
+          echo "Unit tests:    ${{ needs.unit-tests.result }}"
+          echo "E2E tests:     ${{ needs.e2e-tests.result }}"
+          echo "Smoke tests:   ${{ needs.smoke-tests.result }}"
+          echo ""
 
-          if [[ "${{ needs.static-checks.result }}" == "success" && \
-                "${{ needs.unit-tests.result }}" == "success" && \
-                "${{ needs.e2e-tests.result }}" == "success" && \
-                "${{ needs.smoke-tests.result }}" == "success" ]]; then
-            echo "✅ All checks passed!"
-            exit 0
-          else
-            echo "❌ Some checks failed"
+          # Required: static-checks + unit-tests MUST pass
+          if [[ "${{ needs.static-checks.result }}" != "success" ]]; then
+            echo "FATAL: Static checks failed"
             exit 1
           fi
+
+          if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+            echo "FATAL: Unit tests failed"
+            exit 1
+          fi
+
+          # E2E: must pass or be skipped (not failure)
+          E2E="${{ needs.e2e-tests.result }}"
+          if [[ "$E2E" == "failure" ]]; then
+            echo "WARNING: E2E tests failed"
+            exit 1
+          fi
+
+          # Smoke: allowed to skip (conditional job)
+          SMOKE="${{ needs.smoke-tests.result }}"
+          if [[ "$SMOKE" == "failure" ]]; then
+            echo "WARNING: Smoke tests failed"
+            exit 1
+          fi
+
+          echo "All required checks passed!"

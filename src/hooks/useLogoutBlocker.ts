@@ -1,10 +1,5 @@
-import { useState, useCallback, useLayoutEffect } from 'react';
-
-interface UseLogoutBlockerReturn {
-  showDialog: boolean;
-  handleStay: () => void;
-  handleSignOut: () => void;
-}
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import { confirmAction } from '@/utils/alerts';
 
 /**
  * Intercepts browser back-button navigation away from the dashboard.
@@ -13,13 +8,24 @@ interface UseLogoutBlockerReturn {
  * this app uses <BrowserRouter>, which does not provide the DataRouterContext
  * required by React Router v7's useBlocker hook. When pressing back, we
  * immediately re-push a sentinel entry so the user stays on the dashboard,
- * then show a sign-out confirmation dialog.
+ * then show a SweetAlert2 sign-out confirmation.
  *
  * A future migration to createBrowserRouter + RouterProvider would allow
  * switching to useBlocker for a cleaner implementation.
  */
-export function useLogoutBlocker(onConfirmLogout: () => void): UseLogoutBlockerReturn {
-  const [showDialog, setShowDialog] = useState(false);
+export function useLogoutBlocker(onConfirmLogout: () => void): void {
+  const logoutRef = useRef(onConfirmLogout);
+  logoutRef.current = onConfirmLogout;
+
+  const showConfirm = useCallback(async () => {
+    const confirmed = await confirmAction(
+      'Leaving so soon?',
+      'Do you want to sign out of your account?',
+    );
+    if (confirmed) {
+      logoutRef.current();
+    }
+  }, []);
 
   useLayoutEffect(() => {
     // Push a sentinel history entry BEFORE the browser paints so it is always
@@ -30,23 +36,12 @@ export function useLogoutBlocker(onConfirmLogout: () => void): UseLogoutBlockerR
 
     function handlePopState() {
       // Back was pressed — re-push the sentinel immediately so the user
-      // stays at the current URL, then show the sign-out dialog.
+      // stays at the current URL, then show the sign-out confirmation.
       window.history.pushState({ dashboardSentinel: true }, '');
-      setShowDialog(true);
+      showConfirm();
     }
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []); // Runs once on DashboardApp mount; cleaned up on unmount
-
-  const handleStay = useCallback(() => {
-    setShowDialog(false);
-  }, []);
-
-  const handleSignOut = useCallback(() => {
-    setShowDialog(false);
-    onConfirmLogout();
-  }, [onConfirmLogout]);
-
-  return { showDialog, handleStay, handleSignOut };
+  }, [showConfirm]); // Runs once on DashboardApp mount; cleaned up on unmount
 }

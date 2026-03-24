@@ -74,6 +74,8 @@ import { devRouter } from './routes/dev.js';
 import { agentTasksRouter } from './routes/agent-tasks.js';
 import { agentCommsRouter } from './routes/agent-comms.js';
 import { recommendationsRouter } from './routes/recommendations.js';
+import { sandboxRouter } from './routes/sandbox.js';
+import { skillsRouter } from './routes/skills.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
@@ -517,6 +519,8 @@ export function createApp(): express.Application {
   app.use('/api/agent-tasks', agentTasksRouter);
   app.use('/api/agent-comms', agentCommsRouter);
   app.use('/api/recommendations', recommendationsRouter);
+  app.use('/api/sandbox', sandboxRouter);
+  app.use('/api/skills', skillsRouter);
 
   // ---- Gate password verification (sets access cookie server-side) ----
   app.post('/api/gate-verify', (req, res) => {

@@ -68,6 +68,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
       ref={sectionRef}
       id="pricing"
       className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
+      data-aos="fade-up"
     >
       {/* Gradient Background */}
       <div className="absolute inset-0 pointer-events-none">

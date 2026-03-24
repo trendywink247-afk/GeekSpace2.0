@@ -73,6 +73,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
       ref={sectionRef}
       id="contact"
       className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
+      data-aos="zoom-in"
     >
       {/* Neural Network Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">

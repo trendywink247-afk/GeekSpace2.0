@@ -80,6 +80,7 @@ export function TestimonialsSection() {
       ref={sectionRef}
       id="testimonials"
       className="relative py-20 md:py-28 lg:py-32 px-4 overflow-hidden"
+      data-aos="fade-right"
     >
       <div className="max-w-6xl mx-auto">
         {/* Header */}

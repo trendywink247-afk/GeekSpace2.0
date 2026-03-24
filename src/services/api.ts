@@ -1480,6 +1480,16 @@ export const agentStateService = {
 
 export default api;
 
+// ---- Skills ----
+export const skillService = {
+  getCatalog: () => api.get<{ skills: Array<Record<string, unknown>> }>('/skills/catalog'),
+  getUserSkills: () => api.get<{ skills: Array<Record<string, unknown>> }>('/skills/user'),
+  install: (skillId: string) => api.post<{ ok: boolean }>(`/skills/${skillId}/install`),
+  uninstall: (skillId: string) => api.delete<{ ok: boolean }>(`/skills/${skillId}`),
+  toggle: (skillId: string, enabled: boolean) => api.patch<{ ok: boolean }>(`/skills/${skillId}`, { enabled }),
+  updateAgents: (skillId: string, overrides: Record<string, unknown>) => api.patch<{ ok: boolean }>(`/skills/${skillId}/agents`, overrides),
+};
+
 // ---- Office (combined endpoint) ----
 export const officeService = {
   getState: () => api.get<{

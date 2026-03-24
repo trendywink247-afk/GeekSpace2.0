@@ -1,6 +1,18 @@
 // src/dashboard/pages/office/AgentProfileFlyout.tsx
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle, ClipboardList } from 'lucide-react';
+import {
+  useFloating,
+  useHover,
+  useDismiss,
+  useInteractions,
+  FloatingPortal,
+  offset,
+  flip,
+  shift,
+  autoUpdate,
+} from '@floating-ui/react';
 import {
   AGENT_META,
   AGENT_COLORS,
@@ -61,6 +73,41 @@ function StatItem({ label, value, color }: StatItemProps) {
       </span>
       <span className="text-[10px] text-[#8892A4]">{label}</span>
     </div>
+  );
+}
+
+/** Reusable floating tooltip shown on hover. */
+function AgentTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { refs, floatingStyles, context } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+    placement: 'top',
+    middleware: [offset(8), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  });
+  const hover = useHover(context, { delay: { open: 300, close: 0 } });
+  const dismiss = useDismiss(context);
+  const { getReferenceProps, getFloatingProps } = useInteractions([hover, dismiss]);
+
+  return (
+    <>
+      <div ref={refs.setReference} {...getReferenceProps()}>
+        {children}
+      </div>
+      {isOpen && (
+        <FloatingPortal>
+          <div
+            ref={refs.setFloating}
+            style={floatingStyles}
+            {...getFloatingProps()}
+            className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#00F0FF]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"
+          >
+            {label}
+          </div>
+        </FloatingPortal>
+      )}
+    </>
   );
 }
 
@@ -129,14 +176,16 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
 
             {/* Current State */}
             <div className="px-5 pb-4">
-              <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: stateDotColor }}
-                />
-                <span className="text-xs text-[#F4F6FF]">Idle</span>
-                <span className="text-[10px] text-[#4B5563] ml-auto">Current state</span>
-              </div>
+              <AgentTooltip label="Agent is currently idle and ready for tasks">
+                <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-3 py-2">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: stateDotColor }}
+                  />
+                  <span className="text-xs text-[#F4F6FF]">Idle</span>
+                  <span className="text-[10px] text-[#4B5563] ml-auto">Current state</span>
+                </div>
+              </AgentTooltip>
             </div>
 
             {/* Today's Stats */}
@@ -162,26 +211,28 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
                   {specialists.map((sid) => {
                     const sMeta = AGENT_META[sid];
                     const sColor = AGENT_COLORS[sid];
+                    const sDesc = AGENT_DESCRIPTIONS[sid as unknown as AgentId] ?? (sMeta?.role ?? 'Specialist');
                     return (
-                      <button
-                        key={sid}
-                        onClick={() => onNavigateToChat(sid)}
-                        className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] transition-colors text-left"
-                      >
-                        <span className="text-base">{sMeta?.emoji ?? '?'}</span>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-xs font-medium text-[#F4F6FF]">
-                            {sid.charAt(0).toUpperCase() + sid.slice(1)}
-                          </span>
-                          <p className="text-[10px] text-[#4B5563]">
-                            {sMeta?.role ?? 'Specialist'}
-                          </p>
-                        </div>
-                        <span
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: sColor }}
-                        />
-                      </button>
+                      <AgentTooltip key={sid} label={sDesc}>
+                        <button
+                          onClick={() => onNavigateToChat(sid)}
+                          className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] transition-colors text-left"
+                        >
+                          <span className="text-base">{sMeta?.emoji ?? '?'}</span>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-medium text-[#F4F6FF]">
+                              {sid.charAt(0).toUpperCase() + sid.slice(1)}
+                            </span>
+                            <p className="text-[10px] text-[#4B5563]">
+                              {sMeta?.role ?? 'Specialist'}
+                            </p>
+                          </div>
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: sColor }}
+                          />
+                        </button>
+                      </AgentTooltip>
                     );
                   })}
                 </div>
@@ -190,24 +241,28 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
 
             {/* Actions */}
             <div className="px-5 pb-6 space-y-2">
-              <button
-                onClick={() => onNavigateToChat(id)}
-                className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-semibold transition-colors"
-                style={{
-                  backgroundColor: `${color}15`,
-                  color,
-                  border: `1px solid ${color}30`,
-                }}
-              >
-                <MessageCircle className="w-4 h-4" />
-                Chat with {id.charAt(0).toUpperCase() + id.slice(1)}
-              </button>
-              <button
-                className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#8892A4] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06]"
-              >
-                <ClipboardList className="w-4 h-4" />
-                Assign Task
-              </button>
+              <AgentTooltip label={`Start a conversation with ${id.charAt(0).toUpperCase() + id.slice(1)}`}>
+                <button
+                  onClick={() => onNavigateToChat(id)}
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                  style={{
+                    backgroundColor: `${color}15`,
+                    color,
+                    border: `1px solid ${color}30`,
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Chat with {id.charAt(0).toUpperCase() + id.slice(1)}
+                </button>
+              </AgentTooltip>
+              <AgentTooltip label="Create and assign a new task to this agent">
+                <button
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#8892A4] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06]"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Assign Task
+                </button>
+              </AgentTooltip>
             </div>
           </motion.div>
         </>

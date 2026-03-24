@@ -9,6 +9,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { Badge } from '@/components/ui/badge';
 import { Kbd } from '@/components/ui/kbd';
 import api from '@/services/api';
+import { timeAgo as luxonTimeAgo } from '@/utils/dateFormat';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,16 +65,7 @@ type Filter = (typeof FILTERS)[number];
 // ---------------------------------------------------------------------------
 
 function formatTime(ms: number): string {
-  const d = new Date(ms);
-  const now = new Date();
-  const diffH = (now.getTime() - d.getTime()) / 3600000;
-  if (diffH < 1) {
-    const mins = Math.floor((now.getTime() - d.getTime()) / 60000);
-    return mins <= 1 ? 'just now' : `${mins}m ago`;
-  }
-  if (diffH < 24) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (diffH < 48) return 'Yesterday';
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return luxonTimeAgo(new Date(ms));
 }
 
 function priorityWeight(p: string): number {

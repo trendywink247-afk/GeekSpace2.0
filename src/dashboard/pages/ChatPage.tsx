@@ -17,6 +17,7 @@ import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/To
 import type { AgentPersonality } from '@/types';
 import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
+import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
 
 // ── Types ──
 
@@ -117,17 +118,7 @@ function withinMs(a: Date, b: Date, ms: number): boolean {
 
 /** Format a date as a human-readable relative time string */
 function formatRelativeTime(date: Date): string {
-  const now = Date.now();
-  const diffMs = now - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHr = Math.floor(diffMin / 60);
-
-  if (diffSec < 10) return 'just now';
-  if (diffSec < 60) return `${diffSec}s ago`;
-  if (diffMin < 60) return `${diffMin} min ago`;
-  if (diffHr < 24) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return luxonTimeAgo(date);
 }
 
 function buildTimestampVisibility(msgs: ChatMessage[]): Set<string> {
@@ -677,7 +668,7 @@ export function ChatPage() {
         convos.push({
           id: entry.id,
           title: entry.content.slice(0, 50) + (entry.content.length > 50 ? '...' : ''),
-          timestamp: entry.createdAt ? new Date(entry.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '',
+          timestamp: entry.createdAt ? luxonFormatDate(new Date(entry.createdAt)) : '',
           pinned: false,
         });
       }
@@ -1457,7 +1448,7 @@ export function ChatPage() {
                   {!isEditing && (
                     <div className='flex items-center justify-between mt-1 gap-2'>
                       {showTimestamp ? (
-                        <p className='text-[10px] text-[#9CA3AF]/70' title={msg.timestamp.toLocaleString()}>
+                        <p className='text-[10px] text-[#9CA3AF]/70' title={luxonFormatDateTime(msg.timestamp)}>
                           {formatRelativeTime(msg.timestamp)}
                         </p>
                       ) : (
@@ -1787,6 +1778,7 @@ export function ChatPage() {
                 onSelect={handleMentionSelect}
                 onClose={() => { setShowMentionPopup(false); setMentionQuery(''); }}
                 visible={showMentionPopup}
+                anchorRef={textareaRef}
               />
               <textarea
                 ref={textareaRef}

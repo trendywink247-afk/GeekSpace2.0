@@ -63,3 +63,4 @@ playwright/.auth
 *.db-wal
 server/data/*.db*
 tmp-screenshots/
+.gstack/

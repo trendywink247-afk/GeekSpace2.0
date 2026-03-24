@@ -17,6 +17,7 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
+import { DateTime } from 'luxon';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,12 +118,11 @@ function toMs(t: string | number): number {
 
 function formatTime(t: string | number): string {
   const d = new Date(toMs(t));
-  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  return DateTime.fromJSDate(d).toLocaleString(DateTime.TIME_SIMPLE);
 }
 
 function formatLastSync(ms: number): string {
-  const d = new Date(ms);
-  return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  return DateTime.fromMillis(ms).toLocaleString(DateTime.DATETIME_MED);
 }
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -157,7 +157,7 @@ function relativeCountdown(ms: number): string {
   const days = Math.floor(hrs / 24);
   if (days === 1) {
     const d = new Date(ms);
-    return `tomorrow ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+    return `tomorrow ${DateTime.fromJSDate(d).toLocaleString(DateTime.TIME_SIMPLE)}`;
   }
   if (days < 7) return `in ${days} days`;
   return `in ${Math.floor(days / 7)}w`;
@@ -570,10 +570,7 @@ export function CalendarPage() {
   }
 
   const spinCls = refreshing ? "animate-spin" : "";
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
-    "en-IN",
-    { month: "long", year: "numeric" }
-  );
+  const monthLabel = DateTime.local(viewYear, viewMonth + 1, 1).toLocaleString({ month: 'long', year: 'numeric' });
 
   return (
     <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-6">
@@ -833,11 +830,7 @@ export function CalendarPage() {
                 <Clock className="h-4 w-4 text-cyan-400" />
                 {isSameDay(selectedDate, today)
                   ? "Today"
-                  : selectedDate.toLocaleDateString("en-IN", {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                  : DateTime.fromJSDate(selectedDate).toLocaleString({ weekday: 'long', month: 'short', day: 'numeric' })}
                 {(selectedDayEvents.length > 0 ||
                   selectedDayReminders.length > 0) && (
                   <Badge variant="secondary" className="ml-1 text-xs">
@@ -1076,10 +1069,7 @@ export function CalendarPage() {
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <p className="text-xs text-muted-foreground">
-                              {new Date(ms).toLocaleDateString("en-IN", {
-                                month: "short",
-                                day: "numeric",
-                              })}{" "}
+                              {DateTime.fromMillis(ms).toLocaleString({ month: 'short', day: 'numeric' })}{" "}
                               {formatTime(ms)}
                             </p>
                             <span className="text-xs text-[#00F0FF] font-medium">

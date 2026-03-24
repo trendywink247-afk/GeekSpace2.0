@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { userService, activityService, type ActivityEntry } from '@/services/api';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
+import { formatDateTime as luxonFormatDateTime } from '@/utils/dateFormat';
 
 // Map icon field values to event categories
 function getCategory(icon: string): string {
@@ -650,7 +651,7 @@ export function ActivityPage() {
                   </div>
                   <div className="flex-shrink-0 text-right flex items-start gap-2">
                     <div>
-                      <span title={new Date(parseSqliteTs(entry.created_at)).toLocaleString()} className="text-xs text-[#8888AA] whitespace-nowrap">
+                      <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[#8888AA] whitespace-nowrap">
                         {timeAgo(entry.created_at)}
                       </span>
                       <p className="text-xs text-[#9CA3AF]/60 mt-0.5">

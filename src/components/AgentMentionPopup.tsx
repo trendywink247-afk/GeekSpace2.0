@@ -1,4 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  useFloating,
+  useDismiss,
+  useInteractions,
+  FloatingPortal,
+  offset,
+  flip,
+  shift,
+  autoUpdate,
+} from '@floating-ui/react';
 
 // ── Types ──
 
@@ -15,6 +25,8 @@ interface AgentMentionPopupProps {
   onSelect: (agent: MentionAgent) => void;
   onClose: () => void;
   visible: boolean;
+  /** The element the popup anchors to (e.g. the textarea wrapper). */
+  anchorRef?: React.RefObject<HTMLElement | null>;
 }
 
 // ── Agent List ──
@@ -33,9 +45,28 @@ export const MENTION_AGENTS: MentionAgent[] = [
 
 // ── Component ──
 
-export function AgentMentionPopup({ query, onSelect, onClose, visible }: AgentMentionPopupProps) {
+export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef }: AgentMentionPopupProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // ── floating-ui positioning ──
+  const { refs, floatingStyles, context } = useFloating({
+    open: visible,
+    onOpenChange: (open) => { if (!open) onClose(); },
+    placement: 'top-start',
+    middleware: [offset(8), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  });
+
+  // Sync the external anchor ref into floating-ui's reference
+  useEffect(() => {
+    if (anchorRef?.current) {
+      refs.setReference(anchorRef.current);
+    }
+  }, [anchorRef, refs]);
+
+  const dismiss = useDismiss(context, { outsidePress: true, escapeKey: true });
+  const { getFloatingProps } = useInteractions([dismiss]);
 
   // Filter agents by query (case-insensitive prefix match)
   const filtered = MENTION_AGENTS.filter((a) =>
@@ -87,47 +118,52 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible }: AgentMe
   if (!visible || filtered.length === 0) return null;
 
   return (
-    <div
-      className="absolute bottom-full left-0 mb-1 w-64 max-h-56 overflow-y-auto rounded-lg bg-[#0C0C18] border border-[#00F0FF]/10 shadow-xl shadow-black/40 z-50 scrollbar-hide"
-      role="listbox"
-      aria-label="Mention an agent"
-    >
-      <div className="px-2.5 py-1.5 border-b border-[#00F0FF]/5">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4B5563]">
-          Mention an agent
-        </span>
-      </div>
-      <div ref={listRef} className="py-1">
-        {filtered.map((agent, i) => (
-          <button
-            key={agent.id}
-            data-mention-item
-            role="option"
-            aria-selected={i === selectedIndex}
-            onClick={() => onSelect(agent)}
-            onMouseEnter={() => setSelectedIndex(i)}
-            className={[
-              'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors text-sm',
-              i === selectedIndex
-                ? 'bg-[#00F0FF]/10 text-[#E8E8F0]'
-                : 'text-[#9CA3AF] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]',
-            ].join(' ')}
-          >
-            <span className="text-base leading-none shrink-0">{agent.emoji}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium text-xs">{agent.name}</span>
-                {agent.isCore && (
-                  <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#00F0FF]/10 text-[#00F0FF]/70">
-                    core
-                  </span>
-                )}
+    <FloatingPortal>
+      <div
+        ref={refs.setFloating}
+        style={floatingStyles}
+        {...getFloatingProps()}
+        className="w-64 max-h-56 overflow-y-auto rounded-lg bg-[#0C0C18] border border-[#00F0FF]/10 shadow-xl shadow-black/40 z-50 scrollbar-hide"
+        role="listbox"
+        aria-label="Mention an agent"
+      >
+        <div className="px-2.5 py-1.5 border-b border-[#00F0FF]/5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4B5563]">
+            Mention an agent
+          </span>
+        </div>
+        <div ref={listRef} className="py-1">
+          {filtered.map((agent, i) => (
+            <button
+              key={agent.id}
+              data-mention-item
+              role="option"
+              aria-selected={i === selectedIndex}
+              onClick={() => onSelect(agent)}
+              onMouseEnter={() => setSelectedIndex(i)}
+              className={[
+                'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors text-sm',
+                i === selectedIndex
+                  ? 'bg-[#00F0FF]/10 text-[#E8E8F0]'
+                  : 'text-[#9CA3AF] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]',
+              ].join(' ')}
+            >
+              <span className="text-base leading-none shrink-0">{agent.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-xs">{agent.name}</span>
+                  {agent.isCore && (
+                    <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#00F0FF]/10 text-[#00F0FF]/70">
+                      core
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-[#4B5563] truncate">{agent.description}</p>
               </div>
-              <p className="text-[10px] text-[#4B5563] truncate">{agent.description}</p>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+    </FloatingPortal>
   );
 }

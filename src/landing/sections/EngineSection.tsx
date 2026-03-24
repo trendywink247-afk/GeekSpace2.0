@@ -41,6 +41,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
       ref={sectionRef}
       id="engine"
       className="relative min-h-screen flex items-center justify-center py-20 md:py-28 lg:py-32 overflow-hidden"
+      data-aos="fade-up"
     >
       {/* Hexagonal Grid Background */}
       <div className="absolute inset-0 pointer-events-none opacity-10">

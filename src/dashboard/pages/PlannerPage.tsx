@@ -15,6 +15,7 @@ import api from '@/services/api';
 import { plannerService, type PlannerBlock } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { toast } from 'sonner';
+import { DateTime } from 'luxon';
 import type { Reminder } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -83,12 +84,7 @@ function formatHour(h: number): string {
 }
 
 function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return DateTime.fromJSDate(d).toLocaleString({ weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function dateKey(d: Date): string {
