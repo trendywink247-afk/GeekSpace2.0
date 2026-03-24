@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { MessageSquare, Calendar, Send, CheckCircle, TrendingUp, Clock } from 'lucide-react';
 
 interface Activity {
@@ -22,50 +22,34 @@ const activities: Activity[] = [
   { id: 9, company: 'Nova', action: 'generating dashboard wireframes', icon: Clock, time: '2m ago', color: '#E040FB' },
 ];
 
-const stats = [
-  { label: 'completed', value: '5', icon: CheckCircle },
-  { label: 'in progress', value: '3', icon: Clock },
-];
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: 24 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+};
 
 export function ActivitySection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [visibleActivities, setVisibleActivities] = useState<number[]>([]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      // Stagger in activities
-      activities.forEach((_, i) => {
-        setTimeout(() => {
-          setVisibleActivities(prev => [...prev, i]);
-        }, i * 100);
-      });
-    }
-  }, [isVisible]);
-
   return (
     <section
-      ref={sectionRef}
       id="activity"
       className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
     >
+      {/* Pulse animation keyframes */}
+      <style>{`
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.6); }
+        }
+      `}</style>
+
       {/* Data River Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         {[...Array(8)].map((_, i) => (
@@ -83,11 +67,18 @@ export function ActivitySection() {
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Left: Header & Stats */}
-          <div 
-            className={`lg:col-span-1 transition-all duration-700 ${
-              isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
-            }`}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="lg:col-span-1"
           >
+            {/* Mono badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00FF88]/5 border border-[#00FF88]/20 mb-6">
+              <span className="font-mono text-[11px] tracking-wider text-[#00FF88]/70 uppercase">Real-Time</span>
+            </div>
+
             <h2
               className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
@@ -98,83 +89,130 @@ export function ActivitySection() {
               While you focus on what matters, your AI team handles everything else -- around the clock, in parallel.
             </p>
 
-            {/* Stats */}
-            <div className="space-y-4">
-              {stats.map((stat, i) => (
-                <div
-                  key={i}
-                  className="p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-[#00F0FF]" />
-                    </div>
-                    <div>
-                      <div className="text-2xl sm:text-3xl font-bold text-[#E8E8F0]">{stat.value}</div>
-                      <div className="text-sm text-[#6B7280]">{stat.label}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            {/* Stats as colored badges */}
+            <div className="flex flex-wrap gap-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-semibold text-emerald-400">5</span>
+                <span className="text-xs text-emerald-400/70">completed</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <Clock className="w-4 h-4 text-amber-400" />
+                <span className="text-sm font-semibold text-amber-400">3</span>
+                <span className="text-xs text-amber-400/70">in progress</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                <span className="text-sm font-semibold text-red-400">0</span>
+                <span className="text-xs text-red-400/70">failed</span>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Right: Activity Feed */}
+          {/* Right: Activity Feed in Glass Container */}
           <div className="lg:col-span-2">
-            <div className="space-y-3">
-              {activities.map((activity, i) => (
-                <div
-                  key={activity.id}
-                  className={`p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all duration-500 flex items-center gap-4 ${
-                    visibleActivities.includes(i)
-                      ? 'opacity-100 translate-x-0'
-                      : 'opacity-0 translate-x-12'
-                  }`}
-                  style={{ transitionDelay: `${i * 50}ms` }}
-                >
-                  {/* Company Avatar */}
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${activity.color}20` }}
-                  >
-                    <activity.icon
-                      className="w-5 h-5"
-                      style={{ color: activity.color }}
-                      aria-label={activity.action}
+            <div
+              className="overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '20px',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.04), 0 0 40px rgba(0,0,0,0.3)',
+              }}
+            >
+              {/* Feed header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
+                <span className="text-sm font-medium text-[#F4F6FF]">Agent Activity</span>
+                <div className="flex items-center gap-2">
+                  {/* Live pulse dot */}
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span
+                      className="absolute inset-0 rounded-full bg-[#00FF88]"
+                      style={{ animation: 'livePulse 2s ease-in-out infinite' }}
                     />
-                  </div>
-
-                  {/* Activity Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <span className="font-medium text-[#E8E8F0]">{activity.company}</span>
-                      <span className="text-[#6B7280]">{activity.action}</span>
-                    </div>
-                  </div>
-
-                  {/* Time & Status */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-sm text-[#6B7280]/70 font-mono">{activity.time}</span>
-                    <div
-                      className="w-2 h-2 rounded-full motion-safe:animate-pulse"
-                      style={{ backgroundColor: activity.color }}
-                    />
-                  </div>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00FF88]" />
+                  </span>
+                  <span className="font-mono text-[11px] tracking-wider text-[#00FF88]/80 uppercase">Live</span>
                 </div>
-              ))}
+              </div>
+
+              {/* Staggered activity items */}
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.1 }}
+                className="p-3 space-y-2"
+              >
+                {activities.map((activity) => (
+                  <motion.div
+                    key={activity.id}
+                    variants={itemVariants}
+                    className="relative flex items-center gap-3 p-3 rounded-xl transition-colors duration-200 hover:bg-white/[0.02]"
+                    style={{
+                      background: 'rgba(255,255,255,0.015)',
+                      border: '1px solid rgba(255,255,255,0.04)',
+                      borderLeft: `2px solid ${activity.color}30`,
+                    }}
+                  >
+                    {/* Agent avatar with colored glow */}
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                        style={{
+                          backgroundColor: `${activity.color}20`,
+                          boxShadow: `0 0 12px ${activity.color}20`,
+                        }}
+                      >
+                        <activity.icon
+                          className="w-4 h-4"
+                          style={{ color: activity.color }}
+                          aria-label={activity.action}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Activity Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="font-medium text-sm text-[#E8E8F0]">{activity.company}</span>
+                        <span className="text-sm text-[#6B7280] truncate">{activity.action}</span>
+                      </div>
+                    </div>
+
+                    {/* Time badge */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        className="font-mono text-[10px] px-2 py-0.5 rounded-full text-[#6B7280]/70"
+                        style={{ background: 'rgba(255,255,255,0.03)' }}
+                      >
+                        {activity.time}
+                      </span>
+                      <div
+                        className="w-1.5 h-1.5 rounded-full motion-safe:animate-pulse"
+                        style={{ backgroundColor: activity.color }}
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
             </div>
 
-            {/* Live Indicator */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
-              <div className="w-2 h-2 bg-[#00FF88] rounded-full motion-safe:animate-pulse" />
-              <span className="font-mono">LIVE</span>
-              <span className="text-[#6B7280] mx-1">|</span>
-              <span className="font-mono">Agent Activity</span>
-              <span className="text-[#6B7280] mx-1">|</span>
-              <span className="font-mono">9 agents online</span>
-            </div>
-            <div className="mt-3 text-center text-xs text-[#6B7280] font-mono">
-              All systems healthy | 9 agents &middot; 24/7 uptime &middot; Your server, your data
+            {/* Live Indicator footer */}
+            <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
+              <span className="relative flex h-2 w-2">
+                <span
+                  className="absolute inset-0 rounded-full bg-[#00FF88]"
+                  style={{ animation: 'livePulse 2s ease-in-out infinite' }}
+                />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]" />
+              </span>
+              <span className="font-mono text-[11px]">LIVE</span>
+              <span className="text-[#6B7280]/30 mx-1">|</span>
+              <span className="font-mono text-[11px]">9 agents online</span>
+              <span className="text-[#6B7280]/30 mx-1">|</span>
+              <span className="font-mono text-[11px]">Your server, your data</span>
             </div>
           </div>
         </div>

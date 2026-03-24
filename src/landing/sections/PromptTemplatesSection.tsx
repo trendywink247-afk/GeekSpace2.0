@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   MessageSquare,
   Calendar,
@@ -10,6 +10,7 @@ import {
   BarChart3,
   Sparkles,
   ArrowRight,
+  Send,
 } from 'lucide-react';
 
 interface TabItem {
@@ -139,15 +140,82 @@ const tabContents: Record<string, TabContent> = {
   },
 };
 
+/* Typing indicator: three pulsing dots */
+function TypingIndicator({ agentColor, agentInitial }: { agentColor: string; agentInitial: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`w-8 h-8 rounded-full ${agentColor} flex items-center justify-center flex-shrink-0`}>
+        <span className="text-xs font-bold text-white">{agentInitial}</span>
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-1 pt-2">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="block w-1.5 h-1.5 rounded-full bg-[#6B7280]"
+              style={{
+                animation: 'typingPulse 1.2s ease-in-out infinite',
+                animationDelay: `${dot * 0.2}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const messageVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+};
+
 export function PromptTemplatesSection() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('automate');
   const prefersReducedMotion = useReducedMotion();
+  const [showTyping, setShowTyping] = useState(false);
+  const [showAgent, setShowAgent] = useState(true);
 
   const currentContent = tabContents[activeTab];
+  const agentMsg = currentContent.messages.find(m => m.role === 'agent');
+
+  const handleTabSwitch = useCallback((tabId: string) => {
+    if (tabId === activeTab) return;
+    setShowAgent(false);
+    setShowTyping(true);
+    setActiveTab(tabId);
+
+    // Show typing for 300ms, then reveal agent message
+    setTimeout(() => {
+      setShowTyping(false);
+      setShowAgent(true);
+    }, 300);
+  }, [activeTab]);
+
+  // Initial mount: show typing briefly then reveal
+  useEffect(() => {
+    setShowAgent(false);
+    setShowTyping(true);
+    const timer = setTimeout(() => {
+      setShowTyping(false);
+      setShowAgent(true);
+    }, 300);
+    return () => clearTimeout(timer);
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section id="templates" className="relative py-20 md:py-28 lg:py-32 px-4">
+      {/* Typing pulse keyframes */}
+      <style>{`
+        @keyframes typingPulse {
+          0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+          30% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
@@ -155,10 +223,9 @@ export function PromptTemplatesSection() {
             initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
             whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/5 border border-[#00F0FF]/20 mb-6"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00F0FF]/5 border border-[#00F0FF]/20 mb-6"
           >
-            <Sparkles className="w-4 h-4 text-[#00F0FF]" />
-            <span className="text-sm text-[#00F0FF]/80">One prompt is all it takes</span>
+            <span className="font-mono text-[11px] tracking-wider text-[#00F0FF]/70 uppercase">Interactive Demo</span>
           </motion.div>
 
           <motion.h2
@@ -185,7 +252,7 @@ export function PromptTemplatesSection() {
           </motion.p>
         </div>
 
-        {/* Tab Filter */}
+        {/* Tab Pills with layoutId animated indicator */}
         <motion.div
           initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
           whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -193,24 +260,34 @@ export function PromptTemplatesSection() {
           transition={prefersReducedMotion ? undefined : { delay: 0.3 }}
           className="flex flex-wrap justify-center gap-2 mb-12"
         >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-lg shadow-[#00F0FF]/10'
-                  : 'bg-white/5 text-[#8892A4] hover:bg-white/10 hover:text-[#E8E8F0] border border-transparent'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabSwitch(tab.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className="relative inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                style={{ color: isActive ? '#00F0FF' : '#8892A4' }}
+              >
+                {/* Animated background indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="template-tab"
+                    className="absolute inset-0 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/30"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  {tab.icon}
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </motion.div>
 
-        {/* Chat Demo */}
+        {/* Glass Chat Container */}
         <motion.div
           initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
           whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -218,46 +295,111 @@ export function PromptTemplatesSection() {
           transition={prefersReducedMotion ? undefined : { delay: 0.4 }}
           className="max-w-2xl mx-auto"
         >
-          <div className="rounded-2xl border border-white/10 bg-[#0C0C18] overflow-hidden">
-            {/* Chat header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5 bg-white/[0.02]">
-              <span className="text-sm font-medium text-[#F4F6FF]">{currentContent.title}</span>
-              <span className="text-[10px] text-[#6B7280]">just now</span>
+          <div
+            className="overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '20px',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.04), 0 0 40px rgba(0,0,0,0.3)',
+            }}
+          >
+            {/* macOS-style window header */}
+            <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5">
+              {/* Traffic light dots */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+                <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+              </div>
+              <div className="flex-1 text-center">
+                <span className="text-xs font-medium text-[#6B7280]">{currentContent.title}</span>
+              </div>
+              <span className="text-[10px] text-[#6B7280]/50 font-mono">just now</span>
             </div>
 
-            {/* Chat messages */}
+            {/* Chat messages with AnimatePresence for tab switching */}
             <div className="p-5 space-y-4 min-h-[240px]">
-              {currentContent.messages.map((msg, i) => (
-                <div key={`${activeTab}-${i}`}>
-                  {msg.role === 'user' ? (
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#6B51EF] flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-white">Y</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-xs text-[#6B7280] mb-1">You</div>
-                        <div className="text-sm text-[#F4F6FF] leading-relaxed">{msg.text}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-full ${msg.agentColor} flex items-center justify-center flex-shrink-0`}>
-                        <span className="text-xs font-bold text-white">{msg.agentInitial}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-xs text-[#6B7280] mb-1">{msg.agentName}</div>
-                        <div className="text-sm text-[#C4C9D4] leading-relaxed whitespace-pre-line">{msg.text}</div>
-                      </div>
-                    </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-4"
+                >
+                  {currentContent.messages.map((msg, i) => {
+                    // Skip agent message if still in typing phase
+                    if (msg.role === 'agent' && !showAgent) return null;
+
+                    return (
+                      <motion.div
+                        key={`${activeTab}-${i}`}
+                        variants={prefersReducedMotion ? undefined : messageVariants}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: i * 0.15, duration: 0.3, ease: 'easeOut' }}
+                      >
+                        {msg.role === 'user' ? (
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-[#6B51EF] flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-bold text-white">Y</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xs text-[#6B7280] mb-1">You</div>
+                              <div className="text-sm text-[#F4F6FF] leading-relaxed">{msg.text}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full ${msg.agentColor} flex items-center justify-center flex-shrink-0`}>
+                              <span className="text-xs font-bold text-white">{msg.agentInitial}</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xs text-[#6B7280] mb-1">{msg.agentName}</div>
+                              <div className="text-sm text-[#C4C9D4] leading-relaxed whitespace-pre-line">{msg.text}</div>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+
+                  {/* Typing indicator shown before agent response */}
+                  {showTyping && agentMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <TypingIndicator
+                        agentColor={agentMsg.agentColor ?? 'bg-[#00F0FF]'}
+                        agentInitial={agentMsg.agentInitial ?? 'A'}
+                      />
+                    </motion.div>
                   )}
-                </div>
-              ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Input bar */}
+            {/* Glass input bar */}
             <div className="px-5 py-3 border-t border-white/5">
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-sm text-[#6B7280]/50">Ask anything...</span>
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <Sparkles className="w-4 h-4 text-[#00F0FF]/30 flex-shrink-0" />
+                <span className="flex-1 text-sm text-[#6B7280]/50">Ask anything...</span>
+                <div className="w-7 h-7 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center flex-shrink-0">
+                  <Send className="w-3.5 h-3.5 text-[#00F0FF]/50" />
+                </div>
               </div>
             </div>
           </div>

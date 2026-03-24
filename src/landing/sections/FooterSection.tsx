@@ -1,70 +1,110 @@
-import { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Hexagon } from 'lucide-react';
 
 const productLinks = [
   { label: 'Features', to: '/#templates' },
+  { label: 'Agents', to: '/#personas' },
   { label: 'Pricing', to: '/#pricing' },
   { label: 'Security', to: '/#security' },
   { label: 'Documentation', to: '/docs' },
-  { label: 'Telegram', href: 'https://t.me/Weebo_gs_bot' },
+];
+
+const resourceLinks = [
+  { label: 'Telegram Bot', href: 'https://t.me/Weebo_gs_bot' },
+  { label: 'GitHub', href: 'https://github.com' },
+  { label: 'Status', to: '/status' },
+  { label: 'Blog', to: '/blog' },
 ];
 
 const legalLinks = [
   { label: 'Privacy Policy', to: '/privacy' },
   { label: 'Terms of Service', to: '/terms' },
-  { label: 'Status', to: '/status' },
 ];
 
-export function FooterSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
+const socialLinks = [
+  {
+    label: 'GitHub',
+    href: 'https://github.com',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'X',
+    href: 'https://x.com',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Telegram',
+    href: 'https://t.me/Weebo_gs_bot',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+      </svg>
+    ),
+  },
+];
 
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
+function FooterLink({
+  to,
+  href,
+  children,
+}: {
+  to?: string;
+  href?: string;
+  children: React.ReactNode;
+}) {
+  const cls =
+    'text-sm text-[#6B7280] hover:text-[#e5e7eb] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm';
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
+        {children}
+      </a>
     );
+  }
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
+  return (
+    <Link to={to || '/'} className={cls}>
+      {children}
+    </Link>
+  );
+}
 
-    return () => observer.disconnect();
-  }, []);
+export function FooterSection() {
+  const reducedMotion = useReducedMotion();
 
-  const fadeIn = reducedMotion
-    ? 'opacity-100'
-    : `transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`;
-
-  const fadeInStyle = (delay: number) =>
-    reducedMotion ? undefined : { transitionDelay: `${delay}ms` };
+  const fadeUp = {
+    initial: { opacity: 0, y: reducedMotion ? 0 : 16 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true as const, margin: '-40px' as const },
+  };
 
   return (
     <footer
-      ref={sectionRef}
       id="footer"
-      className="relative py-16 px-4 overflow-hidden border-t border-[#00F0FF]/10"
-      style={{ backgroundColor: '#05050A' }}
+      className="relative overflow-hidden bg-[#050510]"
     >
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 lg:gap-8 mb-12">
-          {/* Column 1 - Brand */}
-          <div className={fadeIn} style={fadeInStyle(0)}>
+      {/* Top gradient border */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-[#00F0FF]/30 to-transparent" />
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-16 pb-10">
+        {/* 4-column grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 lg:gap-12 mb-12">
+          {/* Brand */}
+          <motion.div
+            className="col-span-2 md:col-span-1"
+            {...fadeUp}
+            transition={{ duration: 0.5 }}
+          >
             <div className="flex items-center gap-2 mb-3">
               <Hexagon className="w-7 h-7 text-[#00F0FF]" />
               <span
@@ -74,65 +114,92 @@ export function FooterSection() {
                 agentin
               </span>
             </div>
-            <p className="text-sm text-[#6B7280] leading-relaxed">
+            <p className="text-sm text-[#6B7280] leading-relaxed max-w-[200px]">
               Your AI, Your Server, Your Rules.
             </p>
-          </div>
+          </motion.div>
 
-          {/* Column 2 - Product */}
-          <div className={fadeIn} style={fadeInStyle(100)}>
+          {/* Product */}
+          <motion.div
+            {...fadeUp}
+            transition={{ duration: 0.5, delay: 0.05 }}
+          >
             <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
               Product
             </h3>
             <ul className="space-y-2.5" role="list">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  {'href' in link && link.href ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      to={link.to!}
-                      className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
+                  <FooterLink to={link.to}>{link.label}</FooterLink>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
-          {/* Column 3 - Legal */}
-          <div className={fadeIn} style={fadeInStyle(200)}>
+          {/* Resources */}
+          <motion.div
+            {...fadeUp}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
+              Resources
+            </h3>
+            <ul className="space-y-2.5" role="list">
+              {resourceLinks.map((link) => (
+                <li key={link.label}>
+                  <FooterLink
+                    to={'to' in link ? link.to : undefined}
+                    href={'href' in link ? link.href : undefined}
+                  >
+                    {link.label}
+                  </FooterLink>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Legal */}
+          <motion.div
+            {...fadeUp}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
             <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
               Legal
             </h3>
             <ul className="space-y-2.5" role="list">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
-                  >
-                    {link.label}
-                  </Link>
+                  <FooterLink to={link.to}>{link.label}</FooterLink>
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-[#00F0FF]/10">
-          <p className="text-sm text-[#6B7280]/60 text-center">
-            &copy; 2026 Agentin. Made with <span aria-label="love">&hearts;</span> in India
+        {/* Social links row */}
+        <motion.div
+          className="flex justify-center gap-3 mb-10"
+          {...fadeUp}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {socialLinks.map((social) => (
+            <a
+              key={social.label}
+              href={social.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={social.label}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-[#6B7280] hover:text-[#e5e7eb] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
+            >
+              {social.icon}
+            </a>
+          ))}
+        </motion.div>
+
+        {/* Bottom bar */}
+        <div className="pt-6 border-t border-white/[0.06]">
+          <p className="text-sm text-[#6B7280] text-center">
+            Made with love in India {'\uD83C\uDDEE\uD83C\uDDF3'} &middot; &copy; 2026 Agentin
           </p>
         </div>
       </div>
