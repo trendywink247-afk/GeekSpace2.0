@@ -1,17 +1,7 @@
-name: Deploy
+name: Deploy Production
 
-# ── Flow ──
-# Push to main → CI passes → auto-deploy to staging
-# Manual trigger → deploy to production (from whatever is on staging)
-
+# Manual trigger only — staging deploy lives in ci.yml (auto after CI passes)
 on:
-  # Auto-trigger: when CI workflow completes successfully on main
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
-
-  # Manual trigger: production deploys only
   workflow_dispatch:
     inputs:
       target:
@@ -22,66 +12,17 @@ on:
           - production
 
 concurrency:
-  group: deploy-${{ github.event.inputs.target || 'staging' }}
+  group: deploy-production
   cancel-in-progress: false  # Never cancel in-progress deploys
 
 jobs:
-  # ============================================
-  # Auto-deploy to Staging (after CI on main)
-  # ============================================
-  deploy-staging:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success'
-    environment:
-      name: staging
-      url: https://staging.agentin.chat
-    steps:
-      - name: Deploy to staging via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            set -e
-            cd ~/GeekSpace2.0
-
-            echo "=== Merging main → staging ==="
-            git fetch origin main
-            git checkout staging
-            git merge origin/main --no-edit
-            git push origin staging
-
-            echo "=== Building frontend ==="
-            npm run build
-
-            echo "=== Building and deploying staging container ==="
-            docker compose up -d --build staging
-
-            echo "=== Waiting for health check ==="
-            for i in $(seq 1 30); do
-              if curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
-                echo "Staging is healthy!"
-                exit 0
-              fi
-              echo "Waiting... ($i/30)"
-              sleep 2
-            done
-            echo "ERROR: Staging health check failed"
-            exit 1
-
   # ============================================
   # Deploy to Production (manual trigger only)
   # ============================================
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.target == 'production'
+    if: github.event.inputs.target == 'production'
     environment:
       name: production
       url: https://ai.agentin.chat
