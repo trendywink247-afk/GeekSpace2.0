@@ -1,6 +1,7 @@
-name: Deploy Production
+name: "Deploy: staging → production"
 
 # Manual trigger only — staging deploy lives in ci.yml (auto after CI passes)
+run-name: "Deploy to PRODUCTION (staging → live-production)"
 on:
   workflow_dispatch:
     inputs:

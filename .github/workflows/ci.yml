@@ -1,4 +1,4 @@
-name: CI
+name: CI + Staging Deploy
 
 on:
   push:
@@ -190,7 +190,7 @@ jobs:
   # Auto-deploy to Staging (only on push, after CI passes)
   # ============================================
   deploy-staging:
-    name: Deploy Staging
+    name: "Deploy: main → staging"
     runs-on: ubuntu-latest
     needs: [summary]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
