@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Sparkles, ArrowRight, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface PricingPreviewSectionProps {
   onGetStarted?: () => void;
@@ -41,6 +41,50 @@ const toolCosts = [
   { name: 'Otter.ai', cost: 150 },
 ];
 
+const glassBase: React.CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.02)',
+  backdropFilter: 'blur(16px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+  border: '1px solid rgba(255, 255, 255, 0.06)',
+  borderRadius: '24px',
+  padding: '40px',
+};
+
+function useSpringCount(target: number, inView: boolean) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!inView) { setValue(0); return; }
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { setValue(target); return; }
+    let start: number | null = null;
+    const duration = 1000;
+    let raf: number;
+    function step(ts: number) {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, inView]);
+  return value;
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+
+/* Keyframes injected once via a <style> tag */
+const spinKeyframes = `@keyframes pricing-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
+
 export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -57,234 +101,178 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.15 }
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      { threshold: 0.15 },
     );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
-
-  const fadeIn =
-    reducedMotion
-      ? 'opacity-100'
-      : `transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`;
-
-  const fadeInStyle = (delay: number) =>
-    reducedMotion ? undefined : { transitionDelay: `${delay}ms` };
 
   const selectedTools = toolCosts.slice(0, toolCount);
   const totalToolCost = selectedTools.reduce((sum, t) => sum + t.cost, 0);
   const savings = totalToolCost - 499;
   const savingsPercent = totalToolCost > 0 ? Math.round((savings / totalToolCost) * 100) : 0;
 
+  const freePrice = useSpringCount(0, isVisible);
+  const proPrice = useSpringCount(499, isVisible);
+  const teamPrice = useSpringCount(999, isVisible);
+
+  const mv = reducedMotion ? undefined : {
+    initial: 'hidden' as const,
+    whileInView: 'visible' as const,
+    viewport: { once: true, margin: '-80px' as const },
+    variants: cardVariants,
+  };
+
   return (
-    <section
-      ref={sectionRef}
-      id="pricing"
-      className="relative py-20 md:py-28 lg:py-32 overflow-hidden"
-      data-aos="fade-up"
-    >
+    <section ref={sectionRef} id="pricing" className="relative py-20 md:py-28 lg:py-32 overflow-hidden" data-aos="fade-up">
+      {/* Inject spin keyframes */}
+      <style>{spinKeyframes}</style>
+
       {/* Gradient Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 80% 50% at 50% 40%, rgba(0, 240, 255, 0.06) 0%, transparent 70%)',
-          }}
-        />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 40%, rgba(0, 240, 255, 0.06) 0%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
         {/* Section Header */}
-        <div className={`text-center mb-14 ${fadeIn}`} style={fadeInStyle(0)}>
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mb-4">
-            Pricing
-          </span>
-          <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
+        <motion.div className="text-center mb-14" {...mv}>
+          <span className="font-mono text-xs tracking-[0.2em] uppercase text-[#00F0FF]/60 mb-4 block">Pricing</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
             Simple Pricing. <span className="text-gradient">No Surprises.</span>
           </h2>
-          <p className="text-lg text-[#8892A4] max-w-xl mx-auto">
-            Start free. Upgrade when you need more power.
-          </p>
-        </div>
+          <p className="text-lg text-[#8892A4] max-w-xl mx-auto">Start free. Upgrade when you need more power.</p>
+        </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-          {/* Free Card */}
-          <div
-            className={`rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-[#00F0FF]/10 flex flex-col ${fadeIn}`}
-            style={fadeInStyle(100)}
+        <motion.div
+          className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto"
+          {...(reducedMotion ? {} : { initial: 'hidden', whileInView: 'visible', viewport: { once: true, margin: '-80px' }, variants: staggerContainer })}
+        >
+          {/* ---- Free Card ---- */}
+          <motion.div
+            variants={reducedMotion ? undefined : cardVariants}
+            className="group relative flex flex-col rounded-3xl transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(255,255,255,0.04)]"
+            style={{ ...glassBase, borderStyle: 'dashed' }}
           >
-            {/* Badge */}
-            <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-sm font-medium text-[#ADFF2F] mb-6">
-              Free Forever
-            </span>
-
-            {/* Price */}
+            <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-sm font-medium text-[#ADFF2F] mb-6">Free Forever</span>
             <div className="mb-6">
-              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}0</span>
+              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{freePrice}</span>
               <span className="text-lg text-[#8892A4] ml-1">forever</span>
             </div>
-
-            {/* Features */}
             <ul className="space-y-3 mb-8 flex-1" role="list">
-              {freeFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <Check
-                    className="w-5 h-5 text-[#ADFF2F] shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
-                  <span className="text-[#8892A4] text-sm sm:text-base">{feature}</span>
+              {freeFeatures.map((f) => (
+                <li key={f} className="flex items-start gap-3 group/item">
+                  <Check className="w-5 h-5 text-[#00F0FF] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(0,240,255,0.5)]" aria-hidden="true" />
+                  <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
                 </li>
               ))}
             </ul>
-
-            {/* CTA */}
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="w-full min-h-[48px] border-[#00F0FF]/30 text-[#E8E8F0] hover:bg-[#00F0FF]/10 hover:border-[#00F0FF]/50 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            <Link
+              to="/login"
               onClick={onGetStarted}
+              className="flex items-center justify-center w-full min-h-[48px] border border-[#00F0FF]/30 text-[#E8E8F0] hover:bg-[#00F0FF]/10 hover:border-[#00F0FF]/50 py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
             >
-              <Link to="/login">
-                Start Free
-                <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
+              Start Free
+              <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+            </Link>
+          </motion.div>
 
-          {/* Pro Card */}
-          <div
-            className={`group/pro relative rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-[#00F0FF]/40 flex flex-col ${fadeIn}`}
-            style={{
-              ...fadeInStyle(200),
-              boxShadow: '0 0 40px rgba(0, 240, 255, 0.08), inset 0 1px 0 rgba(0, 240, 255, 0.15)',
-            }}
-          >
-            {/* Corner bracket decorations */}
-            <div className="absolute top-[-1px] left-[-1px] w-3 h-3 border-t-2 border-l-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-tl-sm" />
-            <div className="absolute top-[-1px] right-[-1px] w-3 h-3 border-t-2 border-r-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-tr-sm" />
-            <div className="absolute bottom-[-1px] left-[-1px] w-3 h-3 border-b-2 border-l-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-bl-sm" />
-            <div className="absolute bottom-[-1px] right-[-1px] w-3 h-3 border-b-2 border-r-2 border-[#00F0FF]/30 opacity-0 transition-all duration-300 group-hover/pro:opacity-100 group-hover/pro:border-[#00F0FF]/60 pointer-events-none rounded-br-sm" />
-
-            {/* Most Popular Badge */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] text-sm font-bold shadow-lg shadow-[#00F0FF]/20">
-                <Sparkles className="w-3.5 h-3.5" />
-                Most Popular
-              </span>
+          {/* ---- Pro Card (animated border) ---- */}
+          <motion.div variants={reducedMotion ? undefined : cardVariants} className="relative">
+            {/* Most Popular badge */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-[#00F0FF] to-[#8B5CF6] text-[#050510] shadow-lg shadow-[#00F0FF]/20 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Most Popular
             </div>
 
-            {/* Badge */}
-            <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mt-2 mb-6">
-              Pro
-            </span>
+            {/* Animated conic border wrapper */}
+            <div className="relative rounded-3xl p-[1px] overflow-hidden">
+              {/* Spinning gradient layer masked to 1px border */}
+              <div
+                className="absolute inset-[-1px] motion-safe:animate-none"
+                style={{
+                  background: 'conic-gradient(from 0deg, #00F0FF, #8B5CF6, #FF2D78, #00F0FF)',
+                  animation: reducedMotion ? 'none' : 'pricing-spin 4s linear infinite',
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                  padding: '1px',
+                  borderRadius: '25px',
+                }}
+              />
 
-            {/* Price */}
-            <div className="mb-2">
-              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}499</span>
-              <span className="text-lg text-[#8892A4] ml-1">/mo</span>
+              {/* Card content */}
+              <div className="relative flex flex-col rounded-3xl bg-[#0a0a1a] p-10" style={{ backdropFilter: 'blur(16px) saturate(180%)' }}>
+                <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mt-2 mb-6">Pro</span>
+                <div className="mb-2">
+                  <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{proPrice}</span>
+                  <span className="text-lg text-[#8892A4] ml-1">/mo</span>
+                </div>
+                <p className="text-sm text-[#ADFF2F] mb-6">Save 20% with yearly billing</p>
+                <ul className="space-y-3 mb-8 flex-1" role="list">
+                  {proFeatures.map((f) => (
+                    <li key={f} className="flex items-start gap-3 group/item">
+                      <Check className="w-5 h-5 text-[#00F0FF] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(0,240,255,0.5)]" aria-hidden="true" />
+                      <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/login?plan=pro"
+                  className="flex items-center justify-center w-full min-h-[48px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] py-3.5 rounded-xl font-bold text-lg transition-all duration-300 motion-safe:hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(0,240,255,0.3),0_0_50px_rgba(0,240,255,0.1)] group/btn"
+                >
+                  Get Pro
+                  <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
             </div>
-            <p className="text-sm text-[#ADFF2F] mb-6">Save 20% with yearly billing</p>
+          </motion.div>
 
-            {/* Features */}
-            <ul className="space-y-3 mb-8 flex-1" role="list">
-              {proFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <Check
-                    className="w-5 h-5 text-[#ADFF2F] shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
-                  <span className="text-[#8892A4] text-sm sm:text-base">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* CTA */}
-            <Button
-              asChild
-              size="lg"
-              className="w-full min-h-[48px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] py-6 rounded-xl font-bold text-lg transition-all duration-300 motion-safe:hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(0,240,255,0.3),0_0_50px_rgba(0,240,255,0.1)] group glow-hover"
-            >
-              <Link to="/login?plan=pro">
-                Get Pro
-                <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Team Card */}
-          <div
-            className={`rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-[#8B5CF6]/20 flex flex-col ${fadeIn}`}
-            style={fadeInStyle(300)}
+          {/* ---- Team Card ---- */}
+          <motion.div
+            variants={reducedMotion ? undefined : cardVariants}
+            className="group relative flex flex-col rounded-3xl transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(139,92,246,0.06)]"
+            style={{ ...glassBase, background: 'rgba(139, 92, 246, 0.03)', border: '1px solid rgba(139, 92, 246, 0.12)' }}
           >
-            {/* Badge */}
             <span className="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-sm font-medium text-[#8B5CF6] mb-6">
               <Users className="w-3.5 h-3.5" />
               Team
             </span>
-
-            {/* Price */}
             <div className="mb-2">
-              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}999</span>
+              <span className="text-4xl sm:text-5xl font-bold text-white">{'\u20B9'}{teamPrice}</span>
               <span className="text-lg text-[#8892A4] ml-1">/mo</span>
             </div>
             <p className="text-sm text-[#8892A4] mb-6">Per workspace</p>
-
-            {/* Features */}
             <ul className="space-y-3 mb-8 flex-1" role="list">
-              {teamFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <Check
-                    className="w-5 h-5 text-[#8B5CF6] shrink-0 mt-0.5"
-                    aria-hidden="true"
-                  />
-                  <span className="text-[#8892A4] text-sm sm:text-base">{feature}</span>
+              {teamFeatures.map((f) => (
+                <li key={f} className="flex items-start gap-3 group/item">
+                  <Check className="w-5 h-5 text-[#8B5CF6] shrink-0 mt-0.5 transition-all duration-200 group-hover/item:drop-shadow-[0_0_4px_rgba(139,92,246,0.5)]" aria-hidden="true" />
+                  <span className="text-[#8892A4] text-sm sm:text-base">{f}</span>
                 </li>
               ))}
             </ul>
-
-            {/* CTA */}
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="w-full min-h-[48px] border-[#8B5CF6]/30 text-[#E8E8F0] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/50 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
+            <Link
+              to="/login?plan=team"
+              className="flex items-center justify-center w-full min-h-[48px] border border-[#8B5CF6]/30 text-[#E8E8F0] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/50 py-3.5 rounded-xl font-medium text-lg transition-all duration-300 group/btn"
             >
-              <Link to="/login?plan=team">
-                Contact Us
-                <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
-        </div>
+              Contact Us
+              <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+            </Link>
+          </motion.div>
+        </motion.div>
 
         {/* Savings Calculator */}
-        <div
-          className={`mt-16 max-w-3xl mx-auto rounded-2xl p-6 sm:p-8 bg-[#0C0C18]/80 backdrop-blur border border-white/10 ${fadeIn}`}
-          style={fadeInStyle(400)}
+        <motion.div
+          className="mt-16 max-w-3xl mx-auto rounded-3xl p-6 sm:p-8"
+          style={{ ...glassBase }}
+          {...mv}
         >
-          <h3
-            className="text-xl sm:text-2xl font-bold text-center mb-6"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
+          <h3 className="text-xl sm:text-2xl font-bold text-center mb-6" style={{ fontFamily: 'Syne, sans-serif' }}>
             How many AI tools do you pay for?
           </h3>
 
-          {/* Slider */}
+          {/* Styled range slider */}
           <div className="mb-6">
             <input
               type="range"
@@ -292,14 +280,31 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
               max={6}
               value={toolCount}
               onChange={(e) => setToolCount(Number(e.target.value))}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-[#1A1A2E] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#00F0FF] [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(0,240,255,0.5)]"
+              className="w-full h-1.5 rounded-full appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(0,240,255,0.4)] [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(0,240,255,0.4)]"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                // Thumb gradient applied via Tailwind pseudoclass above doesn't work for bg; use inline
+              }}
+              ref={(el) => {
+                if (el) {
+                  el.style.setProperty('--thumb-bg', 'linear-gradient(135deg, #00F0FF, #8B5CF6)');
+                  // Apply gradient thumb via sheet
+                  const id = 'pricing-slider-style';
+                  if (!document.getElementById(id)) {
+                    const s = document.createElement('style');
+                    s.id = id;
+                    s.textContent = `
+                      #pricing input[type=range]::-webkit-slider-thumb{background:linear-gradient(135deg,#00F0FF,#8B5CF6)}
+                      #pricing input[type=range]::-moz-range-thumb{background:linear-gradient(135deg,#00F0FF,#8B5CF6)}
+                    `;
+                    document.head.appendChild(s);
+                  }
+                }
+              }}
             />
             <div className="flex flex-wrap gap-2 mt-3 justify-center">
               {selectedTools.map((tool) => (
-                <span
-                  key={tool.name}
-                  className="px-2 py-1 rounded-md bg-white/5 text-xs text-[#8892A4] border border-white/10"
-                >
+                <span key={tool.name} className="px-2.5 py-1 rounded-lg bg-white/5 text-xs text-[#8892A4] border border-white/10">
                   {tool.name} {'\u20B9'}{tool.cost}
                 </span>
               ))}
@@ -318,11 +323,19 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
             </div>
             <div className="p-4 rounded-xl bg-[#ADFF2F]/5 border border-[#ADFF2F]/20">
               <div className="text-sm text-[#8892A4] mb-1">You save</div>
-              <div className="text-2xl font-bold text-[#ADFF2F]">
-                {savings > 0 ? `${'\u20B9'}${savings.toLocaleString('en-IN')}/mo` : '\u20B90/mo'}
+              <div className="text-2xl font-bold">
+                {savings > 0 ? (
+                  <span className="bg-gradient-to-r from-[#ADFF2F] to-[#00F0FF] bg-clip-text text-transparent">
+                    {'\u20B9'}{savings.toLocaleString('en-IN')}/mo
+                  </span>
+                ) : (
+                  <span className="text-[#ADFF2F]">{'\u20B9'}0/mo</span>
+                )}
               </div>
               {savingsPercent > 0 && (
-                <div className="text-xs text-[#ADFF2F]/70 mt-1">{savingsPercent}% less</div>
+                <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-[#ADFF2F]/20 to-[#00F0FF]/20 text-[#ADFF2F] border border-[#ADFF2F]/20">
+                  {savingsPercent}% less
+                </span>
               )}
             </div>
           </div>
@@ -330,7 +343,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
           <p className="text-xs text-center text-[#6B7280] mt-4">
             ChatGPT Plus costs {'\u20B9'}1,650/month for chat alone
           </p>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

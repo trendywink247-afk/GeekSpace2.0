@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from './sections/HeroSection';
@@ -23,15 +21,6 @@ export function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    AOS.init({
-      duration: 800,
-      once: true,
-      easing: 'ease-out',
-      offset: 80,
-    });
-  }, []);
-
-  useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
@@ -49,7 +38,22 @@ export function LandingPage() {
   const onGetStarted = () => navigate('/login');
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{
+        backgroundColor: '#050510',
+        scrollBehavior: 'smooth',
+      }}
+    >
+      {/* Noise texture overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-[9999]"
+        style={{
+          opacity: 0.035,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       <NeuralBackground />
       <Navigation scrollY={scrollY} onEnterDashboard={onEnterDashboard} />
 

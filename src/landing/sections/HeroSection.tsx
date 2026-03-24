@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Play, Hexagon, MessageCircle, Calendar, Mail, Github, Users, MessageSquare, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 interface HeroSectionProps {
   onEnterDashboard?: () => void;
@@ -68,6 +69,11 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
   const [statsReady, setStatsReady] = useState(false);
 
   const fullText = 'Your AI Team, Self-Hosted';
+  const headlineWords = fullText.split(' ');
+
+  // Parallax scroll for orb
+  const { scrollY } = useScroll();
+  const orbY = useTransform(scrollY, [0, 500], [0, -80]);
 
   // CountUp animated values
   const animatedUsers = useCountUp(stats.users, 1500, statsReady, reducedMotion);
@@ -161,24 +167,56 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
     };
   }, [isLoaded, reducedMotion]);
 
+  // Headline animation variants
+  const headlineContainer = {
+    visible: { transition: { staggerChildren: reducedMotion ? 0 : 0.08 } },
+    hidden: {},
+  };
+  const wordVariant = reducedMotion
+    ? { hidden: { opacity: 1, filter: 'blur(0px)', y: 0 }, visible: { opacity: 1, filter: 'blur(0px)', y: 0 } }
+    : { hidden: { opacity: 0, filter: 'blur(8px)', y: 10 }, visible: { opacity: 1, filter: 'blur(0px)', y: 0, transition: { duration: 0.5 } } };
+
+  // Stat scale-up variant
+  const statVariant = reducedMotion
+    ? { hidden: { opacity: 1, scale: 1 }, visible: { opacity: 1, scale: 1 } }
+    : { hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1, transition: { type: 'spring' as const, stiffness: 200, damping: 15 } } };
+
   return (
     <section
       ref={sectionRef}
       id="hero"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden scanlines w-full"
+      className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden scanlines w-full"
     >
-      {/* Gradient Mesh Background */}
-      <div className="absolute inset-0 gradient-mesh pointer-events-none" />
+      {/* Shimmer keyframe */}
+      <style>{`@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
 
-      {/* Atmospheric Depth Blob — behind the orb */}
+      {/* Layer 1: Aurora mesh gradient */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: `
+          radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
+          radial-gradient(ellipse at 50% 80%, rgba(255, 45, 120, 0.05) 0%, transparent 50%)
+        `,
+      }} />
+
+      {/* Layer 2: Dot grid with radial fade */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+        maskImage: 'radial-gradient(ellipse 60% 50% at 50% 40%, black 30%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 60% 50% at 50% 40%, black 30%, transparent 100%)',
+      }} />
+
+      {/* Layer 3: Atmospheric Depth Blob — subtle behind the orb */}
       <div
-        className={`absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-[#00F0FF]/5 blur-[120px] rounded-full pointer-events-none transition-opacity duration-1000 delay-200 ${
+        className={`absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-[#00F0FF]/[0.03] blur-[140px] rounded-full pointer-events-none transition-opacity duration-1000 delay-200 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
-      {/* Central Orb — Plasma Core */}
-      <div
+      {/* Central Orb — Plasma Core with parallax */}
+      <motion.div
+        style={reducedMotion ? undefined : { y: orbY }}
         className={`absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 delay-300 ${
           isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
         }`}
@@ -241,7 +279,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 max-w-5xl mx-auto mt-[48vh] sm:mt-[38vh] md:mt-[35vh] animate-page-enter">
@@ -256,16 +294,25 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
           </span>
         </div>
 
-        {/* Main Headline — Glitch Effect */}
-        <h1
-          className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-4 max-w-full transition-all duration-700 delay-200 glitch-text ${
-            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={{ fontFamily: 'Syne, sans-serif', lineHeight: 1.0 }}
+        {/* Main Headline — Word-by-word reveal with glitch data attr */}
+        <motion.h1
+          initial="hidden"
+          animate={isLoaded ? 'visible' : 'hidden'}
+          variants={headlineContainer}
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-4 max-w-full glitch-text"
+          style={{ fontFamily: 'Syne, sans-serif', lineHeight: 1.0, letterSpacing: '-0.03em', textWrap: 'balance' }}
           data-text={fullText}
         >
-          <span className="text-gradient">{fullText}</span>
-        </h1>
+          {headlineWords.map((word, i) => (
+            <motion.span
+              key={i}
+              variants={wordVariant}
+              className="inline-block mr-[0.3em]"
+            >
+              <span className="text-gradient">{word}</span>
+            </motion.span>
+          ))}
+        </motion.h1>
 
         {/* Typewriter Subline */}
         <div
@@ -273,7 +320,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="font-mono text-base md:text-lg text-[#6B7280] text-shimmer">
+          <span className="font-mono text-base md:text-lg text-[#9CA3AF] text-shimmer">
             {typedText}
             <span className="typewriter-cursor ml-0.5">&nbsp;</span>
           </span>
@@ -294,6 +341,14 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
               Start Free
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
+            {/* Shimmer sweep */}
+            <span
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                animation: 'shimmer 3s ease-in-out infinite',
+              }}
+            />
           </Button>
           <Button
             size="lg"
@@ -332,8 +387,11 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
           ))}
         </div>
 
-        {/* Social Proof Bar */}
-        <div
+        {/* Social Proof Bar — Stats with spring scale-up */}
+        <motion.div
+          initial="hidden"
+          animate={statsReady ? 'visible' : 'hidden'}
+          variants={{ visible: { transition: { staggerChildren: reducedMotion ? 0 : 0.12 } }, hidden: {} }}
           className={`mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 transition-all duration-700 delay-700 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
@@ -343,15 +401,15 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
             { icon: MessageSquare, label: 'tasks daily', value: `${animatedConversations.toLocaleString()}+`, color: '#ADFF2F' },
             { icon: Bell, label: 'uptime', value: `${animatedReminders.toLocaleString()}+`, color: '#FF2D78' },
           ].map((stat) => (
-            <div key={stat.label} className="flex items-center gap-2.5">
+            <motion.div key={stat.label} variants={statVariant} className="flex items-center gap-2.5">
               <stat.icon className="w-4 h-4 shrink-0" style={{ color: stat.color }} />
               <span className="font-mono text-sm sm:text-base font-bold text-[#E8E8F0]">
                 {stat.value}
               </span>
-              <span className="font-mono text-xs sm:text-sm text-[#6B7280]">{stat.label}</span>
-            </div>
+              <span className="font-mono text-xs sm:text-sm text-[#9CA3AF]">{stat.label}</span>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Works With — Integration Logos */}
         <div

@@ -52,12 +52,18 @@ module.exports = {
           cyan: '#00F0FF',
           magenta: '#FF2D78',
           violet: '#8B5CF6',
-          black: '#06060B',
+          black: '#050510',
           surface: '#0C0C18',
           card: '#10101E',
           lime: '#ADFF2F',
           gold: '#FFD700',
         },
+        'bg-deep': '#050510',
+        'bg-elevated': '#0a0a1a',
+      },
+      borderColor: {
+        subtle: 'rgba(255, 255, 255, 0.06)',
+        'subtle-hover': 'rgba(255, 255, 255, 0.12)',
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -130,6 +136,26 @@ module.exports = {
           "50%": { transform: "translateY(-12px) rotate(3deg)" },
           "100%": { transform: "translateY(0) rotate(0deg)" },
         },
+        "border-rotate": {
+          to: { "--border-angle": "360deg" },
+        },
+        "shimmer-sweep": {
+          "0%, 100%": { transform: "rotate(25deg) translateX(-100%)" },
+          "50%": { transform: "rotate(25deg) translateX(100%)" },
+        },
+        "marquee-scroll": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "aurora-shift": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+        "gradient-text-flow": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -144,6 +170,11 @@ module.exports = {
         orbit: "orbit 8s linear infinite",
         "pulse-lime": "pulse-lime 3s ease-in-out infinite",
         "float-rotate": "float-rotate 8s ease-in-out infinite",
+        "border-rotate": "border-rotate 4s linear infinite",
+        "shimmer-sweep": "shimmer-sweep 3s ease-in-out infinite",
+        "marquee-scroll": "marquee-scroll 40s linear infinite",
+        "aurora-shift": "aurora-shift 15s ease-in-out infinite alternate",
+        "gradient-text-flow": "gradient-text-flow 6s ease-in-out infinite",
       },
     },
   },
