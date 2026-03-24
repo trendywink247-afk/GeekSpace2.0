@@ -7,7 +7,7 @@ const engineFeatures = [
     icon: Server,
     label: 'Self-Hosted',
     description: 'Run on your own server. No third-party cloud dependency. Full control over your infrastructure and uptime.',
-    color: '#00F0FF',
+    color: '#8B5CF6',
   },
   {
     icon: GitBranch,
@@ -224,7 +224,7 @@ export function EngineSection(_props: EngineSectionProps) {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             UNDER THE HOOD
           </span>
 
@@ -264,7 +264,7 @@ export function EngineSection(_props: EngineSectionProps) {
                 >
                   <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
                 </div>
-                <div className="font-semibold text-[#E8E8F0] mb-2 text-[15px]">{feature.label}</div>
+                <div className="font-semibold text-[#F1F5F9] mb-2 text-[15px]">{feature.label}</div>
                 <div className="text-sm text-[#6B7280] leading-relaxed">{feature.description}</div>
               </motion.div>
             ))}
@@ -277,7 +277,7 @@ export function EngineSection(_props: EngineSectionProps) {
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <div className="rounded-2xl bg-[#0a0a14] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+            <div className="rounded-2xl bg-[#0a0a24] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(139,92,246,0.05)]">
               {/* Title bar */}
               <div className="h-10 bg-white/[0.02] border-b border-white/[0.04] flex items-center gap-2 px-4">
                 <div className="flex items-center gap-[7px]">
@@ -291,7 +291,7 @@ export function EngineSection(_props: EngineSectionProps) {
               </div>
 
               {/* Terminal body */}
-              <div className="p-5 font-mono text-[13px] leading-[1.7] min-h-[320px] selection:bg-[#00F0FF]/20">
+              <div className="p-5 font-mono text-[13px] leading-[1.7] min-h-[320px] selection:bg-[#8B5CF6]/20">
                 {displayedLines.map((lineText, i) => {
                   const sourceLine = terminalLines[i];
                   if (!sourceLine) return null;
@@ -311,7 +311,7 @@ export function EngineSection(_props: EngineSectionProps) {
                       <span
                         style={{
                           color: isCommand
-                            ? '#00F0FF'
+                            ? '#8B5CF6'
                             : isSuccess
                               ? '#ADFF2F'
                               : '#6B7280',
@@ -325,7 +325,7 @@ export function EngineSection(_props: EngineSectionProps) {
                 {/* Blinking cursor */}
                 {!isTypingDone && (
                   <span
-                    className="inline-block text-[#00F0FF]"
+                    className="inline-block text-[#8B5CF6]"
                     style={{ fontSize: '13px', lineHeight: '1.7', animation: 'blink 1.2s step-end infinite' }}
                   >
                     {'\u2588'}

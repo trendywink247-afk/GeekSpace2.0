@@ -21,24 +21,42 @@ const FEATURED = new Set(['Weebo', 'Echo']);
 function AgentCard({ agent, featured }: { agent: typeof agents[0]; featured?: boolean }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
+    setTilt({
+      x: ((e.clientY - rect.top - rect.height / 2) / rect.height) * -8,
+      y: ((e.clientX - rect.left - rect.width / 2) / rect.width) * 8,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
 
   return (
     <div
       ref={cardRef}
-      onMouseMove={(e) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        setMousePos({
-          x: ((e.clientX - rect.left) / rect.width) * 100,
-          y: ((e.clientY - rect.top) / rect.height) * 100,
-        });
-      }}
-      className={`relative rounded-2xl p-6 bg-[#0e0e1c] border overflow-hidden hover:-translate-y-1 transition-all duration-300 group ${
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={`relative rounded-2xl p-6 bg-[#0f0f2a] border overflow-hidden transition-all duration-300 group ${
         featured
           ? 'border-t-2 border-white/[0.06] hover:border-white/[0.12]'
           : 'border-white/[0.06] hover:border-white/[0.12]'
       }`}
-      style={featured ? { borderTopColor: agent.color } : undefined}
+      style={{
+        ...(featured ? { borderTopColor: agent.color } : {}),
+        transformStyle: 'preserve-3d' as const,
+        perspective: '1000px',
+        transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s',
+      }}
     >
       {/* Spotlight cursor glow */}
       <div
@@ -51,7 +69,7 @@ function AgentCard({ agent, featured }: { agent: typeof agents[0]; featured?: bo
       {/* Color bar */}
       <div className="w-8 h-1 rounded-full mb-4" style={{ backgroundColor: agent.color }} />
 
-      <h3 className="text-lg font-semibold text-[#E8E8F0] mb-1">{agent.name}</h3>
+      <h3 className="text-lg font-semibold text-[#F1F5F9] mb-1">{agent.name}</h3>
       <p className="text-sm text-[#94A3B8] leading-relaxed">{agent.description}</p>
     </div>
   );
@@ -83,7 +101,7 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
         {/* Centered section header */}
         <div className="text-center mb-12">
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             Your AI Team
           </span>
           <h2
@@ -144,13 +162,13 @@ export function PersonaSection({ onDesignAssistant }: PersonaSectionProps) {
 
           {/* CTA card */}
           <motion.div variants={cardVariants}>
-            <div className="rounded-2xl p-6 border border-[#00F0FF]/20 bg-[#0e0e1c] flex flex-col justify-center items-center text-center h-full min-h-[140px]">
+            <div className="rounded-2xl p-6 border border-[#8B5CF6]/20 bg-[#0f0f2a] flex flex-col justify-center items-center text-center h-full min-h-[140px]">
               <p className="text-sm text-[#94A3B8] mb-4">
                 Ready to meet your team?
               </p>
               <button
                 onClick={() => onDesignAssistant ? onDesignAssistant() : navigate('/login?redirect=design')}
-                className="bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] px-6 py-3 min-h-[44px] rounded-xl font-semibold hover:shadow-[0_4px_24px_rgba(0,240,255,0.2)] transition-all inline-flex items-center gap-2 group"
+                className="bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-white px-6 py-3 min-h-[44px] rounded-xl font-semibold hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] transition-all inline-flex items-center gap-2 group"
               >
                 Start With Your Team
                 <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />

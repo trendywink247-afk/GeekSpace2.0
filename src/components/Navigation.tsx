@@ -84,8 +84,8 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
         }}
         animate={{
           backgroundColor: scrolled
-            ? 'rgba(6, 6, 15, 0.9)'
-            : 'rgba(6, 6, 15, 0.3)',
+            ? 'rgba(6, 6, 26, 0.9)'
+            : 'rgba(6, 6, 26, 0.3)',
           borderColor: scrolled
             ? 'rgba(255, 255, 255, 0.1)'
             : 'rgba(255, 255, 255, 0.06)',
@@ -112,15 +112,15 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
             {/* Logo */}
             <a
               href="#"
-              className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
+              className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
             >
-              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00F0FF] to-[#00D4B0] flex items-center justify-center text-[#06060f] text-sm font-bold">A</span>
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#22D3EE] flex items-center justify-center text-white text-sm font-bold">A</span>
               <span
                 className="hidden sm:inline text-lg font-bold"
                 style={{ fontFamily: 'Syne, sans-serif' }}
               >
                 <span className="text-[#E8E8F0]">Agent</span>
-                <span className="text-[#00F0FF]">in</span>
+                <span className="text-[#8B5CF6]">in</span>
               </span>
             </a>
 
@@ -132,14 +132,14 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   <a
                     key={link.label}
                     href={link.href}
-                    className={`relative px-3 pb-1 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B] ${
+                    className={`relative px-3 pb-1 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B] ${
                       isActive ? 'text-white/90' : 'text-white/60 hover:text-white/90'
                     }`}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="nav-indicator"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00F0FF] rounded-full"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8B5CF6] rounded-full"
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       />
                     )}
@@ -154,15 +154,16 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
               <div className="hidden md:block">
                 <button
                   onClick={onEnterDashboard}
-                  className="bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] font-semibold text-[13px] px-5 py-2 rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:scale-[1.02] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
+                  className="relative overflow-hidden bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-white font-semibold text-[13px] px-5 py-2 rounded-xl hover:shadow-[0_0_20px_rgba(139,92,246,0.25)] hover:scale-[1.02] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
                 >
-                  Get Started
+                  <span className="relative z-10">Get Started</span>
+                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 </button>
               </div>
 
               {/* Mobile Menu Button */}
               <button
-                className="md:hidden p-3 text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
+                className="md:hidden p-3 text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
@@ -174,7 +175,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
 
         {/* Scroll Progress Bar — thin, at the very bottom of the nav pill */}
         <div
-          className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-[#00F0FF] via-[#8B5CF6] to-[#FF2D78]"
+          className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-[#8B5CF6] via-[#22D3EE] to-[#F43F5E]"
           style={{
             width: `${scrollProgress}%`,
             opacity: scrolled ? 0.8 : 0,
@@ -206,7 +207,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05, duration: 0.25 }}
-                      className="flex items-center min-h-[44px] py-3 px-3 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+                      className="flex items-center min-h-[44px] py-3 px-3 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                       style={{
                         color:
                           activeSection === link.sectionId
@@ -232,7 +233,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                         setMobileMenuOpen(false);
                         onEnterDashboard?.();
                       }}
-                      className="w-full mt-3 min-h-[44px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] font-semibold text-[13px] px-5 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]"
+                      className="w-full mt-3 min-h-[44px] bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-white font-semibold text-[13px] px-5 py-3 rounded-xl hover:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
                     >
                       Get Started
                     </button>

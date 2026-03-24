@@ -44,10 +44,14 @@ const statusCounts = {
 
 export function ActivitySection() {
   return (
-    <section
+    <motion.section
       id="activity"
       className="relative overflow-hidden"
       style={{ padding: 'clamp(80px, 12vh, 160px) 0' }}
+      initial={{ opacity: 0, filter: 'blur(8px)', y: 20 }}
+      whileInView={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Dot grid background */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
@@ -58,7 +62,7 @@ export function ActivitySection() {
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Centered section header */}
         <div className="text-center mb-14">
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             Real-Time Feed
           </span>
           <h2
@@ -74,10 +78,10 @@ export function ActivitySection() {
 
         {/* Feed container */}
         <div className="max-w-3xl mx-auto">
-          <div className="rounded-2xl bg-[#0a0a18] border border-white/[0.06] overflow-hidden">
+          <div className="rounded-2xl bg-[#0a0a24] border border-white/[0.06] overflow-hidden">
             {/* Feed header with live indicator */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
-              <span className="text-sm font-medium text-[#E8E8F0]">Agent Activity</span>
+              <span className="text-sm font-medium text-[#F1F5F9]">Agent Activity</span>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
                 <span className="text-[11px] font-mono text-[#22c55e]/80 uppercase tracking-wider">Live</span>
@@ -109,8 +113,8 @@ export function ActivitySection() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#C8C8D8]">
-                      <span className="font-medium text-[#E8E8F0]">{activity.agent}</span>
+                    <p className="text-sm text-[#CBD5E1]">
+                      <span className="font-medium text-[#F1F5F9]">{activity.agent}</span>
                       {' '}{activity.action}
                     </p>
                     <span className="text-xs text-[#6B7280] mt-1 block">{activity.time}</span>
@@ -150,6 +154,6 @@ export function ActivitySection() {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

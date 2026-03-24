@@ -8,7 +8,7 @@ const securityBadges = [
     icon: Server,
     label: 'Self-Hosted',
     description: 'Your server, your rules',
-    color: '#00F0FF',
+    color: '#8B5CF6',
   },
   {
     icon: Lock,
@@ -43,8 +43,8 @@ const scanLines: ScanLine[] = [
   { text: '[SCAN] JWT token validation...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
   { text: '[SCAN] Docker container isolation...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
   { text: '[SCAN] SSH key-only authentication...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
-  { text: '[AUDIT] 15 vulnerabilities fixed', result: '[DONE]', resultColor: '#00F0FF', type: 'audit' },
-  { text: '[RESULT] Security score:', result: '98/100', resultColor: '#00F0FF', type: 'result' },
+  { text: '[AUDIT] 15 vulnerabilities fixed', result: '[DONE]', resultColor: '#8B5CF6', type: 'audit' },
+  { text: '[RESULT] Security score:', result: '98/100', resultColor: '#8B5CF6', type: 'result' },
 ];
 
 interface SecuritySectionProps {
@@ -144,7 +144,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(0,240,255,0.04), transparent 60%)',
+          background: 'radial-gradient(circle at 50% 50%, rgba(139,92,246,0.04), transparent 60%)',
         }}
       />
 
@@ -157,7 +157,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             ENTERPRISE-GRADE SECURITY
           </span>
 
@@ -185,7 +185,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
           >
-            <div className="rounded-2xl bg-[#0a0a14] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+            <div className="rounded-2xl bg-[#0a0a24] border border-white/[0.06] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(139,92,246,0.05)]">
               {/* Title bar */}
               <div className="h-10 bg-white/[0.02] border-b border-white/[0.04] flex items-center gap-2 px-4">
                 <div className="flex items-center gap-[7px]">
@@ -199,7 +199,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
               </div>
 
               {/* Terminal content */}
-              <div className="p-5 font-mono text-[13px] leading-[1.8] min-h-[340px] selection:bg-[#00F0FF]/20">
+              <div className="p-5 font-mono text-[13px] leading-[1.8] min-h-[340px] selection:bg-[#8B5CF6]/20">
                 {scanLines.map((line, i) => {
                   const isShown = i < visibleLines;
                   const isFlashing = flashIndex === i;
@@ -222,12 +222,12 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                       {isShown && (
                         <span
                           className={`font-bold ml-3 shrink-0 transition-all duration-300 ${
-                            isResultLine ? 'text-2xl font-bold text-[#00F0FF]' : ''
+                            isResultLine ? 'text-2xl font-bold text-[#8B5CF6]' : ''
                           } ${isResultLine && shakeResult ? 'animate-[headShake_0.4s_ease-in-out]' : ''}`}
                           style={{
-                            color: isResultLine ? '#00F0FF' : line.resultColor,
+                            color: isResultLine ? '#8B5CF6' : line.resultColor,
                             textShadow: isResultLine
-                              ? '0 0 20px rgba(0,240,255,0.5)'
+                              ? '0 0 20px rgba(139,92,246,0.5)'
                               : isFlashing
                                 ? `0 0 16px ${line.resultColor}80`
                                 : 'none',
@@ -244,7 +244,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                 {/* Blinking cursor */}
                 {visibleLines < scanLines.length && (
                   <span
-                    className="inline-block text-[#00F0FF] mt-1"
+                    className="inline-block text-[#8B5CF6] mt-1"
                     style={{ fontSize: '13px', animation: 'blink 1.2s step-end infinite' }}
                   >
                     {'\u2588'}
@@ -284,7 +284,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                   >
                     <badge.icon className="w-5 h-5" style={{ color: badge.color }} />
                   </div>
-                  <div className="font-semibold text-[#E8E8F0] mb-1 text-[15px]">{badge.label}</div>
+                  <div className="font-semibold text-[#F1F5F9] mb-1 text-[15px]">{badge.label}</div>
                   <div className="text-sm text-[#6B7280] leading-relaxed">{badge.description}</div>
                 </motion.div>
               ))}
@@ -305,7 +305,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
                     navigate('/docs');
                   }
                 }}
-                className="bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060f] px-8 py-4 rounded-2xl font-semibold hover:shadow-[0_4px_24px_rgba(0,240,255,0.2)] transition-all duration-300 inline-flex items-center gap-2 group"
+                className="bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] transition-all duration-300 inline-flex items-center gap-2 group"
               >
                 Review Security
                 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

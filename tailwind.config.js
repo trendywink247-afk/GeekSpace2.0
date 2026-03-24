@@ -29,6 +29,10 @@ module.exports = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          violet: '#8B5CF6',
+          cyan: '#22D3EE',
+          gold: '#F59E0B',
+          rose: '#F43F5E',
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -61,11 +65,11 @@ module.exports = {
         'bg-deep': '#06060f',
         'bg-elevated': '#0a0a1a',
         layer: {
-          void: '#030308',
-          base: '#06060f',
-          raised: '#0a0a18',
-          card: '#0e0e1c',
-          overlay: '#121226',
+          void: '#020209',
+          base: '#06061a',
+          raised: '#0a0a24',
+          card: '#0f0f2a',
+          overlay: '#15153a',
         },
       },
       spacing: {
@@ -184,6 +188,10 @@ module.exports = {
         blink: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
+        },
+        "aurora-gradient": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
         },
       },
       animation: {

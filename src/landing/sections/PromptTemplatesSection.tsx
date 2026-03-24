@@ -53,7 +53,7 @@ const tabContents: Record<string, TabContent> = {
         role: 'agent',
         agentInitial: 'W',
         agentName: 'Weebo',
-        agentColor: 'bg-[#00F0FF]',
+        agentColor: 'bg-[#8B5CF6]',
         text: 'The GST filing deadline for GSTR-3B this month is March 20th for regular taxpayers. GSTR-1 was due on March 11th. Want me to set a reminder?',
       },
       {
@@ -64,7 +64,7 @@ const tabContents: Record<string, TabContent> = {
         role: 'agent',
         agentInitial: 'W',
         agentName: 'Weebo',
-        agentColor: 'bg-[#00F0FF]',
+        agentColor: 'bg-[#8B5CF6]',
         text: 'Done! Reminder set for March 18th at 9 AM. I\'ll also ping you on Telegram that morning.',
       },
     ],
@@ -215,7 +215,7 @@ function TypingIndicator({ agentColor, agentInitial, agentName }: { agentColor: 
       </div>
       <div className="flex-1">
         {agentName && (
-          <div className="text-[11px] font-medium text-[#00F0FF]/60 mb-1">{agentName}</div>
+          <div className="text-[11px] font-medium text-[#8B5CF6]/60 mb-1">{agentName}</div>
         )}
         <div className="inline-flex items-center gap-1.5 bg-white/[0.04] rounded-2xl rounded-bl-md px-4 py-3">
           {[0, 1, 2].map((dot) => (
@@ -292,7 +292,7 @@ export function PromptTemplatesSection() {
             initial={prefersReducedMotion ? undefined : { opacity: 0, y: 24 }}
             whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block"
+            className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block"
           >
             Interactive Demo
           </motion.span>
@@ -365,9 +365,11 @@ export function PromptTemplatesSection() {
           whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={prefersReducedMotion ? undefined : { delay: 0.4 }}
-          className="max-w-2xl mx-auto"
+          className="max-w-2xl mx-auto relative"
         >
-          <div className="rounded-2xl overflow-hidden bg-[#0a0a18] border border-white/[0.06]">
+          {/* Blurred gradient orb behind chat window */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/[0.05] blur-[100px] pointer-events-none" />
+          <div className="relative rounded-2xl overflow-hidden bg-[#0a0a24] border border-white/[0.06]">
             {/* macOS-style window header */}
             <div className="flex items-center gap-3 px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.04]">
               {/* Traffic light dots */}
@@ -408,8 +410,8 @@ export function PromptTemplatesSection() {
                       >
                         {msg.role === 'user' ? (
                           <div className="max-w-[85%]">
-                            <div className="bg-[#00F0FF]/10 rounded-2xl rounded-br-md px-4 py-3">
-                              <div className="text-sm text-[#E8E8F0] leading-relaxed">{msg.text}</div>
+                            <div className="bg-[#8B5CF6]/10 rounded-2xl rounded-br-md px-4 py-3">
+                              <div className="text-sm text-[#F1F5F9] leading-relaxed">{msg.text}</div>
                             </div>
                           </div>
                         ) : (
@@ -418,9 +420,9 @@ export function PromptTemplatesSection() {
                               <span className="text-xs font-bold text-white">{msg.agentInitial}</span>
                             </div>
                             <div className="flex-1">
-                              <div className="text-[11px] font-medium text-[#00F0FF]/60 mb-1">{msg.agentName}</div>
-                              <div className="bg-white/[0.04] rounded-2xl rounded-bl-md px-4 py-3">
-                                <div className="text-sm text-[#C8C8D8] leading-relaxed whitespace-pre-line">{msg.text}</div>
+                              <div className="text-[11px] font-medium text-[#8B5CF6]/60 mb-1">{msg.agentName}</div>
+                              <div className="bg-white/[0.04] rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_0_20px_rgba(139,92,246,0.05)]">
+                                <div className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-line">{msg.text}</div>
                               </div>
                             </div>
                           </div>
@@ -438,7 +440,7 @@ export function PromptTemplatesSection() {
                       transition={{ duration: 0.2 }}
                     >
                       <TypingIndicator
-                        agentColor={agentMsg.agentColor ?? 'bg-[#00F0FF]'}
+                        agentColor={agentMsg.agentColor ?? 'bg-[#8B5CF6]'}
                         agentInitial={agentMsg.agentInitial ?? 'A'}
                         agentName={agentMsg.agentName}
                       />
@@ -451,10 +453,10 @@ export function PromptTemplatesSection() {
             {/* Glass input bar */}
             <div className="bg-white/[0.02] border-t border-white/[0.04] px-4 py-3">
               <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <Sparkles className="w-4 h-4 text-[#00F0FF]/30 flex-shrink-0" />
+                <Sparkles className="w-4 h-4 text-[#8B5CF6]/30 flex-shrink-0" />
                 <span className="flex-1 text-sm text-[#6B7280]/50">Ask anything...</span>
-                <div className="w-7 h-7 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center flex-shrink-0">
-                  <Send className="w-3.5 h-3.5 text-[#00F0FF]/50" />
+                <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center flex-shrink-0">
+                  <Send className="w-3.5 h-3.5 text-[#8B5CF6]/50" />
                 </div>
               </div>
             </div>
@@ -475,7 +477,7 @@ export function PromptTemplatesSection() {
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => navigate('/login')}
-              className="px-8 py-3 bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] hover:from-[#00F0FF]/90 hover:to-[#00D4B0]/90 text-[#06060B] rounded-full font-semibold transition-all duration-200 shadow-lg shadow-[#00F0FF]/20 hover:shadow-[#00F0FF]/30 hover:scale-105"
+              className="px-8 py-3 bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] hover:from-[#8B5CF6]/90 hover:to-[#22D3EE]/90 text-white rounded-full font-semibold transition-all duration-200 shadow-lg shadow-[#8B5CF6]/20 hover:shadow-[#8B5CF6]/30 hover:scale-105"
             >
               Start Creating
             </button>
@@ -484,7 +486,7 @@ export function PromptTemplatesSection() {
                 const demoSection = document.getElementById('demo');
                 demoSection?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 text-[#E8E8F0] rounded-full font-semibold transition-all duration-200 border border-white/[0.06] hover:border-white/[0.12]"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 text-[#F1F5F9] rounded-full font-semibold transition-all duration-200 border border-white/[0.06] hover:border-white/[0.12]"
             >
               See It In Action
               <ArrowRight className="w-4 h-4" />

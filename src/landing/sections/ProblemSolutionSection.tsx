@@ -42,7 +42,7 @@ export function ProblemSolutionSection() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: cardEase }}
         >
-          <span className="inline-block font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/60 mb-4">
+          <span className="inline-block font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4">
             Why Agentin?
           </span>
           <h2
@@ -65,19 +65,19 @@ export function ProblemSolutionSection() {
         <div className="grid md:grid-cols-2 gap-6 md:gap-8">
           {/* Without Agentin */}
           <motion.div
-            className="rounded-2xl p-6 md:p-8 bg-[#0a0a18] border border-[#FF2D78]/10"
+            className="rounded-2xl p-6 md:p-8 bg-[#0a0a24] border border-[#F43F5E]/15"
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: cardEase }}
           >
-            <div className="flex items-center gap-2 text-lg font-semibold text-[#FF2D78]/80 mb-6">
+            <div className="flex items-center gap-2 text-lg font-semibold text-[#F43F5E]/80 mb-6">
               <XCircle className="w-5 h-5" />
               <span>Without Agentin</span>
             </div>
             {problems.map((text, i) => (
               <div key={i} className="flex items-start gap-3 mb-4 last:mb-0">
-                <XCircle className="text-[#FF2D78]/50 w-5 h-5 mt-0.5 shrink-0" />
+                <XCircle className="text-[#F43F5E]/50 w-5 h-5 mt-0.5 shrink-0" />
                 <span className="text-[#94A3B8]">{text}</span>
               </div>
             ))}
@@ -85,20 +85,20 @@ export function ProblemSolutionSection() {
 
           {/* With Agentin */}
           <motion.div
-            className="rounded-2xl p-6 md:p-8 bg-[var(--layer-card,#0e0e1c)] border border-[#00F0FF]/15 shadow-[0_0_60px_rgba(0,240,255,0.04)]"
+            className="rounded-2xl p-6 md:p-8 bg-[var(--layer-card,#0f0f2a)] border border-[#8B5CF6]/20 shadow-[0_0_60px_rgba(139,92,246,0.06)]"
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.6, ease: cardEase, delay: 0.2 }}
           >
-            <div className="flex items-center gap-2 text-lg font-semibold text-[#00F0FF] mb-6">
+            <div className="flex items-center gap-2 text-lg font-semibold text-[#22D3EE] mb-6">
               <CheckCircle2 className="w-5 h-5" />
               <span>With Agentin</span>
             </div>
             {solutions.map((text, i) => (
               <div key={i} className="flex items-start gap-3 mb-4 last:mb-0">
-                <CheckCircle2 className="text-[#00F0FF] w-5 h-5 mt-0.5 shrink-0" />
-                <span className="text-[#E8E8F0]">{text}</span>
+                <CheckCircle2 className="text-[#22D3EE] w-5 h-5 mt-0.5 shrink-0" />
+                <span className="text-[#F1F5F9]">{text}</span>
               </div>
             ))}
           </motion.div>

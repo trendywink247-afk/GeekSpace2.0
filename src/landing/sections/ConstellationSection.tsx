@@ -82,7 +82,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
         <div
           className="absolute inset-0 opacity-30"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(0, 240, 255, 0.08) 0%, transparent 60%)',
+            background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.08) 0%, transparent 60%)',
           }}
         />
       </div>
@@ -96,7 +96,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             A Day In Your Life
           </span>
 
@@ -122,7 +122,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
             className="absolute left-[19px] md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px"
             style={{
               background:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,240,255,0.20) 10%, rgba(0,240,255,0.20) 90%, transparent 100%)',
+                'linear-gradient(to bottom, transparent 0%, rgba(139,92,246,0.20) 10%, rgba(139,92,246,0.20) 90%, transparent 100%)',
             }}
           />
 
@@ -142,7 +142,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
                     className="absolute left-[19px] md:left-1/2 top-5 -translate-x-1/2 z-20"
                   >
                     <div
-                      className={`rounded-full bg-[#06060f] ${isLast ? 'w-4 h-4' : 'w-3 h-3'}`}
+                      className={`rounded-full bg-[#06061a] ${isLast ? 'w-4 h-4' : 'w-3 h-3'}`}
                       style={{
                         borderWidth: '2px',
                         borderStyle: 'solid',
@@ -195,7 +195,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
                           {entry.agent}
                         </span>
                       </div>
-                      <p className={`text-sm text-[#C8C8D8] leading-relaxed ${!isRight ? 'md:text-right' : ''}`}>
+                      <p className={`text-sm text-[#CBD5E1] leading-relaxed ${!isRight ? 'md:text-right' : ''}`}>
                         &ldquo;{entry.message}&rdquo;
                       </p>
                     </div>
@@ -216,7 +216,7 @@ export function ConstellationSection({ onBrowseDirectory }: ConstellationSection
         >
           <Button
             onClick={onBrowseDirectory}
-            className="relative bg-gradient-to-r from-[#00F0FF] to-[#6B51EF] hover:from-[#00F0FF]/90 hover:to-[#6B51EF]/90 text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/20 group"
+            className="relative bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] hover:from-[#8B5CF6]/90 hover:to-[#22D3EE]/90 text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[rgba(139,92,246,0.25)] group"
           >
             Start Your Day &mdash; Free Forever
             <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />

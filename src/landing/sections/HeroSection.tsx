@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Users, MessageSquare, Bell, MessageCircle, Calendar, Mail, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, useScroll, useTransform } from 'framer-motion';
+
+const HeroScene3D = lazy(() => import('./HeroScene3D'));
 
 interface HeroSectionProps {
   onEnterDashboard?: () => void;
@@ -156,7 +158,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
     : { hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } } };
 
   return (
-    <section ref={sectionRef} id="hero" className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden scanlines w-full">
+    <section ref={sectionRef} id="hero" className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden scanlines w-full" style={{ backgroundColor: '#06061a' }}>
       {/* Keyframes */}
       <style>{`
         @keyframes morph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 60% 70% 40%}75%{border-radius:60% 30% 60% 40%/60% 40% 30% 70%}}
@@ -166,9 +168,9 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
       {/* Layer 1: Aurora mesh gradient */}
       <div className="absolute inset-0 pointer-events-none" style={{
         background: `
-          radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
-          radial-gradient(ellipse at 50% 80%, rgba(255, 45, 120, 0.05) 0%, transparent 50%)
+          radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 40%),
+          radial-gradient(ellipse at 50% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%)
         `,
       }} />
 
@@ -181,35 +183,39 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
       }} />
 
       {/* Layer 3: Atmospheric Depth Blob */}
-      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-[#00F0FF]/[0.03] blur-[140px] rounded-full pointer-events-none transition-opacity duration-1000 delay-200 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] bg-[#8B5CF6]/[0.03] blur-[140px] rounded-full pointer-events-none transition-opacity duration-1000 delay-200 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} />
 
-      {/* Morphing Gradient Orb -- purely ambient, above text */}
-      <motion.div
-        className="absolute top-[20%] left-1/2 -translate-x-1/2 z-0"
-        style={!reducedMotion ? { y: orbY } : undefined}
-      >
-        <div className="relative w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] md:w-[450px] md:h-[450px]">
-          {/* Outer glow */}
-          <div className="absolute inset-0 blur-[120px] opacity-20" style={{
-            background: 'conic-gradient(from 0deg, #00F0FF, #8B5CF6, #FF2D78, #00F0FF)',
-            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-            animation: reducedMotion ? 'none' : 'morph 8s ease-in-out infinite',
-          }} />
-          {/* Core blob */}
-          <div className="absolute inset-8 opacity-20" style={{
-            background: 'linear-gradient(135deg, #00F0FF, #8B5CF6, #FF2D78)',
-            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-            animation: reducedMotion ? 'none' : 'morph 8s ease-in-out infinite',
-            filter: 'blur(2px)',
-          }} />
+      {/* 3D Neural Brain Scene -- sits behind text content */}
+      <Suspense fallback={
+        <motion.div
+          className="absolute top-[20%] left-1/2 -translate-x-1/2 z-0"
+          style={!reducedMotion ? { y: orbY } : undefined}
+        >
+          <div className="relative w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] md:w-[450px] md:h-[450px]">
+            <div className="absolute inset-0 blur-[120px] opacity-20" style={{
+              background: 'conic-gradient(from 0deg, #8B5CF6, #22D3EE, #F59E0B, #8B5CF6)',
+              borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+              animation: reducedMotion ? 'none' : 'morph 8s ease-in-out infinite',
+            }} />
+            <div className="absolute inset-8 opacity-20" style={{
+              background: 'linear-gradient(135deg, #8B5CF6, #22D3EE, #F59E0B)',
+              borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+              animation: reducedMotion ? 'none' : 'morph 8s ease-in-out infinite',
+              filter: 'blur(2px)',
+            }} />
+          </div>
+        </motion.div>
+      }>
+        <div className="absolute inset-0 z-0 pointer-events-none" style={{ top: '5%', height: '60%' }}>
+          <HeroScene3D />
         </div>
-      </motion.div>
+      </Suspense>
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-6xl mx-auto pt-[max(120px,20vh)] pb-16 animate-page-enter">
         {/* Micro Label */}
         <div className={`mb-6 relative z-10 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <span className="font-mono text-xs tracking-[0.2em] uppercase text-[#00F0FF]/80 px-4 py-1.5 border border-[#00F0FF]/20 rounded-full bg-[#00F0FF]/5">
+          <span className="font-mono text-xs tracking-[0.2em] uppercase text-[#8B5CF6]/80 px-4 py-1.5 border border-[#8B5CF6]/20 rounded-full bg-[#8B5CF6]/5">
             AI-Powered Team
           </span>
         </div>
@@ -233,7 +239,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
         <div className={`min-h-[1.5em] mb-8 w-full px-4 text-center overflow-visible transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <span className="font-mono text-base md:text-lg text-[#94A3B8]">
             {typedText}
-            <span className="inline-block w-[2px] h-[1.1em] bg-[#00F0FF] align-middle ml-0.5"
+            <span className="inline-block w-[2px] h-[1.1em] bg-[#8B5CF6] align-middle ml-0.5"
               style={{ animation: reducedMotion ? 'none' : 'blink 1.2s step-end infinite' }} />
           </span>
         </div>
@@ -243,7 +249,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
           <Button
             size="lg"
             onClick={onEnterDashboard}
-            className="w-full sm:w-auto min-h-[48px] relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(0,240,255,0.25)] group"
+            className="w-full sm:w-auto min-h-[48px] relative overflow-hidden bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] text-[#06060B] px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(139,92,246,0.25)] group"
           >
             <span className="relative z-10 flex items-center">
               Start Free
@@ -254,7 +260,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
             size="lg"
             variant="outline"
             onClick={() => { const el = document.getElementById('agents'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}
-            className="w-full sm:w-auto min-h-[48px] bg-white/[0.04] border border-white/[0.08] text-[#E8E8F0] hover:bg-white/[0.08] px-8 py-4 rounded-2xl font-medium text-lg transition-all duration-300 group"
+            className="w-full sm:w-auto min-h-[48px] bg-white/[0.04] border border-[#8B5CF6]/30 text-[#E8E8F0] hover:bg-[#8B5CF6]/10 px-8 py-4 rounded-2xl font-medium text-lg transition-all duration-300 group"
           >
             Meet Your Agents
           </Button>
@@ -267,7 +273,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
               <div
                 key={agent.letter}
                 title={agent.name}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-[#06060B] ring-2 ring-[#06060f]"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-[#06060B] ring-2 ring-[#8B5CF6]"
                 style={{ backgroundColor: agent.bg }}
               >
                 {agent.letter}
@@ -285,7 +291,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
           className={`mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 transition-all duration-700 delay-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
           {[
-            { icon: Users, label: 'professionals', value: `${animatedUsers.toLocaleString()}+`, color: '#00F0FF' },
+            { icon: Users, label: 'professionals', value: `${animatedUsers.toLocaleString()}+`, color: '#8B5CF6' },
             { icon: MessageSquare, label: 'tasks daily', value: `${animatedConversations.toLocaleString()}+`, color: '#ADFF2F' },
             { icon: Bell, label: 'uptime', value: `${animatedReminders.toLocaleString()}+`, color: '#FF2D78' },
           ].map((stat) => (
@@ -329,7 +335,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
       </motion.div>
 
       {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#06060B] to-transparent pointer-events-none safe-area-pb" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#06061a] to-transparent pointer-events-none safe-area-pb" />
     </section>
   );
 }

@@ -1,12 +1,12 @@
-import { useRef, useMemo, type RefObject } from 'react';
+import { useRef, useMemo, useEffect, type RefObject } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { AdaptiveDpr, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Types
 interface HeroScene3DProps {
-  mousePosRef: RefObject<{ x: number; y: number }>;
-  scrollProgressRef: RefObject<number>;
+  mousePosRef?: RefObject<{ x: number; y: number }>;
+  scrollProgressRef?: RefObject<number>;
 }
 
 // Constants -- reduced for performance (was 600/100)
@@ -18,9 +18,9 @@ const MOUSE_DAMPING = 0.3;
 const SCROLL_EXPAND_MAX = 0.05; // scale 1.0 to 1.05
 const PULSE_CYCLE_SECONDS = 9; // slow 8-10s cycle
 
-const COL_CYAN = new THREE.Color('#00F0FF');
-const COL_VIOLET = new THREE.Color('#8B5CF6');
-const COL_GOLD = new THREE.Color('#FFB800');
+const COL_INNER = new THREE.Color('#8B5CF6');  // violet — inner particles
+const COL_MID = new THREE.Color('#22D3EE');    // cyan — mid particles
+const COL_OUTER = new THREE.Color('#F59E0B');  // gold — outer halo
 
 // Brain surface generator
 function generateBrainPositions(count: number): Float32Array {
@@ -92,11 +92,11 @@ function NeuralBrain({
 
         const c = new THREE.Color();
         if (normDist < 0.35) {
-          c.copy(COL_CYAN).lerp(COL_VIOLET, normDist / 0.35);
+          c.copy(COL_INNER).lerp(COL_MID, normDist / 0.35);
         } else if (normDist < 0.7) {
-          c.copy(COL_VIOLET).lerp(COL_GOLD, (normDist - 0.35) / 0.35);
+          c.copy(COL_MID).lerp(COL_OUTER, (normDist - 0.35) / 0.35);
         } else {
-          c.copy(COL_GOLD);
+          c.copy(COL_OUTER);
           c.multiplyScalar(0.6 + Math.random() * 0.4);
         }
 
@@ -351,21 +351,21 @@ function FloatingOrb({
 // Only 3 orbs, subtle movement
 const ORBS = [
   {
-    color: '#00F0FF',
+    color: '#8B5CF6',
     basePosition: [3.2, 1.5, -2] as [number, number, number],
     speed: 0.15,
     amplitude: 0.5,
     radius: 0.05,
   },
   {
-    color: '#8B5CF6',
+    color: '#22D3EE',
     basePosition: [-3, -1, 1] as [number, number, number],
     speed: 0.18,
     amplitude: 0.4,
     radius: 0.04,
   },
   {
-    color: '#FFB800',
+    color: '#F59E0B',
     basePosition: [1, 2.5, -1] as [number, number, number],
     speed: 0.12,
     amplitude: 0.5,
@@ -386,7 +386,7 @@ function SceneContent({
       <ambientLight intensity={0.1} />
       <directionalLight position={[5, 5, 5]} intensity={0.15} />
 
-      <fog attach="fog" args={['#121218', 5, 14]} />
+      <fog attach="fog" args={['#06061a', 5, 14]} />
 
       <NeuralBrain
         mousePosRef={mousePosRef}
@@ -405,9 +405,39 @@ function SceneContent({
 
 // Exported Canvas wrapper
 export function HeroScene3D({
-  mousePosRef,
-  scrollProgressRef,
+  mousePosRef: externalMouseRef,
+  scrollProgressRef: externalScrollRef,
 }: HeroScene3DProps) {
+  // Internal refs used when mounted standalone (lazy-loaded without props)
+  const internalMouseRef = useRef({ x: 0, y: 0 });
+  const internalScrollRef = useRef(0);
+
+  const mousePosRef = externalMouseRef ?? internalMouseRef;
+  const scrollProgressRef = externalScrollRef ?? internalScrollRef;
+
+  // Track mouse and scroll internally when no external refs are provided
+  useEffect(() => {
+    if (externalMouseRef && externalScrollRef) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      internalMouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      internalMouseRef.current.y = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+
+    const onScroll = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      internalScrollRef.current = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+    };
+
+    if (!externalMouseRef) window.addEventListener('mousemove', onMouseMove, { passive: true });
+    if (!externalScrollRef) window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      if (!externalMouseRef) window.removeEventListener('mousemove', onMouseMove);
+      if (!externalScrollRef) window.removeEventListener('scroll', onScroll);
+    };
+  }, [externalMouseRef, externalScrollRef]);
+
   return (
     <Canvas
       dpr={[1, 1.5]}
@@ -421,7 +451,7 @@ export function HeroScene3D({
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => {
         // Keep 3D scene dark even in light mode -- it's a visual feature
-        gl.setClearColor('#121218', 1);
+        gl.setClearColor('#06061a', 1);
         gl.toneMapping = THREE.NoToneMapping;
       }}
     >
@@ -432,3 +462,5 @@ export function HeroScene3D({
     </Canvas>
   );
 }
+
+export default HeroScene3D;

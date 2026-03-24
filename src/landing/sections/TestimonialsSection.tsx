@@ -20,7 +20,7 @@ const testimonials: Testimonial[] = [
       'Weebo handles my calendar, drafts emails, and tracks my habits \u2014 I canceled 4 other subscriptions.',
     rating: 5,
     avatar: 'PS',
-    accentColor: '#00F0FF',
+    accentColor: '#8B5CF6',
   },
   {
     name: 'Arjun Mehta',
@@ -88,7 +88,7 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       <Quote className="absolute top-5 right-5 w-7 h-7 text-white/[0.06]" />
 
       {/* Large quote decoration */}
-      <span className="text-4xl font-serif text-[#00F0FF]/15 leading-none">&ldquo;</span>
+      <span className="text-4xl font-serif text-[#8B5CF6]/15 leading-none">&ldquo;</span>
 
       {/* Stars */}
       <div className="flex gap-0.5 mb-4 mt-2">
@@ -187,7 +187,7 @@ export function TestimonialsSection() {
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className={`text-center mb-14 ${fadeIn}`} style={fadeInDelay(0)}>
-          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#00F0FF]/70 mb-4 block">
+          <span className="font-mono text-[0.6875rem] tracking-[0.2em] uppercase text-[#8B5CF6]/70 mb-4 block">
             Social Proof
           </span>
           <h2
@@ -248,7 +248,7 @@ export function TestimonialsSection() {
           {stats.map((stat, i) => (
             <div key={stat.label} className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06]">
-                <span className="text-lg md:text-xl font-bold text-[#E8E8F0]">
+                <span className="text-lg md:text-xl font-bold text-[#F1F5F9]">
                   {stat.value}
                 </span>
                 <span className="text-sm text-[#6B7280]">{stat.label}</span>

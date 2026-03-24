@@ -60,7 +60,7 @@ function FooterLink({
   children: React.ReactNode;
 }) {
   const cls =
-    'text-sm text-[#6B7280] hover:text-[#94A3B8] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm';
+    'text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none rounded-sm';
 
   if (href) {
     return (
@@ -89,15 +89,15 @@ export function FooterSection() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00F0FF] to-[#00D4B0] flex items-center justify-center text-[#06060f] text-sm font-bold">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#22D3EE] flex items-center justify-center text-white text-sm font-bold">
                 A
               </span>
               <span
                 className="text-lg font-bold"
                 style={{ fontFamily: 'Syne, sans-serif' }}
               >
-                <span className="text-[#E8E8F0]">Agent</span>
-                <span className="text-[#00F0FF]">in</span>
+                <span className="text-[#F1F5F9]">Agent</span>
+                <span className="text-[#8B5CF6]">in</span>
               </span>
             </div>
             <p className="text-sm text-[#6B7280] leading-relaxed max-w-[200px]">
@@ -107,7 +107,7 @@ export function FooterSection() {
 
           {/* Product */}
           <div>
-            <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-[#F1F5F9] uppercase tracking-wider mb-4">
               Product
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -121,7 +121,7 @@ export function FooterSection() {
 
           {/* Resources */}
           <div>
-            <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-[#F1F5F9] uppercase tracking-wider mb-4">
               Resources
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -140,7 +140,7 @@ export function FooterSection() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-[#F1F5F9] uppercase tracking-wider mb-4">
               Legal
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -162,7 +162,7 @@ export function FooterSection() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={social.label}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-[#6B7280] hover:text-[#00F0FF] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-[#6B7280] hover:text-[#8B5CF6] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none"
             >
               {social.icon}
             </a>

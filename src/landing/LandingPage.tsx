@@ -27,7 +27,7 @@ export function LandingPage() {
 
   return (
     <div
-      className="relative min-h-screen bg-[#06060f]"
+      className="relative min-h-screen bg-[#06061a]"
       style={{
         scrollBehavior: 'smooth',
       }}
@@ -48,19 +48,19 @@ export function LandingPage() {
         {/* 1. Hero */}
         <HeroSection onEnterDashboard={onEnterDashboard} />
         {/* 2. ProblemSolution */}
-        <div className="bg-[#08081a]"><ProblemSolutionSection /></div>
+        <div className="bg-[#0a0a24]"><ProblemSolutionSection /></div>
         {/* 3. Persona (agents) */}
         <PersonaSection onDesignAssistant={onDesignAssistant} />
         {/* 4. PromptTemplates (interactive demo + templates) */}
-        <div className="bg-[#08081a]"><PromptTemplatesSection /></div>
+        <div className="bg-[#0a0a24]"><PromptTemplatesSection /></div>
         {/* 5. Activity */}
         <ActivitySection />
         {/* 6. Engine */}
-        <div className="bg-[#08081a]"><EngineSection onBuildWorkflow={onBuildWorkflow} /></div>
+        <div className="bg-[#0a0a24]"><EngineSection onBuildWorkflow={onBuildWorkflow} /></div>
         {/* 7. Constellation (Day In Your Life) */}
         <ConstellationSection onBrowseDirectory={onBrowseDirectory} />
         {/* 8. Telegram */}
-        <div className="bg-[#08081a]"><TelegramCTASection /></div>
+        <div className="bg-[#0a0a24]"><TelegramCTASection /></div>
 
         {/* Divider before Testimonials */}
         <div className="max-w-6xl mx-auto px-6"><hr className="border-white/[0.04]" /></div>
@@ -68,7 +68,7 @@ export function LandingPage() {
         {/* 9. Testimonials */}
         <TestimonialsSection />
         {/* 10. Security */}
-        <div className="bg-[#08081a]"><SecuritySection onReviewSecurity={onReviewSecurity} /></div>
+        <div className="bg-[#0a0a24]"><SecuritySection onReviewSecurity={onReviewSecurity} /></div>
         {/* 11. Pricing */}
         <PricingPreviewSection onGetStarted={onGetStarted} />
 

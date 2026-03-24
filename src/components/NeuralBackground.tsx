@@ -16,6 +16,7 @@ export function NeuralBackground() {
   const particlesRef = useRef<Particle[]>([]);
   const animationRef = useRef<number | undefined>(undefined);
   const timeRef = useRef(0);
+  const mouseRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,11 +42,23 @@ export function NeuralBackground() {
         vx: (Math.random() - 0.5) * 0.4,
         vy: (Math.random() - 0.5) * 0.25,
         radius: Math.random() * 2.5 + 1.5,
-        hue: Math.random() > 0.5 ? 168 : 330, // cyan or magenta
+        hue: Math.random() > 0.5 ? 263 : 187, // violet or cyan
         life: Math.random() * maxLife,
         maxLife,
       };
     });
+
+    // Mouse tracking for particle repulsion
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const handleMouseLeave = () => {
+      mouseRef.current = { x: -1000, y: -1000 };
+    };
+    canvas.style.pointerEvents = 'auto';
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
 
     let frameCount = 0;
 
@@ -69,14 +82,14 @@ export function NeuralBackground() {
         // Draw subtle aurora bands
         const auroraGrad1 = ctx.createLinearGradient(0, waveY1 - 100, 0, waveY1 + 100);
         auroraGrad1.addColorStop(0, 'transparent');
-        auroraGrad1.addColorStop(0.5, 'rgba(0, 240, 255, 0.012)');
+        auroraGrad1.addColorStop(0.5, 'rgba(139, 92, 246, 0.012)');
         auroraGrad1.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad1;
         ctx.fillRect(0, waveY1 - 100, canvas.width, 200);
 
         const auroraGrad2 = ctx.createLinearGradient(0, waveY2 - 80, 0, waveY2 + 80);
         auroraGrad2.addColorStop(0, 'transparent');
-        auroraGrad2.addColorStop(0.5, 'rgba(255, 45, 120, 0.008)');
+        auroraGrad2.addColorStop(0.5, 'rgba(34, 211, 238, 0.008)');
         auroraGrad2.addColorStop(1, 'transparent');
         ctx.fillStyle = auroraGrad2;
         ctx.fillRect(0, waveY2 - 80, canvas.width, 160);
@@ -88,12 +101,25 @@ export function NeuralBackground() {
             p.life = 0;
             p.x = Math.random() * canvas.width;
             p.y = Math.random() * canvas.height;
-            p.hue = Math.random() > 0.5 ? 168 : 330;
+            p.hue = Math.random() > 0.5 ? 263 : 187;
           }
 
-          // Organic drift with sine wave
-          p.x += p.vx + Math.sin(t + i * 0.1) * 0.15;
-          p.y += p.vy + Math.cos(t * 0.7 + i * 0.15) * 0.1;
+          // Mouse repulsion — gentle push within 150px
+          const mouse = mouseRef.current;
+          const mdx = p.x - mouse.x;
+          const mdy = p.y - mouse.y;
+          const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+          let repulseX = 0;
+          let repulseY = 0;
+          if (mDist < 150 && mDist > 0) {
+            const force = (1 - mDist / 150) * 0.8;
+            repulseX = (mdx / mDist) * force;
+            repulseY = (mdy / mDist) * force;
+          }
+
+          // Organic drift with sine wave + mouse repulsion
+          p.x += p.vx + Math.sin(t + i * 0.1) * 0.15 + repulseX;
+          p.y += p.vy + Math.cos(t * 0.7 + i * 0.15) * 0.1 + repulseY;
 
           // Wrap around edges
           if (p.x < -10) p.x = canvas.width + 10;
@@ -107,9 +133,9 @@ export function NeuralBackground() {
           const particleAlpha = alpha * 0.6;
 
           // Draw particle with glow
-          const isCyan = p.hue === 168;
-          const color = isCyan ? `rgba(0, 240, 255, ${particleAlpha})` : `rgba(255, 45, 120, ${particleAlpha * 0.8})`;
-          const glowColor = isCyan ? `rgba(0, 240, 255, ${particleAlpha * 0.15})` : `rgba(255, 45, 120, ${particleAlpha * 0.1})`;
+          const isViolet = p.hue === 263;
+          const color = isViolet ? `rgba(139, 92, 246, ${particleAlpha})` : `rgba(34, 211, 238, ${particleAlpha * 0.8})`;
+          const glowColor = isViolet ? `rgba(139, 92, 246, ${particleAlpha * 0.15})` : `rgba(34, 211, 238, ${particleAlpha * 0.1})`;
 
           // Glow
           ctx.beginPath();
@@ -132,17 +158,17 @@ export function NeuralBackground() {
 
               if (distance < connectionDistance) {
                 const lineAlpha = (1 - distance / connectionDistance) * 0.15 * alpha;
-                const mixCyan = p.hue === 168 || particles[j].hue === 168;
-                const mixMagenta = p.hue === 330 || particles[j].hue === 330;
+                const mixViolet = p.hue === 263 || particles[j].hue === 263;
+                const mixCyan = p.hue === 187 || particles[j].hue === 187;
 
                 let lineColor: string;
-                if (mixCyan && mixMagenta) {
+                if (mixViolet && mixCyan) {
                   // Cross-color connection — violet tint
                   lineColor = `rgba(139, 92, 246, ${lineAlpha})`;
-                } else if (mixCyan) {
-                  lineColor = `rgba(0, 240, 255, ${lineAlpha})`;
+                } else if (mixViolet) {
+                  lineColor = `rgba(139, 92, 246, ${lineAlpha})`;
                 } else {
-                  lineColor = `rgba(255, 45, 120, ${lineAlpha})`;
+                  lineColor = `rgba(34, 211, 238, ${lineAlpha})`;
                 }
 
                 ctx.beginPath();
@@ -161,13 +187,15 @@ export function NeuralBackground() {
     };
 
     // Initial full clear
-    ctx.fillStyle = '#06060B';
+    ctx.fillStyle = '#06061a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     animate();
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -177,8 +205,8 @@ export function NeuralBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 z-0 pointer-events-none"
-      style={{ background: '#06060B' }}
+      className="absolute inset-0 z-0"
+      style={{ background: '#06061a' }}
     />
   );
 }
