@@ -1,34 +1,32 @@
-name: "Deploy: staging → production"
+name: "Emergency Rollback"
+run-name: "ROLLBACK production to ${{ inputs.commit_sha }}"
 
-# Manual trigger only — staging deploy lives in ci.yml (auto after CI passes)
-run-name: "Deploy to PRODUCTION (staging → live-production)"
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: 'Deploy target'
+      commit_sha:
+        description: 'Commit SHA to rollback to'
         required: true
-        type: choice
-        options:
-          - production
+        type: string
+      skip_staging:
+        description: 'Skip staging rollback (prod only)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: false  # Never cancel in-progress deploys
+  cancel-in-progress: false
 
 jobs:
-  # ============================================
-  # Deploy to Production (manual trigger only)
-  # ============================================
-  deploy-production:
-    name: Deploy Production
+  rollback:
+    name: Rollback Production
     runs-on: ubuntu-latest
-    if: github.event.inputs.target == 'production'
     environment:
       name: production
       url: https://ai.agentin.chat
     steps:
-      - name: Deploy to production via SSH
+      - name: Rollback via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -38,46 +36,43 @@ jobs:
             set -e
             cd ~/GeekSpace2.0
 
-            echo "=== Merging staging → live-production ==="
-            git fetch origin staging
-            git checkout live-production
-            git merge origin/staging --no-edit
-            git push origin live-production
+            COMMIT="${{ inputs.commit_sha }}"
+            echo "=== Rolling back to $COMMIT ==="
 
-            echo "=== Building frontend ==="
+            # Verify commit exists
+            git cat-file -e "$COMMIT" || { echo "ERROR: Commit $COMMIT not found"; exit 1; }
+
+            # Reset to target commit (keep on main branch, no checkout)
+            git reset --hard "$COMMIT"
+
+            # Rebuild
+            npm ci && npm --prefix server ci
             npm run build
+            npm --prefix server run build
 
-            echo "=== Syncing static files ==="
+            # Deploy static files
             find /srv/assets/ -name "index-*" -not -name "*.css" -delete 2>/dev/null || true
             cp -r dist/assets/* /srv/assets/
             cp dist/index.html /srv/index.html
             cp -r dist/office /srv/ 2>/dev/null || true
 
-            echo "=== Building and deploying production container ==="
+            # Restart containers
             docker compose up -d --build geekspace
+            if [ "${{ inputs.skip_staging }}" != "true" ]; then
+              docker compose up -d --build staging
+            fi
 
-            echo "=== Waiting for health check ==="
+            # Health checks
             for i in $(seq 1 30); do
               if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
-                echo "Production is healthy!"
-                exit 0
+                echo "Production healthy after rollback!"
+                break
               fi
-              echo "Waiting... ($i/30)"
+              [ "$i" -eq 30 ] && { echo "ERROR: Health check failed"; exit 1; }
               sleep 2
             done
-            echo "ERROR: Production health check failed"
-            docker compose logs --tail 20 geekspace
-            exit 1
 
-      - name: Verify production
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            STATUS=$(curl -sf https://ai.agentin.chat/api/health | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','unknown'))" 2>/dev/null || echo "unreachable")
-            echo "Production status: $STATUS"
-            if [ "$STATUS" != "ok" ] && [ "$STATUS" != "healthy" ]; then
-              echo "WARNING: Production may not be fully healthy"
-            fi
+            # Update branches
+            git push origin main --force
+            git push origin main:staging --force
+            git push origin main:live-production --force

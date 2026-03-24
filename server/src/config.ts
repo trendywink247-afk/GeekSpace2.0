@@ -74,6 +74,11 @@ export const config = {
   moonshotReasoningModel: optional('MOONSHOT_REASONING_MODEL', 'kimi-k2-thinking'),
   moonshotTimeout: optionalInt('MOONSHOT_TIMEOUT_MS', 120000),
   moonshotMaxTokens: optionalInt('MOONSHOT_MAX_TOKENS', 8192),
+
+  // Moonshot direct API (api.moonshot.cn — used for Logo AI suggestions)
+  moonshotDirectApiKey: process.env.MOONSHOT_DIRECT_API_KEY || '',
+  moonshotDirectBaseUrl: optional('MOONSHOT_DIRECT_BASE_URL', 'https://api.moonshot.ai/v1'),
+  moonshotDirectModel: optional('MOONSHOT_DIRECT_MODEL', 'kimi-k2.5'),
   // NOTE P3: Together AI and OllamaCloud removed — no API keys, dead providers
 
   // HuggingFace (image generation fallback — FLUX.1-schnell)

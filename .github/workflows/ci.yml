@@ -1,11 +1,10 @@
-name: CI + Staging Deploy
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_call:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,7 +15,7 @@ env:
 
 jobs:
   # ============================================
-  # Static Checks (Lint + TypeCheck + Build)
+  # Job 1: Static Checks (lint, typecheck, build, audit)
   # ============================================
   static-checks:
     name: Static Checks
@@ -38,15 +37,9 @@ jobs:
       - name: Install server dependencies
         run: npm --prefix server ci
 
-      - name: Audit root dependencies
-        run: npm audit --audit-level=critical
-
-      - name: Audit server dependencies
-        run: npm --prefix server audit --audit-level=critical
-
-      - name: Run lint on changed files
+      - name: Lint changed files
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="origin/${{ github.base_ref }}"
             HEAD="HEAD"
           else
@@ -55,10 +48,10 @@ jobs:
           fi
 
           echo "Comparing $BASE...$HEAD"
-          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE $HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$BASE" "$HEAD" -- '*.ts' '*.tsx' '*.js' '*.jsx' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No JS/TS files changed. Skipping lint."
+            echo "No JS/TS files changed — skipping lint."
             exit 0
           fi
 
@@ -80,8 +73,14 @@ jobs:
       - name: Build server
         run: npm --prefix server run build
 
+      - name: Audit root dependencies
+        run: npm audit --audit-level=critical
+
+      - name: Audit server dependencies
+        run: npm --prefix server audit --audit-level=critical
+
   # ============================================
-  # Unit Tests
+  # Job 2: Unit Tests (needs Job 1)
   # ============================================
   unit-tests:
     name: Unit Tests
@@ -106,7 +105,7 @@ jobs:
         run: npm --prefix server run test
 
   # ============================================
-  # E2E Tests (Playwright) — non-blocking
+  # Job 3: E2E Tests (needs Job 1, non-blocking)
   # ============================================
   e2e-tests:
     name: E2E Tests
@@ -161,38 +160,12 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # Summary — gate for deploy
-  # ============================================
-  summary:
-    name: Summary
-    runs-on: ubuntu-latest
-    needs: [static-checks, unit-tests]
-    if: always()
-    steps:
-      - name: Check required jobs passed
-        run: |
-          echo "Static checks: ${{ needs.static-checks.result }}"
-          echo "Unit tests:    ${{ needs.unit-tests.result }}"
-
-          if [[ "${{ needs.static-checks.result }}" != "success" ]]; then
-            echo "FATAL: Static checks failed"
-            exit 1
-          fi
-
-          if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
-            echo "FATAL: Unit tests failed"
-            exit 1
-          fi
-
-          echo "All required checks passed!"
-
-  # ============================================
-  # Auto-deploy to Staging (only on push, after CI passes)
+  # Job 4: Deploy Staging (needs Job 2, push to main only)
   # ============================================
   deploy-staging:
-    name: "Deploy: main → staging"
+    name: "Deploy Staging"
     runs-on: ubuntu-latest
-    needs: [summary]
+    needs: unit-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: staging
@@ -204,23 +177,28 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
           script: |
             set -e
             cd ~/GeekSpace2.0
 
-            echo "=== Merging main → staging ==="
-            git fetch origin main
-            git checkout staging
-            git merge origin/main --no-edit
-            git push origin staging
+            echo "=== Pulling latest main ==="
+            git pull origin main
+
+            echo "=== Installing dependencies ==="
+            npm ci
+            npm --prefix server ci
 
             echo "=== Building frontend ==="
             npm run build
 
-            echo "=== Building and deploying staging container ==="
+            echo "=== Building server ==="
+            npm --prefix server run build
+
+            echo "=== Deploying staging container ==="
             docker compose up -d --build staging
 
-            echo "=== Waiting for health check ==="
+            echo "=== Health check (staging) ==="
             for i in $(seq 1 30); do
               if curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
                 echo "Staging is healthy!"
@@ -229,5 +207,96 @@ jobs:
               echo "Waiting... ($i/30)"
               sleep 2
             done
-            echo "ERROR: Staging health check failed"
+            echo "ERROR: Staging health check failed after 60s"
+            docker compose logs --tail 30 staging
             exit 1
+
+  # ============================================
+  # Job 5: Deploy Production (needs Job 4)
+  # Cancel-in-progress: false — never kill a running deploy
+  # ============================================
+  deploy-production:
+    name: "Deploy Production"
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://ai.agentin.chat
+    steps:
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/GeekSpace2.0
+
+            echo "=== Syncing static files to Caddy ==="
+            find /srv/assets/ -name "index-*" -not -name "*.css" -delete
+            cp -r dist/assets/* /srv/assets/
+            cp dist/index.html /srv/index.html
+            cp -r dist/office /srv/ 2>/dev/null || true
+
+            echo "=== Deploying production container ==="
+            docker compose up -d --build geekspace
+
+            echo "=== Health check (production, local) ==="
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+                echo "Production is healthy (local)!"
+                break
+              fi
+              echo "Waiting... ($i/30)"
+              sleep 2
+            done
+
+            if ! curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+              echo "ERROR: Production health check failed — restarting container"
+              docker compose restart geekspace
+              docker compose logs --tail 30 geekspace
+              exit 1
+            fi
+
+            echo "=== Verifying public URL ==="
+            if curl -sf https://ai.agentin.chat/api/health > /dev/null 2>&1; then
+              echo "Production is live at https://ai.agentin.chat"
+            else
+              echo "WARNING: Public URL check failed (Caddy may still be propagating)"
+            fi
+
+  # ============================================
+  # Job 6: Promote Branches (needs Job 5)
+  # Fast-forward main → staging and main → live-production
+  # No branch switching — working tree stays on main
+  # ============================================
+  promote-branches:
+    name: "Promote Branches"
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Promote main to staging and live-production
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/GeekSpace2.0
+
+            echo "=== Promoting main → staging ==="
+            git push origin main:staging
+
+            echo "=== Promoting main → live-production ==="
+            git push origin main:live-production
+
+            echo "All branches synced to main."
