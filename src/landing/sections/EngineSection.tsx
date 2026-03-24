@@ -1,23 +1,51 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Zap, Webhook, Database, Bot, Workflow } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Zap, Server, GitBranch, Container, ShieldCheck } from 'lucide-react';
 
 const engineFeatures = [
-  { icon: Webhook, label: 'Triggers', description: 'Event-based activation' },
-  { icon: Database, label: 'APIs', description: 'Connect any service' },
-  { icon: Bot, label: 'AI Actions', description: 'Intelligent responses' },
-  { icon: Workflow, label: 'Workflows', description: 'Visual automation builder' },
+  {
+    icon: Server,
+    label: 'Self-Hosted',
+    description: 'Run on your own server. No third-party cloud dependency. Full control over your infrastructure and uptime.',
+  },
+  {
+    icon: GitBranch,
+    label: 'Open Routing',
+    description: '8 LLM providers with intelligent fallback. OpenRouter, Groq, Ollama, Together, and more \u2014 automatic failover.',
+  },
+  {
+    icon: Container,
+    label: 'Docker-Based',
+    description: 'One-command deploy with Docker Compose. 15 services, health-checked, memory-capped, auto-restarting.',
+  },
+  {
+    icon: ShieldCheck,
+    label: 'Privacy-First',
+    description: 'Your data never leaves your server. No telemetry, no training on your data, no cloud lock-in.',
+  },
+];
+
+const terminalLines = [
+  { text: '$ docker compose up -d --build', type: 'command' as const },
+  { text: '  [+] 15/15 services healthy', type: 'success' as const },
+  { text: '  geekspace-app    : running (port 3001)', type: 'output' as const },
+  { text: '  postgres         : running (port 5432)', type: 'output' as const },
+  { text: '  redis            : running (port 6379)', type: 'output' as const },
+  { text: '  ollama           : running (gpu:none)', type: 'output' as const },
+  { text: '  caddy            : reverse proxy active', type: 'output' as const },
+  { text: '  earlyoom         : memory guard active', type: 'output' as const },
+  { text: '', type: 'output' as const },
+  { text: '$ curl localhost:3001/api/health', type: 'command' as const },
+  { text: '  { "status": "ok", "services": 12 }', type: 'success' as const },
 ];
 
 interface EngineSectionProps {
   onBuildWorkflow?: () => void;
 }
 
-export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
-  const navigate = useNavigate();
+export function EngineSection(_props: EngineSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [visibleLines, setVisibleLines] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -35,6 +63,18 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
 
     return () => observer.disconnect();
   }, []);
+
+  // Terminal typing animation
+  useEffect(() => {
+    if (!isVisible) return;
+    if (visibleLines >= terminalLines.length) return;
+
+    const timeout = setTimeout(() => {
+      setVisibleLines((prev) => prev + 1);
+    }, visibleLines === 0 ? 500 : 300);
+
+    return () => clearTimeout(timeout);
+  }, [isVisible, visibleLines]);
 
   return (
     <section
@@ -63,7 +103,7 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
 
       {/* Energy Core Glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div 
+        <div
           className={`w-[600px] h-[600px] rounded-full transition-all duration-1000 ${
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           }`}
@@ -74,136 +114,86 @@ export function EngineSection({ onBuildWorkflow }: EngineSectionProps) {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Content */}
-          <div 
-            className={`text-center lg:text-left transition-all duration-1000 ${
+        {/* Header */}
+        <div
+          className={`text-center mb-16 transition-all duration-1000 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
+            <Zap className="w-4 h-4 text-[#00F0FF]" />
+            <span className="text-sm font-mono text-[#00F0FF]">UNDER THE HOOD</span>
+          </div>
+
+          <h2
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
+            style={{ fontFamily: 'Syne, sans-serif' }}
+          >
+            Enterprise-Grade. <span className="text-gradient">Self-Hosted.</span> Yours.
+          </h2>
+
+          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto leading-relaxed">
+            Built for developers who care about ownership, reliability, and performance. No black boxes.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left: Feature Cards */}
+          <div
+            className={`transition-all duration-1000 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
             }`}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
-              <Zap className="w-4 h-4 text-[#00F0FF]" />
-              <span className="text-sm font-mono text-[#00F0FF]">WEEBO ENGINE</span>
-            </div>
-
-            <h2 
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-              style={{ fontFamily: 'Syne, sans-serif' }}
-            >
-              AUTOMATION <span className="text-gradient">ENGINE</span>
-            </h2>
-            
-            <p className="text-lg text-[#6B7280] mb-8 leading-relaxed">
-              Connect triggers, APIs, and messaging into reliable workflows—without losing visibility or control.
-            </p>
-
-            {/* Feature Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              {engineFeatures.map((feature) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {engineFeatures.map((feature, index) => (
                 <div
                   key={feature.label}
-                  className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
+                  className="p-5 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
+                  style={{ transitionDelay: `${index * 100}ms` }}
                 >
-                  <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
-                  <div className="text-sm text-[#6B7280]">{feature.description}</div>
+                  <feature.icon className="w-8 h-8 text-[#00F0FF] mb-3 group-hover:scale-110 transition-transform" />
+                  <div className="font-semibold text-[#E8E8F0] mb-2">{feature.label}</div>
+                  <div className="text-sm text-[#6B7280] leading-relaxed">{feature.description}</div>
                 </div>
               ))}
             </div>
-
-            <Button
-              size="lg"
-              onClick={() => onBuildWorkflow ? onBuildWorkflow() : navigate('/login?redirect=automations')}
-              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 motion-safe:hover:scale-105 hover:shadow-xl hover:shadow-[#00F0FF]/30 group"
-            >
-              Build a Workflow
-              <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Button>
           </div>
 
-          {/* Right: 3D Engine Visual */}
-          <div 
-            className={`flex items-center justify-center transition-all duration-1000 delay-200 ${
+          {/* Right: Terminal Animation */}
+          <div
+            className={`transition-all duration-1000 delay-200 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
             }`}
           >
-            <div className="relative w-72 h-72 md:w-96 md:h-96">
-              {/* Outer gear rings */}
-              <div className="absolute inset-0 border-2 border-dashed border-[#00F0FF]/30 rounded-full motion-safe:animate-spin" style={{ animationDuration: '30s' }} />
-              <div className="absolute inset-8 border border-[#00F0FF]/20 rounded-full motion-safe:animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
-              <div className="absolute inset-16 border border-[#00F0FF]/15 rounded-full motion-safe:animate-spin" style={{ animationDuration: '15s' }} />
-              
-              {/* Central Engine */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative w-32 h-32 md:w-40 md:h-40">
-                  {/* Gear shape */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative">
-                      {/* Main gear body */}
-                      <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-[#00F0FF]/40 to-[#00F0FF]/10 border-2 border-[#00F0FF]/50 flex items-center justify-center float-animation">
-                        <Zap className="w-12 h-12 md:w-16 md:h-16 text-[#00F0FF]" />
-                      </div>
-                      
-                      {/* Gear teeth */}
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute w-4 h-6 bg-[#00F0FF]/40 rounded-sm"
-                          style={{
-                            top: '50%',
-                            left: '50%',
-                            transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateY(-58px)`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Orbiting nodes */}
-                  {['Triggers', 'APIs', 'AI Actions', 'Workflows', 'Power'].map((label, i) => (
-                    <div
-                      key={label}
-                      className="absolute w-11 h-11 rounded-full bg-[#0C0C18] border border-[#00F0FF]/40 flex items-center justify-center"
-                      aria-label={label}
-                      style={{
-                        top: `${50 + 42 * Math.sin((i * Math.PI * 2) / 5)}%`,
-                        left: `${50 + 42 * Math.cos((i * Math.PI * 2) / 5)}%`,
-                        transform: 'translate(-50%, -50%)',
-                        animation: `float 3s ease-in-out ${i * 0.4}s infinite`,
-                      }}
-                    >
-                      {i === 0 && <Webhook className="w-5 h-5 text-[#00F0FF]" />}
-                      {i === 1 && <Database className="w-5 h-5 text-[#FF2D78]" />}
-                      {i === 2 && <Bot className="w-5 h-5 text-[#ADFF2F]" />}
-                      {i === 3 && <Workflow className="w-5 h-5 text-[#FFB800]" />}
-                      {i === 4 && <Zap className="w-5 h-5 text-[#00F0FF]" />}
-                    </div>
-                  ))}
-                </div>
+            <div className="rounded-2xl border border-white/10 bg-[#0C0C18] overflow-hidden">
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/[0.02]">
+                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+                <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+                <span className="ml-2 text-xs text-[#6B7280] font-mono">terminal</span>
               </div>
 
-              {/* Connection lines */}
-              <svg className="absolute inset-0 w-full h-full opacity-30" aria-hidden="true" role="presentation">
-                {[...Array(6)].map((_, i) => {
-                  const angle = (i / 6) * Math.PI * 2;
-                  const x1 = 50 + 20 * Math.cos(angle);
-                  const y1 = 50 + 20 * Math.sin(angle);
-                  const x2 = 50 + 45 * Math.cos(angle);
-                  const y2 = 50 + 45 * Math.sin(angle);
-                  return (
-                    <line
-                      key={`line-${Math.round(angle * 100)}`}
-                      x1={`${x1}%`}
-                      y1={`${y1}%`}
-                      x2={`${x2}%`}
-                      y2={`${y2}%`}
-                      stroke="rgba(0, 240, 255, 0.4)"
-                      strokeWidth="1"
-                      strokeDasharray="4 4"
-                    />
-                  );
-                })}
-              </svg>
+              {/* Terminal body */}
+              <div className="p-5 font-mono text-sm min-h-[300px]">
+                {terminalLines.slice(0, visibleLines).map((line, i) => (
+                  <div
+                    key={i}
+                    className={`${
+                      line.type === 'command'
+                        ? 'text-[#00F0FF]'
+                        : line.type === 'success'
+                          ? 'text-[#ADFF2F]'
+                          : 'text-[#6B7280]'
+                    } ${line.text === '' ? 'h-4' : ''}`}
+                  >
+                    {line.text}
+                  </div>
+                ))}
+                {visibleLines < terminalLines.length && (
+                  <span className="inline-block w-2 h-4 bg-[#00F0FF] animate-pulse" />
+                )}
+              </div>
             </div>
           </div>
         </div>

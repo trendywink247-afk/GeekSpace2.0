@@ -1,13 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Shield, Lock, Eye, AlertTriangle, Server } from 'lucide-react';
+import { ArrowRight, Shield, Lock, Server, Unlink, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const securityFeatures = [
-  { icon: Lock, label: 'Tenant Isolation', description: 'Complete data separation' },
-  { icon: Eye, label: 'Audit Logs', description: 'Full activity tracking' },
-  { icon: AlertTriangle, label: 'Emergency Stop', description: 'Instant halt control' },
-  { icon: Server, label: 'Encryption', description: 'End-to-end secure' },
+const securityBadges = [
+  { icon: Server, label: 'Self-Hosted', description: 'Your server, your rules' },
+  { icon: Lock, label: 'End-to-End Encrypted', description: 'Data encrypted at rest & transit' },
+  { icon: Unlink, label: 'No Vendor Lock-in', description: 'Export anytime, no strings' },
+  { icon: Fingerprint, label: 'Privacy by Design', description: 'Zero telemetry, zero tracking' },
+];
+
+const terminalLines = [
+  { text: '[SCAN] Checking TLS certificates...', result: '[PASS]', color: '#ADFF2F' },
+  { text: '[SCAN] Verifying encryption at rest...', result: '[PASS]', color: '#ADFF2F' },
+  { text: '[SCAN] JWT token validation...', result: '[PASS]', color: '#ADFF2F' },
+  { text: '[SCAN] Docker container isolation...', result: '[PASS]', color: '#ADFF2F' },
+  { text: '[SCAN] SSH key-only authentication...', result: '[PASS]', color: '#ADFF2F' },
+  { text: '[AUDIT] 15 vulnerabilities fixed', result: '[DONE]', color: '#00F0FF' },
+  { text: '[RESULT] Security score: 98/100', result: '[OK]', color: '#ADFF2F' },
 ];
 
 interface SecuritySectionProps {
@@ -18,6 +28,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [visibleLines, setVisibleLines] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -36,6 +47,21 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
     return () => observer.disconnect();
   }, []);
 
+  // Terminal typing animation
+  useEffect(() => {
+    if (!isVisible) return;
+    const interval = setInterval(() => {
+      setVisibleLines((prev) => {
+        if (prev >= terminalLines.length) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 600);
+    return () => clearInterval(interval);
+  }, [isVisible]);
+
   return (
     <section
       ref={sectionRef}
@@ -44,7 +70,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
     >
       {/* Shield Wireframe Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div 
+        <div
           className={`w-[700px] h-[700px] transition-all duration-1000 ${
             isVisible ? 'opacity-20 scale-100' : 'opacity-0 scale-75'
           }`}
@@ -74,7 +100,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
 
       {/* Glow Effect */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div 
+        <div
           className={`w-[500px] h-[500px] rounded-full transition-all duration-1000 ${
             isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
           }`}
@@ -86,107 +112,87 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: 3D Shield Visual */}
-          <div 
+          {/* Left: Terminal Animation */}
+          <div
             className={`flex items-center justify-center transition-all duration-1000 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
             }`}
           >
-            <div className="relative w-72 h-72 md:w-96 md:h-96">
-              {/* Outer rings */}
-              <div className="absolute inset-0 border border-[#00F0FF]/20 rounded-full motion-safe:animate-pulse" />
-              <div className="absolute inset-8 border border-[#00F0FF]/15 rounded-full motion-safe:animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }} />
-              <div className="absolute inset-16 border border-[#00F0FF]/10 rounded-full motion-safe:animate-pulse" style={{ animationDuration: '3s', animationDelay: '1s' }} />
-              
-              {/* Central Shield */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative w-40 h-40 md:w-48 md:h-48">
-                  {/* Shield shape */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative">
-                      <svg viewBox="0 0 100 120" className="w-32 h-40 md:w-40 md:h-48">
-                        <defs>
-                          <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="rgba(0, 240, 255, 0.4)" />
-                            <stop offset="100%" stopColor="rgba(0, 240, 255, 0.1)" />
-                          </linearGradient>
-                        </defs>
-                        <path
-                          d="M50 10 L85 25 L85 60 Q85 85 50 105 Q15 85 15 60 L15 25 Z"
-                          fill="url(#shieldGrad)"
-                          stroke="rgba(0, 240, 255, 0.5)"
-                          strokeWidth="2"
-                          className="pulse-glow"
-                        />
-                      </svg>
-                      
-                      {/* Lock icon in center */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Lock className="w-12 h-12 md:w-16 md:h-16 text-[#00F0FF]" />
-                      </div>
-                    </div>
-                  </div>
+            <div className="w-full max-w-lg">
+              {/* Terminal window */}
+              <div className="rounded-xl border border-[#00F0FF]/20 bg-[#0A0A14] overflow-hidden shadow-2xl shadow-[#00F0FF]/5">
+                {/* Title bar */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-[#0C0C18]">
+                  <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+                  <span className="ml-2 text-xs text-[#6B7280] font-mono">security-audit.sh</span>
+                </div>
 
-                  {/* Orbiting security icons */}
-                  {[...Array(4)].map((_, i) => {
-                    const orbitLabels = ['Tenant Isolation', 'Audit Logs', 'Emergency Stop', 'Encryption'];
-                    return (
-                      <div
-                        key={i}
-                        className="absolute w-11 h-11 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 flex items-center justify-center"
-                        role="img"
-                        aria-label={orbitLabels[i]}
-                        style={{
-                          top: `${50 + 48 * Math.sin((i * Math.PI) / 2)}%`,
-                          left: `${50 + 48 * Math.cos((i * Math.PI) / 2)}%`,
-                          transform: 'translate(-50%, -50%)',
-                          animation: `float 4s ease-in-out ${i * 0.5}s infinite`,
-                        }}
-                      >
-                        {i === 0 && <Lock className="w-5 h-5 text-[#00F0FF]" />}
-                        {i === 1 && <Eye className="w-5 h-5 text-[#FF2D78]" />}
-                        {i === 2 && <AlertTriangle className="w-5 h-5 text-[#FFB800]" />}
-                        {i === 3 && <Server className="w-5 h-5 text-[#00FF88]" />}
-                      </div>
-                    );
-                  })}
+                {/* Terminal content */}
+                <div className="p-4 font-mono text-sm space-y-1.5 min-h-[280px]">
+                  {terminalLines.map((line, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between transition-all duration-300 ${
+                        i < visibleLines ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                      }`}
+                    >
+                      <span className="text-[#8892A4]">{line.text}</span>
+                      <span className="font-bold ml-2 shrink-0" style={{ color: line.color }}>
+                        {line.result}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Audit note */}
+                  {visibleLines >= terminalLines.length && (
+                    <div className="mt-4 pt-3 border-t border-white/5 text-xs text-[#6B7280] transition-all duration-500 opacity-100">
+                      Audited by 5-agent security swarm. 15 fixes deployed.
+                    </div>
+                  )}
+
+                  {/* Blinking cursor */}
+                  {visibleLines < terminalLines.length && (
+                    <span className="inline-block w-2 h-4 bg-[#00F0FF] motion-safe:animate-pulse" />
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Right: Content */}
-          <div 
+          <div
             className={`text-center lg:text-left transition-all duration-1000 delay-200 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
             }`}
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-6">
               <Shield className="w-4 h-4 text-[#00F0FF]" />
-              <span className="text-sm font-mono text-[#00F0FF]">ENTERPRISE GRADE</span>
+              <span className="text-sm font-mono text-[#00F0FF]">Enterprise-Grade Security</span>
             </div>
 
-            <h2 
+            <h2
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
-              SECURITY <span className="text-gradient">& CONTROL</span>
+              Your Data. Your Server. <span className="text-gradient">Period.</span>
             </h2>
-            
+
             <p className="text-lg text-[#6B7280] mb-8 leading-relaxed">
-              Tenant isolation, audit logs, and emergency stop. Your data stays in your subdomain—encrypted, observable, and yours.
+              No cloud. No third-party access. Full sovereignty over your AI and your data.
             </p>
 
-            {/* Feature Grid */}
+            {/* Security Badges */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {securityFeatures.map((feature, i) => (
+              {securityBadges.map((badge, i) => (
                 <div
                   key={i}
                   className="p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all duration-300 group"
                 >
-                  <feature.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="font-medium text-[#E8E8F0]">{feature.label}</div>
-                  <div className="text-sm text-[#6B7280]">{feature.description}</div>
+                  <badge.icon className="w-6 h-6 text-[#00F0FF] mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="font-medium text-[#E8E8F0]">{badge.label}</div>
+                  <div className="text-sm text-[#6B7280]">{badge.description}</div>
                 </div>
               ))}
             </div>

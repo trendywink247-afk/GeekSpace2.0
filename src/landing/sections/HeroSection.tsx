@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Play, Hexagon, MessageCircle, Calendar, Mail, Github, Users, MessageSquare, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -58,8 +57,7 @@ const integrations = [
   { icon: Github, label: 'GitHub', color: '#8B5CF6' },
 ] as const;
 
-export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps) {
-  const navigate = useNavigate();
+export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [typedText, setTypedText] = useState('');
@@ -69,7 +67,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   const [stats, setStats] = useState<PublicStats>(FALLBACK_STATS);
   const [statsReady, setStatsReady] = useState(false);
 
-  const fullText = 'Your AI Operating System';
+  const fullText = 'Your AI Team, Self-Hosted';
 
   // CountUp animated values
   const animatedUsers = useCountUp(stats.users, 1500, statsReady, reducedMotion);
@@ -116,11 +114,9 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
   useEffect(() => {
     if (!isLoaded) return;
     const phrases = [
-      'Your second brain, always ready.',
-      'Reminders that actually work.',
-      'Chat that remembers everything.',
-      'Automate your daily chaos.',
-      'From idea to action in seconds.',
+      'Your Personal AI',
+      'Command Center',
+      'Automate repetitive work',
     ];
 
     // Respect reduced-motion: show first phrase statically, no animation loop
@@ -256,7 +252,7 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
           }`}
         >
           <span className="font-mono text-xs tracking-[0.3em] uppercase text-[#00F0FF]/80 px-4 py-1.5 border border-[#00F0FF]/20 rounded-full bg-[#00F0FF]/5">
-            AI-Powered Personal Assistant
+            AI-Powered Team
           </span>
         </div>
 
@@ -295,36 +291,62 @@ export function HeroSection({ onEnterDashboard, onWatchDemo }: HeroSectionProps)
             className="w-full sm:w-auto min-h-[48px] relative overflow-hidden bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-6 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)] group"
           >
             <span className="relative z-10 flex items-center">
-              {onEnterDashboard ? 'Get Started Free' : 'Explore the Network'}
+              Start Free
               <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
           </Button>
           <Button
             size="lg"
             variant="outline"
-            onClick={() => onWatchDemo ? onWatchDemo() : navigate('/login?demo=true')}
+            onClick={() => {
+              const el = document.getElementById('agents');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="w-full sm:w-auto min-h-[48px] border-[#FF2D78]/40 text-[#E8E8F0] hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/60 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 group"
           >
             <Play className="mr-2 w-5 h-5 text-[#FF2D78]" />
-            See It in Action
+            Meet Your Agents
           </Button>
         </div>
 
-        {/* Social Proof Bar */}
+        {/* Agent Avatars */}
         <div
-          className={`mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 transition-all duration-700 delay-700 ${
+          className={`mt-10 flex items-center justify-center gap-2 transition-all duration-700 delay-600 ${
             isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
           {[
-            { icon: Users, value: animatedUsers, label: 'users', color: '#00F0FF' },
-            { icon: MessageSquare, value: animatedConversations, label: 'conversations', color: '#ADFF2F' },
-            { icon: Bell, value: animatedReminders, label: 'reminders created', color: '#FF2D78' },
+            { letter: 'A', bg: '#FF2D78' },
+            { letter: 'B', bg: '#00F0FF' },
+            { letter: 'C', bg: '#ADFF2F' },
+            { letter: 'D', bg: '#8B5CF6' },
+            { letter: 'E', bg: '#F59E0B' },
+          ].map((agent) => (
+            <div
+              key={agent.letter}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-[#06060B]"
+              style={{ backgroundColor: agent.bg }}
+            >
+              {agent.letter}
+            </div>
+          ))}
+        </div>
+
+        {/* Social Proof Bar */}
+        <div
+          className={`mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 transition-all duration-700 delay-700 ${
+            isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          {[
+            { icon: Users, label: 'professionals', value: `${animatedUsers.toLocaleString()}+`, color: '#00F0FF' },
+            { icon: MessageSquare, label: 'tasks daily', value: `${animatedConversations.toLocaleString()}+`, color: '#ADFF2F' },
+            { icon: Bell, label: 'uptime', value: `${animatedReminders.toLocaleString()}+`, color: '#FF2D78' },
           ].map((stat) => (
             <div key={stat.label} className="flex items-center gap-2.5">
               <stat.icon className="w-4 h-4 shrink-0" style={{ color: stat.color }} />
               <span className="font-mono text-sm sm:text-base font-bold text-[#E8E8F0]">
-                {stat.value.toLocaleString()}+
+                {stat.value}
               </span>
               <span className="font-mono text-xs sm:text-sm text-[#6B7280]">{stat.label}</span>
             </div>

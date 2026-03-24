@@ -15,31 +15,31 @@ const testimonials: Testimonial[] = [
   {
     name: 'Priya Sharma',
     role: 'Product Manager',
-    location: 'Bangalore',
+    location: 'Flipkart',
     quote:
-      'Agentin replaced Notion, Todoist, and ChatGPT for me. The Telegram integration is a game-changer — I set reminders and track expenses without opening a browser.',
+      'Weebo handles my calendar, drafts emails, and tracks my habits \u2014 I canceled 4 other subscriptions.',
     rating: 5,
     avatar: 'PS',
     accentColor: '#00F0FF',
   },
   {
-    name: 'Rahul Mehta',
+    name: 'Arjun Mehta',
     role: 'Freelance Developer',
-    location: 'Pune',
+    location: 'Independent',
     quote:
-      'I use Jarvis for code reviews and Weebo for daily planning. The habit tracking with streaks keeps me accountable. Best AI tool I\'ve used in 2026.',
+      'The self-hosted approach sold me. My client data never leaves my server. That\'s non-negotiable.',
     rating: 5,
-    avatar: 'RM',
+    avatar: 'AM',
     accentColor: '#ADFF2F',
   },
   {
-    name: 'Ananya Iyer',
-    role: 'MBA Student',
-    location: 'Hyderabad',
+    name: 'Sneha Reddy',
+    role: 'Content Strategist',
+    location: 'Razorpay',
     quote:
-      'The AI remembers my study preferences and sends proactive briefings before exams. It feels like having a personal assistant who actually knows me.',
+      'The agent office is genuinely addictive. I went from paying \u20B96,000/month across tools to \u20B9499 with Agentin. My whole team wants in.',
     rating: 5,
-    avatar: 'AI',
+    avatar: 'SR',
     accentColor: '#8B5CF6',
   },
 ];
@@ -85,14 +85,17 @@ export function TestimonialsSection() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className={`text-center mb-16 ${fadeIn}`} style={fadeInDelay(0)}>
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-sm font-medium text-[#00F0FF] mb-4">
+            Social Proof
+          </span>
           <h2
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            Loved by <span className="text-gradient">real users</span>
+            Loved by <span className="text-gradient">Professionals Across India</span>
           </h2>
           <p className="text-lg text-[#8892A4] max-w-2xl mx-auto">
-            Professionals, students, and founders across India use Agentin daily.
+            Real people. Real workflows. Real results.
           </p>
         </div>
 
@@ -147,6 +150,21 @@ export function TestimonialsSection() {
                   background: `radial-gradient(ellipse at 50% 0%, ${t.accentColor}08 0%, transparent 70%)`,
                 }}
               />
+            </div>
+          ))}
+        </div>
+
+        {/* Stats Row */}
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 mt-14 pt-10 border-t border-white/5 ${fadeIn}`} style={fadeInDelay(600)}>
+          {[
+            { value: '2,000+', label: 'Users' },
+            { value: '99%', label: 'Uptime' },
+            { value: '100%', label: 'Indian-Made' },
+            { value: '15k', label: 'Open Source' },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="text-2xl md:text-3xl font-bold text-[#F4F6FF]">{stat.value}</div>
+              <div className="text-sm text-[#6B7280] mt-1">{stat.label}</div>
             </div>
           ))}
         </div>

@@ -9,27 +9,18 @@ import {
   XCircle,
 } from 'lucide-react';
 
-const painPoints = [
-  {
-    icon: LayoutGrid,
-    pain: '23 browser tabs open',
-    solution: 'One chat that does it all',
-  },
-  {
-    icon: BellOff,
-    pain: 'Missed reminders everywhere',
-    solution: 'Smart reminders that follow up',
-  },
-  {
-    icon: Brain,
-    pain: 'Forgot what you decided last week',
-    solution: 'AI memory that never forgets',
-  },
-  {
-    icon: Zap,
-    pain: 'Copy-pasting between 5 apps',
-    solution: 'Automations that connect everything',
-  },
+const problems = [
+  { icon: LayoutGrid, text: 'Switching between 10+ tools daily' },
+  { icon: BellOff, text: 'Your data scattered across cloud services' },
+  { icon: Brain, text: 'Paying \u20B95,000+/month for separate subscriptions' },
+  { icon: Zap, text: 'No AI that actually knows YOUR context' },
+];
+
+const solutions = [
+  { icon: LayoutGrid, text: 'One platform. 9 specialized agents' },
+  { icon: BellOff, text: 'Self-hosted. Your data stays on YOUR server' },
+  { icon: Brain, text: 'Everything for \u20B9499/month' },
+  { icon: Zap, text: 'AI that knows your calendar, habits, and history' },
 ];
 
 export function ProblemSolutionSection() {
@@ -76,47 +67,57 @@ export function ProblemSolutionSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            Sound <span className="text-gradient">familiar?</span>
+            Stop Juggling. <span className="text-gradient">Start Commanding.</span>
           </h2>
           <p className="text-lg text-[#8892A4] max-w-2xl mx-auto">
-            You&rsquo;re juggling tools, forgetting tasks, and losing context.
-            Agentin replaces the chaos with one intelligent assistant.
+            You deserve an AI that works as hard as you do &mdash; without the fragmentation, the privacy trade-offs, or the bloated bills.
           </p>
         </div>
 
-        {/* Pain → Solution Grid */}
-        <div className="grid sm:grid-cols-2 gap-6">
-          {painPoints.map((item, i) => (
-            <div
-              key={item.pain}
-              className={`group relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-6 hover:border-[#00F0FF]/30 transition-all duration-300 ${fadeIn}`}
-              style={fadeInDelay(100 + i * 100)}
-            >
-              {/* Icon */}
-              <div className="w-10 h-10 rounded-xl bg-[#FF2D78]/10 flex items-center justify-center mb-4 group-hover:bg-[#00F0FF]/10 transition-colors duration-300">
-                <item.icon className="w-5 h-5 text-[#FF2D78] group-hover:text-[#00F0FF] transition-colors duration-300" />
-              </div>
-
-              {/* Before → After */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <XCircle className="w-4 h-4 text-[#FF2D78]/60 mt-0.5 shrink-0" />
-                  <span className="text-sm text-[#8892A4] line-through decoration-[#FF2D78]/30">
-                    {item.pain}
-                  </span>
+        {/* Two-Column Problem / Solution */}
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* The Problem */}
+          <div
+            className={`rounded-2xl border border-[#FF2D78]/20 bg-[#FF2D78]/[0.03] backdrop-blur-sm p-6 md:p-8 ${fadeIn}`}
+            style={fadeInDelay(100)}
+          >
+            <h3 className="text-lg font-bold text-[#FF2D78] mb-6">The Problem</h3>
+            <div className="space-y-5">
+              {problems.map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-[#FF2D78]/60 mt-0.5 shrink-0" />
+                  <span className="text-sm text-[#8892A4]">{item.text}</span>
                 </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#ADFF2F] mt-0.5 shrink-0" />
-                  <span className="text-sm text-[#F4F6FF] font-medium">
-                    {item.solution}
-                  </span>
-                </div>
-              </div>
-
-              {/* Hover arrow */}
-              <ArrowRight className="absolute top-6 right-6 w-4 h-4 text-[#00F0FF]/0 group-hover:text-[#00F0FF]/60 transition-all duration-300 group-hover:translate-x-1" />
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* The Solution */}
+          <div
+            className={`rounded-2xl border border-[#00F0FF]/20 bg-[#00F0FF]/[0.03] backdrop-blur-sm p-6 md:p-8 ${fadeIn}`}
+            style={fadeInDelay(200)}
+          >
+            <h3 className="text-lg font-bold text-[#00F0FF] mb-6">The Solution</h3>
+            <div className="space-y-5">
+              {solutions.map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#ADFF2F] mt-0.5 shrink-0" />
+                  <span className="text-sm text-[#F4F6FF] font-medium">{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className={`text-center mt-12 ${fadeIn}`} style={fadeInDelay(300)}>
+          <a
+            href="/login"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] text-[#06060B] px-8 py-3 rounded-xl font-bold text-base transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,212,0.3)]"
+          >
+            Solve It Now &mdash; Free Forever
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </section>

@@ -1,34 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, ArrowRight, Zap, Bell, Brain, Search } from 'lucide-react';
+import { MessageCircle, ArrowRight, Zap, Bell, Users } from 'lucide-react';
 
 const telegramFeatures = [
   {
     icon: Zap,
-    text: '"remind me to call dentist Friday 3pm"',
-    result: 'Reminder set with snooze options',
-  },
-  {
-    icon: Search,
-    text: '"what\'s the latest on OpenAI?"',
-    result: 'Web search + summarized results',
+    command: '/ask anything',
+    description: 'Get instant AI answers on any topic — from GST deadlines to code debugging.',
   },
   {
     icon: Bell,
-    text: '"spent 450 on Swiggy last night"',
-    result: 'Expense tracked in INR',
+    command: '/remind me',
+    description: 'Smart reminders in seconds. Just say when and what — Weebo handles the rest.',
   },
   {
-    icon: Brain,
-    text: '"remember I prefer TypeScript"',
-    result: 'Saved to long-term memory',
+    icon: Users,
+    command: '/delegate to agents',
+    description: 'Route tasks to specialist agents. Research, drafts, analysis — all from Telegram.',
   },
+];
+
+interface ChatBubble {
+  role: 'user' | 'bot';
+  text: string;
+}
+
+const chatDemo: ChatBubble[] = [
+  { role: 'user', text: 'Hey Weebo, what\'s on my calendar today?' },
+  { role: 'bot', text: 'You have 3 meetings today. The first one starts at 10:30 AM \u2014 \'Sprint Planning\' with your engineering team.' },
+  { role: 'user', text: '/remind me to review the PRD at 4pm' },
+  { role: 'bot', text: 'Done! I\'ll remind you at 4:00 PM to review the PRD.' },
 ];
 
 export function TelegramCTASection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [activeDemo, setActiveDemo] = useState(0);
+  const [visibleMessages, setVisibleMessages] = useState(0);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -49,14 +56,20 @@ export function TelegramCTASection() {
     return () => observer.disconnect();
   }, []);
 
-  // Auto-cycle demo items
+  // Animate chat messages appearing one by one
   useEffect(() => {
-    if (!isVisible || reducedMotion) return;
-    const interval = setInterval(() => {
-      setActiveDemo((prev) => (prev + 1) % telegramFeatures.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isVisible, reducedMotion]);
+    if (!isVisible || reducedMotion) {
+      if (reducedMotion && isVisible) setVisibleMessages(chatDemo.length);
+      return;
+    }
+    if (visibleMessages >= chatDemo.length) return;
+
+    const timeout = setTimeout(() => {
+      setVisibleMessages((prev) => prev + 1);
+    }, visibleMessages === 0 ? 600 : 1200);
+
+    return () => clearTimeout(timeout);
+  }, [isVisible, reducedMotion, visibleMessages]);
 
   const fadeIn = reducedMotion
     ? 'opacity-100'
@@ -90,7 +103,7 @@ export function TelegramCTASection() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0088cc]/10 border border-[#0088cc]/20 mb-6">
               <MessageCircle className="w-4 h-4 text-[#0088cc]" />
               <span className="text-xs text-[#0088cc] font-medium">
-                Works on Telegram
+                Telegram Bot
               </span>
             </div>
 
@@ -98,14 +111,27 @@ export function TelegramCTASection() {
               className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
-              Your AI, <span className="text-gradient">wherever you are</span>
+              Start in 30 Seconds. <span className="text-gradient">No App Download.</span>
             </h2>
 
             <p className="text-lg text-[#8892A4] mb-8 leading-relaxed">
-              No app to install. No browser tab to keep open. Just message
-              Agentin on Telegram and get things done — reminders, research,
-              expenses, memory, and more.
+              Message @Weebo_gs_bot on Telegram. No sign-up needed. Just send /start
             </p>
+
+            {/* Feature list */}
+            <div className="space-y-4 mb-8">
+              {telegramFeatures.map((feature) => (
+                <div key={feature.command} className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#0088cc]/10 border border-[#0088cc]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <feature.icon className="w-4 h-4 text-[#0088cc]" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[#F4F6FF] mb-0.5">{feature.command}</div>
+                    <div className="text-sm text-[#6B7280] leading-relaxed">{feature.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <a
               href="https://t.me/Weebo_gs_bot"
@@ -114,12 +140,12 @@ export function TelegramCTASection() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#0088cc] hover:bg-[#0088cc]/90 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#0088cc]/20 group"
             >
               <MessageCircle className="w-5 h-5" />
-              Chat with Agentin on Telegram
+              Open in Telegram
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </a>
           </div>
 
-          {/* Right: Demo Chat */}
+          {/* Right: Chat Demo */}
           <div className={fadeIn} style={fadeInDelay(200)}>
             <div className="rounded-2xl border border-white/10 bg-[#0C0C18] overflow-hidden">
               {/* Chat header */}
@@ -129,43 +155,32 @@ export function TelegramCTASection() {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-[#F4F6FF]">
-                    Agentin Bot
+                    Weebo
                   </div>
                   <div className="text-[10px] text-[#ADFF2F]">online</div>
                 </div>
               </div>
 
               {/* Chat messages */}
-              <div className="p-4 space-y-3 min-h-[220px]">
-                {telegramFeatures.map((feature, i) => (
+              <div className="p-4 space-y-3 min-h-[260px]">
+                {chatDemo.slice(0, visibleMessages).map((bubble, i) => (
                   <div
                     key={i}
                     className={`transition-all duration-500 ${
-                      i === activeDemo
-                        ? 'opacity-100 scale-100'
-                        : i < activeDemo
-                          ? 'opacity-30 scale-[0.98]'
-                          : 'opacity-0 scale-95 h-0 overflow-hidden'
+                      reducedMotion ? '' : 'animate-in fade-in slide-in-from-bottom-2'
                     }`}
                   >
-                    {/* User message */}
-                    <div className="flex justify-end mb-2">
-                      <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#0088cc]/20 text-sm text-[#F4F6FF]">
-                        {feature.text}
+                    {bubble.role === 'user' ? (
+                      <div className="flex justify-end">
+                        <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#0088cc]/20 text-sm text-[#F4F6FF]">
+                          {bubble.text}
+                        </div>
                       </div>
-                    </div>
-                    {/* Bot reply */}
-                    {i === activeDemo && (
+                    ) : (
                       <div className="flex justify-start">
                         <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-bl-md bg-white/5 border border-white/5">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <feature.icon className="w-3.5 h-3.5 text-[#ADFF2F]" />
-                            <span className="text-[10px] text-[#ADFF2F] font-medium">
-                              Done
-                            </span>
-                          </div>
                           <span className="text-sm text-[#C4C9D4]">
-                            {feature.result}
+                            {bubble.text}
                           </span>
                         </div>
                       </div>
@@ -178,7 +193,7 @@ export function TelegramCTASection() {
               <div className="px-4 py-3 border-t border-white/5">
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5">
                   <span className="text-sm text-[#6B7280]/50">
-                    Message Agentin...
+                    Message Weebo...
                   </span>
                 </div>
               </div>

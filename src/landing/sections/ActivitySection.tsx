@@ -11,19 +11,20 @@ interface Activity {
 }
 
 const activities: Activity[] = [
-  { id: 1, company: '@priya', action: 'created 3 smart reminders', icon: Calendar, time: '2s ago', color: '#00F0FF' },
-  { id: 2, company: '@raj', action: 'logged morning gym habit', icon: CheckCircle, time: '5s ago', color: '#ADFF2F' },
-  { id: 3, company: '@neha', action: 'got a daily brief via Telegram', icon: Send, time: '12s ago', color: '#FF2D78' },
-  { id: 4, company: '@arjun', action: 'asked Jarvis to debug React code', icon: MessageSquare, time: '18s ago', color: '#00F0FF' },
-  { id: 5, company: '@sara', action: 'saved meeting notes to Docs', icon: Clock, time: '34s ago', color: '#FFB800' },
-  { id: 6, company: '@dev', action: 'tracked ₹850 Swiggy expense', icon: TrendingUp, time: '45s ago', color: '#00FF88' },
-  { id: 7, company: '@anita', action: 'started a 25-min focus session', icon: Clock, time: '1m ago', color: '#8B5CF6' },
-  { id: 8, company: '@karan', action: 'published portfolio page', icon: CheckCircle, time: '2m ago', color: '#FF2D78' },
+  { id: 1, company: 'Cal', action: 'Reminder: Team standup in 15 minutes', icon: Calendar, time: 'now', color: '#4ECDC4' },
+  { id: 2, company: 'Weebo', action: 'answered 3 questions about GST filing', icon: MessageSquare, time: '2s ago', color: '#00F0FF' },
+  { id: 3, company: 'Cal', action: 'scheduled meeting with Rahul at 3 PM', icon: Calendar, time: '8s ago', color: '#4ECDC4' },
+  { id: 4, company: 'Aria', action: 'drafting social media banner copy', icon: Send, time: '12s ago', color: '#FF2D78' },
+  { id: 5, company: 'Forge', action: 'deployed REST API endpoint to production', icon: CheckCircle, time: '22s ago', color: '#FFB800' },
+  { id: 6, company: 'Pulse', action: 'analyzing Q1 revenue trends', icon: TrendingUp, time: '31s ago', color: '#00FF88' },
+  { id: 7, company: 'Echo', action: 'summarized 12 unread emails from clients', icon: MessageSquare, time: '45s ago', color: '#FF6B35' },
+  { id: 8, company: 'Jarvis', action: 'fixed TypeScript build error in auth module', icon: CheckCircle, time: '1m ago', color: '#ADFF2F' },
+  { id: 9, company: 'Nova', action: 'generating dashboard wireframes', icon: Clock, time: '2m ago', color: '#E040FB' },
 ];
 
 const stats = [
-  { label: 'Messages', value: '2.4M+', icon: MessageSquare },
-  { label: 'Uptime', value: '99.99%', icon: CheckCircle },
+  { label: 'completed', value: '5', icon: CheckCircle },
+  { label: 'in progress', value: '3', icon: Clock },
 ];
 
 export function ActivitySection() {
@@ -87,14 +88,14 @@ export function ActivitySection() {
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
             }`}
           >
-            <h2 
+            <h2
               className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
-              Live <span className="text-gradient">Activity</span>
+              Your Agents, <span className="text-gradient">Always Working</span>
             </h2>
             <p className="text-lg text-[#6B7280] mb-8">
-              See the network working in real time—reminders, messages, tasks, and automations.
+              While you focus on what matters, your AI team handles everything else -- around the clock, in parallel.
             </p>
 
             {/* Stats */}
@@ -147,7 +148,6 @@ export function ActivitySection() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <span className="font-medium text-[#E8E8F0]">{activity.company}</span>
-                      <span className="text-[#6B7280]">AI</span>
                       <span className="text-[#6B7280]">{activity.action}</span>
                     </div>
                   </div>
@@ -167,7 +167,14 @@ export function ActivitySection() {
             {/* Live Indicator */}
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#6B7280]">
               <div className="w-2 h-2 bg-[#00FF88] rounded-full motion-safe:animate-pulse" />
-              <span className="font-mono">Live updates from the network</span>
+              <span className="font-mono">LIVE</span>
+              <span className="text-[#6B7280] mx-1">|</span>
+              <span className="font-mono">Agent Activity</span>
+              <span className="text-[#6B7280] mx-1">|</span>
+              <span className="font-mono">9 agents online</span>
+            </div>
+            <div className="mt-3 text-center text-xs text-[#6B7280] font-mono">
+              All systems healthy | 9 agents &middot; 24/7 uptime &middot; Your server, your data
             </div>
           </div>
         </div>

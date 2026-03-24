@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Mail, Send, CheckCircle, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Send, CheckCircle, ArrowRight, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { contactService } from '@/services/api';
 
 interface ContactSectionProps {
   onEnterDashboard?: () => void;
@@ -12,15 +10,8 @@ interface ContactSectionProps {
 export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    message: '',
-  });
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -39,32 +30,11 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
     return () => observer.disconnect();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const { data } = await contactService.submit({
-        name: formData.name,
-        email: formData.email,
-        company: formData.company || undefined,
-        message: formData.message,
-      });
-
-      if (data.success) {
-        setIsSubmitted(true);
-        setFormData({ name: '', email: '', company: '', message: '' });
-      } else {
-        setErrorMessage(data.message || 'Something went wrong. Please try again.');
-      }
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      setErrorMessage(
-        axiosErr.response?.data?.message || 'Network error. Please try again later.',
-      );
-    } finally {
-      setIsSubmitting(false);
+    if (email.trim()) {
+      setIsSubscribed(true);
+      setEmail('');
     }
   };
 
@@ -90,170 +60,97 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Left: Content */}
-          <div 
-            className={`transition-all duration-700 ${
-              isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
+      <div className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 text-center">
+        <div
+          className={`transition-all duration-700 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+          }`}
+        >
+          {/* Header badge */}
+          <span className="inline-block px-4 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-sm text-[#00F0FF] font-medium mb-6">
+            Get Started
+          </span>
+
+          <h2
+            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+            style={{ fontFamily: 'Syne, sans-serif' }}
+          >
+            Ready to Command <span className="text-gradient">Your AI Team?</span>
+          </h2>
+
+          <p className="text-lg text-[#6B7280] mb-8 max-w-xl mx-auto">
+            Join 2,000+ Indian professionals who switched to Agentin.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            <Button
+              onClick={onEnterDashboard}
+              className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/25 group"
+            >
+              Start Free &mdash; Rs.0 Forever
+              <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </Button>
+
+            <a
+              href="https://t.me/Weebo_gs_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                variant="outline"
+                className="border-[#00F0FF]/50 text-[#E8E8F0] hover:bg-[#00F0FF]/10 px-8 py-6 rounded-xl font-medium text-lg transition-all duration-300"
+              >
+                <MessageCircle className="mr-2 w-5 h-5" />
+                Talk to Weebo on Telegram
+              </Button>
+            </a>
+          </div>
+
+          <p className="text-sm text-[#6B7280]/70 mb-12">
+            No credit card required. Self-host in 5 minutes.
+          </p>
+
+          {/* Email Signup */}
+          <div
+            className={`glass-card rounded-2xl p-6 sm:p-8 max-w-lg mx-auto transition-all duration-700 delay-200 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            <h2 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
-              style={{ fontFamily: 'Syne, sans-serif' }}
-            >
-              Ready to deploy <span className="text-gradient">your AI?</span>
-            </h2>
-            
-            <p className="text-lg text-[#6B7280] mb-8">
-              Request access, set your persona, and go live in days—not months.
-            </p>
-
-            {/* Contact Info */}
-            <div className="space-y-4 mb-8">
-              <div className="flex items-center gap-4 p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
-                <div className="w-12 h-12 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-[#00F0FF]" />
-                </div>
-                <div>
-                  <div className="text-sm text-[#6B7280]">Email us at</div>
-                  <div className="text-lg font-medium text-[#E8E8F0]">hello@agentin.chat</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
-                <div className="w-12 h-12 rounded-lg bg-[#ADFF2F]/10 flex items-center justify-center">
+            {isSubscribed ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 rounded-full bg-[#ADFF2F]/20 flex items-center justify-center mx-auto mb-3">
                   <CheckCircle className="w-6 h-6 text-[#ADFF2F]" />
                 </div>
-                <div>
-                  <div className="text-sm text-[#6B7280]">Typical response time</div>
-                  <div className="text-lg font-medium text-[#E8E8F0]">Within 24 hours</div>
-                </div>
+                <h3 className="text-lg font-bold text-[#E8E8F0] mb-1">You're on the list!</h3>
+                <p className="text-sm text-[#6B7280]">We'll send you updates and early access features.</p>
               </div>
-            </div>
-
-            {/* Trust badges */}
-            <div className="flex flex-wrap gap-3">
-              {['SOC 2 Compliant', 'GDPR Ready', '99.99% Uptime'].map((badge, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/30 text-sm text-[#6B7280]"
-                >
-                  {badge}
-                </span>
-              ))}
-            </div>
-
-            {/* Try Demo Button */}
-            {onEnterDashboard && (
-              <Button
-                onClick={onEnterDashboard}
-                variant="outline"
-                className="mt-6 border-[#00F0FF]/50 text-[#E8E8F0] hover:bg-[#00F0FF]/10"
-              >
-                Try Demo Dashboard
-              </Button>
-            )}
-          </div>
-
-          {/* Right: Contact Form */}
-          <div 
-            className={`transition-all duration-700 delay-200 ${
-              isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
-            }`}
-          >
-            <div className="glass-card rounded-2xl p-5 sm:p-8">
-              {isSubmitted ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-[#ADFF2F]/20 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-[#ADFF2F]" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#E8E8F0] mb-2">Request Sent!</h3>
-                  <p className="text-[#6B7280]">We'll be in touch within 24 hours.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm text-[#6B7280] mb-2">Name</label>
-                      <Input
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-[#6B7280] mb-2">Work Email</label>
-                      <Input
-                        type="email"
-                        placeholder="john@company.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-[#6B7280] mb-2">Company</label>
-                    <Input
-                      placeholder="Acme Inc."
-                      value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-[#6B7280] mb-2">Message</label>
-                    <Textarea
-                      placeholder="Tell us about your use case..."
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20 min-h-[120px] resize-none"
-                      rows={4}
-                    />
-                  </div>
-
-                  {errorMessage && (
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      {errorMessage}
-                    </div>
-                  )}
-
+            ) : (
+              <>
+                <p className="text-[#E8E8F0] font-medium mb-4">
+                  Get product updates and early access features
+                </p>
+                <form onSubmit={handleSubscribe} className="flex gap-3">
+                  <Input
+                    type="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 rounded-xl text-[#E8E8F0] placeholder:text-[#6B7280]/50 focus:border-[#00F0FF] focus:ring-[#00F0FF]/20"
+                    required
+                  />
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-[#00F0FF] hover:bg-[#6B51EF] text-white py-6 rounded-xl font-medium text-lg transition-all duration-300 hover:shadow-lg hover:shadow-[#00F0FF]/25 group disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[#00F0FF]/70"
+                    className="bg-[#00F0FF] hover:bg-[#6B51EF] text-white rounded-xl font-medium transition-all duration-300 px-6"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 w-5 h-5 motion-safe:animate-spin" />
-                        <span>Sending...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 w-5 h-5" />
-                        Request Access
-                        <Send className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                      </>
-                    )}
+                    <Send className="mr-2 w-4 h-4" />
+                    Subscribe
                   </Button>
-
-                  <p className="text-center text-sm text-[#6B7280]/70">
-                    We typically reply within 24 hours.
-                  </p>
                 </form>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Footer is now in FooterSection */}
       </div>
     </section>
   );

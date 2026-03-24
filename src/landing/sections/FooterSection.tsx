@@ -1,30 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Hexagon, Twitter, Github, Linkedin } from 'lucide-react';
+import { Hexagon } from 'lucide-react';
 
 const productLinks = [
   { label: 'Features', to: '/#templates' },
   { label: 'Pricing', to: '/#pricing' },
-  { label: 'Agents', to: '/#persona' },
-  { label: 'Explore', to: '/explore' },
-];
-
-const resourceLinks = [
+  { label: 'Security', to: '/#security' },
   { label: 'Documentation', to: '/docs' },
-  { label: 'Status', to: '/status' },
-  { label: 'Login', to: '/login' },
-  { label: 'Sign Up', to: '/login?signup=1' },
+  { label: 'Telegram', href: 'https://t.me/Weebo_gs_bot' },
 ];
 
 const legalLinks = [
   { label: 'Privacy Policy', to: '/privacy' },
   { label: 'Terms of Service', to: '/terms' },
-];
-
-const socialLinks = [
-  { label: 'Twitter', icon: Twitter, href: 'https://twitter.com/agentinchat' },
-  { label: 'GitHub', icon: Github, href: 'https://github.com/agentin' },
-  { label: 'LinkedIn', icon: Linkedin, href: 'https://linkedin.com/company/agentin' },
+  { label: 'Status', to: '/status' },
 ];
 
 export function FooterSection() {
@@ -73,37 +62,21 @@ export function FooterSection() {
     >
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Main Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 lg:gap-8 mb-12">
           {/* Column 1 - Brand */}
           <div className={fadeIn} style={fadeInStyle(0)}>
             <div className="flex items-center gap-2 mb-3">
               <Hexagon className="w-7 h-7 text-[#00F0FF]" />
               <span
-                className="text-xl font-bold text-[#F4F6FF]"
+                className="text-xl font-bold text-[#F4F6FF] lowercase"
                 style={{ fontFamily: 'Syne, sans-serif' }}
               >
-                Agentin
+                agentin
               </span>
             </div>
-            <p className="text-sm text-[#6B7280] mb-5 leading-relaxed">
-              Your AI-powered personal assistant
+            <p className="text-sm text-[#6B7280] leading-relaxed">
+              Your AI, Your Server, Your Rules.
             </p>
-
-            {/* Social Links */}
-            <div className="flex items-center gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className="w-9 h-9 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/10 flex items-center justify-center text-[#6B7280] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
-                >
-                  <social.icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Column 2 - Product */}
@@ -114,38 +87,30 @@ export function FooterSection() {
             <ul className="space-y-2.5" role="list">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
-                  >
-                    {link.label}
-                  </Link>
+                  {'href' in link && link.href ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.to!}
+                      className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Column 3 - Resources */}
+          {/* Column 3 - Legal */}
           <div className={fadeIn} style={fadeInStyle(200)}>
-            <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
-              Resources
-            </h3>
-            <ul className="space-y-2.5" role="list">
-              {resourceLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none rounded-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 4 - Legal */}
-          <div className={fadeIn} style={fadeInStyle(300)}>
             <h3 className="text-sm font-semibold text-[#E8E8F0] uppercase tracking-wider mb-4">
               Legal
             </h3>
@@ -166,14 +131,9 @@ export function FooterSection() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#00F0FF]/10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-sm text-[#6B7280]/60">
-              &copy; 2026 Agentin Chat. All rights reserved.
-            </p>
-            <p className="text-sm text-[#6B7280]/60">
-              Made with <span aria-label="love">&hearts;</span> in India
-            </p>
-          </div>
+          <p className="text-sm text-[#6B7280]/60 text-center">
+            &copy; 2026 Agentin. Made with <span aria-label="love">&hearts;</span> in India
+          </p>
         </div>
       </div>
     </footer>
