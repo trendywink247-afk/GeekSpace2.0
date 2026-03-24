@@ -5,6 +5,7 @@ on:
     branches: [main, dev, staging, live-production]
   pull_request:
     branches: [main, dev, staging, live-production]
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
