@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.2.0 · Beast Mode Sessions 1-9 complete · 2552 tests passing · 38 pages polished · Indian-first features · 15+ Docker services · Security-hardened · main = live-production
+> v3.2.0 · Beast Mode Sessions 1-10 complete · 2552 tests passing · Security-hardened · 15+ Docker services · PR-based CI/CD · main = live-production
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -176,7 +176,7 @@ graph TB
 
     Caddy -->|ai.agentin.chat| App
     Caddy -->|api.agentin.chat| App
-    Caddy -->|ai.geekspace.space| Staging
+    Caddy -->|staging.agentin.chat| Staging
     Caddy -->|status.agentin.chat| UptimeKuma
 
     subgraph Docker["Docker Compose — 15+ Services"]
@@ -288,7 +288,7 @@ Chat → classifyIntent() → routeChat() → [provider waterfall] → parseActi
 
 ## OOM Protection
 
-Three-layer memory protection for the 16GB VPS:
+Three-layer memory protection for the 32GB VPS:
 
 | Layer | Mechanism | Details |
 |-------|-----------|---------|
@@ -304,9 +304,7 @@ Three-layer memory protection for the 16GB VPS:
 |--------|-----------|---------|
 | ai.agentin.chat | geekspace:3001 | Production |
 | api.agentin.chat | geekspace:3001 | Production API |
-| ai.geekspace.space | staging:3002 | Staging / Test |
-| api.geekspace.space | staging:3002 | Staging API |
-| staging.agentin.chat | staging:3002 | Staging (alt URL) |
+| staging.agentin.chat | staging:3002 | Staging / Preview |
 | status.agentin.chat | uptime-kuma:3001 | Uptime monitoring |
 
 Staging has isolated Redis (64MB cap) and a separate DB volume.
@@ -359,8 +357,9 @@ cd ~/GeekSpace2.0 && npm run build           # frontend
 # 2. Redeploy backend container
 docker compose up -d --build geekspace
 
-# 3. Sync static files (Caddy serves from host, not container)
-docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+# 3. Sync static files (Caddy serves from /srv, not container)
+docker cp geekspace-app:/app/dist/assets/. /srv/assets/
+docker cp geekspace-app:/app/dist/index.html /srv/index.html
 
 # 4. Update Caddy config (if Caddyfile changed)
 cp caddy/Caddyfile /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile

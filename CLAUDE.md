@@ -1,228 +1,101 @@
-# Claude Code Configuration - RuFlo V3
+# Agentin — Claude Code Configuration
 
-## Behavioral Rules (Always Enforced)
+## Behavioral Rules
 
 - Do what has been asked; nothing more, nothing less
-- NEVER create files unless they're absolutely necessary for achieving your goal
-- ALWAYS prefer editing an existing file to creating a new one
-- NEVER proactively create documentation files (*.md) or README files unless explicitly requested
+- NEVER create files unless absolutely necessary — prefer editing existing files
+- NEVER proactively create documentation (*.md) or README files unless explicitly asked
 - NEVER save working files, text/mds, or tests to the root folder
-- Never continuously check status after spawning a swarm — wait for results
 - ALWAYS read a file before editing it
 - NEVER commit secrets, credentials, or .env files
+- ALWAYS create PRs for changes — never push directly to main
 
 ## File Organization
 
-- NEVER save to root folder — use the directories below
-- Use `/src` for source code files
-- Use `/tests` for test files
-- Use `/docs` for documentation and markdown files
-- Use `/config` for configuration files
-- Use `/scripts` for utility scripts
-- Use `/examples` for example code
-
-## Project Architecture
-
-- Follow Domain-Driven Design with bounded contexts
-- Keep files under 500 lines
-- Use typed interfaces for all public APIs
-- Prefer TDD London School (mock-first) for new code
-- Use event sourcing for state changes
-- Ensure input validation at system boundaries
-
-### Project Config
-
-- **Topology**: hierarchical-mesh
-- **Max Agents**: 15
-- **Memory**: hybrid
-- **HNSW**: Enabled
-- **Neural**: Enabled
+- `/src` — React frontend (Vite + TypeScript)
+- `/server` — Express backend (TypeScript)
+- `/docs` — documentation
+- `/ops` — operational scripts, test harnesses, AI handoff docs
+- `/scripts` — utility scripts
+- `/e2e` — Playwright E2E test specs
+- `/agents` — agent YAML configs
+- `/caddy` — Caddyfile (reverse proxy config)
+- `/picoclaw` — PicoClaw local LLM service
+- `/browser-agent` — headless browser Docker service
+- `/bridge` — Edith bridge service
+- `/geekos` — GeekOS Docker service
 
 ## Build & Test
 
 ```bash
-# Build
-npm run build
-
-# Test
-npm test
-
-# Lint
-npm run lint
+npm run build              # frontend (tsc -b && vite build)
+cd server && npm run build # backend (0 TS errors)
+npm test                   # server unit tests (2552 pass)
+npm run lint               # ESLint
+npx tsc --noEmit           # typecheck frontend
 ```
 
-- ALWAYS run tests after making code changes
-- ALWAYS verify build succeeds before committing
+- ALWAYS verify `npx tsc --noEmit` passes before committing
+- Docker build uses `tsc -b` which is stricter than `--noEmit` — unused imports will fail
 
-## Security Rules
-
-- NEVER hardcode API keys, secrets, or credentials in source files
-- NEVER commit .env files or any file containing secrets
-- Always validate user input at system boundaries
-- Always sanitize file paths to prevent directory traversal
-- Run `npx @claude-flow/cli@latest security scan` after security-related changes
-
-### Session 9 Security Hardening — Gotchas
-
-- **Gate cookie**: value lives in `GATE_COOKIE_VALUE` env var, NOT hardcoded. `gate.html` POSTs to `/api/gate-verify`
-- **JWT**: 15m access tokens, 30d refresh tokens. Do not increase access token expiry
-- **Health endpoint**: `/api/health` is public (status only). `/api/health/detailed` requires admin token
-- **TTS**: uses `execFile()` not `exec()`. Never use `exec()` with user input
-- **Docker**: all containers have `no-new-privileges`. Do not remove it
-- **Passwords**: all service passwords in `.env`, NOT in `docker-compose.yml`. Never add defaults
-- **sshd**: keys-only, no password auth. Config at `/etc/ssh/sshd_config` + `/etc/ssh/sshd_config.d/`
-- **n8n**: bound to `127.0.0.1` only — not exposed externally
-- **Caddy**: standalone host process (PID 777), NOT a Docker container. Config at `/etc/caddy/Caddyfile`, repo copy at `caddy/Caddyfile`
-
-## Deploy Workflow
+## Git Workflow
 
 ```bash
-# 1. Build
-cd ~/GeekSpace2.0/server && npm run build   # 0 TS errors
-cd ~/GeekSpace2.0 && npm run build           # frontend
+# 1. Create feature branch
+git checkout -b feat/my-change main
 
-# 2. Deploy backend
-docker compose up -d --build geekspace
+# 2. Make changes, verify build
+npx tsc --noEmit && npm run build
 
-# 3. Sync static files (Caddy serves from host, not container)
-docker cp geekspace-app:/app/dist/. /var/www/geekspace/
+# 3. Commit, push, create PR
+git push -u origin feat/my-change
+gh pr create --title "feat: description" --body "..."
 
-# 4. Caddy config (if Caddyfile changed)
-cp caddy/Caddyfile /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile
-
-# 5. Verify
-curl localhost:3001/api/health               # 12 services
+# 4. CI runs: static checks → unit tests → staging deploy (PRs) or production deploy (main)
+# 5. Merge after CI green
+gh pr merge <number> --squash --delete-branch --admin
 ```
 
-Prefer `./scripts/prod.sh` which handles steps 2-3 automatically.
+## Deploy (CI handles this automatically)
+
+**PR merge to main triggers:** static checks → unit tests → staging deploy → production deploy → branch promotion
+
+```bash
+# Manual deploy (if needed)
+docker compose up -d --build geekspace        # backend
+docker cp geekspace-app:/app/dist/assets/. /srv/assets/
+docker cp geekspace-app:/app/dist/index.html /srv/index.html
+docker cp geekspace-app:/app/dist/office /srv/office 2>/dev/null || true
+curl localhost:3001/api/health                 # 12 services
+```
+
+**NOTE:** Caddy serves static files from `/srv`, NOT from Docker container.
+
+## Security Gotchas
+
+- **Gate cookie**: value in `GATE_COOKIE_VALUE` env var, NOT hardcoded
+- **JWT**: 15m access / 30d refresh. Do not increase access token expiry
+- **Health**: `/api/health` is public (status only). `/api/health/detailed` requires admin token
+- **TTS**: uses `execFile()` not `exec()`. Never use `exec()` with user input
+- **Docker**: all containers have `no-new-privileges`. Do not remove it
+- **Passwords**: all in `.env`, NOT in `docker-compose.yml`. Never add defaults
+- **sshd**: keys-only, no password auth
+- **n8n**: bound to `127.0.0.1` only
+- **Caddy**: standalone host process, NOT Docker. Config at `/etc/caddy/Caddyfile`, repo copy at `caddy/Caddyfile`
 
 ## Backups
 
 - **Daily**: 3 AM via `/root/geekspace-backup.sh` (SQLite WAL, Postgres dump, Docker volumes, `.env`)
-- **Off-site**: `scripts/offsite-backup.sh` (requires rclone remote configured)
-- **Encrypted**: set `GPG_PASSPHRASE` env var for encrypted backups
+- **Off-site**: `scripts/offsite-backup.sh` (requires rclone remote)
+- **Encrypted**: set `GPG_PASSPHRASE` env var
 
-## Concurrency: 1 MESSAGE = ALL RELATED OPERATIONS
+## Architecture
 
-- All operations MUST be concurrent/parallel in a single message
-- Use Claude Code's Task tool for spawning agents, not just MCP
-- ALWAYS batch ALL todos in ONE TodoWrite call (5-10+ minimum)
-- ALWAYS spawn ALL agents in ONE message with full instructions via Task tool
-- ALWAYS batch ALL file reads/writes/edits in ONE message
-- ALWAYS batch ALL Bash commands in ONE message
-
-## Swarm Orchestration
-
-- MUST initialize the swarm using CLI tools when starting complex tasks
-- MUST spawn concurrent agents using Claude Code's Task tool
-- Never use CLI tools alone for execution — Task tool agents do the actual work
-- MUST call CLI tools AND Task tool in ONE message for complex work
-
-### 3-Tier Model Routing (ADR-026)
-
-| Tier | Handler | Latency | Cost | Use Cases |
-|------|---------|---------|------|-----------|
-| **1** | Agent Booster (WASM) | <1ms | $0 | Simple transforms (var→const, add types) — Skip LLM |
-| **2** | Haiku | ~500ms | $0.0002 | Simple tasks, low complexity (<30%) |
-| **3** | Sonnet/Opus | 2-5s | $0.003-0.015 | Complex reasoning, architecture, security (>30%) |
-
-- Always check for `[AGENT_BOOSTER_AVAILABLE]` or `[TASK_MODEL_RECOMMENDATION]` before spawning agents
-- Use Edit tool directly when `[AGENT_BOOSTER_AVAILABLE]`
-
-## Swarm Configuration & Anti-Drift
-
-- ALWAYS use hierarchical topology for coding swarms
-- Keep maxAgents at 6-8 for tight coordination
-- Use specialized strategy for clear role boundaries
-- Use `raft` consensus for hive-mind (leader maintains authoritative state)
-- Run frequent checkpoints via `post-task` hooks
-- Keep shared memory namespace for all agents
-
-```bash
-npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized
-```
-
-## Swarm Execution Rules
-
-- ALWAYS use `run_in_background: true` for all agent Task calls
-- ALWAYS put ALL agent Task calls in ONE message for parallel execution
-- After spawning, STOP — do NOT add more tool calls or check status
-- Never poll TaskOutput or check swarm status — trust agents to return
-- When agent results arrive, review ALL results before proceeding
-
-## V3 CLI Commands
-
-### Core Commands
-
-| Command | Subcommands | Description |
-|---------|-------------|-------------|
-| `init` | 4 | Project initialization |
-| `agent` | 8 | Agent lifecycle management |
-| `swarm` | 6 | Multi-agent swarm coordination |
-| `memory` | 11 | AgentDB memory with HNSW search |
-| `task` | 6 | Task creation and lifecycle |
-| `session` | 7 | Session state management |
-| `hooks` | 17 | Self-learning hooks + 12 workers |
-| `hive-mind` | 6 | Byzantine fault-tolerant consensus |
-
-### Quick CLI Examples
-
-```bash
-npx @claude-flow/cli@latest init --wizard
-npx @claude-flow/cli@latest agent spawn -t coder --name my-coder
-npx @claude-flow/cli@latest swarm init --v3-mode
-npx @claude-flow/cli@latest memory search --query "authentication patterns"
-npx @claude-flow/cli@latest doctor --fix
-```
-
-## Available Agents (60+ Types)
-
-### Core Development
-`coder`, `reviewer`, `tester`, `planner`, `researcher`
-
-### Specialized
-`security-architect`, `security-auditor`, `memory-specialist`, `performance-engineer`
-
-### Swarm Coordination
-`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
-
-### GitHub & Repository
-`pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
-
-### SPARC Methodology
-`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`
-
-## Memory Commands Reference
-
-```bash
-# Store (REQUIRED: --key, --value; OPTIONAL: --namespace, --ttl, --tags)
-npx @claude-flow/cli@latest memory store --key "pattern-auth" --value "JWT with refresh" --namespace patterns
-
-# Search (REQUIRED: --query; OPTIONAL: --namespace, --limit, --threshold)
-npx @claude-flow/cli@latest memory search --query "authentication patterns"
-
-# List (OPTIONAL: --namespace, --limit)
-npx @claude-flow/cli@latest memory list --namespace patterns --limit 10
-
-# Retrieve (REQUIRED: --key; OPTIONAL: --namespace)
-npx @claude-flow/cli@latest memory retrieve --key "pattern-auth" --namespace patterns
-```
-
-## Quick Setup
-
-```bash
-claude mcp add claude-flow -- npx -y @claude-flow/cli@latest
-npx @claude-flow/cli@latest daemon start
-npx @claude-flow/cli@latest doctor --fix
-```
-
-## Claude Code vs CLI Tools
-
-- Claude Code's Task tool handles ALL execution: agents, file ops, code generation, git
-- CLI tools handle coordination via Bash: swarm init, memory, hooks, routing
-- NEVER use CLI tools as a substitute for Task tool agents
-
-## Support
-
-- Documentation: https://github.com/ruvnet/claude-flow
-- Issues: https://github.com/ruvnet/claude-flow/issues
+- React 19 + Vite + TypeScript frontend
+- Express + TypeScript backend
+- SQLite (primary) + Redis (cache)
+- Docker Compose (15 services)
+- Caddy reverse proxy (host process)
+- LLM routing: cloud-first waterfall (OpenRouter → PicoClaw → Ollama → Groq → Together)
+- 9 AI personalities with auto-delegation
+- Telegram bot: @Weebo_gs_bot
