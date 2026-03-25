@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { LandingPage } from './landing/LandingPage';
 import { DashboardApp } from './dashboard/DashboardApp';
@@ -21,6 +21,21 @@ import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+/** Scroll to #hash on navigation (React Router doesn't do this for SPAs) */
+function HashScroller() {
+  const { hash, pathname } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    // Small delay to let the page render before scrolling
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [hash, pathname]);
+  return null;
+}
+
 function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const onboardingCompleted = useAuthStore((s) => s.onboarding.completed);
@@ -30,6 +45,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <HashScroller />
       {/* Skip to main content — accessibility for keyboard users */}
       <a
         href="#main-content"
