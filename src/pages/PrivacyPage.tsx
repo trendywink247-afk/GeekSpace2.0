@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, Lock, Eye, Server, Trash2, Mail, Database, Globe } from 'lucide-react';
+import { Shield, Lock, Eye, Server, Trash2, Mail, Database, Globe } from 'lucide-react';
 
 export function PrivacyPage() {
   const navigate = useNavigate();
