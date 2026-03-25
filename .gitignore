@@ -62,5 +62,19 @@ playwright/.auth
 *.db-shm
 *.db-wal
 server/data/*.db*
+
+# Debug / temp artifacts
 tmp-screenshots/
+.landing-reference.txt
+.superpowers/
+ruflo.config.json
+apminsightdata/
+apminsightnode.json
+
+# Server sandbox (local dev)
+server/sandbox/
+server/SANDBOX_PERF_SUMMARY.md
+
+# Tool state
 .gstack/
+.worktrees/
