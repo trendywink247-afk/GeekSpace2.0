@@ -1,8 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, AlertTriangle, Scale, CreditCard, Ban } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, AlertTriangle, Scale, CreditCard, Ban } from 'lucide-react';
 
 export function TermsPage() {
-  const navigate = useNavigate();
 
   const sections = [
     {
