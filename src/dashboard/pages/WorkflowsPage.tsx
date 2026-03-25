@@ -135,10 +135,10 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
   };
 
   return (
-    <Card className="border-cyan-500/30">
+    <Card className="border-violet-500/30">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Plus className="h-4 w-4 text-cyan-400" />
+          <Plus className="h-4 w-4 text-violet-400" />
           New Workflow
         </CardTitle>
       </CardHeader>
@@ -215,7 +215,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
 
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving} className="bg-cyan-500 hover:bg-cyan-600 text-black">
+          <Button onClick={handleSubmit} disabled={saving} className="bg-violet-500 hover:bg-violet-600 text-white">
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Create Workflow
           </Button>
@@ -385,7 +385,7 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
                 placeholder="Input for {{user_input}} (optional)"
                 className="text-sm"
               />
-              <Button onClick={handleRun} disabled={running} size="sm" className="w-full bg-cyan-500 hover:bg-cyan-600 text-black">
+              <Button onClick={handleRun} disabled={running} size="sm" className="w-full bg-violet-500 hover:bg-violet-600 text-white">
                 {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
                 {running ? "Running\u2026" : "Run Workflow"}
               </Button>
@@ -518,7 +518,7 @@ export function WorkflowsPage() {
           <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
             <RefreshCw className={"h-4 w-4 " + spinCls} />
           </Button>
-          <Button onClick={() => setShowForm(true)} size="sm" className="bg-cyan-500 hover:bg-cyan-600 text-black">
+          <Button onClick={() => setShowForm(true)} size="sm" className="bg-violet-500 hover:bg-violet-600 text-white">
             <Plus className="h-4 w-4 mr-1" />
             New
           </Button>
@@ -528,25 +528,25 @@ export function WorkflowsPage() {
       {error && <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>}
 
       {/* How it works */}
-      <div className="rounded-xl p-[1px] bg-gradient-to-r from-cyan-500/30 via-purple-500/20 to-green-500/30">
+      <div className="rounded-xl p-[1px] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-green-500/30">
       <Card className="rounded-[11px]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <GitBranch className="h-4 w-4 text-cyan-400" />
+            <GitBranch className="h-4 w-4 text-violet-400" />
             How It Works
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
-            <span className="text-cyan-400 font-bold mt-0.5">1.</span>
+            <span className="text-violet-400 font-bold mt-0.5">1.</span>
             <span>Each workflow is a chain of agent steps &mdash; Weebo, Jarvis, or Edith.</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-cyan-400 font-bold mt-0.5">2.</span>
+            <span className="text-violet-400 font-bold mt-0.5">2.</span>
             <span>Each step&apos;s output is passed to the next using <code className="bg-muted px-1 rounded text-xs">{"{{previous_output}}"}</code> or <code className="bg-muted px-1 rounded text-xs">{"{{output_key}}"}</code>.</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-cyan-400 font-bold mt-0.5">3.</span>
+            <span className="text-violet-400 font-bold mt-0.5">3.</span>
             <span>Use <code className="bg-muted px-1 rounded text-xs">{"{{user_input}}"}</code> anywhere to inject your input when running.</span>
           </div>
         </CardContent>
@@ -568,12 +568,12 @@ export function WorkflowsPage() {
         </div>
       ) : workflows.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-500/5 flex items-center justify-center mx-auto mb-4">
-            <GitBranch className="h-8 w-8 text-cyan-400/30" />
+          <div className="w-16 h-16 rounded-2xl bg-violet-500/5 flex items-center justify-center mx-auto mb-4">
+            <GitBranch className="h-8 w-8 text-violet-400/30" />
           </div>
           <p className="font-medium text-foreground">No workflows yet</p>
           <p className="text-sm mt-1 max-w-xs mx-auto">Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.</p>
-          <Button onClick={() => setShowForm(true)} size="sm" className="mt-4 bg-cyan-500 hover:bg-cyan-600 text-black">
+          <Button onClick={() => setShowForm(true)} size="sm" className="mt-4 bg-violet-500 hover:bg-violet-600 text-white">
             <Plus className="h-4 w-4 mr-1" />Create Workflow
           </Button>
         </div>

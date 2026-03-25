@@ -24,50 +24,109 @@ const strengthConfig = {
   strong: { width: '100%', color: '#10B981', label: 'Strong' },
 } as const;
 
-function OrbitalRings() {
+/* ─── 3D Agentin Aura ─── */
+function AgentinAura() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      {/* Outer ring */}
-      <div
-        className="absolute w-[500px] h-[500px] rounded-full border border-[#8B5CF6]/10"
-        style={{ animation: 'orbit 20s linear infinite' }}
-      >
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8B5CF6]/60" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#10B981]/40" />
-      </div>
-      {/* Middle ring */}
-      <div
-        className="absolute w-[350px] h-[350px] rounded-full border border-[#F59E0B]/8"
-        style={{ animation: 'orbit 14s linear infinite reverse' }}
-      >
-        <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#F59E0B]/50" />
-      </div>
-      {/* Inner ring */}
-      <div
-        className="absolute w-[200px] h-[200px] rounded-full border border-[#8B5CF6]/10"
-        style={{ animation: 'orbit 10s linear infinite' }}
-      >
-        <div className="absolute top-0 right-0 w-1 h-1 rounded-full bg-[#8B5CF6]/60" />
-      </div>
-    </div>
-  );
-}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ perspective: '900px' }}>
+      <style>{`
+        @keyframes aura-spin{0%{transform:rotateX(60deg) rotateZ(0deg)}100%{transform:rotateX(60deg) rotateZ(360deg)}}
+        @keyframes aura-spin-r{0%{transform:rotateX(65deg) rotateZ(360deg)}100%{transform:rotateX(65deg) rotateZ(0deg)}}
+        @keyframes aura-spin-tilt{0%{transform:rotateX(55deg) rotateY(15deg) rotateZ(0deg)}100%{transform:rotateX(55deg) rotateY(15deg) rotateZ(360deg)}}
+        @keyframes aura-breathe{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.15);opacity:0.8}}
+        @keyframes aura-pulse-ring{0%,100%{opacity:0.15;transform:rotateX(70deg) scale(1)}50%{opacity:0.3;transform:rotateX(70deg) scale(1.05)}}
+        @keyframes aura-float-particle{0%,100%{transform:translateY(0) translateZ(0)}50%{transform:translateY(-30px) translateZ(20px)}}
+        @keyframes aura-core-glow{0%,100%{box-shadow:0 0 60px 20px rgba(139,92,246,0.15),0 0 120px 60px rgba(139,92,246,0.05)}50%{box-shadow:0 0 80px 30px rgba(139,92,246,0.25),0 0 160px 80px rgba(139,92,246,0.08)}}
+      `}</style>
 
-function FloatingParticles() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(6)].map((_, i) => (
+      {/* Volumetric core glow */}
+      <div
+        className="absolute w-[120px] h-[120px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
+          animation: 'aura-core-glow 4s ease-in-out infinite',
+        }}
+      />
+      {/* Inner breathing orb */}
+      <div
+        className="absolute w-[60px] h-[60px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(245,158,11,0.15) 50%, transparent 70%)',
+          animation: 'aura-breathe 3s ease-in-out infinite',
+          filter: 'blur(8px)',
+        }}
+      />
+
+      {/* 3D Ring 1 — outer, tilted */}
+      <div
+        className="absolute w-[420px] h-[420px] rounded-full"
+        style={{
+          border: '1px solid rgba(139,92,246,0.12)',
+          animation: 'aura-spin 18s linear infinite',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        {/* Node particles on ring */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#8B5CF6] shadow-[0_0_12px_4px_rgba(139,92,246,0.4)]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_3px_rgba(16,185,129,0.3)]" />
+        <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-[#F59E0B]/60" />
+      </div>
+
+      {/* 3D Ring 2 — mid, counter-rotate */}
+      <div
+        className="absolute w-[300px] h-[300px] rounded-full"
+        style={{
+          border: '1px solid rgba(245,158,11,0.08)',
+          animation: 'aura-spin-r 14s linear infinite',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#F59E0B] shadow-[0_0_10px_3px_rgba(245,158,11,0.35)]" />
+        <div className="absolute top-0 left-1/4 -translate-y-1/2 w-1 h-1 rounded-full bg-[#8B5CF6]/50" />
+      </div>
+
+      {/* 3D Ring 3 — inner, different tilt */}
+      <div
+        className="absolute w-[180px] h-[180px] rounded-full"
+        style={{
+          border: '1px solid rgba(16,185,129,0.1)',
+          animation: 'aura-spin-tilt 10s linear infinite',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div className="absolute bottom-0 right-1/4 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_3px_rgba(16,185,129,0.3)]" />
+      </div>
+
+      {/* Static glow ring — horizon line */}
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full"
+        style={{
+          border: '1.5px solid rgba(139,92,246,0.06)',
+          animation: 'aura-pulse-ring 6s ease-in-out infinite',
+          transformStyle: 'preserve-3d',
+        }}
+      />
+
+      {/* Depth particles — floating in 3D space */}
+      {[
+        { x: '18%', y: '25%', size: 3, color: 'rgba(139,92,246,0.5)', delay: 0, dur: 6 },
+        { x: '75%', y: '35%', size: 2, color: 'rgba(16,185,129,0.4)', delay: 1, dur: 7 },
+        { x: '30%', y: '70%', size: 2.5, color: 'rgba(245,158,11,0.4)', delay: 2, dur: 5 },
+        { x: '65%', y: '65%', size: 2, color: 'rgba(139,92,246,0.35)', delay: 0.5, dur: 8 },
+        { x: '50%', y: '15%', size: 1.5, color: 'rgba(16,185,129,0.3)', delay: 1.5, dur: 6.5 },
+        { x: '85%', y: '55%', size: 2, color: 'rgba(245,158,11,0.3)', delay: 3, dur: 7.5 },
+        { x: '12%', y: '50%', size: 1.5, color: 'rgba(139,92,246,0.4)', delay: 2.5, dur: 5.5 },
+        { x: '42%', y: '80%', size: 2, color: 'rgba(16,185,129,0.35)', delay: 0.8, dur: 6.8 },
+      ].map((p, i) => (
         <div
           key={i}
           className="absolute rounded-full"
           style={{
-            width: `${2 + (i % 3)}px`,
-            height: `${2 + (i % 3)}px`,
-            left: `${15 + i * 14}%`,
-            top: `${20 + (i * 11) % 60}%`,
-            backgroundColor: i % 3 === 0 ? 'rgba(139, 92, 246, 0.4)' : i % 3 === 1 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)',
-            animation: `float ${5 + i * 0.8}s ease-in-out infinite`,
-            animationDelay: `${i * 0.5}s`,
+            width: p.size, height: p.size,
+            left: p.x, top: p.y,
+            backgroundColor: p.color,
+            boxShadow: `0 0 ${p.size * 3}px ${p.size}px ${p.color}`,
+            animation: `aura-float-particle ${p.dur}s ease-in-out infinite`,
+            animationDelay: `${p.delay}s`,
           }}
         />
       ))}
@@ -162,7 +221,7 @@ export function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#06061a] relative overflow-hidden">
         {/* Aurora gradient */}
         <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 40%), radial-gradient(ellipse at 50% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%)' }} />
-        <OrbitalRings />
+        <AgentinAura />
         <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
           <div className="border border-white/10 rounded-2xl p-8 space-y-6" style={{ background: 'rgba(6, 6, 26, 0.9)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
             <div className="w-14 h-14 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center mx-auto">
@@ -218,8 +277,8 @@ export function LoginPage() {
           />
         </div>
 
-        <OrbitalRings />
-        <FloatingParticles />
+        <AgentinAura />
+        {/* Depth particles included in AgentinAura */}
 
         {/* Brand content */}
         <div className="relative z-10 text-center px-12 max-w-lg">

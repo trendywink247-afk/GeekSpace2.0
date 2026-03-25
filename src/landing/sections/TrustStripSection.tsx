@@ -38,7 +38,7 @@ const promises = [
   },
   {
     title: 'Open & Honest Pricing',
-    description: 'One plan. \u20B99/month. No hidden fees or upsells.',
+    description: 'Free forever tier. Pro from \u20B9499/mo. No hidden fees.',
     delay: 0.25,
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

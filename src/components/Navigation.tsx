@@ -11,8 +11,7 @@ interface NavigationProps {
 const navLinks = [
   { label: 'Features', href: '#templates', sectionId: 'templates' },
   { label: 'Agents', href: '#persona', sectionId: 'persona' },
-  { label: 'Integrations', href: '#engine', sectionId: 'engine' },
-  { label: 'Security', href: '#security', sectionId: 'security' },
+  { label: 'Integrations', href: '#infra', sectionId: 'infra' },
   { label: 'Pricing', href: '#pricing', sectionId: 'pricing' },
 ];
 

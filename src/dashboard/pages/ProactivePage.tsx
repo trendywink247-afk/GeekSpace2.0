@@ -88,9 +88,9 @@ const CATEGORY_CONFIG: Record<MessageCategory, {
   },
   upcoming: {
     label: "Upcoming",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
+    color: "text-violet-400",
+    bgColor: "bg-violet-500/10",
+    borderColor: "border-violet-500/20",
     icon: CalendarClock,
   },
   insights: {
@@ -102,9 +102,9 @@ const CATEGORY_CONFIG: Record<MessageCategory, {
   },
   suggestions: {
     label: "Suggestions",
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10",
-    borderColor: "border-cyan-500/20",
+    color: "text-violet-400",
+    bgColor: "bg-violet-500/10",
+    borderColor: "border-violet-500/20",
     icon: Lightbulb,
   },
   celebrations: {
@@ -959,7 +959,7 @@ function ConfigPanel({
                 <TypeToggleRow
                   label="Suggestions"
                   icon={Lightbulb}
-                  color="text-cyan-400"
+                  color="text-violet-400"
                   enabled={typeToggles.suggestions}
                   onToggle={() => onTypeToggle("suggestions")}
                 />
@@ -983,7 +983,7 @@ function ConfigPanel({
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">
-                  <Sunrise className="h-3.5 w-3.5 mt-0.5 text-cyan-400 shrink-0" />
+                  <Sunrise className="h-3.5 w-3.5 mt-0.5 text-violet-400 shrink-0" />
                   <div>
                     <p className="font-medium text-[#F4F6FF]">8:00 AM -- Daily Briefing</p>
                     <p className="text-muted-foreground">Tasks, habits, and calendar</p>

@@ -288,7 +288,7 @@ export function HeroSection({ onEnterDashboard }: HeroSectionProps) {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => { const el = document.getElementById('agents'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}
+              onClick={() => { const el = document.getElementById('persona'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}
               className="w-full sm:w-auto min-h-[48px] bg-white/[0.04] border border-[#8B5CF6]/30 text-[#E8E8F0] hover:bg-[#8B5CF6]/10 px-8 py-4 rounded-2xl font-medium text-lg transition-all duration-300 group"
             >
               Meet Your Agents

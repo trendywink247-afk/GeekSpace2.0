@@ -232,7 +232,7 @@ export function MemoryPage() {
       </div>}
 
       {/* Content */}
-      {loading ? <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" /></div>
+      {loading ? <div className="flex justify-center py-16"><div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" /></div>
       : memories.length === 0 ? (
         <div className="text-center py-16 space-y-5">
           <div className="relative mx-auto w-20 h-20">

@@ -40,19 +40,19 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const SOURCE_BADGE_CLASSES: Record<string, string> = {
-  telegram: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
+  telegram: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
   whatsapp: 'bg-green-500/15 text-green-400 border-green-500/25',
   system: 'bg-[#8892A4]/15 text-[#8892A4] border-[#8892A4]/25',
 };
 
 const PRIORITY_BORDER: Record<string, string> = {
-  urgent: 'border-l-2 border-l-[#FF2D78]',
+  urgent: 'border-l-2 border-l-red-500',
   high: 'border-l-2 border-l-amber-500',
   normal: '',
 };
 
 const PRIORITY_BADGE_CLASSES: Record<string, string> = {
-  urgent: 'bg-[#FF2D78]/15 text-[#FF2D78] border-[#FF2D78]/30',
+  urgent: 'bg-red-500/15 text-red-400 border-red-500/30',
   high: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   normal: 'bg-[#8892A4]/10 text-[#8892A4] border-[#8892A4]/20',
 };

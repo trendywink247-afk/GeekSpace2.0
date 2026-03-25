@@ -62,10 +62,10 @@ export function AgentChatButton({ context, onOpenChat }: AgentChatButtonProps) {
       data-testid="agent-chat-fab"
     >
       {/* Pulse ring */}
-      <span className="absolute inset-0 rounded-full bg-[#00F0FF]/20 animate-[alex-ping_2s_ease-in-out_infinite]" />
+      <span className="absolute inset-0 rounded-full bg-[#8B5CF6]/20 animate-[alex-ping_2s_ease-in-out_infinite]" />
 
       {/* Main orb */}
-      <span className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] shadow-[0_0_30px_rgba(123,97,255,0.4),0_10px_40px_rgba(0,0,0,0.3)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+      <span className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#F59E0B] shadow-[0_0_30px_rgba(123,97,255,0.4),0_10px_40px_rgba(0,0,0,0.3)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
         {isHovered ? (
           <VoiceWave isActive />
         ) : (
@@ -74,7 +74,7 @@ export function AgentChatButton({ context, onOpenChat }: AgentChatButtonProps) {
       </span>
 
       {/* Label tooltip */}
-      <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/30 text-xs text-[#E8E8F0] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+      <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 rounded-lg bg-[#0C0C18] border border-[#8B5CF6]/30 text-xs text-[#E8E8F0] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         Talk to Agent
       </span>
     </button>

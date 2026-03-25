@@ -29,7 +29,7 @@
 
     /* Agentin Brand Tokens */
     --agentin-cyan: #10B981;
-    --agentin-magenta: #FF2D78;
+    --agentin-magenta: #ef4444;
     --agentin-violet: #8B5CF6;
     --agentin-black: #06060f;
     --agentin-surface: #0C0C18;
@@ -421,8 +421,8 @@
     animation: pulse-glow 4s ease-in-out infinite;
   }
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.15); }
-    50% { box-shadow: 0 0 60px rgba(0, 240, 255, 0.25), 0 0 100px rgba(255, 45, 120, 0.1); }
+    0%, 100% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.15); }
+    50% { box-shadow: 0 0 60px rgba(139, 92, 246, 0.25), 0 0 100px rgba(245, 158, 11, 0.1); }
   }
   .float-animation {
     animation: float 6s ease-in-out infinite;
@@ -445,10 +445,10 @@
   }
   @keyframes aurora-pulse {
     0%, 100% {
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1), 0 0 60px rgba(0, 240, 255, 0.05);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.1), 0 0 60px rgba(139, 92, 246, 0.05);
     }
     33% {
-      box-shadow: 0 0 30px rgba(255, 45, 120, 0.12), 0 0 80px rgba(255, 45, 120, 0.06);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.12), 0 0 80px rgba(245, 158, 11, 0.06);
     }
     66% {
       box-shadow: 0 0 25px rgba(139, 92, 246, 0.1), 0 0 70px rgba(139, 92, 246, 0.05);
@@ -460,8 +460,8 @@
     animation: breathing-border 5s ease-in-out infinite;
   }
   @keyframes breathing-border {
-    0%, 100% { border-color: rgba(0, 240, 255, 0.2); }
-    33% { border-color: rgba(255, 45, 120, 0.2); }
+    0%, 100% { border-color: rgba(139, 92, 246, 0.2); }
+    33% { border-color: rgba(245, 158, 11, 0.2); }
     66% { border-color: rgba(139, 92, 246, 0.2); }
   }
 
@@ -1151,7 +1151,7 @@ html, body {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: conic-gradient(from var(--border-angle), #00F0FF, #8B5CF6, #FF2D78, #00F0FF);
+  background: conic-gradient(from var(--border-angle), #8B5CF6, #F59E0B, #8B5CF6, #8B5CF6);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -1279,7 +1279,7 @@ html, body {
 
 /* Gradient text animation */
 .gradient-text-animated {
-  background: linear-gradient(90deg, #00F0FF, #8B5CF6, #FF2D78, #00F0FF);
+  background: linear-gradient(90deg, #8B5CF6, #F59E0B, #8B5CF6, #8B5CF6);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1323,7 +1323,7 @@ html, body {
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: conic-gradient(from var(--border-angle, 0deg), transparent 40%, #00F0FF 50%, transparent 60%);
+  background: conic-gradient(from var(--border-angle, 0deg), transparent 40%, #8B5CF6 50%, transparent 60%);
   animation: border-rotate 4s linear infinite;
   z-index: -1;
   opacity: 0;

@@ -67,7 +67,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
             onClick={onEnterDashboard}
             className="px-8 py-3 text-lg"
           >
-            Start Free &mdash; Rs.0 Forever
+            Start Free &mdash; ₹0 Forever
             <ArrowRight className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
           </ShimmerButton>
 

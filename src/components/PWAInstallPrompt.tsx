@@ -14,9 +14,9 @@ export function PWAInstallPrompt() {
 
   return (
     <div className="fixed bottom-24 left-4 right-4 md:left-auto md:bottom-6 md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-      <div className="glass-card-v2 border border-[#00F0FF]/30 rounded-2xl p-4 shadow-2xl shadow-[#00F0FF]/10">
+      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 shadow-2xl shadow-[#8B5CF6]/10">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#F59E0B] flex items-center justify-center flex-shrink-0">
             <Smartphone className="w-6 h-6 text-white" />
           </div>
           
@@ -33,7 +33,7 @@ export function PWAInstallPrompt() {
               <button
                 onClick={dismiss}
                 aria-label="Dismiss install prompt"
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#6B7280] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#6B7280] hover:text-white hover:bg-[#8B5CF6]/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -42,7 +42,7 @@ export function PWAInstallPrompt() {
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={install}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-white font-medium transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Install
@@ -111,11 +111,11 @@ export function PWASettings() {
   return (
     <div className="space-y-6">
       {/* Install Status */}
-      <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20">
+      <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#8B5CF6]/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-[#00F0FF]" />
+            <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
+              <Smartphone className="w-5 h-5 text-[#8B5CF6]" />
             </div>
             <div>
               <h4 className="font-medium text-[#E8E8F0]">App Installation</h4>
@@ -131,7 +131,7 @@ export function PWASettings() {
           {pwa.canInstall && !pwa.isStandalone && (
             <button
               onClick={pwa.promptInstall}
-              className="px-4 py-2 rounded-lg bg-[#00F0FF] hover:bg-[#00D4B0] text-white text-sm font-medium transition-colors"
+              className="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-sm font-medium transition-colors"
             >
               Install
             </button>
@@ -141,7 +141,7 @@ export function PWASettings() {
 
       {/* Push Notifications */}
       {'Notification' in window && (
-        <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20">
+        <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#8B5CF6]/20">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-[#E8E8F0]">Push Notifications</h4>
@@ -158,8 +158,8 @@ export function PWASettings() {
               disabled={pwa.pushPermission === 'denied'}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 pushEnabled
-                  ? 'bg-[#00FF88]/20 text-[#00FF88]'
-                  : 'bg-[#00F0FF] hover:bg-[#00D4B0] text-white'
+                  ? 'bg-[#10B981]/20 text-[#10B981]'
+                  : 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {pushEnabled ? 'Enabled' : 'Enable'}
@@ -169,7 +169,7 @@ export function PWASettings() {
       )}
 
       {/* Offline Status */}
-      <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20">
+      <div className="p-4 rounded-xl bg-[#0C0C18] border border-[#8B5CF6]/20">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-medium text-[#E8E8F0]">Offline Support</h4>
@@ -179,7 +179,7 @@ export function PWASettings() {
                 : 'Online - all features available'}
             </p>
           </div>
-          <div className={`w-3 h-3 rounded-full ${pwa.isOffline ? 'bg-[#FFB800]' : 'bg-[#00FF88]'}`} />
+          <div className={`w-3 h-3 rounded-full ${pwa.isOffline ? 'bg-[#FFB800]' : 'bg-[#10B981]'}`} />
         </div>
       </div>
 
@@ -187,7 +187,7 @@ export function PWASettings() {
       {pwa.pushPermission === 'granted' && (
         <button
           onClick={pwa.sendTestNotification}
-          className="w-full px-4 py-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:text-white transition-colors"
+          className="w-full px-4 py-3 rounded-xl bg-[#06060B] border border-[#8B5CF6]/20 text-[#6B7280] hover:text-white transition-colors"
         >
           Send Test Notification
         </button>

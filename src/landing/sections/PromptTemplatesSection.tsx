@@ -135,7 +135,7 @@ const tabContents: Record<string, TabContent> = {
         role: 'agent',
         agentInitial: 'F',
         agentName: 'Forge',
-        agentColor: 'bg-cyan-500',
+        agentColor: 'bg-violet-500',
         text: 'Workflow deployed:\n\nTrigger: New email from contacts tagged \'client\'\nStep 1: Create task in your board (priority: medium)\nStep 2: Extract key details + attach email\nStep 3: Set 2h reminder with summary\n\nEstimated: ~15 emails/week will trigger this.',
       },
       {
@@ -146,7 +146,7 @@ const tabContents: Record<string, TabContent> = {
         role: 'agent',
         agentInitial: 'F',
         agentName: 'Forge',
-        agentColor: 'bg-cyan-500',
+        agentColor: 'bg-violet-500',
         text: 'Done! Added Slack #clients channel alert as Step 4. You\'ll get a threaded message with the task link and email summary.',
       },
     ],
@@ -487,7 +487,7 @@ export function PromptTemplatesSection() {
             </button>
             <button
               onClick={() => {
-                const demoSection = document.getElementById('demo');
+                const demoSection = document.getElementById('constellation');
                 demoSection?.scrollIntoView({ behavior: 'smooth' });
               }}
               className="inline-flex items-center gap-2 px-8 py-3 bg-white/5 hover:bg-white/10 text-[#F1F5F9] rounded-full font-semibold transition-all duration-200 border border-white/[0.06] hover:border-white/[0.12]"
