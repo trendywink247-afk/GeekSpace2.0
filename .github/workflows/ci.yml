@@ -16,6 +16,7 @@ env:
 jobs:
   # ============================================
   # Job 1: Static Checks (lint, typecheck, build, audit)
+  # Runs on: PRs + pushes to main
   # ============================================
   static-checks:
     name: Static Checks
@@ -82,6 +83,7 @@ jobs:
 
   # ============================================
   # Job 2: Unit Tests (needs Job 1)
+  # Runs on: PRs + pushes to main
   # ============================================
   unit-tests:
     name: Unit Tests
@@ -104,14 +106,14 @@ jobs:
         run: npm --prefix server run test
 
   # ============================================
-  # Job 3: Deploy Staging (needs Job 2, push to main only)
-  # Builds and deploys to staging.agentin.chat for smoke testing
+  # Job 3: Deploy Staging Preview (needs Job 2, PRs only)
+  # Preview your changes at staging.agentin.chat before merging
   # ============================================
   deploy-staging:
-    name: "Deploy Staging"
+    name: "Deploy Staging Preview"
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request'
     timeout-minutes: 10
     concurrency:
       group: deploy-staging
@@ -120,7 +122,9 @@ jobs:
       name: staging
       url: https://staging.agentin.chat
     steps:
-      - name: Deploy staging via SSH
+      - uses: actions/checkout@v4
+
+      - name: Deploy PR to staging via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -132,8 +136,10 @@ jobs:
             set -e
             cd ~/GeekSpace2.0
 
-            echo "=== Pulling latest main ==="
-            git pull origin main
+            echo "=== Fetching PR branch ==="
+            git fetch origin ${{ github.head_ref }}
+            git checkout ${{ github.head_ref }}
+            git pull origin ${{ github.head_ref }}
 
             echo "=== Building & deploying staging container ==="
             docker compose up -d --build staging
@@ -154,21 +160,47 @@ jobs:
               exit 1
             fi
 
-            echo "=== Verifying staging URL ==="
-            if curl -sf https://staging.agentin.chat/api/health > /dev/null 2>&1; then
-              echo "Staging is live at https://staging.agentin.chat"
-            else
-              echo "WARNING: Staging URL check failed"
-            fi
+            echo "=== Switching back to main ==="
+            git checkout main
+
+            echo "=== Staging preview ready ==="
+            echo "Preview at: https://staging.agentin.chat"
+
+      - name: Comment staging URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `🚀 **Staging deployed!** Preview your changes at:\n👉 https://staging.agentin.chat\n\n_Auto-deployed from this PR. Will be replaced when the next PR deploys._`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('Staging deployed!'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
   # ============================================
-  # Job 4: Deploy Production (needs Job 3)
-  # Staging passed — now deploy production (fast, reuses cached layers)
+  # Job 4: Deploy Production (needs Job 2, push to main only)
+  # Only runs when PR is merged to main
   # ============================================
   deploy-production:
     name: "Deploy Production"
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: unit-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 10
     concurrency:
@@ -178,7 +210,7 @@ jobs:
       name: production
       url: https://ai.agentin.chat
     steps:
-      - name: Deploy production via SSH
+      - name: Deploy to production via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -190,6 +222,9 @@ jobs:
             set -e
             cd ~/GeekSpace2.0
 
+            echo "=== Pulling latest main ==="
+            git pull origin main
+
             echo "=== Building & deploying production container ==="
             docker compose up -d --build geekspace
 
@@ -197,6 +232,9 @@ jobs:
             docker cp geekspace-app:/app/dist/assets/. /srv/assets/
             docker cp geekspace-app:/app/dist/index.html /srv/index.html
             docker cp geekspace-app:/app/dist/office /srv/office 2>/dev/null || true
+
+            echo "=== Also update staging to match production ==="
+            docker compose up -d --build staging
 
             echo "=== Health check (production :3001) ==="
             for i in $(seq 1 30); do
