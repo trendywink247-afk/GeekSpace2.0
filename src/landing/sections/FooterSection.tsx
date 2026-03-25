@@ -53,6 +53,27 @@ function FooterLink({
     );
   }
 
+  // Hash links (/#section) — scroll directly if already on landing page
+  if (to?.startsWith('/#')) {
+    const id = to.slice(2);
+    return (
+      <Link
+        to={to}
+        className={cls}
+        onClick={(e) => {
+          const el = document.getElementById(id);
+          if (el) {
+            e.preventDefault();
+            el.scrollIntoView({ behavior: 'smooth' });
+            window.history.replaceState(null, '', to);
+          }
+        }}
+      >
+        {children}
+      </Link>
+    );
+  }
+
   return (
     <Link to={to || '/'} className={cls}>
       {children}
