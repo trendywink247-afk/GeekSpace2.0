@@ -28,7 +28,13 @@ export function PageShell({ children, maxWidth, spacing = 6, className = '' }: P
   const maxWidthClass = maxWidth && maxWidth !== 'full' ? maxWidthClasses[maxWidth] ?? '' : '';
   const spacingClass = spacingClasses[spacing] ?? 'space-y-6';
   return (
-    <div className={`p-4 md:p-6 pb-24 md:pb-6 ${spacingClass} animate-page-enter ${maxWidthClass} ${className}`}>
+    <div className={`relative p-4 md:p-6 pb-24 md:pb-6 ${spacingClass} animate-page-enter ${maxWidthClass} ${className}`}>
+      {/* Aurora gradient orbs — matches landing page aesthetic */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10" aria-hidden="true">
+        <div className="absolute -top-1/2 -left-1/4 w-[80vw] h-[80vw] rounded-full bg-[#8B5CF6]/[0.03] blur-[120px]" />
+        <div className="absolute -bottom-1/3 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-[#10B981]/[0.02] blur-[100px]" />
+        <div className="absolute top-1/4 right-1/3 w-[40vw] h-[40vw] rounded-full bg-[#F59E0B]/[0.015] blur-[80px]" />
+      </div>
       {children}
     </div>
   );

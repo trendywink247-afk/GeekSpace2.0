@@ -1,0 +1,75 @@
+:root {
+  /* Backgrounds */
+  --ag-bg-deep: #05050A;
+  --ag-bg-base: #06061a;
+  --ag-bg-surface: rgba(12, 12, 30, 0.6);
+  --ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
+  --ag-bg-elevated: rgba(30, 30, 50, 0.7);
+
+  /* Borders */
+  --ag-border-subtle: rgba(139, 92, 246, 0.08);
+  --ag-border-default: rgba(139, 92, 246, 0.15);
+  --ag-border-glow: rgba(0, 240, 255, 0.2);
+  --ag-border-active: rgba(0, 240, 255, 0.4);
+
+  /* Text */
+  --ag-text-primary: #F4F6FF;
+  --ag-text-secondary: #9CA3AF;
+  --ag-text-muted: #6B7280;
+  --ag-text-accent: #00F0FF;
+
+  /* Accents */
+  --ag-violet: #8B5CF6;
+  --ag-cyan: #00F0FF;
+  --ag-green: #10B981;
+  --ag-amber: #F59E0B;
+  --ag-pink: #FF2D78;
+  --ag-lime: #ADFF2F;
+
+  /* Agent Colors */
+  --ag-weebo: #00F0FF;
+  --ag-edith: #8B5CF6;
+  --ag-jarvis: #ADFF2F;
+  --ag-aria: #FF6B9D;
+  --ag-forge: #F59E0B;
+  --ag-pulse: #10B981;
+  --ag-echo: #6366F1;
+  --ag-cal: #84CC16;
+  --ag-nova: #EC4899;
+
+  /* Effects */
+  --ag-glow-sm: 0 0 10px rgba(0, 240, 255, 0.1);
+  --ag-glow-md: 0 0 20px rgba(0, 240, 255, 0.15);
+  --ag-glow-lg: 0 0 40px rgba(139, 92, 246, 0.2);
+  --ag-noise-opacity: 0.025;
+
+  /* Spacing */
+  --ag-radius-sm: 8px;
+  --ag-radius-md: 12px;
+  --ag-radius-lg: 16px;
+  --ag-radius-xl: 24px;
+
+  /* Motion — SUBTLE, entrance-only */
+  --ag-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ag-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ag-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Glass morphism */
+  --ag-glass-bg: rgba(12, 12, 30, 0.4);
+  --ag-glass-border: rgba(139, 92, 246, 0.12);
+  --ag-glass-blur: 16px;
+
+  /* Active/focus states */
+  --ag-focus-ring: 0 0 0 2px rgba(0, 240, 255, 0.3);
+  --ag-active-bg: rgba(0, 240, 255, 0.08);
+  --ag-active-border: rgba(0, 240, 255, 0.25);
+
+  /* Gradients */
+  --ag-gradient-aurora: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.03) 0%, transparent 50%);
+
+  /* Scrollbar */
+  --ag-scrollbar-thumb: rgba(0, 240, 255, 0.15);
+  --ag-scrollbar-thumb-hover: rgba(0, 240, 255, 0.3);
+}

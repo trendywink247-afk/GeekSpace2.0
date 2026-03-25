@@ -4,9 +4,9 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
-  X, Menu, Clock, BarChart3, Brain, CreditCard, Cpu, BookOpen, Activity,
-  Code, Rocket, Film, Image as ImageIcon, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff, GitBranch,
-  Inbox, MessageSquare, Mail, TrendingUp, Target, Mic, FileText, Search, Monitor
+  X, Menu, Clock, Brain, Cpu, Activity,
+  Code, Rocket, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
+  Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -28,6 +28,7 @@ import { agentService, userService, type ActivityEntry } from '@/services/api';
 import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
+import { SmartSuggestions } from '@/components/SmartSuggestions';
 // LogoutConfirmDialog replaced by SweetAlert2 via useLogoutBlocker
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -76,6 +77,7 @@ const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({
 const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatingPage').then(m => ({ default: m.ConversationRatingPage })));
 const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').then(m => ({ default: m.DocsWorkspacePage })));
 const OfficePage = lazyRetry(() => import('./pages/office/index').then(m => ({ default: m.OfficePage })));
+const OfficeHomePage = lazyRetry(() => import('./pages/office/index').then(m => ({ default: m.OfficeHomePage })));
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
@@ -97,39 +99,36 @@ interface MenuGroup {
 }
 
 const menuGroups: MenuGroup[] = [
+  // Pinned (always visible, never collapse)
   {
     label: null,
     icon: null,
     items: [
-      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-      { id: 'portfolio', label: 'Portfolio', icon: Palette },
+      { id: 'overview', label: 'Home', icon: LayoutDashboard },
+      { id: 'chat', label: 'Chat', icon: MessageSquare },
     ],
   },
+  // AI Studio
   {
-    label: 'AI Specialist',
-    icon: Code,
+    label: 'AI Studio',
+    icon: Sparkles,
     items: [
+      { id: 'creative-studio', label: 'Creative Studio', icon: Palette },
       { id: 'website-builder', label: 'Website Builder', icon: Code },
-      { id: 'image-gen', label: 'Image Generator', icon: ImageIcon },
-      { id: 'gallery', label: 'Image Gallery', icon: ImageIcon },
-      { id: 'video-gen', label: 'Video Generator', icon: Film },
-      { id: 'tools', label: 'AI Tools', icon: Cpu },
       { id: 'design', label: 'Design Assistant', icon: Palette },
+      { id: 'tools', label: 'AI Tools', icon: Cpu },
     ],
   },
+  // Agent
   {
     label: 'Agent',
     icon: Bot,
     items: [
       { id: 'agent', label: 'Agent Settings', icon: Bot },
       { id: 'memory', label: 'Memory', icon: Brain },
-      { id: 'personal-memory', label: 'Personal Memory', icon: Brain },
-      { id: 'recipes', label: 'Recipes', icon: BookOpen },
-      { id: 'capabilities', label: 'What Can I Do?', icon: Sparkles },
-      { id: 'training', label: 'Conversation Ratings', icon: MessageSquare },
-      { id: 'office', label: 'Agent Office', icon: Monitor },
     ],
   },
+  // Fleet
   {
     label: 'Weebo Fleet',
     icon: Cpu,
@@ -138,6 +137,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'planner', label: 'Planner', icon: CalendarCheck },
     ],
   },
+  // Productivity
   {
     label: 'Productivity',
     icon: Zap,
@@ -148,36 +148,37 @@ const menuGroups: MenuGroup[] = [
       { id: 'social-media', label: 'Social Media', icon: Share2 },
       { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
       { id: 'focus', label: 'Focus & Habits', icon: Target, shortcut: 'F' },
-      { id: 'workflows', label: 'Workflows', icon: GitBranch },
       { id: 'docs', label: 'Docs', icon: FileText },
     ],
   },
+  // Communication
   {
     label: 'Communication',
     icon: MessageSquare,
     items: [
-      { id: 'inbox', label: 'AI Inbox', icon: Inbox },
-      { id: 'gmail', label: 'Gmail', icon: Mail },
+      { id: 'inbox', label: 'Inbox', icon: Inbox },
       { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
     ],
   },
+  // Insights
   {
     label: 'Insights',
     icon: TrendingUp,
     items: [
-      { id: 'analytics', label: 'Personal Analytics', icon: TrendingUp },
+      { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     ],
   },
+  // You
   {
-    label: 'Account',
+    label: 'You',
     icon: Settings,
     items: [
-      { id: 'usage', label: 'Usage', icon: BarChart3 },
-      { id: 'billing', label: 'Billing', icon: CreditCard },
+      { id: 'portfolio', label: 'Portfolio', icon: Palette },
       { id: 'connections', label: 'Connections', icon: Link2 },
       { id: 'settings', label: 'Settings', icon: Settings },
     ],
   },
+  // System
   {
     label: 'System',
     icon: Terminal,
@@ -222,6 +223,12 @@ export function DashboardApp() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
+  const [officeHomepage, _setOfficeHomepage] = useState(() => {
+    try {
+      return localStorage.getItem('agentin_office_homepage') === 'true';
+    } catch { return false; }
+  });
+  void _setOfficeHomepage; // will be used by settings toggle in PR 2
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   useLogoutBlocker(logout);
@@ -438,7 +445,9 @@ export function DashboardApp() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+        return officeHomepage
+          ? <OfficeHomePage />
+          : <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
       case 'portfolio':
         return <PortfolioPage />;
       case 'usage':
@@ -508,7 +517,9 @@ export function DashboardApp() {
       case 'training':
         return <ConversationRatingPage />;
       case 'office':
-        return <OfficePage />;
+        return officeHomepage
+          ? (() => { navigate('/dashboard'); return null; })()
+          : <OfficePage />;
       case 'voice':
         return <VoiceChatPage />;
       case 'design':
@@ -542,7 +553,7 @@ export function DashboardApp() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-[#00F0FF]/10">
+      <div className="h-14 flex items-center px-4" style={{ borderBottom: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
         <div className="flex items-center gap-3 flex-1">
           <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/15 flex items-center justify-center flex-shrink-0 pulse-glow" style={{ boxShadow: '0 0 12px rgba(0, 240, 255, 0.1)' }}>
             <Hexagon className="w-5 h-5 text-[#00F0FF]" />
@@ -563,6 +574,9 @@ export function DashboardApp() {
         </button>
       </div>
 
+      {/* AI Suggested — dynamic section */}
+      {!sidebarCollapsed && <SmartSuggestions onNavigate={(page) => navigate(`/dashboard/${page}`)} />}
+
       {/* Navigation */}
       <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#00F0FF]/20 hover:scrollbar-thumb-[#00F0FF]/40">
         {menuGroups.map((group, groupIdx) => (
@@ -574,9 +588,12 @@ export function DashboardApp() {
                   onClick={() => toggleGroup(group.label!)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[40px] mt-2 relative ${
                     groupHasActivePage(group)
-                      ? 'text-[#00F0FF]'
-                      : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#8892A4] active:bg-[#00F0FF]/10'
+                      ? 'text-[var(--ag-text-accent,#00F0FF)]'
+                      : 'text-[var(--ag-text-muted,#6B7280)] hover:text-[var(--ag-text-secondary,#9CA3AF)] active:bg-[#00F0FF]/10'
                   }`}
+                  style={!groupHasActivePage(group) ? { '--hover-bg': 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))' } as React.CSSProperties : undefined}
+                  onMouseEnter={e => { if (!groupHasActivePage(group)) (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; }}
+                  onMouseLeave={e => { if (!groupHasActivePage(group)) (e.currentTarget as HTMLButtonElement).style.background = ''; }}
                 >
                   {groupHasActivePage(group) && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
@@ -592,7 +609,7 @@ export function DashboardApp() {
                   </div>
                   {!sidebarCollapsed && (
                     <>
-                      <span className="text-[11px] font-semibold flex-1 text-left uppercase tracking-[0.08em]">{group.label}</span>
+                      <span className="text-[11px] font-semibold flex-1 text-left uppercase tracking-[0.08em]" style={{ color: groupHasActivePage(group) ? 'var(--ag-text-accent, #00F0FF)' : 'var(--ag-text-muted, #6B7280)' }}>{group.label}</span>
                       {isGroupExpanded(group.label) ? (
                         <ChevronDown className="w-4 h-4 flex-shrink-0 opacity-50" />
                       ) : (
@@ -603,7 +620,7 @@ export function DashboardApp() {
                 </button>
                 {/* Expandable sub-items */}
                 {!sidebarCollapsed && isGroupExpanded(group.label) && (
-                  <div className="ml-4 border-l border-[#00F0FF]/10 pl-2 space-y-0.5">
+                  <div className="ml-4 pl-2 space-y-0.5" style={{ borderLeft: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
                     {group.items.map((item) => (
                       <button
                         key={item.id}
@@ -611,14 +628,22 @@ export function DashboardApp() {
                         aria-current={isPageActive(item.id) ? 'page' : undefined}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] relative ${
                           isPageActive(item.id)
-                            ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
-                            : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] border-l-2 border-transparent'
+                            ? 'border-l-2'
+                            : 'border-l-2 border-transparent'
                         }`}
+                        style={isPageActive(item.id) ? {
+                          color: 'var(--ag-text-accent, #00F0FF)',
+                          background: 'rgba(0, 240, 255, 0.08)',
+                          borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                          boxShadow: 'inset 2px 0 0 var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                        } : { color: 'var(--ag-text-muted, #6B7280)' }}
+                        onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+                        onMouseLeave={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-muted, #6B7280)'; } }}
                       >
-                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isPageActive(item.id) ? 'text-[#00F0FF]' : ''}`} />
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm flex-1 text-left">{item.label}</span>
                         {item.shortcut && !isPageActive(item.id) && (
-                          <span className="text-[10px] font-mono text-[#4B5563] bg-[#1a1a2e] px-1.5 py-0.5 rounded border border-[#2a2a3e]">{item.shortcut}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ color: 'var(--ag-text-muted, #6B7280)', background: 'rgba(6,6,27,0.8)', border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))' }}>{item.shortcut}</span>
                         )}
                         {item.id === 'reminders' && dueReminderCount > 0 && (
                           <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
@@ -649,13 +674,17 @@ export function DashboardApp() {
                     key={item.id}
                     onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
-                      isPageActive(item.id)
-                        ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
-                        : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10 border-l-2 border-transparent'
-                    }`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
+                    style={isPageActive(item.id) ? {
+                      color: 'var(--ag-text-accent, #00F0FF)',
+                      background: 'rgba(0, 240, 255, 0.08)',
+                      borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                      boxShadow: 'inset 2px 0 0 var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                    } : { color: 'var(--ag-text-secondary, #9CA3AF)', borderLeftColor: 'transparent' }}
+                    onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+                    onMouseLeave={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; } }}
                   >
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isPageActive(item.id) ? 'text-[#00F0FF]' : ''}`} />
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
                     {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                   </button>
                 ))}
@@ -664,7 +693,10 @@ export function DashboardApp() {
                 {groupIdx === 0 && (
                   <button
                     onClick={() => navigate('/explore')}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] transition-all min-h-[44px]"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all min-h-[44px]"
+                    style={{ color: 'var(--ag-text-secondary, #9CA3AF)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; }}
                   >
                     <Compass className="w-5 h-5 flex-shrink-0" />
                     {!sidebarCollapsed && <span className="text-sm font-medium">Explore</span>}
@@ -677,17 +709,20 @@ export function DashboardApp() {
 
         {/* Agentin Roadmap — standalone footer link */}
         <div className="mt-2">
-          <div className="h-px bg-[#00F0FF]/10 my-2 mx-2" />
+          <div className="h-px my-2 mx-2" style={{ background: 'var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }} />
           <button
             onClick={() => navigate('/dashboard/roadmap')}
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative ${
-              isPageActive('roadmap')
-                ? 'text-[#00F0FF] bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
-                : 'text-[#6B7280] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0] active:bg-[#00F0FF]/10 border-l-2 border-transparent'
-            }`}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
+            style={isPageActive('roadmap') ? {
+              color: 'var(--ag-text-accent, #00F0FF)',
+              background: 'rgba(0, 240, 255, 0.08)',
+              borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+            } : { color: 'var(--ag-text-secondary, #9CA3AF)', borderLeftColor: 'transparent' }}
+            onMouseEnter={e => { if (!isPageActive('roadmap')) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+            onMouseLeave={e => { if (!isPageActive('roadmap')) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; } }}
           >
-            <Rocket className={`w-5 h-5 flex-shrink-0 ${isPageActive('roadmap') ? 'text-[#00F0FF]' : ''}`} />
+            <Rocket className="w-5 h-5 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Agentin Roadmap</span>}
           </button>
         </div>
@@ -713,7 +748,7 @@ export function DashboardApp() {
 
       {/* Spend indicator */}
       {!sidebarCollapsed && (
-        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/15">
+        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl" style={{ background: 'var(--ag-bg-elevated, rgba(30, 30, 50, 0.7))', border: '1px solid var(--ag-border-default, rgba(139, 92, 246, 0.15))' }}>
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-[#ADFF2F]" />
             <span className="text-xs text-[#6B7280]">This month</span>
@@ -732,39 +767,53 @@ export function DashboardApp() {
       )}
 
       {/* User avatar area */}
-      <div className="p-3 border-t border-[#00F0FF]/10 space-y-1">
+      <div className="p-3 space-y-1" style={{ borderTop: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 text-white text-sm font-bold transition-shadow duration-300"
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 0 16px rgba(0, 240, 255, 0.2)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+            >
               {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#E8E8F0] truncate">{user?.name?.split(' ')[0] || 'User'}</span>
+                <span className="text-sm font-medium truncate" style={{ color: 'var(--ag-text-primary, #F4F6FF)' }}>{user?.name?.split(' ')[0] || 'User'}</span>
                 <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20 flex-shrink-0">
                   {user?.plan === 'pro' ? 'Pro' : 'Free'}
                 </span>
               </div>
-              <span className="text-[11px] text-[#4B5563] truncate block">{user?.email || ''}</span>
+              <span className="text-[11px] truncate block" style={{ color: 'var(--ag-text-muted, #6B7280)' }}>{user?.email || ''}</span>
             </div>
             <button
               onClick={() => navigate('/dashboard/settings')}
-              className="p-1.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors flex-shrink-0"
+              className="p-1.5 rounded-lg transition-colors flex-shrink-0"
+              style={{ color: 'var(--ag-text-muted, #6B7280)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 240, 255, 0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; }}
               aria-label="Settings"
             >
-              <Settings className="w-4 h-4 text-[#6B7280]" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-bold">
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-bold transition-shadow duration-300"
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 0 16px rgba(0, 240, 255, 0.2)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+            >
               {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
             </div>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#6B7280] hover:bg-red-500/10 hover:text-red-400 transition-all min-h-[40px]"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all min-h-[40px]"
+          style={{ color: 'var(--ag-text-muted, #6B7280)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#FF2D78'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255, 45, 120, 0.08)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-muted, #6B7280)'; (e.currentTarget as HTMLButtonElement).style.background = ''; }}
           data-testid="dashboard-logout-button"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
@@ -836,14 +885,14 @@ export function DashboardApp() {
 
       {/* ---- Desktop Sidebar — floating glass panel ---- */}
       <aside
-        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 ease-out z-50 flex-col ${
+        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 ease-out z-50 flex-col backdrop-blur-xl ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}
         style={{
-          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.85), rgba(16, 16, 30, 0.75))',
+          background: 'linear-gradient(180deg, var(--ag-bg-surface, rgba(12, 12, 24, 0.85)), rgba(16, 16, 30, 0.75))',
           backdropFilter: 'blur(24px) saturate(1.3)',
-          border: '1px solid rgba(0, 240, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 240, 255, 0.03)',
+          border: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
+          boxShadow: 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 8px 32px rgba(0, 0, 0, 0.4)',
         }}
         role="navigation"
         aria-label="Main navigation"
@@ -854,13 +903,12 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ease-out ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ease-out backdrop-blur-xl ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.95), rgba(16, 16, 30, 0.9))',
-          backdropFilter: 'blur(24px)',
-          borderRight: '1px solid rgba(0, 240, 255, 0.1)',
+          background: 'linear-gradient(180deg, var(--ag-bg-surface, rgba(12, 12, 24, 0.95)), rgba(16, 16, 30, 0.9))',
+          borderRight: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
         }}
         role="navigation"
         aria-label="Mobile navigation"
@@ -1045,9 +1093,9 @@ export function DashboardApp() {
         className="md:hidden fixed left-3 right-3 h-16 backdrop-blur-xl rounded-2xl z-30 flex items-center justify-around px-2"
         style={{
           bottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))',
-          background: 'linear-gradient(180deg, rgba(12, 12, 24, 0.85), rgba(16, 16, 30, 0.8))',
-          border: '1px solid rgba(0, 240, 255, 0.1)',
-          boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 240, 255, 0.03)',
+          background: 'linear-gradient(180deg, rgba(5, 5, 10, 0.92), rgba(5, 5, 10, 0.88))',
+          border: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
+          boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.4), var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1))',
         }}
         role="tablist"
         aria-label="Main tabs"
@@ -1066,11 +1114,8 @@ export function DashboardApp() {
                   navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
                 }
               }}
-              className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight ${
-                isActive
-                  ? 'text-[#00F0FF]'
-                  : 'text-[#6B7280] active:text-[#E8E8F0]'
-              }`}
+              className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight"
+              style={{ color: isActive ? 'var(--ag-text-accent, #00F0FF)' : 'var(--ag-text-muted, #6B7280)' }}
             >
               <div className="relative">
                 <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
@@ -1097,8 +1142,11 @@ export function DashboardApp() {
                 )}
               </div>
               <span className="text-[10px] font-medium">{tab.label}</span>
-              {/* 47.3: Colored underline for active tab — full-width bottom border */}
-              <div className={`h-0.5 w-full rounded-full transition-all ${isActive ? 'bg-[#00F0FF]' : 'bg-transparent'}`} />
+              {/* Active tab glow indicator */}
+              <div
+                className={`h-0.5 w-4 rounded-full transition-all ${isActive ? 'bg-[#00F0FF]' : 'bg-transparent'}`}
+                style={isActive ? { boxShadow: '0 0 8px #00F0FF' } : undefined}
+              />
             </button>
           );
         })}

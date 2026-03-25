@@ -78,10 +78,9 @@ describe('92.2 login-guard brute force protection', () => {
 // --- 92.1 + 92.4  CSP configuration ---
 
 describe('92.1 + 92.4 CSP configuration', () => {
-  it('app.ts includes reportUri in CSP Helmet config', () => {
+  it('app.ts disables Helmet CSP (Caddy handles CSP)', () => {
     const src = readSrc('app.ts');
-    expect(src).toMatch(/reportUri/);
-    expect(src).toMatch(/csp-report/);
+    expect(src).toMatch(/contentSecurityPolicy:\s*false/);
   });
 
   it('app.ts registers POST /api/csp-report route', () => {

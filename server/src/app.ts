@@ -104,34 +104,13 @@ export function createApp(): express.Application {
   app.set('trust proxy', 1);
 
   // ---- Security headers ----
-  // NOTE (Risk R11): script-src uses 'self' without nonces. Nonce-based CSP would require
-  // frontend templating changes that are out of scope. style-src uses 'unsafe-inline' for
-  // Tailwind/shadcn inline styles. Both are documented in the risk register as accepted risks.
-  // 53.3 CSP audit: added form-action, worker-src, manifest-src directives.
+  // NOTE: Content-Security-Policy is set by the host Caddy process, not Express.
+  // Setting it here too would cause duplicate CSP headers. contentSecurityPolicy is
+  // therefore disabled in Helmet. Per-route CSP overrides in admin.ts and artifacts.ts
+  // are intentional (those routes need custom policies for inline scripts/styles).
+  // All other Helmet security headers remain active.
   app.use(helmet({
-    contentSecurityPolicy: config.isProduction ? {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://openrouter.ai", "wss:"],
-        frameSrc: ["'none'"],
-        // Prevent embedding in iframes — defence-in-depth alongside X-Frame-Options: DENY
-        frameAncestors: ["'none'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        // 53.3: Restrict form submissions, workers, and manifest to same-origin
-        formAction: ["'self'"],
-        workerSrc: ["'self'"],
-        manifestSrc: ["'self'"],
-        // Force HTTP resources to upgrade to HTTPS (safe, widely supported)
-        upgradeInsecureRequests: [],
-        // 92.1: CSP violation reporting endpoint
-        reportUri: ['/api/csp-report'],
-      },
-    } : false,
+    contentSecurityPolicy: false,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     frameguard: { action: 'deny' },
   }));
