@@ -135,37 +135,35 @@ jobs:
             echo "=== Pulling latest main ==="
             git pull origin main
 
-            echo "=== Installing dependencies ==="
-            npm ci --prefer-offline
-            npm --prefix server ci --prefer-offline
-
-            echo "=== Building ==="
-            npx vite build
-            npm --prefix server run build
-
-            echo "=== Syncing static files to Caddy ==="
-            find /srv/assets/ -name "index-*" -not -name "*.css" -delete 2>/dev/null || true
-            cp -r dist/assets/* /srv/assets/
-            cp dist/index.html /srv/index.html
-            cp -r dist/office /srv/ 2>/dev/null || true
-
-            echo "=== Deploying production container ==="
+            echo "=== Building & deploying container ==="
             docker compose up -d --build geekspace
 
+            echo "=== Syncing static files to Caddy ==="
+            docker cp geekspace-app:/app/dist/assets/. /srv/assets/
+            docker cp geekspace-app:/app/dist/index.html /srv/index.html
+            docker cp geekspace-app:/app/dist/office /srv/office 2>/dev/null || true
+
             echo "=== Health check ==="
-            for i in $(seq 1 20); do
+            for i in $(seq 1 30); do
               if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
                 echo "Production is healthy!"
                 break
               fi
-              echo "Waiting... ($i/20)"
-              sleep 3
+              echo "Waiting... ($i/30)"
+              sleep 2
             done
 
             if ! curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
               echo "ERROR: Health check failed"
               docker compose logs --tail 20 geekspace
               exit 1
+            fi
+
+            echo "=== Verifying public URL ==="
+            if curl -sf https://ai.agentin.chat/api/health > /dev/null 2>&1; then
+              echo "Production is live at https://ai.agentin.chat"
+            else
+              echo "WARNING: Public URL check failed (Caddy may still be propagating)"
             fi
 
   # ============================================
