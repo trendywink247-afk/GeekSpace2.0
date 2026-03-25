@@ -50,14 +50,8 @@ COPY server/ecosystem.config.cjs ./server/ecosystem.config.cjs
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
-# Copy admin dashboard
-COPY --from=builder /app/admin-dashboard ./admin-dashboard
-
-# Copy APM Insight config
-COPY apminsightnode.json ./
-
-# Create data directory for SQLite and APM logs directory
-RUN mkdir -p /app/data /app/apminsightdata && chown -R node:node /app/data /app/apminsightdata
+# Create data directory for SQLite
+RUN mkdir -p /app/data && chown -R node:node /app/data
 
 # Allow git operations on the mounted /repo volume (owned by root, run as node)
 RUN git config --system safe.directory /repo
