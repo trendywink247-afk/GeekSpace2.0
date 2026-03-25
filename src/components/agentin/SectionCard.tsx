@@ -21,11 +21,11 @@ const paddingClasses: Record<string, string> = {
 export function SectionCard({ children, title, subtitle, className = '', padding = 'md' }: SectionCardProps) {
   const paddingClass = paddingClasses[padding] ?? 'p-4 md:p-5';
   return (
-    <div className={`bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl ${paddingClass} ${className}`}>
+    <div className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-300 ${paddingClass} ${className}`}>
       {(title || subtitle) && (
         <div className="mb-4">
-          {title && <h2 className="text-base font-semibold text-[#F4F6FF]">{title}</h2>}
-          {subtitle && <p className="text-xs text-[#8892A4] mt-0.5">{subtitle}</p>}
+          {title && <h2 className="text-base font-semibold text-[var(--ag-text-primary,#F4F6FF)]">{title}</h2>}
+          {subtitle && <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5">{subtitle}</p>}
         </div>
       )}
       {children}

@@ -3,52 +3,6 @@
 # the geekspace-shared network using their container names.
 
 services:
-#-----caddy------------
-  caddy:
-    image: caddy:2
-    container_name: geekspace-caddy
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - GATE_COOKIE_VALUE=${GATE_COOKIE_VALUE:?Set GATE_COOKIE_VALUE in .env}
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - /var/www/geekspace:/srv:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - geekspace-net
-      - geekspace-shared
-    depends_on:
-      geekspace:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2019/config/"]
-      interval: 30s
-      timeout: 5s
-      start_period: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.25'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
   # ---- GeekSpace API + Frontend ----
   geekspace:
     build: .
@@ -111,38 +65,6 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
-
-  # [LEGACY] EDITH Bridge (WS-RPC → HTTP for Moonshot) — deprecated, kept for reference
-  edith-bridge:
-    build: ./bridge/edith-bridge
-    container_name: geekspace-edith-bridge
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    profiles: ["edith"]
-    environment:
-      # Set to your actual Moonshot container name/address
-      - EDITH_OPENCLAW_WS=${EDITH_OPENCLAW_WS:-ws://openclaw:55550}
-      - EDITH_TOKEN=${EDITH_TOKEN:-}
-      - OPENCLAW_CHAT_METHOD=${OPENCLAW_CHAT_METHOD:-chat.completions}
-      - BRIDGE_PORT=8787
-      - REQUEST_TIMEOUT_MS=120000
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    networks:
-      - geekspace-net
-      - geekspace-shared
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
-      interval: 15s
-      timeout: 5s
-      start_period: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 128M
 
   # ---- Redis ----
   redis:
@@ -517,84 +439,84 @@ services:
           memory: 64M
           cpus: '0.1'
 
-#-----geekos-agents-----
-  geekos-postgres:
-    image: pgvector/pgvector:pg16
-    container_name: geekspace-geekos-postgres
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    profiles:
-      - geekos
-    environment:
-      - POSTGRES_USER=geekos
-      - POSTGRES_PASSWORD=${GEEKOS_PG_PASSWORD}
-      - POSTGRES_DB=geekos
-    volumes:
-      - geekos-postgres-data:/var/lib/postgresql/data
-    networks:
-      - geekspace-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U geekos"]
-      interval: 10s
-      timeout: 5s
-      start_period: 15s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.25'
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  geekos:
-    build: ./geekos
-    container_name: geekspace-geekos
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    profiles:
-      - geekos
-    depends_on:
-      geekspace:
-        condition: service_healthy
-      geekos-postgres:
-        condition: service_healthy
-    environment:
-      - OPENAI_API_KEY=agentin-internal-proxy
-      - OPENAI_BASE_URL=http://geekspace:3001/api/geekos-llm/v1
-      - SMALL_MODEL=agentin-default
-      - MEDIUM_MODEL=agentin-default
-      - LARGE_MODEL=agentin-default
-      - POSTGRES_URL=postgresql://geekos:${GEEKOS_PG_PASSWORD}@geekos-postgres:5432/geekos
-    expose:
-      - "3000"
-    deploy:
-      resources:
-        limits:
-          memory: 2048M
-          cpus: '1.0'
-    networks:
-      - geekspace-net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/agents || exit 1"]
-      interval: 30s
-      timeout: 30s
-      start_period: 60s
-      retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+#-----geekos-agents----- DISABLED: kept for future use
+# DISABLED:  geekos-postgres:
+# DISABLED:    image: pgvector/pgvector:pg16
+# DISABLED:    container_name: geekspace-geekos-postgres
+# DISABLED:    restart: unless-stopped
+# DISABLED:    security_opt:
+# DISABLED:      - no-new-privileges:true
+# DISABLED:    cap_drop:
+# DISABLED:      - ALL
+# DISABLED:    profiles:
+# DISABLED:      - geekos
+# DISABLED:    environment:
+# DISABLED:      - POSTGRES_USER=geekos
+# DISABLED:      - POSTGRES_PASSWORD=${GEEKOS_PG_PASSWORD}
+# DISABLED:      - POSTGRES_DB=geekos
+# DISABLED:    volumes:
+# DISABLED:      - geekos-postgres-data:/var/lib/postgresql/data
+# DISABLED:    networks:
+# DISABLED:      - geekspace-net
+# DISABLED:    healthcheck:
+# DISABLED:      test: ["CMD-SHELL", "pg_isready -U geekos"]
+# DISABLED:      interval: 10s
+# DISABLED:      timeout: 5s
+# DISABLED:      start_period: 15s
+# DISABLED:      retries: 5
+# DISABLED:    deploy:
+# DISABLED:      resources:
+# DISABLED:        limits:
+# DISABLED:          memory: 256M
+# DISABLED:          cpus: '0.25'
+# DISABLED:    logging:
+# DISABLED:      driver: "json-file"
+# DISABLED:      options:
+# DISABLED:        max-size: "10m"
+# DISABLED:        max-file: "3"
+# DISABLED:
+# DISABLED:  geekos:
+# DISABLED:    build: ./geekos
+# DISABLED:    container_name: geekspace-geekos
+# DISABLED:    restart: unless-stopped
+# DISABLED:    security_opt:
+# DISABLED:      - no-new-privileges:true
+# DISABLED:    cap_drop:
+# DISABLED:      - ALL
+# DISABLED:    profiles:
+# DISABLED:      - geekos
+# DISABLED:    depends_on:
+# DISABLED:      geekspace:
+# DISABLED:        condition: service_healthy
+# DISABLED:      geekos-postgres:
+# DISABLED:        condition: service_healthy
+# DISABLED:    environment:
+# DISABLED:      - OPENAI_API_KEY=agentin-internal-proxy
+# DISABLED:      - OPENAI_BASE_URL=http://geekspace:3001/api/geekos-llm/v1
+# DISABLED:      - SMALL_MODEL=agentin-default
+# DISABLED:      - MEDIUM_MODEL=agentin-default
+# DISABLED:      - LARGE_MODEL=agentin-default
+# DISABLED:      - POSTGRES_URL=postgresql://geekos:${GEEKOS_PG_PASSWORD}@geekos-postgres:5432/geekos
+# DISABLED:    expose:
+# DISABLED:      - "3000"
+# DISABLED:    deploy:
+# DISABLED:      resources:
+# DISABLED:        limits:
+# DISABLED:          memory: 2048M
+# DISABLED:          cpus: '1.0'
+# DISABLED:    networks:
+# DISABLED:      - geekspace-net
+# DISABLED:    healthcheck:
+# DISABLED:      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/agents || exit 1"]
+# DISABLED:      interval: 30s
+# DISABLED:      timeout: 30s
+# DISABLED:      start_period: 60s
+# DISABLED:      retries: 3
+# DISABLED:    logging:
+# DISABLED:      driver: "json-file"
+# DISABLED:      options:
+# DISABLED:        max-size: "10m"
+# DISABLED:        max-file: "3"
 
 volumes:
   geekspace-data:
@@ -604,10 +526,6 @@ volumes:
   redis-data:
     driver: local
   n8n-data:
-    driver: local
-  caddy_data:
-    driver: local
-  caddy_config:
     driver: local
   uptime-kuma-data:
     driver: local
