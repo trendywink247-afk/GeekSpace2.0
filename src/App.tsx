@@ -16,6 +16,7 @@ import { ConnectPage } from './pages/ConnectPage';
 import { InvitePage } from './pages/InvitePage';
 import OAuthCallbackPage from './onboarding/OAuthCallbackPage';
 const LogoStudioPage = lazy(() => import('./logo-studio/LogoStudioPage').then(m => ({ default: m.LogoStudioPage })));
+const ImageToolsPage = lazy(() => import('./image-tools/ImageToolsPage').then(m => ({ default: m.ImageToolsPage })));
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -54,6 +55,11 @@ function App() {
           <Route path="/logo-studio" element={
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
               <LogoStudioPage />
+            </Suspense>
+          } />
+          <Route path="/image-tools" element={
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
+              <ImageToolsPage />
             </Suspense>
           } />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />

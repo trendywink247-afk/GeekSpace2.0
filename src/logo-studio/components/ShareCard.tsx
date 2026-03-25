@@ -266,7 +266,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
         {/* Copy Link */}
         <button
           onClick={handleCopyLink}
-          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/70 hover:bg-white/[0.06] flex items-center justify-center gap-2"
         >
           <svg {...iconProps}>
             {linkCopied ? (

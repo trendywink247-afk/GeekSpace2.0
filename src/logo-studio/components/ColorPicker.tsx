@@ -47,7 +47,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
 
         {open && (
           <div
-            className="absolute top-full left-0 mt-2 bg-[#0a0a24] border border-white/10
+            className="absolute top-full left-0 mt-2 bg-[#0a0a24] border border-white/[0.06]
               rounded-xl p-3 shadow-xl z-50 transition-opacity duration-150"
           >
             <div className="grid grid-cols-5 gap-1.5 mb-2">
@@ -79,7 +79,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
               type="button"
               onClick={() => colorInputRef.current?.click()}
               className="w-full text-[10px] text-white/50 hover:text-white/80
-                py-1 rounded-md border border-white/10 hover:border-white/20
+                py-1 rounded-md border border-white/[0.06] hover:border-white/[0.12]
                 bg-gradient-to-r from-violet-500/10 via-emerald-500/10 to-amber-500/10
                 transition-colors cursor-pointer"
             >

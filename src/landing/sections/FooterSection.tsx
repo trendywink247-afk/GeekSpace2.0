@@ -7,6 +7,7 @@ const productLinks = [
   { label: 'Pricing', to: '/#pricing' },
   { label: 'Security', to: '/#security' },
   { label: 'Documentation', to: '/docs' },
+  { label: 'Image Tools', to: '/image-tools' },
 ];
 
 const resourceLinks = [
@@ -14,6 +15,7 @@ const resourceLinks = [
   { label: 'GitHub', href: 'https://github.com' },
   { label: 'Status', to: '/status' },
   { label: 'Blog', to: '/blog' },
+  { label: 'Logo Studio', to: '/logo-studio' },
 ];
 
 const legalLinks = [
@@ -175,6 +177,13 @@ export function FooterSection() {
         <div className="border-t border-white/[0.04] pt-6 mt-8">
           <p className="text-sm text-[#94A3B8] text-center">
             &copy; {new Date().getFullYear()} Agentin &middot; Made with love in India
+          </p>
+          <p className="text-xs text-[#94A3B8]/50 text-center mt-2">
+            Powered by{' '}
+            <a href="https://ai.geekspace.space" target="_blank" rel="noopener noreferrer"
+              className="text-[#8B5CF6]/60 hover:text-[#8B5CF6] transition-colors">
+              GeekSpace
+            </a>
           </p>
         </div>
       </div>

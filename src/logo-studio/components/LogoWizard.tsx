@@ -48,7 +48,7 @@ const COLOR_OPTIONS = [
   { hex: '#F59E0B', label: 'Gold' },
   { hex: '#EC4899', label: 'Rose' },
   { hex: '#EF4444', label: 'Crimson' },
-  { hex: '#3B82F6', label: 'Ocean' },
+  { hex: '#14B8A6', label: 'Teal' },
   { hex: '#F97316', label: 'Amber' },
   { hex: '#64748B', label: 'Slate' },
 ] as const;

@@ -54,7 +54,7 @@ function ColorInput({ label, value, onChange }: {
     <div className="flex items-center gap-2">
       <span className="text-xs text-[#94A3B8] w-10">{label}</span>
       <label className="relative cursor-pointer">
-        <div className="w-5 h-5 rounded border border-white/10" style={{ backgroundColor: value }} />
+        <div className="w-5 h-5 rounded border border-white/[0.06]" style={{ backgroundColor: value }} />
         <input type="color" value={value} onChange={e => onChange(e.target.value)}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
       </label>

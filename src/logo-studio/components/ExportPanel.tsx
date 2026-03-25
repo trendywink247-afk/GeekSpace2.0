@@ -38,7 +38,7 @@ export function ExportPanel({ onExportSVG, onCopyCode, svgString }: ExportPanelP
     </svg>
   );
 
-  const secondary = 'rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all border border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06]';
+  const secondary = 'rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all border border-white/[0.06] bg-white/[0.03] text-white/70 hover:bg-white/[0.06]';
 
   return (
     <div className="flex gap-3 items-center pt-4 border-t border-white/[0.06]">

@@ -60,7 +60,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white/80"
+      className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white/80"
     >
       {copied ? 'Copied!' : label}
     </button>
@@ -195,7 +195,7 @@ export function BrandKitPanel({
                 <div key={i} className="flex flex-col items-center gap-1.5">
                   <button
                     onClick={() => navigator.clipboard?.writeText(color.hex)}
-                    className="w-10 h-10 rounded-full border border-white/10 cursor-pointer transition-transform hover:scale-110"
+                    className="w-10 h-10 rounded-full border border-white/[0.06] cursor-pointer transition-transform hover:scale-110"
                     style={{ backgroundColor: color.hex }}
                     title={`Copy ${color.hex}`}
                   />
@@ -259,7 +259,7 @@ export function BrandKitPanel({
                     </span>
                   </div>
                   <button
-                    className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border border-white/10 bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white/70"
+                    className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white/70"
                     title={`Download ${size.platform} (${size.width}x${size.height})`}
                   >
                     Download

@@ -11,6 +11,7 @@ import { LogoWizard } from './components/LogoWizard';
 import { ChatRefine } from './components/ChatRefine';
 import { BrandKitPanel } from './components/BrandKitPanel';
 import { ShareCard } from './components/ShareCard';
+import { ColorVariants } from './components/ColorVariants';
 import { LogoSVG } from './LogoEngine';
 import { PRESETS } from './presets';
 import type { LogoParams } from './types';
@@ -156,9 +157,18 @@ export function LogoStudioPage() {
               </section>
             )}
             {selectedConcept && (
-              <section className="mt-8">
-                <ShareCard logoUrl={selectedConcept.url} brandName={wizardResult?.brandName || selectedConcept.name} />
-              </section>
+              <>
+                <section className="mt-8">
+                  <ColorVariants
+                    imageUrl={selectedConcept.url}
+                    brandName={wizardResult?.brandName || selectedConcept.name}
+                    onSelect={(dataUrl, name) => setSelectedConcept({ name, url: dataUrl })}
+                  />
+                </section>
+                <section className="mt-8">
+                  <ShareCard logoUrl={selectedConcept.url} brandName={wizardResult?.brandName || selectedConcept.name} />
+                </section>
+              </>
             )}
             {favorites.length > 0 && (
               <section className="mt-8">

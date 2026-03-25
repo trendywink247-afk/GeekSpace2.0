@@ -25,8 +25,9 @@ export function StudioHeader() {
           </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+            <img src="/logo-agentin.png" alt="Agentin" className="w-6 h-6 object-contain hidden sm:block" />
             <div>
-              <h1 className="text-base font-semibold text-white leading-tight">Logo Creator</h1>
+              <h1 className="text-base font-semibold text-white leading-tight">Just another AI Logo creator for Vibe artists</h1>
               <p className="text-[10px] text-white/40 leading-tight">Powered by Agentin</p>
             </div>
             <span className="mt-1 sm:mt-0 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full px-3 py-0.5 text-[11px] whitespace-nowrap w-fit">
