@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hexagon, Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2, Check, X, Timer } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2, Check, X, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/services/api';
@@ -188,13 +188,13 @@ export function ForgotPasswordPage() {
 
   // Password strength calculation
   const getPasswordStrength = (pw: string): { level: 'weak' | 'medium' | 'strong'; percent: number; color: string } => {
-    if (pw.length === 0) return { level: 'weak', percent: 0, color: '#FF3366' };
-    if (pw.length < 6) return { level: 'weak', percent: 33, color: '#FF3366' };
+    if (pw.length === 0) return { level: 'weak', percent: 0, color: '#ef4444' };
+    if (pw.length < 6) return { level: 'weak', percent: 33, color: '#ef4444' };
     const hasMixed = /[a-z]/.test(pw) && /[A-Z]/.test(pw);
     const hasNumbers = /\d/.test(pw);
-    if (pw.length > 8 && (hasMixed || hasNumbers)) return { level: 'strong', percent: 100, color: '#00FF88' };
+    if (pw.length > 8 && (hasMixed || hasNumbers)) return { level: 'strong', percent: 100, color: '#10B981' };
     if (pw.length >= 6) return { level: 'medium', percent: 66, color: '#F59E0B' };
-    return { level: 'weak', percent: 33, color: '#FF3366' };
+    return { level: 'weak', percent: 33, color: '#ef4444' };
   };
 
   const passwordStrength = getPasswordStrength(newPassword);
@@ -210,19 +210,28 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Background — matches LoginPage */}
+      {/* Background — aurora gradient with noise */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse at top, rgba(0, 240, 255, 0.15), transparent 50%),
-            radial-gradient(ellipse at bottom, rgba(255, 97, 220, 0.1), transparent 50%),
-            #06060B
+            radial-gradient(ellipse at top, rgba(139, 92, 246, 0.08), transparent 50%),
+            radial-gradient(ellipse at bottom left, rgba(16, 185, 129, 0.06), transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(245, 158, 11, 0.04), transparent 50%),
+            #06061a
           `,
         }}
       />
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#00F0FF]/8 blur-[120px]" />
-      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#FF2D78]/8 blur-[100px]" />
+      {/* Noise texture overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'url(/noise.svg)',
+          opacity: 0.035,
+        }}
+      />
+      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/[0.06] blur-[120px]" />
+      <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#F59E0B]/[0.05] blur-[100px]" />
 
       <div
         className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto transition-all duration-700 ${
@@ -232,11 +241,11 @@ export function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center group-hover:bg-[#00F0FF]/30 transition-colors">
-              <Hexagon className="w-6 h-6 text-[#00F0FF]" />
+            <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center group-hover:bg-[#8B5CF6]/30 transition-colors">
+              <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-white">Agent</span><span className="text-[#00F0FF]">in</span>
+              <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>
             </span>
           </button>
 
@@ -253,11 +262,12 @@ export function ForgotPasswordPage() {
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                         isCurrent
-                          ? 'bg-[#00F0FF] text-white scale-110'
+                          ? 'text-white scale-110'
                           : isPast
-                          ? 'bg-[#00FF88]/20 text-[#00FF88]'
+                          ? 'bg-[#10B981]/20 text-[#10B981]'
                           : 'bg-[#1A1A2E] text-[#6B7280]'
                       }`}
+                      style={isCurrent ? { background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' } : undefined}
                     >
                       {isPast ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -266,14 +276,14 @@ export function ForgotPasswordPage() {
                       )}
                     </div>
                     <span className={`text-[10px] transition-colors duration-300 ${
-                      isCurrent ? 'text-[#00F0FF]' : isPast ? 'text-[#00FF88]' : 'text-[#6B7280]'
+                      isCurrent ? 'text-[#8B5CF6]' : isPast ? 'text-[#10B981]' : 'text-[#6B7280]'
                     }`}>
                       {stepLabels[i]}
                     </span>
                   </div>
                   {i < 3 && (
                     <div className={`w-5 sm:w-8 h-0.5 mb-5 transition-colors duration-300 ${
-                      isPast ? 'bg-[#00FF88]/40' : 'bg-[#1A1A2E]'
+                      isPast ? 'bg-[#10B981]/40' : 'bg-[#1A1A2E]'
                     }`} />
                   )}
                 </div>
@@ -291,12 +301,10 @@ export function ForgotPasswordPage() {
 
         {/* Card */}
         <div
-          className="p-6 rounded-2xl space-y-4"
+          className="p-6 rounded-2xl space-y-4 border border-white/[0.06] bg-white/[0.02]"
           style={{
-            background: 'rgba(11, 11, 16, 0.8)',
             WebkitBackdropFilter: 'blur(20px)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0, 240, 255, 0.2)',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
@@ -312,16 +320,21 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
                     required
                     autoFocus
                   />
                 </div>
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
+              {error && <p className="text-sm text-[#ef4444]" role="alert" aria-live="polite">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 text-base text-white border-0"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+              >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -351,7 +364,7 @@ export function ForgotPasswordPage() {
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
                       aria-label={`Digit ${i + 1} of 6`}
-                      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold rounded-xl bg-[#06060B]/60 border border-[#00F0FF]/30 text-[#E8E8F0] focus:border-[#00F0FF] focus:ring-1 focus:ring-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 outline-none transition-all"
+                      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold rounded-xl bg-[#06061a]/60 border border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 outline-none transition-all"
                     />
                   ))}
                 </div>
@@ -360,9 +373,14 @@ export function ForgotPasswordPage() {
                 </p>
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
+              {error && <p className="text-sm text-[#ef4444]" role="alert" aria-live="polite">{error}</p>}
 
-              <Button type="submit" disabled={isLoading || otp.join('').length !== 6} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
+              <Button
+                type="submit"
+                disabled={isLoading || otp.join('').length !== 6}
+                className="w-full h-12 text-base text-white border-0"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+              >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -383,9 +401,9 @@ export function ForgotPasswordPage() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={isLoading}
-                  className="w-full text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors py-2 min-h-[44px]"
+                  className="w-full text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors py-2 min-h-[44px]"
                 >
-                  Didn't receive the code? <span className="text-[#00F0FF] font-medium">Resend</span>
+                  Didn't receive the code? <span className="text-[#8B5CF6] font-medium">Resend</span>
                 </button>
               )}
             </form>
@@ -403,7 +421,7 @@ export function ForgotPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
                     required
                     minLength={8}
                     autoFocus
@@ -427,11 +445,11 @@ export function ForgotPasswordPage() {
                       </span>
                       <div className="flex items-center gap-1 text-[10px]">
                         {newPassword.length >= 8 ? (
-                          <Check className="w-3 h-3 text-[#00FF88]" />
+                          <Check className="w-3 h-3 text-[#10B981]" />
                         ) : (
-                          <X className="w-3 h-3 text-[#FF3366]" />
+                          <X className="w-3 h-3 text-[#ef4444]" />
                         )}
-                        <span className={newPassword.length >= 8 ? 'text-[#00FF88]' : 'text-[#6B7280]'}>
+                        <span className={newPassword.length >= 8 ? 'text-[#10B981]' : 'text-[#6B7280]'}>
                           8+ characters
                         </span>
                       </div>
@@ -448,7 +466,7 @@ export function ForgotPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/30 text-[#E8E8F0]"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
                     required
                     minLength={8}
                   />
@@ -462,17 +480,22 @@ export function ForgotPasswordPage() {
                   { check: newPassword === confirmPassword && confirmPassword.length > 0, label: 'Passwords match' },
                 ].map(({ check, label }) => (
                   <div key={label} className="flex items-center gap-2 text-xs">
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#00FF88]/20' : 'bg-[#1A1A2E]'}`}>
-                      {check && <CheckCircle2 className="w-3 h-3 text-[#00FF88]" />}
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#10B981]/20' : 'bg-[#1A1A2E]'}`}>
+                      {check && <CheckCircle2 className="w-3 h-3 text-[#10B981]" />}
                     </div>
-                    <span className={check ? 'text-[#00FF88]' : 'text-[#6B7280]'}>{label}</span>
+                    <span className={check ? 'text-[#10B981]' : 'text-[#6B7280]'}>{label}</span>
                   </div>
                 ))}
               </div>
 
-              {error && <p className="text-sm text-[#FF3366]" role="alert" aria-live="polite">{error}</p>}
+              {error && <p className="text-sm text-[#ef4444]" role="alert" aria-live="polite">{error}</p>}
 
-              <Button type="submit" disabled={isLoading} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 text-base text-white border-0"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+              >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
@@ -488,8 +511,8 @@ export function ForgotPasswordPage() {
           {/* Step 4: Success */}
           {step === 'success' && (
             <div className="text-center space-y-4 py-4">
-              <div className="w-16 h-16 rounded-full bg-[#00FF88]/10 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-[#00FF88]" />
+              <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-[#10B981]" />
               </div>
               <p className="text-[#6B7280]">
                 Your password has been reset successfully. You can now sign in with your new credentials.
@@ -499,7 +522,8 @@ export function ForgotPasswordPage() {
               </p>
               <Button
                 onClick={() => navigate('/login')}
-                className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] h-12 text-base"
+                className="w-full h-12 text-base text-white border-0"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Go to Login Now
@@ -513,7 +537,7 @@ export function ForgotPasswordPage() {
           <p className="text-center text-sm text-[#6B7280] mt-6">
             <button
               onClick={() => navigate('/login')}
-              className="text-[#00F0FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
+              className="text-[#8B5CF6] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-1" />
               Back to Sign In

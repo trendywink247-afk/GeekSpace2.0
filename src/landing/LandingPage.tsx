@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from './sections/HeroSection';
+import { FreeToolsSection } from './sections/FreeToolsSection';
+import { TrustStripSection } from './sections/TrustStripSection';
 import { ProblemSolutionSection } from './sections/ProblemSolutionSection';
 import { PersonaSection } from './sections/PersonaSection';
 import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
@@ -47,6 +49,10 @@ export function LandingPage() {
       <main className="relative z-10">
         {/* 1. Hero */}
         <HeroSection onEnterDashboard={onEnterDashboard} />
+        {/* 1b. Free Tools showcase */}
+        <FreeToolsSection />
+        {/* 1c. Trust promises */}
+        <TrustStripSection />
         {/* 2. Social Proof */}
         <SocialProofSection />
         {/* 3. ProblemSolution */}

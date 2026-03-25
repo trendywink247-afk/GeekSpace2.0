@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { LogoSVG } from '../LogoEngine';
 import { MagicCard } from '@/components/magicui/magic-card';
+import { useFreeTrial } from '@/hooks/useFreeTrial';
 import type { LogoParams } from '../types';
 
 /* ---------- types ---------- */
@@ -74,6 +76,8 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
   const [similarity, setSimilarity] = useState(0.5);
   const [favorites, setFavorites] = useState<FavoriteConcept[]>(loadFavorites);
   const [industry, setIndustry] = useState('');
+
+  const { logoGenLimit, isLogoLimited, trackLogoGen, remainingLogoGens } = useFreeTrial();
 
   const stylesRef = useRef<HTMLDivElement>(null);
   const autoGenTriggered = useRef(false);
@@ -156,7 +160,9 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
   };
 
   const doGenerateVisuals = async (ov?: { name?: string; style?: StylePreset; ind?: string; dir?: string }) => {
+    if (isLogoLimited) return;
     setVisualLoading(true); setError('');
+    trackLogoGen();
     const batchNum = generateCount + 1; setGenerateCount(batchNum);
     try {
       const dirHint = ov?.dir ?? direction;
@@ -255,18 +261,40 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       )}
 
       {/* Direction + generate */}
-      <div className="flex gap-2 mb-4">
-        <input type="text" value={direction} onChange={(e) => setDirection(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSubmit()}
-          placeholder={activeTab === 'visual' ? 'e.g. cyberpunk neon, luxury gold, minimal flat...' : 'e.g. bold gradient, minimal clean...'}
-          className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-violet-500/40" />
-        <button onClick={handleSubmit} disabled={isLoading}
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white whitespace-nowrap">
-          {visualLoading ? <span className="flex items-center gap-2"><Spinner /> Generating 10...</span>
-           : loading ? <span className="flex items-center gap-2"><Spinner /> Suggesting...</span>
-           : activeTab === 'visual' ? 'Generate 10' : 'Suggest'}
-        </button>
-      </div>
+      {isLogoLimited && activeTab === 'visual' ? (
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-center mb-4">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+            <svg className="w-6 h-6 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Loved your logos?</h3>
+          <p className="text-sm text-white/50 mb-4">Create a free account to generate unlimited logos. No ads, no tracking.</p>
+          <Link to="/login?signup=1" className="inline-block px-6 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-600 to-amber-500 text-white hover:opacity-90 transition-opacity">
+            Create Free Account
+          </Link>
+        </div>
+      ) : (
+        <div className="flex gap-2 mb-4">
+          <input type="text" value={direction} onChange={(e) => setDirection(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSubmit()}
+            placeholder={activeTab === 'visual' ? 'e.g. cyberpunk neon, luxury gold, minimal flat...' : 'e.g. bold gradient, minimal clean...'}
+            className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-violet-500/40" />
+          <div className="flex flex-col items-end gap-1">
+            <button onClick={handleSubmit} disabled={isLoading}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white whitespace-nowrap">
+              {visualLoading ? <span className="flex items-center gap-2"><Spinner /> Generating 10...</span>
+               : loading ? <span className="flex items-center gap-2"><Spinner /> Suggesting...</span>
+               : activeTab === 'visual' ? 'Generate 10' : 'Suggest'}
+            </button>
+            {activeTab === 'visual' && (
+              <span className="text-[11px] text-white/40">
+                {remainingLogoGens}/{logoGenLimit} free
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-xs text-red-400/80 mb-3">{error}</p>}
 
@@ -359,7 +387,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
               );
             })}
           </div>
-          {!isLoading && (
+          {!isLoading && !isLogoLimited && (
             <div className="mt-3 flex justify-center">
               <button onClick={generateVisuals} className="text-xs text-violet-400/50 hover:text-violet-400 cursor-pointer transition-colors">
                 Regenerate with new variations

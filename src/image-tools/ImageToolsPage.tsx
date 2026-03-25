@@ -288,6 +288,17 @@ export function ImageToolsPage() {
                 All processing happens locally in your browser
               </div>
             </div>
+
+            {/* Soft registration suggestion */}
+            <div className="mt-6 text-center">
+              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                <p className="text-sm text-white/50">Want to save your work and unlock more tools?</p>
+                <Link to="/login?signup=1" className="text-sm font-medium text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors">
+                  Create a free account →
+                </Link>
+                <p className="text-[10px] text-white/25">No ads. No tracking. Ever.</p>
+              </div>
+            </div>
           </>
         )}
       </main>

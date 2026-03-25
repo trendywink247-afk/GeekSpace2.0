@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, Clock, SkipForward, LogOut } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Loader2, Zap, Clock, SkipForward, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
 import { ProfileStep } from './steps/ProfileStep';
@@ -150,11 +150,9 @@ export function OnboardingWizard() {
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
           <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-            <span className="text-white">Agent</span><span className="text-[#00F0FF]">in</span>
+            <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>
           </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -174,10 +172,10 @@ export function OnboardingWizard() {
           </span>
           <span>{Math.round(progressPercent)}% complete</span>
         </div>
-        <div className="h-2 bg-[#0C0C18] rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-[#00F0FF] to-[#FF2D78] transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%` }}
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(6, 6, 26, 0.9)' }}>
+          <div
+            className="h-full transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%`, background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
           />
         </div>
       </div>
@@ -190,13 +188,13 @@ export function OnboardingWizard() {
           
           return (
             <div key={s.id} className="flex items-center">
-              <div 
+              <div
                 className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg sm:text-xl transition-all duration-300 ${
-                  isCompleted 
-                    ? 'bg-[#00FF88] text-[#0C0C18]' 
-                    : isActive 
-                      ? 'bg-[#00F0FF] text-white ring-4 ring-[#00F0FF]/20 scale-110' 
-                      : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#6B7280]'
+                  isCompleted
+                    ? 'bg-[#10B981] text-white'
+                    : isActive
+                      ? 'bg-[#8B5CF6] text-white ring-4 ring-[#8B5CF6]/20 scale-110'
+                      : 'border border-white/[0.08] bg-white/[0.02] text-[#6B7280]'
                 }`}
                 title={s.name}
                 aria-current={isActive ? 'step' : undefined}
@@ -205,7 +203,7 @@ export function OnboardingWizard() {
               </div>
               {i < STEPS.length - 1 && (
                 <div className={`w-4 sm:w-8 h-0.5 mx-1 sm:mx-2 ${
-                  isCompleted ? 'bg-[#00FF88]' : 'bg-[#00F0FF]/20'
+                  isCompleted ? 'bg-[#10B981]' : 'bg-white/[0.08]'
                 }`} />
               )}
             </div>
@@ -214,7 +212,7 @@ export function OnboardingWizard() {
       </div>
 
       {/* Step Content */}
-      <div className={`p-4 sm:p-8 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 mb-6 shadow-xl shadow-[#00F0FF]/5 ${stepAnimClass}`}>
+      <div className={`p-4 sm:p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl mb-6 shadow-xl shadow-[#8B5CF6]/5 ${stepAnimClass}`}>
         {step === 0 && (
           <ProfileStep
             name={onboarding.profile.name}
@@ -276,7 +274,7 @@ export function OnboardingWizard() {
       {/* Skip Modal */}
       {showSkipModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card-v2 border border-[#00F0FF]/20 rounded-2xl p-6 max-w-xs sm:max-w-sm w-full">
+          <div className="border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl rounded-2xl p-6 max-w-xs sm:max-w-sm w-full">
             <h3 className="text-lg font-semibold text-[#E8E8F0] mb-4">Skip this step?</h3>
             <p className="text-sm text-[#6B7280] mb-4">
               You can always complete this later in your dashboard settings.
@@ -286,7 +284,7 @@ export function OnboardingWizard() {
                 <button
                   key={reason}
                   onClick={() => handleSkip(i === 3)}
-                  className="w-full text-left px-4 py-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:border-[#00F0FF]/50 hover:text-[#E8E8F0] transition-all"
+                  className="w-full text-left px-4 py-3 rounded-xl bg-[#06061a] border border-white/[0.08] text-sm text-[#6B7280] hover:border-[#8B5CF6]/50 hover:text-[#E8E8F0] transition-all"
                 >
                   {reason}
                 </button>
@@ -294,7 +292,7 @@ export function OnboardingWizard() {
             </div>
             <Button
               variant="outline"
-              className="w-full border-[#00F0FF]/30 text-[#6B7280]"
+              className="w-full border-[#8B5CF6]/30 text-[#6B7280]"
               onClick={() => setShowSkipModal(false)}
             >
               Continue Setup
@@ -311,7 +309,7 @@ export function OnboardingWizard() {
             <Button
               variant="outline"
               onClick={handleBack}
-              className="min-h-[48px] px-4 border-[#00F0FF]/30 text-[#6B7280]"
+              className="min-h-[48px] px-4 border-[#8B5CF6]/30 text-[#6B7280]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -322,7 +320,8 @@ export function OnboardingWizard() {
             <Button
               onClick={handleNext}
               disabled={!canAdvance() || isSaving}
-              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#00F0FF] to-[#00D4B0] hover:opacity-90 text-white font-medium"
+              className="flex-1 min-h-[48px] hover:opacity-90 text-white font-medium"
+              style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
             >
               {isSaving ? (
                 <>
@@ -340,7 +339,7 @@ export function OnboardingWizard() {
             <Button
               onClick={handleLaunch}
               disabled={isLaunching}
-              className="flex-1 min-h-[48px] bg-gradient-to-r from-[#00FF88] to-[#51EF6B] text-[#0C0C18] hover:opacity-90 font-bold"
+              className="flex-1 min-h-[48px] bg-[#10B981] hover:bg-[#059669] text-white hover:opacity-90 font-bold"
             >
               {isLaunching ? (
                 <>
@@ -362,7 +361,7 @@ export function OnboardingWizard() {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowSkipModal(true)}
-              className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded px-2 py-1"
+              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded px-2 py-1"
             >
               <SkipForward className="w-4 h-4" />
               Skip this step
@@ -370,7 +369,7 @@ export function OnboardingWizard() {
             <span className="text-[#6B7280]/30">|</span>
             <button
               onClick={() => handleSkip(true)}
-              className="text-sm text-[#6B7280] hover:text-[#FF3366] transition-colors focus-visible:ring-2 focus-visible:ring-[#FF3366]/50 rounded px-2 py-1"
+              className="text-sm text-[#6B7280] hover:text-[#ef4444] transition-colors focus-visible:ring-2 focus-visible:ring-[#ef4444]/50 rounded px-2 py-1"
             >
               Skip all setup
             </button>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Hexagon, Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,9 @@ function getPasswordStrength(pw: string): { level: 'weak' | 'medium' | 'strong';
 }
 
 const strengthConfig = {
-  weak:   { width: '33%', color: '#FF3366', label: 'Weak' },
+  weak:   { width: '33%', color: '#ef4444', label: 'Weak' },
   medium: { width: '66%', color: '#F59E0B', label: 'Medium' },
-  strong: { width: '100%', color: '#ADFF2F', label: 'Strong' },
+  strong: { width: '100%', color: '#10B981', label: 'Strong' },
 } as const;
 
 function OrbitalRings() {
@@ -29,18 +29,18 @@ function OrbitalRings() {
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       {/* Outer ring */}
       <div
-        className="absolute w-[500px] h-[500px] rounded-full border border-[#00F0FF]/10"
+        className="absolute w-[500px] h-[500px] rounded-full border border-[#8B5CF6]/10"
         style={{ animation: 'orbit 20s linear infinite' }}
       >
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#00F0FF]/60" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#ADFF2F]/40" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8B5CF6]/60" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#10B981]/40" />
       </div>
       {/* Middle ring */}
       <div
-        className="absolute w-[350px] h-[350px] rounded-full border border-[#FF2D78]/8"
+        className="absolute w-[350px] h-[350px] rounded-full border border-[#F59E0B]/8"
         style={{ animation: 'orbit 14s linear infinite reverse' }}
       >
-        <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#FF2D78]/50" />
+        <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#F59E0B]/50" />
       </div>
       {/* Inner ring */}
       <div
@@ -65,7 +65,7 @@ function FloatingParticles() {
             height: `${2 + (i % 3)}px`,
             left: `${15 + i * 14}%`,
             top: `${20 + (i * 11) % 60}%`,
-            backgroundColor: i % 3 === 0 ? 'rgba(0, 240, 255, 0.4)' : i % 3 === 1 ? 'rgba(173, 255, 47, 0.3)' : 'rgba(255, 45, 120, 0.3)',
+            backgroundColor: i % 3 === 0 ? 'rgba(139, 92, 246, 0.4)' : i % 3 === 1 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)',
             animation: `float ${5 + i * 0.8}s ease-in-out infinite`,
             animationDelay: `${i * 0.5}s`,
           }}
@@ -159,13 +159,14 @@ export function LoginPage() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05050A] relative overflow-hidden">
-        <div className="absolute inset-0 gradient-mesh" />
+      <div className="min-h-screen flex items-center justify-center bg-[#06061a] relative overflow-hidden">
+        {/* Aurora gradient */}
+        <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 40%), radial-gradient(ellipse at 50% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%)' }} />
         <OrbitalRings />
         <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
-          <div className="bg-[#0C0C18] border border-white/10 rounded-2xl p-8 space-y-6">
-            <div className="w-14 h-14 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto">
-              <Hexagon className="w-7 h-7 text-[#00F0FF]" />
+          <div className="border border-white/10 rounded-2xl p-8 space-y-6" style={{ background: 'rgba(6, 6, 26, 0.9)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
+            <div className="w-14 h-14 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center mx-auto">
+              <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <p className="text-white/50 text-sm mb-1">Signed in as</p>
@@ -177,13 +178,13 @@ export function LoginPage() {
               <Button
                 onClick={() => logout()}
                 variant="outline"
-                className="w-full border-[#FF2D78]/40 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:border-[#FF2D78]"
+                className="w-full border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]"
               >
                 Yes, sign out
               </Button>
               <Button
                 onClick={() => navigate('/dashboard', { replace: true })}
-                className="w-full bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/20"
+                className="w-full bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/20"
               >
                 Stay signed in
               </Button>
@@ -195,11 +196,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* Global animated gradient mesh */}
-      <div className="absolute inset-0 gradient-mesh" />
+    <div className="min-h-screen flex relative overflow-hidden" style={{ background: '#06061a' }}>
+      {/* Aurora gradient */}
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 40%), radial-gradient(ellipse at 50% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%)' }} />
       {/* Noise texture */}
-      <div className="absolute inset-0 noise-overlay" />
+      <div className="fixed inset-0 pointer-events-none z-[9999]" style={{ opacity: 0.035, backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")' }} />
 
       {/* ─── Left Panel: Visual Showcase (desktop only) ─── */}
       <div className="hidden md:flex flex-1 relative items-center justify-center">
@@ -209,13 +210,12 @@ export function LoginPage() {
             className="absolute inset-0"
             style={{
               background: `
-                radial-gradient(ellipse at 30% 40%, rgba(0, 240, 255, 0.1) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 70%, rgba(139, 92, 246, 0.07) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 20%, rgba(173, 255, 47, 0.04) 0%, transparent 40%)
+                radial-gradient(ellipse at 30% 40%, rgba(139, 92, 246, 0.1) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, rgba(16, 185, 129, 0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 20%, rgba(245, 158, 11, 0.04) 0%, transparent 40%)
               `,
             }}
           />
-          <div className="absolute inset-0 cyber-grid opacity-20" />
         </div>
 
         <OrbitalRings />
@@ -224,30 +224,30 @@ export function LoginPage() {
         {/* Brand content */}
         <div className="relative z-10 text-center px-12 max-w-lg">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center">
-              <Hexagon className="w-8 h-8 text-[#00F0FF]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center">
+              <img src="/logo-agentin.png" alt="Agentin" className="w-10 h-10 object-contain" />
             </div>
             <span className="text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
+              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#8B5CF6]">in</span>
             </span>
           </div>
           <h2
             className="text-5xl font-extrabold mb-4 leading-tight"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
-            <span className="text-gradient-lime">Your AI.</span>
+            <span className="text-[#8B5CF6]">Your AI. Your Server.</span>
             <br />
             <span className="text-[#E8E8F0]">Your Rules.</span>
           </h2>
           <p className="text-lg text-[#6B7280] leading-relaxed">
-            Personal AI OS that breaks rules and assists you in your chores.
+            Personal AI OS that lives on your server and assists you in your chores.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/5 border border-[#00F0FF]/15">
-              <div className="w-2 h-2 rounded-full bg-[#ADFF2F] animate-pulse" />
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8B5CF6]/5 border border-[#8B5CF6]/15">
+              <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
               <span className="text-xs text-[#6B7280]">AI Engine Online</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF2D78]/5 border border-[#FF2D78]/15">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F59E0B]/5 border border-[#F59E0B]/15">
               <span className="text-xs text-[#6B7280]">v3.0</span>
             </div>
           </div>
@@ -257,8 +257,8 @@ export function LoginPage() {
       {/* ─── Right Panel: Login Form ─── */}
       <div className="flex-1 md:max-w-[520px] flex items-center justify-center px-4 py-8 relative z-10">
         {/* Mobile-only floating orbs */}
-        <div className="md:hidden absolute top-1/4 left-1/4 w-[300px] h-[300px] rounded-full bg-[#00F0FF]/[0.04] blur-[100px] animate-pulse" style={{ animationDuration: '6s' }} />
-        <div className="md:hidden absolute bottom-1/4 right-1/4 w-[200px] h-[200px] rounded-full bg-[#FF2D78]/[0.03] blur-[80px] animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="md:hidden absolute top-1/4 left-1/4 w-[300px] h-[300px] rounded-full bg-[#8B5CF6]/[0.04] blur-[100px] animate-pulse" style={{ animationDuration: '6s' }} />
+        <div className="md:hidden absolute bottom-1/4 right-1/4 w-[200px] h-[200px] rounded-full bg-[#F59E0B]/[0.03] blur-[80px] animate-pulse" style={{ animationDuration: '8s' }} />
 
         <div
           className={`w-full max-w-sm sm:max-w-md relative transition-all duration-700 ${
@@ -268,18 +268,18 @@ export function LoginPage() {
           {/* Mobile Logo (hidden on desktop since left panel shows it) */}
           <div className="text-center mb-8 md:hidden">
             <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2.5 mb-6 group">
-              <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center group-hover:bg-[#00F0FF]/15 group-hover:border-[#00F0FF]/40 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]">
-                <Hexagon className="w-6 h-6 text-[#00F0FF]" />
+              <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center group-hover:bg-[#8B5CF6]/15 group-hover:border-[#8B5CF6]/40 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.15)]">
+                <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
               </div>
               <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-                <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
+                <span className="text-[#E8E8F0]">Agent</span><span className="text-[#8B5CF6]">in</span>
               </span>
             </button>
           </div>
 
           {/* Agent greeting */}
           <div className="text-center mb-3 md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/10 mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.06] mb-4" style={{ background: 'rgba(6, 6, 26, 0.9)' }}>
               <span className="text-sm">{['✨', '🔷', '🤖'][Math.floor(Date.now() / 60000) % 3]}</span>
               <span className="text-xs text-[#8892A4]">
                 {['Weebo is excited to meet you!', 'Edith has everything ready.', 'Jarvis at your service.'][Math.floor(Date.now() / 60000) % 3]}
@@ -302,7 +302,7 @@ export function LoginPage() {
               variant="outline"
               disabled={oauthLoading !== null}
               onClick={() => handleOAuth('google')}
-              className="w-full border-[#00F0FF]/15 h-12 text-[#E8E8F0] hover:border-[#00F0FF]/40 hover:bg-[#00F0FF]/5 text-base"
+              className="w-full border-[#8B5CF6]/15 h-12 text-[#E8E8F0] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 text-base"
             >
               {oauthLoading === 'google' ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -316,7 +316,7 @@ export function LoginPage() {
               variant="outline"
               disabled={oauthLoading !== null}
               onClick={() => handleOAuth('github')}
-              className="w-full border-[#00F0FF]/15 h-11 text-[#9CA3AF] hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/5"
+              className="w-full border-[#8B5CF6]/15 h-11 text-[#9CA3AF] hover:border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/5"
             >
               {oauthLoading === 'github' ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -327,10 +327,10 @@ export function LoginPage() {
             </Button>
             <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#00F0FF]/10" />
+                <div className="w-full border-t border-[#8B5CF6]/10" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[#06060B] px-3 text-xs text-[#4B5563]">or use email</span>
+                <span className="px-3 text-xs text-[#4B5563]" style={{ background: '#06061a' }}>or use email</span>
               </div>
             </div>
           </div>
@@ -338,12 +338,10 @@ export function LoginPage() {
           {/* Email form card */}
           <form data-testid="login-form" onSubmit={handleSubmit} className="space-y-4">
             <div
-              className="p-6 rounded-2xl space-y-4 plasma-border"
+              className="p-6 rounded-2xl space-y-4 border border-white/[0.06] bg-white/[0.02]"
               style={{
-                background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.9), rgba(16, 16, 30, 0.8))',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
-                backdropFilter: 'blur(24px) saturate(1.3)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 240, 255, 0.04)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
               }}
             >
               {isSignup && (
@@ -355,19 +353,19 @@ export function LoginPage() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="your-username"
-                      className="pl-10 bg-[#06060B]/60 border-[#00F0FF]/20 text-[#E8E8F0] focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10"
+                      className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                       required
                     />
                   </div>
                   <p className="text-xs text-[#6B7280] mt-1">
-                    Your URL: <span className="text-[#00F0FF]">{username || 'you'}.agentin.chat</span>
+                    Your URL: <span className="text-[#8B5CF6]">{username || 'you'}.agentin.chat</span>
                   </p>
                 </div>
               )}
               <div>
                 <label className="text-sm text-[#9CA3AF] mb-2 block">Email</label>
                 <div className="relative">
-                  <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${showEmailError ? 'text-[#FF3366]' : showEmailSuccess ? 'text-[#ADFF2F]' : 'text-[#6B7280]'}`} />
+                  <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${showEmailError ? 'text-[#ef4444]' : showEmailSuccess ? 'text-[#10B981]' : 'text-[#6B7280]'}`} />
                   <Input
                     ref={emailRef}
                     type="email"
@@ -376,19 +374,19 @@ export function LoginPage() {
                     onBlur={() => setEmailBlurred(true)}
                     placeholder="you@example.com"
                     autoFocus
-                    className={`pl-10 bg-[#06060B]/60 text-[#E8E8F0] transition-colors ${
+                    className={`pl-10 bg-[#06061a]/60 text-[#E8E8F0] transition-colors ${
                       showEmailError
-                        ? 'border-[#FF3366]/60 focus:border-[#FF3366]/80 focus:ring-[#FF3366]/10'
+                        ? 'border-[#ef4444]/60 focus:border-[#ef4444]/80 focus:ring-[#ef4444]/10'
                         : showEmailSuccess
-                          ? 'border-[#ADFF2F]/40 focus:border-[#ADFF2F]/60 focus:ring-[#ADFF2F]/10'
-                          : 'border-[#00F0FF]/20 focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10'
+                          ? 'border-[#10B981]/40 focus:border-[#10B981]/60 focus:ring-[#10B981]/10'
+                          : 'border-white/[0.08] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10'
                     }`}
                     required
                     data-testid="login-email"
                   />
                 </div>
                 {showEmailError && (
-                  <p className="text-xs text-[#FF3366]/80 mt-1">Please enter a valid email</p>
+                  <p className="text-xs text-[#ef4444]/80 mt-1">Please enter a valid email</p>
                 )}
               </div>
               <div>
@@ -400,7 +398,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-10 pr-12 bg-[#06060B]/60 border-[#00F0FF]/20 text-[#E8E8F0] focus:border-[#00F0FF]/50 focus:ring-[#00F0FF]/10"
+                    className="pl-10 pr-12 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     data-testid="login-password"
                   />
@@ -408,7 +406,7 @@ export function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B7280] hover:text-[#8B5CF6] transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -443,7 +441,7 @@ export function LoginPage() {
                 <div className="flex justify-end">
                   <Link
                     to="/forgot-password"
-                    className="text-sm text-[#00F0FF] hover:text-[#00F0FF]/80 hover:underline transition-colors inline-flex items-center gap-1.5 py-1 font-medium"
+                    className="text-sm text-[#8B5CF6] hover:text-[#8B5CF6]/80 hover:underline transition-colors inline-flex items-center gap-1.5 py-1 font-medium"
                   >
                     Forgot password?
                   </Link>
@@ -451,13 +449,13 @@ export function LoginPage() {
               )}
 
               {error && (
-                <div className="text-sm text-[#FF3366]" role="alert" aria-live="polite" data-testid="login-error">
+                <div className="text-sm text-[#ef4444]" role="alert" aria-live="polite" data-testid="login-error">
                   <p>{error}</p>
                   {error.toLowerCase().includes('already taken') && (
                     <button
                       type="button"
                       onClick={() => { setIsSignup(false); setError(''); }}
-                      className="text-[#00F0FF] hover:underline font-medium mt-1 inline-block min-h-[44px] py-2"
+                      className="text-[#8B5CF6] hover:underline font-medium mt-1 inline-block min-h-[44px] py-2"
                     >
                       Try logging in instead?
                     </button>
@@ -470,14 +468,14 @@ export function LoginPage() {
                 disabled={isLoading}
                 className="w-full h-12 text-base font-bold transition-all duration-300"
                 style={{
-                  background: 'linear-gradient(135deg, #ADFF2F, #00F0FF)',
-                  color: '#06060B',
-                  boxShadow: '0 0 20px rgba(173, 255, 47, 0.15)',
+                  background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)',
+                  color: '#ffffff',
+                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
                 }}
                 data-testid="login-submit"
               >
                 {isLoading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Signing {isSignup ? 'up' : 'in'}…</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Signing {isSignup ? 'up' : 'in'}...</>
                 ) : (
                   <>
                     {isSignup ? 'Create Account' : 'Sign In'}
@@ -492,10 +490,10 @@ export function LoginPage() {
               type="button"
               variant="outline"
               onClick={handleDemo}
-              className="w-full border-[#FF2D78]/30 hover:bg-[#FF2D78]/5 hover:border-[#FF2D78]/50 h-11 group text-[#9CA3AF]"
+              className="w-full border-[#F59E0B]/30 hover:bg-[#F59E0B]/5 hover:border-[#F59E0B]/50 h-11 group text-[#9CA3AF]"
               data-testid="demo-login-button"
             >
-              <Zap className="w-4 h-4 mr-2 text-[#FF2D78] group-hover:animate-pulse" />
+              <Zap className="w-4 h-4 mr-2 text-[#F59E0B] group-hover:animate-pulse" />
               Try Demo
               <span className="ml-2 text-xs text-[#4B5563] hidden sm:inline">(no signup needed)</span>
             </Button>
@@ -506,16 +504,16 @@ export function LoginPage() {
             {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => { setIsSignup(!isSignup); setError(''); }}
-              className="text-[#00F0FF] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded"
+              className="text-[#8B5CF6] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded"
             >
               {isSignup ? 'Sign In' : 'Sign Up'}
             </button>
           </p>
 
           {searchParams.get('demo') === 'true' && (
-            <div className="mt-4 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
+            <div className="mt-4 p-3 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 text-center">
               <p className="text-xs text-[#6B7280]">
-                Demo credentials pre-filled. Click <span className="text-[#00F0FF] font-medium">Sign In</span> or <span className="text-[#FF2D78] font-medium">Login with Demo</span> for instant access.
+                Demo credentials pre-filled. Click <span className="text-[#8B5CF6] font-medium">Sign In</span> or <span className="text-[#F59E0B] font-medium">Login with Demo</span> for instant access.
               </p>
             </div>
           )}
