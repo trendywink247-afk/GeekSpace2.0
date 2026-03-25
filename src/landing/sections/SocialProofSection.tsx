@@ -13,11 +13,11 @@ const stats = [
 const activities = [
   { agent: 'Cal', action: 'Scheduled standup', color: '#4ECDC4' },
   { agent: 'Weebo', action: 'Answered GST query', color: '#10B981' },
-  { agent: 'Aria', action: 'Drafted social copy', color: '#FF2D78' },
+  { agent: 'Aria', action: 'Drafted social copy', color: '#8B5CF6' },
   { agent: 'Forge', action: 'Deployed API endpoint', color: '#FFB800' },
-  { agent: 'Pulse', action: 'Analyzing revenue', color: '#00FF88' },
+  { agent: 'Pulse', action: 'Analyzing revenue', color: '#10B981' },
   { agent: 'Echo', action: 'Summarized 12 emails', color: '#FF6B35' },
-  { agent: 'Jarvis', action: 'Fixed build error', color: '#ADFF2F' },
+  { agent: 'Jarvis', action: 'Fixed build error', color: '#10B981' },
   { agent: 'Nova', action: 'Generated wireframes', color: '#E040FB' },
   { agent: 'Edith', action: 'Researching market trends', color: '#8B5CF6' },
 ];

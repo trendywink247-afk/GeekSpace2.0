@@ -209,30 +209,132 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Background — aurora gradient with noise */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse at top, rgba(139, 92, 246, 0.08), transparent 50%),
-            radial-gradient(ellipse at bottom left, rgba(16, 185, 129, 0.06), transparent 50%),
-            radial-gradient(ellipse at bottom right, rgba(245, 158, 11, 0.04), transparent 50%),
-            #06061a
-          `,
-        }}
-      />
-      {/* Noise texture overlay */}
+    <div
+      className="min-h-dvh flex items-center justify-center px-4 py-8 pb-24 md:pb-8 relative overflow-hidden"
+      style={{ background: '#06061a' }}
+    >
+      {/* Inline keyframes for AgentinAura effect */}
+      <style>{`
+        @keyframes aura-spin {
+          0%   { transform: rotateX(60deg) rotateZ(0deg); }
+          100% { transform: rotateX(60deg) rotateZ(360deg); }
+        }
+        @keyframes aura-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50%       { transform: scale(1.15); opacity: 0.8; }
+        }
+        @keyframes aura-core-glow {
+          0%, 100% { box-shadow: 0 0 60px 20px rgba(139,92,246,0.15); }
+          50%       { box-shadow: 0 0 80px 30px rgba(139,92,246,0.25); }
+        }
+      `}</style>
+
+      {/* Aurora gradient background — matches AuthPageBackground */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'url(/noise.svg)',
-          opacity: 0.035,
+          background: [
+            'radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.08) 0%, transparent 50%)',
+            'radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.06) 0%, transparent 40%)',
+            'radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.04) 0%, transparent 50%)',
+          ].join(', '),
         }}
       />
+
+      {/* Noise texture overlay — inline SVG matching AuthPageBackground */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.035,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          backgroundRepeat: 'repeat',
+          backgroundSize: '256px 256px',
+        }}
+      />
+
+      {/* Ambient glow blobs */}
       <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/[0.06] blur-[120px]" />
       <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] rounded-full bg-[#F59E0B]/[0.05] blur-[100px]" />
 
+      {/* 3D AgentinAura rings */}
+      <div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        style={{ perspective: '800px' }}
+        aria-hidden="true"
+      >
+        {/* Core glow */}
+        <div
+          className="absolute w-32 h-32 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
+            animation: 'aura-core-glow 4s ease-in-out infinite, aura-breathe 6s ease-in-out infinite',
+          }}
+        />
+        {/* Ring 1 — large, slow */}
+        <div
+          className="absolute w-[340px] h-[340px] rounded-full border border-[#8B5CF6]/[0.12]"
+          style={{
+            animation: 'aura-spin 18s linear infinite',
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {/* Node dots on ring 1 */}
+          {[0, 90, 180, 270].map((deg) => (
+            <div
+              key={deg}
+              className="absolute w-1.5 h-1.5 rounded-full bg-[#8B5CF6]/40"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: `rotate(${deg}deg) translateX(170px) translateY(-50%)`,
+              }}
+            />
+          ))}
+        </div>
+        {/* Ring 2 — medium, reverse */}
+        <div
+          className="absolute w-[240px] h-[240px] rounded-full border border-[#F59E0B]/[0.10]"
+          style={{
+            animation: 'aura-spin 12s linear infinite reverse',
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {[45, 135, 225, 315].map((deg) => (
+            <div
+              key={deg}
+              className="absolute w-1 h-1 rounded-full bg-[#F59E0B]/30"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: `rotate(${deg}deg) translateX(120px) translateY(-50%)`,
+              }}
+            />
+          ))}
+        </div>
+        {/* Ring 3 — small, faster */}
+        <div
+          className="absolute w-[160px] h-[160px] rounded-full border border-[#10B981]/[0.08]"
+          style={{
+            animation: 'aura-spin 8s linear infinite',
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {[60, 180, 300].map((deg) => (
+            <div
+              key={deg}
+              className="absolute w-1 h-1 rounded-full bg-[#10B981]/25"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: `rotate(${deg}deg) translateX(80px) translateY(-50%)`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Main card container */}
       <div
         className={`w-full max-w-sm sm:max-w-md relative z-10 mx-auto transition-all duration-700 ${
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
@@ -241,7 +343,7 @@ export function ForgotPasswordPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2 mb-6 group">
-            <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center group-hover:bg-[#8B5CF6]/30 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center group-hover:bg-[#8B5CF6]/30 transition-colors border border-[#8B5CF6]/20">
               <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -267,7 +369,7 @@ export function ForgotPasswordPage() {
                           ? 'bg-[#10B981]/20 text-[#10B981]'
                           : 'bg-[#1A1A2E] text-[#6B7280]'
                       }`}
-                      style={isCurrent ? { background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' } : undefined}
+                      style={isCurrent ? { background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)' } : undefined}
                     >
                       {isPast ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -275,7 +377,7 @@ export function ForgotPasswordPage() {
                         i + 1
                       )}
                     </div>
-                    <span className={`text-[10px] transition-colors duration-300 ${
+                    <span className={`text-xs transition-colors duration-300 ${
                       isCurrent ? 'text-[#8B5CF6]' : isPast ? 'text-[#10B981]' : 'text-[#6B7280]'
                     }`}>
                       {stepLabels[i]}
@@ -291,7 +393,7 @@ export function ForgotPasswordPage() {
             })}
           </div>
 
-          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
+          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
             {stepConfig[step].title}
           </h1>
           <p className="text-[#6B7280]">
@@ -301,11 +403,12 @@ export function ForgotPasswordPage() {
 
         {/* Card */}
         <div
-          className="p-6 rounded-2xl space-y-4 border border-white/[0.06] bg-white/[0.02]"
+          className="p-6 sm:p-8 rounded-2xl space-y-4 border border-white/[0.06]"
           style={{
-            WebkitBackdropFilter: 'blur(20px)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            background: 'rgba(6, 6, 26, 0.9)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            boxShadow: '0 20px 60px rgba(139,92,246,0.08), 0 8px 24px rgba(0,0,0,0.3)',
           }}
         >
           {/* Step 1: Email */}
@@ -320,7 +423,7 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     autoFocus
                   />
@@ -332,8 +435,8 @@ export function ForgotPasswordPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 text-base text-white border-0"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+                className="w-full h-12 text-base font-bold text-white border-0 transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)' }}
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -378,8 +481,8 @@ export function ForgotPasswordPage() {
               <Button
                 type="submit"
                 disabled={isLoading || otp.join('').length !== 6}
-                className="w-full h-12 text-base text-white border-0"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+                className="w-full h-12 text-base font-bold text-white border-0 transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)' }}
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -421,7 +524,7 @@ export function ForgotPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     minLength={8}
                     autoFocus
@@ -440,10 +543,10 @@ export function ForgotPasswordPage() {
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] capitalize" style={{ color: passwordStrength.color }}>
+                      <span className="text-xs capitalize" style={{ color: passwordStrength.color }}>
                         {passwordStrength.level}
                       </span>
-                      <div className="flex items-center gap-1 text-[10px]">
+                      <div className="flex items-center gap-1 text-xs">
                         {newPassword.length >= 8 ? (
                           <Check className="w-3 h-3 text-[#10B981]" />
                         ) : (
@@ -466,7 +569,7 @@ export function ForgotPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50"
+                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     minLength={8}
                   />
@@ -493,8 +596,8 @@ export function ForgotPasswordPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 text-base text-white border-0"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+                className="w-full h-12 text-base font-bold text-white border-0 transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)' }}
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -511,7 +614,7 @@ export function ForgotPasswordPage() {
           {/* Step 4: Success */}
           {step === 'success' && (
             <div className="text-center space-y-4 py-4">
-              <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mx-auto border border-[#10B981]/20">
                 <CheckCircle2 className="w-8 h-8 text-[#10B981]" />
               </div>
               <p className="text-[#6B7280]">
@@ -522,8 +625,8 @@ export function ForgotPasswordPage() {
               </p>
               <Button
                 onClick={() => navigate('/login')}
-                className="w-full h-12 text-base text-white border-0"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+                className="w-full h-12 text-base font-bold text-white border-0 transition-all duration-300"
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)', boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)' }}
               >
                 <ArrowRight className="w-4 h-4 mr-2" />
                 Go to Login Now

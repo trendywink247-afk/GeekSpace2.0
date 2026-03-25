@@ -7,13 +7,13 @@ const timelineEntries = [
   {
     time: '8:00 AM',
     agent: 'Echo',
-    color: '#FF2D78',
+    color: '#8B5CF6',
     message: '12 emails summarized. 3 clients need replies by EOD. Newsletters auto-archived.',
   },
   {
     time: '9:30 AM',
     agent: 'Cal',
-    color: '#00FF88',
+    color: '#10B981',
     message: 'Team standup moved to 10 AM. Rahul confirmed for 3 PM. Your deep work block is protected until noon.',
   },
   {

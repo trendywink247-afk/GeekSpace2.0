@@ -14,11 +14,11 @@ const activities: Activity[] = [
   { id: 1, agent: 'Cal', action: 'Reminder: Team standup in 15 minutes', time: 'now', color: '#4ECDC4', status: 'in-progress' },
   { id: 2, agent: 'Weebo', action: 'Answered 3 questions about GST filing', time: '2s ago', color: '#10B981', status: 'completed' },
   { id: 3, agent: 'Cal', action: 'Scheduled meeting with Rahul at 3 PM', time: '8s ago', color: '#4ECDC4', status: 'completed' },
-  { id: 4, agent: 'Aria', action: 'Drafting social media banner copy', time: '12s ago', color: '#FF2D78', status: 'in-progress' },
+  { id: 4, agent: 'Aria', action: 'Drafting social media banner copy', time: '12s ago', color: '#8B5CF6', status: 'in-progress' },
   { id: 5, agent: 'Forge', action: 'Deployed REST API endpoint to production', time: '22s ago', color: '#FFB800', status: 'completed' },
-  { id: 6, agent: 'Pulse', action: 'Analyzing Q1 revenue trends', time: '31s ago', color: '#00FF88', status: 'in-progress' },
+  { id: 6, agent: 'Pulse', action: 'Analyzing Q1 revenue trends', time: '31s ago', color: '#10B981', status: 'in-progress' },
   { id: 7, agent: 'Echo', action: 'Summarized 12 unread emails from clients', time: '45s ago', color: '#FF6B35', status: 'completed' },
-  { id: 8, agent: 'Jarvis', action: 'Fixed TypeScript build error in auth module', time: '1m ago', color: '#ADFF2F', status: 'completed' },
+  { id: 8, agent: 'Jarvis', action: 'Fixed TypeScript build error in auth module', time: '1m ago', color: '#10B981', status: 'completed' },
   { id: 9, agent: 'Nova', action: 'Generating dashboard wireframes', time: '2m ago', color: '#E040FB', status: 'in-progress' },
 ];
 

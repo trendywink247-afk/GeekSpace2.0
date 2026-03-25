@@ -32,11 +32,11 @@ interface ScanLine {
 }
 
 const scanLines: ScanLine[] = [
-  { text: '[SCAN] Checking TLS certificates...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
-  { text: '[SCAN] Verifying encryption at rest...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
-  { text: '[SCAN] JWT token validation...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
-  { text: '[SCAN] Docker container isolation...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
-  { text: '[SCAN] SSH key-only authentication...', result: '[PASS]', resultColor: '#ADFF2F', type: 'scan' },
+  { text: '[SCAN] Checking TLS certificates...', result: '[PASS]', resultColor: '#10B981', type: 'scan' },
+  { text: '[SCAN] Verifying encryption at rest...', result: '[PASS]', resultColor: '#10B981', type: 'scan' },
+  { text: '[SCAN] JWT token validation...', result: '[PASS]', resultColor: '#10B981', type: 'scan' },
+  { text: '[SCAN] Docker container isolation...', result: '[PASS]', resultColor: '#10B981', type: 'scan' },
+  { text: '[SCAN] SSH key-only authentication...', result: '[PASS]', resultColor: '#10B981', type: 'scan' },
   { text: '[AUDIT] 15 vulnerabilities fixed', result: '[DONE]', resultColor: '#8B5CF6', type: 'audit' },
   { text: '[RESULT] Security score:', result: '98/100', resultColor: '#8B5CF6', type: 'result' },
 ];
@@ -48,7 +48,7 @@ const infraFeatures = [
     icon: Container,
     label: 'Docker-Based',
     description: '5-minute setup, 15 services',
-    color: '#ADFF2F',
+    color: '#10B981',
   },
   {
     icon: GitBranch,

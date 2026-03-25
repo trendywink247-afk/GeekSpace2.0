@@ -8,10 +8,10 @@ import { BlurFade } from '@/components/magicui/blur-fade';
 const agents = [
   { name: 'Weebo', description: 'Your everyday AI companion for tasks, chat, and quick answers.', color: '#10B981' },
   { name: 'Edith', description: 'Deep research and analysis. Reads, summarizes, and connects the dots.', color: '#8B5CF6' },
-  { name: 'Jarvis', description: 'Code generation, debugging, and technical problem-solving.', color: '#ADFF2F' },
-  { name: 'Aria', description: 'Creative writing, content, and communication in your voice.', color: '#FF2D78' },
+  { name: 'Jarvis', description: 'Code generation, debugging, and technical problem-solving.', color: '#10B981' },
+  { name: 'Aria', description: 'Creative writing, content, and communication in your voice.', color: '#8B5CF6' },
   { name: 'Forge', description: 'Builds automation workflows, integrations, and pipelines.', color: '#FFB800' },
-  { name: 'Pulse', description: 'Data analytics, trend detection, and business insights.', color: '#00FF88' },
+  { name: 'Pulse', description: 'Data analytics, trend detection, and business insights.', color: '#10B981' },
   { name: 'Echo', description: 'Social media management, drafts, and audience engagement.', color: '#FF6B35' },
   { name: 'Cal', description: 'Calendar management, scheduling, and time optimization.', color: '#4ECDC4' },
   { name: 'Nova', description: 'Design thinking, UI concepts, and visual problem-solving.', color: '#E040FB' },

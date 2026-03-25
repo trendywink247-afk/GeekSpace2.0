@@ -97,8 +97,8 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
         <div className="max-w-lg mx-auto rounded-2xl p-8 bg-[#0e0e1c] border border-white/[0.06]">
           {isSubscribed ? (
             <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-full bg-[#ADFF2F]/20 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-6 h-6 text-[#ADFF2F]" />
+              <div className="w-12 h-12 rounded-full bg-[#10B981]/20 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-6 h-6 text-[#10B981]" />
               </div>
               <h3 className="text-lg font-bold text-[#F1F5F9] mb-1">
                 You're on the list!

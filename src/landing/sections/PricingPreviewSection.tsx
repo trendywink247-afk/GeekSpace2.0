@@ -149,10 +149,10 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
             {/* ---- Free Card ---- */}
             <motion.div variants={reducedMotion ? undefined : cardVariants}>
               <MagicCard
-                gradientColor="#ADFF2F"
+                gradientColor="#10B981"
                 className="group relative flex flex-col border border-white/[0.06] rounded-2xl p-8 transition-all duration-300 hover:border-white/[0.12] hover:shadow-[0_4px_40px_rgba(255,255,255,0.04)] h-full"
               >
-                <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-sm font-medium text-[#ADFF2F] mb-6">Free Forever</span>
+                <span className="inline-flex items-center self-start px-3 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-sm font-medium text-[#10B981] mb-6">Free Forever</span>
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-[#F1F5F9]">{'\u20B9'}{freePrice}</span>
                   <span className="text-lg text-[#B8C4D4] ml-1">forever</span>
@@ -211,7 +211,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
                       <span className="text-4xl font-bold text-[#8B5CF6]">{'\u20B9'}{proPrice}</span>
                       <span className="text-lg text-[#B8C4D4] ml-1">/mo</span>
                     </div>
-                    <p className="text-sm text-[#ADFF2F] mb-6">Save 20% with yearly billing</p>
+                    <p className="text-sm text-[#10B981] mb-6">Save 20% with yearly billing</p>
                     <ul className="space-y-3 mb-8 flex-1" role="list">
                       {proFeatures.map((f) => (
                         <li key={f} className="flex items-start gap-3 group/item">

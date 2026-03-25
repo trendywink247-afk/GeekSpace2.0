@@ -21,7 +21,7 @@ const engineFeatures = [
     icon: Container,
     label: 'Docker-Based',
     description: 'One-command deploy with Docker Compose. 15 services, health-checked, memory-capped, auto-restarting.',
-    color: '#ADFF2F',
+    color: '#10B981',
   },
   {
     icon: ShieldCheck,

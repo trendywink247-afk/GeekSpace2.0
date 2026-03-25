@@ -15,11 +15,11 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
   { name: 'Priya Sharma', role: 'Product Manager', location: 'Flipkart', quote: 'Weebo handles my calendar, drafts emails, and tracks my habits \u2014 I canceled 4 other subscriptions.', rating: 5, avatar: 'PS', accentColor: '#8B5CF6' },
-  { name: 'Arjun Mehta', role: 'Freelance Developer', location: 'Independent', quote: "The self-hosted approach sold me. My client data never leaves my server. That's non-negotiable.", rating: 5, avatar: 'AM', accentColor: '#ADFF2F' },
+  { name: 'Arjun Mehta', role: 'Freelance Developer', location: 'Independent', quote: "The self-hosted approach sold me. My client data never leaves my server. That's non-negotiable.", rating: 5, avatar: 'AM', accentColor: '#10B981' },
   { name: 'Sneha Reddy', role: 'Content Strategist', location: 'Razorpay', quote: 'The agent office is genuinely addictive. I went from paying \u20B96,000/month across tools to \u20B9499 with Agentin. My whole team wants in.', rating: 5, avatar: 'SR', accentColor: '#8B5CF6' },
   { name: 'Vikram Desai', role: 'Startup Founder', location: 'Razorpay Alum', quote: 'Replaced our entire AI stack. Jarvis handles code, Aria does comms, and Weebo ties it all together.', rating: 5, avatar: 'VD', accentColor: '#8B5CF6' },
   { name: 'Sneha Kulkarni', role: 'Content Strategist', location: 'Swiggy', quote: 'Echo manages all our social channels now. The delegation system alone saves me 3 hours daily.', rating: 5, avatar: 'SK', accentColor: '#FFB800' },
-  { name: 'Deepak Joshi', role: 'Full-Stack Developer', location: 'Zerodha', quote: 'Self-hosted with Ollama support? Deployed it on our VPS in 15 minutes. No data leaves our servers.', rating: 5, avatar: 'DJ', accentColor: '#ADFF2F' },
+  { name: 'Deepak Joshi', role: 'Full-Stack Developer', location: 'Zerodha', quote: 'Self-hosted with Ollama support? Deployed it on our VPS in 15 minutes. No data leaves our servers.', rating: 5, avatar: 'DJ', accentColor: '#10B981' },
 ];
 
 const row1 = testimonials.slice(0, 3);

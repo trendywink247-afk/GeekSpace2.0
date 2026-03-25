@@ -12,8 +12,8 @@ interface HeroSectionProps {
 const agents = [
   { letter: 'W', name: 'Weebo', bg: '#10B981', role: 'Assistant' },
   { letter: 'E', name: 'Edith', bg: '#8B5CF6', role: 'Coder' },
-  { letter: 'J', name: 'Jarvis', bg: '#ADFF2F', role: 'Ops' },
-  { letter: 'A', name: 'Aria', bg: '#FF2D78', role: 'Comms' },
+  { letter: 'J', name: 'Jarvis', bg: '#10B981', role: 'Ops' },
+  { letter: 'A', name: 'Aria', bg: '#8B5CF6', role: 'Comms' },
   { letter: 'F', name: 'Forge', bg: '#F59E0B', role: 'Builder' },
 ];
 

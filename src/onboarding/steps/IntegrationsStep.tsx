@@ -136,7 +136,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Link2 className="w-6 h-6 text-[#00F0FF]" />
+        <Link2 className="w-6 h-6 text-[#8B5CF6]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Connect Integrations
         </h2>
@@ -176,7 +176,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               <p className="text-xs text-[#6B7280]">
                 Scan the QR code to connect
               </p>
-              <div className="flex items-center justify-center gap-2 text-xs text-[#00FF88]">
+              <div className="flex items-center justify-center gap-2 text-xs text-[#10B981]">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Waiting for scan...
               </div>
@@ -201,8 +201,8 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                 onClick={() => toggle(opt.id)}
                 className={`w-full p-4 min-h-[44px] rounded-xl border transition-all flex items-center justify-between ${
                   isConnected
-                    ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                    : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
+                    ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                    : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40'
                 }`}
               >
                 <div className="text-left">
@@ -210,11 +210,11 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
                   <div className="text-sm text-[#6B7280]">{opt.description}</div>
                 </div>
                 {isConnected ? (
-                  <div className="w-6 h-6 rounded-full bg-[#00FF88] flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-[#10B981] flex items-center justify-center flex-shrink-0">
                     <Check className="w-4 h-4 text-[#0C0C18]" />
                   </div>
                 ) : isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-[#00F0FF]" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[#8B5CF6]" />
                 ) : isWaiting ? (
                   <div className="w-2 h-2 rounded-full bg-[#FFB800] animate-pulse" />
                 ) : null}
@@ -257,10 +257,10 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               )}
 
               {opt.id === 'telegram' && isConnected && (
-                <div className="mt-2 p-3 rounded-xl bg-[#00FF88]/5 border border-[#00FF88]/20 flex items-center justify-between gap-2">
+                <div className="mt-2 p-3 rounded-xl bg-[#10B981]/5 border border-[#10B981]/20 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#00FF88]" />
-                    <span className="text-sm text-[#00FF88]">Telegram connected!</span>
+                    <Check className="w-4 h-4 text-[#10B981]" />
+                    <span className="text-sm text-[#10B981]">Telegram connected!</span>
                   </div>
                   <button
                     type="button"
@@ -281,10 +281,10 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
               )}
 
               {opt.id === 'whatsapp' && isConnected && (
-                <div className="mt-2 p-3 rounded-xl bg-[#00FF88]/5 border border-[#00FF88]/20 flex items-center justify-between gap-2">
+                <div className="mt-2 p-3 rounded-xl bg-[#10B981]/5 border border-[#10B981]/20 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-[#00FF88]" />
-                    <span className="text-sm text-[#00FF88]">WhatsApp connected!</span>
+                    <Check className="w-4 h-4 text-[#10B981]" />
+                    <span className="text-sm text-[#10B981]">WhatsApp connected!</span>
                   </div>
                   <button
                     type="button"
@@ -318,7 +318,7 @@ export function IntegrationsStep({ selected, onToggle, onSkip }: IntegrationsSte
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] px-4 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded"
+          className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors min-h-[44px] px-4 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded"
         >
           I'll do this later
         </button>

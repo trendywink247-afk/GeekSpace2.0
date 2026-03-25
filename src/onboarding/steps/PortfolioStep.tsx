@@ -46,7 +46,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Layout className="w-6 h-6 text-[#00F0FF]" />
+        <Layout className="w-6 h-6 text-[#8B5CF6]" />
         <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
           Portfolio Setup
         </h2>
@@ -61,7 +61,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           type="button"
           onClick={handleMagic}
           disabled={magicLoading}
-          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#00F0FF]/40 text-[#00F0FF] hover:bg-[#00F0FF]/10 hover:border-[#00F0FF] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+          className="w-full py-3 min-h-[44px] rounded-xl border-2 border-dashed border-[#8B5CF6]/40 text-[#8B5CF6] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6] transition-all flex items-center justify-center gap-2 text-sm font-medium"
         >
           {magicLoading ? (
             <>
@@ -83,7 +83,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           value={headline}
           onChange={(e) => onHeadlineChange(e.target.value)}
           placeholder="Developer & Builder"
-          className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+          className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
         />
       </div>
       <div>
@@ -92,12 +92,12 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           value={skills.join(', ')}
           onChange={(e) => handleSkillsInput(e.target.value)}
           placeholder="React, TypeScript, Python"
-          className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+          className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
         />
         {skills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {skills.map((skill) => (
-              <span key={skill} className="px-2 py-1 text-xs rounded-full bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/20">
+              <span key={skill} className="px-2 py-1 text-xs rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20">
                 {skill}
               </span>
             ))}
@@ -110,7 +110,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
           value={about}
           onChange={(e) => onAboutChange(e.target.value)}
           placeholder="Building cool things"
-          className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF] placeholder:text-[#6B7280]/50"
+          className="w-full p-3 rounded-xl bg-[#06060B] border border-[#8B5CF6]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#8B5CF6] placeholder:text-[#6B7280]/50"
         />
       </div>
 
@@ -118,7 +118,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         <button
           type="button"
           onClick={() => { setMagicDone(false); }}
-          className="text-xs text-[#6B7280] hover:text-[#00F0FF] transition-colors flex items-center gap-1"
+          className="text-xs text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1"
         >
           <Sparkles className="w-3 h-3" />
           Try the magic trick again
@@ -129,7 +129,7 @@ export function PortfolioStep({ skills, headline, about, tags, name, onSkillsCha
         <button
           type="button"
           onClick={onSkip}
-          className="text-sm text-[#6B7280] hover:text-[#00F0FF] transition-colors min-h-[44px] px-4"
+          className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors min-h-[44px] px-4"
         >
           I'll do this later
         </button>
