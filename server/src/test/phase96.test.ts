@@ -680,8 +680,8 @@ describe('96.7 WorkflowsPage frontend integration', () => {
     expect(src).toContain('<WorkflowsPage />');
   });
 
-  it('DashboardApp imports GitBranch from lucide-react', () => {
+  it('DashboardApp imports Sparkles from lucide-react', () => {
     const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
-    expect(src).toContain('GitBranch');
+    expect(src).toContain('Sparkles');
   });
 });
