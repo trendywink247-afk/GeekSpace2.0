@@ -10,7 +10,6 @@ import { CheckCircle2, XCircle, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { AgentinLogo } from '@/components/AgentinLogo';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
@@ -70,7 +69,7 @@ export function ConnectPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
-            <AgentinLogo size={28} />
+            <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
             <span className="text-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Agentin Chat</span>
           </div>
         </div>

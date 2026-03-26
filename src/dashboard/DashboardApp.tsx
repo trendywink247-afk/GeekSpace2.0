@@ -10,7 +10,6 @@ import {
   ImageIcon, Video, BookOpen, HelpCircle, Star, GitBranch, Mail, BarChart3, CreditCard, Map
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
-import { AgentinLogo } from '@/components/AgentinLogo';
 import { AgentChatButton } from '@/components/AgentChatButton';
 import { AgentChatPanel } from '@/components/AgentChatPanel';
 import { AgentDesignWizard } from '@/components/AgentDesignWizard';
@@ -548,7 +547,7 @@ export function DashboardApp() {
           className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
           aria-label="Go to dashboard home"
         >
-          <AgentinLogo size={32} />
+          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
           {!sidebarCollapsed && (
             <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
               <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
