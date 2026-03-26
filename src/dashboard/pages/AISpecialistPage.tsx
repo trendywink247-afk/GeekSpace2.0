@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { JsonFormatterPage } from './tools/JsonFormatterPage';
 import { BorderBeam } from '@/components/magicui/border-beam';
+import { PageShell } from '@/components/agentin';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -270,7 +271,7 @@ function SpecialistCard({
   const catColor = CATEGORY_COLORS[specialist.category] ?? '#00F0FF';
 
   return (
-    <div className="group relative flex flex-col bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5 transition-all duration-200 hover:border-[#00F0FF]/30 hover:shadow-[0_0_24px_rgba(0,240,255,0.06)]">
+    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-2xl p-5 transition-all duration-200 hover:border-[var(--ag-cyan)]/30 hover:shadow-[0_0_24px_rgba(0,240,255,0.06)]">
       {/* Category badge */}
       <Badge
         className="absolute top-3 right-3 text-[10px] uppercase tracking-wider border-0"
@@ -285,18 +286,18 @@ function SpecialistCard({
       </div>
 
       {/* Name */}
-      <h3 className="text-base font-semibold text-[#F4F6FF] text-center">
+      <h3 className="text-base font-semibold text-[var(--ag-text-primary)] text-center">
         {specialist.name}
         {specialist.codename && (
-          <span className="text-[#8892A4] font-normal text-xs ml-1.5">({specialist.codename})</span>
+          <span className="text-[var(--ag-text-muted)] font-normal text-xs ml-1.5">({specialist.codename})</span>
         )}
       </h3>
 
       {/* Description */}
-      <p className="text-xs text-[#8892A4] text-center mt-1 line-clamp-1">{specialist.description}</p>
+      <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1 line-clamp-1">{specialist.description}</p>
 
       {/* Stats */}
-      <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-[#8892A4]">
+      <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-[var(--ag-text-muted)]">
         <span className="flex items-center gap-1">
           <MessageCircle className="w-3 h-3" />
           {specialist.conversations}
@@ -313,7 +314,7 @@ function SpecialistCard({
           <button
             key={prompt}
             onClick={() => onPromptClick(prompt)}
-            className="text-left text-[11px] text-[#8892A4] hover:text-[#00F0FF] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#00F0FF]/5 truncate min-h-[30px] flex items-center"
+            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/5 truncate min-h-[30px] flex items-center"
             title={prompt}
           >
             <span className="truncate">&ldquo;{prompt}&rdquo;</span>
@@ -324,7 +325,7 @@ function SpecialistCard({
       {/* Try It button */}
       <Button
         onClick={onTry}
-        className="mt-4 w-full bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 font-medium min-h-[44px]"
+        className="mt-4 w-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/20 border border-[var(--ag-cyan)]/20 hover:border-[var(--ag-cyan)]/40 font-medium min-h-[44px]"
       >
         Try It
         <ArrowRight className="w-4 h-4 ml-1" />
@@ -408,9 +409,9 @@ export function AISpecialistPage() {
     ] as const;
 
     return (
-      <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-8">
+      <PageShell className="w-full max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 pt-4">
+        <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[var(--ag-amber)]/20 flex items-center justify-center flex-shrink-0">
             <Wrench className="w-4 h-4 text-[var(--ag-amber)]" />
           </div>
@@ -423,7 +424,7 @@ export function AISpecialistPage() {
         </div>
 
         {/* Top tab strip */}
-        <div className="overflow-x-auto scrollbar-hide w-full px-4">
+        <div className="overflow-x-auto scrollbar-hide w-full">
           <div className="flex gap-1 border-b border-[var(--ag-border-subtle)] w-max min-w-full">
             <button
               onClick={() => setActiveTab('specialists')}
@@ -439,7 +440,7 @@ export function AISpecialistPage() {
           </div>
         </div>
 
-        <div className="px-4 space-y-6">
+        <div className="space-y-6">
           {/* Coming Soon tool stubs */}
           <div>
             <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -495,7 +496,7 @@ export function AISpecialistPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -503,30 +504,30 @@ export function AISpecialistPage() {
   // Specialists tab (main view)
   // -----------------------------------------------------------------------
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-8">
+    <PageShell className="w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4">
-        <div className="w-9 h-9 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4.5 h-4.5 text-[#00F0FF]" />
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-[var(--ag-cyan)]/20 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-4.5 h-4.5 text-[var(--ag-cyan)]" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-[#E8E8F0]">AI Specialists</h1>
-          <p className="text-sm text-[#8892A4]">Pre-built AI modes you can activate with one click</p>
+          <h1 className="text-xl font-semibold text-[var(--ag-text-primary)]">AI Specialists</h1>
+          <p className="text-sm text-[var(--ag-text-muted)]">Pre-built AI modes you can activate with one click</p>
         </div>
       </div>
 
       {/* Top tab strip */}
-      <div className="overflow-x-auto scrollbar-hide w-full px-4">
-        <div className="flex gap-1 border-b border-[#2A2A3A] w-max min-w-full">
+      <div className="overflow-x-auto scrollbar-hide w-full">
+        <div className="flex gap-1 border-b border-[var(--ag-border-subtle)] w-max min-w-full">
           <button
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[#00F0FF] text-[#E8E8F0] transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[var(--ag-cyan)] text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
           >
             <Sparkles className="w-3.5 h-3.5" />
             Specialists
           </button>
           <button
             onClick={() => setActiveTab('tools')}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-[#8892A4] hover:text-[#A0A0B0] transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
           >
             <Braces className="w-3.5 h-3.5" />
             AI Tools
@@ -534,7 +535,7 @@ export function AISpecialistPage() {
         </div>
       </div>
 
-      <div className="px-4 space-y-6">
+      <div className="space-y-6">
         {/* Featured banner */}
         <FeaturedBanner
           specialist={featuredSpecialist}
@@ -545,12 +546,12 @@ export function AISpecialistPage() {
         <div className="space-y-4">
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8892A4] pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)] pointer-events-none" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search specialists..."
-              className="pl-10 bg-[#0C0C18] border-[#00F0FF]/10 text-[#F4F6FF] placeholder:text-[#8892A4]/60 focus-visible:border-[#00F0FF]/30 focus-visible:ring-[#00F0FF]/20 min-h-[44px]"
+              className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]/60 focus-visible:border-[var(--ag-cyan)]/30 focus-visible:ring-[var(--ag-cyan)]/20 min-h-[44px]"
             />
           </div>
 
@@ -564,8 +565,8 @@ export function AISpecialistPage() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[36px] flex-shrink-0 ${
                     isActive
-                      ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
-                      : 'bg-[#0C0C18] text-[#8892A4] border border-[#00F0FF]/10 hover:border-[#00F0FF]/20 hover:text-[#F4F6FF]'
+                      ? 'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30'
+                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-cyan)]/20 hover:text-[var(--ag-text-primary)]'
                   }`}
                 >
                   {cat.label}
@@ -589,17 +590,17 @@ export function AISpecialistPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="w-10 h-10 text-[#8892A4]/40 mb-3" />
-            <p className="text-[#8892A4] text-sm">No specialists match your search.</p>
+            <Search className="w-10 h-10 text-[var(--ag-text-muted)]/40 mb-3" />
+            <p className="text-[var(--ag-text-muted)] text-sm">No specialists match your search.</p>
             <button
               onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-              className="text-[#00F0FF] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
+              className="text-[var(--ag-cyan)] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
             >
               Clear filters
             </button>
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

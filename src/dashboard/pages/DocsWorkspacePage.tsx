@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { PageShell } from '@/components/agentin';
 import { FileText, Plus, Search, Pin, Clock, Archive, Folder,
   Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus,
   Maximize2, Minimize2, RefreshCw, Check, Loader2, MessageSquare } from 'lucide-react';
@@ -176,15 +177,16 @@ export function DocsWorkspacePage() {
   }
 
   return (
+    <PageShell className="!p-0 !pb-0">
     <div className="flex h-full min-h-[calc(100vh-64px)]">
       {/* Left sidebar — hidden on mobile */}
-      <aside className="hidden md:flex w-56 border-r border-white/5 flex-col bg-[#06060B]/50 shrink-0">
+      <aside className="hidden md:flex w-56 border-r border-[var(--ag-border-subtle)] flex-col bg-[#06060B]/50 shrink-0">
         {/* Quick capture */}
         <button
           onClick={handleCreate}
           className="m-3 flex items-center gap-2 px-3 py-2.5 rounded-xl
                      bg-[#00F0FF]/10 border border-[#00F0FF]/20
-                     text-[#00F0FF] text-sm font-medium
+                     text-[var(--ag-cyan)] text-sm font-medium
                      hover:bg-[#00F0FF]/15 transition-colors
                      min-h-[44px]"
         >
@@ -201,7 +203,7 @@ export function DocsWorkspacePage() {
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
                 min-h-[40px]
                 ${viewFilter === v.id && !activeFolder
-                  ? 'bg-[#00F0FF]/10 text-[#00F0FF]'
+                  ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)]'
                   : 'text-[#8892B0] hover:text-[#CCD6F6] hover:bg-white/5'
                 }`}
             >
@@ -211,7 +213,7 @@ export function DocsWorkspacePage() {
           ))}
         </div>
 
-        <div className="mx-3 my-2 border-t border-white/5" />
+        <div className="mx-3 my-2 border-t border-[var(--ag-border-subtle)]" />
 
         {/* Folders */}
         <div className="px-2 flex-1 overflow-y-auto">
@@ -232,7 +234,7 @@ export function DocsWorkspacePage() {
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
                 min-h-[40px]
                 ${activeFolder === f.id
-                  ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]'
+                  ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]'
                   : 'text-[#8892B0] hover:text-[#CCD6F6] hover:bg-white/5'
                 }`}
             >
@@ -252,7 +254,7 @@ export function DocsWorkspacePage() {
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-4 md:px-6 py-4 border-b border-white/5 flex items-center gap-3">
+        <div className="px-4 md:px-6 py-4 border-b border-[var(--ag-border-subtle)] flex items-center gap-3">
           <span className="text-[10px] text-[#4B5563] font-medium shrink-0 hidden md:inline">📝 Powered by Weebo</span>
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8892B0]" />
@@ -260,7 +262,7 @@ export function DocsWorkspacePage() {
               placeholder="Search documents..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 h-10 bg-[#0C0C18]/60 border-white/10"
+              className="pl-9 h-10 bg-[var(--ag-bg-surface)]/60 border-white/10"
             />
           </div>
 
@@ -272,7 +274,7 @@ export function DocsWorkspacePage() {
                 onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
                 className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[36px]
                   ${viewFilter === v.id
-                    ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
+                    ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
                     : 'bg-white/5 text-[#8892B0] border border-white/10'
                   }`}
               >
@@ -284,7 +286,7 @@ export function DocsWorkspacePage() {
           <Button
             size="sm"
             onClick={handleCreate}
-            className="gap-1.5 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30
+            className="gap-1.5 bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/30
                        hover:bg-[#00F0FF]/20 shrink-0 min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
@@ -293,7 +295,7 @@ export function DocsWorkspacePage() {
         </div>
 
         {/* Quick capture bar */}
-        <div className="px-4 md:px-6 py-3 border-b border-white/5 bg-[#0C0C18]/30">
+        <div className="px-4 md:px-6 py-3 border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]/30">
           <div className="flex gap-2 max-w-2xl">
             <textarea
               ref={quickCaptureRef}
@@ -309,7 +311,7 @@ export function DocsWorkspacePage() {
             />
             {quickCapture && (
               <Button size="sm" onClick={handleQuickCapture}
-                className="bg-[#00F0FF]/20 text-[#00F0FF] min-h-[40px]">
+                className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] min-h-[40px]">
                 Capture
               </Button>
             )}
@@ -321,13 +323,13 @@ export function DocsWorkspacePage() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="h-36 rounded-2xl bg-[#0C0C18]/60 border border-white/5 animate-pulse" />
+                <div key={i} className="h-36 rounded-2xl bg-[var(--ag-bg-surface)]/60 border border-[var(--ag-border-subtle)] animate-pulse" />
               ))}
             </div>
           ) : filteredDocs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-[#00F0FF]/30" />
+                <FileText className="w-8 h-8 text-[var(--ag-cyan)]/30" />
               </div>
               <h3 className="text-[#F4F6FF] font-medium mb-1">
                 {search ? 'No documents match your search' : 'No documents yet'}
@@ -336,7 +338,7 @@ export function DocsWorkspacePage() {
                 {search ? 'Try a different search term' : 'Start writing. Your AI-powered workspace awaits.'}
               </p>
               {!search && (
-                <Button onClick={handleCreate} className="gap-2 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30">
+                <Button onClick={handleCreate} className="gap-2 bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/30">
                   <Plus className="w-4 h-4" />
                   Create Document
                 </Button>
@@ -349,8 +351,8 @@ export function DocsWorkspacePage() {
                   key={doc.id}
                   onClick={() => { setSelectedDoc(doc); setEditorOpen(true); }}
                   className="group text-left p-4 rounded-2xl
-                             bg-[#0C0C18]/80 border border-white/5
-                             hover:border-[#00F0FF]/30 hover:bg-[#10101E]/80
+                             bg-[var(--ag-bg-surface)]/80 border border-[var(--ag-border-subtle)]
+                             hover:border-[#00F0FF]/30 hover:bg-[var(--ag-bg-elevated)]/80
                              transition-all duration-200
                              backdrop-blur-sm"
                 >
@@ -389,7 +391,7 @@ export function DocsWorkspacePage() {
                     <span className="text-[#8892B0]/50 text-xs">{formatDate(doc.updated_at)}</span>
                     <div className="flex items-center gap-1.5">
                       {parseTags(doc.tags).slice(0, 2).map(tag => (
-                        <Badge key={tag} className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
+                        <Badge key={tag} className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[#8B5CF6]/20">
                           {tag}
                         </Badge>
                       ))}
@@ -405,7 +407,7 @@ export function DocsWorkspacePage() {
 
       {/* New folder dialog */}
       <Dialog open={newFolderOpen} onOpenChange={setNewFolderOpen}>
-        <DialogContent className="bg-[#0C0C18] border-white/10 max-w-sm">
+        <DialogContent className="bg-[var(--ag-bg-surface)] border-white/10 max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-[#F4F6FF]">New Folder</DialogTitle>
           </DialogHeader>
@@ -420,13 +422,14 @@ export function DocsWorkspacePage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewFolderOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
-              className="bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30">
+              className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/30">
               Create
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+    </PageShell>
   );
 }
 
@@ -634,7 +637,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
     <div className="flex flex-col h-full min-h-[calc(100vh-64px)]">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3
-                         bg-[#06060B]/95 backdrop-blur-xl border-b border-white/5">
+                         bg-[#06060B]/95 backdrop-blur-xl border-b border-[var(--ag-border-subtle)]">
         <button onClick={onBack} className="p-2 rounded-lg hover:bg-white/5 min-w-[44px] min-h-[44px]
                                             flex items-center justify-center"
                 aria-label="Back to documents">
@@ -656,7 +659,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
         <Button
           size="sm"
           onClick={openConversationModal}
-          className="gap-1.5 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[#8B5CF6]
+          className="gap-1.5 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[var(--ag-violet)]
                      hover:bg-[#8B5CF6]/30 min-h-[40px]"
           title="Create from Conversation"
         >
@@ -666,7 +669,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
       </header>
 
       {/* AI Writing Toolbar */}
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#00F0FF]/10 bg-[#0C0C18] overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)] overflow-x-auto scrollbar-hide">
         <span className="text-[10px] text-[#8892B0]/60 uppercase tracking-wider mr-1 shrink-0">AI</span>
         {aiActions.map(({ id, icon: Icon, label }) => (
           <button
@@ -674,12 +677,12 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
             onClick={() => handleAIAction(id)}
             disabled={!!aiProcessing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
-                       text-[#9CA3AF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10
+                       text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10
                        transition-colors whitespace-nowrap disabled:opacity-50
                        min-h-[36px]"
           >
             {aiProcessing === id ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00F0FF]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ag-cyan)]" />
             ) : (
               <Icon className="w-3.5 h-3.5" />
             )}
@@ -689,7 +692,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
 
         {/* Processing indicator */}
         {aiProcessing && (
-          <span className="text-[10px] text-[#00F0FF] animate-pulse ml-auto shrink-0">
+          <span className="text-[10px] text-[var(--ag-cyan)] animate-pulse ml-auto shrink-0">
             Processing...
           </span>
         )}
@@ -718,10 +721,10 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
 
       {/* Create from Conversation Modal */}
       <Dialog open={convModalOpen} onOpenChange={setConvModalOpen}>
-        <DialogContent className="bg-[#0C0C18] border-white/10 max-w-lg max-h-[80vh] flex flex-col">
+        <DialogContent className="bg-[var(--ag-bg-surface)] border-white/10 max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-[#F4F6FF] flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#8B5CF6]" />
+              <MessageSquare className="w-5 h-5 text-[var(--ag-violet)]" />
               Create from Conversation
             </DialogTitle>
           </DialogHeader>
@@ -731,7 +734,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
           <div className="flex-1 overflow-y-auto space-y-2 mt-2 min-h-0">
             {convLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-[#8B5CF6]" />
+                <Loader2 className="w-5 h-5 animate-spin text-[var(--ag-violet)]" />
               </div>
             ) : conversations.length === 0 ? (
               <p className="text-sm text-[#8892B0]/60 text-center py-8">No conversations found</p>
@@ -749,11 +752,11 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
                                transition-all disabled:opacity-50"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <Badge className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
+                      <Badge className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[#8B5CF6]/20">
                         {conv.role}
                       </Badge>
                       {convProcessing === conv.id && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8B5CF6]" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ag-violet)]" />
                       )}
                       <span className="text-[10px] text-[#8892B0]/50">
                         {new Date(conv.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}

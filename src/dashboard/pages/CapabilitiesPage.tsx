@@ -8,6 +8,7 @@
 // ============================================================
 
 import { useState } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
   User, Bell, Mail, Cpu, ChevronRight, Sparkles, Eye, TrendingUp,
@@ -515,7 +516,7 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20',
+    Core: 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[#00F0FF]/20',
     Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
     New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
   };
@@ -573,7 +574,7 @@ function CapabilityCard({
         </div>
 
         {/* Title + description */}
-        <h3 className="text-sm font-semibold text-[#E8E8F0] mb-1.5">{cap.title}</h3>
+        <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{cap.title}</h3>
         <p className="text-xs text-[#6B7280] leading-relaxed flex-1 mb-3">{cap.description}</p>
 
         {/* Wow factor */}
@@ -595,7 +596,7 @@ function CapabilityCard({
               onClick={() => handleCopy(ex)}
               className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
             >
-              <span className="text-[11px] text-[#9BA3C9] group-hover/prompt:text-[#E8E8F0] truncate transition-colors">
+              <span className="text-[11px] text-[#9BA3C9] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
                 {ex}
               </span>
               {copied === ex ? (
@@ -622,7 +623,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 rounded-xl text-xs font-medium border border-white/10 text-[#9BA3C9] hover:border-white/25 hover:text-[#E8E8F0] transition-all"
+              className="px-3 py-2 rounded-xl text-xs font-medium border border-white/10 text-[#9BA3C9] hover:border-white/25 hover:text-[var(--ag-text-primary)] transition-all"
             >
               Open
             </button>
@@ -647,13 +648,13 @@ function PipelineVisualizer() {
   return (
     <div className="rounded-2xl border border-white/8 bg-[#0A0A14] overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-white/6">
+      <div className="px-6 py-5 border-b border-[var(--ag-border-subtle)]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/15 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-[#00F0FF]" />
+            <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-[#E8E8F0]">How Every Message Works</h2>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">How Every Message Works</h2>
             <p className="text-xs text-[#6B7280]">From your chat to the response — the full request lifecycle</p>
           </div>
         </div>
@@ -664,7 +665,7 @@ function PipelineVisualizer() {
         {/* Example message */}
         <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
           <span className="text-xs text-[#9BA3C9]">You type: </span>
-          <span className="text-sm text-[#00F0FF] font-mono">"build me a hello world page"</span>
+          <span className="text-sm text-[var(--ag-cyan)] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -718,7 +719,7 @@ function PipelineVisualizer() {
                   <step.icon className="w-4 h-4" style={{ color: step.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-[#E8E8F0]">{step.label}</div>
+                  <div className="text-xs font-medium text-[var(--ag-text-primary)]">{step.label}</div>
                   {activeStep === i && (
                     <div className="text-[10px] font-mono mt-0.5" style={{ color: step.color }}>{step.detail}</div>
                   )}
@@ -749,13 +750,13 @@ function HiddenPowers() {
   return (
     <div className="rounded-2xl border border-white/8 bg-[#0A0A14] overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-white/6">
+      <div className="px-6 py-5 border-b border-[var(--ag-border-subtle)]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/15 flex items-center justify-center">
             <Star className="w-4 h-4 text-[#BF5FFF]" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-[#E8E8F0]">Hidden Powers</h2>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">Hidden Powers</h2>
             <p className="text-xs text-[#6B7280]">Things most users never discover — but you should know</p>
           </div>
         </div>
@@ -766,7 +767,7 @@ function HiddenPowers() {
           {visiblePowers.map((power, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/3 border border-white/6 hover:border-white/12 transition-all group"
+              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/3 border border-[var(--ag-border-subtle)] hover:border-white/12 transition-all group"
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform group-hover:scale-110"
@@ -775,7 +776,7 @@ function HiddenPowers() {
                 <power.icon className="w-4 h-4" style={{ color: power.color }} />
               </div>
               <div>
-                <div className="text-xs font-semibold text-[#E8E8F0] mb-1">{power.title}</div>
+                <div className="text-xs font-semibold text-[var(--ag-text-primary)] mb-1">{power.title}</div>
                 <div className="text-[11px] text-[#6B7280] leading-relaxed">{power.description}</div>
               </div>
             </div>
@@ -785,7 +786,7 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 rounded-xl border border-white/8 text-xs text-[#9BA3C9] hover:border-white/20 hover:text-[#E8E8F0] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 rounded-xl border border-white/8 text-xs text-[#9BA3C9] hover:border-white/20 hover:text-[var(--ag-text-primary)] transition-all flex items-center justify-center gap-2"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
@@ -821,6 +822,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
   );
 
   return (
+    <PageShell>
     <div className="max-w-6xl mx-auto space-y-6 pb-24 md:pb-8">
 
       {/* ── Hero ──────────────────────────────────────────── */}
@@ -855,9 +857,9 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           {/* Eyebrow */}
           <div className="flex items-center gap-2 mb-5">
             <div className="w-5 h-5 rounded-full bg-[#00F0FF]/15 border border-[#00F0FF]/25 flex items-center justify-center">
-              <Sparkles className="w-2.5 h-2.5 text-[#00F0FF]" />
+              <Sparkles className="w-2.5 h-2.5 text-[var(--ag-cyan)]" />
             </div>
-            <span className="text-xs font-mono text-[#00F0FF] tracking-widest uppercase">Agent Command Center</span>
+            <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
@@ -990,6 +992,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         </div>
       </div>
     </div>
+    </PageShell>
   );
 }
 

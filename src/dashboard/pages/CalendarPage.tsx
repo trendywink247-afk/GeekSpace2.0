@@ -1,5 +1,6 @@
 // CalendarPage.tsx -- Phase 95 + Enhanced Calendar Grid + AI Assistant Panel
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { PageShell } from '@/components/agentin';
 import {
   Calendar,
   Link2,
@@ -573,7 +574,8 @@ export function CalendarPage() {
   const monthLabel = DateTime.local(viewYear, viewMonth + 1, 1).toLocaleString({ month: 'long', year: 'numeric' });
 
   return (
-    <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -587,7 +589,7 @@ export function CalendarPage() {
           <Button
             size="sm"
             onClick={() => setShowAddDialog(true)}
-            className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+            className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Event</span>
@@ -774,7 +776,7 @@ export function CalendarPage() {
                       key={idx}
                       onClick={() => setSelectedDate(cell.date)}
                       className={[
-                        "relative flex flex-col items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[56px] bg-[#0C0C18] transition-colors",
+                        "relative flex flex-col items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[56px] bg-[var(--ag-bg-surface)] transition-colors",
                         cell.isCurrentMonth
                           ? "text-foreground"
                           : "text-muted-foreground/40",
@@ -787,7 +789,7 @@ export function CalendarPage() {
                       <span
                         className={[
                           "text-sm font-medium leading-none",
-                          isToday ? "text-[#00F0FF] font-bold" : "",
+                          isToday ? "text-[var(--ag-cyan)] font-bold" : "",
                         ].join(" ")}
                       >
                         {cell.day}
@@ -1018,7 +1020,7 @@ export function CalendarPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#00F0FF]" />
+                <Clock className="h-4 w-4 text-[var(--ag-cyan)]" />
                 Upcoming
               </CardTitle>
             </CardHeader>
@@ -1072,7 +1074,7 @@ export function CalendarPage() {
                               {DateTime.fromMillis(ms).toLocaleString({ month: 'short', day: 'numeric' })}{" "}
                               {formatTime(ms)}
                             </p>
-                            <span className="text-xs text-[#00F0FF] font-medium">
+                            <span className="text-xs text-[var(--ag-cyan)] font-medium">
                               {relativeCountdown(ms)}
                             </span>
                           </div>
@@ -1345,7 +1347,7 @@ export function CalendarPage() {
       {/* ── AI Assistant Panel ────────────────────────────────── */}
       {showAI && (
         <div
-          className="fixed z-40 bg-[#0C0C18] border border-[rgba(0,240,255,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
+          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(0,240,255,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
             bottom-0 left-0 right-0 h-[80vh]
             md:bottom-6 md:left-auto md:right-24 md:top-auto md:w-[400px] md:h-[560px]"
           style={{
@@ -1353,12 +1355,12 @@ export function CalendarPage() {
           }}
         >
           {/* Panel header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(0,240,255,0.1)] bg-[#0C0C18] shrink-0">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
               style={{ background: "linear-gradient(135deg, #00F0FF20, #8B5CF620)" }}
             >
-              <Sparkles className="h-4 w-4 text-[#00F0FF]" />
+              <Sparkles className="h-4 w-4 text-[var(--ag-cyan)]" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-[#F4F6FF]">Calendar AI</h3>
@@ -1403,7 +1405,7 @@ export function CalendarPage() {
           >
             {aiLoading ? (
               <div className="flex items-center gap-2 text-[#8892A4] py-8 justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-[#00F0FF]" />
+                <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-cyan)]" />
                 <span>Thinking...</span>
               </div>
             ) : aiResponse ? (
@@ -1414,7 +1416,7 @@ export function CalendarPage() {
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
                   style={{ background: "rgba(0,240,255,0.08)" }}
                 >
-                  <Calendar className="h-6 w-6 text-[#00F0FF]/60" />
+                  <Calendar className="h-6 w-6 text-[var(--ag-cyan)]/60" />
                 </div>
                 <p className="text-[#8892A4] text-xs max-w-[240px]">
                   Ask me to find free slots, schedule meetings, or check what is coming up.
@@ -1432,7 +1434,7 @@ export function CalendarPage() {
               setAiInput("");
               void askCalendarAI(trimmed);
             }}
-            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(0,240,255,0.1)] bg-[#0C0C18] shrink-0"
+            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
           >
             <input
               type="text"
@@ -1459,5 +1461,6 @@ export function CalendarPage() {
         </div>
       )}
     </div>
+    </PageShell>
   );
 }

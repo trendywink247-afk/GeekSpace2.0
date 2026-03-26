@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageShell } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
@@ -203,10 +204,11 @@ export function VoiceChatPage() {
   })();
 
   return (
-    <div className="flex flex-col h-[100dvh] md:h-full min-h-0 pb-24 md:pb-6">
+    <PageShell>
+      <div className="flex flex-col h-[100dvh] md:h-full min-h-0">
       {/* -- Header -- */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0">
-        <h1 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <h1 className="text-lg font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
           Voice Chat <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">🎙️ Voice with Weebo</span>
         </h1>
         <button
@@ -220,7 +222,7 @@ export function VoiceChatPage() {
 
       {/* -- Settings Panel (collapsible) -- */}
       {settingsOpen && (
-        <div className="px-4 py-3 border-b border-[#00F0FF]/10 bg-[#0C0C18] flex-shrink-0 animate-page-enter">
+        <div className="px-4 py-3 border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)] flex-shrink-0 animate-page-enter">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Voice On/Off */}
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -257,7 +259,7 @@ export function VoiceChatPage() {
                 <select
                   value={settings.speed}
                   onChange={e => setSettings(s => ({ ...s, speed: Number(e.target.value) }))}
-                  className="appearance-none bg-[#1A1A2E] text-[#E8E8F0] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[#00F0FF]/10 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/40"
+                  className="appearance-none bg-[#1A1A2E] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[#00F0FF]/10 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/40"
                 >
                   {SPEED_OPTIONS.map(s => (
                     <option key={s} value={s}>{s}x</option>
@@ -351,7 +353,7 @@ export function VoiceChatPage() {
               }}
             >
               {voiceState === 'processing' ? (
-                <Loader2 className="w-9 h-9 text-[#00F0FF] animate-spin" />
+                <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
               ) : (
                 <span role="img" aria-label="agent avatar">{agentEmoji}</span>
               )}
@@ -417,11 +419,11 @@ export function VoiceChatPage() {
         {/* -- Transcript History -- */}
         <div
           ref={scrollRef}
-          className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 rounded-xl bg-[#0C0C18]/60 border border-[#00F0FF]/10 p-3 space-y-2"
+          className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 rounded-xl bg-[var(--ag-bg-surface)]/60 border border-[#00F0FF]/10 p-3 space-y-2"
         >
           {transcript.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-8">
-              <Mic className="w-8 h-8 text-[#00F0FF]/20 mb-3" />
+              <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
               <p className="text-sm text-[#6B7280]">No conversation yet</p>
               <p className="text-xs text-[#6B7280]/60 mt-1">Tap the microphone to start</p>
             </div>
@@ -438,11 +440,11 @@ export function VoiceChatPage() {
               >
                 <span className={[
                   'font-semibold flex-shrink-0 text-xs mt-0.5',
-                  turn.role === 'user' ? 'text-[#00F0FF]' : 'text-[#ADFF2F]',
+                  turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[#ADFF2F]',
                 ].join(' ')}>
                   {turn.role === 'user' ? 'You' : agent.name || 'Agent'}:
                 </span>
-                <span className="text-[#E8E8F0]/90 break-words">{turn.text}</span>
+                <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
               </div>
             ))
           )}
@@ -468,13 +470,13 @@ export function VoiceChatPage() {
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
-              <Loader2 className="w-7 h-7 text-[#00F0FF] animate-spin" />
+              <Loader2 className="w-7 h-7 text-[var(--ag-cyan)] animate-spin" />
             ) : voiceState === 'recording' ? (
               <MicOff className="w-7 h-7 text-white" />
             ) : voiceState === 'speaking' ? (
               <span className="w-5 h-5 rounded-sm bg-[#ADFF2F]" />
             ) : (
-              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
+              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[#6B7280]'}`} />
             )}
           </button>
 
@@ -487,7 +489,7 @@ export function VoiceChatPage() {
         <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Text Mode</span>
@@ -496,7 +498,7 @@ export function VoiceChatPage() {
           <button
             onClick={clearTranscript}
             disabled={transcript.length === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear</span>
@@ -504,7 +506,7 @@ export function VoiceChatPage() {
 
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -555,6 +557,7 @@ export function VoiceChatPage() {
           50% { transform: scale(1.06); }
         }
       `}</style>
-    </div>
+      </div>
+    </PageShell>
   );
 }

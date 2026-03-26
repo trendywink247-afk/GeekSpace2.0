@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import api from '@/services/api';
+import { PageShell } from '@/components/agentin';
 
 interface Conversation {
   id: string;
@@ -98,10 +99,11 @@ export function ConversationRatingPage() {
     new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-w-0 overflow-x-hidden p-4 md:p-6 space-y-4">
+    <PageShell spacing={4}>
+    <div className="min-w-0 overflow-x-hidden">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
-          <MessageSquare size={20} className="text-[#8B5CF6]" />
+          <MessageSquare size={20} className="text-[var(--ag-violet)]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[#F4F6FF]">Conversation Ratings</h1>
@@ -125,19 +127,19 @@ export function ConversationRatingPage() {
       )}
 
       {!loading && conversations.map(conv => (
-        <Card key={conv.id} className="bg-[#0C0C18] border-[#00F0FF]/10">
+        <Card key={conv.id} className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/10">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-[#F4F6FF]/40 mb-1">{formatDate(conv.createdAt)}</p>
                 {conv.userMessage && (
                   <div className="mb-2">
-                    <span className="text-xs font-medium text-[#00F0FF] uppercase tracking-wide">You</span>
+                    <span className="text-xs font-medium text-[var(--ag-cyan)] uppercase tracking-wide">You</span>
                     <p className="text-sm text-[#F4F6FF]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
                   </div>
                 )}
                 <div>
-                  <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">Agent</span>
+                  <span className="text-xs font-medium text-[var(--ag-violet)] uppercase tracking-wide">Agent</span>
                   <p className="text-sm text-[#F4F6FF]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
                 </div>
               </div>
@@ -186,5 +188,6 @@ export function ConversationRatingPage() {
         </div>
       )}
     </div>
+    </PageShell>
   );
 }

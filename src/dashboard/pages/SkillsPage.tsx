@@ -1,5 +1,6 @@
 // @deprecated — DEAD CODE confirmed by Sprint 1 audit 2026-03-26. Not imported in DashboardApp.tsx. Safe to delete.
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { PageShell } from '@/components/agentin/PageShell';
 import { Search, Loader2, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { SkillCard } from '@/components/skills/SkillCard';
 import { SkillDetailModal } from '@/components/skills/SkillDetailModal';
@@ -187,23 +188,26 @@ export function SkillsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
-      </div>
+      <PageShell>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-[var(--ag-cyan)] animate-spin" />
+        </div>
+      </PageShell>
     );
   }
 
   // ----- Render ---------------------------------------------------
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-500 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-5 animate-in fade-in duration-500">
       {/* Toast */}
       {toast && (
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl backdrop-blur-sm border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${
             toast.type === 'success'
-              ? 'bg-[#0C0C18]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
-              : 'bg-[#0C0C18]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
+              ? 'bg-[var(--ag-bg-surface)]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
+              : 'bg-[var(--ag-bg-surface)]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
           }`}
         >
           {toast.type === 'success' ? (
@@ -211,7 +215,7 @@ export function SkillsPage() {
           ) : (
             <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
           )}
-          <span className="text-sm text-[#E8E8F0] font-medium">{toast.message}</span>
+          <span className="text-sm text-[var(--ag-text-primary)] font-medium">{toast.message}</span>
         </div>
       )}
 
@@ -224,8 +228,8 @@ export function SkillsPage() {
           >
             Skill Store
           </h1>
-          <p className="text-[#9CA3AF] text-sm">
-            <span className="text-[#00F0FF] font-medium">{installedCount}</span> installed of{' '}
+          <p className="text-[var(--ag-text-muted)] text-sm">
+            <span className="text-[var(--ag-cyan)] font-medium">{installedCount}</span> installed of{' '}
             {catalog.length} skills
           </p>
         </div>
@@ -240,7 +244,7 @@ export function SkillsPage() {
               aria-label="Search skills"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 rounded-lg bg-white/5 border border-white/10 text-sm text-[#E8E8F0] placeholder:text-[#6B7280] outline-none focus:border-[#00F0FF]/40 transition-colors"
+              className="w-full h-10 pl-9 pr-3 rounded-lg bg-white/5 border border-white/10 text-sm text-[var(--ag-text-primary)] placeholder:text-[#6B7280] outline-none focus:border-[#00F0FF]/40 transition-colors"
             />
           </div>
 
@@ -251,8 +255,8 @@ export function SkillsPage() {
             onClick={() => setShowMySkills((v) => !v)}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 h-10 rounded-lg border transition-colors whitespace-nowrap min-w-[44px] ${
               showMySkills
-                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
-                : 'bg-white/5 border-white/10 text-[#9CA3AF] hover:text-[#E8E8F0]'
+                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[var(--ag-cyan)]'
+                : 'bg-white/5 border-white/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
             <Package className="w-3.5 h-3.5" />
@@ -270,8 +274,8 @@ export function SkillsPage() {
             onClick={() => setActiveCategory(cat.id)}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full border whitespace-nowrap transition-colors duration-150 min-h-[36px] ${
               activeCategory === cat.id
-                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
-                : 'bg-white/5 border-white/10 text-[#9CA3AF] hover:text-[#E8E8F0] hover:bg-white/[0.07]'
+                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[var(--ag-cyan)]'
+                : 'bg-white/5 border-white/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:bg-white/[0.07]'
             }`}
           >
             <span>{cat.icon}</span>
@@ -284,7 +288,7 @@ export function SkillsPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <Package className="w-10 h-10 text-[#6B7280] mx-auto mb-3" />
-          <p className="text-[#9CA3AF] text-sm">
+          <p className="text-[var(--ag-text-muted)] text-sm">
             {search || activeCategory !== 'all' || showMySkills
               ? 'No skills match your filters'
               : 'No skills available yet'}
@@ -322,5 +326,6 @@ export function SkillsPage() {
         actionLoading={actionLoading === selectedSkill?.id}
       />
     </div>
+    </PageShell>
   );
 }

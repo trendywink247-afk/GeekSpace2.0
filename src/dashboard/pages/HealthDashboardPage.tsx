@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageShell } from '@/components/agentin';
 
 // ---- Types ----
 
@@ -213,10 +214,10 @@ export function HealthDashboardPage() {
   if (!snapshot) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[var(--ag-cyan)] animate-spin" />
         {error && (
           <div className="text-center space-y-3">
-            <p className="text-sm text-[#9CA3AF]">{error}</p>
+            <p className="text-sm text-[var(--ag-text-muted)]">{error}</p>
             <Button
               variant="outline"
               size="sm"
@@ -237,15 +238,16 @@ export function HealthDashboardPage() {
     : 0;
 
   return (
-    <div data-testid="health-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
+    <PageShell className="animate-in fade-in duration-500">
+    <div data-testid="health-page" className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>API Health</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">Monitored by Edith</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[var(--ag-violet)]">Monitored by Edith</span>
           </div>
-          <p className="text-[#9CA3AF] flex items-center gap-2 text-sm md:text-base">
+          <p className="text-[var(--ag-text-muted)] flex items-center gap-2 text-sm md:text-base">
             {connected ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse shrink-0" />
@@ -271,7 +273,7 @@ export function HealthDashboardPage() {
         </div>
         <Badge
           variant="outline"
-          className="border-[#00F0FF]/40 text-[#00F0FF] shrink-0 text-xs"
+          className="border-[#00F0FF]/40 text-[var(--ag-cyan)] shrink-0 text-xs"
         >
           {new Date(snapshot.timestamp).toLocaleTimeString()}
         </Badge>
@@ -290,9 +292,9 @@ export function HealthDashboardPage() {
             <CardContent className="p-3 md:p-4">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                <span className="text-xs text-[#9CA3AF]">{stat.label}</span>
+                <span className="text-xs text-[var(--ag-text-muted)]">{stat.label}</span>
               </div>
-              <p className="text-2xl md:text-xl font-bold text-[#E8E8F0]">{stat.value}</p>
+              <p className="text-2xl md:text-xl font-bold text-[var(--ag-text-primary)]">{stat.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -300,8 +302,8 @@ export function HealthDashboardPage() {
 
       {/* Component Status Grid */}
       <div>
-        <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
-          <Server className="w-5 h-5 text-[#00F0FF]" />
+        <h2 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+          <Server className="w-5 h-5 text-[var(--ag-cyan)]" />
           Components
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -315,7 +317,7 @@ export function HealthDashboardPage() {
                     <Icon className="w-4 h-4" style={{ color }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-[#E8E8F0] truncate">{componentLabels[key] || key}</p>
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{componentLabels[key] || key}</p>
                     <p className="text-xs flex items-center gap-1.5" style={{ color }}>
                       <span
                         className={`w-2 h-2 rounded-full inline-block shrink-0${color === '#00FF88' ? ' animate-pulse' : ''}`}
@@ -335,7 +337,7 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm text-[var(--ag-text-muted)] mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4" />
               Error Rate (5-min window)
             </h3>
@@ -343,7 +345,7 @@ export function HealthDashboardPage() {
               <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#FF6161' : errorRate > 0 ? '#FFB800' : '#00FF88' }}>
                 {errorRate}%
               </span>
-              <span className="text-sm text-[#9CA3AF] mb-1">
+              <span className="text-sm text-[var(--ag-text-muted)] mb-1">
                 {snapshot.metrics.totalErrors} / {snapshot.metrics.totalRequests} requests
               </span>
             </div>
@@ -351,13 +353,13 @@ export function HealthDashboardPage() {
         </Card>
         <Card className="border-[#00F0FF]/20">
           <CardContent className="p-5">
-            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm text-[var(--ag-text-muted)] mb-2 flex items-center gap-1.5">
               <Cpu className="w-4 h-4" />
               Memory Usage
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[#00F0FF]">{snapshot.system.memoryMb} MB</span>
-              <span className="text-sm text-[#9CA3AF] mb-1">heap used</span>
+              <span className="text-3xl font-bold text-[var(--ag-cyan)]">{snapshot.system.memoryMb} MB</span>
+              <span className="text-sm text-[var(--ag-text-muted)] mb-1">heap used</span>
             </div>
           </CardContent>
         </Card>
@@ -366,7 +368,7 @@ export function HealthDashboardPage() {
       {/* Top Endpoints */}
       {(snapshot.topEndpoints ?? []).length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
             <Zap className="w-5 h-5 text-[#FFB800]" />
             Hot Endpoints (5-min window)
           </h2>
@@ -375,17 +377,17 @@ export function HealthDashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#00F0FF]/10">
-                    <th className="text-left text-[#9CA3AF] font-medium px-4 py-3">Endpoint</th>
-                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Hits</th>
-                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Errors</th>
-                    <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Avg Latency</th>
+                    <th className="text-left text-[var(--ag-text-muted)] font-medium px-4 py-3">Endpoint</th>
+                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Hits</th>
+                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Errors</th>
+                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Avg Latency</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(snapshot.topEndpoints ?? []).map((ep) => (
                     <tr key={ep.path} className="border-b border-[#00F0FF]/5 hover:bg-[#00F0FF]/5 transition-colors">
-                      <td className="px-4 py-2.5 font-mono text-[#E8E8F0] text-xs whitespace-nowrap">{ep.path}</td>
-                      <td className="px-4 py-2.5 text-right text-[#E8E8F0]">{ep.count}</td>
+                      <td className="px-4 py-2.5 font-mono text-[var(--ag-text-primary)] text-xs whitespace-nowrap">{ep.path}</td>
+                      <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)]">{ep.count}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#FF6161' : '#00FF88' }}>{ep.errors}</td>
                       <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#FFB800' : '#9CA3AF' }}>{ep.avgMs}ms</td>
                     </tr>
@@ -398,9 +400,10 @@ export function HealthDashboardPage() {
       )}
 
       {/* Footer */}
-      <div className="text-center text-xs text-[#9CA3AF]/50 py-2">
+      <div className="text-center text-xs text-[var(--ag-text-muted)]/50 py-2">
         {snapshot.metrics.activeConnections} active stream{snapshot.metrics.activeConnections !== 1 ? 's' : ''} · Window resets every 5 min
       </div>
     </div>
+    </PageShell>
   );
 }

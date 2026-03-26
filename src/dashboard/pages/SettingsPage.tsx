@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   User,
   Bell,
@@ -551,10 +552,11 @@ export function SettingsPage() {
   };
 
   return (
+    <PageShell>
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* 57.9: Agent config save-confirmation toast */}
       {savedToast && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
           <Save className="w-4 h-4" />
           Settings saved
         </div>
@@ -568,14 +570,14 @@ export function SettingsPage() {
           data-testid="shortcuts-modal"
         >
           <div
-            className="bg-[#0C0C18] border border-[#00F0FF]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
                 Keyboard Shortcuts
               </h2>
-              <button onClick={() => setShowShortcuts(false)} className="text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close shortcuts">✕</button>
+              <button onClick={() => setShowShortcuts(false)} className="text-[var(--ag-text-muted)] hover:text-[#F4F6FF] transition-colors text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close shortcuts">✕</button>
             </div>
             <div className="space-y-4">
               {[
@@ -596,19 +598,19 @@ export function SettingsPage() {
                 ]},
               ].map(({ group, items }) => (
                 <div key={group}>
-                  <p className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-1.5">{group}</p>
+                  <p className="text-xs uppercase tracking-widest text-[var(--ag-text-muted)] mb-1.5">{group}</p>
                   <div className="space-y-1">
                     {items.map(({ key, desc }) => (
                       <div key={key} className="flex items-center justify-between">
-                        <span className="text-[#9CA3AF] text-sm">{desc}</span>
-                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/20 text-[#00F0FF] text-xs font-mono">{key}</kbd>
+                        <span className="text-[var(--ag-text-muted)] text-sm">{desc}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-mono">{key}</kbd>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-[11px] text-[#9CA3AF] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
+            <p className="mt-5 text-[11px] text-[var(--ag-text-muted)] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
           </div>
         </div>
       )}
@@ -617,7 +619,7 @@ export function SettingsPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Settings
           </h1>
-          <p className="text-[#9CA3AF]">Manage your account preferences</p>
+          <p className="text-[var(--ag-text-muted)]">Manage your account preferences</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           {/* 46.4: Unsaved changes warning banner */}
@@ -631,7 +633,7 @@ export function SettingsPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowShortcuts(true)}
-              className="border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs"
+              className="border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/40 text-xs"
               title="Keyboard shortcuts (?)"
               data-testid="shortcuts-btn"
             >
@@ -670,8 +672,8 @@ export function SettingsPage() {
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               activeTab === id
-                ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40'
-                : 'text-[#9CA3AF] hover:text-[#E8E8F0] border border-transparent hover:border-[#00F0FF]/20'
+                ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/40'
+                : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent hover:border-[#00F0FF]/20'
             }`}
           >
             <NavIcon className="w-3 h-3" />
@@ -689,7 +691,7 @@ export function SettingsPage() {
               <CardContent className="p-6 text-center">
                 <div className="relative inline-block mb-4">
                   {profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[#0C0C18] object-cover" />
+                    <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[var(--ag-bg-surface)] object-cover" />
                   ) : (
                     <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
                       {profile.name.split(' ').map(n => n[0]).join('')}
@@ -711,7 +713,7 @@ export function SettingsPage() {
                 {/* 53.9: Upload photo with live preview */}
                 <div className="mt-2">
                   <label className="cursor-pointer">
-                    <span className="text-xs text-[#00F0FF] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
+                    <span className="text-xs text-[var(--ag-cyan)] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
@@ -737,16 +739,16 @@ export function SettingsPage() {
                     />
                   </label>
                   {avatarError && <p className="text-xs text-[#FF3366] mt-1">{avatarError}</p>}
-                  {!avatarError && <p className="text-xs text-[#9CA3AF] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
+                  {!avatarError && <p className="text-xs text-[var(--ag-text-muted)] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
-                <h3 className="font-semibold text-[#E8E8F0]">{profile.name || user?.email?.split('@')[0] || 'Your Name'}</h3>
-                <p className="text-sm text-[#9CA3AF]">@{profile.username}</p>
+                <h3 className="font-semibold text-[var(--ag-text-primary)]">{profile.name || user?.email?.split('@')[0] || 'Your Name'}</h3>
+                <p className="text-sm text-[var(--ag-text-muted)]">@{profile.username}</p>
                 {/* 77.6: Dynamic plan badge */}
                 {(() => {
                   const plan = user?.plan as string | undefined;
                   if (!plan || plan === 'free') {
                     return (
-                      <Badge variant="outline" className="mt-3 border-[#6B7280]/30 text-[#9CA3AF]">
+                      <Badge variant="outline" className="mt-3 border-[#6B7280]/30 text-[var(--ag-text-muted)]">
                         Free Plan
                       </Badge>
                     );
@@ -777,38 +779,38 @@ export function SettingsPage() {
             <Card className="lg:col-span-2 border-[#00F0FF]/20">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription className="text-[#9CA3AF]">Update your public profile</CardDescription>
+                <CardDescription className="text-[var(--ag-text-muted)]">Update your public profile</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name</label>
-                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Display Name</label>
+                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">Username</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Username</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]">@</span>
-                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] pl-8" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted)]">@</span>
+                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-[#9CA3AF] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                  <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Email</label>
+                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
                 </div>
                 <div>
-                  <label className="text-sm text-[#9CA3AF] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
+                  <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Bio</label>
+                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl border border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Location</label>
+                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
                   </div>
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]" />
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Website</label>
+                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
                   </div>
                 </div>
               </CardContent>
@@ -821,7 +823,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Choose how you want to be notified</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Choose how you want to be notified</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -836,11 +838,11 @@ export function SettingsPage() {
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-[#00F0FF]" />
+                      <item.icon className="w-5 h-5 text-[var(--ag-cyan)]" />
                     </div>
                     <div>
-                      <div className="font-medium text-[#E8E8F0]">{item.title}</div>
-                      <div className="text-sm text-[#9CA3AF]">{item.desc}</div>
+                      <div className="font-medium text-[var(--ag-text-primary)]">{item.title}</div>
+                      <div className="text-sm text-[var(--ag-text-muted)]">{item.desc}</div>
                     </div>
                   </div>
                   <Switch
@@ -859,7 +861,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Telegram Alerts</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Choose which alerts are sent to your Telegram</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Choose which alerts are sent to your Telegram</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {([
@@ -871,8 +873,8 @@ export function SettingsPage() {
               ] as const).map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-[#E8E8F0] text-sm">{item.title}</div>
-                    <div className="text-xs text-[#9CA3AF] mt-0.5">{item.desc}</div>
+                    <div className="font-medium text-[var(--ag-text-primary)] text-sm">{item.title}</div>
+                    <div className="text-xs text-[var(--ag-text-muted)] mt-0.5">{item.desc}</div>
                   </div>
                   <Switch
                     checked={agentNotifs[item.key] === 1}
@@ -891,7 +893,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Snooze Presets</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Choose which snooze options appear when delaying a reminder</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Choose which snooze options appear when delaying a reminder</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {(['1h', '3h', 'tomorrow', 'next-week'] as const).map((preset) => {
@@ -900,7 +902,7 @@ export function SettingsPage() {
                 return (
                   <div key={preset} className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-[#E8E8F0] text-sm">{labels[preset]}</div>
+                      <div className="font-medium text-[var(--ag-text-primary)] text-sm">{labels[preset]}</div>
                     </div>
                     <Switch
                       checked={enabled}
@@ -921,8 +923,8 @@ export function SettingsPage() {
           {/* 59.10: Reset Agent Config to Defaults */}
           <Card className="border-[#FF6161]/20">
             <CardHeader>
-              <CardTitle className="text-[#E8E8F0]">Reset Agent Configuration</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Restore all agent notification and snooze settings to their defaults</CardDescription>
+              <CardTitle className="text-[var(--ag-text-primary)]">Reset Agent Configuration</CardTitle>
+              <CardDescription className="text-[var(--ag-text-muted)]">Restore all agent notification and snooze settings to their defaults</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
@@ -947,7 +949,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Active Sessions</CardTitle>
-                  <CardDescription className="text-[#9CA3AF]">Devices where you are currently signed in</CardDescription>
+                  <CardDescription className="text-[var(--ag-text-muted)]">Devices where you are currently signed in</CardDescription>
                 </div>
                 {sessions.length > 1 && (
                   <Button
@@ -967,14 +969,14 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {sessionsLoading ? (
-                <div className="flex items-center gap-2 py-4 text-[#9CA3AF]">
+                <div className="flex items-center gap-2 py-4 text-[var(--ag-text-muted)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Loading sessions...</span>
                 </div>
               ) : sessions.length === 0 ? (
                 <div className="text-center py-6">
-                  <Monitor className="w-8 h-8 text-[#00F0FF]/30 mx-auto mb-2" />
-                  <p className="text-sm text-[#9CA3AF]">No active sessions found</p>
+                  <Monitor className="w-8 h-8 text-[var(--ag-cyan)]/30 mx-auto mb-2" />
+                  <p className="text-sm text-[var(--ag-text-muted)]">No active sessions found</p>
                 </div>
               ) : (
                 sessions.map((s) => {
@@ -982,24 +984,24 @@ export function SettingsPage() {
                   const isCurrent = sessions.length > 0 &&
                     s.id === [...sessions].sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())[0].id;
                   return (
-                    <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl bg-[#06060B] border transition-all ${
+                    <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl  border transition-all ${
                       isCurrent ? 'border-[#00F0FF]/50 ring-1 ring-[#00F0FF]/20' : 'border-[#00F0FF]/20'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
+                        <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-[#E8E8F0] truncate max-w-[200px]">
+                            <span className="text-sm font-medium text-[var(--ag-text-primary)] truncate max-w-[200px]">
                               {s.user_agent.slice(0, 40) || 'Unknown browser'}
                             </span>
                             {isCurrent && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/15 text-[#00F0FF] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/15 text-[var(--ag-cyan)] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
                                 Current
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-[#9CA3AF]">
+                          <div className="text-xs text-[var(--ag-text-muted)]">
                             {s.ip || 'Unknown IP'} · Last seen {new Date(s.last_seen).toLocaleDateString()}
                           </div>
                         </div>
@@ -1018,7 +1020,7 @@ export function SettingsPage() {
                   );
                 })
               )}
-              <p className="text-xs text-[#9CA3AF] pt-1">
+              <p className="text-xs text-[var(--ag-text-muted)] pt-1">
                 Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
               </p>
             </CardContent>
@@ -1028,18 +1030,18 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#00F0FF]" />
+                <MapPin className="w-4 h-4 text-[var(--ag-cyan)]" />
                 Timezone
               </CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Auto-detected from your browser</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Auto-detected from your browser</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#06060B] border border-[#00F0FF]/20">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-[#00F0FF]/20">
                 <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-[#00F0FF]" />
+                  <Globe className="w-5 h-5 text-[var(--ag-cyan)]" />
                   <div>
-                    <p className="text-sm font-medium text-[#E8E8F0]">{detectedTimezone}</p>
-                    <p className="text-xs text-[#9CA3AF]">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">{detectedTimezone}</p>
+                    <p className="text-xs text-[var(--ag-text-muted)]">
                       Current time: {new Date().toLocaleTimeString('en-US', { timeZone: detectedTimezone, hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -1048,7 +1050,7 @@ export function SettingsPage() {
                   Auto-detected
                 </Badge>
               </div>
-              <p className="text-xs text-[#9CA3AF] mt-2">
+              <p className="text-xs text-[var(--ag-text-muted)] mt-2">
                 This timezone is used for reminders, daily briefings, and scheduling. It updates automatically based on your device settings.
               </p>
             </CardContent>
@@ -1058,17 +1060,17 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileDown className="w-4 h-4 text-[#00F0FF]" />
+                <FileDown className="w-4 h-4 text-[var(--ag-cyan)]" />
                 Data Export (GDPR)
               </CardTitle>
-              <CardDescription className="text-[#9CA3AF]">
+              <CardDescription className="text-[var(--ag-text-muted)]">
                 Download a copy of all your data stored in Agentin
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20">
-                <Shield className="w-4 h-4 text-[#00F0FF] flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-[#9CA3AF]">
+                <Shield className="w-4 h-4 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[var(--ag-text-muted)]">
                   Your export includes your profile, conversation history, memories, active sessions, and preferences.
                   The file is downloaded directly to your device and is not stored on our servers.
                 </p>
@@ -1077,7 +1079,7 @@ export function SettingsPage() {
                 variant="outline"
                 onClick={() => void handleGDPRExport()}
                 disabled={isExportingGDPR}
-                className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
                 data-testid="gdpr-export-btn"
               >
                 {isExportingGDPR ? (
@@ -1096,7 +1098,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Preferred AI Engine</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Choose which AI model powers your assistant</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Choose which AI model powers your assistant</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {[
@@ -1111,16 +1113,16 @@ export function SettingsPage() {
                   disabled={modelSaving}
                   className={`w-full text-left p-3 rounded-xl border transition-all ${
                     preferredModel === opt.value
-                      ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[#00F0FF]'
-                      : 'bg-[#06060B] border-[#00F0FF]/20 text-[#E8E8F0] hover:border-[#00F0FF]/50'
+                      ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[var(--ag-cyan)]'
+                      : ' border-[#00F0FF]/20 text-[var(--ag-text-primary)] hover:border-[#00F0FF]/50'
                   }`}
                 >
                   <div className="font-medium text-sm">{opt.label}</div>
-                  <div className="text-xs text-[#9CA3AF] mt-0.5">{opt.desc}</div>
+                  <div className="text-xs text-[var(--ag-text-muted)] mt-0.5">{opt.desc}</div>
                 </button>
               ))}
               {modelSaving && (
-                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
+                <div className="flex items-center gap-2 text-[var(--ag-text-muted)] text-sm">
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
@@ -1131,7 +1133,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Preferred Free Model</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">
+              <CardDescription className="text-[var(--ag-text-muted)]">
                 Pick which OpenRouter free model to use when cloud mode is selected
               </CardDescription>
             </CardHeader>
@@ -1149,7 +1151,7 @@ export function SettingsPage() {
                     setFreeModelSaving(false);
                   }
                 }}
-                className="w-full px-3 py-2 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl text-[#E8E8F0] text-sm focus:outline-none focus:border-[#00F0FF]/40"
+                className="w-full px-3 py-2 border border-[#00F0FF]/20 rounded-xl text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[#00F0FF]/40"
               >
                 <option value="auto">Auto (Agentin selects best available)</option>
                 {freeModels.map((m) => (
@@ -1157,11 +1159,11 @@ export function SettingsPage() {
                 ))}
               </select>
               {freeModelSaving && (
-                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
+                <div className="flex items-center gap-2 text-[var(--ag-text-muted)] text-sm">
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
-              <p className="text-xs text-[#9CA3AF]">
+              <p className="text-xs text-[var(--ag-text-muted)]">
                 Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
               </p>
             </CardContent>
@@ -1171,27 +1173,27 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Update your account password</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Update your account password</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-2 block">Current Password</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Current Password</label>
                 <Input
                   type="password"
                   value={pwCurrent}
                   onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter current password"
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
                 />
               </div>
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-2 block">New Password</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">New Password</label>
                 <Input
                   type="password"
                   value={pwNew}
                   onChange={(e) => { setPwNew(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter new password"
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
                 />
                 {/* Password strength meter */}
                 {pwNew.length > 0 && (() => {
@@ -1229,13 +1231,13 @@ export function SettingsPage() {
                 })()}
               </div>
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-2 block">Confirm New Password</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Confirm New Password</label>
                 <Input
                   type="password"
                   value={pwConfirm}
                   onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Confirm new password"
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
                 />
               </div>
               {pwError && (
@@ -1292,14 +1294,14 @@ export function SettingsPage() {
               <CardTitle className="text-[#FF2D78] flex items-center gap-2">
                 <Trash2 className="w-4 h-4" /> Danger Zone
               </CardTitle>
-              <CardDescription className="text-[#9CA3AF]">
+              <CardDescription className="text-[var(--ag-text-muted)]">
                 Actions here are irreversible. Proceed with caution.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#FF2D78]/5 border border-[#FF2D78]/20">
                 <Shield className="w-4 h-4 text-[#FF2D78] flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-[#9CA3AF]">
+                <p className="text-xs text-[var(--ag-text-muted)]">
                   Deleting your account will permanently erase all conversations, reminders, automations,
                   memories, documents, and settings. This action cannot be reversed.
                 </p>
@@ -1315,17 +1317,17 @@ export function SettingsPage() {
                 </Button>
               ) : (
                 <div className="space-y-3 p-4 rounded-xl bg-[#FF2D78]/[0.03] border border-[#FF2D78]/20">
-                  <p className="text-sm text-[#E8E8F0] font-medium">
+                  <p className="text-sm text-[var(--ag-text-primary)] font-medium">
                     To confirm, type <span className="text-[#FF2D78] font-bold font-mono">DELETE</span> below, then enter your password.
                   </p>
                   <div>
-                    <label className="text-xs text-[#9CA3AF] mb-1.5 block">Type DELETE to confirm</label>
+                    <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Type DELETE to confirm</label>
                     <Input
                       type="text"
                       placeholder="DELETE"
                       value={deleteConfirmText}
                       onChange={(e) => setDeleteConfirmText(e.target.value)}
-                      className={`bg-[#0C0C18] text-[#E8E8F0] font-mono tracking-wider ${
+                      className={`bg-[var(--ag-bg-surface)] text-[var(--ag-text-primary)] font-mono tracking-wider ${
                         deleteConfirmText === 'DELETE'
                           ? 'border-[#FF2D78]/60'
                           : 'border-[#FF2D78]/20'
@@ -1335,13 +1337,13 @@ export function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-[#9CA3AF] mb-1.5 block">Your current password</label>
+                    <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Your current password</label>
                     <Input
                       type="password"
                       placeholder="Enter password"
                       value={deletePassword}
                       onChange={(e) => setDeletePassword(e.target.value)}
-                      className="bg-[#0C0C18] border-[#FF2D78]/20 text-[#E8E8F0]"
+                      className="bg-[var(--ag-bg-surface)] border-[#FF2D78]/20 text-[var(--ag-text-primary)]"
                       data-testid="delete-account-password-input"
                     />
                   </div>
@@ -1353,7 +1355,7 @@ export function SettingsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteConfirmText(''); setDeleteError(''); }}
-                      className="border-[#00F0FF]/20 text-[#9CA3AF]"
+                      className="border-[#00F0FF]/20 text-[var(--ag-text-muted)]"
                     >
                       Cancel
                     </Button>
@@ -1396,7 +1398,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>API Keys</CardTitle>
-                  <CardDescription className="text-[#9CA3AF]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
+                  <CardDescription className="text-[var(--ag-text-muted)]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
                 </div>
                 <Button onClick={() => setShowAddKey(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                   <Plus className="w-4 h-4 mr-2" />Add Key
@@ -1406,22 +1408,22 @@ export function SettingsPage() {
             <CardContent className="space-y-4">
               {apiKeys.length === 0 && !showAddKey && (
                 <div className="text-center py-8">
-                  <Key className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF] mb-2">No API keys added yet</p>
-                  <p className="text-sm text-[#9CA3AF]">Add your provider keys to use your own credits</p>
+                  <Key className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+                  <p className="text-[var(--ag-text-muted)] mb-2">No API keys added yet</p>
+                  <p className="text-sm text-[var(--ag-text-muted)]">Add your provider keys to use your own credits</p>
                 </div>
               )}
 
               {apiKeys.map((key) => (
-                <div key={key.id} className="rounded-xl bg-[#06060B] border border-[#00F0FF]/20 overflow-hidden">
+                <div key={key.id} className="rounded-xl border border-[#00F0FF]/20 overflow-hidden">
                   <div className="flex items-center justify-between p-4 gap-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
                         {providerEmoji[key.provider] ?? '🔑'}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-medium text-[#E8E8F0] truncate">{key.label}</div>
-                        <div className="text-sm text-[#9CA3AF] font-mono truncate">
+                        <div className="font-medium text-[var(--ag-text-primary)] truncate">{key.label}</div>
+                        <div className="text-sm text-[var(--ag-text-muted)] font-mono truncate">
                           {key.maskedKey.length > 12
                             ? `${key.maskedKey.slice(0, 4)}...${key.maskedKey.slice(-4)}`
                             : key.maskedKey}
@@ -1431,7 +1433,7 @@ export function SettingsPage() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Button variant="ghost" size="sm"
                         onClick={() => { setRotatingKeyId(rotatingKeyId === key.id ? null : key.id); setRotateValue(''); }}
-                        className="text-[#00F0FF]/70 hover:text-[#00F0FF] text-xs px-2">
+                        className="text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] text-xs px-2">
                         Rotate
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
@@ -1450,7 +1452,7 @@ export function SettingsPage() {
                       />
                       <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
                         onClick={() => handleRotateKey(key.id)}
-                        className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30">
+                        className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30">
                         {isRotating ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
                       </Button>
                     </div>
@@ -1459,9 +1461,9 @@ export function SettingsPage() {
               ))}
 
               {showAddKey && (
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/30 space-y-3">
+                <div className="p-4 rounded-xl border border-[#00F0FF]/30 space-y-3">
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">Provider</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Provider</label>
                     <div className="flex gap-2 flex-wrap">
                       {(['openai', 'anthropic', 'qwen', 'openrouter'] as ApiProvider[]).map((p) => (
                         <button
@@ -1469,8 +1471,8 @@ export function SettingsPage() {
                           onClick={() => setNewKeyProvider(p)}
                           className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
-                              ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
-                              : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF]'
+                              ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[var(--ag-cyan)]'
+                              : 'bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)]'
                           }`}
                         >
                           {p}
@@ -1479,13 +1481,13 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-[#9CA3AF] mb-2 block">API Key</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">API Key</label>
                     <Input
                       type="password"
                       value={newKeyValue}
                       onChange={(e) => setNewKeyValue(e.target.value)}
                       placeholder="sk-..."
-                      className="bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] font-mono"
+                      className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/30 text-[var(--ag-text-primary)] font-mono"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -1510,7 +1512,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Agent Memory</CardTitle>
-                  <CardDescription className="text-[#9CA3AF]">What your AI assistant remembers about you</CardDescription>
+                  <CardDescription className="text-[var(--ag-text-muted)]">What your AI assistant remembers about you</CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {['all', 'fact', 'preference'].map((cat) => (
@@ -1519,8 +1521,8 @@ export function SettingsPage() {
                       onClick={() => setMemoryFilter(cat)}
                       className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
                         memoryFilter === cat
-                          ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[#00F0FF]'
-                          : 'bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF]'
+                          ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[var(--ag-cyan)]'
+                          : 'bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)]'
                       }`}
                     >
                       {cat}
@@ -1536,13 +1538,13 @@ export function SettingsPage() {
                 </div>
               ) : memories.length === 0 ? (
                 <div className="text-center py-8">
-                  <Brain className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF] mb-2">No memories yet</p>
-                  <p className="text-sm text-[#9CA3AF]">Your agent learns about you through conversations</p>
+                  <Brain className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+                  <p className="text-[var(--ag-text-muted)] mb-2">No memories yet</p>
+                  <p className="text-sm text-[var(--ag-text-muted)]">Your agent learns about you through conversations</p>
                 </div>
               ) : (
                 memories.map((memory) => (
-                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all">
+                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center mt-0.5" style={{
                         backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#00F0FF15'
@@ -1553,11 +1555,11 @@ export function SettingsPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-[#E8E8F0]">{memory.key}</span>
-                          <Badge variant="outline" className="text-xs border-[#00F0FF]/30 text-[#9CA3AF]">{memory.category}</Badge>
+                          <span className="text-sm font-medium text-[var(--ag-text-primary)]">{memory.key}</span>
+                          <Badge variant="outline" className="text-xs border-[#00F0FF]/30 text-[var(--ag-text-muted)]">{memory.category}</Badge>
                         </div>
-                        <p className="text-sm text-[#9CA3AF]">{memory.value}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-[#9CA3AF]/60">
+                        <p className="text-sm text-[var(--ag-text-muted)]">{memory.value}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-[var(--ag-text-muted)]/60">
                           <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {new Date(memory.updatedAt || memory.createdAt).toLocaleDateString()}</span>
                           <span>Confidence: {Math.round(memory.confidence * 100)}%</span>
                           <span>Source: {memory.source}</span>
@@ -1584,7 +1586,7 @@ export function SettingsPage() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <span className="text-base">✨</span> Top Reactions
                 </CardTitle>
-                <CardDescription className="text-[#9CA3AF] text-xs">
+                <CardDescription className="text-[var(--ag-text-muted)] text-xs">
                   Your most-used reactions on agent messages
                 </CardDescription>
               </CardHeader>
@@ -1593,10 +1595,10 @@ export function SettingsPage() {
                   {reactionSummary.map(({ reaction, count }) => (
                     <div
                       key={reaction}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-colors"
                     >
                       <span className="text-base leading-none">{reaction}</span>
-                      <span className="text-xs font-bold text-[#00F0FF]">{count}</span>
+                      <span className="text-xs font-bold text-[var(--ag-cyan)]">{count}</span>
                     </div>
                   ))}
                 </div>
@@ -1616,12 +1618,12 @@ export function SettingsPage() {
                 </CardTitle>
                 <button
                   onClick={() => setShowStarred(s => !s)}
-                  className="text-xs text-[#9CA3AF] hover:text-[#F59E0B] transition-colors"
+                  className="text-xs text-[var(--ag-text-muted)] hover:text-[#F59E0B] transition-colors"
                 >
                   {showStarred ? 'Hide' : 'Show'}
                 </button>
               </div>
-              <CardDescription className="text-[#9CA3AF] text-xs">Messages you've starred from your conversation history</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)] text-xs">Messages you've starred from your conversation history</CardDescription>
             </CardHeader>
             {showStarred && (
               <CardContent className="space-y-2 max-h-64 overflow-y-auto">
@@ -1629,10 +1631,10 @@ export function SettingsPage() {
                   <p className="text-xs text-[#4B5563] py-2">No starred messages yet. Star messages from your conversation history.</p>
                 ) : (
                   starredMessages.map((msg) => (
-                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-[#0C0C18] border border-[#F59E0B]/20">
+                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[#F59E0B]/20">
                       <span className="text-xs mt-0.5">{msg.role === 'user' ? '👤' : '🤖'}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-[#E8E8F0] line-clamp-2">{msg.content}</p>
+                        <p className="text-xs text-[var(--ag-text-primary)] line-clamp-2">{msg.content}</p>
                         <p className="text-xs text-[#4B5563] mt-0.5">{new Date(msg.createdAt).toLocaleDateString()}</p>
                       </div>
                       <button
@@ -1641,7 +1643,7 @@ export function SettingsPage() {
                             setStarredMessages(prev => prev.filter(m => m.id !== msg.id));
                           }).catch(() => {});
                         }}
-                        className="shrink-0 text-[#F59E0B] hover:text-[#9CA3AF] transition-colors"
+                        className="shrink-0 text-[#F59E0B] hover:text-[var(--ag-text-muted)] transition-colors"
                         title="Unstar"
                         data-testid={`unstar-msg-${msg.id}`}
                       >
@@ -1657,10 +1659,10 @@ export function SettingsPage() {
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Brain className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+                <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">How Memory Works</h4>
-                  <p className="text-xs text-[#9CA3AF]">
+                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">How Memory Works</h4>
+                  <p className="text-xs text-[var(--ag-text-muted)]">
                     Your agent learns about you through conversations — extracting facts, preferences, and context.
                     Memories improve response quality over time. You can delete any memory at any time.
                   </p>
@@ -1673,15 +1675,15 @@ export function SettingsPage() {
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Chat History Export</h4>
-                  <p className="text-xs text-[#9CA3AF]">Download your full conversation history as a JSON file.</p>
+                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Chat History Export</h4>
+                  <p className="text-xs text-[var(--ag-text-muted)]">Download your full conversation history as a JSON file.</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleExportConversations}
                   disabled={isExportingConversations}
-                  className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                  className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
                 >
                   {isExportingConversations ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1693,8 +1695,8 @@ export function SettingsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">Export as Markdown</h4>
-                  <p className="text-xs text-[#9CA3AF]">Download chat history as a readable Markdown (.md) file.</p>
+                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Export as Markdown</h4>
+                  <p className="text-xs text-[var(--ag-text-muted)]">Download chat history as a readable Markdown (.md) file.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1736,7 +1738,7 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Privacy Controls</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Control what is visible on your public portfolio</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Control what is visible on your public portfolio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {[
@@ -1748,8 +1750,8 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-[#E8E8F0]">{item.title}</div>
-                    <div className="text-sm text-[#9CA3AF]">{item.desc}</div>
+                    <div className="font-medium text-[var(--ag-text-primary)]">{item.title}</div>
+                    <div className="text-sm text-[var(--ag-text-muted)]">{item.desc}</div>
                   </div>
                   <Switch
                     checked={privacy[item.key as keyof typeof privacy]}
@@ -1777,10 +1779,10 @@ export function SettingsPage() {
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+                <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-[#E8E8F0] mb-1">What We Never Show</h4>
-                  <p className="text-xs text-[#9CA3AF]">
+                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">What We Never Show</h4>
+                  <p className="text-xs text-[var(--ag-text-muted)]">
                     Raw chat logs, internal system data, precise location (only city if enabled), and API keys are never exposed publicly.
                   </p>
                 </div>
@@ -1807,13 +1809,13 @@ export function SettingsPage() {
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Customize the look of your dashboard</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Customize the look of your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-3 block">Theme Mode</label>
-                <div className="inline-flex rounded-xl border border-[#00F0FF]/20 bg-[#06060B] p-1 gap-1">
+                <label className="text-sm text-[var(--ag-text-muted)] mb-3 block">Theme Mode</label>
+                <div className="inline-flex rounded-xl border border-[#00F0FF]/20 p-1 gap-1">
                   {([
                     { id: 'dark', label: 'Dark', Icon: Moon },
                     { id: 'light', label: 'Light', Icon: Sun },
@@ -1827,8 +1829,8 @@ export function SettingsPage() {
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         themeMode === id
-                          ? 'bg-[#00F0FF]/15 text-[#00F0FF] shadow-inner'
-                          : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                          ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] shadow-inner'
+                          : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -1836,7 +1838,7 @@ export function SettingsPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-[#9CA3AF]">
+                <p className="mt-2 text-xs text-[var(--ag-text-muted)]">
                   {themeMode === 'system' ? 'Follows your OS preference' : themeMode === 'dark' ? 'Dark mode active' : 'Light mode active'}
                 </p>
                 {/* Live mini theme preview card */}
@@ -1884,7 +1886,7 @@ export function SettingsPage() {
               </div>
 
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-3 block">Accent Color</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-3 block">Accent Color</label>
                 <div className="flex gap-3 flex-wrap">
                   {accentPresets.map((color) => (
                     <button
@@ -1898,22 +1900,22 @@ export function SettingsPage() {
                   ))}
                 </div>
                 <div className="mt-3 flex items-center gap-3">
-                  <label className="text-sm text-[#9CA3AF]">Custom:</label>
+                  <label className="text-sm text-[var(--ag-text-muted)]">Custom:</label>
                   <input
                     type="color"
                     value={accentColor}
                     onChange={(e) => { setAccentColor(e.target.value); void agentService.updateConfig({ accentColor: e.target.value }).then(() => showSavedToast()).catch(() => {}); }}
                     className="w-8 h-8 rounded cursor-pointer bg-transparent"
                   />
-                  <span className="text-sm font-mono text-[#9CA3AF]">{accentColor}</span>
+                  <span className="text-sm font-mono text-[var(--ag-text-muted)]">{accentColor}</span>
                 </div>
               </div>
 
               {/* Compact Mode */}
               <div className="flex items-center justify-between py-3 border-t border-[#00F0FF]/10">
                 <div>
-                  <p className="text-sm font-medium text-[#E8E8F0]">Compact Mode</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Reduce card padding and spacing for a denser layout</p>
+                  <p className="text-sm font-medium text-[var(--ag-text-primary)]">Compact Mode</p>
+                  <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Reduce card padding and spacing for a denser layout</p>
                 </div>
                 <Switch
                   checked={compactMode}
@@ -1924,14 +1926,14 @@ export function SettingsPage() {
 
               {/* AI Background Generator */}
               <div className="space-y-3">
-                <label className="text-sm text-[#9CA3AF] block">AI-Generated Background</label>
+                <label className="text-sm text-[var(--ag-text-muted)] block">AI-Generated Background</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Describe a vibe (optional)..."
                     value={bgVibe}
                     onChange={(e) => setBgVibe(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm focus:outline-none focus:border-[#00F0FF]/60"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[#00F0FF]/60"
                   />
                   <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#00F0FF] hover:bg-[#00D4B0]">
                     {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -1943,7 +1945,7 @@ export function SettingsPage() {
                       className="h-24 rounded-xl border border-[#00F0FF]/20"
                       style={{ background: bgPreview.gradient }}
                     />
-                    <p className="text-xs text-[#9CA3AF]">"{bgPreview.name}" — click Apply to use this background</p>
+                    <p className="text-xs text-[var(--ag-text-muted)]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
                       <Button onClick={handleApplyBg} size="sm" className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">Apply</Button>
                       <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#00F0FF]/30">Try another</Button>
@@ -1958,30 +1960,30 @@ export function SettingsPage() {
         <TabsContent value="voice" className="space-y-6">
           <Card className="border-[#00F0FF]/20">
             <CardHeader>
-              <CardTitle className="text-[#E8E8F0] flex items-center gap-2">
-                <Volume2 className="w-5 h-5 text-[#00F0FF]" />Voice Settings
+              <CardTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
+                <Volume2 className="w-5 h-5 text-[var(--ag-cyan)]" />Voice Settings
               </CardTitle>
-              <CardDescription className="text-[#9CA3AF]">Configure text-to-speech and voice input.</CardDescription>
+              <CardDescription className="text-[var(--ag-text-muted)]">Configure text-to-speech and voice input.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-[#E8E8F0]">Enable TTS (Text-to-Speech)</h4>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Read agent responses aloud in Voice Chat.</p>
+                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)]">Enable TTS (Text-to-Speech)</h4>
+                  <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Read agent responses aloud in Voice Chat.</p>
                 </div>
                 <Switch checked={voiceSettings.enabled} onCheckedChange={(v) => saveVoiceSettings({ enabled: v })} aria-label="Enable TTS" />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-[#E8E8F0]">Speech Rate</label>
-                  <span className="text-xs text-[#9CA3AF]">{voiceSettings.rate.toFixed(1)}x</span>
+                  <label className="text-sm font-medium text-[var(--ag-text-primary)]">Speech Rate</label>
+                  <span className="text-xs text-[var(--ag-text-muted)]">{voiceSettings.rate.toFixed(1)}x</span>
                 </div>
                 <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#00F0FF]" />
-                <div className="flex justify-between text-xs text-[#9CA3AF]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
+                <div className="flex justify-between text-xs text-[var(--ag-text-muted)]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-[#E8E8F0]">Language</label>
-                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00F0FF]/40">
+                <label className="text-sm font-medium text-[var(--ag-text-primary)]">Language</label>
+                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00F0FF]/40">
                   <option value="en-US">English (US)</option>
                   <option value="en-GB">English (UK)</option>
                   <option value="hi-IN">Hindi (India)</option>
@@ -1989,17 +1991,17 @@ export function SettingsPage() {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10">
+                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10">
                   {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
                   {ttsSample ? "Speaking..." : "Test Voice"}
                 </Button>
-                <p className="text-xs text-[#9CA3AF]">Plays a sample phrase with your current settings.</p>
+                <p className="text-xs text-[var(--ag-text-muted)]">Plays a sample phrase with your current settings.</p>
               </div>
               <div className="rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/15 px-4 py-3 flex items-start gap-3">
-                <Mic className="w-4 h-4 text-[#00F0FF] mt-0.5 shrink-0" />
+                <Mic className="w-4 h-4 text-[var(--ag-cyan)] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm text-[#E8E8F0] font-medium">Keyboard Shortcut</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
+                  <p className="text-sm text-[var(--ag-text-primary)] font-medium">Keyboard Shortcut</p>
+                  <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
                 </div>
               </div>
             </CardContent>
@@ -2014,5 +2016,6 @@ export function SettingsPage() {
         </div>
       )}
     </div>
+    </PageShell>
   );
 }

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/services/api";
+import { PageShell } from "@/components/agentin";
 
 // ---- Types ----
 
@@ -52,7 +53,7 @@ interface WorkflowRun {
 // ---- Constants ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: "text-[#00F0FF]",
+  weebo: "text-[var(--ag-cyan)]",
   jarvis: "text-[#ADFF2F]",
   edith: "text-[#8B5CF6]",
   weebofleet: "text-amber-400",
@@ -166,7 +167,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground font-medium">Step {idx + 1}</span>
                 {steps.length > 1 && (
-                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => removeStep(idx)} aria-label={"Remove step " + (idx + 1)}>
+                  <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50" onClick={() => removeStep(idx)} aria-label={"Remove step " + (idx + 1)}>
                     <Trash2 className="h-3 w-3 text-red-400" />
                   </Button>
                 )}
@@ -337,13 +338,13 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => setExpanded(!expanded)} aria-label={expanded ? "Collapse workflow" : "Expand workflow"}>
+            <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50" onClick={() => setExpanded(!expanded)} aria-label={expanded ? "Collapse workflow" : "Expand workflow"}>
               {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
             </Button>
             <Button
               variant="ghost"
               size={confirmDelete ? "sm" : "icon"}
-              className={`min-h-[44px] text-red-400 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${confirmDelete ? 'px-2 border border-red-400/40 bg-red-400/10' : 'min-w-[44px]'}`}
+              className={`min-h-[44px] text-red-400 focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 ${confirmDelete ? 'px-2 border border-red-400/40 bg-red-400/10' : 'min-w-[44px]'}`}
               onClick={handleDelete}
               disabled={deleting}
               aria-label={confirmDelete ? 'Confirm delete workflow' : 'Delete workflow'}
@@ -395,34 +396,34 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
 
             {/* Live output panel -- visible while running */}
             {running && runSteps.length > 0 && (
-              <div className="mt-4 space-y-3 border border-[#00F0FF]/10 rounded-xl p-4 bg-[#0C0C18]">
-                <h3 className="text-sm font-medium text-[#E8E8F0]">Live Output</h3>
+              <div className="mt-4 space-y-3 border border-[var(--ag-cyan)]/10 rounded-xl p-4 bg-[var(--ag-bg-surface)]">
+                <h3 className="text-sm font-medium text-[var(--ag-text-primary)]">Live Output</h3>
                 {runSteps.map((step, i) => (
                   <div key={i} className="flex gap-3 items-start">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 ${
                       step.status === "done" ? "bg-[#00FF88]/20 text-[#00FF88]" :
                       step.status === "error" ? "bg-red-500/20 text-red-400" :
-                      step.status === "running" ? "bg-[#00F0FF]/20 text-[#00F0FF] animate-pulse" :
+                      step.status === "running" ? "bg-[var(--ag-cyan)]/20 text-[var(--ag-cyan)] animate-pulse" :
                       "bg-[#8892A4]/10 text-[#8892A4]"
                     }`}>
                       {step.status === "done" ? "\u2713" : step.status === "error" ? "\u2717" : i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[#9CA3AF]">
+                      <p className="text-xs text-[var(--ag-text-muted)]">
                         Step {i + 1}: <span className={AGENT_COLORS[step.agent] ?? ""}>{AGENT_LABELS[step.agent] ?? step.agent}</span>
                         {" "}<span className="text-[#8892A4]">&rarr; {step.output_key}</span>
                       </p>
                       {step.output && (
-                        <p className="text-sm text-[#E8E8F0] mt-1 whitespace-pre-wrap line-clamp-6 bg-[#12121F] rounded-lg p-2">{step.output}</p>
+                        <p className="text-sm text-[var(--ag-text-primary)] mt-1 whitespace-pre-wrap line-clamp-6 bg-[var(--ag-bg-elevated)] rounded-lg p-2">{step.output}</p>
                       )}
                       {step.error && (
                         <p className="text-xs text-red-400 mt-1">{step.error}</p>
                       )}
                       {step.status === "running" && (
                         <div className="flex gap-1 mt-2">
-                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
-                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
-                          <div className="w-1.5 h-1.5 bg-[#00F0FF] rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
+                          <div className="w-1.5 h-1.5 bg-[var(--ag-cyan)] rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
+                          <div className="w-1.5 h-1.5 bg-[var(--ag-cyan)] rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
+                          <div className="w-1.5 h-1.5 bg-[var(--ag-cyan)] rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
                         </div>
                       )}
                     </div>
@@ -504,7 +505,7 @@ export function WorkflowsPage() {
   const spinCls = refreshing ? "animate-spin" : "";
 
   return (
-    <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-6">
+    <PageShell>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -515,7 +516,7 @@ export function WorkflowsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
+          <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50">
             <RefreshCw className={"h-4 w-4 " + spinCls} />
           </Button>
           <Button onClick={() => setShowForm(true)} size="sm" className="bg-violet-500 hover:bg-violet-600 text-white">
@@ -594,13 +595,13 @@ export function WorkflowsPage() {
         <CardContent className="pt-4">
           <p className="text-xs font-medium text-muted-foreground mb-2">Agent Guide</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-[#00F0FF]" /><span className="text-[#00F0FF] font-medium">Weebo</span><span className="text-muted-foreground">&mdash; tasks &amp; productivity</span></div>
+            <div className="flex items-center gap-1.5"><Bot className="h-3 w-3 text-[var(--ag-cyan)]" /><span className="text-[var(--ag-cyan)] font-medium">Weebo</span><span className="text-muted-foreground">&mdash; tasks &amp; productivity</span></div>
             <div className="flex items-center gap-1.5"><Settings className="h-3 w-3 text-[#ADFF2F]" /><span className="text-[#ADFF2F] font-medium">Jarvis</span><span className="text-muted-foreground">&mdash; planning &amp; research</span></div>
             <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-[#8B5CF6]" /><span className="text-[#8B5CF6] font-medium">Edith</span><span className="text-muted-foreground">&mdash; deep analysis</span></div>
             <div className="flex items-center gap-1.5"><Zap className="h-3 w-3 text-amber-400" /><span className="text-amber-400 font-medium">WeeboFleet</span><span className="text-muted-foreground">&mdash; automation</span></div>
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

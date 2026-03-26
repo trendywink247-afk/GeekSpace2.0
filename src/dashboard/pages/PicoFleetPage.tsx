@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   Zap, Plus, Trash2, Clock, CheckCircle, XCircle, AlertCircle,
   RefreshCw, Send, Loader2, ChevronDown, ChevronUp, X, Activity,
@@ -497,12 +498,13 @@ export function PicoFleetPage() {
   }
 
   return (
-    <PullToRefreshWrapper onRefresh={() => loadData()} className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
+    <PageShell>
+    <PullToRefreshWrapper onRefresh={() => loadData()} className="space-y-6 animate-in fade-in duration-500">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
           <div
-            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[#0C0C18]/95 backdrop-blur-sm border shadow-2xl"
+            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[var(--ag-bg-surface)]/95 backdrop-blur-sm border shadow-2xl"
             style={{ borderColor: toast.type === 'success' ? '#00FF8840' : '#FF616140' }}
           >
             {toast.type === 'success' ? (
@@ -510,8 +512,8 @@ export function PicoFleetPage() {
             ) : (
               <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
             )}
-            <span className="text-sm text-[#E8E8F0]">{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-[#9CA3AF] hover:text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss notification">
+            <span className="text-sm text-[var(--ag-text-primary)]">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss notification">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -525,7 +527,7 @@ export function PicoFleetPage() {
             <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Weebo Fleet</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">Weebo Fleet</span>
           </div>
-          <p className="text-[#9CA3AF]">
+          <p className="text-[var(--ag-text-muted)]">
             <span className="text-[#00FF88] font-medium">{agents.length}</span> agent{agents.length !== 1 ? 's' : ''} deployed
             {' '}&middot;{' '}
             <span className="text-[#00F0FF] font-medium">{totalCompleted}</span> tasks completed
@@ -535,7 +537,7 @@ export function PicoFleetPage() {
           onClick={() => loadData()}
           disabled={refreshing}
           variant="outline"
-          className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+          className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
@@ -544,7 +546,7 @@ export function PicoFleetPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/10">
+        <TabsList className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10">
           <TabsTrigger value="fleet" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2">
             <Zap className="w-4 h-4" />
             Fleet
@@ -572,7 +574,7 @@ export function PicoFleetPage() {
                   <Card key={slotNum} className={`border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all press-scale ${!agent.enabled ? 'opacity-60' : ''}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
+                        <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
                           <span
                             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                             style={{
@@ -606,7 +608,7 @@ export function PicoFleetPage() {
                               size="sm"
                               onClick={() => handleDeleteAgent(agent)}
                               aria-label={`Remove ${agent.name}`}
-                              className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
+                              className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -635,16 +637,16 @@ export function PicoFleetPage() {
                       )}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <div className="text-xs text-[#9CA3AF] mb-1">Completed</div>
+                          <div className="text-xs text-[var(--ag-text-muted)] mb-1">Completed</div>
                           <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                         </div>
                         <div className="p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <div className="text-xs text-[#9CA3AF] mb-1">Failed</div>
+                          <div className="text-xs text-[var(--ag-text-muted)] mb-1">Failed</div>
                           <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-[#9CA3AF] flex items-center gap-1">
+                        <span className="text-xs text-[var(--ag-text-muted)] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Slot {slotNum}
                         </span>
@@ -674,7 +676,7 @@ export function PicoFleetPage() {
                 return (
                   <Card key={slotNum} className="border-[#00F0FF]/30 border-dashed">
                     <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
-                      <p className="text-sm text-[#9CA3AF]">Choose personality</p>
+                      <p className="text-sm text-[var(--ag-text-muted)]">Choose personality</p>
                       <div className="flex gap-2">
                         {personalities.map((p) => (
                           <button
@@ -704,7 +706,7 @@ export function PicoFleetPage() {
                         value={newAgentName}
                         onChange={(e) => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-[200px]"
+                        className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)] max-w-[200px]"
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                         autoFocus
                       />
@@ -713,7 +715,7 @@ export function PicoFleetPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
-                          className="border-[#00F0FF]/30 text-[#9CA3AF]"
+                          className="border-[#00F0FF]/30 text-[var(--ag-text-muted)]"
                         >
                           Cancel
                         </Button>
@@ -734,7 +736,7 @@ export function PicoFleetPage() {
               return (
                 <Card
                   key={slotNum}
-                  className="bg-[#0C0C18] border-[#00F0FF]/20 border-dashed hover:border-[#00F0FF]/40 transition-all cursor-pointer group press-scale"
+                  className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 border-dashed hover:border-[#00F0FF]/40 transition-all cursor-pointer group press-scale"
                   onClick={() => setCreatingSlot(slotNum)}
                 >
                   <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
@@ -742,8 +744,8 @@ export function PicoFleetPage() {
                       <Plus className="w-6 h-6 text-[#00F0FF]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium text-[#E8E8F0]">Deploy Agent</p>
-                      <p className="text-xs text-[#9CA3AF]">Slot {slotNum} available</p>
+                      <p className="text-sm font-medium text-[var(--ag-text-primary)]">Deploy Agent</p>
+                      <p className="text-xs text-[var(--ag-text-muted)]">Slot {slotNum} available</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -754,7 +756,7 @@ export function PicoFleetPage() {
           {/* Quick Task */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
+              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
                 <Send className="w-4 h-4 text-[#00F0FF]" />
                 Quick Task
               </CardTitle>
@@ -765,7 +767,7 @@ export function PicoFleetPage() {
                   value={taskInput}
                   onChange={(e) => setTaskInput(e.target.value)}
                   placeholder="Describe a task in natural language..."
-                  className="flex-1 bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="flex-1 bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
                   onKeyDown={(e) => e.key === 'Enter' && !planning && handlePlanTask()}
                   disabled={planning}
                 />
@@ -784,7 +786,7 @@ export function PicoFleetPage() {
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-[#9CA3AF] mt-2">
+              <p className="text-xs text-[var(--ag-text-muted)] mt-2">
                 The planner will break your request into tasks and assign them to available agents.
               </p>
             </CardContent>
@@ -817,7 +819,7 @@ export function PicoFleetPage() {
                 </button>
                 <button
                   onClick={() => setShowEscalateDialog(false)}
-                  className="px-3 py-1.5 rounded-lg border border-[#00F0FF]/30 text-[#9CA3AF] text-sm"
+                  className="px-3 py-1.5 rounded-lg border border-[#00F0FF]/30 text-[var(--ag-text-muted)] text-sm"
                 >
                   Cancel
                 </button>
@@ -828,10 +830,10 @@ export function PicoFleetPage() {
           {/* Recent Activity */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
+              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#00FF88]" />
                 Recent Activity
-                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#9CA3AF] text-xs">
+                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)] text-xs">
                   {recentTasks.length}
                 </Badge>
               </CardTitle>
@@ -839,7 +841,7 @@ export function PicoFleetPage() {
             <CardContent className="pt-0">
               {recentTasks.length === 0 ? (
                 <div className="text-center py-6">
-                  <p className="text-[#9CA3AF] text-sm">No recent activity. Assign tasks to your fleet to see progress here.</p>
+                  <p className="text-[var(--ag-text-muted)] text-sm">No recent activity. Assign tasks to your fleet to see progress here.</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -852,7 +854,7 @@ export function PicoFleetPage() {
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: getStatusColor(task.status) }}
                       />
-                      <span className="flex-1 text-sm text-[#E8E8F0] truncate">
+                      <span className="flex-1 text-sm text-[var(--ag-text-primary)] truncate">
                         {task.description}
                       </span>
                       <span
@@ -861,7 +863,7 @@ export function PicoFleetPage() {
                       >
                         {task.status}
                       </span>
-                      <span className="text-xs text-[#9CA3AF] shrink-0 hidden sm:block">
+                      <span className="text-xs text-[var(--ag-text-muted)] shrink-0 hidden sm:block">
                         {formatTime(task.completed_at || task.started_at || task.created_at || null)}
                       </span>
                     </div>
@@ -874,10 +876,10 @@ export function PicoFleetPage() {
           {/* Task History */}
           <Card className="border-[#00F0FF]/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[#E8E8F0] flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#9CA3AF]" />
+              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[var(--ag-text-muted)]" />
                 Task History
-                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[#9CA3AF] text-xs">
+                <Badge variant="outline" className="ml-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)] text-xs">
                   {tasks.length}
                 </Badge>
               </CardTitle>
@@ -886,7 +888,7 @@ export function PicoFleetPage() {
               {tasks.length === 0 ? (
                 <div className="text-center py-10">
                   <AlertCircle className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF] text-sm">No fleet agents yet. Create your first agent to get started.</p>
+                  <p className="text-[var(--ag-text-muted)] text-sm">No fleet agents yet. Create your first agent to get started.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -907,7 +909,7 @@ export function PicoFleetPage() {
                             >
                               {task.task_type}
                             </Badge>
-                            <span className="flex-1 text-sm text-[#E8E8F0] truncate">
+                            <span className="flex-1 text-sm text-[var(--ag-text-primary)] truncate">
                               {task.description}
                             </span>
                             <span className="hidden sm:flex items-center gap-1.5 shrink-0">
@@ -923,9 +925,9 @@ export function PicoFleetPage() {
                                   </span>
                                 );
                               })()}
-                              <span className="text-xs text-[#9CA3AF]">{task.agent_name}</span>
+                              <span className="text-xs text-[var(--ag-text-muted)]">{task.agent_name}</span>
                             </span>
-                            <span className="text-xs text-[#9CA3AF] hidden md:block shrink-0 min-w-[70px] text-right">
+                            <span className="text-xs text-[var(--ag-text-muted)] hidden md:block shrink-0 min-w-[70px] text-right">
                               {formatTime(task.completed_at || task.started_at || task.created_at)}
                             </span>
                             {task.status === 'queued' && (
@@ -933,7 +935,7 @@ export function PicoFleetPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => { e.stopPropagation(); handleCancelTask(task.id); }}
-                                className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
+                                className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
                                 title="Cancel task"
                                 aria-label="Cancel task"
                               >
@@ -941,9 +943,9 @@ export function PicoFleetPage() {
                               </Button>
                             )}
                             {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+                              <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] shrink-0" />
                             ) : (
-                              <ChevronDown className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+                              <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] shrink-0" />
                             )}
                           </div>
                         </button>
@@ -951,14 +953,14 @@ export function PicoFleetPage() {
                           <div className="mt-1 ml-4 p-4 rounded-lg bg-[#06060B]/80 border border-[#00F0FF]/10 animate-in slide-in-from-top-2 duration-200">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                               <div>
-                                <div className="text-xs text-[#9CA3AF]">Status</div>
+                                <div className="text-xs text-[var(--ag-text-muted)]">Status</div>
                                 <div className="text-sm font-medium capitalize" style={{ color: getStatusColor(task.status) }}>
                                   {task.status}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#9CA3AF]">Agent</div>
-                                <div className="text-sm text-[#E8E8F0] flex items-center gap-1.5">
+                                <div className="text-xs text-[var(--ag-text-muted)]">Agent</div>
+                                <div className="text-sm text-[var(--ag-text-primary)] flex items-center gap-1.5">
                                   {(() => {
                                     const detailAgent = agents.find(a => a.name === task.agent_name);
                                     const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#9CA3AF';
@@ -975,24 +977,24 @@ export function PicoFleetPage() {
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#9CA3AF]">Started</div>
-                                <div className="text-sm text-[#E8E8F0]">{formatTime(task.started_at)}</div>
+                                <div className="text-xs text-[var(--ag-text-muted)]">Started</div>
+                                <div className="text-sm text-[var(--ag-text-primary)]">{formatTime(task.started_at)}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#9CA3AF]">Completed</div>
-                                <div className="text-sm text-[#E8E8F0]">{formatTime(task.completed_at)}</div>
+                                <div className="text-xs text-[var(--ag-text-muted)]">Completed</div>
+                                <div className="text-sm text-[var(--ag-text-primary)]">{formatTime(task.completed_at)}</div>
                               </div>
                             </div>
                             {task.result && (
                               <div>
-                                <div className="text-xs text-[#9CA3AF] mb-1">Result</div>
-                                <pre className="text-sm text-[#E8E8F0] bg-[#0C0C18] p-3 rounded-lg border border-[#00F0FF]/10 overflow-x-auto whitespace-pre-wrap font-mono text-xs">
+                                <div className="text-xs text-[var(--ag-text-muted)] mb-1">Result</div>
+                                <pre className="text-sm text-[var(--ag-text-primary)] bg-[var(--ag-bg-surface)] p-3 rounded-lg border border-[#00F0FF]/10 overflow-x-auto whitespace-pre-wrap font-mono text-xs">
                                   {task.result}
                                 </pre>
                               </div>
                             )}
                             {!task.result && task.status !== 'queued' && task.status !== 'running' && (
-                              <div className="text-xs text-[#9CA3AF] italic">No result data available.</div>
+                              <div className="text-xs text-[var(--ag-text-muted)] italic">No result data available.</div>
                             )}
                           </div>
                         )}
@@ -1009,14 +1011,14 @@ export function PicoFleetPage() {
         <TabsContent value="config" className="mt-6 space-y-6">
           {/* Agent selector */}
           <div className="flex items-center gap-4">
-            <label className="text-sm text-[#9CA3AF] shrink-0">Configure agent:</label>
+            <label className="text-sm text-[var(--ag-text-muted)] shrink-0">Configure agent:</label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-              <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-[300px]">
+              <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)] max-w-[300px]">
                 <SelectValue placeholder="Select an agent..." />
               </SelectTrigger>
-              <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/20">
+              <SelectContent className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
                 {agents.map(a => (
-                  <SelectItem key={a.id} value={a.id} className="text-[#E8E8F0]">
+                  <SelectItem key={a.id} value={a.id} className="text-[var(--ag-text-primary)]">
                     <span className="inline-flex items-center gap-1.5">
                       <span
                         className="inline-flex w-5 h-5 rounded-full items-center justify-center text-[10px] font-bold"
@@ -1035,13 +1037,13 @@ export function PicoFleetPage() {
           {!selectedAgent ? (
             <div className="text-center py-16">
               <Bot className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#9CA3AF]">Select an agent above to configure.</p>
+              <p className="text-[var(--ag-text-muted)]">Select an agent above to configure.</p>
             </div>
           ) : (
             <>
               {/* Personality Picker */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#E8E8F0]">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--ag-text-primary)]">
                   <Sparkles className="w-5 h-5 text-[#00F0FF]" />
                   Personality
                 </h2>
@@ -1074,16 +1076,16 @@ export function PicoFleetPage() {
                           </div>
                         )}
                       </div>
-                      <h3 className="font-semibold text-[#E8E8F0] mb-1">{p.name}</h3>
-                      <p className="text-sm text-[#9CA3AF]">{p.desc}</p>
+                      <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{p.name}</h3>
+                      <p className="text-sm text-[var(--ag-text-muted)]">{p.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Mode Picker */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#E8E8F0]">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--ag-text-primary)]">
                   <Cpu className="w-5 h-5 text-[#00F0FF]" />
                   Mode
                 </h2>
@@ -1112,16 +1114,16 @@ export function PicoFleetPage() {
                           </div>
                         )}
                       </div>
-                      <h3 className="font-semibold text-[#E8E8F0] mb-1">{m.name}</h3>
-                      <p className="text-sm text-[#9CA3AF]">{m.desc}</p>
+                      <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{m.name}</h3>
+                      <p className="text-sm text-[var(--ag-text-muted)]">{m.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Model Preference */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#E8E8F0]">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--ag-text-primary)]">
                   <Brain className="w-5 h-5 text-[#00F0FF]" />
                   Model Preference
                 </h2>
@@ -1141,16 +1143,16 @@ export function PicoFleetPage() {
                           : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
                       }`}
                     >
-                      <div className="text-sm font-medium text-[#E8E8F0]">{opt.label}</div>
-                      <div className="text-xs text-[#9CA3AF]">{opt.desc}</div>
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">{opt.label}</div>
+                      <div className="text-xs text-[var(--ag-text-muted)]">{opt.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Voice & Tone */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#E8E8F0]">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--ag-text-primary)]">
                   Voice & Tone
                 </h2>
                 <div className="space-y-2">
@@ -1169,8 +1171,8 @@ export function PicoFleetPage() {
                       }`}
                     >
                       <div className="text-left">
-                        <div className="font-medium text-[#E8E8F0]">{v.name}</div>
-                        <div className="text-sm text-[#9CA3AF]">{v.desc}</div>
+                        <div className="font-medium text-[var(--ag-text-primary)]">{v.name}</div>
+                        <div className="text-sm text-[var(--ag-text-muted)]">{v.desc}</div>
                       </div>
                       {cfgVoice === v.id && (
                         <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center shrink-0">
@@ -1183,11 +1185,11 @@ export function PicoFleetPage() {
               </div>
 
               {/* Sliders — Creativity & Formality */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20 space-y-6">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-creativity" className="text-sm text-[#9CA3AF]">Creativity</label>
-                    <span className="text-sm text-[#E8E8F0] font-mono">{cfgCreativity[0]}%</span>
+                    <label htmlFor="slider-creativity" className="text-sm text-[var(--ag-text-muted)]">Creativity</label>
+                    <span className="text-sm text-[var(--ag-text-primary)] font-mono">{cfgCreativity[0]}%</span>
                   </div>
                   <Slider
                     id="slider-creativity"
@@ -1197,15 +1199,15 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
+                  <div className="flex justify-between text-xs text-[var(--ag-text-muted)] mt-1">
                     <span>Conservative</span>
                     <span>Creative</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-formality" className="text-sm text-[#9CA3AF]">Formality</label>
-                    <span className="text-sm text-[#E8E8F0] font-mono">{cfgFormality[0]}%</span>
+                    <label htmlFor="slider-formality" className="text-sm text-[var(--ag-text-muted)]">Formality</label>
+                    <span className="text-sm text-[var(--ag-text-primary)] font-mono">{cfgFormality[0]}%</span>
                   </div>
                   <Slider
                     id="slider-formality"
@@ -1215,7 +1217,7 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
+                  <div className="flex justify-between text-xs text-[var(--ag-text-muted)] mt-1">
                     <span>Casual</span>
                     <span>Formal</span>
                   </div>
@@ -1223,30 +1225,30 @@ export function PicoFleetPage() {
               </div>
 
               {/* System Prompt & Custom Commands */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20 space-y-4">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 space-y-4">
                 <div>
-                  <label className="text-sm text-[#9CA3AF] block mb-2">System Prompt</label>
+                  <label className="text-sm text-[var(--ag-text-muted)] block mb-2">System Prompt</label>
                   <Textarea
                     value={cfgSystemPrompt}
                     onChange={(e) => { setCfgSystemPrompt(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none"
+                    className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[120px] resize-none"
                     placeholder="Custom instructions for this agent..."
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-[#9CA3AF] block mb-2">Custom Commands</label>
+                  <label className="text-sm text-[var(--ag-text-muted)] block mb-2">Custom Commands</label>
                   <Textarea
                     value={cfgCustomCommands}
                     onChange={(e) => { setCfgCustomCommands(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none"
+                    className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[100px] resize-none"
                     placeholder="Tell this agent how to behave, what to prioritize..."
                   />
                 </div>
               </div>
 
               {/* Assigned Tools */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#E8E8F0]">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--ag-text-primary)]">
                   Assigned Tools
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
@@ -1268,7 +1270,7 @@ export function PicoFleetPage() {
                         }`}
                       >
                         <tool.icon className="w-5 h-5" style={{ color: isActive ? tool.color : '#6B7280' }} />
-                        <span className={`text-sm font-medium ${isActive ? 'text-[#E8E8F0]' : 'text-[#9CA3AF]'}`}>
+                        <span className={`text-sm font-medium ${isActive ? 'text-[var(--ag-text-primary)]' : 'text-[var(--ag-text-muted)]'}`}>
                           {tool.label}
                         </span>
                         {isActive && (
@@ -1281,7 +1283,7 @@ export function PicoFleetPage() {
               </div>
 
               {/* Enable/Disable + Save */}
-              <div className="p-6 rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/20">
+              <div className="p-6 rounded-2xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Switch
@@ -1298,10 +1300,10 @@ export function PicoFleetPage() {
                       className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div>
-                      <div className="text-sm font-medium text-[#E8E8F0]">
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">
                         Agent {cfgEnabled ? 'Enabled' : 'Disabled'}
                       </div>
-                      <div className="text-xs text-[#9CA3AF]">
+                      <div className="text-xs text-[var(--ag-text-muted)]">
                         {cfgEnabled && agents.filter(a => a.enabled).length <= 1
                           ? 'Last active agent — cannot be disabled'
                           : cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
@@ -1334,58 +1336,58 @@ export function PicoFleetPage() {
           {showCronForm ? (
             <Card className="border-[#00F0FF]/30">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-[#E8E8F0]">
+                <CardTitle className="text-lg text-[var(--ag-text-primary)]">
                   {editingCronId ? 'Edit Cron Job' : 'New Cron Job'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div>
-                  <label className="text-sm text-[#9CA3AF] block mb-1">Name</label>
+                  <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Name</label>
                   <Input
                     value={cronName}
                     onChange={e => setCronName(e.target.value)}
                     placeholder="e.g., Daily standup reminder"
-                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                    className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm text-[#9CA3AF] block mb-1">Task Type</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Task Type</label>
                     <Select value={cronTaskType} onValueChange={setCronTaskType}>
-                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
+                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/20">
+                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
                         {TASK_TYPES.map(t => (
-                          <SelectItem key={t.value} value={t.value} className="text-[#E8E8F0]">{t.label}</SelectItem>
+                          <SelectItem key={t.value} value={t.value} className="text-[var(--ag-text-primary)]">{t.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-[#9CA3AF] block mb-1">Interval</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Interval</label>
                     <Select value={String(cronInterval)} onValueChange={v => setCronInterval(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
+                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/20">
+                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
                         {INTERVAL_OPTIONS.map(i => (
-                          <SelectItem key={i.value} value={String(i.value)} className="text-[#E8E8F0]">{i.label}</SelectItem>
+                          <SelectItem key={i.value} value={String(i.value)} className="text-[var(--ag-text-primary)]">{i.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-[#9CA3AF] block mb-1">Agent Slot</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Agent Slot</label>
                     <Select value={String(cronAgentSlot)} onValueChange={v => setCronAgentSlot(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]">
+                      <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/20">
+                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
                         {[2, 3, 4, 5, 6].map(s => {
                           const a = agents.find(ag => ag.slot === s);
                           return (
-                            <SelectItem key={s} value={String(s)} className="text-[#E8E8F0]">
+                            <SelectItem key={s} value={String(s)} className="text-[var(--ag-text-primary)]">
                               Slot {s}{a ? ` — ${a.name}` : ' (empty)'}
                             </SelectItem>
                           );
@@ -1396,7 +1398,7 @@ export function PicoFleetPage() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm text-[#9CA3AF]">Config (JSON)</label>
+                    <label className="text-sm text-[var(--ag-text-muted)]">Config (JSON)</label>
                     {cronConfigError ? (
                       <span className="text-xs text-[#FF6161] flex items-center gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0" />
@@ -1428,7 +1430,7 @@ export function PicoFleetPage() {
                       }
                     }}
                     className={[
-                      'bg-[#06060B] text-[#E8E8F0] font-mono text-xs min-h-[80px] resize-none transition-colors',
+                      'bg-[#06060B] text-[var(--ag-text-primary)] font-mono text-xs min-h-[80px] resize-none transition-colors',
                       cronConfigError
                         ? 'border-[#FF6161]/60 focus-visible:border-[#FF6161] focus-visible:ring-[#FF6161]/20'
                         : 'border-[#00F0FF]/30',
@@ -1440,7 +1442,7 @@ export function PicoFleetPage() {
                   <Button
                     variant="outline"
                     onClick={resetCronForm}
-                    className="border-[#00F0FF]/30 text-[#9CA3AF]"
+                    className="border-[#00F0FF]/30 text-[var(--ag-text-muted)]"
                   >
                     Cancel
                   </Button>
@@ -1469,8 +1471,8 @@ export function PicoFleetPage() {
           {cronJobs.length === 0 && !showCronForm ? (
             <div className="text-center py-16">
               <Timer className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#9CA3AF] mb-2">No cron jobs yet.</p>
-              <p className="text-xs text-[#9CA3AF]">Create recurring tasks that run on a schedule.</p>
+              <p className="text-[var(--ag-text-muted)] mb-2">No cron jobs yet.</p>
+              <p className="text-xs text-[var(--ag-text-muted)]">Create recurring tasks that run on a schedule.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1484,7 +1486,7 @@ export function PicoFleetPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-[#E8E8F0] truncate">{job.name}</span>
+                            <span className="font-medium text-[var(--ag-text-primary)] truncate">{job.name}</span>
                             <Badge
                               variant="outline"
                               className="text-xs shrink-0"
@@ -1493,7 +1495,7 @@ export function PicoFleetPage() {
                               {typeLabel}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-[#9CA3AF]">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ag-text-muted)]">
                             <span className="flex items-center gap-1">
                               <Timer className="w-3 h-3" />
                               Every {intervalLabel}
@@ -1521,7 +1523,7 @@ export function PicoFleetPage() {
                             size="sm"
                             onClick={() => handleEditCron(job)}
                             aria-label={`Edit cron job ${job.name}`}
-                            className="text-[#9CA3AF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0"
+                            className="text-[var(--ag-text-muted)] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-10 w-10 p-0"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -1530,7 +1532,7 @@ export function PicoFleetPage() {
                             size="sm"
                             onClick={() => handleDeleteCron(job.id)}
                             aria-label={`Delete cron job ${job.name}`}
-                            className="text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0"
+                            className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1545,5 +1547,6 @@ export function PicoFleetPage() {
         </TabsContent>
       </Tabs>
     </PullToRefreshWrapper>
+    </PageShell>
   );
 }

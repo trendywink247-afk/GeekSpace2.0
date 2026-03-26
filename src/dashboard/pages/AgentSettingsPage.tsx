@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { PageShell } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
@@ -260,15 +261,16 @@ export function AgentSettingsPage() {
   const isTelegramConnected = telegramStatus === 'connected' || telegramInt?.status === 'connected';
 
   return (
+    <PageShell>
     <div className="space-y-6 max-w-4xl mx-auto pb-24 md:pb-6">
       {/* Toast notification */}
       {saveToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="px-4 py-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/40 shadow-lg shadow-[#00F0FF]/10 text-sm text-[#E8E8F0] flex items-center gap-2">
+          <div className="px-4 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/40 shadow-lg shadow-[#00F0FF]/10 text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
             {saveToast.includes('Saved') || saveToast.includes('Switched') || saveToast.includes('Cleared') ? (
               <Check className="w-4 h-4 text-[#ADFF2F]" />
             ) : (
-              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+              <Sparkles className="w-4 h-4 text-[var(--ag-cyan)]" />
             )}
             {saveToast}
           </div>
@@ -314,7 +316,7 @@ export function AgentSettingsPage() {
                   className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     isActive
                       ? 'text-white'
-                      : 'text-[#8892A4] hover:text-[#F4F6FF] bg-[#06060B] hover:bg-[#12121F]'
+                      : 'text-[#8892A4] hover:text-[#F4F6FF]  hover:bg-[#12121F]'
                   }`}
                   style={isActive ? {
                     backgroundColor: `${a.color}20`,
@@ -353,7 +355,7 @@ export function AgentSettingsPage() {
               value={tab.value}
               className={`flex-1 sm:flex-none rounded-none border-b-2 border-transparent px-4 sm:px-6 py-3 text-sm font-medium transition-all duration-200 bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:bg-transparent ${
                 activeTab === tab.value
-                  ? '!border-b-[#00F0FF] !text-[#00F0FF]'
+                  ? '!border-b-[#00F0FF] !text-[var(--ag-cyan)]'
                   : '!text-[#8892A4] hover:!text-[#F4F6FF]'
               }`}
             >
@@ -369,13 +371,13 @@ export function AgentSettingsPage() {
           {/* Agent Name */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
-              <Bot className="w-5 h-5 text-[#00F0FF]" />
+              <Bot className="w-5 h-5 text-[var(--ag-cyan)]" />
               Agent Name
             </h2>
             <Input
               value={agentName}
               onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
-              className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-md"
+              className="border-[#00F0FF]/30 text-[var(--ag-text-primary)] max-w-md"
               placeholder="What should your agent be called?"
               maxLength={30}
             />
@@ -387,7 +389,7 @@ export function AgentSettingsPage() {
           {/* Personality Sliders */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-[#F4F6FF]">
-              <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+              <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
               Personality Tuning
             </h2>
             <p className="text-xs text-[#8892A4] mb-6">
@@ -398,7 +400,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Creativity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                     {['Precise', 'Focused', 'Balanced', 'Creative', 'Exploratory'][creativityStep]}
                   </span>
                 </div>
@@ -419,7 +421,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Tone</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                     {TONE_LABELS[toneStep]}
                   </span>
                 </div>
@@ -440,7 +442,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Verbosity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                     {VERBOSITY_LABELS[verbosityStep]}
                   </span>
                 </div>
@@ -461,7 +463,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Humor</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                     {HUMOR_LABELS[humorStep]}
                   </span>
                 </div>
@@ -482,7 +484,7 @@ export function AgentSettingsPage() {
               <div className="md:col-span-2 md:max-w-[calc(50%-1rem)]">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Empathy</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                     {EMPATHY_LABELS[empathyStep]}
                   </span>
                 </div>
@@ -504,17 +506,17 @@ export function AgentSettingsPage() {
           {/* Language Preference */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
-              <Globe className="w-5 h-5 text-[#00F0FF]" />
+              <Globe className="w-5 h-5 text-[var(--ag-cyan)]" />
               Language Preference
             </h2>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] max-w-xs">
+              <SelectTrigger className="border-[#00F0FF]/30 text-[var(--ag-text-primary)] max-w-xs">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0C0C18] border-[#00F0FF]/30">
-                <SelectItem value="english" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">English</SelectItem>
-                <SelectItem value="hinglish" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">Hinglish</SelectItem>
-                <SelectItem value="hindi" className="text-[#E8E8F0] focus:bg-[#00F0FF]/10 focus:text-[#00F0FF]">Hindi</SelectItem>
+              <SelectContent className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/30">
+                <SelectItem value="english" className="text-[var(--ag-text-primary)] focus:bg-[#00F0FF]/10 focus:text-[var(--ag-cyan)]">English</SelectItem>
+                <SelectItem value="hinglish" className="text-[var(--ag-text-primary)] focus:bg-[#00F0FF]/10 focus:text-[var(--ag-cyan)]">Hinglish</SelectItem>
+                <SelectItem value="hindi" className="text-[var(--ag-text-primary)] focus:bg-[#00F0FF]/10 focus:text-[var(--ag-cyan)]">Hindi</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-[#8892A4] mt-2">
@@ -525,7 +527,7 @@ export function AgentSettingsPage() {
           {/* Custom Instructions */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
-              <Brain className="w-5 h-5 text-[#00F0FF]" />
+              <Brain className="w-5 h-5 text-[var(--ag-cyan)]" />
               Custom Instructions
             </h2>
             <div className="relative">
@@ -537,7 +539,7 @@ export function AgentSettingsPage() {
                     setCustomInstructions(e.target.value);
                   }
                 }}
-                className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[120px] resize-none pr-16"
+                className="border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[120px] resize-none pr-16"
                 placeholder="Tell your agent how to behave. E.g. 'Always respond with bullet points' or 'Be encouraging and use emojis'..."
                 maxLength={500}
               />
@@ -555,7 +557,7 @@ export function AgentSettingsPage() {
           {/* Autonomy Level */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
-              <Shield className="w-5 h-5 text-[#00F0FF]" />
+              <Shield className="w-5 h-5 text-[var(--ag-cyan)]" />
               Autonomy Level
             </h2>
             <p className="text-xs text-[#8892A4] mb-4">
@@ -571,7 +573,7 @@ export function AgentSettingsPage() {
                     className={`w-full flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
                       isActive
                         ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5'
-                        : 'border-[#1A1A2E] bg-[#06060B] hover:border-[#00F0FF]/20'
+                        : 'border-[#1A1A2E]  hover:border-[#00F0FF]/20'
                     }`}
                   >
                     <div className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
@@ -597,7 +599,7 @@ export function AgentSettingsPage() {
           {/* Agent Assignment */}
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#F4F6FF]">
-              <Users className="w-5 h-5 text-[#00F0FF]" />
+              <Users className="w-5 h-5 text-[var(--ag-cyan)]" />
               Agent Assignments
             </h2>
             <p className="text-xs text-[#8892A4] mb-4">
@@ -607,7 +609,7 @@ export function AgentSettingsPage() {
               {AGENTS.map((a) => {
                 const features = AGENT_ASSIGNMENTS[a.id] || [];
                 return (
-                  <div key={a.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1A1A2E] bg-[#06060B]">
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1A1A2E] ">
                     <div className="flex items-center gap-2.5">
                       <div
                         className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
@@ -659,7 +661,7 @@ export function AgentSettingsPage() {
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Brain className="w-5 h-5 text-[#00F0FF]" />
+                <Brain className="w-5 h-5 text-[var(--ag-cyan)]" />
                 <div>
                   <h2 className="text-lg font-semibold text-[#F4F6FF]">Agent can remember things</h2>
                   <p className="text-sm text-[#8892A4] mt-0.5">
@@ -677,7 +679,7 @@ export function AgentSettingsPage() {
             {memoryEnabled && memoryCount > 0 && (
               <div className="mt-4 pt-4 border-t border-[#00F0FF]/10">
                 <p className="text-sm text-[#8892A4]">
-                  Your agent currently has <span className="text-[#00F0FF] font-semibold">{memoryCount}</span> {memoryCount === 1 ? 'memory' : 'memories'} stored.
+                  Your agent currently has <span className="text-[var(--ag-cyan)] font-semibold">{memoryCount}</span> {memoryCount === 1 ? 'memory' : 'memories'} stored.
                 </p>
               </div>
             )}
@@ -690,14 +692,14 @@ export function AgentSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-[#8B5CF6]" />
+                <Brain className="w-5 h-5 text-[var(--ag-violet)]" />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold text-[#F4F6FF]">Memory Manager</h3>
                 <p className="text-sm text-[#8892A4]">View, edit, and manage individual memories</p>
               </div>
             </div>
-            <ExternalLink className="w-5 h-5 text-[#8892A4] group-hover:text-[#00F0FF] transition-colors" />
+            <ExternalLink className="w-5 h-5 text-[#8892A4] group-hover:text-[var(--ag-cyan)] transition-colors" />
           </button>
 
           {/* Clear All Memories */}
@@ -732,7 +734,7 @@ export function AgentSettingsPage() {
         <TabsContent value="tools" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-1 flex items-center gap-2 text-[#F4F6FF]">
-              <Wrench className="w-5 h-5 text-[#00F0FF]" />
+              <Wrench className="w-5 h-5 text-[var(--ag-cyan)]" />
               Available Tools
             </h2>
             <p className="text-sm text-[#8892A4] mb-6">
@@ -748,7 +750,7 @@ export function AgentSettingsPage() {
                     className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${
                       enabled
                         ? 'border-[#00F0FF]/20 bg-[#00F0FF]/5'
-                        : 'border-[#1A1A2E] bg-[#06060B]'
+                        : 'border-[#1A1A2E] '
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -786,7 +788,7 @@ export function AgentSettingsPage() {
         <TabsContent value="channels" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20">
             <h2 className="text-lg font-semibold mb-1 flex items-center gap-2 text-[#F4F6FF]">
-              <Link2 className="w-5 h-5 text-[#00F0FF]" />
+              <Link2 className="w-5 h-5 text-[var(--ag-cyan)]" />
               Connected Channels
             </h2>
             <p className="text-sm text-[#8892A4] mb-6">
@@ -795,7 +797,7 @@ export function AgentSettingsPage() {
 
             <div className="space-y-3">
               {/* Telegram */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 bg-[#06060B]">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 ">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#0088CC]/10 flex items-center justify-center">
                     <Send className="w-5 h-5 text-[#0088CC]" />
@@ -827,10 +829,10 @@ export function AgentSettingsPage() {
               </div>
 
               {/* Web Chat */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 bg-[#06060B]">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#00F0FF]/20 ">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-[#00F0FF]" />
+                    <MessageCircle className="w-5 h-5 text-[var(--ag-cyan)]" />
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-[#F4F6FF]">Web Chat</h3>
@@ -844,7 +846,7 @@ export function AgentSettingsPage() {
               </div>
 
               {/* WhatsApp */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-[#1A1A2E] bg-[#06060B] opacity-60">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-[#1A1A2E] opacity-60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-[#25D366]" />
@@ -854,7 +856,7 @@ export function AgentSettingsPage() {
                     <p className="text-xs text-[#8892A4]">Chat with your agent on WhatsApp</p>
                   </div>
                 </div>
-                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#8B5CF6]/10 text-[var(--ag-violet)] border border-[#8B5CF6]/20">
                   Coming soon
                 </span>
               </div>
@@ -863,5 +865,6 @@ export function AgentSettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </PageShell>
   );
 }

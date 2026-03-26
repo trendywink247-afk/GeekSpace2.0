@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Download, ImageIcon, RefreshCw, Loader2, Trash2, ZoomIn, X, Calendar } from 'lucide-react';
 import { imageService, type UserImage } from '@/services/api';
+import { PageShell } from '@/components/agentin';
 
 export function ImageGalleryPage() {
   const [images, setImages] = useState<UserImage[]>([]);
@@ -62,28 +63,28 @@ export function ImageGalleryPage() {
   }, [images, filter, dateFrom, dateTo]);
 
   return (
-    <div className="p-6 pb-24 md:pb-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <PageShell maxWidth="6xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
-            <ImageIcon className="w-5 h-5 text-[#00F0FF]" />
+          <div className="w-10 h-10 rounded-xl bg-[var(--ag-cyan)]/10 flex items-center justify-center">
+            <ImageIcon className="w-5 h-5 text-[var(--ag-cyan)]" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-[#E8E8F0]">Image Gallery</h1>
-            <p className="text-xs text-[#9CA3AF]">Your last 30 generated images</p>
+            <h1 className="text-lg font-semibold text-[var(--ag-text-primary)]">Image Gallery</h1>
+            <p className="text-xs text-[var(--ag-text-muted)]">Your last 30 generated images</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Filter pills */}
-          <div className="flex items-center gap-1 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5">
             {(['all', 'generated', 'edited'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-2.5 py-1 rounded-md text-xs transition-all ${
                   filter === f
-                    ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                    : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                    ? 'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]'
+                    : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
                 }`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -95,8 +96,8 @@ export function ImageGalleryPage() {
             onClick={() => setShowDateFilter(!showDateFilter)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors ${
               showDateFilter || dateFrom || dateTo
-                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
-                : 'bg-[#0C0C18] border-[#00F0FF]/15 text-[#9CA3AF] hover:text-[#E8E8F0]'
+                ? 'bg-[var(--ag-cyan)]/10 border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)]'
+                : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -105,7 +106,7 @@ export function ImageGalleryPage() {
           <button
             onClick={loadGallery}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-xs text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/10 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -115,23 +116,23 @@ export function ImageGalleryPage() {
 
       {/* Date range filter panel */}
       {showDateFilter && (
-        <div className="flex items-center gap-3 flex-wrap px-1 mb-4">
+        <div className="flex items-center gap-3 flex-wrap px-1">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[#9CA3AF]">From:</label>
+            <label className="text-xs text-[var(--ag-text-muted)]">From:</label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg px-3 py-1.5 text-xs text-[#E8E8F0] outline-none focus:border-[#00F0FF]/40"
+              className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] outline-none focus:border-[var(--ag-cyan)]/40"
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[#9CA3AF]">To:</label>
+            <label className="text-xs text-[var(--ag-text-muted)]">To:</label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg px-3 py-1.5 text-xs text-[#E8E8F0] outline-none focus:border-[#00F0FF]/40"
+              className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] outline-none focus:border-[var(--ag-cyan)]/40"
             />
           </div>
           {(dateFrom || dateTo) && (
@@ -147,7 +148,7 @@ export function ImageGalleryPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-[#00F0FF]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
         </div>
       )}
 
@@ -158,12 +159,12 @@ export function ImageGalleryPage() {
       )}
 
       {!loading && !error && filteredImages.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[#00F0FF]/15">
-          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-1">
-            <ImageIcon className="w-8 h-8 text-[#00F0FF]/40" />
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[var(--ag-border-subtle)]">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--ag-cyan)]/10 flex items-center justify-center mb-1">
+            <ImageIcon className="w-8 h-8 text-[var(--ag-cyan)]/40" />
           </div>
-          <p className="text-[#E8E8F0] text-sm font-medium">No images yet</p>
-          <p className="text-[#9CA3AF] text-xs max-w-xs">
+          <p className="text-[var(--ag-text-primary)] text-sm font-medium">No images yet</p>
+          <p className="text-[var(--ag-text-muted)] text-xs max-w-xs">
             Generate some with AI using the Image Generator page. Your creations will appear here.
           </p>
         </div>
@@ -174,11 +175,11 @@ export function ImageGalleryPage() {
           {filteredImages.map((img) => (
             <div
               key={img.id}
-              className="group relative rounded-xl overflow-hidden border border-[#00F0FF]/10 bg-[#06060B] hover:border-[#00F0FF]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all cursor-pointer mb-4"
+              className="group relative rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[#06060B] hover:border-[var(--ag-cyan)]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all cursor-pointer mb-4"
               style={{ breakInside: 'avoid' }}
               onClick={() => setLightboxImage(img)}
             >
-              <div className="bg-[#0A0A1A]">
+              <div className="bg-[var(--ag-bg-elevated)]">
                 <img
                   src={img.image_url}
                   alt={img.prompt || 'Generated image'}
@@ -195,7 +196,7 @@ export function ImageGalleryPage() {
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#00F0FF]/90 text-[#06060B] hover:bg-[#00F0FF] transition-colors shadow-lg"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-cyan)]/90 text-[#06060B] hover:bg-[var(--ag-cyan)] transition-colors shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Download image"
                   >
@@ -217,26 +218,26 @@ export function ImageGalleryPage() {
                 </div>
                 {/* Bottom info */}
                 <div>
-                  <p className="text-xs text-[#E8E8F0] line-clamp-2 mb-1">{img.prompt ?? ''}</p>
+                  <p className="text-xs text-[var(--ag-text-primary)] line-clamp-2 mb-1">{img.prompt ?? ''}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#9CA3AF]">
+                    <span className="text-xs text-[var(--ag-text-muted)]">
                       {new Date(img.created_at).toLocaleDateString()}
                     </span>
                     {img.width && img.height && (
-                      <span className="text-[10px] text-[#9CA3AF]/60">{img.width}x{img.height}</span>
+                      <span className="text-[10px] text-[var(--ag-text-muted)]/60">{img.width}x{img.height}</span>
                     )}
                   </div>
                 </div>
               </div>
               {/* Bottom bar: always visible with prompt + download (touch-friendly on mobile) */}
-              <div className="px-2.5 py-2 border-t border-[#00F0FF]/10 flex items-center justify-between gap-1 sm:group-hover:opacity-0 transition-opacity">
-                <p className="text-xs text-[#9CA3AF] truncate flex-1">{img.prompt ?? ''}</p>
+              <div className="px-2.5 py-2 border-t border-[var(--ag-border-subtle)] flex items-center justify-between gap-1 sm:group-hover:opacity-0 transition-opacity">
+                <p className="text-xs text-[var(--ag-text-muted)] truncate flex-1">{img.prompt ?? ''}</p>
                 <a
                   href={img.image_url}
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[#00F0FF] hover:text-[#00F0FF]/80 active:text-[#00F0FF]/80 transition-colors flex-shrink-0"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)]/80 active:text-[var(--ag-cyan)]/80 transition-colors flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Download image"
                 >
@@ -256,7 +257,7 @@ export function ImageGalleryPage() {
         >
           <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-[#9CA3AF] truncate flex-1 mr-4">
+              <p className="text-sm text-[var(--ag-text-muted)] truncate flex-1 mr-4">
                 {lightboxImage.prompt}
               </p>
               <div className="flex items-center gap-2">
@@ -264,7 +265,7 @@ export function ImageGalleryPage() {
                   href={lightboxImage.image_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#00F0FF] text-[#06060B] font-medium text-sm hover:bg-[#00F0FF]/90 transition-colors"
+                  className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[var(--ag-cyan)] text-[#06060B] font-medium text-sm hover:bg-[var(--ag-cyan)]/90 transition-colors"
                   aria-label="Download image"
                 >
                   <Download className="w-4 h-4" />
@@ -272,14 +273,14 @@ export function ImageGalleryPage() {
                 </a>
                 <button
                   onClick={() => { void handleDelete(lightboxImage.id); }}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#FF6161]/20 text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[#FF6161]/20 text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                   aria-label="Delete image"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setLightboxImage(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors"
                   aria-label="Close preview"
                 >
                   <X className="w-4 h-4" />
@@ -289,10 +290,10 @@ export function ImageGalleryPage() {
             <img
               src={lightboxImage.image_url}
               alt={lightboxImage.prompt || 'Generated image'}
-              className="w-full rounded-2xl border border-[#00F0FF]/20"
+              className="w-full rounded-2xl border border-[var(--ag-border-subtle)]"
               loading="lazy"
             />
-            <div className="flex items-center gap-3 mt-3 text-xs text-[#9CA3AF]">
+            <div className="flex items-center gap-3 mt-3 text-xs text-[var(--ag-text-muted)]">
               {lightboxImage.width && lightboxImage.height && (
                 <span>{lightboxImage.width}x{lightboxImage.height}</span>
               )}
@@ -302,6 +303,6 @@ export function ImageGalleryPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

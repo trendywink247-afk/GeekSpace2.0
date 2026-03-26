@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { PageShell } from '@/components/agentin/PageShell';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -600,7 +601,8 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
   };
 
   return (
-    <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
@@ -608,8 +610,8 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
             <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">Powered by Edith</span>
           </div>
-          <p className="text-[#9CA3AF] flex items-center gap-2 text-sm">
-            <Bot className="w-4 h-4 text-[#00F0FF]" />
+          <p className="text-[var(--ag-text-muted)] flex items-center gap-2 text-sm">
+            <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
             <span className="hidden md:inline">Direct CLI access to Agentin API + AI Agent</span>
             <span className="md:hidden">CLI + AI Agent</span>
           </p>
@@ -619,7 +621,7 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
             <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
             <span className="text-xs text-[#00FF88] font-mono">AI Ready</span>
           </div>
-          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00F0FF]/30 text-[#9CA3AF] min-h-[44px]" aria-label="Clear terminal">
+          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00F0FF]/30 text-[var(--ag-text-muted)] min-h-[44px]" aria-label="Clear terminal">
             <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
           </Button>
         </div>
@@ -636,9 +638,9 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
           <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
           <div className="w-3 h-3 rounded-full bg-[#00FF88]" />
           <div className="flex-1 text-center">
-            <span className="text-xs text-[#9CA3AF] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
+            <span className="text-xs text-[var(--ag-text-muted)] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
           </div>
-          <TerminalIcon className="w-4 h-4 text-[#9CA3AF]" />
+          <TerminalIcon className="w-4 h-4 text-[var(--ag-text-muted)]" />
         </div>
 
         {/* Terminal Content */}
@@ -648,14 +650,14 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
               {cmd.input && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#00FF88]">➜</span>
-                  <span className="text-[#00F0FF]">~</span>
-                  <span className="text-[#E8E8F0]">{cmd.input}</span>
+                  <span className="text-[var(--ag-cyan)]">~</span>
+                  <span className="text-[var(--ag-text-primary)]">{cmd.input}</span>
                 </div>
               )}
               {cmd.isLoading ? (
-                <div className="mt-1 flex items-center gap-2 text-[#00F0FF]">
+                <div className="mt-1 flex items-center gap-2 text-[var(--ag-cyan)]">
                   <div className="w-3 h-3 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
-                  <span className="text-[#9CA3AF]">Thinking...</span>
+                  <span className="text-[var(--ag-text-muted)]">Thinking...</span>
                 </div>
               ) : cmd.output ? (
                 <div className="mt-1 relative group">
@@ -670,7 +672,7 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
                     {copiedId === cmd.id ? (
                       <Check className="w-3 h-3 text-[#00FF88]" />
                     ) : (
-                      <Copy className="w-3 h-3 text-[#9CA3AF]" />
+                      <Copy className="w-3 h-3 text-[var(--ag-text-muted)]" />
                     )}
                   </button>
                 </div>
@@ -681,19 +683,19 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
           {/* Input Line */}
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <span className="text-[#00FF88]">➜</span>
-            <span className="text-[#00F0FF]">~</span>
+            <span className="text-[var(--ag-cyan)]">~</span>
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => { setInput(e.target.value); setAutocompleteSuggestions([]); }}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent border-none outline-none text-[#E8E8F0] font-mono"
+              className="flex-1 bg-transparent border-none outline-none text-[var(--ag-text-primary)] font-mono"
               placeholder="Type a command or ask Jarvis for help..."
               autoComplete="off"
               spellCheck={false}
             />
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[#00F0FF] font-mono whitespace-nowrap select-none">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[var(--ag-cyan)] font-mono whitespace-nowrap select-none">
               <Bot className="w-3 h-3" />
               AI Help
             </span>
@@ -708,14 +710,14 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
                   onClick={() => { setInput(s); setAutocompleteSuggestions([]); inputRef.current?.focus(); }}
                   className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
                     i === autocompleteIndex
-                      ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40'
-                      : 'text-[#9CA3AF] hover:text-[#E8E8F0] border border-transparent'
+                      ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40'
+                      : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent'
                   }`}
                 >
                   {s}
                 </button>
               ))}
-              <span className="text-[10px] text-[#9CA3AF]/50 self-center ml-1">Tab to cycle</span>
+              <span className="text-[10px] text-[var(--ag-text-muted)]/50 self-center ml-1">Tab to cycle</span>
             </div>
           )}
         </div>
@@ -732,19 +734,20 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
             onClick={() => executeCommand(cmd)}
             className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
               cmd.startsWith('ai ') || cmd.startsWith('/')
-                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20'
-                : 'bg-[#0C0C18] border-[#00F0FF]/20 text-[#9CA3AF] hover:border-[#00F0FF]/50 hover:text-[#E8E8F0]'
+                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20'
+                : 'bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/50 hover:text-[var(--ag-text-primary)]'
             }`}
           >
             {cmd}
           </button>
         ))}
-        <span className="text-[10px] text-[#9CA3AF]/50 ml-auto hidden sm:inline">
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[#00F0FF] font-mono">Tab</kbd> autocomplete
+        <span className="text-[10px] text-[var(--ag-text-muted)]/50 ml-auto hidden sm:inline">
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[var(--ag-cyan)] font-mono">Tab</kbd> autocomplete
           <span className="mx-1.5">|</span>
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[#00F0FF] font-mono">&uarr;&darr;</kbd> history
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[var(--ag-cyan)] font-mono">&uarr;&darr;</kbd> history
         </span>
       </div>
     </div>
+    </PageShell>
   );
 }

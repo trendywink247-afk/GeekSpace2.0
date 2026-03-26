@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageShell } from '@/components/agentin';
 import {
   BookOpen,
   Sunrise,
@@ -134,21 +135,24 @@ export function RecipesPage() {
 
   if (loading) {
     return (
+      <PageShell>
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
       </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Inline toast */}
       {toast && (
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl backdrop-blur-sm border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${
             toast.type === 'success'
-              ? 'bg-[#0C0C18]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
-              : 'bg-[#0C0C18]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
+              ? 'bg-[var(--ag-bg-surface)]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
+              : 'bg-[var(--ag-bg-surface)]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
           }`}
         >
           {toast.type === 'success' ? (
@@ -156,7 +160,7 @@ export function RecipesPage() {
           ) : (
             <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
           )}
-          <span className="text-sm text-[#E8E8F0] font-medium">{toast.message}</span>
+          <span className="text-sm text-[var(--ag-text-primary)] font-medium">{toast.message}</span>
         </div>
       )}
 
@@ -168,7 +172,7 @@ export function RecipesPage() {
         >
           Recipes
         </h1>
-        <p className="text-[#9CA3AF]">
+        <p className="text-[var(--ag-text-muted)]">
           <span className="text-[#00F0FF] font-medium">{activeCount}</span> active of{' '}
           {recipes.length} recipes
         </p>
@@ -180,8 +184,8 @@ export function RecipesPage() {
           <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-8 h-8 text-[#00F0FF]/30" />
           </div>
-          <p className="text-[#E8E8F0] font-medium mb-1">No recipes available yet</p>
-          <p className="text-sm text-[#9CA3AF]">Discover pre-built automation recipes to supercharge your workflow</p>
+          <p className="text-[var(--ag-text-primary)] font-medium mb-1">No recipes available yet</p>
+          <p className="text-sm text-[var(--ag-text-muted)]">Discover pre-built automation recipes to supercharge your workflow</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,7 +197,7 @@ export function RecipesPage() {
             return (
               <Card
                 key={recipe.id}
-                className={`bg-[#0C0C18] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 ${
+                className={`bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 ${
                   recipe.installed ? 'ring-1 ring-[#00FF88]/20' : ''
                 }`}
               >
@@ -230,13 +234,13 @@ export function RecipesPage() {
                   </div>
 
                   {/* Name + Description */}
-                  <h3 className="font-semibold text-[#E8E8F0] mb-1">{recipe.name}</h3>
-                  <p className="text-sm text-[#9CA3AF] mb-4 flex-1">{recipe.description}</p>
+                  <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{recipe.name}</h3>
+                  <p className="text-sm text-[var(--ag-text-muted)] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
                     <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-[#9CA3AF]">Requires:</span>
+                      <span className="text-xs text-[var(--ag-text-muted)]">Requires:</span>
                       {recipe.requiredIntegrations.map((int) => (
                         <span
                           key={int}
@@ -257,7 +261,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full border-[#6B7280]/30 text-[#9CA3AF] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                      className="w-full border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -285,5 +289,6 @@ export function RecipesPage() {
         </div>
       )}
     </div>
+    </PageShell>
   );
 }

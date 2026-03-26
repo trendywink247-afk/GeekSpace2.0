@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { imageService, picoService, agentService } from '@/services/api';
 import type { UserImage, ImageModel } from '@/services/api';
+import { PageShell } from '@/components/agentin';
 
 // ---- Structured prompt builder options ----
 const STYLE_OPTIONS = [
@@ -287,7 +288,7 @@ export function ImageGenPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
@@ -354,19 +355,19 @@ export function ImageGenPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#E8E8F0]">Image Generator</h1>
-          <p className="text-sm text-[#9CA3AF] mt-1">
+          <h1 className="text-2xl font-bold text-[var(--ag-text-primary)]">Image Generator</h1>
+          <p className="text-sm text-[var(--ag-text-muted)] mt-1">
             Create and edit AI images &middot; {imageCount}/{maxImages} saved
           </p>
         </div>
 
         {/* Credit counter badge */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#ADFF2F]/20">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#ADFF2F]/20">
             <Zap className="w-4 h-4 text-[#ADFF2F]" />
             <div className="text-right">
-              <div className="text-sm font-semibold text-[#E8E8F0]">{maxImages - imageCount}</div>
-              <div className="text-[10px] text-[#9CA3AF] leading-none">remaining</div>
+              <div className="text-sm font-semibold text-[var(--ag-text-primary)]">{maxImages - imageCount}</div>
+              <div className="text-[10px] text-[var(--ag-text-muted)] leading-none">remaining</div>
             </div>
           </div>
 
@@ -980,14 +981,14 @@ export function ImageGenPage() {
       </div>
 
       {/* Usage info */}
-      <div className="rounded-xl border border-[#00F0FF]/10 p-4 flex items-start gap-3">
-        <AlertCircle className="w-4 h-4 text-[#9CA3AF] shrink-0 mt-0.5" />
-        <div className="text-xs text-[#9CA3AF] space-y-1">
-          <p>Images are saved for <strong className="text-[#E8E8F0]">24 hours</strong> and then automatically deleted.</p>
-          <p>Use the <strong className="text-[#E8E8F0]">Copy ID</strong> button to get an image ID you can reference in your Website Builder projects.</p>
-          <p>Maximum <strong className="text-[#E8E8F0]">{maxImages} images</strong> at a time. Delete old ones to make room for new ones.</p>
+      <div className="rounded-xl border border-[var(--ag-border-subtle)] p-4 flex items-start gap-3">
+        <AlertCircle className="w-4 h-4 text-[var(--ag-text-muted)] shrink-0 mt-0.5" />
+        <div className="text-xs text-[var(--ag-text-muted)] space-y-1">
+          <p>Images are saved for <strong className="text-[var(--ag-text-primary)]">24 hours</strong> and then automatically deleted.</p>
+          <p>Use the <strong className="text-[var(--ag-text-primary)]">Copy ID</strong> button to get an image ID you can reference in your Website Builder projects.</p>
+          <p>Maximum <strong className="text-[var(--ag-text-primary)]">{maxImages} images</strong> at a time. Delete old ones to make room for new ones.</p>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

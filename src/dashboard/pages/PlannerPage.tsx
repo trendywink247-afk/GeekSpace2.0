@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { PageShell } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, Flame, Plus, ChevronLeft, ChevronRight, Clock,
@@ -148,7 +149,7 @@ function StatBadge({
 }) {
   return (
     <div className="flex items-baseline gap-1">
-      <span className={`text-lg font-bold ${accent ? 'text-[#00F0FF]' : 'text-[#E8E8F0]'}`}>
+      <span className={`text-lg font-bold ${accent ? 'text-[#00F0FF]' : 'text-[var(--ag-text-primary)]'}`}>
         {value}{suffix}
       </span>
       <span className="text-[10px] text-[#8892A4] uppercase tracking-wider">{label}</span>
@@ -192,7 +193,7 @@ function BacklogCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-[#E8E8F0] truncate leading-relaxed">{item.title}</p>
+        <p className="text-xs text-[var(--ag-text-primary)] truncate leading-relaxed">{item.title}</p>
       </div>
 
       {priorityColor && item.priority && item.priority !== 'normal' && (
@@ -250,7 +251,7 @@ function TimeBlockCard({
             )}
           </div>
 
-          <span className="text-xs font-medium text-[#E8E8F0] truncate">{block.title}</span>
+          <span className="text-xs font-medium text-[var(--ag-text-primary)] truncate">{block.title}</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -297,7 +298,7 @@ function QuickAddForm({
           value={title}
           onChange={e => onTitleChange(e.target.value)}
           placeholder="What are you working on?"
-          className="h-7 text-xs bg-white/5 border-white/10 text-[#E8E8F0] placeholder:text-[#8892A4]/60 flex-1"
+          className="h-7 text-xs bg-white/5 border-white/10 text-[var(--ag-text-primary)] placeholder:text-[#8892A4]/60 flex-1"
           onKeyDown={e => {
             if (e.key === 'Enter') onSubmit();
             if (e.key === 'Escape') onCancel();
@@ -313,7 +314,7 @@ function QuickAddForm({
         </Button>
         <button
           onClick={onCancel}
-          className="w-6 h-6 rounded flex items-center justify-center text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+          className="w-6 h-6 rounded flex items-center justify-center text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -329,7 +330,7 @@ function QuickAddForm({
               px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
               ${duration === opt.value
                 ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/40 text-[#8B5CF6]'
-                : 'bg-white/5 border-white/5 text-[#8892A4] hover:border-white/10 hover:text-[#E8E8F0]'}
+                : 'bg-white/5 border-[var(--ag-border-subtle)] text-[#8892A4] hover:border-white/10 hover:text-[var(--ag-text-primary)]'}
             `}
           >
             {opt.label}
@@ -601,11 +602,12 @@ export function PlannerPage() {
   const currentHourFraction = now.getHours() + now.getMinutes() / 60;
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#E8E8F0] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[var(--ag-text-primary)] flex items-center gap-2">
             <CalendarCheck className="w-6 h-6 text-[#00F0FF]" />
             {viewMode === 'day' ? 'Daily' : 'Weekly'} Planner
           </h1>
@@ -623,7 +625,7 @@ export function PlannerPage() {
               className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] ${
                 viewMode === 'day'
                   ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
-                  : 'text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5'
+                  : 'text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
               }`}
             >
               <Clock className="w-3.5 h-3.5 inline mr-1.5" />Day
@@ -633,7 +635,7 @@ export function PlannerPage() {
               className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] ${
                 viewMode === 'week'
                   ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
-                  : 'text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5'
+                  : 'text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
@@ -667,17 +669,17 @@ export function PlannerPage() {
           }}
         >
           {/* Week header with nav */}
-          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                className="h-7 w-7 text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm font-semibold text-[#E8E8F0]">
+              <span className="text-sm font-semibold text-[var(--ag-text-primary)]">
                 {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
                 {' - '}
                 {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
@@ -685,7 +687,7 @@ export function PlannerPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                className="h-7 w-7 text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -705,7 +707,7 @@ export function PlannerPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[700px]">
               {/* Day headers */}
-              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/5">
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--ag-border-subtle)]">
                 <div className="p-2" />
                 {weekDates.map(d => {
                   const isDateToday = isSameDay(d, new Date());
@@ -720,7 +722,7 @@ export function PlannerPage() {
                       <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[#00F0FF]' : 'text-[#8892A4]'}`}>
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}
                       </span>
-                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[#00F0FF]' : 'text-[#E8E8F0]'}`}>
+                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[#00F0FF]' : 'text-[var(--ag-text-primary)]'}`}>
                         {d.getDate()}
                       </span>
                     </button>
@@ -732,7 +734,7 @@ export function PlannerPage() {
               <div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
                 {HOURS.filter((_, i) => i % 2 === 0).map(hour => (
                   <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.03]">
-                    <div className="p-1.5 text-right text-[10px] text-[#8892A4] font-mono border-r border-white/5">
+                    <div className="p-1.5 text-right text-[10px] text-[#8892A4] font-mono border-r border-[var(--ag-border-subtle)]">
                       {formatHour(hour)}
                     </div>
                     {weekDates.map(d => {
@@ -813,10 +815,10 @@ export function PlannerPage() {
               backdropFilter: 'blur(16px)',
             }}
           >
-            <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 text-[#8892A4]" />
-                <span className="text-sm font-semibold text-[#E8E8F0]">Backlog</span>
+                <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Backlog</span>
                 <Badge
                   variant="outline"
                   className="text-xs border-[#00F0FF]/30 text-[#00F0FF] bg-[#00F0FF]/10"
@@ -855,7 +857,7 @@ export function PlannerPage() {
               )}
             </div>
 
-            <div className="px-4 py-2.5 border-t border-white/5">
+            <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
               <div className="flex items-center gap-3 text-[10px] text-[#8892A4]">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-[#00F0FF]" />
@@ -884,26 +886,26 @@ export function PlannerPage() {
             }}
           >
             {/* Date header */}
-            <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                  className="h-7 w-7 text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
                   onClick={goPrev}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <button
                   onClick={goToday}
-                  className="text-sm font-semibold text-[#E8E8F0] hover:text-[#00F0FF] transition-colors"
+                  className="text-sm font-semibold text-[var(--ag-text-primary)] hover:text-[#00F0FF] transition-colors"
                 >
                   {formatDate(currentDate)}
                 </button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                  className="h-7 w-7 text-[#8892A4] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
                   onClick={goNext}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -975,7 +977,7 @@ export function PlannerPage() {
                       {!dragItem && slotBlocks.length === 0 && quickAddHour !== hour && (
                         <button
                           onClick={() => setQuickAddHour(hour)}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-white/5 hover:bg-[#8B5CF6]/20 border border-white/5 hover:border-[#8B5CF6]/30 flex items-center justify-center transition-all"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-md bg-white/5 hover:bg-[#8B5CF6]/20 border border-[var(--ag-border-subtle)] hover:border-[#8B5CF6]/30 flex items-center justify-center transition-all"
                           style={{ opacity: 0.3 }}
                           onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                           onMouseLeave={e => (e.currentTarget.style.opacity = '0.3')}
@@ -1024,5 +1026,6 @@ export function PlannerPage() {
         </div>
       </div>}
     </div>
+    </PageShell>
   );
 }

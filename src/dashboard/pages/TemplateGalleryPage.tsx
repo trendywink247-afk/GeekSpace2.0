@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { PageShell } from '@/components/agentin/PageShell';
 import {
   Search, Copy, Check, Code, LayoutTemplate,
   Rocket, ShoppingCart, FileText, User, Building, Folder,
@@ -98,11 +99,12 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
   };
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6">
       {/* Header — hidden when embedded inside another page's tab */}
       {!embedded && (
         <div>
-          <h1 className="text-2xl font-bold text-[#E8E8F0]">Template Gallery</h1>
+          <h1 className="text-2xl font-bold text-[var(--ag-text-primary)]">Template Gallery</h1>
           <p className="text-[#6B7280] text-sm mt-1">
             Start with a professionally designed template
           </p>
@@ -118,7 +120,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
             placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/30 rounded-lg text-[#E8E8F0] placeholder-[#6B7280] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.15)] outline-none transition-all duration-200"
+            className="w-full pl-10 pr-4 py-2 bg-[var(--ag-bg-surface)] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.15)] outline-none transition-all duration-200"
           />
         </div>
 
@@ -128,7 +130,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
             className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
               selectedCategory === 'all'
                 ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
-                : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
+                : 'bg-[var(--ag-bg-surface)] text-[#6B7280] hover:text-[var(--ag-text-primary)] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
             }`}
           >
             <LayoutTemplate className="w-4 h-4" />
@@ -144,7 +146,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
                   selectedCategory === cat.id
                     ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
-                    : 'bg-[#0C0C18] text-[#6B7280] hover:text-[#E8E8F0] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
+                    : 'bg-[var(--ag-bg-surface)] text-[#6B7280] hover:text-[var(--ag-text-primary)] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -163,9 +165,9 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       ) : templates.length === 0 ? (
         <div className="text-center py-20 glass-card-v2 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/[0.02]">
           <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
-            <LayoutTemplate className="w-8 h-8 text-[#00F0FF]/50" />
+            <LayoutTemplate className="w-8 h-8 text-[var(--ag-cyan)]/50" />
           </div>
-          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No templates found</h3>
+          <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">No templates found</h3>
           <p className="text-[#6B7280] text-sm max-w-xs mx-auto">Try adjusting your search or filters to discover templates</p>
         </div>
       ) : (
@@ -185,7 +187,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Code className="w-16 h-16 text-[#00F0FF]/20" />
+                    <Code className="w-16 h-16 text-[var(--ag-cyan)]/20" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0C0C18] via-transparent to-transparent" />
@@ -199,15 +201,15 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 )}
 
                 {/* Category badge */}
-                <div className="absolute top-3 right-3 px-2 py-1 bg-[#0C0C18]/80 text-[#6B7280] text-xs rounded-full capitalize">
+                <div className="absolute top-3 right-3 px-2 py-1 bg-[var(--ag-bg-surface)]/80 text-[#6B7280] text-xs rounded-full capitalize">
                   {template.category}
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[#E8E8F0] font-medium text-lg">{template.name}</h3>
+                  <h3 className="text-[var(--ag-text-primary)] font-medium text-lg">{template.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-1">
                     <span>{template.cloneCount} uses</span>
-                    {template.isOfficial && <span className="text-[#00F0FF]">Agentin</span>}
+                    {template.isOfficial && <span className="text-[var(--ag-cyan)]">Agentin</span>}
                   </div>
                 </div>
               </div>
@@ -221,7 +223,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePreview(template)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF]/20 text-[var(--ag-cyan)] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
                     <span>Preview</span>
@@ -258,9 +260,9 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       {/* Clone Success Modal */}
       {cloneResult && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0C0C18] rounded-xl border border-[#00F0FF]/30 w-full max-w-md shadow-2xl">
+          <div className="bg-[var(--ag-bg-surface)] rounded-xl border border-[#00F0FF]/30 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20">
-              <h2 className="text-lg font-medium text-[#E8E8F0]">Template Cloned!</h2>
+              <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Template Cloned!</h2>
               <button
                 onClick={() => setCloneResult(null)}
                 className="p-1 hover:bg-[#00F0FF]/10 rounded"
@@ -269,7 +271,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
               </button>
             </div>
             <div className="p-4">
-              <p className="text-[#9CA3AF] text-sm mb-4">
+              <p className="text-[var(--ag-text-muted)] text-sm mb-4">
                 &ldquo;{cloneResult.name}&rdquo; has been added to your workspace.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -288,7 +290,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     setCloneResult(null);
                     onNavigate?.('artifacts');
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00F0FF]/20 text-[#00F0FF] rounded-lg hover:bg-[#00F0FF]/30 transition-colors font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00F0FF]/20 text-[var(--ag-cyan)] rounded-lg hover:bg-[#00F0FF]/30 transition-colors font-medium text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View All Projects
@@ -299,5 +301,6 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
         </div>
       )}
     </div>
+    </PageShell>
   );
 }

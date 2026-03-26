@@ -3,6 +3,7 @@
 // ============================================================
 
 import { useState, useEffect } from 'react';
+import { PageShell } from '@/components/agentin/PageShell';
 import {
   Rocket,
   Users,
@@ -468,31 +469,32 @@ export function RoadmapPage() {
       case 'completed':
         return <Badge className="bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30 shadow-[0_0_8px_rgba(0,255,136,0.1)]">Shipped</Badge>;
       case 'in-progress':
-        return <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/30 shadow-[0_0_8px_rgba(0,240,255,0.1)]">In Progress</Badge>;
+        return <Badge className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-[#00F0FF]/30 shadow-[0_0_8px_rgba(0,240,255,0.1)]">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#6B7280]/15 text-[#9CA3AF] border-[#6B7280]/30">Planned</Badge>;
+        return <Badge className="bg-[#6B7280]/15 text-[var(--ag-text-muted)] border-[#6B7280]/30">Planned</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-4">
-          <Rocket className="w-4 h-4 text-[#00F0FF]" />
-          <span className="text-sm text-[#00F0FF] font-medium">Our Vision</span>
+          <Rocket className="w-4 h-4 text-[var(--ag-cyan)]" />
+          <span className="text-sm text-[var(--ag-cyan)] font-medium">Our Vision</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agentin Roadmap
         </h1>
         <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
           <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-[#FF2D78]">Explored by Nova</span>
-          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">v{pkgJson.version}</span>
-          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#6B7280]/10 border border-[#6B7280]/30 text-[#9CA3AF]">
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)]">v{pkgJson.version}</span>
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#6B7280]/10 border border-[#6B7280]/30 text-[var(--ag-text-muted)]">
             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
-        <p className="text-[#9CA3AF]">
+        <p className="text-[var(--ag-text-muted)]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>
       </div>
@@ -504,8 +506,8 @@ export function RoadmapPage() {
             <History className="w-5 h-5 text-[#F59E0B]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#E8E8F0]">Recent Changes</h2>
-            <p className="text-sm text-[#9CA3AF]">Latest shipped improvements</p>
+            <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Recent Changes</h2>
+            <p className="text-sm text-[var(--ag-text-muted)]">Latest shipped improvements</p>
           </div>
         </div>
         <div className="space-y-3">
@@ -525,12 +527,12 @@ export function RoadmapPage() {
                       >
                         {note.phase}
                       </Badge>
-                      <span className="font-semibold text-[#E8E8F0] text-sm">{note.title}</span>
-                      <span className="text-xs text-[#9CA3AF] ml-auto">{note.date}</span>
+                      <span className="font-semibold text-[var(--ag-text-primary)] text-sm">{note.title}</span>
+                      <span className="text-xs text-[var(--ag-text-muted)] ml-auto">{note.date}</span>
                     </div>
                     <ul className="space-y-1">
                       {note.items.map((item, i) => (
-                        <li key={i} className="text-xs text-[#9CA3AF] flex items-start gap-1.5">
+                        <li key={i} className="text-xs text-[var(--ag-text-muted)] flex items-start gap-1.5">
                           <span className="text-[#00FF88] mt-0.5 flex-shrink-0">+</span>
                           {item}
                         </li>
@@ -548,8 +550,8 @@ export function RoadmapPage() {
       <Card className="border-[#00F0FF]/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#9CA3AF]">Overall Progress</span>
-            <span className="text-sm font-medium text-[#E8E8F0]">{Math.round(progressPercent)}%</span>
+            <span className="text-sm text-[var(--ag-text-muted)]">Overall Progress</span>
+            <span className="text-sm font-medium text-[var(--ag-text-primary)]">{Math.round(progressPercent)}%</span>
           </div>
           <div className="h-3 bg-[#06060B] rounded-full overflow-hidden mb-4">
             <div
@@ -560,15 +562,15 @@ export function RoadmapPage() {
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
-              <span className="text-[#E8E8F0]">{completedCount} Completed</span>
+              <span className="text-[var(--ag-text-primary)]">{completedCount} Completed</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#FFB800]" />
-              <span className="text-[#9CA3AF]">0 In Progress</span>
+              <span className="text-[var(--ag-text-muted)]">0 In Progress</span>
             </div>
             <div className="flex items-center gap-2">
-              <Circle className="w-4 h-4 text-[#00F0FF]" />
-              <span className="text-[#9CA3AF]">{plannedCount} Planned</span>
+              <Circle className="w-4 h-4 text-[var(--ag-cyan)]" />
+              <span className="text-[var(--ag-text-muted)]">{plannedCount} Planned</span>
             </div>
           </div>
         </CardContent>
@@ -583,8 +585,8 @@ export function RoadmapPage() {
               <CheckCircle2 className="w-5 h-5 text-[#00FF88]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#E8E8F0]">Q1 2026</h2>
-              <p className="text-sm text-[#9CA3AF]">Recently Shipped</p>
+              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q1 2026</h2>
+              <p className="text-sm text-[var(--ag-text-muted)]">Recently Shipped</p>
             </div>
           </div>
 
@@ -599,11 +601,11 @@ export function RoadmapPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
+                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
+                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
                         {item.category}
                       </Badge>
                     </div>
@@ -618,11 +620,11 @@ export function RoadmapPage() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-[#00F0FF]" />
+              <Clock className="w-5 h-5 text-[var(--ag-cyan)]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#E8E8F0]">Q2 2026</h2>
-              <p className="text-sm text-[#9CA3AF]">Coming Next</p>
+              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q2 2026</h2>
+              <p className="text-sm text-[var(--ag-text-muted)]">Coming Next</p>
             </div>
           </div>
 
@@ -632,16 +634,16 @@ export function RoadmapPage() {
                 <div className="h-[3px] bg-gradient-to-r from-[#00F0FF] to-[#00F0FF]/40" />
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center text-[#00F0FF]">
+                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center text-[var(--ag-cyan)]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
+                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
+                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
                         {item.category}
                       </Badge>
                     </div>
@@ -656,11 +658,11 @@ export function RoadmapPage() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#6B7280]/20 flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-[#9CA3AF]" />
+              <Rocket className="w-5 h-5 text-[var(--ag-text-muted)]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#E8E8F0]">Q3-Q4 2026</h2>
-              <p className="text-sm text-[#9CA3AF]">Future Vision</p>
+              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q3-Q4 2026</h2>
+              <p className="text-sm text-[var(--ag-text-muted)]">Future Vision</p>
             </div>
           </div>
 
@@ -670,16 +672,16 @@ export function RoadmapPage() {
                 <div className="h-[3px] bg-gradient-to-r from-[#6B7280] to-[#6B7280]/30" />
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#9CA3AF]">
+                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[var(--ag-text-muted)]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[#E8E8F0]">{item.title}</h3>
+                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[#9CA3AF]">
+                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
                         {item.category}
                       </Badge>
                     </div>
@@ -697,13 +699,13 @@ export function RoadmapPage() {
           <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
-                <h3 className="text-lg font-semibold text-[#E8E8F0]">Suggest & Earn</h3>
+                <Lightbulb className="w-5 h-5 text-[var(--ag-cyan)]" />
+                <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Suggest & Earn</h3>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 Submit feature ideas. Earn credits when they're accepted, shipped, or go live.
               </p>
-              <div className="flex gap-4 mt-2 text-xs text-[#9CA3AF]">
+              <div className="flex gap-4 mt-2 text-xs text-[var(--ag-text-muted)]">
                 <span className="flex items-center gap-1"><span className="text-[#00FF88] font-bold">+10</span> Accepted</span>
                 <span className="flex items-center gap-1"><span className="text-[#BF5FFF] font-bold">+50</span> Shipped</span>
                 <span className="flex items-center gap-1"><span className="text-[#F59E0B] font-bold">+100</span> Live</span>
@@ -718,8 +720,8 @@ export function RoadmapPage() {
               </DialogTrigger>
               <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
                 <DialogHeader>
-                  <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-[#00F0FF]" />
+                  <DialogTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-[var(--ag-cyan)]" />
                     Suggest a Feature
                   </DialogTitle>
                 </DialogHeader>
@@ -739,33 +741,33 @@ export function RoadmapPage() {
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <Label className="text-[#E8E8F0] text-sm">Title <span className="text-[#FF2D78]">*</span></Label>
+                      <Label className="text-[var(--ag-text-primary)] text-sm">Title <span className="text-[#FF2D78]">*</span></Label>
                       <Input
                         placeholder="e.g. Dark mode calendar view"
                         value={formTitle}
                         onChange={e => setFormTitle(e.target.value)}
                         maxLength={100}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0]"
+                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
+                      <Label className="text-[var(--ag-text-primary)] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[var(--ag-text-muted)] font-normal">(min 20 chars)</span></Label>
                       <Textarea
                         placeholder="Describe the feature and why it would be useful..."
                         value={formBody}
                         onChange={e => setFormBody(e.target.value)}
                         rows={4}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
+                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)] resize-none"
                       />
-                      <p className="text-right text-xs text-[#9CA3AF]">{formBody.length}/2000</p>
+                      <p className="text-right text-xs text-[var(--ag-text-muted)]">{formBody.length}/2000</p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#E8E8F0] text-sm">Tags <span className="text-[#9CA3AF] font-normal">(comma-separated, max 5)</span></Label>
+                      <Label className="text-[var(--ag-text-primary)] text-sm">Tags <span className="text-[var(--ag-text-muted)] font-normal">(comma-separated, max 5)</span></Label>
                       <Input
                         placeholder="e.g. calendar, mobile, ai"
                         value={formTags}
                         onChange={e => setFormTags(e.target.value)}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0]"
+                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
                       />
                     </div>
                     {submitError && <p className="text-xs text-[#FF2D78]">{submitError}</p>}
@@ -784,11 +786,11 @@ export function RoadmapPage() {
 
           {/* My Suggestions list */}
           <div className="mb-4">
-            <h4 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#00F0FF]" />
+            <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[var(--ag-cyan)]" />
               My Suggestions
               {mySuggestions.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-bold border border-[#00F0FF]/30">
+                <span className="px-1.5 py-0.5 rounded-full bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-bold border border-[#00F0FF]/30">
                   {mySuggestions.length}
                 </span>
               )}
@@ -811,7 +813,7 @@ export function RoadmapPage() {
                 ))}
               </div>
             ) : mySuggestions.length === 0 ? (
-              <p className="text-xs text-[#9CA3AF]">No suggestions yet. Be the first to suggest a feature!</p>
+              <p className="text-xs text-[var(--ag-text-muted)]">No suggestions yet. Be the first to suggest a feature!</p>
             ) : (
               <div className="space-y-2">
                 {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
@@ -821,10 +823,10 @@ export function RoadmapPage() {
                   return (
                     <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#E8E8F0] truncate">{s.title}</p>
+                        <p className="text-sm text-[var(--ag-text-primary)] truncate">{s.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-[#9CA3AF]">{new Date(s.created_at).toLocaleDateString()}</p>
-                          <span className="flex items-center gap-0.5 text-xs text-[#00F0FF]">
+                          <p className="text-xs text-[var(--ag-text-muted)]">{new Date(s.created_at).toLocaleDateString()}</p>
+                          <span className="flex items-center gap-0.5 text-xs text-[var(--ag-cyan)]">
                             <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                           </span>
                           {downvotes > 0 && (
@@ -855,7 +857,7 @@ export function RoadmapPage() {
                       <button
                         onClick={() => void handleVote(s.id)}
                         disabled={vs?.voting}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-h-[44px]"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-h-[44px]"
                         aria-label="Upvote this suggestion"
                       >
                         <ThumbsUp className="w-3 h-3" />
@@ -865,7 +867,7 @@ export function RoadmapPage() {
                       {s.status === 'new' && (
                         <button
                           onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#00F0FF] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
                           aria-label="Edit suggestion"
                         >
                           <Pencil className="w-3 h-3" />
@@ -875,7 +877,7 @@ export function RoadmapPage() {
                         <button
                           onClick={() => void handleDelete(s.id)}
                           disabled={deletingId === s.id}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[#9CA3AF] hover:text-[#FF2D78]'}`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[var(--ag-text-muted)] hover:text-[#FF2D78]'}`}
                           aria-label="Delete suggestion"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -895,7 +897,7 @@ export function RoadmapPage() {
                 {mySuggestions.length > 5 && (
                   <button
                     onClick={() => setShowAllSuggestions(prev => !prev)}
-                    className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 text-[#00F0FF] text-xs font-medium transition-colors"
+                    className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs font-medium transition-colors"
                   >
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
                     {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
@@ -908,7 +910,7 @@ export function RoadmapPage() {
           {/* Task 70.6: Popular Ideas (top clusters) */}
           {topClusters.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#BF5FFF]" />
                 Popular Ideas
               </h4>
@@ -916,15 +918,15 @@ export function RoadmapPage() {
                 {topClusters.map(cluster => (
                   <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#BF5FFF]/10">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#E8E8F0] truncate">
+                      <p className="text-sm text-[var(--ag-text-primary)] truncate">
                         {cluster.name || cluster.canonical_summary}
                       </p>
                       {cluster.name && cluster.name !== cluster.canonical_summary && (
-                        <p className="text-xs text-[#9CA3AF] truncate">{cluster.canonical_summary}</p>
+                        <p className="text-xs text-[var(--ag-text-muted)] truncate">{cluster.canonical_summary}</p>
                       )}
                     </div>
                     {cluster.total_votes !== undefined && (
-                      <span className="flex items-center gap-1 text-xs text-[#00F0FF] flex-shrink-0">
+                      <span className="flex items-center gap-1 text-xs text-[var(--ag-cyan)] flex-shrink-0">
                         <ThumbsUp className="w-3 h-3" /> {cluster.total_votes}
                       </span>
                     )}
@@ -937,7 +939,7 @@ export function RoadmapPage() {
           {/* Earned Credits */}
           {myRewards.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
                 <Gift className="w-4 h-4 text-[#F59E0B]" />
                 Earned Credits
                 <span className="text-[#F59E0B] font-bold ml-auto">
@@ -949,8 +951,8 @@ export function RoadmapPage() {
                   <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/20">
                     <Gift className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[#E8E8F0]">{getRewardLabel(r.eventType)}</p>
-                      <p className="text-xs text-[#9CA3AF]">{new Date(r.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-[var(--ag-text-primary)]">{getRewardLabel(r.eventType)}</p>
+                      <p className="text-xs text-[var(--ag-text-muted)]">{new Date(r.createdAt).toLocaleDateString()}</p>
                     </div>
                     <span className="text-sm font-bold text-[#F59E0B] flex-shrink-0">+{r.credits}</span>
                   </div>
@@ -964,11 +966,11 @@ export function RoadmapPage() {
       {/* Original CTA (kept for backwards compat, hidden via the new section above) */}
       <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/5 border-[#00F0FF]/20">
         <CardContent className="p-6 text-center">
-          <Sparkles className="w-8 h-8 text-[#00F0FF] mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-[#E8E8F0] mb-2">
+          <Sparkles className="w-8 h-8 text-[var(--ag-cyan)] mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-2">
             Have a feature request?
           </h3>
-          <p className="text-sm text-[#9CA3AF] mb-4">
+          <p className="text-sm text-[var(--ag-text-muted)] mb-4">
             We're building Agentin for you. Let us know what you'd like to see next.
           </p>
           <button
@@ -991,7 +993,7 @@ export function RoadmapPage() {
         return (
           <Card className="bg-[#0B0B10] border-[#BF5FFF]/20">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-[#E8E8F0] mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-4 flex items-center gap-2">
                 <History className="w-5 h-5 text-[#BF5FFF]" />
                 Recent Improvements
               </h3>
@@ -1018,37 +1020,37 @@ export function RoadmapPage() {
         <Dialog open={!!editingSuggestion} onOpenChange={(open) => { if (!open) setEditingSuggestion(null); }}>
           <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
             <DialogHeader>
-              <DialogTitle className="text-[#E8E8F0] flex items-center gap-2">
-                <Pencil className="w-5 h-5 text-[#00F0FF]" />
+              <DialogTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Edit Suggestion
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label className="text-[#E8E8F0] text-sm">Title</Label>
+                <Label className="text-[var(--ag-text-primary)] text-sm">Title</Label>
                 <Input
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
                   maxLength={100}
-                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0]"
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#E8E8F0] text-sm">Description <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
+                <Label className="text-[var(--ag-text-primary)] text-sm">Description <span className="text-[var(--ag-text-muted)] font-normal">(min 20 chars)</span></Label>
                 <Textarea
                   value={editBody}
                   onChange={e => setEditBody(e.target.value)}
                   rows={4}
-                  className="bg-[#05050A] border-[#00F0FF]/20 text-[#E8E8F0] resize-none"
+                  className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)] resize-none"
                 />
-                <p className="text-right text-xs text-[#9CA3AF]">{editBody.length}/2000</p>
+                <p className="text-right text-xs text-[var(--ag-text-muted)]">{editBody.length}/2000</p>
               </div>
               {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
               <div className="flex gap-2">
                 <Button
                   onClick={() => setEditingSuggestion(null)}
                   variant="outline"
-                  className="flex-1 border-[#00F0FF]/20 text-[#9CA3AF]"
+                  className="flex-1 border-[#00F0FF]/20 text-[var(--ag-text-muted)]"
                 >
                   Cancel
                 </Button>
@@ -1070,7 +1072,7 @@ export function RoadmapPage() {
         <Dialog open={!!detailSuggestion} onOpenChange={(open) => { if (!open) setDetailSuggestion(null); }}>
           <DialogContent className="bg-[#0B0B10] border-[#BF5FFF]/20">
             <DialogHeader>
-              <DialogTitle className="text-lg text-[#E8E8F0] pr-8">{detailSuggestion.title}</DialogTitle>
+              <DialogTitle className="text-lg text-[var(--ag-text-primary)] pr-8">{detailSuggestion.title}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Status badge */}
@@ -1085,7 +1087,7 @@ export function RoadmapPage() {
                 >
                   {getStatusLabel(detailSuggestion.status)}
                 </span>
-                <span className="text-xs text-[#9CA3AF]">
+                <span className="text-xs text-[var(--ag-text-muted)]">
                   Submitted {new Date(detailSuggestion.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
               </div>
@@ -1094,9 +1096,9 @@ export function RoadmapPage() {
                 <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
               </div>
               {/* Vote counts — always show, using voteState with suggestion fallback */}
-              <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
+              <div className="flex items-center gap-4 text-xs text-[var(--ag-text-muted)]">
                 <span className="flex items-center gap-1">
-                  <ThumbsUp className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  <ThumbsUp className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
                   {(voteState[detailSuggestion.id]?.upvotes ?? detailSuggestion.upvotes ?? 0)} upvotes
                 </span>
                 <span className="flex items-center gap-1">
@@ -1105,21 +1107,21 @@ export function RoadmapPage() {
                 </span>
               </div>
               {/* Phase 72.4: Status Timeline */}
-              {loadingEvents && <p className="text-xs text-[#9CA3AF]">Loading history…</p>}
+              {loadingEvents && <p className="text-xs text-[var(--ag-text-muted)]">Loading history…</p>}
               {detailEvents.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-[#9CA3AF]">Status History</p>
+                  <p className="text-xs font-semibold text-[var(--ag-text-muted)]">Status History</p>
                   <div className="space-y-1.5">
                     {detailEvents.map(ev => (
                       <div key={ev.id} className="flex items-center gap-2 text-xs">
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.oldStatus), borderColor: `${getStatusColor(ev.oldStatus)}40`, backgroundColor: `${getStatusColor(ev.oldStatus)}10` }}>
                           {getStatusLabel(ev.oldStatus)}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-[#9CA3AF]" />
+                        <ArrowRight className="w-3 h-3 text-[var(--ag-text-muted)]" />
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.newStatus), borderColor: `${getStatusColor(ev.newStatus)}40`, backgroundColor: `${getStatusColor(ev.newStatus)}10` }}>
                           {getStatusLabel(ev.newStatus)}
                         </span>
-                        <span className="text-[#9CA3AF] ml-auto">
+                        <span className="text-[var(--ag-text-muted)] ml-auto">
                           {new Date(ev.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
@@ -1131,7 +1133,7 @@ export function RoadmapPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => setDetailSuggestion(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] text-xs transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] text-xs transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                   Close
@@ -1142,5 +1144,6 @@ export function RoadmapPage() {
         </Dialog>
       )}
     </div>
+    </PageShell>
   );
 }
