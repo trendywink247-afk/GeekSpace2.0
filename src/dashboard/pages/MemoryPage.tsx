@@ -1,3 +1,4 @@
+// @deprecated — DEAD CODE confirmed by Sprint 1 audit 2026-03-26. Not imported in DashboardApp.tsx. Safe to delete.
 // ============================================================
 // Memory Page — Enhanced with stats, search, category filters,
 // bulk operations, export, and knowledge graph preview

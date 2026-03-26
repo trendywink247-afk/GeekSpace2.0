@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "test": "TEST_MODE=true vitest run",
     "test:watch": "TEST_MODE=true vitest",
-    "test:coverage": "TEST_MODE=true vitest run --coverage"
+    "test:coverage": "TEST_MODE=true vitest run --coverage",
+    "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "@types/passport": "^1.0.17",

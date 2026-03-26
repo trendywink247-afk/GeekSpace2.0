@@ -1,3 +1,4 @@
+// @deprecated — DEAD CODE confirmed by Sprint 1 audit 2026-03-26. Not imported in DashboardApp.tsx. Safe to delete.
 // ============================================================
 // Memory Manager - "Your AI's memory is like a personal Wikipedia about you."
 // Search, browse, categorize, and manage agent memories

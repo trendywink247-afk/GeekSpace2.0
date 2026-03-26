@@ -22,7 +22,7 @@ import { authRouter } from './routes/auth.js';
 import { oauthRouter } from './routes/oauth.js';
 import { routingDebugRouter } from './routes/debug-routing.js';
 import { usersRouter } from './routes/users.js';
-import { agentRouter } from './routes/agent.js';
+import { agentRouter } from './routes/agent/index.js';
 import { usageRouter } from './routes/usage.js';
 import { integrationsRouter } from './routes/integrations.js';
 import { remindersRouter } from './routes/reminders.js';

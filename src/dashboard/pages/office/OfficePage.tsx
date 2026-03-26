@@ -16,31 +16,58 @@ import {
 } from './constants';
 import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard } from './types';
 
-// ---------------------------------------------------------------------------
-// Helper: build a CanvasAgent for SpotlightHUD from an agentId
-// ---------------------------------------------------------------------------
-
+/**
+ * Constructs a CanvasAgent object suitable for display in the SpotlightHUD.
+ *
+ * **Purpose:** Converts a raw agent ID into a fully-initialized CanvasAgent
+ * with position, color, metadata, and initial animation state for the spotlight HUD.
+ *
+ * **Position Resolution:** Looks up desk position from either CORE_DESK_POSITIONS
+ * or SPECIALIST_POSITIONS. Falls back to (0, 0) if agent not found.
+ *
+ * **Pixel Coordinates:** Converts grid coordinates (tiles) to pixel coordinates
+ * by multiplying by CELL size (32px) and centering (+ CELL/2).
+ *
+ * **Dormancy:** Specialists start dormant (greyed out in UI) until their parent
+ * core agent activates them. Core agents are never dormant.
+ *
+ * @param id - Agent identifier string (e.g., 'weebo', 'aria')
+ * @returns CanvasAgent initialized and ready for rendering, or null if agent metadata not found
+ *
+ * @example
+ * ```typescript
+ * const agent = getAgentForHUD('weebo');
+ * // Returns: { id: 'weebo', name: '✨ Weebo', color: '#00F0FF', ... }
+ * ```
+ */
 function getAgentForHUD(id: string): CanvasAgent | null {
   const meta = AGENT_META[id as AgentId];
   if (!meta) return null;
+
+  // Resolve grid position: core agents have fixed desks, specialists have reserved spots
   const pos =
     CORE_DESK_POSITIONS[id as CoreAgentId] ??
     SPECIALIST_POSITIONS[id as SpecialistId] ??
     { x: 0, y: 0 };
+
   return {
     id: id as AgentId,
+    // Format name with emoji + capitalized agent ID (e.g., "✨ Weebo")
     name: meta.emoji + ' ' + id.charAt(0).toUpperCase() + id.slice(1),
     color: AGENT_COLORS[id as AgentId],
     emoji: meta.emoji,
     role: meta.role,
+    // Grid coordinates (tile-based, 0-26 x 0-24)
     x: pos.x,
     y: pos.y,
     targetX: pos.x,
     targetY: pos.y,
+    // Pixel coordinates (scaled by CELL size + centered for sprite drawing)
     renderX: pos.x * CELL + CELL / 2,
     renderY: pos.y * CELL + CELL / 2,
     speed: 5,
     state: 'idle',
+    // Specialists are a different agent class (not core team)
     isSpecialist: !CORE_AGENTS.includes(id as CoreAgentId),
     isDormant: false,
     path: [],
@@ -48,9 +75,47 @@ function getAgentForHUD(id: string): CanvasAgent | null {
   };
 }
 
-// ---------------------------------------------------------------------------
-// OfficePage
-// ---------------------------------------------------------------------------
+/**
+ * @fileoverview Agent Office Mission Control page component.
+ *
+ * Main canvas-based UI for monitoring and interacting with the 9-agent system.
+ * Features real-time agent animation, interactive task board, communication timeline,
+ * and insight cards.
+ *
+ * **Layout:**
+ * - Left (60% desktop / 35vh mobile): Pixel-art office canvas with 9 agents
+ * - Right (40% desktop / full mobile): Sidebar with task board, comms, timeline
+ * - Overlays: Connection badge, day/night theme toggle, spotlight HUD, agent profile
+ *
+ * **Data Flow:**
+ * - `useOfficeData()` hook: SSE stream + polling of `/api/office/state`
+ * - Canvas updates: Real-time from SSE events (50-200ms latency)
+ * - Sidebar updates: Polled every 5s from backend
+ * - Session expiry: Banner shown if JWT token expires (401 Unauthorized)
+ *
+ * **State Management:**
+ * - `selectedAgentId`: For spotlight HUD and task assignment
+ * - `flyoutAgentId`: For agent profile overlay (double-click)
+ * - `officeTheme`: Persisted to localStorage, affects canvas lighting
+ * - `dismissedInsights`: Locally suppresses insight cards already shown
+ *
+ * @component
+ * @returns Full office page with canvas, sidebar, and overlays
+ *
+ * @example
+ * ```tsx
+ * import { OfficePage } from '@/dashboard/pages/office';
+ *
+ * export function Dashboard() {
+ *   return (
+ *     <div>
+ *       <Header />
+ *       <OfficePage />
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
 
 type OfficeTheme = 'day' | 'night' | 'auto';
 

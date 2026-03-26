@@ -9,6 +9,10 @@ import { getObjectsInRoom, SMART_OBJECTS } from './smartObjects';
 import { isPointOccupied } from './occupancy';
 import { isWalkable } from './navigation';
 
+/**
+ * A snapshot of everything an agent can sense about its immediate environment,
+ * computed once per decision tick.
+ */
 export interface AgentPerception {
   agent: CanvasAgent;
   currentRoom: RoomZone | null;
@@ -21,6 +25,13 @@ export interface AgentPerception {
   recentlyWorked: boolean;
 }
 
+/**
+ * Builds a full perception snapshot for an agent at its current position.
+ * @param agent - The agent whose environment is being sampled.
+ * @param allAgents - All agents currently on the canvas (used for proximity checks).
+ * @param recentWorkers - Set of agent IDs that worked during the most recent tick.
+ * @returns An AgentPerception snapshot describing the agent's surroundings.
+ */
 export function perceive(
   agent: CanvasAgent,
   allAgents: CanvasAgent[],

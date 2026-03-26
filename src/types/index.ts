@@ -591,7 +591,9 @@ export interface OnboardingState {
     bio: string;
     headline: string;
     tags: string[];
+    avatar: string;
   };
+  useCase: string;
   agentPreferences: {
     personality: 'edith' | 'jarvis' | 'weebo';
     agentMode: AgentMode;

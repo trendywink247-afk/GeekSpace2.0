@@ -130,7 +130,7 @@ export function TelegramCTASection() {
             <span className="text-gradient">No App Download.</span>
           </h2>
           <p className="text-lg text-[#B8C4D4] max-w-2xl mx-auto">
-            Message @Weebo_gs_bot on Telegram. No sign-up needed. Just send
+            Message @agentinchatbot on Telegram. No sign-up needed. Just send
             /start
           </p>
         </div>
@@ -191,7 +191,7 @@ export function TelegramCTASection() {
 
             {/* CTA button */}
             <a
-              href="https://t.me/Weebo_gs_bot"
+              href="https://t.me/agentinchatbot"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2.5 px-7 py-3.5 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_24px_rgba(34,158,217,0.30)] group"

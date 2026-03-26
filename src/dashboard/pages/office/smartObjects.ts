@@ -1,9 +1,46 @@
-// src/dashboard/pages/office/smartObjects.ts
-// Smart objects: furniture with blocked footprints + interaction points.
-// All interaction point coordinates verified walkable against COLLISION_MAP.
+/**
+ * @fileoverview Smart Objects Module — Interactive furniture and fixtures for the office.
+ *
+ * Smart objects are furniture pieces with:
+ * - **Footprint**: Tiles blocked by the furniture (agents cannot walk through)
+ * - **Interaction Points**: Walkable tiles where agents stand to use the furniture
+ * - **Behavior Type**: What agents do here (work, socialize, relax, etc.)
+ *
+ * All interaction points are verified walkable against COLLISION_MAP.
+ * Use {@link findAvailablePoint} to reserve and claim interaction points.
+ *
+ * @example
+ * ```typescript
+ * const coffee = SMART_OBJECTS.find(obj => obj.id === 'coffee-counter');
+ * const spot = findAvailablePoint(coffee.interactionPoints, agentId, agentX, agentY);
+ * if (spot && reservePoint(spot.x, spot.y, agentId)) {
+ *   agent.targetX = spot.x;
+ *   agent.targetY = spot.y;
+ * }
+ * ```
+ */
 
 import type { RoomType } from './roomZones';
 
+/**
+ * A single point where an agent can stand to interact with a smart object.
+ * Agents navigate to this point and perform the associated behavior.
+ *
+ * @property x - Tile column coordinate (0–26). **MUST be walkable** (verified against COLLISION_MAP).
+ * @property y - Tile row coordinate (0–24). **MUST be walkable** (verified against COLLISION_MAP).
+ * @property facing - Direction agent faces while interacting (affects sprite frame selection).
+ * @property behavior - Activity type determining what agent does here and what phrases they speak.
+ *
+ * **Behavior Types:**
+ * - `work` — Working at desk (typing animation)
+ * - `coffee` — Getting coffee (social, "Need coffee!" phrases)
+ * - `chat` — Socializing (facing another agent, exchanging greetings)
+ * - `observe` — Watching/listening (at presentation or meeting)
+ * - `relax` — Taking a break (lounge/couch, "Recharging..." phrases)
+ * - `browse` — Reading/exploring (bookshelf, "Good read" phrases)
+ * - `present` — Presenting/teaching (at whiteboard/meeting table)
+ * - `collaborate` — Group discussion (meeting table, team phrases)
+ */
 export interface InteractionPoint {
   x: number;
   y: number;
@@ -19,13 +56,47 @@ export interface InteractionPoint {
     | 'collaborate';
 }
 
+/**
+ * A smart object: interactive furniture with blocked tiles and interaction points.
+ * Agents navigate to interaction points and reserve them via the occupancy system.
+ *
+ * @property id - Unique identifier (e.g., 'coffee-counter', 'meeting-table'). Used for lookups.
+ * @property type - Furniture type (e.g., 'desk', 'seating', 'appliance', 'table', 'display'). Used for styling/visualization.
+ * @property room - Room zone this object belongs to. Used for agent behavior hints.
+ * @property label - Human-readable display name (e.g., "Coffee Machine", "Whiteboard").
+ * @property footprint - Array of tiles blocked by this furniture. Agents cannot walk on these tiles.
+ *   **NOTE:** Footprint tiles should NOT overlap with COLLISION_MAP (they become blocked by furniture).
+ * @property interactionPoints - Walkable tiles where agents can stand to use this object.
+ *   **CRITICAL:** All interaction point coordinates **MUST** satisfy `isWalkable(ip.x, ip.y) === true`.
+ *   Verified at module load time via startup validation (non-blocking errors logged to console).
+ * @property maxOccupants - Maximum agents that can use this object simultaneously.
+ *   Used by occupancy system to enforce capacity limits.
+ *
+ * @example
+ * ```typescript
+ * {
+ *   id: 'coffee-counter',
+ *   type: 'appliance',
+ *   room: 'pantry',
+ *   label: 'Coffee Machine',
+ *   footprint: [
+ *     { x: 7, y: 3 }, { x: 8, y: 3 }, { x: 9, y: 3 }, { x: 10, y: 3 },
+ *   ],
+ *   interactionPoints: [
+ *     { x: 8, y: 4, facing: 'up', behavior: 'coffee' },
+ *     { x: 9, y: 4, facing: 'up', behavior: 'coffee' },
+ *   ],
+ *   maxOccupants: 2,
+ * }
+ * ```
+ */
 export interface SmartObject {
   id: string;
   type: string;
   room: RoomType;
   label: string;
-  footprint: Array<{ x: number; y: number }>; // blocked tiles (the object body)
-  interactionPoints: InteractionPoint[]; // where agents stand to USE the object
+  footprint: Array<{ x: number; y: number }>;
+  interactionPoints: InteractionPoint[];
   maxOccupants: number;
 }
 
@@ -251,19 +322,78 @@ export const SMART_OBJECTS: SmartObject[] = [
   },
 ];
 
-// Helpers
+// ── Helpers & Queries ──────────────────────────────────────────────────────
+
+/**
+ * Retrieves all smart objects in a specific room zone.
+ * Useful for determining what furniture agents can interact with in their current room.
+ * @param room - The room zone ID to query.
+ * @returns Array of SmartObjects in that room. Empty if no objects found.
+ *
+ * @example
+ * ```typescript
+ * const officeObjects = getObjectsInRoom('workspace');
+ * // Returns: [desk-cluster-left, desk-cluster-right, ...]
+ * ```
+ */
 export function getObjectsInRoom(room: RoomType): SmartObject[] {
   return SMART_OBJECTS.filter((o) => o.room === room);
 }
 
+/**
+ * Looks up a single smart object by its unique ID.
+ * Used when an agent has decided on a specific furniture piece to interact with.
+ * @param id - The object ID to look up (e.g., 'coffee-counter', 'meeting-table').
+ * @returns The matching SmartObject, or undefined if not found.
+ *
+ * @example
+ * ```typescript
+ * const couch = getObjectById('couch');
+ * if (couch) {
+ *   agent.targetX = couch.interactionPoints[0].x;
+ *   agent.targetY = couch.interactionPoints[0].y;
+ * }
+ * ```
+ */
 export function getObjectById(id: string): SmartObject | undefined {
   return SMART_OBJECTS.find((o) => o.id === id);
 }
 
+/**
+ * Retrieves all interaction points across all smart objects.
+ * Useful for global queries (e.g., "where are all the coffee spots?").
+ * @returns Flat array of all InteractionPoints from all SmartObjects.
+ *
+ * @example
+ * ```typescript
+ * const allPoints = getAllInteractionPoints();
+ * const nearestPoint = allPoints.reduce((prev, curr) => {
+ *   const currDist = Math.abs(curr.x - agent.x) + Math.abs(curr.y - agent.y);
+ *   const prevDist = Math.abs(prev.x - agent.x) + Math.abs(prev.y - agent.y);
+ *   return currDist < prevDist ? curr : prev;
+ * });
+ * ```
+ */
 export function getAllInteractionPoints(): InteractionPoint[] {
   return SMART_OBJECTS.flatMap((o) => o.interactionPoints);
 }
 
+/**
+ * Filters interaction points by their behavior type.
+ * Agents use this to find places where they can do a specific activity.
+ * @param behavior - The behavior type to search for (e.g., 'coffee', 'relax', 'collaborate').
+ * @returns Array of interaction points with matching behavior, each tagged with its parent object ID.
+ *
+ * @example
+ * ```typescript
+ * // Agent wants to take a break
+ * const breakSpots = getInteractionPointsForBehavior('relax');
+ * const randomBreakSpot = breakSpots[Math.floor(Math.random() * breakSpots.length)];
+ *
+ * // Or find coffee spots
+ * const coffeeSpots = getInteractionPointsForBehavior('coffee');
+ * ```
+ */
 export function getInteractionPointsForBehavior(
   behavior: InteractionPoint['behavior'],
 ): Array<InteractionPoint & { objectId: string }> {
@@ -275,3 +405,47 @@ export function getInteractionPointsForBehavior(
   }
   return results;
 }
+
+// ── Adding New Smart Objects ───────────────────────────────────────────────
+/**
+ * @guide Adding a New Smart Object
+ *
+ * 1. **Define the object** in SMART_OBJECTS array:
+ *    ```typescript
+ *    {
+ *      id: 'unique-id',                      // Must be unique
+ *      type: 'furniture-type',               // desk, seating, appliance, table, display
+ *      room: 'workspace',                    // See roomZones.ts for valid room IDs
+ *      label: 'Display Name',                // Shown in UI
+ *      footprint: [
+ *        { x, y }, { x, y }, ...             // Tiles blocked by this furniture
+ *      ],
+ *      interactionPoints: [
+ *        { x, y, facing: 'down', behavior: 'work' },
+ *        { x, y, facing: 'up', behavior: 'work' },
+ *      ],
+ *      maxOccupants: 2,                      // How many agents can use it at once
+ *    }
+ *    ```
+ *
+ * 2. **Verify interaction points are walkable**:
+ *    - Each IP coordinate (x, y) MUST satisfy: `isWalkable(x, y) === true`
+ *    - If not, agents cannot reach the interaction point
+ *    - Run startup validation: module logs errors for invalid IPs
+ *
+ * 3. **Update pixel-art images**:
+ *    - Edit `/public/office/office_bg.webp` to add the furniture visual
+ *    - Edit `/public/office/office_collision.webp` to mark footprint as blocked
+ *      (alpha > 128 = blocked, alpha ≤ 128 = walkable)
+ *    - Verify `collisionLoader.ts` parses your changes correctly
+ *
+ * 4. **Test**:
+ *    - Verify object appears in office canvas
+ *    - Verify agents can navigate to all interaction points
+ *    - Check agent can interact (reserve point, perform behavior)
+ *    - Verify speech bubbles show appropriate phrases (from `phrasesForBehavior`)
+ *
+ * @tip Interaction point facing should face the furniture (e.g., face 'up' if standing below it)
+ * @tip Use `findAvailablePoint()` from occupancy.ts to reserve interaction points
+ * @tip Check existing objects in SMART_OBJECTS for reference implementations
+ */

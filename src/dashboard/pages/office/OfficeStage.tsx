@@ -128,6 +128,15 @@ const BEHAVIOR_INTERVAL = 0.2; // 200ms = 5fps for behavior logic
 // Props
 // ---------------------------------------------------------------------------
 
+/**
+ * Props for the OfficeStage canvas component.
+ *
+ * @property events - Real-time SSE events from `/api/agent-state/stream`; drives canvas updates
+ * @property selectedAgentId - Currently selected agent (for highlighting); null = no selection
+ * @property onAgentSelect - Callback fired on single-click; pass null to deselect
+ * @property onAgentDoubleClick - Callback fired on double-click to open agent profile flyout
+ * @property theme - Visual theme ('day' or 'night'); affects canvas background lighting
+ */
 interface Props {
   events: SSEEvent[];
   selectedAgentId: string | null;
@@ -136,12 +145,18 @@ interface Props {
   theme?: 'day' | 'night';
 }
 
-// ---------------------------------------------------------------------------
-// Per-agent initial speed multiplier — used only for initial spawn.
-// Actual speed multiplier is managed by agentBehavior.ts (AGENT_SPEED map).
-// Base speed: 64 px/sec (2 tiles/sec). Multiplied by agent.speed from behavior.
-// ---------------------------------------------------------------------------
-
+/**
+ * Initial speed multiplier for all agents on spawn.
+ *
+ * The agentBehavior module (AGENT_SPEED map) provides personality-specific overrides.
+ * Base speed: 64 pixels/behavior tick (200ms), so 320px/sec movement = 10 tiles/sec.
+ *
+ * Actual per-agent speed = base × agent.speed (from AGENT_SPEED).
+ * Examples:
+ * - weebo (1.15): 368px/sec
+ * - edith (0.85): 272px/sec
+ * - nova (1.2): 384px/sec
+ */
 const AGENT_INITIAL_SPEED = 1.0; // default multiplier; behavior system overrides
 
 // ---------------------------------------------------------------------------
@@ -229,10 +244,58 @@ function buildInitialAgents(): CanvasAgent[] {
   return agents;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
+/**
+ * OfficeStage — Canvas-based agent visualization and interaction component.
+ *
+ * **Rendering:**
+ * - Pure HTML5 canvas at 30fps (requestAnimationFrame)
+ * - Pixel-art background + 9 sprite-animated agents
+ * - Particle beams for inter-agent communication
+ * - Floating speech bubbles for personality voicing
+ * - Selection highlight and spotlight effects (zoom, dim)
+ *
+ * **Agent Movement:**
+ * - Grid-based pathfinding (BFS) with 64×32 tile size (864×800 canvas)
+ * - Smooth pixel-level interpolation each tick (200ms behavior cycle)
+ * - Personality-driven behavior state machine (wandering, socializing, working, etc.)
+ * - Collision detection and occupancy system for interaction points
+ *
+ * **Real-time Integration:**
+ * - Subscribes to SSE events from parent (OfficePage)
+ * - Updates agent state (thinking, typing, tool_call) on each event
+ * - Selects animation tier based on request context (first visit, multi-agent, etc.)
+ * - Routes agents to desks when working, back to idle behaviors when done
+ *
+ * **User Interactions:**
+ * - Single-click: Select agent for spotlight HUD
+ * - Double-click: Open agent profile flyout
+ * - Theme toggle: Day/night mode (stored in localStorage)
+ *
+ * **Performance Optimizations:**
+ * - PNG sprite sheets (32px) loaded with lazy fallback to programmatic rendering
+ * - Ambient particles reduced from 15 to 5 on mobile for performance
+ * - Event deduplication by composite key (agentId-state-timestamp)
+ * - Canvas cleared and redrawn each tick (no retained graphics)
+ *
+ * @component
+ * @param props - Component props (events, selectedAgentId, callbacks, theme)
+ * @returns Canvas element with pixel-art office and interactive agents
+ *
+ * @example
+ * ```tsx
+ * const { sseEvents } = useOfficeData();
+ *
+ * return (
+ *   <OfficeStage
+ *     events={sseEvents}
+ *     selectedAgentId={selectedId}
+ *     onAgentSelect={setSelectedId}
+ *     onAgentDoubleClick={setFlyoutId}
+ *     theme="day"
+ *   />
+ * );
+ * ```
+ */
 export default function OfficeStage({
   events,
   selectedAgentId,

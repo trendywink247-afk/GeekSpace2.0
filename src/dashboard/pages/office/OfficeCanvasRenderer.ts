@@ -51,6 +51,15 @@ export function loadOfficeAssets(): Promise<void> {
 // Types
 // ---------------------------------------------------------------------------
 
+/**
+ * Complete render state snapshot passed to the main render function.
+ * @property agents - All agents on the canvas with positions and states
+ * @property beams - Active particle beams connecting agents (communications)
+ * @property tick - Current frame number for animation timing
+ * @property selectedAgentId - Currently selected agent for highlighting, or null
+ * @property showDebug - Whether to overlay grid + collision visualization
+ * @property collisionMap - Optional parsed collision grid from image (auto-loaded if available)
+ */
 interface RenderState {
   agents: CanvasAgent[];
   beams: ParticleBeam[];
@@ -81,6 +90,12 @@ export function isBgLoaded(): boolean {
 // drawBackground — pixel art image scaled to canvas (or solid fallback)
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws the pixel-art office background image scaled to fill the canvas.
+ * Falls back to a solid dark fill while the image is loading or on error.
+ * Disables image smoothing so pixel art renders crisply at integer scale.
+ * @param ctx - The 2D rendering context of the office canvas.
+ */
 export function drawBackground(ctx: CanvasRenderingContext2D): void {
   if (bgImage && bgLoaded && bgImage.complete && bgImage.naturalWidth > 0) {
     ctx.imageSmoothingEnabled = false;
@@ -97,6 +112,12 @@ export function drawBackground(ctx: CanvasRenderingContext2D): void {
 // drawForeground — pixel art layer drawn ON TOP of characters for depth
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws the pixel-art foreground layer on top of all agents, creating a depth
+ * illusion (e.g. desks or walls occluding agents behind them).
+ * No-ops silently if the foreground image has not loaded yet.
+ * @param ctx - The 2D rendering context of the office canvas.
+ */
 export function drawForeground(ctx: CanvasRenderingContext2D): void {
   if (fgImage && bgLoaded && fgImage.complete && fgImage.naturalWidth > 0) {
     ctx.imageSmoothingEnabled = false;
@@ -109,6 +130,23 @@ export function drawForeground(ctx: CanvasRenderingContext2D): void {
 // Uses smooth renderX/renderY for sub-pixel positioning
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws a single agent's pixel-art sprite, name label, state indicator glow,
+ * and selection ring at its smooth pixel position.
+ *
+ * Sprite selection logic (in priority order):
+ * 1. PNG sprite sheet (3 rows × 5 cols: down/up/right × idle/walk×3/type×2)
+ * 2. Pre-rendered HTMLCanvasElement sprites as fallback
+ *
+ * Pose offsets are applied when the agent is seated at or leaning against
+ * furniture, making characters visually "use" the smart object.
+ *
+ * @param ctx - The 2D rendering context of the office canvas.
+ * @param agent - The agent to render, including smooth renderX/renderY coords.
+ * @param tick - Current frame counter used for walk animation cycling.
+ * @param isSelected - Whether to draw the pulsing selection ring around this agent.
+ * @param theme - `'day'` or `'night'`; affects name-label glow intensity.
+ */
 export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number, isSelected: boolean, theme?: 'day' | 'night'): void {
   const cx = Math.round(agent.renderX);
   const cy = Math.round(agent.renderY);
@@ -321,6 +359,14 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
 // Uses smooth renderX/renderY for sub-pixel positioning
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws a small icon or animation above an agent's head that reflects its current state:
+ * thinking (spinning dots), tool_call (wrench), responding (pencil), delegating (arrow), etc.
+ * Idles produce no indicator. The indicator bobs gently using tick-based offset.
+ * @param ctx - The 2D rendering context of the office canvas.
+ * @param agent - The agent whose state drives the indicator type and position.
+ * @param tick - Current frame counter used for animation cycling and bobbing.
+ */
 export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tick: number): void {
   const cx = agent.renderX;
   const cy = agent.renderY;
@@ -484,6 +530,44 @@ export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasA
 // Uses smooth renderX/renderY for sub-pixel beam endpoints
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws an animated particle beam between two agents, visualizing inter-agent communication.
+ * Particles are 2×2px colored rectangles that travel from the source to the target agent
+ * along the straight line between their smooth pixel positions. No-ops if either agent
+ * is not found in the agents array or if the beam has expired.
+ * @param ctx - The 2D rendering context of the office canvas.
+ * @param beam - The beam descriptor (source/target agent IDs, color, duration).
+ * @param agents - All canvas agents, used to resolve agent positions by ID.
+ */
+/**
+ * Draws an animated particle beam connecting two agents, representing communication/delegation.
+ * The beam consists of 10 particles flowing from source to destination, with soft fading at edges.
+ * Particles disappear when beam duration expires.
+ * No-ops silently if source or destination agent not found on canvas.
+ *
+ * **Particle animation:**
+ * - Flow direction: from source agent (fromAgentId) to destination (toAgentId)
+ * - 10 particles evenly spaced, continuously flowing along the beam path
+ * - Fade effect: edges of beam (start/end) fade to 0 alpha, center stays opaque
+ * - Life cycle: beam fades over `duration` milliseconds, then no longer drawn
+ *
+ * @param ctx - The 2D rendering context of the office canvas
+ * @param beam - ParticleBeam object with source, destination, color, creation time, and duration
+ * @param agents - All agents on canvas (used to resolve fromAgentId and toAgentId to positions)
+ *
+ * @example
+ * ```typescript
+ * const beam: ParticleBeam = {
+ *   id: 'beam-comm-1',
+ *   fromAgentId: 'weebo',
+ *   toAgentId: 'edith',
+ *   color: '#00F0FF',
+ *   createdAt: Date.now(),
+ *   duration: 2000,  // Visible for 2 seconds
+ * };
+ * drawParticleBeam(ctx, beam, allAgents);
+ * ```
+ */
 export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBeam, agents: CanvasAgent[]): void {
   const from = agents.find(a => a.id === beam.fromAgentId);
   const to = agents.find(a => a.id === beam.toAgentId);
@@ -513,6 +597,14 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
 // drawTimeOfDayOverlay — tints the canvas based on time of day
 // ---------------------------------------------------------------------------
 
+/**
+ * Applies a semi-transparent color tint over the canvas to simulate time of day:
+ * - 06:00–08:00 → warm orange sunrise tint
+ * - 08:00–17:00 → no tint (bright daylight)
+ * - 17:00–19:00 → warm amber sunset tint
+ * - 19:00–06:00 → deep blue/indigo night tint
+ * @param ctx - The 2D rendering context of the office canvas.
+ */
 export function drawTimeOfDayOverlay(ctx: CanvasRenderingContext2D): void {
   const hour = new Date().getHours();
 
@@ -549,6 +641,33 @@ export function drawTimeOfDayOverlay(ctx: CanvasRenderingContext2D): void {
 // drawAmbientEffects — subtle desk screen flickers + coffee steam
 // ---------------------------------------------------------------------------
 
+/**
+ * Draws ambient environmental details that bring the office to life:
+ * desk screen flickers, coffee steam particles, desk monitor glows, foliage sway,
+ * and window light reflections. These effects run independently of agent state.
+ *
+ * **Ambient effects breakdown:**
+ * - **Screen flickers:** Random desk monitor pulse every ~120 ticks (2 frames each)
+ * - **Coffee steam:** Tiny smoke particles rising from coffee machine (constant)
+ * - **Desk monitor glows:** Colored rectangles at each desk, glow in agent color when agent nearby
+ * - **Foliage sway:** Potted plants on windowsill bob gently (sine wave motion)
+ * - **Window reflections:** Moving light patterns across window panes (night only)
+ *
+ * @param ctx - The 2D rendering context of the office canvas
+ * @param tick - Current frame counter (used for timing and cycling animations)
+ * @param agents - Optional array of agents (used to color desk glows based on nearby agent)
+ * @param theme - `'day'` or `'night'`; affects glow intensity and window reflections
+ *
+ * **Call order:** After background, before agents (so effects appear behind sprites)
+ *
+ * @example
+ * ```typescript
+ * // In render loop:
+ * drawBackground(ctx);
+ * drawAmbientEffects(ctx, frameCount, agents, 'night');
+ * drawAgents(ctx);
+ * ```
+ */
 export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, agents?: CanvasAgent[], theme?: 'day' | 'night'): void {
   // Screen flickers on desks — every ~120 ticks, a random desk glows briefly (2 frames)
   if (tick % 120 < 2) {
@@ -670,6 +789,35 @@ export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, 
 // Red = blocked, green = walkable, with grid lines for tile boundaries.
 // ---------------------------------------------------------------------------
 
+/**
+ * Overlays developer debug visualization showing:
+ * - Collision map (blocked tiles in red, walkable in green)
+ * - Grid lines (every tile boundary)
+ * - Tile coordinates for walkable tiles (for manual position verification)
+ * - Room zone boundaries (colored rectangles)
+ * - Smart object interaction points (dots with direction arrows)
+ *
+ * **Visual legend:**
+ * - Red tiles (alpha 0.15) — Blocked by collision map
+ * - Green tiles (alpha 0.1) — Walkable tiles
+ * - Room zones — Semi-transparent colored overlays
+ * - Yellow dots — Reserved interaction points
+ * - Blue dots — Available interaction points
+ * - White arrows — Facing direction for each interaction point
+ *
+ * **Performance note:** This overlay has minimal performance impact (simple fills + text)
+ * but should only be enabled during development. **Call only when `showDebug = true`.**
+ *
+ * @param ctx - The 2D rendering context of the office canvas
+ * @param collisionMap - 2D boolean grid (true = blocked, false = walkable)
+ *
+ * @example
+ * ```typescript
+ * if (showDebugMode) {
+ *   drawDebugOverlay(ctx, collisionGrid);
+ * }
+ * ```
+ */
 export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: boolean[][]): void {
   for (let r = 0; r < collisionMap.length; r++) {
     for (let c = 0; c < collisionMap[r].length; c++) {
@@ -771,6 +919,27 @@ export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: bo
 // Optional showDebug parameter draws the collision grid overlay.
 // ---------------------------------------------------------------------------
 
+/**
+ * Main render entry point — composites a complete office frame in draw order:
+ * 1. Background pixel-art image (or solid fallback)
+ * 2. Particle beams between agents
+ * 3. Ambient effects (screen flickers, steam, LED indicators)
+ * 4. Meeting-room collaboration glow
+ * 5. Each agent sprite + state indicator + speech bubble (sorted by Y for depth)
+ * 6. Foreground pixel-art layer (occludes agents behind desks/walls)
+ * 7. Time-of-day tint overlay
+ * 8. Zoom/spotlight cinematic effects (CanvasEffectState)
+ * 9. Debug overlay (optional, dev-only)
+ *
+ * Called every ~33ms (~30 fps) by the OfficeStage tick loop.
+ *
+ * @param ctx - The 2D rendering context of the office canvas.
+ * @param state - Snapshot of all agents, beams, tick counter, and selection state.
+ * @param showDebug - When true, renders the collision/zone debug overlay.
+ * @param collisionMap - Collision grid passed through to `drawDebugOverlay`.
+ * @param effectState - Zoom and spotlight state from `CanvasEffects`; skipped if omitted.
+ * @param theme - `'day'` or `'night'`; affects ambient and agent glow intensity.
+ */
 export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState, theme?: 'day' | 'night'): void {
   const { agents, beams, tick, selectedAgentId } = state;
   const activeTheme = theme ?? 'night';

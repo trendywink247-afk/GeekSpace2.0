@@ -11,6 +11,9 @@ export type RoomType =
   | 'workspace'
   | 'meeting_room';
 
+/**
+ * Defines a named region of the office map with spatial bounds and agent behavior hints.
+ */
 export interface RoomZone {
   id: RoomType;
   label: string;
@@ -78,6 +81,12 @@ export const ROOMS: RoomZone[] = [
   },
 ];
 
+/**
+ * Returns the first room whose bounds contain the given tile coordinates.
+ * @param x - Tile column index.
+ * @param y - Tile row index.
+ * @returns The matching RoomZone, or null if the tile belongs to no room.
+ */
 export function getRoomAt(x: number, y: number): RoomZone | null {
   for (const room of ROOMS) {
     const b = room.bounds;
@@ -86,6 +95,11 @@ export function getRoomAt(x: number, y: number): RoomZone | null {
   return null;
 }
 
+/**
+ * Looks up a room by its unique identifier.
+ * @param id - The RoomType identifier to search for.
+ * @returns The matching RoomZone, or undefined if not found.
+ */
 export function getRoomById(id: RoomType): RoomZone | undefined {
   return ROOMS.find((r) => r.id === id);
 }

@@ -27,6 +27,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { AgentStatusStrip } from '@/components/AgentStatusStrip';
 import { DiscoverCard } from '@/components/DiscoverCard';
+import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
+import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
+import { StreakCard } from '@/components/dashboard/StreakCard';
+import { InboxCard } from '@/components/dashboard/InboxCard';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -686,6 +690,22 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         <AgentStatusStrip
           onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
         />
+
+        {/* ─── Sprint 4: Quick Actions Grid ─── */}
+        <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
+
+        {/* ─── Sprint 4: Creations + Streak row ─── */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <RecentGenerations onNavigate={onNavigate} />
+          </div>
+          <div className="lg:col-span-1">
+            <StreakCard onNavigate={onNavigate} />
+          </div>
+        </div>
+
+        {/* ─── Sprint 4: Inbox Card ─── */}
+        <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
 
         {/* ─── Load error banner ─── */}
         {loadErrors > 0 && !loadErrDismissed && (

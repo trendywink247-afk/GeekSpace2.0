@@ -1,37 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Check, Loader2, Zap, Clock, SkipForward, LogOut } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Loader2, Clock, SkipForward, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
 import { ProfileStep } from './steps/ProfileStep';
 import { BioStep } from './steps/BioStep';
+import { UseCaseStep } from './steps/UseCaseStep';
 import { AgentStep } from './steps/AgentStep';
 import { PortfolioStep } from './steps/PortfolioStep';
 import { IntegrationsStep } from './steps/IntegrationsStep';
-import { ReviewStep } from './steps/ReviewStep';
+import { FreeTierStep } from './steps/FreeTierStep';
+import { GuidedFirstTaskStep } from './steps/GuidedFirstTaskStep';
 import type { AgentMode, IntegrationType } from '@/types';
 
 const STEPS = [
   { id: 'profile', name: 'Profile', emoji: '👤', description: 'Who you are' },
   { id: 'bio', name: 'Bio', emoji: '📝', description: 'Tell your story' },
+  { id: 'use-case', name: 'Focus', emoji: '🎯', description: 'Your main goal' },
   { id: 'agent', name: 'Agent', emoji: '🤖', description: 'Your AI assistant' },
   { id: 'portfolio', name: 'Portfolio', emoji: '💼', description: 'Show your work' },
   { id: 'integrations', name: 'Connect', emoji: '🔗', description: 'Link your apps' },
-  { id: 'review', name: 'Launch', emoji: '🚀', description: 'Ready to go' },
+  { id: 'plan', name: 'Plan', emoji: '💎', description: 'Choose your tier' },
+  { id: 'launch', name: 'Launch', emoji: '🚀', description: 'Ready to go' },
 ];
 
 // Skip reasons for analytics
 const SKIP_REASONS = [
-  '⏰ In a hurry — remind me later',
-  '🤔 Not sure what to put',
-  '🔒 Prefer to keep it private',
-  '⏭️ Skip all setup',
+  '\u23F0 In a hurry \u2014 remind me later',
+  '\uD83E\uDD14 Not sure what to put',
+  '\uD83D\uDD12 Prefer to keep it private',
+  '\u23ED\uFE0F Skip all setup',
 ];
 
 export function OnboardingWizard() {
   const navigate = useNavigate();
   const { onboarding, updateOnboarding, saveOnboardingStep, completeOnboarding, user, fetchUser, logout } = useAuthStore();
-  const [step, setStep] = useState(Math.min(onboarding.step, 5));
+  const [step, setStep] = useState(Math.min(onboarding.step, STEPS.length - 1));
   const [stepAnimClass, setStepAnimClass] = useState('animate-step-slide-in');
   const [isLaunching, setIsLaunching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,7 +86,7 @@ export function OnboardingWizard() {
 
   const handleSkip = async (skipAll = false) => {
     if (skipAll) {
-      // Skip to review step
+      // Skip to launch step
       await saveOnboardingStep(STEPS.length - 1, {});
       animateStep(STEPS.length - 1);
     } else {
@@ -97,12 +101,12 @@ export function OnboardingWizard() {
     if (step > 0) animateStep(step - 1);
   };
 
-  const handleLaunch = async () => {
+  const handleLaunch = async (targetRoute?: string) => {
     setIsLaunching(true);
     try {
       await completeOnboarding();
       await fetchUser();
-      navigate('/dashboard', { replace: true });
+      navigate(targetRoute || '/dashboard', { replace: true });
     } finally {
       setIsLaunching(false);
     }
@@ -111,15 +115,19 @@ export function OnboardingWizard() {
   const getStepData = (currentStep: number): Record<string, unknown> => {
     switch (currentStep) {
       case 0:
-        return { name: onboarding.profile.name, username: onboarding.profile.username };
+        return { name: onboarding.profile.name, username: onboarding.profile.username, avatar: onboarding.profile.avatar };
       case 1:
         return { bio: onboarding.profile.bio, headline: onboarding.profile.headline, tags: onboarding.profile.tags };
       case 2:
-        return { personality: onboarding.agentPreferences.personality, agentMode: onboarding.agentPreferences.agentMode, apiKey: agentApiKey || undefined };
+        return { useCase: onboarding.useCase };
       case 3:
-        return { skills: onboarding.portfolio.skills, headline: onboarding.portfolio.headline, about: onboarding.portfolio.about };
+        return { personality: onboarding.agentPreferences.personality, agentMode: onboarding.agentPreferences.agentMode, apiKey: agentApiKey || undefined };
       case 4:
+        return { skills: onboarding.portfolio.skills, headline: onboarding.portfolio.headline, about: onboarding.portfolio.about };
+      case 5:
         return { integrations: onboarding.integrations };
+      case 6:
+        return {}; // Free tier step — no data to save
       default:
         return {};
     }
@@ -132,15 +140,22 @@ export function OnboardingWizard() {
       case 1:
         return onboarding.profile.bio.length === 0 || onboarding.profile.bio.length >= 10;
       case 2:
-        return true;
+        return onboarding.useCase.length > 0;
       case 3:
         return true;
       case 4:
         return true;
+      case 5:
+        return true;
+      case 6:
+        return true; // Free tier — handled by its own buttons
       default:
         return true;
     }
   };
+
+  // Steps where the Next button is hidden because the step has its own navigation
+  const stepHasOwnNav = step === 6 || step === 7;
 
   const currentStepInfo = STEPS[step];
   const progressPercent = ((step + 1) / STEPS.length) * 100;
@@ -180,16 +195,16 @@ export function OnboardingWizard() {
         </div>
       </div>
 
-      {/* Progress Steps - Icons */}
-      <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
+      {/* Progress Steps - compact dots for 8 steps */}
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isCompleted = i < step;
-          
+
           return (
             <div key={s.id} className="flex items-center">
               <div
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg sm:text-xl transition-all duration-300 ${
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm sm:text-base transition-all duration-300 ${
                   isCompleted
                     ? 'bg-[#10B981] text-white'
                     : isActive
@@ -199,10 +214,10 @@ export function OnboardingWizard() {
                 title={s.name}
                 aria-current={isActive ? 'step' : undefined}
               >
-                {isCompleted ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : s.emoji}
+                {isCompleted ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : s.emoji}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-4 sm:w-8 h-0.5 mx-1 sm:mx-2 ${
+                <div className={`w-2 sm:w-4 h-0.5 mx-0.5 sm:mx-1 ${
                   isCompleted ? 'bg-[#10B981]' : 'bg-white/[0.08]'
                 }`} />
               )}
@@ -217,8 +232,10 @@ export function OnboardingWizard() {
           <ProfileStep
             name={onboarding.profile.name}
             username={onboarding.profile.username}
+            avatar={onboarding.profile.avatar}
             onNameChange={(name) => updateOnboarding({ profile: { ...onboarding.profile, name } })}
             onUsernameChange={(username) => updateOnboarding({ profile: { ...onboarding.profile, username } })}
+            onAvatarChange={(avatar) => updateOnboarding({ profile: { ...onboarding.profile, avatar } })}
           />
         )}
         {step === 1 && (
@@ -233,6 +250,12 @@ export function OnboardingWizard() {
           />
         )}
         {step === 2 && (
+          <UseCaseStep
+            selected={onboarding.useCase}
+            onSelect={(useCase) => updateOnboarding({ useCase })}
+          />
+        )}
+        {step === 3 && (
           <AgentStep
             personality={onboarding.agentPreferences.personality}
             agentMode={onboarding.agentPreferences.agentMode}
@@ -242,7 +265,7 @@ export function OnboardingWizard() {
             onApiKeyChange={setAgentApiKey}
           />
         )}
-        {step === 3 && (
+        {step === 4 && (
           <PortfolioStep
             skills={onboarding.portfolio.skills}
             headline={onboarding.portfolio.headline}
@@ -255,17 +278,28 @@ export function OnboardingWizard() {
             onSkip={() => handleSkip(false)}
           />
         )}
-        {step === 4 && (
+        {step === 5 && (
           <IntegrationsStep
             selected={onboarding.integrations}
             onToggle={(integrations: IntegrationType[]) => updateOnboarding({ integrations })}
             onSkip={() => handleSkip(false)}
           />
         )}
-        {step === 5 && (
-          <ReviewStep
-            onboarding={onboarding}
-            onLaunch={handleLaunch}
+        {step === 6 && (
+          <FreeTierStep
+            onContinueFree={() => animateStep(7)}
+            onUpgrade={async () => {
+              await completeOnboarding();
+              await fetchUser();
+              navigate('/dashboard/billing', { replace: true });
+            }}
+          />
+        )}
+        {step === 7 && (
+          <GuidedFirstTaskStep
+            useCase={onboarding.useCase}
+            onSelectTask={(route) => handleLaunch(route)}
+            onSkipToDashboard={() => handleLaunch('/dashboard')}
             isLaunching={isLaunching}
           />
         )}
@@ -303,20 +337,20 @@ export function OnboardingWizard() {
 
       {/* Navigation */}
       <div className="space-y-3">
-        {/* Main action buttons */}
-        <div className="flex items-center gap-3">
-          {step > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="min-h-[48px] px-4 border-[#8B5CF6]/30 text-[#6B7280]"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          )}
+        {/* Main action buttons — hidden on steps that have their own nav */}
+        {!stepHasOwnNav && (
+          <div className="flex items-center gap-3">
+            {step > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="min-h-[48px] px-4 border-[#8B5CF6]/30 text-[#6B7280]"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            )}
 
-          {step < STEPS.length - 1 ? (
             <Button
               onClick={handleNext}
               disabled={!canAdvance() || isSaving}
@@ -335,29 +369,24 @@ export function OnboardingWizard() {
                 </>
               )}
             </Button>
-          ) : (
-            <Button
-              onClick={handleLaunch}
-              disabled={isLaunching}
-              className="flex-1 min-h-[48px] bg-[#10B981] hover:bg-[#059669] text-white hover:opacity-90 font-bold"
-            >
-              {isLaunching ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Launching...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 mr-2" />
-                  Launch My Agent
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Skip option - only show on intermediate steps */}
-        {step > 0 && step < STEPS.length - 1 && (
+        {/* Back button for steps with own nav */}
+        {stepHasOwnNav && step > 0 && (
+          <div className="flex justify-center">
+            <button
+              onClick={handleBack}
+              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          </div>
+        )}
+
+        {/* Skip option - only show on intermediate steps, not on steps with own nav */}
+        {step > 0 && step < STEPS.length - 1 && !stepHasOwnNav && (
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowSkipModal(true)}
@@ -380,10 +409,12 @@ export function OnboardingWizard() {
         <p className="text-center text-xs text-[#6B7280]/50">
           {step === 0 && "Let's start with the basics"}
           {step === 1 && "This helps others understand what you do"}
-          {step === 2 && "Choose an AI personality that fits you"}
-          {step === 3 && "Showcase your skills and projects"}
-          {step === 4 && "Connect apps to supercharge your agent"}
-          {step === 5 && "Review everything before launching"}
+          {step === 2 && "Pick your focus to tailor your AI experience"}
+          {step === 3 && "Choose an AI personality that fits you"}
+          {step === 4 && "Showcase your skills and projects"}
+          {step === 5 && "Connect apps to supercharge your agent"}
+          {step === 6 && "Agentin is free to use with generous limits"}
+          {step === 7 && "Pick your first task and get started"}
         </p>
 
         {/* Finish later — skips all setup, goes straight to dashboard */}

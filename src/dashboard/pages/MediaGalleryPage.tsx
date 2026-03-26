@@ -1,3 +1,4 @@
+// @deprecated — DEAD CODE confirmed by Sprint 1 audit 2026-03-26. Not imported in DashboardApp.tsx. Safe to delete.
 // ============================================================
 // Media Gallery Page - Browse generated images/videos from DB
 // ============================================================

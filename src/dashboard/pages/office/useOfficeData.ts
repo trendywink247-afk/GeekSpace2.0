@@ -13,10 +13,21 @@ import {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Resolves the API base URL from Vite environment variables.
+ * In dev mode, defaults to localhost:3001. In production, uses the current domain.
+ * @returns The API base URL (e.g., 'http://localhost:3001' or '')
+ */
 function apiBase(): string {
   return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
 }
 
+/**
+ * Retrieves the authentication token from localStorage or sessionStorage.
+ * Checks multiple possible keys to support different authentication methods.
+ * @returns JWT token string, or null if not found
+ */
 function getToken(): string | null {
   return (
     localStorage.getItem('gs_token') ||
@@ -28,6 +39,14 @@ function getToken(): string | null {
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/**
+ * User's delegation API quota status.
+ * @property used - Number of delegations already used this cycle
+ * @property limit - Total delegations allowed by current plan
+ * @property remaining - Remaining delegations available
+ * @property plan - Current subscription plan name (e.g., 'pro', 'free')
+ */
 export interface DelegationStatus {
   used: number;
   limit: number;
@@ -35,6 +54,18 @@ export interface DelegationStatus {
   plan: string;
 }
 
+/**
+ * Sidebar data polled from `/api/office/state`.
+ * Contains task board, communications, timeline, and metrics.
+ *
+ * @property taskBoard - Kanban-style task board by status (pending, running, completed, etc.)
+ * @property taskStats - Aggregate task statistics (total, pending, completed, failed, etc.)
+ * @property comms - Array of communication entries (messages, delegations, etc.)
+ * @property commStats - Statistics about communications (average response time, etc.)
+ * @property timeline - Chronological timeline of recent events
+ * @property metrics - Today's usage metrics (credits, messages, tool calls, provider breakdown)
+ * @property delegationStatus - User's delegation quota status, or null if not applicable
+ */
 export interface OfficeData {
   taskBoard: Record<string, unknown[]>;
   taskStats: {
@@ -52,6 +83,15 @@ export interface OfficeData {
   delegationStatus: DelegationStatus | null;
 }
 
+/**
+ * Return value of useOfficeData hook.
+ * Contains both real-time SSE events and polled sidebar data.
+ *
+ * @property sseEvents - Array of real-time agent events (grows as they arrive)
+ * @property officeData - Polled sidebar data (tasks, comms, metrics), or null while loading
+ * @property connectionMode - 'live' (SSE connected), 'reconnecting' (retrying), or 'polling' (SSE exhausted)
+ * @property sessionExpired - True if the user's session has expired (show re-login banner)
+ */
 export interface UseOfficeDataReturn {
   sseEvents: SSEEvent[];
   officeData: OfficeData | null;
@@ -62,6 +102,64 @@ export interface UseOfficeDataReturn {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
+
+/**
+ * React hook for real-time office data streaming and polling.
+ *
+ * **Dual-channel approach:**
+ * 1. **SSE `/api/agent-state/stream`** — Real-time agent events (high frequency, low latency)
+ *    - Agent state changes (typing, thinking, tool calls)
+ *    - Particle beams and communications
+ *    - Fallback: retries every 15s if connection fails
+ *
+ * 2. **Polling `/api/office/state`** — Sidebar data (5s interval)
+ *    - Task board, communications, timeline
+ *    - Metrics and delegation status
+ *    - Always runs in parallel, independent of SSE
+ *
+ * **Connection modes:**
+ * - `live` — SSE connected and receiving events
+ * - `reconnecting` — SSE failed, retrying every 15s
+ * - `polling` — SSE exhausted (e.g., too many failures), using poll-only fallback
+ *
+ * **Event deduplication:**
+ * SSE events are deduplicated by `agentId-state-timestamp` to prevent duplicates
+ * from retransmissions or network issues.
+ *
+ * **Session expiry:**
+ * If any request returns 401 (Unauthorized), `sessionExpired` is set to true.
+ * The consumer should display a re-login banner.
+ *
+ * **Cleanup:**
+ * - Aborts SSE fetch on unmount
+ * - Clears polling interval on unmount
+ * - Clears retry timer on unmount
+ *
+ * @returns Object containing:
+ *   - `sseEvents`: Array of real-time agent events (grows continuously)
+ *   - `officeData`: Polled sidebar data (updated every 5s)
+ *   - `connectionMode`: 'live', 'reconnecting', or 'polling'
+ *   - `sessionExpired`: True if user needs to re-login
+ *
+ * @example
+ * ```tsx
+ * export function OfficePage() {
+ *   const { sseEvents, officeData, connectionMode, sessionExpired } = useOfficeData();
+ *
+ *   if (sessionExpired) {
+ *     return <ReLoginBanner />;
+ *   }
+ *
+ *   return (
+ *     <OfficeCanvas
+ *       events={sseEvents}
+ *       sidebarData={officeData}
+ *       connectionMode={connectionMode}
+ *     />
+ *   );
+ * }
+ * ```
+ */
 export function useOfficeData(): UseOfficeDataReturn {
   const [sseEvents, setSseEvents] = useState<SSEEvent[]>([]);
   const [officeData, setOfficeData] = useState<OfficeData | null>(null);
@@ -173,6 +271,7 @@ export function useOfficeData(): UseOfficeDataReturn {
 
     (async () => {
       try {
+        // ─── Establish SSE connection with JWT auth ────────────────────────
         const res = await fetch(`${apiBase()}/api/agent-state/stream`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -183,6 +282,7 @@ export function useOfficeData(): UseOfficeDataReturn {
 
         if (!mountedRef.current) return;
 
+        // ─── Handle session expiry ────────────────────────────────────────
         if (res.status === 401) {
           setSessionExpired(true);
           return;
@@ -192,23 +292,34 @@ export function useOfficeData(): UseOfficeDataReturn {
           throw new Error(`SSE HTTP ${res.status}`);
         }
 
+        // ─── Stream parsing: decode chunks and extract SSE lines ──────────
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
 
+        // Read response as a stream of SSE events, one per line
+        // Format: "data: {...json...}\n"
         for (;;) {
           const { done, value } = await reader.read();
           if (done || !mountedRef.current) break;
 
+          // Accumulate chunks into UTF-8 decoded strings
           buffer += decoder.decode(value, { stream: true });
+          // Split by newline, keeping incomplete final line in buffer
           const lines = buffer.split('\n');
           buffer = lines.pop() ?? '';
 
+          // ─── Process each complete SSE line ─────────────────────────────
           for (const line of lines) {
+            // Skip non-SSE lines (e.g., comments, heartbeats)
             if (!line.startsWith('data:')) continue;
             const raw = line.slice(5).trim();
             if (!raw || raw === '[DONE]') continue;
+
             try {
+              // ─── Deduplication: composite key by agentId-state-timestamp
+              // Prevents re-renders from network retransmissions while preserving
+              // state transitions (e.g., multiple tool calls with same timestamp)
               const evt = JSON.parse(raw) as SSEEvent;
               const key = `${evt.agentId}-${evt.state}-${evt.timestamp}`;
               if (!seenEventIds.current.has(key)) {
@@ -216,25 +327,31 @@ export function useOfficeData(): UseOfficeDataReturn {
                 if (mountedRef.current) {
                   setSseEvents(prev => {
                     const next = [...prev, evt];
+                    // Keep only recent events (TIMELINE_MAX_ITEMS = 500)
                     return next.length > TIMELINE_MAX_ITEMS ? next.slice(-TIMELINE_MAX_ITEMS) : next;
                   });
                 }
               }
             } catch {
-              // Ignore malformed JSON lines
+              // Malformed JSON (corrupted packet) — skip and continue streaming
             }
           }
         }
 
-        // Stream ended cleanly — schedule a reconnect
+        // ─── Stream ended (clean EOF) — schedule reconnect ─────────────────
+        // This is normal when the server closes the connection. Reconnect
+        // every 15s until the stream is restored (or connection mode changes).
         if (mountedRef.current) {
           setConnectionMode('reconnecting');
           scheduleSSERetry();
         }
       } catch (err) {
         if (!mountedRef.current) return;
-        // AbortError is expected on cleanup — don't mark as reconnecting
+        // ─── Cleanup abort is expected — don't retry ──────────────────────
+        // User navigated away or component unmounted; abort signal was fired.
+        // Don't change connectionMode (already 'live' from setConnectionMode above).
         if (err instanceof DOMException && err.name === 'AbortError') return;
+        // ─── Other errors: transient network issue — retry ─────────────────
         setConnectionMode('reconnecting');
         scheduleSSERetry();
       }

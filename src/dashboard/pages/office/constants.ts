@@ -1,18 +1,69 @@
 // src/dashboard/pages/office/constants.ts
 import type { AgentId, CoreAgentId, SpecialistId } from './types';
 
+/**
+ * Tile size in pixels.
+ * All agent positions, pathfinding, and collision checks use this as the unit grid.
+ * @constant {number}
+ */
 export const CELL = 32;
+
+/**
+ * Number of columns in the office grid (horizontal extent).
+ * @constant {number}
+ */
 export const COLS = 27;
+
+/**
+ * Number of rows in the office grid (vertical extent).
+ * @constant {number}
+ */
 export const ROWS = 25;
+
+/**
+ * Canvas width in pixels (COLS × CELL = 27 × 32).
+ * This is the width of the office canvas element.
+ * @constant {number}
+ */
 export const CANVAS_W = COLS * CELL; // 864
+
+/**
+ * Canvas height in pixels (ROWS × CELL = 25 × 32).
+ * This is the height of the office canvas element.
+ * @constant {number}
+ */
 export const CANVAS_H = ROWS * CELL; // 800
 
+/**
+ * Brand color for each of the 9 agents.
+ * Used for sprite palette substitution, UI highlights, and particle beam colors.
+ * Each agent gets a unique hex color that defines their visual identity.
+ *
+ * Color scheme:
+ * - weebo: cyan (#00F0FF) — creative, high-energy
+ * - edith: purple (#8B5CF6) — strategic, calm
+ * - jarvis: lime (#ADFF2F) — operational, bright
+ * - aria: pink (#FF6B9D) — creative, warm
+ * - forge: amber (#F59E0B) — technical, warm
+ * - pulse: emerald (#10B981) — analytical, balanced
+ * - echo: indigo (#6366F1) — coaching, thoughtful
+ * - cal: lime (#84CC16) — scheduling, organized
+ * - nova: pink (#EC4899) — research, investigative
+ *
+ * @constant {Record<AgentId, string>}
+ */
 export const AGENT_COLORS: Record<AgentId, string> = {
   weebo: '#00F0FF', edith: '#8B5CF6', jarvis: '#ADFF2F',
   aria: '#FF6B9D', forge: '#F59E0B', pulse: '#10B981',
   echo: '#6366F1', cal: '#84CC16', nova: '#EC4899',
 };
 
+/**
+ * Metadata for each agent: emoji and role title.
+ * Used in UI to display agent identity and current role.
+ *
+ * @constant {Record<AgentId, { emoji: string; role: string }>}
+ */
 export const AGENT_META: Record<AgentId, { emoji: string; role: string }> = {
   weebo: { emoji: '\u2728', role: 'Creative Assistant' },
   edith: { emoji: '\uD83D\uDD37', role: 'Strategic Engine' },
@@ -25,13 +76,35 @@ export const AGENT_META: Record<AgentId, { emoji: string; role: string }> = {
   nova: { emoji: '\uD83D\uDE80', role: 'Researcher' },
 };
 
+/**
+ * Hierarchical delegation mapping: specialist agents report to a core agent.
+ * Used by the agent behavior system to understand delegation chains.
+ *
+ * Hierarchy:
+ * - weebo (core) → aria (creative), echo (coaching)
+ * - edith (core) → forge (technical), pulse (analysis)
+ * - jarvis (core) → cal (scheduling), nova (research)
+ *
+ * @constant {Record<SpecialistId, CoreAgentId>}
+ */
 export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
   aria: 'weebo', echo: 'weebo',
   forge: 'edith', pulse: 'edith',
   cal: 'jarvis', nova: 'jarvis',
 };
 
+/**
+ * All three core agents that can receive direct user messages.
+ * Each core agent can delegate to 2 specialist agents.
+ * @constant {CoreAgentId[]}
+ */
 export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
+
+/**
+ * All six specialist agents that are delegated to by core agents.
+ * Specialists are dormant (greyed out) until their parent agent activates them.
+ * @constant {SpecialistId[]}
+ */
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
 // Auto-generated from office_collision.webp — pixel-accurate collision map.
