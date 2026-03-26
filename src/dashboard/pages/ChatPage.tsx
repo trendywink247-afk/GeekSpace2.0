@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square,
   ThumbsUp, ThumbsDown, RefreshCw, Pencil, Pin, Search, Plus, Trash2,
-  MessageSquare, ChevronDown, ChevronRight, X, PanelLeftClose, PanelLeft,
+  ChevronDown, ChevronRight, X, PanelLeftClose, PanelLeft,
   Wifi, WifiOff, Clock, Star,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ import type { AgentPersonality } from '@/types';
 import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
+import { PageShell } from '@/components/agentin';
 
 // ── Types ──
 
@@ -237,8 +238,8 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   const langKey = (lang || '').toLowerCase();
   const langMeta = LANG_COLORS[langKey];
   return (
-    <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0A0A1A]">
+    <div className="relative my-2 rounded-lg overflow-hidden border" style={{ borderColor: 'var(--ag-border-default)' }}>
+      <div className="flex items-center justify-between px-3 py-1.5" style={{ background: 'var(--ag-bg-deep)' }}>
         {langMeta ? (
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase ${langMeta.bg} ${langMeta.text}`}>
             {langMeta.label}
@@ -261,7 +262,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[#06060B] leading-relaxed whitespace-pre"><code>{code}</code></pre>
+      <pre className="p-3 overflow-x-auto text-xs leading-relaxed whitespace-pre font-mono" style={{ color: 'var(--ag-text-primary)', background: 'var(--ag-bg-deep)' }}><code>{code}</code></pre>
     </div>
   );
 }
@@ -327,12 +328,21 @@ function ToolStepCard({ step }: { step: ToolStep }) {
   );
 }
 
+/** Agent color from conversation title hash */
+const AGENT_COLORS = ['#00F0FF', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
+
+function getAgentColor(id: string): string {
+  const hash = id.charCodeAt(0) + (id.charCodeAt(1) || 0);
+  return AGENT_COLORS[hash % AGENT_COLORS.length];
+}
+
 /** Conversation sidebar item */
 function ConversationItem({
   title,
   timestamp,
   isActive,
   pinned,
+  convId,
   onClick,
   onPin,
   onDelete,
@@ -341,37 +351,47 @@ function ConversationItem({
   timestamp?: string;
   isActive: boolean;
   pinned: boolean;
+  convId: string;
   onClick: () => void;
   onPin: () => void;
   onDelete: () => void;
 }) {
   const [showActions, setShowActions] = useState(false);
+  const dotColor = getAgentColor(convId);
 
   return (
     <div
       className={[
-        'group/conv flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors text-sm min-h-[44px]',
+        'group/conv flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all text-sm min-h-[44px] backdrop-blur-md',
         isActive
-          ? 'bg-[#00F0FF]/10 text-[#E8E8F0] border border-[#00F0FF]/20'
-          : 'text-[#9CA3AF] hover:bg-[#0C0C18] hover:text-[#E8E8F0]',
+          ? 'text-[var(--ag-text-primary)]'
+          : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]',
       ].join(' ')}
+      style={{
+        background: isActive ? 'var(--ag-active-bg)' : 'transparent',
+        border: isActive ? '1px solid var(--ag-active-border)' : '1px solid transparent',
+      }}
       onClick={onClick}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      {pinned && <Pin className='w-3 h-3 text-[#00F0FF] shrink-0 rotate-45' />}
-      <MessageSquare className='w-3.5 h-3.5 shrink-0 opacity-50' />
+      {/* Agent color dot */}
+      <span
+        className='w-2 h-2 rounded-full shrink-0'
+        style={{ backgroundColor: dotColor }}
+      />
+      {pinned && <Pin className='w-3 h-3 text-[var(--ag-cyan)] shrink-0 rotate-45' />}
       <div className='flex-1 min-w-0'>
         <p className='truncate text-xs'>{title || 'New conversation'}</p>
         {timestamp && (
-          <p className='text-[10px] text-[#4B5563] mt-0.5'>{timestamp}</p>
+          <p className='text-[10px] text-[var(--ag-text-muted)] mt-0.5'>{timestamp}</p>
         )}
       </div>
       {showActions && (
         <div className='flex items-center gap-0.5 shrink-0'>
           <button
             onClick={(e) => { e.stopPropagation(); onPin(); }}
-            className='p-1 rounded hover:bg-[#00F0FF]/10 text-[#8892A4] hover:text-[#00F0FF] min-w-[24px] min-h-[24px] flex items-center justify-center'
+            className='p-1 rounded hover:bg-[var(--ag-active-bg)] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] min-w-[24px] min-h-[24px] flex items-center justify-center'
             title={pinned ? 'Unpin' : 'Pin'}
             aria-label={pinned ? 'Unpin conversation' : 'Pin conversation'}
           >
@@ -379,7 +399,7 @@ function ConversationItem({
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className='p-1 rounded hover:bg-[#FF2D78]/10 text-[#8892A4] hover:text-[#FF2D78] min-w-[24px] min-h-[24px] flex items-center justify-center'
+            className='p-1 rounded hover:bg-[#FF2D78]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-pink)] min-w-[24px] min-h-[24px] flex items-center justify-center'
             title='Delete conversation'
             aria-label='Delete conversation'
           >
@@ -1163,13 +1183,14 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
+    <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
     <div className='flex h-[calc(100dvh-184px)] md:h-[calc(100vh-130px)]'>
       {/* ── Conversation Sidebar ── */}
       {sidebarOpen && (
-        <div className='w-64 md:w-72 flex-shrink-0 bg-[#06060B] border-r border-[#00F0FF]/10 flex flex-col rounded-l-xl overflow-hidden'>
+        <div className='w-64 md:w-72 flex-shrink-0 border-r flex flex-col rounded-l-xl overflow-hidden backdrop-blur-xl' style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
           {/* Sidebar Header */}
-          <div className='flex items-center justify-between px-3 py-3 border-b border-[#00F0FF]/10'>
-            <h3 className='text-xs font-semibold text-[#E8E8F0] uppercase tracking-wider'>Conversations</h3>
+          <div className='flex items-center justify-between px-3 py-3 border-b' style={{ borderColor: 'var(--ag-border-subtle)' }}>
+            <h3 className='text-xs font-semibold text-[var(--ag-text-primary)] uppercase tracking-wider'>Conversations</h3>
             <button
               onClick={() => setSidebarOpen(false)}
               className='p-1 rounded hover:bg-[#00F0FF]/10 text-[#9CA3AF] hover:text-[#E8E8F0] min-w-[28px] min-h-[28px] flex items-center justify-center'
@@ -1213,6 +1234,7 @@ export function ChatPage() {
               filteredConversations.map((conv) => (
                 <ConversationItem
                   key={conv.id}
+                  convId={conv.id}
                   title={conv.title}
                   timestamp={conv.timestamp}
                   isActive={false}
@@ -1232,9 +1254,9 @@ export function ChatPage() {
       )}
 
       {/* ── Main Chat Area ── */}
-      <div className='flex-1 flex flex-col bg-[#06060B] rounded-xl border border-[#00F0FF]/10 min-w-0 relative'>
+      <div className='flex-1 flex flex-col rounded-xl border min-w-0 relative' style={{ background: 'var(--ag-bg-deep)', borderColor: 'var(--ag-border-subtle)' }}>
         {/* Header */}
-        <div className='flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0'>
+        <div className='flex items-center justify-between px-4 py-3 border-b flex-shrink-0 backdrop-blur-md' style={{ borderColor: 'var(--ag-border-subtle)', background: 'var(--ag-glass-bg)' }}>
           <div className='flex items-center gap-3'>
             {/* Sidebar toggle */}
             {!sidebarOpen && (
@@ -1699,7 +1721,7 @@ export function ChatPage() {
         )}
 
         {/* Input */}
-        <div className='px-4 py-3 border-t border-[#00F0FF]/10 flex-shrink-0'>
+        <div className='px-4 py-3 border-t flex-shrink-0 backdrop-blur-md' style={{ borderColor: 'var(--ag-border-subtle)', background: 'var(--ag-glass-bg)' }}>
           {/* Agent Picker */}
           <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
             {[
@@ -1849,5 +1871,6 @@ export function ChatPage() {
         </div>
       </div>
     </div>
+    </PageShell>
   );
 }
