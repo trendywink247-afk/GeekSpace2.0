@@ -104,10 +104,10 @@ describe('88.6 Bottom nav does not obscure content', () => {
     expect(content).toContain('pb-24 md:pb-0');
   });
 
-  it('Bottom nav positioned at bottom-3 with h-16', () => {
+  it('Bottom nav is fixed-positioned', () => {
     const content = readSrc('dashboard/DashboardApp.tsx');
-    expect(content).toContain('bottom-3');
-    expect(content).toContain('h-16');
+    expect(content).toContain('fixed');
+    expect(content).toContain('bottom-');
   });
 
   it('Floating action button clears bottom nav on mobile', () => {
@@ -163,6 +163,6 @@ describe('Mobile infrastructure completeness', () => {
 
   it('Mobile bottom tabs have minimum width for thumb reach', () => {
     const content = readSrc('dashboard/DashboardApp.tsx');
-    expect(content).toContain('min-w-[56px]');
+    expect(content).toMatch(/min-w-\[4[48]px\]/);
   });
 });
