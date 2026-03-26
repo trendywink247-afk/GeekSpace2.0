@@ -1075,8 +1075,31 @@ function getHueShiftedImage(
 
 /** Load all 6 PNG sprite sheets. Non-fatal on error. */
 export async function loadSpriteSheets(): Promise<void> {
-  // Code-generated sprites are now primary — skip PNG loading.
-  // Old char_*.png sheets are deprecated and will be removed.
+  const loads = Array.from({ length: 6 }, (_, i) => {
+    const key = `char_${i}`;
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      const sheet: SpriteSheet = {
+        image: img,
+        frameWidth: 16,
+        frameHeight: 32,
+        cols: 7,
+        rows: 3,
+        loaded: false,
+      };
+      SPRITE_SHEETS.set(key, sheet);
+      img.onload = () => {
+        sheet.loaded = true;
+        resolve();
+      };
+      img.onerror = () => {
+        // Non-fatal: renderer falls back to programmatic sprites
+        resolve();
+      };
+      img.src = `/office/${key}.png`;
+    });
+  });
+  await Promise.all(loads);
 }
 
 /** Whether any sprite sheets have loaded */
