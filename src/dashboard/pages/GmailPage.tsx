@@ -99,7 +99,7 @@ function hasAttachmentHeuristic(msg: GmailMessage): boolean {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function GmailPage() {
+export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
   /* ---------- State ---------- */
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [messages, setMessages] = useState<GmailMessage[]>([]);
@@ -519,8 +519,11 @@ export function GmailPage() {
 
   /* ---------- Connected state ---------- */
 
+  const Wrapper = shell ? PageShell : 'div';
+  const wrapperProps = shell ? { maxWidth: '6xl' as const } : {};
+
   return (
-    <PageShell maxWidth="6xl">
+    <Wrapper {...wrapperProps}>
     <div className="space-y-6">
       {/* Stats header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -1104,6 +1107,6 @@ export function GmailPage() {
         </DialogContent>
       </Dialog>
     </div>
-    </PageShell>
+    </Wrapper>
   );
 }

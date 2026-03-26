@@ -76,21 +76,28 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
   };
 
   const handlePreview = (template: Template) => {
-    // Open preview in new window with the template code
+    // Open preview in a sandboxed iframe inside a new window to prevent XSS
     const previewWindow = window.open('', '_blank');
     if (previewWindow) {
+      const escapedName = template.name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       previewWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${template.name} - Preview</title>
-          <style>${template.css || ''}</style>
+          <title>${escapedName} - Preview</title>
+          <style>*{margin:0;padding:0}iframe{width:100%;height:100vh;border:none}</style>
         </head>
         <body>
-          ${template.html || ''}
-          <script>${template.js || ''}</script>
+          <iframe sandbox="allow-scripts" srcdoc=""></iframe>
+          <script>
+            var iframe = document.querySelector('iframe');
+            var content = ${JSON.stringify(
+              `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>${template.css || ''}</style></head><body>${template.html || ''}<script>${(template.js || '').replace(/<\/script>/gi, '<\\/script>')}<\/script></body></html>`
+            )};
+            iframe.setAttribute('srcdoc', content);
+          </script>
         </body>
         </html>
       `);

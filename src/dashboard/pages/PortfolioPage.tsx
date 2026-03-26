@@ -347,9 +347,11 @@ export function PortfolioPage() {
 
   if (isLoading) {
     return (
+      <PageShell>
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
       </div>
+      </PageShell>
     );
   }
 

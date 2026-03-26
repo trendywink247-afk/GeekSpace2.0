@@ -133,6 +133,7 @@ export function BillingPage() {
 
   if (loading) {
     return (
+      <PageShell>
       <div className="space-y-6">
         <PageProgress loading />
         {/* Header skeleton */}
@@ -157,6 +158,7 @@ export function BillingPage() {
           ))}
         </div>
       </div>
+      </PageShell>
     );
   }
 

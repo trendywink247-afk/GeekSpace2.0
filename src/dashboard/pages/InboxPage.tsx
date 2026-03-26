@@ -411,7 +411,7 @@ function KeyboardHints() {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function InboxPage() {
+export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   const [messages, setMessages] = useState<InboxMessage[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(false);
@@ -578,8 +578,11 @@ export function InboxPage() {
 
   // ---- Render ----
 
+  const Wrapper = shell ? PageShell : 'div';
+  const wrapperProps = shell ? { maxWidth: '3xl' as const } : {};
+
   return (
-    <PageShell maxWidth="3xl">
+    <Wrapper {...wrapperProps}>
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
@@ -717,6 +720,6 @@ export function InboxPage() {
         </p>
       )}
     </div>
-    </PageShell>
+    </Wrapper>
   );
 }

@@ -46,9 +46,9 @@ export function ConnectInboxPage() {
         </button>
       </div>
 
-      {/* Tab panels */}
+      {/* Tab panels — pass shell={false} to prevent double PageShell nesting */}
       <div className="flex-1 min-h-0 overflow-y-auto" role="tabpanel">
-        {activeTab === 'all' ? <InboxPage /> : <GmailPage />}
+        {activeTab === 'all' ? <InboxPage shell={false} /> : <GmailPage shell={false} />}
       </div>
     </div>
     </PageShell>

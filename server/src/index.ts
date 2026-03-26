@@ -167,3 +167,12 @@ const httpServer = app.listen(config.port, () => {
 
 process.on('SIGTERM', () => shutdown('SIGTERM', httpServer));
 process.on('SIGINT', () => shutdown('SIGINT', httpServer));
+
+// Catch unhandled promise rejections so stray async errors don't crash the process silently
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.error({ err: reason }, 'Unhandled promise rejection — this is a bug, please wrap async handlers');
+});
+process.on('uncaughtException', (err: Error) => {
+  logger.error({ err }, 'Uncaught exception — shutting down');
+  shutdown('uncaughtException', httpServer);
+});
