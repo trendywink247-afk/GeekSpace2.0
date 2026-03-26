@@ -668,8 +668,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     };
   };
 
-  const isOverdue = (datetime: string, completed?: boolean) => {
-    return !completed && new Date(datetime) < new Date();
+  const isOverdue = (datetime: string, completed?: boolean | number) => {
+    // Handle both boolean and SQLite integer (0/1) for completed
+    if (completed === true || completed === 1) return false;
+    const reminderTime = new Date(datetime).getTime();
+    if (isNaN(reminderTime)) return false;
+    return reminderTime < Date.now();
   };
 
   // 39.2: "due soon" = active reminder within the next 24h but not yet overdue

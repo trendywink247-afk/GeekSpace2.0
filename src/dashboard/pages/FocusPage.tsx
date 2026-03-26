@@ -144,7 +144,8 @@ function createTimerWorker(): Worker | null {
     const worker = new Worker(url);
     URL.revokeObjectURL(url);
     return worker;
-  } catch {
+  } catch (err) {
+    console.warn('[Focus] Web Worker creation failed, falling back to main thread timer:', err);
     return null;
   }
 }
@@ -498,8 +499,8 @@ export function FocusPage() {
       if (!('wakeLock' in navigator)) return;
       try {
         wakeLockRef.current = await navigator.wakeLock.request('screen');
-      } catch {
-        // Device doesn't support wake lock or permission denied
+      } catch (err) {
+        console.warn('[Focus] Wake lock unavailable:', err instanceof Error ? err.message : err);
       }
     }
     void acquireWakeLock();
@@ -777,7 +778,24 @@ export function FocusPage() {
             <Flame size={14} className="text-orange-400" />
             <span className="text-xs text-[#8892A4]">Focus streak</span>
           </div>
-          <p className="text-xl font-bold text-[#F4F6FF] font-[Syne]">{focusStreak}<span className="text-xs text-[#8892A4] font-normal ml-0.5">d</span></p>
+          {/* Arc progress ring */}
+          <div className="relative w-16 h-16 mx-auto">
+            <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+              <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+              <circle
+                cx="32" cy="32" r="28"
+                fill="none"
+                stroke={focusStreak >= 7 ? '#ADFF2F' : focusStreak >= 3 ? '#00F0FF' : '#FF2D78'}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${Math.min(focusStreak / 7, 1) * 175.9} 175.9`}
+                className="transition-all duration-700"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-xl font-bold text-[#F4F6FF] font-[Syne]">{focusStreak}<span className="text-[9px] text-[#8892A4] font-normal">d</span></p>
+            </div>
+          </div>
         </div>
         <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl p-3 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">

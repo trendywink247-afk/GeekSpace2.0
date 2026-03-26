@@ -1109,32 +1109,67 @@ export function AutomationsPage() {
               )}
 
               {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
-                <div className="mt-3 space-y-1.5">
-                  <label className="text-xs text-[#8892B0] font-medium">Webhook URL</label>
-                  <Input
-                    type="url"
-                    placeholder="https://your-webhook-endpoint.com/..."
-                    value={form.webhookUrl}
-                    onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
-                    className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
-                  />
-                  {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
-                    <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
-                      <span className="text-sm">!</span> Using http:// sends data unencrypted. Use https:// for production.
-                    </p>
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-[#8892B0] font-medium">Webhook URL</label>
+                    <Input
+                      type="url"
+                      placeholder="https://your-webhook-endpoint.com/..."
+                      value={form.webhookUrl}
+                      onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
+                      className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
+                    />
+                    {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
+                      <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
+                        <span className="text-sm">!</span> Using http:// sends data unencrypted. Use https:// for production.
+                      </p>
+                    )}
+                  </div>
+                  {form.actionType === 'call_api' && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-[#8892B0] font-medium">HTTP Method</label>
+                      <div className="flex gap-2">
+                        {(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const).map(method => (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setForm({ ...form, actionConfig: { ...form.actionConfig, method } })}
+                            className={`text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] font-mono ${
+                              (form.actionConfig.method ?? 'POST') === method
+                                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/40 text-[#00F0FF]'
+                                : 'bg-[#0C0C18] border-white/5 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-white/10'
+                            }`}
+                          >
+                            {method}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
 
               {form.actionType === 'create_reminder' && (
-                <div className="mt-3 space-y-1.5">
-                  <label className="text-xs text-[#8892B0] font-medium">Reminder text</label>
-                  <Input
-                    placeholder="What to remind about..."
-                    value={form.actionConfig.reminder_text ?? ''}
-                    onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
-                    className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
-                  />
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-[#8892B0] font-medium">Reminder text</label>
+                    <Input
+                      placeholder="What to remind about..."
+                      value={form.actionConfig.reminder_text ?? ''}
+                      onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
+                      className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-[#8892B0] font-medium">When (date &amp; time)</label>
+                    <Input
+                      type="datetime-local"
+                      value={form.actionConfig.reminder_datetime ?? ''}
+                      onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_datetime: e.target.value } })}
+                      className="bg-[#06060B] border-white/10 text-[#E8E8F0] h-11 text-base [color-scheme:dark]"
+                    />
+                    <p className="text-[10px] text-[#8892B0]">Leave blank to create reminder immediately when automation fires.</p>
+                  </div>
                 </div>
               )}
 

@@ -979,7 +979,7 @@ function ConfigPanel({
             <CardContent className="pt-5 pb-5 space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-purple-400" />
-                <p className="text-sm font-medium">Schedule (IST)</p>
+                <p className="text-sm font-medium">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">
