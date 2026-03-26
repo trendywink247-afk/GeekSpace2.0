@@ -373,14 +373,16 @@ export function ActivityPage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery]);
 
-  // Reload when serverQ or date-range changes (server-side text search + date filter)
+  // Reload when serverQ, date-range, or category filter changes
   useEffect(() => {
     setLoading(true);
-    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
+    // Fetch a larger batch when a specific category is selected so client-side filter has enough data
+    const limit = activeFilter === 'All' ? PAGE_SIZE : PAGE_SIZE * 4;
+    userService.getActivity(limit, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
       .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [serverQ, dateFrom, dateTo]);
+  }, [serverQ, dateFrom, dateTo, activeFilter]);
 
   const handleLoadMore = () => {
     setLoadingMore(true);
@@ -438,7 +440,7 @@ export function ActivityPage() {
   const stats = useMemo(() => computeActivityStats(entries, total), [entries, total]);
 
   const handlePullRefresh = async () => {
-    const res = await userService.getActivity(50);
+    const res = await userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined);
     setEntries(res.data.activity ?? []);
     setTotal(res.data.total ?? res.data.activity?.length ?? 0);
   };
@@ -660,6 +662,11 @@ export function ActivityPage() {
                     </div>
                     <button
                       onClick={async () => {
+                        await userService.deleteActivityEntry(entry.id).catch(() => {});
+                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                      }}
+                      onTouchEnd={async (e) => {
+                        e.preventDefault();
                         await userService.deleteActivityEntry(entry.id).catch(() => {});
                         setEntries((prev) => prev.filter((e) => e.id !== entry.id));
                       }}

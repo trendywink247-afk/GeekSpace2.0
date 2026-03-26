@@ -38,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { suggestionService } from '@/services/api';
+import pkgJson from '../../../package.json';
 
 interface RoadmapItem {
   id: string;
@@ -484,7 +485,13 @@ export function RoadmapPage() {
         <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
           Agentin Roadmap
         </h1>
-        <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-[#FF2D78] mb-2">Explored by Nova</span>
+        <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-[#FF2D78]">Explored by Nova</span>
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">v{pkgJson.version}</span>
+          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#6B7280]/10 border border-[#6B7280]/30 text-[#9CA3AF]">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
         <p className="text-[#9CA3AF]">
           Building the future of AI-powered personal workspaces. Here's what we're working on.
         </p>

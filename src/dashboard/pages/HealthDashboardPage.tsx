@@ -143,7 +143,8 @@ export function HealthDashboardPage() {
     }
 
     const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
-    const url = `${apiBase}/api/health/stream`;
+    const token = localStorage.getItem('gs_token');
+    const url = `${apiBase}/api/health/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -220,7 +221,7 @@ export function HealthDashboardPage() {
               variant="outline"
               size="sm"
               onClick={handleRetry}
-              className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10"
+              className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px]"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry

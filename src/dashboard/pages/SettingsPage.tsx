@@ -649,7 +649,7 @@ export function SettingsPage() {
       </div>
 
       {/* Section quick-nav — smooth-scrolls to each settings section */}
-      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2">
+      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2 whitespace-nowrap">
         {[
           { id: 'profile', label: 'Profile', icon: User },
           { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -739,7 +739,7 @@ export function SettingsPage() {
                   {avatarError && <p className="text-xs text-[#FF3366] mt-1">{avatarError}</p>}
                   {!avatarError && <p className="text-xs text-[#9CA3AF] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
-                <h3 className="font-semibold text-[#E8E8F0]">{profile.name}</h3>
+                <h3 className="font-semibold text-[#E8E8F0]">{profile.name || user?.email?.split('@')[0] || 'Your Name'}</h3>
                 <p className="text-sm text-[#9CA3AF]">@{profile.username}</p>
                 {/* 77.6: Dynamic plan badge */}
                 {(() => {
@@ -1753,7 +1753,22 @@ export function SettingsPage() {
                   </div>
                   <Switch
                     checked={privacy[item.key as keyof typeof privacy]}
-                    onCheckedChange={(checked) => setPrivacy({ ...privacy, [item.key]: checked })}
+                    onCheckedChange={async (checked) => {
+                      const newPrivacy = { ...privacy, [item.key]: checked };
+                      setPrivacy(newPrivacy);
+                      try {
+                        const token = localStorage.getItem('gs_token');
+                        await fetch('/api/user/profile', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                          body: JSON.stringify({ privacy: { [item.key]: checked } }),
+                        });
+                        showSavedToast();
+                      } catch {
+                        // revert on failure
+                        setPrivacy(privacy);
+                      }
+                    }}
                   />
                 </div>
               ))}

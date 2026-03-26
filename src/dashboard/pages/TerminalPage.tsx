@@ -162,21 +162,7 @@ Usage this month:
   Cost: $${usage.totalCostUSD.toFixed(2)}
   Forecast: $${usage.forecastUSD.toFixed(2)}`,
 
-    'gs usage today': (() => {
-      const now = new Date();
-      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayOfMonth = now.getDate();
-      // Estimate today's share by dividing monthly totals by days in the month
-      const dailyFactor = 1 / daysInMonth;
-      return `Usage Today (est. based on ${dayOfMonth}/${daysInMonth} days):
-  Messages: ${Math.floor(usage.totalMessages * dailyFactor)}
-  Tokens In: ${Math.floor(usage.totalTokensIn * dailyFactor).toLocaleString()}
-  Tokens Out: ${Math.floor(usage.totalTokensOut * dailyFactor).toLocaleString()}
-  Cost: $${(usage.totalCostUSD * dailyFactor).toFixed(3)}
-
-By Provider:
-${Object.entries(usage.byProvider).map(([k, v]) => `  ${k}: $${((v as number) * dailyFactor).toFixed(3)}`).join('\n') || '  No data'}`;
-    })(),
+    'gs usage today': 'Fetching today\'s usage...',
 
     'gs usage month': `Monthly Usage Report:
   Total Messages: ${usage.totalMessages.toLocaleString()}
@@ -217,11 +203,8 @@ ${Object.entries(usage.byTool).map(([k, v]) => `  ${k}: $${(v as number).toFixed
       return `Automations:\n${lines.join('\n')}`;
     },
 
-    'gs deploy': `Portfolio auto-deploys on save. No manual deploy needed.
-View your portfolio: https://${user?.username || 'user'}.agentin.chat
-
-Tip: Edit your portfolio at /dashboard/portfolio
-Deploy ID: dep_${Date.now().toString(36)}`,
+    'gs deploy': `Deploy is handled by CI/CD. See /docs/deployment
+View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
 
     'help': helpText,
   });
@@ -474,6 +457,30 @@ Deploy ID: dep_${Date.now().toString(36)}`,
       setHistoryIndex(-1);
       setInput('');
       streamAiResponse(cmd, prompt);
+      return;
+    }
+
+    // Handle gs usage today -- fetch actual daily usage from API
+    if (trimmedCmd === 'gs usage today') {
+      addCommand({ command: cmd, output: 'Fetching today\'s usage...', type: 'output' });
+      setHistory((prev) => [...prev, cmd]);
+      setHistoryIndex(-1);
+      setInput('');
+      usageService.summary('day').then(({ data: s }) => {
+        const out = `Usage Today (actual):
+  Messages: ${s.totalMessages?.toLocaleString() ?? 0}
+  Tokens In: ${s.totalTokensIn?.toLocaleString() ?? 0}
+  Tokens Out: ${s.totalTokensOut?.toLocaleString() ?? 0}
+  Tool Calls: ${s.totalToolCalls ?? 0}
+  Cost: $${s.totalCostUSD?.toFixed(3) ?? '0.000'}${
+          s.byProvider && Object.keys(s.byProvider).length > 0
+            ? '\n\nBy Provider:\n' + Object.entries(s.byProvider).map(([k, v]) => `  ${k}: $${(v as number).toFixed(3)}`).join('\n')
+            : ''
+        }`;
+        updateLastOutput(out);
+      }).catch(() => {
+        updateLastOutput('Error: Failed to fetch daily usage');
+      });
       return;
     }
 
