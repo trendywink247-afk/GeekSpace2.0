@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
-  Download, X, Play, AlertCircle, RefreshCw, AlertTriangle
+  Download, X, Play, AlertCircle, RefreshCw, AlertTriangle, ImageIcon
 } from 'lucide-react';
 import { videoService, picoService, agentService } from '@/services/api';
 import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
@@ -374,9 +374,16 @@ export function VideoGenPage() {
     }
   };
 
-  // Handle video generation
+  // Handle video generation — pre-flight check: never deduct credits on failure
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+
+    // Pre-flight: block generation if all known providers are unavailable
+    if (isProviderBroken) {
+      showToast('Video generation is temporarily unavailable — your credits were not charged.', 'error');
+      return;
+    }
+
     setGenerating(true);
     try {
       const res = await videoService.generate(prompt, selectedModel, 1280, 720, duration);
@@ -385,8 +392,10 @@ export function VideoGenPage() {
       setPrompt('');
       await loadGallery();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Generation failed';
-      showToast(msg, 'error');
+      // Show honest error — credits are NOT deducted for failed generation attempts
+      const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      const msg = apiMsg || 'Video generation failed';
+      showToast(`${msg} — your credits were not charged.`, 'error');
     } finally {
       setGenerating(false);
     }
@@ -537,8 +546,10 @@ export function VideoGenPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#E8E8F0]">Video Generator</h1>
-          <p className="text-sm text-[#9CA3AF] mt-1">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--ag-amber)] via-[#FCD34D] to-[var(--ag-cyan)] bg-clip-text text-transparent">
+            Video Generator
+          </h1>
+          <p className="text-sm text-[var(--ag-text-secondary)] mt-1">
             Create AI-powered short clips &middot; {videoCount}/{maxVideos} saved
           </p>
         </div>
@@ -633,31 +644,36 @@ export function VideoGenPage() {
         </div>
       </div>
 
-      {/* Premium Coming Soon card — shown when providers are unavailable */}
+      {/* Honest unavailability notice — shown when all video providers are blocked */}
       {isProviderBroken && (
-        <div className="relative overflow-hidden rounded-2xl border border-[#A78BFA]/30 bg-gradient-to-br from-[#A78BFA]/8 via-[#0C0C18] to-[#BF5FFF]/5 p-6">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#A78BFA]/8 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-[#BF5FFF]/6 blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--ag-amber)]/30 bg-gradient-to-br from-[var(--ag-amber)]/5 via-[#0C0C18] to-[var(--ag-amber)]/3 p-6">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[var(--ag-amber)]/6 blur-3xl pointer-events-none" />
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-[#A78BFA]/15 flex items-center justify-center flex-shrink-0">
-              <Film className="w-8 h-8 text-[#A78BFA]" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--ag-amber)]/15 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-8 h-8 text-[var(--ag-amber)]" />
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-semibold text-[#E8E8F0]">AI Video Generation</h3>
-                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#A78BFA]/20 text-[#A78BFA] border border-[#A78BFA]/30 font-semibold">Coming Soon</span>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Video generation is temporarily unavailable</h3>
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-amber)]/20 text-[var(--ag-amber)] border border-[var(--ag-amber)]/30 font-semibold">Service Notice</span>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
-                Create cinematic AI videos from text prompts. Multi-clip Director Mode with auto-stitch.
+              <p className="text-sm text-[var(--ag-text-secondary)] font-medium">
+                Your credits were not charged. No generation was attempted.
               </p>
-              <div className="flex items-center gap-4 mt-3 text-xs text-[#9CA3AF]">
-                <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#A78BFA]" /> Text-to-video</span>
-                <span className="flex items-center gap-1.5"><Wand2 className="w-3 h-3 text-[#BF5FFF]" /> Director Mode</span>
-                <span className="flex items-center gap-1.5"><Film className="w-3 h-3 text-[#00F0FF]" /> Auto-stitch</span>
+              <p className="text-sm text-[var(--ag-text-secondary)] mt-2">
+                Free video providers (Pollinations, SeedAnce, Veo2) are currently unavailable from this server region.
+                Paid generation via OpenRouter is available if you add your API key.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-4">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-text-secondary)]">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--ag-amber)]" />
+                  <span>OpenRouter video models available with API key</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-xs text-[#00FF88]">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Image generation works fine — try that instead!</span>
+                </div>
               </div>
-              <p className="text-xs text-[#A78BFA]/60 mt-3">
-                Video providers are being upgraded. Image generation is fully available.
-              </p>
             </div>
           </div>
         </div>
@@ -785,11 +801,11 @@ export function VideoGenPage() {
           </button>
         </div>
 
-        {/* Unavailable notice */}
+        {/* Unavailable notice — credits not charged */}
         {isProviderBroken && (
-          <p className="text-xs text-[#FF6161] mt-3 flex items-center gap-1.5">
+          <p className="text-xs text-[var(--ag-amber)] mt-3 flex items-center gap-1.5">
             <AlertTriangle className="w-3 h-3" />
-            Video generation is temporarily unavailable from this server region. Image generation works fine!
+            Video generation is temporarily unavailable — your credits will not be charged.
           </p>
         )}
 

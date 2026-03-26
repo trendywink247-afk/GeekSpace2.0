@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, MessageCircle, ArrowRight, Sparkles, Braces, Wrench } from 'lucide-react';
+import { Search, Star, MessageCircle, ArrowRight, Sparkles, Braces, Wrench, FileText, Palette, GitCompare, Lock, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { JsonFormatterPage } from './tools/JsonFormatterPage';
+import { BorderBeam } from '@/components/magicui/border-beam';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -372,42 +373,128 @@ export function AISpecialistPage() {
   };
 
   // -----------------------------------------------------------------------
-  // Tools tab (JSON Formatter kept as a sub-tool)
+  // Tools tab — JSON Formatter + 4 Coming Soon stubs
   // -----------------------------------------------------------------------
   if (activeTab === 'tools') {
+    const COMING_SOON_TOOLS = [
+      {
+        id: 'markdown-formatter',
+        name: 'Markdown Formatter',
+        icon: FileText,
+        description: 'Preview and clean up Markdown documents. Real-time rendered output.',
+        accentColor: '#8B5CF6',
+      },
+      {
+        id: 'color-palette',
+        name: 'Color Palette Generator',
+        icon: Palette,
+        description: 'Generate beautiful accessible color palettes from a seed color or mood.',
+        accentColor: '#F59E0B',
+      },
+      {
+        id: 'text-diff',
+        name: 'Text Diff Viewer',
+        icon: GitCompare,
+        description: 'Side-by-side diff view for any two blocks of text with highlighted changes.',
+        accentColor: '#10B981',
+      },
+      {
+        id: 'base64',
+        name: 'Base64 Encoder / Decoder',
+        icon: Lock,
+        description: 'Encode or decode Base64 strings and files. Supports binary and Unicode.',
+        accentColor: '#00F0FF',
+      },
+    ] as const;
+
     return (
-      <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+      <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-8">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 pt-4">
-          <div className="w-9 h-9 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">
-            <Wrench className="w-4.5 h-4.5 text-[#00F0FF]" />
+          <div className="w-9 h-9 rounded-xl bg-[var(--ag-amber)]/20 flex items-center justify-center flex-shrink-0">
+            <Wrench className="w-4 h-4 text-[var(--ag-amber)]" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-[#E8E8F0]">AI Tools</h1>
-            <p className="text-sm text-[#8892A4]">Developer utilities powered by AI</p>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-[var(--ag-amber)] to-[var(--ag-cyan)] bg-clip-text text-transparent">
+              AI Tools
+            </h1>
+            <p className="text-sm text-[var(--ag-text-secondary)]">Developer utilities powered by AI</p>
           </div>
         </div>
 
         {/* Top tab strip */}
         <div className="overflow-x-auto scrollbar-hide w-full px-4">
-          <div className="flex gap-1 border-b border-[#2A2A3A] w-max min-w-full">
+          <div className="flex gap-1 border-b border-[var(--ag-border-subtle)] w-max min-w-full">
             <button
               onClick={() => setActiveTab('specialists')}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-[#8892A4] hover:text-[#A0A0B0] transition-colors min-h-[44px]"
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Specialists
             </button>
-            <button
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[#00F0FF] text-[#E8E8F0] transition-colors min-h-[44px]"
-            >
+            <button className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[var(--ag-amber)] text-[var(--ag-text-primary)] transition-colors min-h-[44px]">
               <Braces className="w-3.5 h-3.5" />
               AI Tools
             </button>
           </div>
         </div>
 
-        <JsonFormatterPage />
+        <div className="px-4 space-y-6">
+          {/* Coming Soon tool stubs */}
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[var(--ag-amber)]" />
+              Coming Soon
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {COMING_SOON_TOOLS.map(tool => {
+                const Icon = tool.icon;
+                return (
+                  <div
+                    key={tool.id}
+                    className="relative group rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5 overflow-hidden cursor-not-allowed opacity-80 hover:opacity-100 transition-opacity"
+                    style={{ backdropFilter: 'blur(var(--ag-glass-blur))' }}
+                  >
+                    {/* Glass shimmer on hover */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                      style={{ background: `radial-gradient(ellipse at 50% 0%, ${tool.accentColor}08 0%, transparent 70%)` }} />
+
+                    {/* Coming Soon badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-bg-elevated)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)]">
+                        Soon
+                      </span>
+                    </div>
+
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                      style={{ backgroundColor: `${tool.accentColor}15` }}
+                    >
+                      <Icon className="w-5 h-5" style={{ color: tool.accentColor }} />
+                    </div>
+                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{tool.name}</h3>
+                    <p className="text-xs text-[var(--ag-text-secondary)] leading-relaxed">{tool.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* JSON Formatter — revamped with glass panels */}
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Braces className="w-4 h-4 text-[var(--ag-amber)]" />
+              Available Now
+            </h2>
+            <div className="relative rounded-2xl border border-[var(--ag-amber)]/20 overflow-hidden"
+              style={{ background: 'rgba(245,158,11,0.03)', backdropFilter: 'blur(var(--ag-glass-blur))' }}>
+              <BorderBeam size={200} duration={15} colorFrom="var(--ag-amber)" colorTo="var(--ag-cyan)" borderWidth={1} />
+              <div className="p-1">
+                <JsonFormatterPage />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
