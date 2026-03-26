@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AgentinLogo } from '@/components/AgentinLogo';
 import { Mail, Lock, ArrowLeft, ArrowRight, KeyRound, ShieldCheck, CheckCircle2, Loader2, Check, X, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -345,7 +344,7 @@ export function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <button onClick={() => navigate('/')} aria-label="Return to home" className="inline-flex items-center gap-2 mb-6 group">
             <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center group-hover:bg-[#8B5CF6]/30 transition-colors border border-[#8B5CF6]/20">
-              <AgentinLogo size={32} />
+              <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
               <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AgentinLogo } from '@/components/AgentinLogo';
 import { ArrowRight, ArrowLeft, Check, Loader2, Clock, SkipForward, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
@@ -166,7 +165,7 @@ export function OnboardingWizard() {
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-          <AgentinLogo size={32} />
+          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
           <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
             <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>
           </span>

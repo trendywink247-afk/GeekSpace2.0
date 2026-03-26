@@ -4,7 +4,6 @@ import {
   BookOpen, Rocket, Bot, Zap, Settings,
   Shield, HelpCircle, ChevronRight, ChevronDown, Search
 } from 'lucide-react';
-import { AgentinLogo } from '@/components/AgentinLogo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -507,7 +506,7 @@ export function DocsPage() {
               <span className="hidden sm:inline">Back to Agentin</span>
             </Link>
             <div className="flex items-center gap-2">
-              <AgentinLogo size={24} />
+              <img src="/logo-agentin.png" alt="Agentin" className="w-6 h-6 object-contain" />
               <div>
                 <h1 className="text-base font-semibold text-white leading-tight" style={{ fontFamily: 'Syne, sans-serif' }}>
                   Documentation

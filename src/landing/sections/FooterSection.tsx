@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { AgentinLogo } from '@/components/AgentinLogo';
 
 const productLinks = [
   { label: 'Features', to: '/#templates' },
@@ -95,7 +94,7 @@ export function FooterSection() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <AgentinLogo size={28} />
+              <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
               <span
                 className="text-lg font-bold"
                 style={{ fontFamily: 'Syne, sans-serif' }}

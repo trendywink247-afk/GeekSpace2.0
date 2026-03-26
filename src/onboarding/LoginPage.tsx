@@ -10,7 +10,6 @@ import { MobileConstellationHero } from './components/MobileConstellationHero';
 import { AgentChatBubble } from './components/AgentChatBubble';
 import { AuthPageBackground } from './components/AuthPageBackground';
 import { LoginTrustBadges } from './components/LoginTrustBadges';
-import { AgentinLogo } from '@/components/AgentinLogo';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -119,7 +118,7 @@ export function LoginPage() {
         <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
           <div className="border border-white/[0.06] rounded-2xl p-8 space-y-6" style={{ background: 'rgba(6, 6, 26, 0.9)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
             <div className="w-14 h-14 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center mx-auto">
-              <AgentinLogo size={32} />
+              <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <p className="text-white/50 text-sm mb-1">Signed in as</p>
@@ -159,7 +158,7 @@ export function LoginPage() {
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-6">
-              <AgentinLogo size={48} />
+              <img src="/logo-agentin.png" alt="Agentin" className="w-12 h-12 object-contain" />
               <span className="text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
                 <span className="text-[#E8E8F0]">Agent</span><span className="text-[#8B5CF6]">in</span>
               </span>
