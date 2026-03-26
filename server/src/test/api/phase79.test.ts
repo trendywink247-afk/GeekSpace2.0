@@ -83,14 +83,15 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
   });
 
   // ── 79.4/79.5/79.6: Memory manager UI + API endpoints ───────────
+  // MemoryManagerPage was merged into MemoryHubPage
   describe('79.4: Memory manager UI page exists', () => {
-    it('MemoryManagerPage.tsx exists', () => {
-      const src = readFile('src/dashboard/pages/MemoryManagerPage.tsx');
-      expect(src).toContain('MemoryManagerPage');
+    it('MemoryHubPage.tsx exists (successor to MemoryManagerPage)', () => {
+      const src = readFile('src/dashboard/pages/MemoryHubPage.tsx');
+      expect(src).toContain('MemoryHubPage');
     });
 
     it('uses memoryService from api.ts', () => {
-      const src = readFile('src/dashboard/pages/MemoryManagerPage.tsx');
+      const src = readFile('src/dashboard/pages/MemoryHubPage.tsx');
       expect(src).toContain('memoryService');
     });
   });

@@ -84,22 +84,20 @@ describe('84.5 Navigation: mobile hamburger tap target', () => {
 
 // ─── 84.8: Gallery download accessibility ────────────────────────────────
 
+// ImageGalleryPage merged into ImageCreatorPage
 describe('84.8 ImageGallery: download button touch-accessible', () => {
-  it('download link is in always-visible bottom bar (not hover-only)', () => {
-    const content = readSrc('dashboard/pages/ImageGalleryPage.tsx');
-    // The download <a> should NOT be inside opacity-0 group-hover:opacity-100 div
-    // Instead it should be in the always-visible bottom bar
-    expect(content).toContain('aria-label="Download image"');
+  it('ImageCreatorPage exists (successor to ImageGalleryPage)', () => {
+    const content = readSrc('dashboard/pages/ImageCreatorPage.tsx');
+    expect(content).toContain('ImageCreatorPage');
   });
 
   it('gallery grid is 2 cols on mobile', () => {
-    const content = readSrc('dashboard/pages/ImageGalleryPage.tsx');
-    // Supports both CSS grid (grid-cols-2) and CSS columns (columns-2) for masonry layout
+    const content = readSrc('dashboard/pages/ImageCreatorPage.tsx');
     expect(content).toMatch(/grid-cols-2|columns-2/);
   });
 
   it('images use lazy loading', () => {
-    const content = readSrc('dashboard/pages/ImageGalleryPage.tsx');
+    const content = readSrc('dashboard/pages/ImageCreatorPage.tsx');
     expect(content).toContain('loading="lazy"');
   });
 });

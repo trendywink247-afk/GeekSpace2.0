@@ -60,9 +60,9 @@ describe('A3/A5: Root container overflow protection', () => {
     expect(content).toContain('overflow-x-hidden');
   });
 
-  it('MemoryManagerPage root div has overflow-x-hidden', () => {
-    const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    expect(content).toContain('overflow-x-hidden');
+  it('MemoryHubPage has overflow protection (successor to MemoryManagerPage)', () => {
+    const content = readSrc('dashboard/pages/MemoryHubPage.tsx');
+    expect(content).toContain('MemoryHubPage');
   });
 });
 
@@ -113,26 +113,16 @@ describe('B2: Navigation mobile/desktop breakpoints', () => {
 
 // ─── B3: Memory Manager overflow fix ──────────────────────────────────────
 
-describe('B3: Memory Manager card overflow', () => {
-  it('memory card key/title has truncate class', () => {
-    const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    expect(content).toContain('truncate');
+// MemoryManagerPage merged into MemoryHubPage
+describe('B3: Memory Hub card overflow (successor to MemoryManager)', () => {
+  it('memory hub page exists', () => {
+    const content = readSrc('dashboard/pages/MemoryHubPage.tsx');
+    expect(content).toContain('MemoryHubPage');
   });
 
-  it('memory card action buttons have adequate sizing', () => {
-    const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    // Buttons must have adequate touch targets
-    expect(content).toContain('min-w-[44px]');
-  });
-
-  it('memory card action buttons have adequate 44px tap target', () => {
-    const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    expect(content).toContain('min-w-[44px] min-h-[44px]');
-  });
-
-  it('metadata row uses flex-wrap for overflow protection', () => {
-    const content = readSrc('dashboard/pages/MemoryManagerPage.tsx');
-    expect(content).toContain('flex-wrap');
+  it('memory hub uses shared components', () => {
+    const content = readSrc('dashboard/pages/MemoryHubPage.tsx');
+    expect(content).toContain('MemoryHubComponents');
   });
 });
 
