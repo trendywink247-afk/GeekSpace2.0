@@ -4,7 +4,7 @@ import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
-  X, Menu, Clock, Brain, Cpu, Activity,
+  X, Menu, Clock, Brain, Cpu, Activity, Monitor,
   Code, Rocket, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
   Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search
 } from 'lucide-react';
@@ -124,6 +124,7 @@ const menuGroups: MenuGroup[] = [
     label: 'Agent',
     icon: Bot,
     items: [
+      { id: 'office', label: 'Agent Office', icon: Monitor },
       { id: 'agent', label: 'Agent Settings', icon: Bot },
       { id: 'memory', label: 'Memory', icon: Brain },
     ],
@@ -223,12 +224,7 @@ export function DashboardApp() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
-  const [officeHomepage, _setOfficeHomepage] = useState(() => {
-    try {
-      return localStorage.getItem('agentin_office_homepage') === 'true';
-    } catch { return false; }
-  });
-  void _setOfficeHomepage; // will be used by settings toggle in PR 2
+  const officeHomepage = true;
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   useLogoutBlocker(logout);
@@ -517,9 +513,7 @@ export function DashboardApp() {
       case 'training':
         return <ConversationRatingPage />;
       case 'office':
-        return officeHomepage
-          ? (() => { navigate('/dashboard'); return null; })()
-          : <OfficePage />;
+        return <OfficePage />;
       case 'voice':
         return <VoiceChatPage />;
       case 'design':

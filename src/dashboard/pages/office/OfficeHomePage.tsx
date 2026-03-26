@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Bell, CheckCircle2, Calendar, BarChart3, Clock, Send, Flame, ChevronRight } from 'lucide-react';
+import { Monitor, Bell, CheckCircle2, Calendar, BarChart3, Clock, Send, Flame, ChevronRight, Users, ChevronsUp } from 'lucide-react';
 import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
@@ -18,7 +18,7 @@ import {
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
-import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEEvent } from './types';
+import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEEvent, ConnectionMode } from './types';
 import type { OfficeData } from './useOfficeData';
 import { agentService, agentTasksService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -443,6 +443,9 @@ function EnhancedSidebar({
 }) {
   const [activeTab, setActiveTab] = useState<EnhancedTab>('today');
 
+  // Compute max habit streak for quick stats
+  const maxStreak = overviewHabits.reduce((max, h) => Math.max(max, h.streak ?? 0), 0);
+
   return (
     <div
       className="flex flex-col h-full backdrop-blur-xl"
@@ -451,6 +454,52 @@ function EnhancedSidebar({
         borderLeft: '1px solid var(--ag-border-subtle)',
       }}
     >
+      {/* Quick Stats mini-bar */}
+      <div
+        className="flex items-center gap-1.5 px-3 py-2 flex-shrink-0 border-b overflow-x-auto"
+        style={{
+          borderColor: 'var(--ag-border-subtle)',
+          background: 'rgba(12, 12, 30, 0.5)',
+        }}
+      >
+        {/* Reminders pill */}
+        <span
+          className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm"
+          style={{
+            background: 'rgba(255,45,120,0.08)',
+            color: 'var(--ag-pink)',
+            border: '1px solid rgba(255,45,120,0.15)',
+          }}
+        >
+          <Bell className="w-2.5 h-2.5" />
+          {overviewReminders.length} reminders
+        </span>
+        {/* Habit streak pill */}
+        <span
+          className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm"
+          style={{
+            background: 'rgba(173,255,47,0.08)',
+            color: 'var(--ag-lime)',
+            border: '1px solid rgba(173,255,47,0.15)',
+          }}
+        >
+          <Flame className="w-2.5 h-2.5" />
+          {maxStreak}d streak
+        </span>
+        {/* Calendar events pill */}
+        <span
+          className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm"
+          style={{
+            background: 'rgba(139,92,246,0.08)',
+            color: 'var(--ag-violet)',
+            border: '1px solid rgba(139,92,246,0.15)',
+          }}
+        >
+          <Calendar className="w-2.5 h-2.5" />
+          {overviewCalendarEvents.length} events
+        </span>
+      </div>
+
       {/* Tab bar -- glass morphism tabs */}
       <div
         className="flex items-center gap-1 px-2 py-2 flex-shrink-0 border-b overflow-x-auto backdrop-blur-md"
@@ -517,7 +566,7 @@ function EnhancedSidebar({
 // Suggestion strip -- glass background, hover glow chips, shimmer on first
 // ---------------------------------------------------------------------------
 
-const SUGGESTIONS = [
+const SUGGESTIONS_FALLBACK = [
   'Set a reminder',
   'Generate an image',
   'Summarize my day',
@@ -525,7 +574,23 @@ const SUGGESTIONS = [
   'Draft an email',
 ];
 
+const SUGGESTIONS_MORNING = ['Plan my day', 'Check calendar'];
+const SUGGESTIONS_AFTERNOON = ['Summarize progress', 'Draft an email'];
+const SUGGESTIONS_EVENING = ['Review today', "Set tomorrow's goals"];
+
+function getTimedSuggestions(): string[] {
+  const h = new Date().getHours();
+  const timed = h < 12 ? SUGGESTIONS_MORNING : h < 18 ? SUGGESTIONS_AFTERNOON : SUGGESTIONS_EVENING;
+  // Merge timed suggestions at the front, then fill with fallback (deduplicated)
+  const merged = [...timed];
+  for (const s of SUGGESTIONS_FALLBACK) {
+    if (!merged.includes(s)) merged.push(s);
+  }
+  return merged;
+}
+
 function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
+  const suggestions = useMemo(() => getTimedSuggestions(), []);
   return (
     <div
       className="flex items-center gap-2 px-4 py-2 overflow-x-auto flex-shrink-0 border-t backdrop-blur-xl"
@@ -534,7 +599,7 @@ function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
         background: 'var(--ag-bg-surface)',
       }}
     >
-      {SUGGESTIONS.map((s, i) => (
+      {suggestions.map((s, i) => (
         <button
           key={s}
           onClick={() => onSelect(s)}
@@ -542,7 +607,7 @@ function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
           style={{
             color: 'var(--ag-text-secondary)',
             border: '1px solid var(--ag-border-subtle)',
-            background: i === 0 ? 'rgba(139,92,246,0.06)' : 'transparent',
+            background: i === 0 ? 'rgba(139,92,246,0.08)' : 'transparent',
             animation: i === 0 ? 'shimmer 3s ease-in-out infinite' : undefined,
           }}
         >
@@ -554,7 +619,7 @@ function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
       <style>{`
         @keyframes shimmer {
           0%, 100% { border-color: var(--ag-border-subtle); }
-          50% { border-color: var(--ag-border-default); }
+          50% { border-color: rgba(139,92,246,0.4); }
         }
       `}</style>
     </div>
@@ -565,9 +630,15 @@ function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
 // Header bar -- glass morphism with gradient border glow
 // ---------------------------------------------------------------------------
 
-function HeaderBar({ weeklyStats }: { weeklyStats: OverviewWeeklyStats | null }) {
+function HeaderBar({ weeklyStats, connectionMode }: { weeklyStats: OverviewWeeklyStats | null; connectionMode: ConnectionMode }) {
   const user = useAuthStore((s) => s.user);
   const name = user?.name || user?.username || 'there';
+
+  const connDot = connectionMode === 'live'
+    ? { color: 'var(--ag-lime)', label: 'Connected', ping: true }
+    : connectionMode === 'reconnecting'
+      ? { color: 'var(--ag-amber)', label: 'Reconnecting', ping: false }
+      : { color: 'var(--ag-pink)', label: 'Offline', ping: false };
 
   return (
     <div
@@ -576,21 +647,45 @@ function HeaderBar({ weeklyStats }: { weeklyStats: OverviewWeeklyStats | null })
         background: 'var(--ag-bg-surface)',
       }}
     >
-      {/* Bottom border glow line */}
+      {/* Bottom border glow line — slow pulse animation */}
       <div
         className="absolute bottom-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, var(--ag-violet) 30%, var(--ag-cyan) 70%, transparent 100%)',
-          opacity: 0.3,
+          background: 'linear-gradient(90deg, transparent 0%, var(--ag-violet) 30%, var(--ag-emerald) 70%, transparent 100%)',
+          animation: 'headerBorderPulse 4s ease-in-out infinite',
         }}
       />
+      <style>{`
+        @keyframes headerBorderPulse {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.55; }
+        }
+      `}</style>
 
       <div className="flex items-center gap-3 min-w-0">
-        <div>
-          <h1 className="text-sm font-bold text-[var(--ag-text-primary)] truncate" style={{ fontFamily: 'Syne, sans-serif' }}>
-            {getGreeting()}, {name}
-          </h1>
-          <p className="text-[10px] text-[var(--ag-text-secondary)]">{formatDate()}</p>
+        <div className="flex items-center gap-2">
+          {/* Connection status dot */}
+          <span
+            className="relative flex h-2 w-2 flex-shrink-0"
+            title={connDot.label}
+          >
+            {connDot.ping && (
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+                style={{ backgroundColor: connDot.color }}
+              />
+            )}
+            <span
+              className="relative inline-flex rounded-full h-2 w-2"
+              style={{ backgroundColor: connDot.color }}
+            />
+          </span>
+          <div>
+            <h1 className="text-sm font-bold text-[var(--ag-text-primary)] truncate" style={{ fontFamily: 'Syne, sans-serif' }}>
+              {getGreeting()}, {name}
+            </h1>
+            <p className="text-[10px] text-[var(--ag-text-secondary)]">{formatDate()}</p>
+          </div>
         </div>
       </div>
       {weeklyStats && (
@@ -635,9 +730,16 @@ export function OfficeHomePage() {
   const [taskCount, setTaskCount] = useState(0);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
 
+  // Mobile "tap to expand" hint — visible for 3s then fades out
+  const [showTapHint, setShowTapHint] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTapHint(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Day/Night theme
   const [officeTheme, setOfficeTheme] = useState<OfficeTheme>(() => {
-    return (localStorage.getItem('office_theme') as OfficeTheme) || 'auto';
+    try { return (localStorage.getItem('office_theme') as OfficeTheme) || 'auto'; } catch { return 'auto'; }
   });
   const resolvedTheme: 'day' | 'night' = officeTheme === 'auto'
     ? (new Date().getHours() >= 6 && new Date().getHours() < 18 ? 'day' : 'night')
@@ -720,7 +822,7 @@ export function OfficeHomePage() {
 
       {/* Header bar with BlurFade entrance */}
       <BlurFade delay={0} inView>
-        <HeaderBar weeklyStats={weeklyStats} />
+        <HeaderBar weeklyStats={weeklyStats} connectionMode={connectionMode} />
       </BlurFade>
 
       {/* Main content: canvas + sidebar */}
@@ -757,15 +859,22 @@ export function OfficeHomePage() {
             style={{ background: 'linear-gradient(to bottom, rgba(5,5,10,0.85) 0%, transparent 100%)' }}
           >
             <div className="flex items-center gap-2">
-              <Monitor className="w-4 h-4 text-[var(--ag-cyan)]" />
+              <Monitor className="w-4 h-4 text-[var(--ag-violet)]" />
               <span className="text-xs font-bold text-[var(--ag-text-primary)] tracking-wide" style={{ fontFamily: 'Syne, sans-serif' }}>
                 Mission Control
               </span>
+              {/* Agent count badge — glass morphism pill */}
               <span
-                className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider"
-                style={{ background: 'rgba(139,92,246,0.12)', color: 'var(--ag-violet)', border: '1px solid var(--ag-border-default)' }}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider backdrop-blur-md"
+                style={{
+                  background: 'rgba(139,92,246,0.15)',
+                  color: 'var(--ag-violet)',
+                  border: '1px solid rgba(139,92,246,0.3)',
+                  boxShadow: '0 0 8px rgba(139,92,246,0.2)',
+                }}
               >
-                9 AGENTS
+                <Users className="w-2.5 h-2.5" />
+                9 agents online
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -848,6 +957,25 @@ export function OfficeHomePage() {
               onDismiss={() => setSelectedAgentId(null)}
             />
           )}
+
+          {/* Mobile "tap to expand" hint — only on small screens, fades after 3s */}
+          <div
+            className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none md:hidden z-20 transition-opacity duration-700"
+            style={{ opacity: showTapHint ? 1 : 0 }}
+            aria-hidden="true"
+          >
+            <span
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] backdrop-blur-md"
+              style={{
+                background: 'rgba(12,12,30,0.6)',
+                color: 'var(--ag-text-secondary)',
+                border: '1px solid var(--ag-border-subtle)',
+              }}
+            >
+              <ChevronsUp className="w-3 h-3 opacity-60" />
+              Tap to expand
+            </span>
+          </div>
         </BlurFade>
 
         {/* Enhanced Sidebar -- 40% desktop, rest of viewport on mobile */}

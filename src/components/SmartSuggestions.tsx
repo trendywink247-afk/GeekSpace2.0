@@ -67,7 +67,8 @@ export function SmartSuggestions({ onNavigate }: SmartSuggestionsProps) {
     ];
     const dayIndex = Math.floor(Date.now() / 86400000) % discoveryFeatures.length;
     // Only show if user hasn't visited (check localStorage)
-    const visited = JSON.parse(localStorage.getItem('agentin_visited_pages') || '[]');
+    let visited: string[] = [];
+    try { visited = JSON.parse(localStorage.getItem('agentin_visited_pages') || '[]'); } catch { /* private browsing */ }
     const discovery = discoveryFeatures[dayIndex];
     if (!visited.includes(discovery.page)) {
       items.push(discovery);
