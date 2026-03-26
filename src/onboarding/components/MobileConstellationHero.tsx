@@ -1,3 +1,5 @@
+import { AgentinLogo } from '@/components/AgentinLogo';
+
 export interface MobileConstellationHeroProps {
   onLogoClick?: () => void;
 }
@@ -115,11 +117,7 @@ export function MobileConstellationHero({ onLogoClick }: MobileConstellationHero
           aria-label="Agentin logo"
           tabIndex={onLogoClick ? 0 : -1}
         >
-          <img
-            src="/logo-agentin.png"
-            alt="Agentin"
-            style={{ width: 40, height: 40, objectFit: 'contain' }}
-          />
+          <AgentinLogo size={40} />
         </button>
 
         {/* Wordmark */}
