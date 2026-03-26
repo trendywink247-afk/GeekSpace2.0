@@ -35,6 +35,16 @@ export function PageShell({ children, maxWidth, spacing = 6, className = '' }: P
         <div className="absolute -bottom-1/3 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-[#10B981]/[0.02] blur-[100px]" />
         <div className="absolute top-1/4 right-1/3 w-[40vw] h-[40vw] rounded-full bg-[#F59E0B]/[0.015] blur-[80px]" />
       </div>
+      {/* Dot-grid overlay — matches landing page pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(139,92,246,0.07) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          opacity: 0.07,
+        }}
+        aria-hidden="true"
+      />
       {children}
     </div>
   );

@@ -179,9 +179,9 @@ export function FooterSection() {
           </p>
           <p className="text-xs text-[#94A3B8]/50 text-center mt-2">
             Powered by{' '}
-            <a href="https://ai.geekspace.space" target="_blank" rel="noopener noreferrer"
+            <a href="https://ai.agentin.chat" target="_blank" rel="noopener noreferrer"
               className="text-[#8B5CF6]/60 hover:text-[#8B5CF6] transition-colors">
-              GeekSpace
+              Agentin
             </a>
           </p>
         </div>

@@ -34,7 +34,7 @@ const engineFeatures = [
 const terminalLines = [
   { text: 'docker compose up -d --build', type: 'command' as const },
   { text: '[+] 15/15 services healthy', type: 'output' as const },
-  { text: 'geekspace-app    : running (port 3001)', type: 'output' as const },
+  { text: 'agentin-app      : running (port 3001)', type: 'output' as const },
   { text: 'postgres         : running (port 5432)', type: 'output' as const },
   { text: 'redis            : running (port 6379)', type: 'output' as const },
   { text: 'ollama           : running (gpu:none)', type: 'output' as const },

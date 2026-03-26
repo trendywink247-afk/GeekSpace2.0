@@ -519,6 +519,58 @@
   }
 }
 
+/* ─── Agentin Glass Card System ─── */
+
+/* Agentin glass card — use as className="ag-card" */
+.ag-card {
+  background: var(--ag-bg-surface);
+  backdrop-filter: blur(var(--ag-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ag-glass-blur));
+  border: 1px solid var(--ag-border-subtle);
+  border-radius: var(--ag-radius-lg);
+  transition: border-color var(--ag-transition-smooth),
+              box-shadow var(--ag-transition-smooth);
+}
+.ag-card:hover {
+  border-color: var(--ag-border-default);
+  box-shadow: var(--ag-glow-sm);
+}
+
+/* Agentin gradient text — use as className="ag-gradient-text" */
+.ag-gradient-text {
+  background: linear-gradient(135deg, #00F0FF, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Agentin primary button — use as className="ag-btn-primary" */
+.ag-btn-primary {
+  background: linear-gradient(135deg, var(--ag-cyan), var(--ag-violet));
+  color: #06061a;
+  font-weight: 600;
+  border-radius: var(--ag-radius-md);
+  padding: 10px 20px;
+  min-height: 44px;
+  transition: opacity var(--ag-transition-fast),
+              box-shadow var(--ag-transition-fast);
+}
+.ag-btn-primary:hover {
+  opacity: 0.9;
+  box-shadow: var(--ag-glow-md);
+}
+
+/* Light mode adaptations for ag-card */
+html.light .ag-card {
+  background: var(--lp-glass-bg);
+  border-color: var(--lp-glass-border);
+  box-shadow: var(--lp-card-shadow);
+}
+html.light .ag-card:hover {
+  border-color: var(--lp-border-hover);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.08);
+}
+
 /* ─── Light Mode — Full Override ─── */
 
 /* shadcn design system overrides for light mode */
