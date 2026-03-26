@@ -587,7 +587,7 @@ export function InboxPage() {
           </div>
           <h1 className="text-xl font-semibold text-[#F4F6FF]">AI Inbox <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📥 Triaged by Edith</span></h1>
           {unreadCount > 0 && (
-            <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold">
+            <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold animate-pulse">
               {unreadCount}
             </Badge>
           )}

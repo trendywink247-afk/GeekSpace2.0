@@ -275,7 +275,7 @@ export function GmailPage() {
   };
 
   const handleReply = async () => {
-    if (!selected?.id || !replyText.trim()) return;
+    if (!selected?.id || !selected.inbox_id || !replyText.trim()) return;
     setSending(true);
     setError('');
     try {
@@ -793,7 +793,7 @@ export function GmailPage() {
               <CardContent className="space-y-4 pt-4">
                 {/* AI Summary (from sync) */}
                 {selected.summary && (
-                  <div className="bg-[#BF5FFF]/8 border border-[#BF5FFF]/15 rounded-xl p-3">
+                  <div className="bg-[#BF5FFF]/5 border border-[#BF5FFF]/15 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#BF5FFF]" />
                       <span className="text-[#BF5FFF] text-xs font-medium">AI Summary</span>
@@ -804,7 +804,7 @@ export function GmailPage() {
 
                 {/* On-demand Thread Summary */}
                 {(threadSummary || summarizing) && (
-                  <div className="bg-[#8B5CF6]/8 border border-[#8B5CF6]/15 rounded-xl overflow-hidden">
+                  <div className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 rounded-xl overflow-hidden">
                     <button
                       onClick={() => setSummaryExpanded(!summaryExpanded)}
                       className="flex items-center gap-2 w-full px-3 py-2.5 text-left min-h-[44px]"
@@ -847,7 +847,7 @@ export function GmailPage() {
                     {expandedThread === selected.thread_id && (
                       <div className="space-y-2 pl-2 border-l-2 border-white/5">
                         {threadMessages.filter(m => m.id !== selected.id).map(msg => (
-                          <div key={msg.id} className="bg-white/3 rounded-lg p-3">
+                          <div key={msg.id} className="bg-white/5 rounded-lg p-3">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold text-[#E8E8F0]/50">
                                 {senderInitial(msg.sender)}
@@ -864,7 +864,7 @@ export function GmailPage() {
                 )}
 
                 {/* Email content */}
-                <div className="bg-white/3 rounded-xl p-4">
+                <div className="bg-white/5 rounded-xl p-4">
                   <p className="text-[#E8E8F0]/70 text-sm leading-relaxed whitespace-pre-wrap">
                     {selected.snippet || selected.summary || '(no content preview available)'}
                   </p>
@@ -900,7 +900,13 @@ export function GmailPage() {
                 )}
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  {selected.inbox_id == null ? (
+                    <span className="flex items-center gap-1.5 text-[#E8E8F0]/30 text-xs px-3 py-2 rounded-lg border border-white/5 bg-white/5 min-h-[44px]">
+                      <Reply className="w-3.5 h-3.5 shrink-0" />
+                      Connect Gmail first to reply
+                    </span>
+                  ) : (
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowReply(true); setShowForward(false); }}
@@ -909,6 +915,7 @@ export function GmailPage() {
                     <Reply className="w-3.5 h-3.5 mr-1.5" />
                     Reply
                   </Button>
+                  )}
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowForward(true); setShowReply(false); }}

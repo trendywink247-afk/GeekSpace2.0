@@ -192,6 +192,7 @@ export function PicoFleetPage() {
   const [cronInterval, setCronInterval] = useState(60);
   const [cronAgentSlot, setCronAgentSlot] = useState(2);
   const [cronConfig, setCronConfig] = useState('{}');
+  const [cronConfigError, setCronConfigError] = useState<string | null>(null);
   const [savingCron, setSavingCron] = useState(false);
 
   // Toast auto-dismiss
@@ -231,12 +232,14 @@ export function PicoFleetPage() {
     loadData(true);
   }, [loadData]);
 
-  // ---- Recent activity polling (every 30s) ----
+  // ---- Tasks tab auto-refresh every 30s ----
   useEffect(() => {
-    const fetchRecent = async () => {
+    if (activeTab !== 'fleet') return;
+    const refreshTasks = async () => {
       try {
-        const res = await picoService.getTasks({ limit: 10 });
-        setRecentTasks(res.data.map(t => ({
+        const res = await picoService.getTasks({ limit: 50 });
+        setTasks(res.data);
+        setRecentTasks(res.data.slice(0, 10).map(t => ({
           id: t.id,
           description: t.description,
           status: t.status,
@@ -244,10 +247,9 @@ export function PicoFleetPage() {
         })));
       } catch { /* non-fatal */ }
     };
-    fetchRecent();
-    const interval = setInterval(fetchRecent, 30000);
+    const interval = setInterval(refreshTasks, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTab]);
 
   // ---- Load agent config when selected ----
   useEffect(() => {
@@ -394,17 +396,27 @@ export function PicoFleetPage() {
     setCronInterval(60);
     setCronAgentSlot(2);
     setCronConfig('{}');
+    setCronConfigError(null);
     setEditingCronId(null);
     setShowCronForm(false);
   };
 
   const handleSaveCronJob = async () => {
     if (!cronName.trim()) return;
+    // Validate JSON config before submit — block if invalid
+    let parsedConfig: Record<string, unknown> = {};
+    if (cronConfig.trim()) {
+      try {
+        parsedConfig = JSON.parse(cronConfig);
+        setCronConfigError(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message.replace('JSON.parse: ', '').slice(0, 60) : 'Invalid JSON';
+        setCronConfigError(msg);
+        return;
+      }
+    }
     setSavingCron(true);
     try {
-      let parsedConfig: Record<string, unknown> = {};
-      try { parsedConfig = JSON.parse(cronConfig); } catch { /* default */ }
-
       if (editingCronId) {
         await picoService.updateCronJob(editingCronId, {
           name: cronName,
@@ -1383,11 +1395,44 @@ export function PicoFleetPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-[#9CA3AF] block mb-1">Config (JSON)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm text-[#9CA3AF]">Config (JSON)</label>
+                    {cronConfigError ? (
+                      <span className="text-xs text-[#FF6161] flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {cronConfigError}
+                      </span>
+                    ) : (
+                      cronConfig.trim() && (
+                        <span className="text-xs text-[#00FF88] flex items-center gap-1">
+                          <Check className="w-3 h-3 shrink-0" />
+                          Valid JSON
+                        </span>
+                      )
+                    )}
+                  </div>
                   <Textarea
                     value={cronConfig}
-                    onChange={e => setCronConfig(e.target.value)}
-                    className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] font-mono text-xs min-h-[80px] resize-none"
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCronConfig(val);
+                      if (!val.trim()) {
+                        setCronConfigError(null);
+                        return;
+                      }
+                      try {
+                        JSON.parse(val);
+                        setCronConfigError(null);
+                      } catch (err) {
+                        setCronConfigError(err instanceof Error ? err.message.replace('JSON.parse: ', '').slice(0, 60) : 'Invalid JSON');
+                      }
+                    }}
+                    className={[
+                      'bg-[#06060B] text-[#E8E8F0] font-mono text-xs min-h-[80px] resize-none transition-colors',
+                      cronConfigError
+                        ? 'border-[#FF6161]/60 focus-visible:border-[#FF6161] focus-visible:ring-[#FF6161]/20'
+                        : 'border-[#00F0FF]/30',
+                    ].join(' ')}
                     placeholder='{"reminder_text": "Check server health"}'
                   />
                 </div>
@@ -1401,8 +1446,9 @@ export function PicoFleetPage() {
                   </Button>
                   <Button
                     onClick={handleSaveCronJob}
-                    disabled={!cronName.trim() || savingCron}
+                    disabled={!cronName.trim() || savingCron || !!cronConfigError}
                     className="bg-[#00F0FF] hover:bg-[#00D4B0]"
+                    title={cronConfigError ? 'Fix JSON config before saving' : undefined}
                   >
                     {savingCron ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingCronId ? 'Update' : 'Create')}
                   </Button>
