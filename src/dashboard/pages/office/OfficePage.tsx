@@ -15,6 +15,10 @@ import {
   CORE_AGENTS,
 } from './constants';
 import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard } from './types';
+import { AGENT_WORK_HOURS } from './types';
+
+/** All 9 agent IDs for iteration. */
+const ALL_AGENT_IDS: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
 /**
  * Constructs a CanvasAgent object suitable for display in the SpotlightHUD.
@@ -193,10 +197,13 @@ export function OfficePage() {
     await agentTasksService.create({ agent_id: agentId, title });
   }, []);
 
+  // Determine which agents are within working hours for the status strip
+  const currentHour = new Date().getHours();
+
   return (
     <div
-      className="relative flex flex-col md:flex-row h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
-      style={{ background: '#05050A' }}
+      className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
+      style={{ background: 'var(--ag-bg-deep, #05050A)' }}
     >
       {/* Session expired banner */}
       {sessionExpired && (
@@ -220,6 +227,9 @@ export function OfficePage() {
           </button>
         </div>
       )}
+
+      {/* Main content: Canvas + Sidebar */}
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
       {/* Office Stage — 60% desktop, 35vh mobile */}
       <div className="relative w-full md:w-[60%] h-[35vh] md:h-full flex-shrink-0">
@@ -362,13 +372,60 @@ export function OfficePage() {
         />
       </div>
 
+      </div>{/* end main content flex row */}
+
+      {/* A.7 — Status strip: 9 agent dots with name + working status */}
+      <div
+        className="flex-shrink-0 flex items-center justify-center gap-3 md:gap-4 px-3 py-2 border-t overflow-x-auto"
+        style={{
+          borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))',
+          background: 'var(--ag-bg-surface, rgba(12,12,30,0.6))',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+      >
+        {ALL_AGENT_IDS.map((agentId) => {
+          const agentColor = AGENT_COLORS[agentId];
+          const meta = AGENT_META[agentId];
+          const hours = AGENT_WORK_HOURS[agentId];
+          const isOnDuty = currentHour >= hours.start && currentHour < hours.end;
+          return (
+            <button
+              key={agentId}
+              onClick={() => setSelectedAgentId(agentId)}
+              className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-2 py-1 transition-all min-h-[32px]"
+              style={{
+                background: selectedAgentId === agentId ? `${agentColor}15` : 'transparent',
+                border: selectedAgentId === agentId ? `1px solid ${agentColor}30` : '1px solid transparent',
+              }}
+              title={`${agentId.charAt(0).toUpperCase() + agentId.slice(1)} - ${meta?.role ?? 'Agent'} (${isOnDuty ? 'On duty' : 'Off duty'})`}
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: isOnDuty ? agentColor : '#4B5563',
+                  boxShadow: isOnDuty ? `0 0 6px ${agentColor}50` : 'none',
+                  opacity: isOnDuty ? 1 : 0.5,
+                }}
+              />
+              <span
+                className="text-[10px] font-medium tracking-wide hidden sm:inline"
+                style={{ color: isOnDuty ? agentColor : '#4B5563' }}
+              >
+                {agentId.charAt(0).toUpperCase() + agentId.slice(1)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Agent Profile Flyout (double-click) */}
       <AgentProfileFlyout
         agentId={flyoutAgentId}
         onClose={() => setFlyoutAgentId(null)}
-        onNavigateToChat={(id) => {
+        onNavigateToChat={(agentIdArg) => {
           setFlyoutAgentId(null);
-          navigate(`/dashboard/chat?agent=${id}`);
+          navigate(`/dashboard/chat?agent=${agentIdArg}`);
         }}
       />
     </div>

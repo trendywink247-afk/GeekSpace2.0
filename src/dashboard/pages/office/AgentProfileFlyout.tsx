@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/AgentProfileFlyout.tsx
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle, ClipboardList } from 'lucide-react';
 import {
@@ -21,11 +21,15 @@ import {
   C,
 } from './constants';
 import type { AgentId, SpecialistId } from './types';
+import { createTask, TASK_TYPE_LABELS } from './taskQueue';
+import type { TaskType } from './taskQueue';
 
 interface Props {
   agentId: string | null;
   onClose: () => void;
   onNavigateToChat: (agentId: string) => void;
+  /** Callback when a task is assigned via the flyout modal. */
+  onTaskAssigned?: (agentId: AgentId, taskLabel: string) => void;
 }
 
 const STATE_DOT_COLORS: Record<string, string> = {
@@ -111,7 +115,7 @@ function AgentTooltip({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props) {
+export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskAssigned }: Props) {
   const isOpen = agentId !== null;
   const id = (agentId ?? 'weebo') as AgentId;
   const meta = AGENT_META[id];
@@ -119,6 +123,25 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
   const description = AGENT_DESCRIPTIONS[id] ?? '';
   const specialists = getSpecialistsForAgent(id);
   const stateDotColor = STATE_DOT_COLORS['idle'] ?? '#4B5563';
+
+  // A.4 — Assign Task modal state
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskInput, setTaskInput] = useState('');
+  const [taskType, setTaskType] = useState<TaskType>('generate_insight');
+
+  const handleAssignTask = useCallback(() => {
+    const label = taskInput.trim();
+    if (!label) return;
+    createTask({
+      type: taskType,
+      label,
+      assignedTo: id,
+      priority: 2,
+    });
+    onTaskAssigned?.(id, label);
+    setTaskInput('');
+    setShowTaskModal(false);
+  }, [taskInput, taskType, id, onTaskAssigned]);
 
   return (
     <AnimatePresence>
@@ -257,6 +280,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
               </AgentTooltip>
               <AgentTooltip label="Create and assign a new task to this agent">
                 <button
+                  onClick={() => setShowTaskModal(true)}
                   className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#8892A4] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06]"
                 >
                   <ClipboardList className="w-4 h-4" />
@@ -264,6 +288,104 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat }: Props
                 </button>
               </AgentTooltip>
             </div>
+
+            {/* A.4 — Assign Task Modal */}
+            <AnimatePresence>
+              {showTaskModal && (
+                <motion.div
+                  key="task-modal-overlay"
+                  className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div
+                    className="absolute inset-0 bg-black/60"
+                    onClick={() => setShowTaskModal(false)}
+                  />
+                  <motion.div
+                    className="relative w-full max-w-md rounded-2xl p-5"
+                    style={{
+                      backgroundColor: C.card,
+                      border: `1px solid ${color}30`,
+                      boxShadow: `0 0 40px ${color}10`,
+                    }}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-[#F4F6FF]">
+                        What should {id.charAt(0).toUpperCase() + id.slice(1)} do?
+                      </h3>
+                      <button
+                        onClick={() => setShowTaskModal(false)}
+                        className="p-1 rounded-lg hover:bg-white/5"
+                      >
+                        <X className="w-4 h-4 text-[#4B5563]" />
+                      </button>
+                    </div>
+
+                    {/* Task type dropdown */}
+                    <label className="block mb-3">
+                      <span className="text-[10px] uppercase tracking-wider text-[#8892A4] mb-1 block">
+                        Task Type
+                      </span>
+                      <select
+                        value={taskType}
+                        onChange={e => setTaskType(e.target.value as TaskType)}
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-none"
+                        style={{
+                          background: '#12121F',
+                          color: '#F4F6FF',
+                          border: '1px solid rgba(0,240,255,0.1)',
+                        }}
+                      >
+                        {(Object.entries(TASK_TYPE_LABELS) as [TaskType, string][]).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    {/* Task description input */}
+                    <label className="block mb-4">
+                      <span className="text-[10px] uppercase tracking-wider text-[#8892A4] mb-1 block">
+                        Description
+                      </span>
+                      <input
+                        type="text"
+                        value={taskInput}
+                        onChange={e => setTaskInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleAssignTask(); }}
+                        placeholder={`What should ${id.charAt(0).toUpperCase() + id.slice(1)} work on?`}
+                        autoFocus
+                        className="w-full rounded-lg px-3 py-2.5 text-xs outline-none placeholder:text-[#4B5563] min-h-[44px]"
+                        style={{
+                          background: '#12121F',
+                          color: '#F4F6FF',
+                          border: '1px solid rgba(0,240,255,0.1)',
+                        }}
+                      />
+                    </label>
+
+                    {/* Submit button */}
+                    <button
+                      onClick={handleAssignTask}
+                      disabled={!taskInput.trim()}
+                      className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all disabled:opacity-40 min-h-[44px]"
+                      style={{
+                        backgroundColor: `${color}20`,
+                        color,
+                        border: `1px solid ${color}40`,
+                      }}
+                    >
+                      Assign to {id.charAt(0).toUpperCase() + id.slice(1)}
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}

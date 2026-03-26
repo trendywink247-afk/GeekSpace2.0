@@ -89,7 +89,7 @@ type FidgetType = 'none' | 'typing' | 'looking' | 'stretching';
  * - 'working': SSE event triggered (typing, thinking) — special state
  * - 'group-meeting': 3+ agents at meeting table, synchronized animation
  */
-type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'working' | 'group-meeting';
+type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'working' | 'group-meeting' | 'delivering';
 
 /**
  * Internal state object for each agent.
@@ -1104,6 +1104,25 @@ export function tickBehaviors(
         break;
       }
 
+      case 'delivering': {
+        // Movement toward target agent handled by tickDeliveries — just update facing
+        if (bState.socialTarget) {
+          const deliveryTarget = agents.find(a => a.id === bState!.socialTarget);
+          if (deliveryTarget) {
+            bState.facing = computeFacing(agent.x, agent.y, deliveryTarget.x, deliveryTarget.y);
+            // Set walk target to near the recipient
+            const nx = deliveryTarget.x + (agent.x > deliveryTarget.x ? 1 : -1);
+            const validPt = validateTarget(nx, deliveryTarget.y, agent.x, agent.y);
+            updated.targetX = validPt.x;
+            updated.targetY = validPt.y;
+            updated.path = [];
+            updated.pathIndex = 0;
+            changed = true;
+          }
+        }
+        break;
+      }
+
       // 'working' mode -- no-op, handled by real task system
       default:
         break;
@@ -1283,4 +1302,172 @@ export function resetAllBehaviors(): void {
   activeGroupId = null;
   groupMeetingTimer = randomInt(300, 450);
   socialChatTimer = randomInt(100, 150);
+  pendingDeliveries.length = 0;
+}
+
+// ── A.3 — Agent-to-Agent Visible Messaging ──────────────────────────────────
+// When Agent A completes a task with a dependency for Agent B:
+// 1. Agent A walks toward Agent B's desk (mode = 'delivering')
+// 2. On arrival: ParticleBeam fires from A to B
+// 3. A emits SpeechBubble: "Hey [B.name], done with X — your turn"
+// 4. B's state transitions to comm_received → task_started
+// 5. B emits: "On it!"
+
+/** Pending delivery: Agent A completed a task and needs to hand off to Agent B. */
+interface AgentDelivery {
+  fromAgentId: AgentId;
+  toAgentId: AgentId;
+  taskLabel: string;
+  /** Delivery lifecycle phase. */
+  phase: 'walking' | 'arrived' | 'done';
+}
+
+const pendingDeliveries: AgentDelivery[] = [];
+
+/**
+ * Initiates a visible delivery sequence between two agents.
+ * Agent A walks to Agent B, fires a ParticleBeam, and emits a speech bubble.
+ * Called when a task completes and another agent needs to pick up follow-on work.
+ *
+ * @param fromAgentId - The agent delivering the result
+ * @param toAgentId - The agent receiving the handoff
+ * @param taskLabel - Human-readable label of the completed task
+ */
+export function startDelivery(
+  fromAgentId: AgentId,
+  toAgentId: AgentId,
+  taskLabel: string,
+): void {
+  // Avoid duplicate deliveries
+  if (pendingDeliveries.some(
+    d => d.fromAgentId === fromAgentId && d.toAgentId === toAgentId && d.phase !== 'done',
+  )) return;
+
+  pendingDeliveries.push({
+    fromAgentId,
+    toAgentId,
+    taskLabel,
+    phase: 'walking',
+  });
+
+  // Set Agent A's behavior to 'delivering'
+  const bs = behaviorStates.get(fromAgentId);
+  if (bs) {
+    releasePoint(fromAgentId);
+    bs.mode = 'delivering';
+    bs.socialTarget = toAgentId;
+    bs.timer = 0;
+    bs.socialStep = 0;
+  }
+}
+
+/**
+ * Ticks delivery behaviors. Called within tickBehaviors for agents in 'delivering' mode.
+ * Returns new ParticleBeams and SpeechBubbles generated during delivery sequences.
+ */
+export function tickDeliveries(
+  agents: CanvasAgent[],
+): {
+  beams: Array<{ fromAgentId: AgentId; toAgentId: AgentId; color: string }>;
+  bubbles: SpeechBubble[];
+  stateChanges: Array<{ agentId: AgentId; newState: 'comm_received' | 'task_started' }>;
+} {
+  const beams: Array<{ fromAgentId: AgentId; toAgentId: AgentId; color: string }> = [];
+  const bubbles: SpeechBubble[] = [];
+  const stateChanges: Array<{ agentId: AgentId; newState: 'comm_received' | 'task_started' }> = [];
+
+  for (const delivery of pendingDeliveries) {
+    if (delivery.phase === 'done') continue;
+
+    const fromAgent = agents.find(a => a.id === delivery.fromAgentId);
+    const toAgent = agents.find(a => a.id === delivery.toAgentId);
+    if (!fromAgent || !toAgent) {
+      delivery.phase = 'done';
+      continue;
+    }
+
+    const bs = behaviorStates.get(delivery.fromAgentId);
+    if (!bs || bs.mode !== 'delivering') {
+      delivery.phase = 'done';
+      continue;
+    }
+
+    if (delivery.phase === 'walking') {
+      // Walk toward target agent
+      const dist = Math.abs(fromAgent.x - toAgent.x) + Math.abs(fromAgent.y - toAgent.y);
+      bs.facing = computeFacing(fromAgent.x, fromAgent.y, toAgent.x, toAgent.y);
+
+      if (dist <= 2) {
+        // Arrived — fire beam and speech bubbles
+        delivery.phase = 'arrived';
+        bs.socialStep = 0;
+        bs.timer = 15; // brief pause for visual effect
+
+        // ParticleBeam from A to B
+        beams.push({
+          fromAgentId: delivery.fromAgentId,
+          toAgentId: delivery.toAgentId,
+          color: AGENT_COLORS[delivery.fromAgentId] || '#00F0FF',
+        });
+
+        // A says: "Hey [B.name], done with X — your turn"
+        const toName = delivery.toAgentId.charAt(0).toUpperCase() + delivery.toAgentId.slice(1);
+        const shortLabel = delivery.taskLabel.length > 20
+          ? delivery.taskLabel.slice(0, 18) + '...'
+          : delivery.taskLabel;
+        bubbles.push(makeBubble(
+          delivery.fromAgentId,
+          `Hey ${toName}, done with ${shortLabel} — your turn`,
+        ));
+
+        // B receives comm
+        stateChanges.push({ agentId: delivery.toAgentId, newState: 'comm_received' });
+      }
+    } else if (delivery.phase === 'arrived') {
+      bs.timer--;
+      if (bs.timer <= 0 && bs.socialStep === 0) {
+        bs.socialStep = 1;
+        // B responds: "On it!"
+        bubbles.push(makeBubble(delivery.toAgentId, 'On it!'));
+        stateChanges.push({ agentId: delivery.toAgentId, newState: 'task_started' });
+        bs.timer = 10;
+      } else if (bs.socialStep >= 1 && bs.timer <= 0) {
+        // Delivery complete — A returns to wandering
+        delivery.phase = 'done';
+        bs.socialTarget = null;
+        bs.socialStep = 0;
+        const perception = perceive(fromAgent, agents, recentWorkers);
+        const nextDest = chooseDestination(perception);
+        if (nextDest) {
+          bs.mode = 'wandering';
+          bs.targetPoint = nextDest;
+          bs.speed = AGENT_SPEED[fromAgent.id] ?? 1.0;
+          bs.timer = computeLingerDuration(fromAgent.id, nextDest.behavior);
+        } else {
+          bs.mode = 'sitting';
+          bs.timer = randomInt(5, 15);
+          bs.facing = 'down';
+        }
+      }
+    }
+  }
+
+  // Clean up completed deliveries
+  for (let i = pendingDeliveries.length - 1; i >= 0; i--) {
+    if (pendingDeliveries[i].phase === 'done') {
+      pendingDeliveries.splice(i, 1);
+    }
+  }
+
+  return { beams, bubbles, stateChanges };
+}
+
+/**
+ * Returns true if the given agent is currently in a delivery sequence.
+ * Used by tickBehaviors to skip normal behavior processing for delivering agents.
+ */
+export function isDelivering(agentId: AgentId): boolean {
+  return pendingDeliveries.some(
+    d => d.fromAgentId === agentId && d.phase !== 'done',
+  );
 }
