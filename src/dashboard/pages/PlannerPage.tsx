@@ -4,9 +4,11 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell, Flame, Plus, ChevronLeft, ChevronRight, Clock,
   GripVertical, Trash2, X, CalendarCheck, LayoutGrid,
+  Calendar as CalendarIcon, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -341,7 +343,9 @@ function QuickAddForm({
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export function PlannerPage() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [blocks, setBlocks] = useState<Record<string, TimeBlock[]>>({});
   const [habits, setHabits] = useState<HabitItem[]>([]);
   const [habitsLoading, setHabitsLoading] = useState(true);
@@ -400,9 +404,28 @@ export function PlannerPage() {
   // --- Derived data ---
   const dk = dateKey(currentDate);
 
+  // Fetch blocks for current date (day view)
   useEffect(() => {
     fetchBlocksForDate(dk);
   }, [dk, fetchBlocksForDate]);
+
+  // Fetch blocks for the full week (week view)
+  const weekDates = useMemo(() => {
+    const start = new Date(currentDate);
+    const dayOfWeek = start.getDay();
+    start.setDate(start.getDate() - dayOfWeek); // Start on Sunday
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  }, [currentDate]);
+
+  useEffect(() => {
+    if (viewMode === 'week') {
+      weekDates.forEach(d => fetchBlocksForDate(dateKey(d)));
+    }
+  }, [viewMode, weekDates, fetchBlocksForDate]);
 
   const todayBlocks = useMemo(() => blocks[dk] || [], [blocks, dk]);
 
@@ -584,23 +607,203 @@ export function PlannerPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#E8E8F0] flex items-center gap-2">
             <CalendarCheck className="w-6 h-6 text-[#00F0FF]" />
-            Daily Planner
+            {viewMode === 'day' ? 'Daily' : 'Weekly'} Planner
           </h1>
-          <span className="text-[10px] text-[#4B5563] font-medium">📅 Organized by Jarvis</span>
+          <span className="text-[10px] text-[#4B5563] font-medium">Organized by Jarvis</span>
           <p className="text-sm text-[#8892A4] mt-1">
-            Drag tasks from backlog into your timeline
+            {viewMode === 'day' ? 'Drag tasks from backlog into your timeline' : 'See your full week at a glance'}
           </p>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+          {/* View toggle */}
+          <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] ${
+                viewMode === 'day'
+                  ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
+                  : 'text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 inline mr-1.5" />Day
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] ${
+                viewMode === 'week'
+                  ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
+                  : 'text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
+            </button>
+          </div>
+
+          {/* Ask Cal CTA */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs"
+            onClick={() => navigate('/dashboard/chat?agent=cal&prompt=Plan+my+week')}
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            Ask Cal to plan my week
+          </Button>
+
           <StatBadge label="planned" value={stats.planned} suffix=" items" />
           <StatBadge label="blocked" value={stats.hoursBlocked} suffix="h" />
           <StatBadge label="of day" value={stats.pct} suffix="%" accent />
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <div
+          className="rounded-xl border border-white/10 overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, rgba(12,12,24,0.9) 0%, rgba(12,12,24,0.7) 100%)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          {/* Week header with nav */}
+          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-semibold text-[#E8E8F0]">
+                {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
+                {' - '}
+                {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-[#8892A4] hover:text-[#E8E8F0] hover:bg-white/5"
+                onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 h-7"
+              onClick={goToday}
+            >
+              This Week
+            </Button>
+          </div>
+
+          {/* Week grid */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              {/* Day headers */}
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/5">
+                <div className="p-2" />
+                {weekDates.map(d => {
+                  const isDateToday = isSameDay(d, new Date());
+                  return (
+                    <button
+                      key={dateKey(d)}
+                      onClick={() => { setCurrentDate(d); setViewMode('day'); }}
+                      className={`p-2 text-center transition-colors min-h-[44px] ${
+                        isDateToday ? 'bg-[#00F0FF]/[0.05]' : 'hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[#00F0FF]' : 'text-[#8892A4]'}`}>
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}
+                      </span>
+                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[#00F0FF]' : 'text-[#E8E8F0]'}`}>
+                        {d.getDate()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Hour rows — show every 2 hours for compactness */}
+              <div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
+                {HOURS.filter((_, i) => i % 2 === 0).map(hour => (
+                  <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.03]">
+                    <div className="p-1.5 text-right text-[10px] text-[#8892A4] font-mono border-r border-white/5">
+                      {formatHour(hour)}
+                    </div>
+                    {weekDates.map(d => {
+                      const dk2 = dateKey(d);
+                      const dayBlocks = (blocks[dk2] || []).filter(b => Math.floor(b.startHour) === hour || Math.floor(b.startHour) === hour + 1);
+                      const isDateToday = isSameDay(d, new Date());
+                      const isCurrent = isDateToday && Math.floor(currentHourFraction) >= hour && Math.floor(currentHourFraction) < hour + 2;
+                      return (
+                        <div
+                          key={dk2}
+                          className={`p-0.5 min-h-[48px] border-r border-white/[0.03] transition-colors ${
+                            isCurrent ? 'bg-[#00F0FF]/[0.03]' : ''
+                          } ${isDateToday ? 'bg-white/[0.01]' : ''}`}
+                          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+                          onDrop={e => {
+                            e.preventDefault();
+                            if (!dragItem) return;
+                            const block: TimeBlock = {
+                              id: generateId(),
+                              title: dragItem.title,
+                              startHour: hour,
+                              duration: 1,
+                              type: dragItem.type,
+                              color: TYPE_COLORS[dragItem.type],
+                              reminderId: dragItem.type === 'reminder' ? String(dragItem.sourceId) : undefined,
+                              habitId: dragItem.type === 'habit' ? Number(dragItem.sourceId) : undefined,
+                            };
+                            setBlocks(prev => ({
+                              ...prev,
+                              [dk2]: [...(prev[dk2] || []), block],
+                            }));
+                            const payload = localBlockToApi(block, dk2);
+                            plannerService.create(payload).then(res => {
+                              const serverBlock = apiBlockToLocal(res.data.block);
+                              setBlocks(prev => ({
+                                ...prev,
+                                [dk2]: (prev[dk2] || []).map(b => b.id === block.id ? serverBlock : b),
+                              }));
+                            }).catch(() => { /* optimistic block stays */ });
+                            setDragItem(null);
+                            toast.success(`Scheduled at ${formatHour(hour)} on ${DateTime.fromJSDate(d).toLocaleString({ weekday: 'short' })}`);
+                          }}
+                        >
+                          {dayBlocks.map(block => (
+                            <div
+                              key={block.id}
+                              className="rounded px-1 py-0.5 mb-0.5 text-[10px] truncate border-l-2 cursor-pointer hover:opacity-80"
+                              style={{
+                                backgroundColor: `${block.color}0A`,
+                                borderLeftColor: block.color,
+                                color: block.color,
+                              }}
+                              onClick={() => { setCurrentDate(d); setViewMode('day'); }}
+                              title={`${block.title} (${formatHour(block.startHour)})`}
+                            >
+                              {block.title}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Layout (Day View) */}
+      {viewMode === 'day' && <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
         {/* Left: Backlog Panel */}
         <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
           <div
@@ -819,7 +1022,7 @@ export function PlannerPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

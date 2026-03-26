@@ -161,10 +161,10 @@ export function AgentSettingsPage() {
     }).catch(() => setTelegramStatus('not_connected'));
   }, [loadIntegrations]);
 
-  // Sync from store when agent data loads
+  // Sync from store once on mount — hasHydrated guard prevents re-sync on every agent field change
+  const hasHydrated = useRef(false);
   useEffect(() => {
-    if (isDirty.current) return;
-    if (agent.id) {
+    if (!hasHydrated.current && agent.id) {
       setSelectedPersonality(agent.personality || 'weebo');
       setAgentName(agent.name || 'Weebo');
       setTone([agent.formality ?? 50]);
@@ -173,8 +173,10 @@ export function AgentSettingsPage() {
       setHumor([agent.humor ?? 50]);
       setEmpathy([agent.empathy ?? 50]);
       setCustomInstructions(agent.systemPrompt || '');
+      hasHydrated.current = true;
     }
-  }, [agent.id, agent.personality, agent.name, agent.formality, agent.verbosity, agent.creativity, agent.humor, agent.empathy, agent.systemPrompt]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent.id]);
 
   // ---- Handlers ----
 

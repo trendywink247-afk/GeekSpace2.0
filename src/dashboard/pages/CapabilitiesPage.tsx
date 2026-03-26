@@ -31,6 +31,7 @@ interface Capability {
   description: string;
   examples: string[];
   badge: 'Core' | 'Pro' | 'New';
+  status?: 'limited' | 'degraded';
   navigateTo?: string;
   needsSetup?: boolean;
   wow?: string;
@@ -153,9 +154,10 @@ const capabilities: Capability[] = [
     color: '#BF5FFF',
     glow: 'rgba(191,95,255,0.12)',
     title: 'Video Generation',
-    description: 'Generate short video clips from text prompts. Perfect for social media content, product demos, and visual storytelling. (Temporarily unavailable — free providers unreachable from this server.)',
+    description: 'Generate short video clips from text prompts. Perfect for social media content, product demos, and visual storytelling. Free providers currently unreachable — functionality is limited.',
     examples: ['Create a 10s product demo for my app', 'Generate a cinematic intro for my brand', 'Make an animated explainer for my SaaS'],
     badge: 'Pro',
+    status: 'limited',
     navigateTo: 'video-gen',
     wow: 'Text-to-video in your media library',
   },
@@ -549,6 +551,16 @@ function CapabilityCard({
             <cap.icon className="w-5 h-5" style={{ color: cap.color }} />
           </div>
           <div className="flex items-center gap-2">
+            {cap.status === 'limited' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20">
+                Limited
+              </span>
+            )}
+            {cap.status === 'degraded' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+                Degraded
+              </span>
+            )}
             {cap.needsSetup && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20">
                 Setup needed

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, Brain, Cpu, Activity, Monitor,
-  Code, Rocket, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
+  Code, Rocket, CalendarCheck, Share2, Sparkles, WifiOff,
   Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search,
   ImageIcon, Video, BookOpen, HelpCircle, Star, GitBranch, Mail, BarChart3, CreditCard, Map
 } from 'lucide-react';
@@ -58,13 +58,13 @@ const PicoFleetPage = lazyRetry(() =>
 const HealthDashboardPage = lazyRetry(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
 const WebsiteBuilderPage = lazyRetry(() => import('./pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
 const RoadmapPage = lazyRetry(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
-const ImageGenPage = lazyRetry(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
+// ImageGenPage + ImageGalleryPage unified into ImageCreatorPage (tabbed)
+const ImageCreatorPage = lazyRetry(() => import('./pages/ImageCreatorPage').then(m => ({ default: m.ImageCreatorPage })));
 const VideoGenPage = lazyRetry(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
 const PlannerPage = lazyRetry(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
 const SocialMediaPage = lazyRetry(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
-const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
 const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
 const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
@@ -83,8 +83,9 @@ const OfficeHomePage = lazyRetry(() => import('./pages/office/index').then(m => 
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
+const ConnectInboxPage = lazyRetry(() => import('./pages/ConnectInboxPage').then(m => ({ default: m.ConnectInboxPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio' | 'connect-inbox';
 
 
 interface MenuItem {
@@ -156,7 +157,8 @@ const menuGroups: MenuGroup[] = [
     label: 'Connect',
     icon: MessageSquare,
     items: [
-      { id: 'inbox', label: 'Inbox', icon: Inbox },
+      { id: 'connect-inbox', label: 'Inbox', icon: Inbox },
+      { id: 'inbox', label: 'All Messages', icon: Inbox },
       { id: 'gmail', label: 'Gmail', icon: Mail },
       { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
       { id: 'pico', label: 'Fleet', icon: Cpu },
@@ -240,7 +242,7 @@ export function DashboardApp() {
   ).length;
 
   // All pending (non-completed) reminders count for mobile badge
-  const pendingReminderCount = reminders.filter((r) => !r.completed).length;
+  // pendingReminderCount removed — unused variable
 
   // Pending integrations count for nav badge
   const pendingConnectionCount = integrations.filter((i) => i.status === 'pending').length;
@@ -356,7 +358,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -461,9 +463,9 @@ export function DashboardApp() {
       case 'website-builder':
         return <WebsiteBuilderPage />;
       case 'image-gen':
-        return <ImageGenPage />;
+        return <ImageCreatorPage />;
       case 'gallery':
-        return <ImageGalleryPage />;
+        return <ImageCreatorPage />;
       case 'video-gen':
         return <VideoGenPage />;
       case 'planner':
@@ -485,6 +487,8 @@ export function DashboardApp() {
         return <ActivityPage />;
       case 'proactive':
         return <ProactivePage />;
+      case 'connect-inbox':
+        return <ConnectInboxPage />;
       case 'inbox':
         return <InboxPage />;
       case 'gmail':
