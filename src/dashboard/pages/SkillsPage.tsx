@@ -1,3 +1,4 @@
+// @deprecated — DEAD CODE confirmed by Sprint 1 audit 2026-03-26. Not imported in DashboardApp.tsx. Safe to delete.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Loader2, CheckCircle2, XCircle, Package } from 'lucide-react';
 import { SkillCard } from '@/components/skills/SkillCard';

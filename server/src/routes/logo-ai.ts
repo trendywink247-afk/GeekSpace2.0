@@ -2,6 +2,7 @@
 // Endpoints: ai-visual, ai-suggest, ai-evolve, ai-refine, brand-kit, status
 
 import { Router } from 'express';
+import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import {
@@ -97,7 +98,7 @@ async function callMoonshot(system: string, user: string, maxTokens = 1024): Pro
 
 // ---- POST /ai-visual — FLUX logo generation with industry + logoType ----
 
-logoAiRouter.post('/ai-visual', async (req, res) => {
+logoAiRouter.post('/ai-visual', requireAuth, async (req: AuthRequest, res) => {
   res.setTimeout(90000);
 
   if (!config.togetherApiKey) {
@@ -169,7 +170,7 @@ logoAiRouter.post('/ai-visual', async (req, res) => {
 
 // ---- POST /ai-refine — conversational refinement ----
 
-logoAiRouter.post('/ai-refine', async (req, res) => {
+logoAiRouter.post('/ai-refine', requireAuth, async (req: AuthRequest, res) => {
   res.setTimeout(90000);
 
   if (!config.moonshotDirectApiKey || !config.togetherApiKey) {
@@ -240,7 +241,7 @@ logoAiRouter.post('/ai-refine', async (req, res) => {
 
 // ---- POST /brand-kit — AI-generated brand identity ----
 
-logoAiRouter.post('/brand-kit', async (req, res) => {
+logoAiRouter.post('/brand-kit', requireAuth, async (req: AuthRequest, res) => {
   res.setTimeout(90000);
 
   if (!config.moonshotDirectApiKey) {
@@ -323,7 +324,7 @@ Valid parameters: shape ("squircle"|"circle"|"chat-left"|"chat-right"), cornerRa
 Brand colors: Violet #8B5CF6, Emerald #10B981, Gold #F59E0B, Purple #7C3AED, Rose #EC4899.
 Return ONLY a JSON array of 4 objects: [{"name":"...", "params":{...}}]. No markdown.`;
 
-logoAiRouter.post('/ai-suggest', async (req, res) => {
+logoAiRouter.post('/ai-suggest', requireAuth, async (req: AuthRequest, res) => {
   res.setTimeout(90000);
 
   if (!config.moonshotDirectApiKey) {
@@ -360,7 +361,7 @@ logoAiRouter.post('/ai-suggest', async (req, res) => {
 
 // ---- POST /ai-evolve — blend selected styles ----
 
-logoAiRouter.post('/ai-evolve', async (req, res) => {
+logoAiRouter.post('/ai-evolve', requireAuth, async (req: AuthRequest, res) => {
   res.setTimeout(90000);
 
   if (!config.moonshotDirectApiKey || !config.togetherApiKey) {

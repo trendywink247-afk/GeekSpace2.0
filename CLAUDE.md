@@ -98,4 +98,4 @@ curl localhost:3001/api/health                 # 12 services
 - Caddy reverse proxy (host process)
 - LLM routing: cloud-first waterfall (OpenRouter → PicoClaw → Ollama → Groq → Together)
 - 9 AI personalities with auto-delegation
-- Telegram bot: @Weebo_gs_bot
+- Telegram bot: @agentinchatbot

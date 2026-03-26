@@ -6,7 +6,8 @@ import {
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, Brain, Cpu, Activity, Monitor,
   Code, Rocket, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
-  Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search
+  Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search,
+  ImageIcon, Video, BookOpen, HelpCircle, Star, GitBranch, Mail, BarChart3, CreditCard, Map
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -99,7 +100,7 @@ interface MenuGroup {
 }
 
 const menuGroups: MenuGroup[] = [
-  // Pinned (always visible, never collapse)
+  // Pinned (always visible, no collapse header)
   {
     label: null,
     icon: null,
@@ -108,85 +109,74 @@ const menuGroups: MenuGroup[] = [
       { id: 'chat', label: 'Chat', icon: MessageSquare },
     ],
   },
-  // AI Studio
+  // Create
   {
-    label: 'AI Studio',
+    label: 'Create',
     icon: Sparkles,
     items: [
       { id: 'creative-studio', label: 'Creative Studio', icon: Palette },
+      { id: 'image-gen', label: 'Images', icon: ImageIcon },
+      { id: 'video-gen', label: 'Video', icon: Video },
       { id: 'website-builder', label: 'Website Builder', icon: Code },
       { id: 'design', label: 'Design Assistant', icon: Palette },
       { id: 'tools', label: 'AI Tools', icon: Cpu },
     ],
   },
-  // Agent
+  // My Agent
   {
-    label: 'Agent',
+    label: 'My Agent',
     icon: Bot,
     items: [
       { id: 'office', label: 'Agent Office', icon: Monitor },
       { id: 'agent', label: 'Agent Settings', icon: Bot },
       { id: 'memory', label: 'Memory', icon: Brain },
+      { id: 'recipes', label: 'Recipes', icon: BookOpen },
+      { id: 'capabilities', label: 'What Can I Do?', icon: HelpCircle },
+      { id: 'training', label: 'Ratings', icon: Star },
     ],
   },
-  // Fleet
+  // Work
   {
-    label: 'Weebo Fleet',
-    icon: Cpu,
+    label: 'Work',
+    icon: Zap,
     items: [
+      { id: 'reminders', label: 'Reminders', icon: Bell, shortcut: 'R' },
+      { id: 'calendar', label: 'Calendar', icon: CalendarCheck },
+      { id: 'workflows', label: 'Workflows', icon: GitBranch },
+      { id: 'automations', label: 'Automations', icon: Zap },
+      { id: 'focus', label: 'Focus & Habits', icon: Target, shortcut: 'F' },
+      { id: 'docs', label: 'Docs', icon: FileText },
+      { id: 'social-media', label: 'Social Media', icon: Share2 },
+      { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
+    ],
+  },
+  // Connect
+  {
+    label: 'Connect',
+    icon: MessageSquare,
+    items: [
+      { id: 'inbox', label: 'Inbox', icon: Inbox },
+      { id: 'gmail', label: 'Gmail', icon: Mail },
+      { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
       { id: 'pico', label: 'Fleet', icon: Cpu },
       { id: 'planner', label: 'Planner', icon: CalendarCheck },
     ],
   },
-  // Productivity
+  // Control
   {
-    label: 'Productivity',
-    icon: Zap,
-    items: [
-      { id: 'reminders', label: 'Reminders', icon: Bell, shortcut: 'R' },
-      { id: 'automations', label: 'Automations', icon: Zap },
-      { id: 'calendar', label: 'Calendar', icon: CalendarCheck },
-      { id: 'social-media', label: 'Social Media', icon: Share2 },
-      { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
-      { id: 'focus', label: 'Focus & Habits', icon: Target, shortcut: 'F' },
-      { id: 'docs', label: 'Docs', icon: FileText },
-    ],
-  },
-  // Communication
-  {
-    label: 'Communication',
-    icon: MessageSquare,
-    items: [
-      { id: 'inbox', label: 'Inbox', icon: Inbox },
-      { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
-    ],
-  },
-  // Insights
-  {
-    label: 'Insights',
-    icon: TrendingUp,
-    items: [
-      { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-    ],
-  },
-  // You
-  {
-    label: 'You',
+    label: 'Control',
     icon: Settings,
     items: [
       { id: 'portfolio', label: 'Portfolio', icon: Palette },
+      { id: 'analytics', label: 'Analytics', icon: TrendingUp },
       { id: 'connections', label: 'Connections', icon: Link2 },
       { id: 'settings', label: 'Settings', icon: Settings },
-    ],
-  },
-  // System
-  {
-    label: 'System',
-    icon: Terminal,
-    items: [
-      { id: 'terminal', label: 'Terminal', icon: Terminal },
+      { id: 'usage', label: 'Usage', icon: BarChart3 },
+      { id: 'billing', label: 'Billing', icon: CreditCard },
       { id: 'health', label: 'Health', icon: Activity },
       { id: 'activity', label: 'Activity Log', icon: Clock },
+      { id: 'terminal', label: 'Terminal', icon: Terminal },
+      { id: 'roadmap', label: 'Roadmap', icon: Map },
     ],
   },
 ];

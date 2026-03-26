@@ -72,7 +72,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
           </ShimmerButton>
 
           <a
-            href="https://t.me/Weebo_gs_bot"
+            href="https://t.me/agentinchatbot"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -81,7 +81,7 @@ export function ContactSection({ onEnterDashboard }: ContactSectionProps) {
               className="border-[#8B5CF6]/30 text-[#F1F5F9] hover:bg-[#8B5CF6]/10 hover:border-[#8B5CF6]/50 px-8 py-3 rounded-xl font-medium text-lg transition-all duration-300"
             >
               <MessageCircle className="mr-2 w-5 h-5" />
-              Talk to Weebo on Telegram
+              Talk to Agentin on Telegram
             </Button>
           </a>
         </div>
