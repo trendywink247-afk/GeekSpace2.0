@@ -6,7 +6,7 @@ import type { AgentPersonality } from '@/types';
 
 // ── Use case definitions ───────────────────────────────────────────────────────
 
-type UseCase = 'creator' | 'student' | 'developer' | 'business';
+type UseCase = 'creator' | 'student' | 'developer' | 'business' | 'productivity' | 'personal';
 
 interface UseCaseOption {
   id: UseCase;
@@ -47,6 +47,18 @@ const USE_CASES: UseCaseOption[] = [
     label: 'Business',
     emoji: '💼',
     description: 'Emails, meeting notes, scheduling',
+  },
+  {
+    id: 'productivity',
+    label: 'Productivity',
+    emoji: '⚡',
+    description: 'Workflows, task management, automation',
+  },
+  {
+    id: 'personal',
+    label: 'Personal',
+    emoji: '🏠',
+    description: 'Reminders, habits, daily planning',
   },
 ];
 
@@ -224,21 +236,37 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-[#E8E8F0]">Connect Telegram</h2>
+                <h2 className="text-lg font-bold text-[#E8E8F0]">Connect on Telegram</h2>
                 <p className="text-sm text-[#6B7280] mt-1">
-                  Chat with your AI on the go. You can always connect later in Settings → Connections.
+                  Chat with your AI agent on the go. You can always connect later in Settings.
                 </p>
               </div>
-              <div className="rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">📱</span>
-                  <span className="text-sm font-semibold text-[#E8E8F0]">Telegram Bot</span>
+              <div className="rounded-xl border border-[#0088cc]/30 bg-[#0088cc]/5 p-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#0088cc]/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-[#E8E8F0]">@agentinchatbot</span>
+                    <p className="text-xs text-[#6B7280] mt-0.5">Your personal AI on Telegram</p>
+                  </div>
                 </div>
-                <p className="text-xs text-[#6B7280]">
-                  Send messages, set reminders, and get AI responses — right from your phone.
-                </p>
+                <ul className="text-xs text-[#9CA3AF] space-y-1 ml-1">
+                  <li className="flex items-center gap-2"><span className="text-[#00FF88]">*</span> Send messages and get AI responses</li>
+                  <li className="flex items-center gap-2"><span className="text-[#00FF88]">*</span> Set reminders from your phone</li>
+                  <li className="flex items-center gap-2"><span className="text-[#00FF88]">*</span> Generate images on the go</li>
+                </ul>
               </div>
               <div className="flex flex-col gap-2">
+                <a
+                  href="https://t.me/agentinchatbot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={async () => { await handleSave(); }}
+                  className="w-full py-3 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white text-sm font-semibold transition-colors text-center"
+                >
+                  Open @agentinchatbot in Telegram
+                </a>
                 <button
                   onClick={async () => {
                     await handleSave();
@@ -247,7 +275,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   disabled={saving}
                   className="w-full py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00D4E0] disabled:opacity-50 text-black text-sm font-semibold transition-colors"
                 >
-                  Connect Telegram
+                  Connect via Dashboard
                 </button>
                 <button
                   onClick={async () => {
@@ -257,7 +285,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   disabled={saving}
                   className="w-full py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-white/20 disabled:opacity-50 transition-colors"
                 >
-                  {saving ? 'Saving…' : 'Skip for now'}
+                  {saving ? 'Saving\u2026' : 'Skip for now'}
                 </button>
               </div>
             </div>

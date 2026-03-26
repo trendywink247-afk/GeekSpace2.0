@@ -1,3 +1,10 @@
+/**
+ * @deprecated Sprint 3 — DECOMPOSED (2026-03-26)
+ * Replaced by: src/routes/agent/ (7 sub-routers + index.ts)
+ * This file is preserved for reference only.
+ * Safe to delete after Sprint 6 architecture hardening.
+ * DO NOT add new routes here.
+ */
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, optionalAuth, type AuthRequest } from '../middleware/auth.js';
@@ -81,7 +88,7 @@ function detectAndHandleTaskIntent(message: string): boolean {
 
 // ---- Helper: Build system prompt with user context ----
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
   user: Record<string, unknown> | undefined,
   userId: string,

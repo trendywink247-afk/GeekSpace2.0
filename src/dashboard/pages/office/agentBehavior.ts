@@ -18,6 +18,8 @@ import { reservePoint, releasePoint, releaseAll } from './occupancy';
 import { getRoomAt } from './roomZones';
 
 // ── Startup validation: verify all interaction points are walkable ──────────
+// Non-fatal safety check — interaction points must be on walkable tiles or agents
+// cannot reach them. Logged as errors but don't block module loading.
 for (const obj of SMART_OBJECTS) {
   for (const ip of obj.interactionPoints) {
     if (!isWalkable(ip.x, ip.y)) {
@@ -29,6 +31,8 @@ for (const obj of SMART_OBJECTS) {
 }
 
 // ── Context-aware social chat phrases ───────────────────────────────────────
+// Speech bubbles shown when agents socialize or interact with smart objects.
+// Chosen based on the interaction point's behavior type (coffee, meeting, relax, etc).
 
 const COFFEE_PHRASES = ['Need coffee', 'Morning brew!', 'Want one?', 'Best part of the day'];
 const MEETING_PHRASES = ["Let's review", 'Good point!', 'Ship it?', 'Next steps...', 'Agreed'];
@@ -37,6 +41,11 @@ const PATIO_PHRASES = ['Fresh air!', 'Nice day', 'Back to work soon', 'Peaceful 
 const BOOKSHELF_PHRASES = ['Good read', 'Found it!', 'Check this out', 'Interesting...'];
 const GENERAL_PHRASES = ['Hey!', 'Nice work!', "How's it going?", 'Almost done!', 'High five!'];
 
+/**
+ * Returns the appropriate speech bubble phrases for the given interaction behavior.
+ * @param behavior - The interaction point behavior type (coffee, relax, present, etc) or 'general'.
+ * @returns Array of contextual phrases to randomly select from for speech bubbles.
+ */
 function phrasesForBehavior(
   behavior: InteractionPoint['behavior'] | 'general',
 ): string[] {
@@ -53,11 +62,52 @@ function phrasesForBehavior(
 }
 
 // ── Agent behavior state ────────────────────────────────────────────────────
+// State machine for each agent, updated every behavior tick (200ms).
+// Tracks current mode, targets, timers, and animation state.
 
+/**
+ * Cardinal direction the agent's sprite is facing.
+ * Determines which animation frame set to use and where speech bubbles appear.
+ */
 export type FacingDirection = 'down' | 'up' | 'left' | 'right';
+
+/**
+ * Idle fidget animation types shown while sitting or waiting.
+ * - 'none': No fidget (waiting for next action)
+ * - 'typing': Agent at desk, animating typing posture
+ * - 'looking': Looking around (at nearby agents or objects)
+ * - 'stretching': Stretch/relax animation while waiting
+ */
 type FidgetType = 'none' | 'typing' | 'looking' | 'stretching';
+
+/**
+ * Agent behavior state machine modes:
+ * - 'sitting': At a smart object or desk, performing fidget animation
+ * - 'wandering': Walking between smart objects, exploring the office
+ * - 'socializing': Interacting with another agent (facing, exchanging phrases)
+ * - 'returning': Walking back to home desk after wandering
+ * - 'working': SSE event triggered (typing, thinking) — special state
+ * - 'group-meeting': 3+ agents at meeting table, synchronized animation
+ */
 type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'working' | 'group-meeting';
 
+/**
+ * Internal state object for each agent.
+ * One BehaviorState per agent, stored in behaviorStates Map.
+ * Updated by tickBehavior() every behavior tick (200ms).
+ *
+ * @property mode - Current behavior mode (sitting, wandering, etc.)
+ * @property targetPoint - Goal interaction point (desk, couch, coffee machine)
+ * @property socialTarget - Other agent to socialize with, if any
+ * @property timer - Countdown ticks until next major action (0 triggers state change)
+ * @property fidgetTimer - Countdown ticks until next fidget animation frame
+ * @property fidgetType - Current idle fidget being performed
+ * @property speed - Personality-driven speed multiplier (0.85–1.2)
+ * @property socialStep - Step in social interaction sequence (0–5 = greeting, talking, departure)
+ * @property facing - Sprite facing direction (affects animation frame selection)
+ * @property groupId - Non-null when agent is part of a group meeting
+ * @property wanderCount - How many interaction points visited on current wander (reset to 0 when returning home)
+ */
 interface BehaviorState {
   mode: BehaviorMode;
   targetPoint: (InteractionPoint & { objectId: string }) | null;
@@ -74,25 +124,63 @@ interface BehaviorState {
 
 const behaviorStates = new Map<AgentId, BehaviorState>();
 
-// Per-agent personality speed multipliers (applied to 64px/sec base)
+/**
+ * Per-agent personality speed multipliers.
+ * Applied to the base speed of 64 pixels per behavior tick (200ms).
+ * Influences how fast agents walk, determining their personality energy level.
+ *
+ * Range: 0.85 (slow, methodical) to 1.2 (fast, energetic)
+ *
+ * @example
+ * ```
+ * weebo: 1.15 = Quick, energetic movement
+ * edith: 0.85 = Calm, deliberate pacing
+ * nova: 1.2 = Always moving (researcher personality)
+ * ```
+ */
 const AGENT_SPEED: Record<string, number> = {
-  weebo: 1.15,   // energetic
+  weebo: 1.15,   // energetic, bouncy
   edith: 0.85,   // calm, methodical
   jarvis: 1.0,   // steady, focused
   aria: 1.1,     // creative energy
-  forge: 0.9,    // deliberate
+  forge: 0.9,    // deliberate, thoughtful
   pulse: 1.05,   // data-driven pace
-  echo: 0.95,    // thoughtful
-  cal: 1.0,      // scheduled
-  nova: 1.2,     // researcher, always moving
+  echo: 0.95,    // reflective
+  cal: 1.0,      // scheduled, balanced
+  nova: 1.2,     // researcher, perpetually active
 };
 
 // ── Personality-driven behavior preferences ──────────────────────────────────
-// Each agent prefers certain smart object types. Weights determine how likely
-// they are to pick that type when wandering. Higher weight = more likely.
+// Each agent has personality-driven preferences for which smart object types
+// they're drawn to when wandering. Weights determine probability during random selection.
+// Higher weight = more likely to pick that object type.
+//
+// Example: weebo prefers seating/lounge areas (creative break), while edith prefers
+// desks/meeting tables (strategic, work-focused).
 
+/**
+ * Type union of all smart object categories.
+ * Used in BEHAVIOR_PREFERENCES to weight which objects each agent prefers.
+ */
 type SmartObjectType = 'desk' | 'appliance' | 'seating' | 'table' | 'display' | 'furniture' | 'decoration';
 
+/**
+ * Personality-weighted preferences for smart object types.
+ * When an agent is wandering, it randomly picks a weighted object type,
+ * then navigates to a nearby object of that type.
+ *
+ * Weights are arbitrary units; higher = more likely to be selected.
+ *
+ * @example
+ * ```
+ * weebo: { seating: 3, decoration: 2, table: 2, ... }
+ *   → Strongly prefers lounges and creative spaces
+ * edith: { desk: 3, table: 3, display: 2, ... }
+ *   → Focused on work and strategy areas
+ * nova: { furniture: 3, display: 3, table: 2, desk: 2, ... }
+ *   → Data analyst — interested in organized areas
+ * ```
+ */
 const BEHAVIOR_PREFERENCES: Record<string, Partial<Record<SmartObjectType, number>>> = {
   weebo: { seating: 3, decoration: 2, table: 2, appliance: 2, desk: 1, furniture: 1, display: 1 },       // prefers lounge, patio, creative areas
   aria:  { seating: 3, decoration: 3, table: 2, appliance: 2, desk: 1, furniture: 1, display: 1 },       // creative director — lounges, patio
@@ -166,6 +254,13 @@ const LINGER_MULTIPLIER: Record<string, Partial<Record<InteractionPoint['behavio
   jarvis: { collaborate: 1.5, observe: 1.3 },    // ops — meeting + whiteboard
 };
 
+/**
+ * Computes how many ticks an agent should linger at an interaction point,
+ * combining the base duration range for that behavior with the agent's personality multiplier.
+ * @param agentId - The agent whose linger personality multiplier is applied.
+ * @param behavior - The interaction behavior type (e.g., 'coffee', 'relax', 'work').
+ * @returns Number of behavior ticks (1 tick = 200ms) to spend at the interaction point.
+ */
 function computeLingerDuration(agentId: AgentId, behavior: InteractionPoint['behavior']): number {
   const dur = INTERACTION_DURATION[behavior] ?? { min: 25, max: 50 };
   const base = randomInt(dur.min, dur.max);
@@ -224,6 +319,20 @@ function computeFacing(fromX: number, fromY: number, toX: number, toY: number): 
 // Agents ALWAYS pick a smart object interaction point -- never random walkable tiles.
 // Uses personality-weighted selection with contextual overrides.
 
+/**
+ * Selects the best available interaction point for an agent to wander to,
+ * using a contextual rule cascade followed by personality-weighted random selection.
+ *
+ * Rule priority:
+ * 1. If agent recently worked → 60% chance to pick a break point (coffee, relax, chat)
+ * 2. If idle agent nearby → 35% chance to approach a shared social point
+ * 3. If agent is in meeting room → 60% chance to pick collaborate/present/observe
+ * 4. Weighted random using BEHAVIOR_PREFERENCES × ROOM_AFFINITY (personality-driven)
+ * 5. Fallback: any available interaction point
+ *
+ * @param p - The perception snapshot for the deciding agent.
+ * @returns The chosen interaction point with objectId and distance, or null if none available.
+ */
 function chooseDestination(
   p: AgentPerception,
 ): (InteractionPoint & { objectId: string; distance: number }) | null {
@@ -282,6 +391,42 @@ function chooseDestination(
 
 // ── Initialize behavior for an agent ────────────────────────────────────────
 
+/**
+ * Initializes the behavior state for an agent (called on first appearance).
+ * Sets idle mode with a staggered timer so agents don't all wake up simultaneously.
+ * Marks agents that just finished tool calls as "recent workers" for break weighting.
+ * @param agent - The agent to initialize
+ */
+/**
+ * Initializes behavior state for a newly visible agent on the office canvas.
+ *
+ * Called once when an agent enters the office (e.g., first render of OfficePage).
+ * Creates the internal BehaviorState record and sets initial sitting state.
+ *
+ * **What it does:**
+ * 1. Mark agent as "recent worker" if currently active (tool_call/tool_result)
+ *    - Recent workers prefer break areas (coffee, lounge) next cycle
+ *    - Mark expires after 2 minutes
+ * 2. Create BehaviorState with:
+ *    - **mode**: 'sitting' (start at desk)
+ *    - **timer**: staggered 5-15s (prevents all agents moving simultaneously)
+ *    - **speed**: personality-driven from AGENT_SPEED (0.85-1.2)
+ *    - **fidgetType**: 'none' (will cycle through fidgets while sitting)
+ *
+ * **Why stagger?**
+ * Without stagger, all agents would transition from sitting→wandering at the same time,
+ * creating a distracting synchronized mass movement. Stagger (0-30 ticks) distributes
+ * agent movements smoothly across 6 seconds.
+ *
+ * @param agent - The agent to initialize (usually from initial office state)
+ *
+ * @example
+ * ```typescript
+ * // When OfficePage mounts:
+ * const initialAgents = getOfficeAgents();
+ * initialAgents.forEach(agent => initBehavior(agent));
+ * ```
+ */
 export function initBehavior(agent: CanvasAgent): void {
   // Track recent workers for lounge weighting
   if (agent.state === 'tool_call' || agent.state === 'tool_result') {
@@ -289,13 +434,13 @@ export function initBehavior(agent: CanvasAgent): void {
     setTimeout(() => recentWorkers.delete(agent.id), 120_000);
   }
 
-  // Stagger initial timers so agents don't all move at once
+  // Stagger initial timers so agents don't all move at once (prevents synchronized mass movement)
   const stagger = Math.floor(Math.random() * 30);
   behaviorStates.set(agent.id, {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(25, 75) + stagger, // 5-15s initial desk time then start roaming
+    timer: randomInt(25, 75) + stagger, // 5-15s initial desk time (staggered 0-30 ticks) then start roaming
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
     speed: AGENT_SPEED[agent.id] ?? 1.0,
@@ -308,6 +453,12 @@ export function initBehavior(agent: CanvasAgent): void {
 
 // ── Cancel idle behavior -- snap agent back to desk ──────────────────────────
 
+/**
+ * Immediately cancels idle behavior for an agent, snapping them back to sitting at desk.
+ * Called when the user sends a message and the agent needs to respond (not idle anymore).
+ * Releases all occupancy reservations and resets the behavior state.
+ * @param agentId - ID of the agent to return to desk
+ */
 export function cancelIdleBehavior(agentId: AgentId): void {
   const bState = behaviorStates.get(agentId);
   if (!bState) return;
@@ -348,6 +499,13 @@ const GROUP_MEETING_BEHAVIORS: Array<InteractionPoint['behavior']> = [
   'collaborate', 'chat', 'relax',
 ];
 
+/**
+ * Attempts to start a group meeting if conditions are met (no active meeting, 3+ idle agents,
+ * 2+ eligible agents, and a smart object with enough interaction points).
+ * Assigns each chosen agent a unique interaction point and sets their behavior mode to
+ * 'group-meeting'. No-ops if any precondition fails.
+ * @param idleAgents - All currently idle (non-dormant) agents.
+ */
 function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   if (activeGroupMeeting) return;
   if (idleAgents.length < 3) return;
@@ -413,6 +571,19 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   }
 }
 
+/**
+ * Advances the active group meeting through its three phases each behavior tick:
+ * - **gathering**: routes each member to their assigned interaction point; transitions to
+ *   chatting once all members are within 2 tiles of their spot.
+ * - **chatting**: decrements chat timer and emits context-aware speech bubbles every ~20 ticks
+ *   until the timer expires; then transitions to dispersing.
+ * - **dispersing**: releases reservations, sends each member to a new solo destination,
+ *   and clears the active meeting.
+ *
+ * @param agents - All canvas agents (used to find meeting member objects).
+ * @param newBubbles - Array to push newly created speech bubbles into.
+ * @returns Map of agentId → tile position targets for the current tick.
+ */
 function tickGroupMeeting(
   agents: CanvasAgent[],
   newBubbles: SpeechBubble[],
@@ -504,6 +675,68 @@ function tickGroupMeeting(
 
 // ── Main tick function -- call every 200ms ───────────────────────────────────
 
+/**
+ * Main behavior tick — updates all idle agents' positions, states, and social interactions.
+ * Called every 200ms by OfficeStage. Perception-driven: agents choose destinations based on
+ * nearby agents, current room, and personality preferences.
+ *
+ * Handles:
+ * - Sitting/fidgeting at desks
+ * - Wandering to smart objects (personality-weighted)
+ * - Socializing with nearby agents (context-aware phrases)
+ * - Group meetings (2-3 agents at meeting table)
+ * - Day/night behavior differences
+ * @param agents - All agents on the canvas
+ * @param _tick - Current canvas frame number (unused but kept for consistency)
+ * @param theme - Time of day ('day' = faster wandering, 'night' = slower, calmer)
+ * @returns Updated agents + new speech bubbles to display
+ */
+/**
+ * Main behavior tick function — advances all agent behavior state machines each tick (200ms).
+ *
+ * **Behavior System Overview:**
+ * This is a complete perception-driven behavior system for idle agents in the office canvas.
+ * Each agent has a state machine with modes: sitting, wandering, socializing, group-meeting, etc.
+ * Agents autonomously pick interaction points to visit, initiate social encounters, and form groups.
+ *
+ * **What Happens Each Tick:**
+ * 1. Update global timers for group meetings and ambient chatter
+ * 2. Trigger group meetings when available movable agents exist
+ * 3. Process each idle agent through its behavior state machine:
+ *    - Sitting: idle fidget, timer-based transition to wandering
+ *    - Wandering: navigate toward chosen interaction point, visit it
+ *    - Socializing: exchange phrases with nearby agent, then disperse
+ *    - Returning: walk back to home desk (legacy, rarely triggered)
+ *    - Group-meeting: coordinate with other agents at meeting table
+ * 4. Return updated agents and any new speech bubbles created during interactions
+ *
+ * **Key Features:**
+ * - **Perception-driven**: Agents perceive nearby agents/objects and make decisions based on context
+ * - **Personality-driven**: AGENT_SPEED, BEHAVIOR_PREFERENCES, ROOM_AFFINITY encode personality
+ * - **Coordination**: Group meetings, social chats, and shared interaction points
+ * - **Theme-aware**: Night mode reduces activity, social frequency, and group meeting rate
+ *
+ * **Behavioral Rules:**
+ * - Agents only interact at smart object interaction points (never random tiles)
+ * - Personality-weighted selection: nova loves bookshelves, forge prefers desks, echo lingers at couches
+ * - Social encounters triggered by proximity (agents within 5 tiles exchange brief phrases)
+ * - Group meetings form spontaneously (3-4 agents at meeting table) every 5-15s (day) or 15-30s (night)
+ *
+ * @param agents - All agents currently on the canvas
+ * @param _tick - Current frame counter (unused; behavior runs on 200ms intervals in Stage)
+ * @param theme - `'day'` or `'night'` — affects activity level and group meeting frequency
+ * @returns Object with:
+ *   - `updatedAgents`: Array of agents with updated positions, facing, state (some may be unchanged)
+ *   - `newBubbles`: Any speech bubbles created during social interactions this tick
+ *
+ * @example
+ * ```typescript
+ * // In OfficeStage, call every 200ms:
+ * const { updatedAgents, newBubbles } = tickBehaviors(agents, frameCount, 'day');
+ * setAgents(updatedAgents);
+ * newBubbles.forEach(bubble => addBubble(bubble));
+ * ```
+ */
 export function tickBehaviors(
   agents: CanvasAgent[],
   _tick: number,
@@ -896,19 +1129,112 @@ export function tickBehaviors(
 
 // ── Query functions for the renderer ────────────────────────────────────────
 
+/**
+ * Gets the current idle fidget animation for an agent (typing, looking, stretching, or none).
+ *
+ * Fidget types cycle while sitting, providing subtle visual interest:
+ * - `'typing'`: Agent at desk, hands on keyboard (3-frame animation)
+ * - `'looking'`: Glancing around, watching nearby agents
+ * - `'stretching'`: Stretch/relax pose (2-frame animation)
+ * - `'none'`: Neutral standing (waiting for next action)
+ *
+ * **Usage:** Called by sprite renderer to select which idle animation frame to display.
+ *
+ * @param agentId - Agent ID
+ * @returns Current fidget type ('typing', 'looking', 'stretching', or 'none')
+ *
+ * @example
+ * ```typescript
+ * const fidget = getAgentFidget('weebo');
+ * // If fidget === 'typing', render weebo with typing animation
+ * ```
+ */
 export function getAgentFidget(agentId: AgentId): FidgetType {
   return behaviorStates.get(agentId)?.fidgetType ?? 'none';
 }
 
+/**
+ * Gets the current behavior mode for an agent.
+ *
+ * Behavior modes represent the agent's current activity:
+ * - `'sitting'`: At desk or furniture, idle fidgeting (initial state)
+ * - `'wandering'`: Walking toward an interaction point to visit
+ * - `'socializing'`: Interacting with another nearby agent (brief encounter)
+ * - `'group-meeting'`: Participating in a multi-agent meeting at a table
+ * - `'returning'`: Walking back to home desk (legacy, rarely used)
+ * - `'working'`: Actively processing (handled by external task system, no-op)
+ *
+ * **Usage:** Used by renderer for pose selection and debugging. Helps determine
+ * which animation set and offset to apply when drawing the agent.
+ *
+ * @param agentId - Agent ID
+ * @returns Current behavior mode ('sitting', 'wandering', 'socializing', 'group-meeting', 'returning', or 'working')
+ *
+ * @example
+ * ```typescript
+ * const mode = getAgentBehaviorMode('edith');
+ * if (mode === 'wandering') drawWalkAnimation(agent);
+ * else drawIdleAnimation(agent);
+ * ```
+ */
 export function getAgentBehaviorMode(agentId: AgentId): BehaviorMode {
   return behaviorStates.get(agentId)?.mode ?? 'sitting';
 }
 
+/**
+ * Gets the direction the agent sprite is currently facing (down, up, left, right).
+ *
+ * Facing direction determines:
+ * - **Sprite row selection**: Each agent sprite has 3 rows (down/up/right) indexed by facing
+ * - **Animation frame mapping**: Walk animations cycle differently based on direction
+ * - **Speech bubble position**: Bubbles appear above the agent's head
+ *
+ * **Direction rules:**
+ * - `'down'`: Front face (walking south, sitting at desk facing camera)
+ * - `'up'`: Back view (walking north, away from camera)
+ * - `'left'` / `'right'`: Side view (walking east/west, mirror for left)
+ *
+ * **Usage:** Called by sprite renderer to select which sprite row to draw.
+ *
+ * @param agentId - Agent ID
+ * @returns Current facing direction ('down', 'up', 'left', or 'right')
+ *
+ * @example
+ * ```typescript
+ * const facing = getAgentFacing('aria');
+ * // If facing === 'left', render sprite row 2 (right side) mirrored
+ * ```
+ */
 export function getAgentFacing(agentId: AgentId): FacingDirection {
   return behaviorStates.get(agentId)?.facing ?? 'down';
 }
 
-/** Get the visual pose for an agent at furniture (sit/lean/stand) */
+/**
+ * Gets the visual pose for an agent when seated at furniture.
+ *
+ * Pose determines how deeply the sprite is offset when sitting at or leaning against an object:
+ * - `'sit'`: Deep into chair/couch (8px down + furniture offset)
+ *   Used for: desks, seating, tables
+ * - `'lean'`: Slight lean against counter/appliance (3px down + furniture offset)
+ *   Used for: coffee machines, appliances
+ * - `'stand'`: Normal standing pose (no vertical offset)
+ *   Used for: whiteboards, displays, decorations, standing meetings
+ * - `'none'`: Agent not at an interaction point (walking, etc.)
+ *
+ * **Usage:** Called by renderer to apply Y-axis offset when drawing agent at furniture.
+ * The offset makes furniture interactions visually believable (character sits in chair,
+ * not hovering above it).
+ *
+ * @param agentId - Agent ID
+ * @returns Visual pose ('sit', 'lean', 'stand', or 'none')
+ *
+ * @example
+ * ```typescript
+ * const pose = getAgentPose('forge');
+ * const sittingOffset = pose === 'sit' ? 8 : pose === 'lean' ? 3 : 0;
+ * drawAgentAt(forge, x, y + sittingOffset);
+ * ```
+ */
 export function getAgentPose(agentId: AgentId): 'sit' | 'lean' | 'stand' | 'none' {
   const bs = behaviorStates.get(agentId);
   if (!bs || !bs.targetPoint) return 'none';
@@ -919,6 +1245,36 @@ export function getAgentPose(agentId: AgentId): 'sit' | 'lean' | 'stand' | 'none
 
 // ── Reset all behaviors (e.g., on unmount) ──────────────────────────────────
 
+/**
+ * Clears all agent behavior state, reservations, and global timers.
+ *
+ * **When to call:** On OfficePage unmount to prevent stale state from persisting
+ * if the page is remounted later. Ensures clean slate for next office session.
+ *
+ * **What it clears:**
+ * - `behaviorStates`: Per-agent state machines (sitting, wandering, etc.)
+ * - Occupancy reservations: Interaction point bookings held by agents
+ * - `recentWorkers`: Set of agents that recently performed tool calls
+ * - Active group meeting state: Any in-progress multi-agent meeting
+ * - Global timers: Group meeting and social chat countdown timers
+ *
+ * **After reset:**
+ * - All agents revert to 'sitting' idle state
+ * - All interaction points become available
+ * - Group meetings and social chats will restart fresh on next init
+ *
+ * **Critical for correct behavior:**
+ * Without reset, remounting OfficePage with stale state causes:
+ * - Agents stuck in 'wandering' without valid targets (target already released)
+ * - Overlapping reservations (two agents at same furniture)
+ * - Group meetings referencing deleted agents
+ *
+ * @example
+ * ```typescript
+ * // In OfficePage.tsx useEffect cleanup:
+ * return () => resetAllBehaviors();
+ * ```
+ */
 export function resetAllBehaviors(): void {
   behaviorStates.clear();
   releaseAll();

@@ -1,0 +1,151 @@
+import { Briefcase, Code, Image, Inbox, Timer, Terminal } from 'lucide-react';
+
+/** All valid use-case identifiers a user can select during onboarding. */
+type UseCase = 'productivity' | 'creative' | 'communication' | 'business' | 'personal' | 'developer';
+
+/**
+ * Configuration for a single use-case option card.
+ * @property id - Use-case identifier stored in agent preferences.
+ * @property label - Display name shown on the card.
+ * @property description - One-line summary of what this use-case covers.
+ * @property icon - Lucide icon rendered in the card icon slot.
+ * @property color - Hex accent color for the icon and selection ring.
+ * @property focusArea - Dashboard area to emphasize when this use-case is active (e.g. 'workflows').
+ */
+interface UseCaseOption {
+  id: UseCase;
+  label: string;
+  description: string;
+  icon: typeof Briefcase;
+  color: string;
+  focusArea: string;
+}
+
+const USE_CASE_OPTIONS: UseCaseOption[] = [
+  {
+    id: 'productivity',
+    label: 'Productivity',
+    description: 'Workflows, task management, and automation',
+    icon: Timer,
+    color: '#00F0FF',
+    focusArea: 'workflows',
+  },
+  {
+    id: 'creative',
+    label: 'Creative',
+    description: 'Image generation, writing, and content',
+    icon: Image,
+    color: '#BF5FFF',
+    focusArea: 'image-gen',
+  },
+  {
+    id: 'communication',
+    label: 'Communication',
+    description: 'Inbox management, emails, and messaging',
+    icon: Inbox,
+    color: '#00FF88',
+    focusArea: 'inbox',
+  },
+  {
+    id: 'business',
+    label: 'Business',
+    description: 'Documents, workflows, and scheduling',
+    icon: Briefcase,
+    color: '#F59E0B',
+    focusArea: 'docs',
+  },
+  {
+    id: 'personal',
+    label: 'Personal',
+    description: 'Reminders, habits, and daily planning',
+    icon: Timer,
+    color: '#EC4899',
+    focusArea: 'reminders',
+  },
+  {
+    id: 'developer',
+    label: 'Developer',
+    description: 'Terminal, health checks, and code tools',
+    icon: Terminal,
+    color: '#10B981',
+    focusArea: 'terminal',
+  },
+];
+
+interface UseCaseStepProps {
+  /** Currently selected use-case ID, or empty string if none chosen yet. */
+  selected: string;
+  /** Called with the chosen use-case ID when the user clicks a card. */
+  onSelect: (useCase: string) => void;
+}
+
+/**
+ * Onboarding step that lets the user pick their primary use-case for Agentin.
+ * Selection is visually highlighted and persisted via `onSelect`.
+ * @component
+ */
+export function UseCaseStep({ selected, onSelect }: UseCaseStepProps) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Code className="w-6 h-6 text-[#8B5CF6]" />
+        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
+          What will you use Agentin for?
+        </h2>
+      </div>
+      <p className="text-[#6B7280] text-sm">
+        Pick your main use case so your AI can tailor suggestions and shortcuts.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {USE_CASE_OPTIONS.map((uc) => {
+          const isSelected = selected === uc.id;
+          const Icon = uc.icon;
+          return (
+            <button
+              key={uc.id}
+              type="button"
+              onClick={() => onSelect(uc.id)}
+              className={[
+                'flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
+                'focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
+                isSelected
+                  ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                  : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40',
+              ].join(' ')}
+            >
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${uc.color}15` }}
+              >
+                <Icon className="w-5 h-5" style={{ color: uc.color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#E8E8F0]">{uc.label}</div>
+                <div className="text-xs text-[#6B7280] mt-0.5">{uc.description}</div>
+              </div>
+              {isSelected && (
+                <div className="w-5 h-5 rounded-full bg-[#8B5CF6] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Maps a use-case ID to the `focus_area` string stored in the agent's config.
+ * Defaults to `'workflows'` for unrecognized values.
+ * @param useCase - One of the six valid UseCase IDs (or any string).
+ * @returns The corresponding focus area slug (e.g. 'image-gen', 'inbox').
+ */
+export function useCaseToFocusArea(useCase: string): string {
+  const match = USE_CASE_OPTIONS.find((uc) => uc.id === useCase);
+  return match?.focusArea ?? 'workflows';
+}

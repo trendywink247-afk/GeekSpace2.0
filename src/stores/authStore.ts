@@ -11,33 +11,88 @@ declare global {
   }
 }
 
+/**
+ * Zustand store shape for authentication and session state.
+ *
+ * Persisted fields (survive page reloads via localStorage key `gs-auth`):
+ * `token`, `isAuthenticated`, `user`, `onboarding`, `compactMode`.
+ */
 interface AuthStore {
+  /** Authenticated user profile, or null when logged out. */
   user: User | null;
+  /** JWT access token stored in localStorage under `gs_token`. */
   token: string | null;
+  /** True when a valid session exists. */
   isAuthenticated: boolean;
+  /** True while any auth API call is in-flight. */
   isLoading: boolean;
+  /** Multi-step onboarding progress (step index, profile data, preferences). */
   onboarding: OnboardingState;
+  /** When true, the sidebar/chat UI renders in compact/condensed layout. */
   compactMode: boolean;
 
-  // actions
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  /**
+   * Authenticates with email + password. Stores token in localStorage and syncs timezone.
+   * @throws {Error} If credentials are invalid or the API returns an error.
+   */
   login: (email: string, password: string) => Promise<void>;
+
+  /**
+   * Registers a new account and logs the user in immediately.
+   * @throws {Error} If signup fails (e.g. email taken, validation error).
+   */
   signup: (email: string, password: string, username: string) => Promise<void>;
+
+  /** Clears session state, removes token from localStorage, and resets onboarding. */
   logout: () => void;
+
+  /**
+   * Fetches the current user's profile from `/api/users/me` and syncs timezone.
+   * Clears auth state if the request fails (e.g. expired token).
+   */
   fetchUser: () => Promise<void>;
+
+  /** Replaces the cached user profile with a new value (e.g. after profile edits). */
   setUser: (user: User) => void;
+
+  /**
+   * Persists a single onboarding step's data to the API and advances the step counter.
+   * Silently allows offline use (API failure does not throw).
+   * @param step - The step index that was just completed.
+   * @param data - Arbitrary step-specific form data to save.
+   */
   saveOnboardingStep: (step: number, data: Record<string, unknown>) => Promise<void>;
+
+  /** Merges partial onboarding state (e.g. profile fields) without persisting to API. */
   updateOnboarding: (data: Partial<OnboardingState>) => void;
+
+  /**
+   * Marks onboarding as completed on the API and sets `completed: true` locally.
+   * Silently allows offline use.
+   */
   completeOnboarding: () => Promise<void>;
+
+  /** Toggles compact layout mode for the dashboard UI. */
   setCompactMode: (enabled: boolean) => void;
 
-  // demo mode
+  /**
+   * Logs in with a demo account from the API. Falls back to a hardcoded mock user
+   * if the backend is unreachable (e.g. during development without a server).
+   */
   loginDemo: () => Promise<void>;
 }
 
+/**
+ * Default onboarding state for new users.
+ * Also used as the reset value after logout.
+ */
 export const defaultOnboarding: OnboardingState = {
   step: 0,
   completed: false,
-  profile: { name: '', username: '', bio: '', headline: '', tags: [] },
+  profile: { name: '', username: '', bio: '', headline: '', tags: [], avatar: '#8B5CF6' },
+  useCase: '',
   agentPreferences: { personality: 'jarvis', agentMode: 'builder' as AgentMode },
   portfolio: { skills: [], headline: '', about: '' },
   integrations: [],
@@ -152,7 +207,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await authService.completeOnboarding();
         } catch { /* allow offline */ }
-        set((s) => ({ onboarding: { ...s.onboarding, completed: true, step: 6 } }));
+        set((s) => ({ onboarding: { ...s.onboarding, completed: true, step: 8 } }));
       },
 
       setCompactMode: (enabled) => set({ compactMode: enabled }),

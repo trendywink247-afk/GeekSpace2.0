@@ -4,6 +4,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+/**
+ * Internal PWA status snapshot managed by `usePWA`.
+ * @property isInstalled - True after the `appinstalled` event fires.
+ * @property isStandalone - True when running as an installed PWA (display-mode: standalone).
+ * @property canInstall - True when the browser has fired `beforeinstallprompt` and the app is installable.
+ * @property isOffline - True when `navigator.onLine` is false.
+ * @property pushPermission - Current `Notification.permission` value, or null if the API is unavailable.
+ * @property serviceWorker - Active ServiceWorkerRegistration after `/sw.js` registers, or null.
+ */
 interface PWAState {
   isInstalled: boolean;
   isStandalone: boolean;
@@ -13,11 +22,28 @@ interface PWAState {
   serviceWorker: ServiceWorkerRegistration | null;
 }
 
+/**
+ * Minimal typing for the non-standard `BeforeInstallPromptEvent`.
+ * Browsers fire this before showing the native install prompt.
+ */
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+/**
+ * Manages Progressive Web App (PWA) functionality including service worker registration,
+ * app installation prompts, push notifications, and offline/online detection.
+ *
+ * @returns Object containing:
+ *   - State: isInstalled, isStandalone, canInstall, isOffline, pushPermission, serviceWorker
+ *   - Methods: promptInstall, requestPushPermission, subscribeToPush, unsubscribeFromPush,
+ *     sendTestNotification, syncWhenOnline
+ *
+ * @example
+ * const { canInstall, promptInstall, isOffline, subscribeToPush } = usePWA();
+ * if (canInstall) <button onClick={promptInstall}>Install App</button>
+ */
 export function usePWA() {
   const [state, setState] = useState<PWAState>({
     isInstalled: false,
@@ -210,7 +236,12 @@ export function usePWA() {
   };
 }
 
-// Helper function to convert VAPID key
+/**
+ * Converts a URL-safe base64 VAPID public key to the `ArrayBuffer` required
+ * by `PushManager.subscribe({ applicationServerKey })`.
+ * @param base64String - URL-safe base64-encoded VAPID public key (from `VITE_VAPID_PUBLIC_KEY`).
+ * @returns Raw key bytes as an ArrayBuffer.
+ */
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -222,7 +253,21 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return outputArray.buffer;
 }
 
-// Hook for install prompt banner
+/**
+ * Manages PWA install prompt display and dismissal.
+ * Shows a banner after 5 seconds if the app can be installed (canInstall=true).
+ * Respects user dismissal and only shows once until dismissed.
+ *
+ * @returns Object containing:
+ *   - showPrompt: Whether to display the install banner
+ *   - dismiss: Function to dismiss the prompt
+ *   - install: Function to trigger the install dialog
+ *   - canInstall: Whether installation is currently available
+ *
+ * @example
+ * const { showPrompt, install, dismiss, canInstall } = useInstallPrompt();
+ * if (showPrompt) return <InstallBanner onInstall={install} onDismiss={dismiss} />;
+ */
 export function useInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);

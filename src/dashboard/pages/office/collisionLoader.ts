@@ -8,14 +8,29 @@ import { CELL, COLS, ROWS } from './constants';
 let parsedMap: boolean[][] | null = null;
 let loaded = false;
 
+/**
+ * Returns whether the authored collision image has been successfully parsed.
+ * @returns True if the map was loaded from the image; false otherwise.
+ */
 export function isAuthoredMapLoaded(): boolean {
   return loaded;
 }
 
+/**
+ * Returns the parsed collision grid, or null if it has not been loaded yet.
+ * @returns A 2-D boolean grid where true means blocked, or null before loading.
+ */
 export function getAuthoredMap(): boolean[][] | null {
   return parsedMap;
 }
 
+/**
+ * Loads `/office/office_collision.webp` and converts its alpha channel into a
+ * per-tile blocked/walkable grid. Alpha > 128 is treated as blocked.
+ * Falls back gracefully — returns null on any error so the caller can use
+ * the hardcoded COLLISION_MAP constant instead.
+ * @returns A 2-D boolean grid (true = blocked) on success, or null on failure.
+ */
 export async function loadCollisionFromImage(): Promise<boolean[][] | null> {
   try {
     const img = new Image();
