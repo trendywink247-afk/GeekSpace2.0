@@ -92,7 +92,7 @@ describe('useFeatureFlag', () => {
     it('allows retry after error', async () => {
       // First call fails
       vi.mocked(featureService.get).mockRejectedValueOnce(new Error('Network error'));
-      let state = useFeatureFlagStore.getState();
+      const state = useFeatureFlagStore.getState();
       await state.fetchFlags();
 
       expect(useFeatureFlagStore.getState().loaded).toBe(false);
@@ -136,7 +136,7 @@ describe('useFeatureFlag', () => {
       const mockData1 = { darkMode: true };
       vi.mocked(featureService.get).mockResolvedValueOnce({ data: mockData1 });
 
-      let state = useFeatureFlagStore.getState();
+      const state = useFeatureFlagStore.getState();
       await state.fetchFlags();
 
       const flagsAfterFirst = useFeatureFlagStore.getState().flags;

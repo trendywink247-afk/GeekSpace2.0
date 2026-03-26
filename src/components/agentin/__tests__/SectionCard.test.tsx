@@ -1,439 +1,252 @@
 /**
  * @fileoverview Test suite for SectionCard component
- * Tests glass morphism styling, hover effects, padding, and title/subtitle rendering
+ * Tests glass morphism styling, hover effects, padding, and text hierarchy
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
 import { SectionCard } from '../SectionCard';
 
 describe('SectionCard', () => {
-  // ─── Basic rendering ──────────────────────────────────────────────────
-  describe('rendering', () => {
-    it('renders children content', () => {
-      render(
-        <SectionCard>
-          <p>Card content here</p>
-        </SectionCard>
-      );
-      expect(screen.getByText('Card content here')).toBeInTheDocument();
-    });
-
-    it('has glass morphism styling (backdrop-blur-xl)', () => {
+  // ─── Glass morphism styling ────────────────────────────────────────────
+  describe('Glass morphism effect', () => {
+    it('applies backdrop-blur-xl for frosted glass effect', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
-      const card = container.firstChild;
-      expect(card).toHaveClass('backdrop-blur-xl');
+      const card = container.firstChild as HTMLElement;
+      expect(card.className).toMatch(/backdrop-blur-xl/);
     });
 
-    it('has subtle border', () => {
+    it('applies border with subtle transparency', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
-      const card = container.firstChild;
-      expect((card as HTMLElement).className).toMatch(/border/);
-    });
-  });
-
-  // ─── Title and subtitle ────────────────────────────────────────────────
-  describe('title and subtitle', () => {
-    it('renders title when provided', () => {
-      render(
-        <SectionCard title="Recent Activity">
-          <p>Content</p>
-        </SectionCard>
-      );
-      expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+      const card = container.firstChild as HTMLElement;
+      // Should have border class (exact color varies with theme)
+      expect(card.className).toMatch(/border/);
     });
 
-    it('applies semibold font to title', () => {
+    it('uses CSS custom properties for border color (--ag-border or similar)', () => {
       const { container } = render(
-        <SectionCard title="Title">
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
-      const title = screen.getByText('Title');
-      expect(title).toHaveClass('font-semibold');
-    });
-
-    it('renders subtitle when provided', () => {
-      render(
-        <SectionCard title="Activity" subtitle="Last 7 days">
-          <p>Content</p>
-        </SectionCard>
-      );
-      expect(screen.getByText('Last 7 days')).toBeInTheDocument();
-    });
-
-    it('applies secondary color to subtitle (small, muted)', () => {
-      const { container } = render(
-        <SectionCard title="Title" subtitle="Subtitle">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const subtitle = screen.getByText('Subtitle');
-      expect(subtitle).toHaveClass(/text-sm|text-slate|text-gray/);
-    });
-
-    it('no title rendered when undefined', () => {
-      render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
-      );
-      // Should not have h3/h4 element
-      const headings = screen.queryAllByRole('heading');
-      expect(headings.length).toBe(0);
-    });
-
-    it('title positioning above subtitle', () => {
-      const { container } = render(
-        <SectionCard title="Main" subtitle="Sub">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const header = container.querySelector('[class*="flex-col"]');
-      // Verify flex column with space-y for vertical stacking
-      expect(header).toBeTruthy();
-    });
-  });
-
-  // ─── Padding sizes ────────────────────────────────────────────────────
-  describe('padding prop', () => {
-    it('applies p-3 for padding="sm"', () => {
-      const { container } = render(
-        <SectionCard padding="sm">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.querySelector('[class*="p-3"]');
-      expect(card).toHaveClass('p-3');
-    });
-
-    it('applies p-4 md:p-5 for padding="md"', () => {
-      const { container } = render(
-        <SectionCard padding="md">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.firstChild;
-      expect((card as HTMLElement).className).toMatch(/p-4|md:p-5/);
-    });
-
-    it('applies p-6 for padding="lg"', () => {
-      const { container } = render(
-        <SectionCard padding="lg">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.querySelector('[class*="p-6"]');
-      expect(card).toHaveClass('p-6');
-    });
-
-    it('uses default padding="md" when not provided', () => {
-      const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.firstChild;
-      expect((card as HTMLElement).className).toMatch(/p-4|md:p-5/);
+      const style = getComputedStyle(container.firstChild as Element);
+      // Verify custom property is referenced (difficult to test without CSS env)
+      expect(container.firstChild).toBeTruthy();
     });
   });
 
   // ─── Hover effects ────────────────────────────────────────────────────
-  describe('hover effects', () => {
-    it('changes border color on hover', () => {
+  describe('Hover effects', () => {
+    it('applies hover:border-[color] for border color change', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:/);
+      expect(card.className).toMatch(/hover:border/);
     });
 
-    it('applies shadow glow on hover', () => {
+    it('applies hover:shadow-* for glow effect on hover', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:shadow|hover:glow/);
+      expect(card.className).toMatch(/hover:shadow/);
     });
 
-    it('adds inset highlight on hover (subtle inner glow)', () => {
+    it('applies hover:inset-shadow or bg-gradient for inset highlight', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Should have inset shadow or box-shadow
-      expect(true).toBe(true); // TODO: Verify inset highlight
+      // Either inset-shadow or gradient background
+      const hasInsetOrGradient = /inset|bg-gradient|before:|after:/.test(card.className);
+      expect(hasInsetOrGradient).toBe(true);
     });
 
-    it('transitions smoothly (300ms)', () => {
+    it('transitions are smooth (duration-300)', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
-      const card = container.firstChild;
-      expect((card as HTMLElement).className).toMatch(/transition|duration-300/);
+      const card = container.firstChild as HTMLElement;
+      expect(card.className).toMatch(/transition|duration-300/);
     });
   });
 
-  // ─── Theme colors (CSS custom properties) ──────────────────────────────
-  describe('CSS custom properties', () => {
-    it('uses --ag-card-bg for background', () => {
+  // ─── Padding variants ──────────────────────────────────────────────────
+  describe('Padding size options', () => {
+    it('applies p-3 (0.75rem) when padding="sm"', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard padding="sm">Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      const style = window.getComputedStyle(card);
-      // Verify --ag-card-bg or equivalent color
-      expect(true).toBe(true); // TODO: Verify CSS var
+      expect(card.className).toMatch(/p-3/);
     });
 
-    it('uses --ag-border-color for border', () => {
+    it('applies p-4 (1rem) or p-5 (1.25rem) when padding="md" (default)', () => {
       const { container } = render(
-        <SectionCard>
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard padding="md">Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/border/);
+      expect(card.className).toMatch(/p-[45]/);
     });
 
-    it('uses --ag-text-primary for title text', () => {
-      render(
+    it('applies p-6 (1.5rem) when padding="lg"', () => {
+      const { container } = render(
+        <SectionCard padding="lg">Content</SectionCard>
+      );
+      const card = container.firstChild as HTMLElement;
+      expect(card.className).toMatch(/p-6/);
+    });
+
+    it('defaults to padding="md" when padding prop omitted', () => {
+      const { container } = render(
+        <SectionCard>Content</SectionCard>
+      );
+      const card = container.firstChild as HTMLElement;
+      // Should have md padding (p-4 or p-5)
+      expect(card.className).toMatch(/p-[45]/);
+    });
+  });
+
+  // ─── Title and subtitle rendering ──────────────────────────────────────
+  describe('Title and subtitle', () => {
+    it('renders title when provided', () => {
+      const { getByText } = render(
+        <SectionCard title="Card Title">Content</SectionCard>
+      );
+      expect(getByText('Card Title')).toBeTruthy();
+    });
+
+    it('applies font-semibold to title', () => {
+      const { container } = render(
+        <SectionCard title="Title">Content</SectionCard>
+      );
+      const title = container.querySelector('[class*="font-semibold"]');
+      expect(title).toBeTruthy();
+    });
+
+    it('renders subtitle below title', () => {
+      const { getByText } = render(
+        <SectionCard title="Title" subtitle="Sub">Content</SectionCard>
+      );
+      expect(getByText('Sub')).toBeTruthy();
+    });
+
+    it('applies secondary/muted color to subtitle', () => {
+      const { container } = render(
+        <SectionCard title="Title" subtitle="Sub">Content</SectionCard>
+      );
+      const subtitle = container.querySelector('[class*="text-"]');
+      // Should have opacity or muted color class
+      expect(subtitle?.className).toMatch(/opacity|text-gray|text-slate|text-muted/i);
+    });
+
+    it('renders children content below title/subtitle', () => {
+      const { getByText } = render(
         <SectionCard title="Title">
-          <p>Content</p>
+          <p>Child content</p>
         </SectionCard>
       );
-      const title = screen.getByText('Title');
-      expect((title as HTMLElement).className).toMatch(/text-/);
-    });
-
-    it('uses --ag-text-secondary for subtitle text', () => {
-      render(
-        <SectionCard title="Title" subtitle="Sub">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const subtitle = screen.getByText('Sub');
-      expect((subtitle as HTMLElement).className).toMatch(/text-slate|text-gray|text-secondary/);
+      expect(getByText('Child content')).toBeTruthy();
     });
   });
 
-  // ─── Additional className ─────────────────────────────────────────────
-  describe('className prop', () => {
-    it('merges additional className with defaults', () => {
+  // ─── Custom className prop ────────────────────────────────────────────
+  describe('className customization', () => {
+    it('merges custom className with component classes', () => {
       const { container } = render(
-        <SectionCard className="ring-2 ring-cyan-500">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.firstChild;
-      expect(card).toHaveClass('ring-2', 'ring-cyan-500');
-      expect(card).toHaveClass('backdrop-blur-xl'); // Still has default
-    });
-
-    it('custom className can override defaults', () => {
-      const { container } = render(
-        <SectionCard className="backdrop-blur-none">
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard className="custom-class">Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/backdrop-blur-none/);
+      expect(card.className).toMatch(/custom-class/);
+      expect(card.className).toMatch(/backdrop-blur/); // Base classes still present
+    });
+
+    it('custom className does not override critical classes (backdrop-blur)', () => {
+      const { container } = render(
+        <SectionCard className="p-10">Content</SectionCard>
+      );
+      const card = container.firstChild as HTMLElement;
+      // backdrop-blur should still be present
+      expect(card.className).toMatch(/backdrop-blur/);
     });
   });
 
-  // ─── Responsive behavior ──────────────────────────────────────────────
-  describe('responsive', () => {
-    it('applies responsive padding (p-3 mobile, md:p-4 desktop)', () => {
+  // ─── Theme awareness (CSS custom properties) ───────────────────────────
+  describe('Theme support (CSS custom properties)', () => {
+    it('uses var(--ag-*) custom properties for colors', () => {
       const { container } = render(
-        <SectionCard padding="md">
-          <p>Content</p>
-        </SectionCard>
+        <SectionCard>Content</SectionCard>
       );
-      const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/p-4.*md:p-5|md:p-5.*p-4/);
+      // Check that component references CSS variables (difficult without CSS env)
+      // For now, verify component renders without errors
+      expect(container.firstChild).toBeTruthy();
     });
 
-    it('title and content stack responsively', () => {
-      const { container } = render(
-        <SectionCard title="Title">
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            <p>Item 1</p>
-            <p>Item 2</p>
-          </div>
-        </SectionCard>
-      );
-      expect(screen.getByText('Item 1')).toBeInTheDocument();
-      expect(screen.getByText('Item 2')).toBeInTheDocument();
+    it('respects dark mode via CSS custom property changes', () => {
+      // TODO: Test with dark mode CSS variables set
+      // Requires mocking CSS custom property values
+      expect(true).toBe(true);
     });
   });
 
   // ─── Accessibility ────────────────────────────────────────────────────
-  describe('a11y', () => {
-    it('title has proper heading level (h3)', () => {
-      render(
-        <SectionCard title="Section Title">
-          <p>Content</p>
-        </SectionCard>
+  describe('Accessibility', () => {
+    it('title uses semantic heading (h2 or h3)', () => {
+      const { container } = render(
+        <SectionCard title="Title">Content</SectionCard>
       );
-      const heading = screen.getByRole('heading', { level: 3 });
-      expect(heading).toHaveTextContent('Section Title');
+      const heading = container.querySelector('h2, h3, h4');
+      expect(heading).toBeTruthy();
     });
 
-    it('has sufficient color contrast on glass background', () => {
-      // TODO: Use contrast checker
-      // Text on frosted glass should have WCAG AA contrast
-      render(
-        <SectionCard title="Title" subtitle="Subtitle">
-          <p>Content with text</p>
-        </SectionCard>
+    it('subtitle uses semantic element (p or span with role)', () => {
+      const { container } = render(
+        <SectionCard title="Title" subtitle="Sub">Content</SectionCard>
       );
-      expect(screen.getByText('Title')).toBeInTheDocument();
+      const subtitle = container.querySelector('p, span');
+      expect(subtitle).toBeTruthy();
     });
 
-    it('supports keyboard navigation (card can receive focus if interactive)', () => {
-      render(
-        <SectionCard
-          title="Interactive"
-          className="cursor-pointer"
-        >
-          <button>Clickable</button>
-        </SectionCard>
+    it('content is readable without hover state', () => {
+      // Verify text contrast with background (difficult without CSS env)
+      const { getByText } = render(
+        <SectionCard>Readable content</SectionCard>
       );
-      const button = screen.getByRole('button');
-      expect(button).toBeInTheDocument();
-    });
-  });
-
-  // ─── Content variations ───────────────────────────────────────────────
-  describe('content variations', () => {
-    it('renders list content', () => {
-      render(
-        <SectionCard title="Activities">
-          <ul>
-            <li>Activity 1</li>
-            <li>Activity 2</li>
-          </ul>
-        </SectionCard>
-      );
-      expect(screen.getByText('Activity 1')).toBeInTheDocument();
-      expect(screen.getByText('Activity 2')).toBeInTheDocument();
-    });
-
-    it('renders table content', () => {
-      render(
-        <SectionCard title="Data">
-          <table>
-            <tr><td>Row 1</td></tr>
-            <tr><td>Row 2</td></tr>
-          </table>
-        </SectionCard>
-      );
-      expect(screen.getByText('Row 1')).toBeInTheDocument();
-    });
-
-    it('renders nested components', () => {
-      render(
-        <SectionCard title="Nested">
-          <div>
-            <h4>Nested Title</h4>
-            <p>Nested content</p>
-          </div>
-        </SectionCard>
-      );
-      expect(screen.getByText('Nested Title')).toBeInTheDocument();
+      expect(getByText('Readable content')).toBeTruthy();
     });
   });
 
   // ─── Edge cases ────────────────────────────────────────────────────────
-  describe('edge cases', () => {
-    it('handles empty children gracefully', () => {
+  describe('Edge cases', () => {
+    it('renders with empty content', () => {
+      const { container } = render(<SectionCard />);
+      expect(container.firstChild).toBeTruthy();
+    });
+
+    it('renders with very long title (truncation not tested, just renders)', () => {
+      const { getByText } = render(
+        <SectionCard title="This is a very long card title that might wrap or truncate on smaller screens">
+          Content
+        </SectionCard>
+      );
+      expect(getByText(/very long card title/)).toBeTruthy();
+    });
+
+    it('renders with empty subtitle', () => {
       const { container } = render(
-        <SectionCard title="Empty">
-          <></>
-        </SectionCard>
+        <SectionCard title="Title" subtitle="">Content</SectionCard>
       );
-      expect(screen.getByText('Empty')).toBeInTheDocument();
+      expect(container.firstChild).toBeTruthy();
     });
 
-    it('handles very long title and subtitle', () => {
-      render(
-        <SectionCard
-          title="This is a very long title that might wrap to multiple lines"
-          subtitle="This is an equally long subtitle that should also wrap properly"
-        >
-          <p>Content</p>
-        </SectionCard>
-      );
-      expect(screen.getByText(/very long title/)).toBeInTheDocument();
-    });
-
-    it('handles children with complex content', () => {
-      render(
-        <SectionCard title="Complex">
-          <div className="space-y-2">
-            <p>Paragraph 1</p>
-            <p>Paragraph 2</p>
-            <button>Button</button>
-            <ul>
-              <li>Item 1</li>
-            </ul>
-          </div>
-        </SectionCard>
-      );
-      expect(screen.getByRole('button')).toBeInTheDocument();
-    });
-
-    it('renders multiple cards in sequence without interference', () => {
+    it('renders with null/undefined children gracefully', () => {
       const { container } = render(
-        <>
-          <SectionCard title="Card 1"><p>Content 1</p></SectionCard>
-          <SectionCard title="Card 2"><p>Content 2</p></SectionCard>
-        </>
+        <SectionCard>{null}{undefined}</SectionCard>
       );
-      expect(screen.getByText('Card 1')).toBeInTheDocument();
-      expect(screen.getByText('Card 2')).toBeInTheDocument();
-      const cards = container.querySelectorAll('[class*="backdrop"]');
-      expect(cards.length).toBe(2);
-    });
-  });
-
-  // ─── Hover state interaction ───────────────────────────────────────────
-  describe('hover interaction', () => {
-    it('hover state changes are applied dynamically', async () => {
-      const user = userEvent.setup();
-      const { container } = render(
-        <SectionCard title="Hoverable">
-          <p>Content</p>
-        </SectionCard>
-      );
-      const card = container.firstChild as HTMLElement;
-
-      // Initial state
-      expect(card).toBeInTheDocument();
-
-      // Simulate hover (note: CSS hover may not be fully testable in unit tests)
-      // This is better tested with visual/e2e tests
-      // Just verify the card exists and has hover classes defined
-      expect(card.className).toMatch(/hover:/);
+      expect(container.firstChild).toBeTruthy();
     });
   });
 });

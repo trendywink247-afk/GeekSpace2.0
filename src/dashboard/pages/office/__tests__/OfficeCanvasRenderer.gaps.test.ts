@@ -279,7 +279,7 @@ describe('OfficeCanvasRenderer — Rendering Pipeline', () => {
       // Verify ctx.fillStyle or similar called for highlight
     });
 
-    it('draws agents in order (painter's algorithm for overlap)', () => {
+    it('draws agents in order (painter algorithm for overlap)', () => {
       // TODO: Verify agents drawn in order
       // First agent drawn first (background), last agent drawn on top
 

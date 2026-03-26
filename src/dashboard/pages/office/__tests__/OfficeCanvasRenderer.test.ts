@@ -160,7 +160,7 @@ describe('OfficeCanvasRenderer — Asset Loading & Rendering', () => {
         }
       };
       
-      // @ts-ignore
+      // @ts-expect-error -- override Image constructor for test
       window.Image = MockFailImage;
       
       expect(async () => {

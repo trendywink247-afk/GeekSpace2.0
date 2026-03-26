@@ -145,7 +145,7 @@ describe('OfficeCanvasRenderer — Render Loop', () => {
     });
 
     it('increments frame counter (tick)', () => {
-      let state: RenderState = {
+      const state: RenderState = {
         agents: [],
         beams: [],
         tick: 0,

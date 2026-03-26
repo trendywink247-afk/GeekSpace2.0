@@ -94,15 +94,18 @@ function AgentTooltip({ label, children }: { label: string; children: React.Reac
   const dismiss = useDismiss(context);
   const { getReferenceProps, getFloatingProps } = useInteractions([hover, dismiss]);
 
+  const setRef = useCallback((node: HTMLDivElement | null) => { refs.setReference(node); }, [refs]);
+  const setFloat = useCallback((node: HTMLDivElement | null) => { refs.setFloating(node); }, [refs]);
+
   return (
     <>
-      <div ref={refs.setReference} {...getReferenceProps()}>
+      <div ref={setRef} {...getReferenceProps()}>
         {children}
       </div>
       {isOpen && (
         <FloatingPortal>
           <div
-            ref={refs.setFloating}
+            ref={setFloat}
             style={floatingStyles}
             {...getFloatingProps()}
             className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#00F0FF]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"

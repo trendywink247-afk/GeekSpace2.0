@@ -94,7 +94,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
           <script>
             var iframe = document.querySelector('iframe');
             var content = ${JSON.stringify(
-              `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>${template.css || ''}</style></head><body>${template.html || ''}<script>${(template.js || '').replace(/<\/script>/gi, '<\\/script>')}<\/script></body></html>`
+              `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>${template.css || ''}</style></head><body>${template.html || ''}<script>${(template.js || '').replace(/<\/script>/gi, '<\\/script>')}</` + `script></body></html>`
             )};
             iframe.setAttribute('srcdoc', content);
           </script>
