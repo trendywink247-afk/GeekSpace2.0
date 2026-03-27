@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Code, LayoutTemplate, Wand2, Wrench, Send, Loader2, Eye,
   Play, X, Sparkles, Terminal, Bot, Plus, Trash2, Clock,
-  CheckCircle, AlertCircle, Wifi, WifiOff
+  CheckCircle, AlertCircle, Wifi, WifiOff, Monitor, Smartphone, Tablet,
+  PanelLeftClose, PanelLeft,
 } from 'lucide-react';
 import { ArtifactsPage } from './ArtifactsPage';
 import { TemplateGalleryPage } from './TemplateGalleryPage';
@@ -59,8 +61,17 @@ function formatTimeAgo(ts: string | null): string {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// ---- Device preview config ----
+type DeviceMode = 'desktop' | 'tablet' | 'mobile';
+const DEVICE_WIDTHS: Record<DeviceMode, string> = {
+  desktop: '100%',
+  tablet: '768px',
+  mobile: '375px',
+};
+
 export function WebsiteBuilderPage() {
   const [activeTab, setActiveTab] = useState('projects');
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'edith', page: 'website-builder' });
 
   // Builder state
   const [builderMode, setBuilderMode] = useState<'imagine' | 'dev' | null>(null);
@@ -77,6 +88,8 @@ export function WebsiteBuilderPage() {
   const [devJs, setDevJs] = useState('');
   const [devSaving, setDevSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [splitView, setSplitView] = useState(false);
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
 
@@ -131,7 +144,7 @@ export function WebsiteBuilderPage() {
       setFleetAgents(agentsRes.data);
       setFleetTasks(tasksRes.data);
       // Auto-clean stale assigned slots (agent was deleted)
-      const liveSlots = new Set(agentsRes.data.map(a => a.slot));
+      const liveSlots = new Set(agentsRes.data.map((a: FleetAgent) => a.slot));
       setAssignedSlots(prev => {
         const cleaned = new Set([...prev].filter(s => liveSlots.has(s)));
         if (cleaned.size !== prev.size) return cleaned;
@@ -175,9 +188,23 @@ export function WebsiteBuilderPage() {
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>${devCss}</style></head>
 <body>${devHtml}<script>${devJs}<` + `/script></body></html>`;
 
+  // Refresh the preview iframe contents
+  const refreshPreview = useCallback(() => {
+    if (previewRef.current) {
+      const doc = previewRef.current.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(getPreviewHtml());
+        doc.close();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devHtml, devCss, devJs]);
+
   // Handle "Let's do it" — save dev changes (update existing or create new)
   const handleDevSave = async () => {
     setDevSaving(true);
+    void notifyStart('Saving website project');
     try {
       if (selectedProject) {
         // Update existing project
@@ -187,6 +214,7 @@ export function WebsiteBuilderPage() {
           js: devJs,
         });
         showToast('Changes saved and deployed!');
+        void notifyDone(`Updated project "${selectedProject.title}"`);
       } else {
         // Create a new project from scratch
         const title = devTitle.trim() || 'My Project';
@@ -199,20 +227,15 @@ export function WebsiteBuilderPage() {
         // Select the newly created project so subsequent saves update it
         setSelectedProject(res.data as Artifact);
         showToast(`Project "${title}" created!`);
+        void notifyDone(`Created project "${title}"`);
         await loadProjects();
       }
       setShowPreview(true);
       // Update iframe
-      if (previewRef.current) {
-        const doc = previewRef.current.contentDocument;
-        if (doc) {
-          doc.open();
-          doc.write(getPreviewHtml());
-          doc.close();
-        }
-      }
+      setTimeout(refreshPreview, 50);
     } catch {
       showToast('Failed to save changes', 'error');
+      void notifyFail('Save failed');
     } finally {
       setDevSaving(false);
     }
@@ -222,8 +245,9 @@ export function WebsiteBuilderPage() {
   const handleImagine = async () => {
     if (!imaginePrompt.trim()) return;
     setImagineLoading(true);
+    const isEdit = !!selectedProject;
+    void notifyStart(isEdit ? 'Updating project via AI' : 'Generating project via AI');
     try {
-      const isEdit = !!selectedProject;
       const context = isEdit
         ? `Update the existing project titled "${selectedProject!.title}". `
         : 'Create a new website. ';
@@ -231,22 +255,26 @@ export function WebsiteBuilderPage() {
       // Use 'builder' channel so the backend applies the code-generation system prompt,
       // and pass existingArtifactId when editing so generate_code updates instead of creates.
       const res = await agentService.chat(fullPrompt, 'builder', isEdit ? selectedProject!.id : undefined);
-      const codeAction = res.data.actions?.find(a => a.tool === 'generate_code');
+      const codeAction = res.data.actions?.find((a: { tool: string }) => a.tool === 'generate_code');
       if (codeAction?.success) {
         showToast(isEdit ? 'Project updated!' : 'New project created! Check My Projects.');
+        void notifyDone(isEdit ? 'Project updated via AI' : 'New project generated via AI');
         if (isEdit && codeAction.artifactId) {
           // Refresh project list and re-select the updated project
           await loadProjects();
         }
       } else if (res.data.actions?.length) {
         showToast(isEdit ? 'Project updated! Check My Projects.' : 'New project created! Check My Projects.');
+        void notifyDone('AI action completed');
       } else {
         // No action block — show the AI text as a hint, but also warn
         showToast('AI responded but no code was generated. Try being more specific.', 'error');
+        void notifyFail('No code generated');
       }
       setImaginePrompt('');
     } catch {
       showToast('Failed to generate. Try again.', 'error');
+      void notifyFail('AI generation failed');
     } finally {
       setImagineLoading(false);
     }
@@ -268,15 +296,18 @@ export function WebsiteBuilderPage() {
   const handleDeployAgent = async () => {
     if (!newAgentName.trim() || creatingSlot === null) return;
     setSavingAgent(true);
+    void notifyStart('Deploying new agent');
     try {
       await picoService.createAgent(newAgentName.trim(), newAgentPersonality);
       showToast(`Agent "${newAgentName.trim()}" deployed!`);
+      void notifyDone(`Agent "${newAgentName.trim()}" deployed`);
       setNewAgentName('');
       setNewAgentPersonality('weebo');
       setCreatingSlot(null);
       await loadFleet();
     } catch {
       showToast('Failed to deploy agent', 'error');
+      void notifyFail('Agent deployment failed');
     } finally {
       setSavingAgent(false);
     }
@@ -285,14 +316,17 @@ export function WebsiteBuilderPage() {
   const handleAssignTask = async () => {
     if (!taskInput.trim() || assignedSlots.size === 0) return;
     setPlanningTask(true);
+    void notifyStart('Planning task for agents');
     try {
       const res = await picoService.planTask(taskInput.trim());
       const count = res.data.queued;
       showToast(`Planned ${count} task${count !== 1 ? 's' : ''} for assigned agents`);
+      void notifyDone(`Planned ${count} task(s)`);
       setTaskInput('');
       await loadFleet();
     } catch {
       showToast('Failed to plan task', 'error');
+      void notifyFail('Task planning failed');
     } finally {
       setPlanningTask(false);
     }
@@ -317,18 +351,73 @@ export function WebsiteBuilderPage() {
   const unassignedAgents = fleetAgents.filter(a => !assignedSlots.has(a.slot));
   const emptySlots = [1, 2, 3, 4, 5, 6].filter(s => !fleetAgents.some(a => a.slot === s));
 
+  // ---- Device preview bar ----
+  const DeviceBar = () => (
+    <div className="flex items-center gap-1">
+      {([
+        { mode: 'desktop' as DeviceMode, icon: Monitor, label: 'Desktop' },
+        { mode: 'tablet' as DeviceMode, icon: Tablet, label: 'Tablet' },
+        { mode: 'mobile' as DeviceMode, icon: Smartphone, label: 'Mobile' },
+      ]).map(({ mode, icon: Icon, label }) => (
+        <button
+          key={mode}
+          onClick={() => setDeviceMode(mode)}
+          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+            deviceMode === mode
+              ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+              : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
+          }`}
+          aria-label={`Preview ${label}`}
+          title={label}
+        >
+          <Icon className="w-4 h-4" />
+        </button>
+      ))}
+    </div>
+  );
+
+  // ---- Preview iframe component ----
+  const PreviewFrame = ({ className = '' }: { className?: string }) => (
+    <div className={`flex items-start justify-center overflow-auto ${
+      deviceMode !== 'desktop' ? 'p-4 md:p-8 bg-[#06061a]' : 'p-0'
+    } ${className}`}>
+      <iframe
+        ref={previewRef}
+        title="Live Preview"
+        sandbox="allow-scripts allow-same-origin"
+        className={`bg-white transition-all duration-300 ${
+          deviceMode === 'mobile'
+            ? 'w-[375px] h-[667px] border border-[rgba(139,92,246,0.15)] rounded-xl shadow-2xl'
+            : deviceMode === 'tablet'
+              ? 'w-[768px] h-[600px] border border-[rgba(139,92,246,0.15)] rounded-xl shadow-2xl'
+              : 'w-full h-full'
+        }`}
+        style={deviceMode === 'desktop' ? undefined : { maxWidth: DEVICE_WIDTHS[deviceMode] }}
+      />
+    </div>
+  );
+
   return (
     <PageShell>
-      <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--ag-text-primary)]">Website Builder</h1>
-        <p className="text-sm text-[var(--ag-text-muted)] mt-1">Build, manage, and deploy your web projects</p>
-      </div>
+      {/* ---- Header ---- */}
+      <PageHeader
+        icon={Code}
+        title="Website Builder"
+        subtitle="Powered by Edith"
+        badge={
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#8B5CF6]" />
+          </span>
+        }
+      />
 
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
-          toast.type === 'success' ? 'bg-[#ADFF2F]/10 text-[#ADFF2F] border border-[#ADFF2F]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+          toast.type === 'success'
+            ? 'bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20'
+            : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>
           {toast.text}
         </div>
@@ -336,20 +425,20 @@ export function WebsiteBuilderPage() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <TabsList className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 flex w-max min-w-full">
-            <TabsTrigger value="projects" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)] gap-2 flex-shrink-0 whitespace-nowrap">
+          <TabsList className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] flex w-max min-w-full">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Code className="w-4 h-4" />
               My Projects
             </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)] gap-2 flex-shrink-0 whitespace-nowrap">
+            <TabsTrigger value="templates" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <LayoutTemplate className="w-4 h-4" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="builder" className="data-[state=active]:bg-[#ADFF2F]/10 data-[state=active]:text-[#ADFF2F] gap-2 flex-shrink-0 whitespace-nowrap">
+            <TabsTrigger value="builder" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Wrench className="w-4 h-4" />
               Builder
             </TabsTrigger>
-            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#00FF88]/10 data-[state=active]:text-[#00FF88] gap-2 flex-shrink-0 whitespace-nowrap">
+            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Bot className="w-4 h-4" />
               Weebos
             </TabsTrigger>
@@ -368,21 +457,21 @@ export function WebsiteBuilderPage() {
 
         <TabsContent value="builder" className="mt-6">
           {/* Project selector */}
-          <div className="mb-6">
-            <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Working on:</label>
+          <SectionCard padding="md" className="mb-6">
+            <label className="text-sm text-[#9CA3AF] mb-2 block">Working on:</label>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedProject(null)}
-                className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px] ${
                   !selectedProject
-                    ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
-                    : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                    ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                    : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                 }`}
               >
                 New Project
               </button>
               {projectsLoading ? (
-                <div className="flex items-center gap-2 text-[var(--ag-text-muted)] text-sm px-3">
+                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm px-3">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading...
                 </div>
@@ -391,10 +480,10 @@ export function WebsiteBuilderPage() {
                   <button
                     key={p.id}
                     onClick={() => loadProjectForDev(p)}
-                    className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate max-w-[200px] ${
+                    className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate max-w-[200px] min-h-[44px] ${
                       selectedProject?.id === p.id
-                        ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
-                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                        ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                        : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                     }`}
                   >
                     {p.title}
@@ -402,7 +491,7 @@ export function WebsiteBuilderPage() {
                 ))
               )}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Mode selector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -411,23 +500,23 @@ export function WebsiteBuilderPage() {
               onClick={() => setBuilderMode('imagine')}
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'imagine'
-                  ? 'border-[#ADFF2F]/40 bg-[#ADFF2F]/5 shadow-[0_0_20px_rgba(173,255,47,0.08)]'
-                  : 'border-[#00F0FF]/10 hover:border-[#ADFF2F]/30 hover:shadow-[0_0_15px_rgba(173,255,47,0.06)] bg-[var(--ag-bg-surface)]/50'
+                  ? 'border-[#8B5CF6]/40 bg-[#8B5CF6]/5 shadow-[0_0_20px_rgba(139,92,246,0.08)]'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#8B5CF6]/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
-              style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  builderMode === 'imagine' ? 'bg-[#ADFF2F]/20' : 'bg-[#00F0FF]/10'
+                  builderMode === 'imagine' ? 'bg-[#8B5CF6]/20' : 'bg-[#8B5CF6]/10'
                 }`}>
-                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[#ADFF2F]' : 'text-[var(--ag-cyan)]'}`} />
+                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[#8B5CF6]' : 'text-[#9CA3AF]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Imagine & Add</h3>
-                  <p className="text-xs text-[var(--ag-text-muted)]">Let AI build it for you</p>
+                  <h3 className="text-[#F4F6FF] font-semibold">Imagine & Add</h3>
+                  <p className="text-xs text-[#9CA3AF]">Let AI build it for you</p>
                 </div>
               </div>
-              <p className="text-sm text-[var(--ag-text-muted)]">
+              <p className="text-sm text-[#9CA3AF]">
                 Describe what you want and the agent will create or update your project.
               </p>
             </button>
@@ -443,22 +532,22 @@ export function WebsiteBuilderPage() {
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'dev'
                   ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
-                  : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[var(--ag-bg-surface)]/50'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
-              style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
                 }`}>
-                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
+                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Feelin&apos; to be a Dev</h3>
-                  <p className="text-xs text-[var(--ag-text-muted)]">I&apos;ll input on it myself</p>
+                  <h3 className="text-[#F4F6FF] font-semibold">Feelin&apos; to be a Dev</h3>
+                  <p className="text-xs text-[#9CA3AF]">I&apos;ll input on it myself</p>
                 </div>
               </div>
-              <p className="text-sm text-[var(--ag-text-muted)]">
+              <p className="text-sm text-[#9CA3AF]">
                 Write HTML, CSS, and JavaScript directly. Full control over your code.
               </p>
             </button>
@@ -466,14 +555,14 @@ export function WebsiteBuilderPage() {
 
           {/* ---- Imagine Mode ---- */}
           {builderMode === 'imagine' && (
-            <div className="rounded-2xl border border-[#ADFF2F]/20 p-6" style={{ background: 'rgba(173, 255, 47, 0.03)' }}>
+            <SectionCard padding="lg">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-[#ADFF2F]" />
-                <h3 className="text-[var(--ag-text-primary)] font-semibold">
+                <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
+                <h3 className="text-[#F4F6FF] font-semibold">
                   {selectedProject ? `Update "${selectedProject.title}"` : 'Create Something New'}
                 </h3>
               </div>
-              <p className="text-sm text-[var(--ag-text-muted)] mb-4">
+              <p className="text-sm text-[#9CA3AF] mb-4">
                 {selectedProject
                   ? 'Describe changes you want — the agent will update your existing project.'
                   : 'Describe what you want to build — the agent will create a new project for you.'}
@@ -486,14 +575,14 @@ export function WebsiteBuilderPage() {
                     ? 'e.g. "Add a contact form section with a dark theme..."'
                     : 'e.g. "A modern landing page for a SaaS product with pricing cards..."'}
                   rows={3}
-                  className="flex-1 bg-[#06060B] border border-[#ADFF2F]/20 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none focus:border-[#ADFF2F]/50 outline-none text-sm"
+                  className="flex-1 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-3 text-[#F4F6FF] placeholder-[#6B7280]/50 resize-none focus:border-[#8B5CF6]/50 outline-none text-sm"
                 />
               </div>
               <div className="flex justify-end mt-3">
                 <button
                   onClick={handleImagine}
                   disabled={imagineLoading || !imaginePrompt.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#ADFF2F] text-[#06060B] font-semibold text-sm hover:bg-[#ADFF2F]/90 hover:shadow-[0_0_20px_rgba(173,255,47,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/90 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px]"
                 >
                   {imagineLoading ? (
                     <>
@@ -508,7 +597,7 @@ export function WebsiteBuilderPage() {
                   )}
                 </button>
               </div>
-            </div>
+            </SectionCard>
           )}
 
           {/* ---- Dev Mode ---- */}
@@ -516,8 +605,8 @@ export function WebsiteBuilderPage() {
             <div className="space-y-4">
               {/* Title input — only shown for new projects */}
               {!selectedProject && (
-                <div className="rounded-xl border border-[#00F0FF]/15 bg-[var(--ag-bg-surface)]/50 p-4 space-y-3">
-                  <p className="text-sm text-[var(--ag-text-muted)]">
+                <SectionCard padding="md">
+                  <p className="text-sm text-[#9CA3AF]">
                     Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
                   </p>
                   <input
@@ -525,110 +614,196 @@ export function WebsiteBuilderPage() {
                     value={devTitle}
                     onChange={(e) => setDevTitle(e.target.value)}
                     placeholder="Project name (e.g. Hello World)"
-                    className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
+                    className="w-full mt-3 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none min-h-[44px]"
                   />
-                </div>
+                </SectionCard>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Split view: code + preview side by side */}
+              {splitView && showPreview ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left: code editors stacked */}
+                  <div className="space-y-4">
                     {/* HTML */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
                         <span className="px-1.5 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-xs rounded font-mono">HTML</span>
                       </label>
                       <textarea
                         value={devHtml}
                         onChange={(e) => setDevHtml(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="<div>Your HTML here...</div>"
                       />
                     </div>
 
                     {/* CSS */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
                         <span className="px-1.5 py-0.5 bg-[#3B82F6]/20 text-[#3B82F6] text-xs rounded font-mono">CSS</span>
                       </label>
                       <textarea
                         value={devCss}
                         onChange={(e) => setDevCss(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="body { color: white; }"
                       />
                     </div>
 
                     {/* JavaScript */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
                         <span className="px-1.5 py-0.5 bg-[#FFD700]/20 text-[#FFD700] text-xs rounded font-mono">JS</span>
                       </label>
                       <textarea
                         value={devJs}
                         onChange={(e) => setDevJs(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="console.log('Hello world');"
                       />
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={handleDevSave}
-                      disabled={devSaving}
-                      className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] text-[#06060B] font-bold text-sm hover:bg-[#00F0FF]/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
-                    >
-                      {devSaving ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
+                  {/* Right: preview */}
+                  <div className="rounded-2xl border border-[rgba(139,92,246,0.15)] overflow-hidden flex flex-col min-h-[500px]">
+                    <div className="flex items-center justify-between px-4 py-2 bg-[rgba(12,12,30,0.6)] border-b border-[rgba(139,92,246,0.08)]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
+                        <DeviceBar />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => refreshPreview()}
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                          aria-label="Refresh preview"
+                          title="Refresh"
+                        >
                           <Play className="w-4 h-4" />
-                          {selectedProject ? "Let's do it" : 'Save & Create'}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowPreview(!showPreview);
-                        if (!showPreview && previewRef.current) {
-                          setTimeout(() => {
-                            const doc = previewRef.current?.contentDocument;
-                            if (doc) {
-                              doc.open();
-                              doc.write(getPreviewHtml());
-                              doc.close();
-                            }
-                          }, 50);
-                        }
-                      }}
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:border-[#00F0FF]/40 transition-colors text-sm"
-                    >
-                      <Eye className="w-4 h-4" />
-                      {showPreview ? 'Hide Preview' : 'Preview'}
-                    </button>
+                        </button>
+                        <button
+                          onClick={() => setSplitView(false)}
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                          aria-label="Exit split view"
+                          title="Exit split view"
+                        >
+                          <PanelLeftClose className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <PreviewFrame className="flex-1" />
+                  </div>
+                </div>
+              ) : (
+                /* Regular stacked code editors */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* HTML */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <span className="px-1.5 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-xs rounded font-mono">HTML</span>
+                    </label>
+                    <textarea
+                      value={devHtml}
+                      onChange={(e) => setDevHtml(e.target.value)}
+                      spellCheck={false}
+                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      placeholder="<div>Your HTML here...</div>"
+                    />
                   </div>
 
-                  {/* Live Preview */}
-              {showPreview && (
-                <div className="rounded-2xl border border-[#00F0FF]/20 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 bg-[var(--ag-bg-surface)] border-b border-[#00F0FF]/10">
-                    <span className="text-xs text-[var(--ag-text-muted)] font-mono">Preview</span>
-                    <button onClick={() => setShowPreview(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close preview">
+                  {/* CSS */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <span className="px-1.5 py-0.5 bg-[#3B82F6]/20 text-[#3B82F6] text-xs rounded font-mono">CSS</span>
+                    </label>
+                    <textarea
+                      value={devCss}
+                      onChange={(e) => setDevCss(e.target.value)}
+                      spellCheck={false}
+                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      placeholder="body { color: white; }"
+                    />
+                  </div>
+
+                  {/* JavaScript */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <span className="px-1.5 py-0.5 bg-[#FFD700]/20 text-[#FFD700] text-xs rounded font-mono">JS</span>
+                    </label>
+                    <textarea
+                      value={devJs}
+                      onChange={(e) => setDevJs(e.target.value)}
+                      spellCheck={false}
+                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      placeholder="console.log('Hello world');"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={handleDevSave}
+                  disabled={devSaving}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8B5CF6] text-white font-bold text-sm hover:bg-[#8B5CF6]/90 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none min-h-[44px]"
+                >
+                  {devSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      {selectedProject ? "Let's do it" : 'Save & Create'}
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    const nextShow = !showPreview;
+                    setShowPreview(nextShow);
+                    if (nextShow) {
+                      setTimeout(refreshPreview, 50);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
+                >
+                  <Eye className="w-4 h-4" />
+                  {showPreview ? 'Hide Preview' : 'Preview'}
+                </button>
+                {showPreview && (
+                  <button
+                    onClick={() => setSplitView(!splitView)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
+                    title={splitView ? 'Stack view' : 'Split view'}
+                  >
+                    <PanelLeft className="w-4 h-4" />
+                    {splitView ? 'Stack' : 'Split'}
+                  </button>
+                )}
+              </div>
+
+              {/* Live Preview — stacked (non-split) */}
+              {showPreview && !splitView && (
+                <div className="rounded-2xl border border-[rgba(139,92,246,0.15)] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2 bg-[rgba(12,12,30,0.6)] border-b border-[rgba(139,92,246,0.08)]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
+                      <DeviceBar />
+                    </div>
+                    <button
+                      onClick={() => setShowPreview(false)}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded-lg transition-colors"
+                      aria-label="Close preview"
+                    >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <iframe
-                    ref={previewRef}
-                    title="Live Preview"
-                    sandbox="allow-scripts allow-modals allow-forms"
-                    className="w-full h-[500px] bg-[var(--ag-bg-surface)]"
-                  />
+                  <PreviewFrame className="h-[500px]" />
                 </div>
               )}
             </div>
@@ -639,29 +814,29 @@ export function WebsiteBuilderPage() {
         <TabsContent value="weebos" className="mt-6 space-y-6">
           {fleetLoading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 border-2 border-[#00FF88] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <>
               {/* Assigned agents */}
-              <div>
+              <SectionCard padding="lg">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-[#00FF88]" />
+                  <h3 className="text-lg font-semibold text-[#F4F6FF] flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-[#8B5CF6]" />
                     Assigned Weebos
-                    <span className="text-xs text-[var(--ag-text-muted)] font-normal ml-1">
+                    <span className="text-xs text-[#9CA3AF] font-normal ml-1">
                       {assignedAgents.length}/{MAX_ASSIGNED} max
                     </span>
                   </h3>
                 </div>
 
                 {assignedAgents.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[#00FF88]/20 p-10 text-center bg-[#00FF88]/[0.02]">
-                    <div className="w-14 h-14 rounded-2xl bg-[#00FF88]/10 flex items-center justify-center mx-auto mb-4">
-                      <Bot className="w-7 h-7 text-[#00FF88]/50" />
+                  <div className="rounded-2xl border border-dashed border-[#8B5CF6]/20 p-10 text-center bg-[#8B5CF6]/[0.02]">
+                    <div className="w-14 h-14 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
+                      <Bot className="w-7 h-7 text-[#8B5CF6]/50" />
                     </div>
-                    <p className="text-[var(--ag-text-primary)] font-medium text-sm mb-1">No agents assigned yet</p>
-                    <p className="text-[var(--ag-text-muted)] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
+                    <p className="text-[#F4F6FF] font-medium text-sm mb-1">No agents assigned yet</p>
+                    <p className="text-[#9CA3AF] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -672,15 +847,15 @@ export function WebsiteBuilderPage() {
                       return (
                         <div
                           key={agent.id}
-                          className="rounded-2xl border border-[#00FF88]/20 p-5 transition-all hover:border-[#00FF88]/40"
-                          style={{ background: 'rgba(0, 255, 136, 0.03)' }}
+                          className="rounded-2xl border border-[rgba(139,92,246,0.15)] p-5 transition-all hover:border-[#8B5CF6]/40"
+                          style={{ background: 'rgba(139, 92, 246, 0.03)' }}
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <span className="text-xl">{personality}</span>
                               <div>
-                                <div className="font-semibold text-[var(--ag-text-primary)] text-sm">{agent.name}</div>
-                                <div className="text-xs text-[var(--ag-text-muted)] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
+                                <div className="font-semibold text-[#F4F6FF] text-sm">{agent.name}</div>
+                                <div className="text-xs text-[#9CA3AF] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -697,7 +872,7 @@ export function WebsiteBuilderPage() {
                               {/* Unassign */}
                               <button
                                 onClick={() => toggleAssign(agent.slot)}
-                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                                 aria-label={`Unassign ${agent.name} from Builder`}
                               >
                                 <X className="w-4 h-4" />
@@ -707,12 +882,12 @@ export function WebsiteBuilderPage() {
 
                           {/* Stats row */}
                           <div className="flex gap-3 mb-3">
-                            <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#00FF88]/10">
-                              <div className="text-xs text-[var(--ag-text-muted)]">Completed</div>
+                            <div className="flex-1 p-2.5 rounded-lg bg-[#06061a] border border-[#00FF88]/10">
+                              <div className="text-xs text-[#9CA3AF]">Completed</div>
                               <div className="text-lg font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                             </div>
-                            <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#FF6161]/10">
-                              <div className="text-xs text-[var(--ag-text-muted)]">Failed</div>
+                            <div className="flex-1 p-2.5 rounded-lg bg-[#06061a] border border-[#FF6161]/10">
+                              <div className="text-xs text-[#9CA3AF]">Failed</div>
                               <div className="text-lg font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                             </div>
                           </div>
@@ -720,15 +895,15 @@ export function WebsiteBuilderPage() {
                           {/* Current work progress */}
                           {agentTasks.length > 0 ? (
                             <div className="space-y-2">
-                              <div className="text-xs text-[var(--ag-text-muted)] font-medium">Current Work</div>
+                              <div className="text-xs text-[#9CA3AF] font-medium">Current Work</div>
                               {agentTasks.slice(0, 2).map(task => (
-                                <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
+                                <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
                                   {task.status === 'running' ? (
                                     <Loader2 className="w-3.5 h-3.5 text-[#FFB800] animate-spin shrink-0" />
                                   ) : (
-                                    <Clock className="w-3.5 h-3.5 text-[var(--ag-cyan)] shrink-0" />
+                                    <Clock className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
                                   )}
-                                  <span className="text-xs text-[var(--ag-text-primary)] truncate flex-1">{task.description}</span>
+                                  <span className="text-xs text-[#F4F6FF] truncate flex-1">{task.description}</span>
                                   <span className="text-xs capitalize shrink-0"
                                     style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
                                     {task.status}
@@ -737,13 +912,13 @@ export function WebsiteBuilderPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                              <CheckCircle className="w-3.5 h-3.5 text-[var(--ag-text-muted)]" />
-                              <span className="text-xs text-[var(--ag-text-muted)]">No active tasks — ready for work</span>
+                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
+                              <CheckCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                              <span className="text-xs text-[#9CA3AF]">No active tasks — ready for work</span>
                             </div>
                           )}
 
-                          <div className="mt-2 text-xs text-[var(--ag-text-muted)] flex items-center gap-1">
+                          <div className="mt-2 text-xs text-[#9CA3AF] flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Created {formatTimeAgo(agent.created_at)}
                           </div>
@@ -752,28 +927,28 @@ export function WebsiteBuilderPage() {
                     })}
                   </div>
                 )}
-              </div>
+              </SectionCard>
 
               {/* Quick task for assigned agents */}
               {assignedAgents.length > 0 && (
-                <div className="rounded-2xl border border-[#00F0FF]/20 p-5" style={{ background: 'rgba(0, 240, 255, 0.02)' }}>
+                <SectionCard padding="lg">
                   <div className="flex items-center gap-2 mb-3">
-                    <Send className="w-4 h-4 text-[var(--ag-cyan)]" />
-                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Assign Task</h3>
+                    <Send className="w-4 h-4 text-[#8B5CF6]" />
+                    <h3 className="text-sm font-semibold text-[#F4F6FF]">Assign Task</h3>
                   </div>
                   <div className="flex gap-3">
                     <input
                       value={taskInput}
                       onChange={e => setTaskInput(e.target.value)}
                       placeholder="Describe a website task for your agents..."
-                      className="flex-1 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
+                      className="flex-1 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none min-h-[44px]"
                       onKeyDown={e => e.key === 'Enter' && !planningTask && handleAssignTask()}
                       disabled={planningTask}
                     />
                     <button
                       onClick={handleAssignTask}
                       disabled={!taskInput.trim() || planningTask}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00F0FF] text-[#06060B] font-semibold text-sm hover:bg-[#00F0FF]/90 hover:shadow-[0_0_15px_rgba(0,240,255,0.25)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/90 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px]"
                     >
                       {planningTask ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -785,17 +960,17 @@ export function WebsiteBuilderPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-[var(--ag-text-muted)] mt-2">
+                  <p className="text-xs text-[#9CA3AF] mt-2">
                     The planner will break your request into tasks and assign them to available agents.
                   </p>
-                </div>
+                </SectionCard>
               )}
 
               {/* Assign from fleet */}
               {unassignedAgents.length > 0 && assignedSlots.size < MAX_ASSIGNED && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-[var(--ag-cyan)]" />
+                  <h3 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-[#8B5CF6]" />
                     Assign from Fleet
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -806,18 +981,18 @@ export function WebsiteBuilderPage() {
                         <button
                           key={agent.id}
                           onClick={() => toggleAssign(agent.slot)}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-[#00F0FF]/10 bg-[var(--ag-bg-surface)]/50 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all text-left cursor-pointer group"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 transition-all text-left cursor-pointer group min-h-[44px]"
                         >
                           <span className="text-lg">{personality}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{agent.name}</div>
-                            <div className="text-xs text-[var(--ag-text-muted)]">Slot {agent.slot}</div>
+                            <div className="text-sm font-medium text-[#F4F6FF] truncate">{agent.name}</div>
+                            <div className="text-xs text-[#9CA3AF]">Slot {agent.slot}</div>
                           </div>
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
                             style={{ background: `${color}15`, color }}>
                             {statusMeta[agent.status]?.label ?? agent.status}
                           </div>
-                          <Plus className="w-4 h-4 text-[#00FF88] opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <Plus className="w-4 h-4 text-[#8B5CF6] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       );
                     })}
@@ -828,26 +1003,26 @@ export function WebsiteBuilderPage() {
               {/* Deploy new agent */}
               {emptySlots.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#ADFF2F]" />
+                  <h3 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
                     Deploy New Agent
                   </h3>
 
                   {creatingSlot !== null ? (
-                    <div className="rounded-2xl border border-dashed border-[#00F0FF]/30 p-5 max-w-md">
-                      <p className="text-sm text-[var(--ag-text-muted)] mb-3">Choose personality for Slot {creatingSlot}</p>
+                    <SectionCard padding="lg" className="max-w-md">
+                      <p className="text-sm text-[#9CA3AF] mb-3">Choose personality for Slot {creatingSlot}</p>
                       <div className="flex gap-2 mb-3">
                         {([
                           { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
                           { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: '#00F0FF' },
-                          { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: '#FFB800' },
+                          { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: '#8B5CF6' },
                         ]).map(p => (
                           <button
                             key={p.id}
                             onClick={() => setNewAgentPersonality(p.id)}
-                            className="flex flex-col items-center gap-1 p-3 rounded-lg border transition-all min-w-[60px]"
+                            className="flex flex-col items-center gap-1 p-3 rounded-lg border transition-all min-w-[60px] min-h-[44px]"
                             style={{
-                              borderColor: newAgentPersonality === p.id ? p.color : 'rgba(0, 240, 255, 0.15)',
+                              borderColor: newAgentPersonality === p.id ? p.color : 'rgba(139, 92, 246, 0.15)',
                               backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
                             }}
                           >
@@ -860,36 +1035,36 @@ export function WebsiteBuilderPage() {
                         value={newAgentName}
                         onChange={e => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none mb-3"
+                        className="w-full bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none mb-3 min-h-[44px]"
                         onKeyDown={e => e.key === 'Enter' && handleDeployAgent()}
                         autoFocus
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
-                          className="px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-[var(--ag-text-muted)] text-sm hover:text-[var(--ag-text-primary)] transition-colors"
+                          className="px-4 py-2 rounded-xl border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] text-sm hover:text-[#F4F6FF] transition-colors min-h-[44px]"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={handleDeployAgent}
                           disabled={!newAgentName.trim() || savingAgent}
-                          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#00FF88] text-[#06060B] font-semibold text-sm hover:bg-[#00FF88]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                         >
                           {savingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deploy'}
                         </button>
                       </div>
-                    </div>
+                    </SectionCard>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {emptySlots.slice(0, 3).map(slot => (
                         <button
                           key={slot}
                           onClick={() => setCreatingSlot(slot)}
-                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[#00F0FF]/20 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all cursor-pointer group"
+                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[rgba(139,92,246,0.15)] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 transition-all cursor-pointer group min-h-[44px]"
                         >
-                          <Plus className="w-5 h-5 text-[var(--ag-cyan)] group-hover:text-[#00FF88]" />
-                          <span className="text-sm text-[var(--ag-text-muted)] group-hover:text-[var(--ag-text-primary)]">Slot {slot}</span>
+                          <Plus className="w-5 h-5 text-[#8B5CF6] group-hover:text-[#8B5CF6]" />
+                          <span className="text-sm text-[#9CA3AF] group-hover:text-[#F4F6FF]">Slot {slot}</span>
                         </button>
                       ))}
                     </div>
@@ -899,29 +1074,29 @@ export function WebsiteBuilderPage() {
 
               {/* Agent removal section — only show if there are assigned agents */}
               {assignedAgents.length > 0 && (
-                <div className="pt-4 border-t border-[#00F0FF]/10">
+                <div className="pt-4 border-t border-[rgba(139,92,246,0.08)]">
                   <details className="group">
-                    <summary className="text-xs text-[var(--ag-text-muted)] cursor-pointer hover:text-[var(--ag-text-primary)] transition-colors flex items-center gap-1">
+                    <summary className="text-xs text-[#9CA3AF] cursor-pointer hover:text-[#F4F6FF] transition-colors flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       Manage assigned agents
                     </summary>
                     <div className="mt-3 space-y-2">
                       {assignedAgents.map(agent => (
-                        <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <span className="text-sm text-[var(--ag-text-primary)]">
+                        <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
+                          <span className="text-sm text-[#F4F6FF]">
                             {agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'} {agent.name} (Slot {agent.slot})
                           </span>
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleAssign(agent.slot)}
-                              className="px-3 py-1 rounded-lg text-xs text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:text-[var(--ag-text-primary)] hover:border-[#00F0FF]/30 transition-colors"
+                              className="px-3 py-1 rounded-lg text-xs text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px] flex items-center"
                             >
                               Unassign
                             </button>
                             {agent.slot !== 1 && (
                               <button
                                 onClick={() => handleDeleteAgent(agent)}
-                                className="px-3 py-1 rounded-lg text-xs text-[#FF6161] border border-[#FF6161]/20 hover:bg-[#FF6161]/10 transition-colors flex items-center gap-1"
+                                className="px-3 py-1 rounded-lg text-xs text-[#FF6161] border border-[#FF6161]/20 hover:bg-[#FF6161]/10 transition-colors flex items-center gap-1 min-h-[44px]"
                               >
                                 <Trash2 className="w-3 h-3" />
                                 Remove
@@ -938,7 +1113,6 @@ export function WebsiteBuilderPage() {
           )}
         </TabsContent>
       </Tabs>
-      </div>
     </PageShell>
   );
 }
