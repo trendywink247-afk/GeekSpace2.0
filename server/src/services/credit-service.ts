@@ -1,12 +1,22 @@
-// ============================================================
-// CreditService — centralised credit/quota logic
-//
-// Extracts and unifies credit-related queries scattered across
-// routes/agent/chat.ts, routes/agent/premium.ts, routes/webhooks.ts,
-// and services/llm.ts.
-//
-// Does NOT replace any existing route code — additive only.
-// ============================================================
+/**
+ * CreditService -- Centralised Credit and Quota Logic
+ *
+ * Provides a single source of truth for credit balance queries, deductions,
+ * and quota checks. Unifies credit-related logic previously scattered
+ * across `routes/agent/chat.ts`, `routes/agent/premium.ts`,
+ * `routes/webhooks.ts`, and `services/llm.ts`.
+ *
+ * Supports two storage backends transparently:
+ *  - **Subscriptions table** -- for paid users with billing cycles,
+ *    `credits_remaining`, `credits_used_this_cycle`, and `monthly_credits`.
+ *  - **Users table fallback** -- legacy/free users who only have a
+ *    `credits` column and no `subscriptions` row.
+ *
+ * This module is additive; it does not replace existing inline deduction
+ * calls in the routes. Callers can gradually migrate to it.
+ *
+ * @module services/credit-service
+ */
 
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
@@ -45,8 +55,14 @@ export interface UsageReport {
 
 /**
  * Get the full credit balance for a user.
- * Checks the subscriptions table first (paid plans), falls back
- * to the users table credits column (legacy/free users).
+ *
+ * Checks the `subscriptions` table first (paid plans with billing
+ * cycles). Falls back to the `users.credits` column for legacy/free
+ * users who have no subscription row, returning a synthetic balance
+ * with 5000 monthly credits and an empty billing cycle end.
+ *
+ * @param userId - Authenticated user ID
+ * @returns A normalised {@link CreditBalance} regardless of storage backend
  */
 export function getBalance(userId: string): CreditBalance {
   const sub = db.prepare(
@@ -83,9 +99,18 @@ export function getBalance(userId: string): CreditBalance {
 }
 
 /**
- * Deduct credits from a user's subscription.
- * Matches the existing deductSubscriptionCredits() in services/llm.ts.
- * Logs the deduction for audit purposes.
+ * Deduct credits from a user's subscription balance.
+ *
+ * Updates the `subscriptions` table by decrementing `credits_remaining`
+ * (floored at 0) and incrementing `credits_used_this_cycle`. Guest users
+ * and zero/negative amounts are silently ignored.
+ *
+ * This mirrors the existing `deductSubscriptionCredits()` in
+ * `services/llm.ts` and is intended as the canonical replacement.
+ *
+ * @param userId - Authenticated user ID (no-op if starts with `guest:`)
+ * @param amount - Number of credits to deduct (must be positive)
+ * @param reason - Human-readable audit reason, e.g. `"chat"`, `"voice-stt"`
  */
 export function deduct(userId: string, amount: number, reason: string): void {
   if (userId.startsWith('guest:')) return;

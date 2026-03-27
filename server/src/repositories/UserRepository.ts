@@ -1,13 +1,32 @@
-// ============================================================
-// UserRepository — centralised DB access for the `users` table
-//
-// Extracts queries verbatim from existing inline route usage.
-// Does NOT replace any route code yet — additive only.
-// ============================================================
+/**
+ * @module UserRepository
+ *
+ * Centralised data-access layer for the **`users`** table.
+ *
+ * This repository encapsulates every SQL query that touches user records --
+ * lookups by id / email / username, plan & credit checks, profile updates,
+ * and activity tracking.  Route handlers and services should prefer these
+ * methods over inline `db.prepare()` calls to keep query logic in one place.
+ *
+ * **Owned table:** `users`
+ *
+ * @remarks
+ * - All finder methods return `undefined` when no matching row exists.
+ * - The generic {@link UserRepository.update | update()} helper dynamically
+ *   builds a `SET` clause from the provided fields object, so callers must
+ *   validate field names before passing them in.
+ * - The `credits` column is a legacy balance for free-tier users; paid plans
+ *   use {@link SubscriptionRepository} for credit tracking instead.
+ */
 
 import type Database from 'better-sqlite3';
 
-/** Raw row shape from the `users` table. */
+/**
+ * Raw row shape returned by `SELECT * FROM users`.
+ *
+ * All columns map 1-to-1 to the SQLite schema.  JSON-encoded fields
+ * (e.g. `tags`) are stored as plain strings and must be parsed by the caller.
+ */
 export interface UserRow {
   id: string;
   email: string;
@@ -90,8 +109,21 @@ export class UserRepository {
   }
 
   /**
-   * Generic partial update. Only the keys present in `fields` are SET.
-   * Caller is responsible for validating field names.
+   * Generic partial update -- only the keys present in `fields` are SET.
+   *
+   * Dynamically builds `UPDATE users SET col1 = ?, col2 = ? ... WHERE id = ?`.
+   * Fields whose value is `undefined` are silently skipped; if every field is
+   * `undefined` the method returns immediately without executing a query.
+   *
+   * @param id - UUID of the user to update.
+   * @param fields - A partial map of column names to new values.
+   *   The `id` and `created_at` columns are excluded from the type to prevent
+   *   accidental mutation of immutable keys.
+   *
+   * @remarks
+   * **Caller is responsible for validating field names** -- this method trusts
+   * that the keys in `fields` correspond to real columns.  Passing arbitrary
+   * user-supplied keys could result in SQL errors or injection.
    */
   update(id: string, fields: Partial<Omit<UserRow, 'id' | 'created_at'>>): void {
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined);

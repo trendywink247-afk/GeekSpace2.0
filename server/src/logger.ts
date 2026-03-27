@@ -7,6 +7,19 @@ import { config } from './config.js';
 import type { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 
+/**
+ * Application-wide structured logger powered by Pino.
+ *
+ * In production, outputs newline-delimited JSON (for log aggregators). In
+ * development, pipes through `pino-pretty` with colorized output.
+ *
+ * Log level is controlled by `config.logLevel` (env `LOG_LEVEL`), defaulting
+ * to `"info"` in production and `"debug"` in development.
+ *
+ * @example
+ * logger.info({ userId, action: 'login' }, 'User logged in');
+ * logger.error({ err }, 'Database query failed');
+ */
 export const logger = pino({
   level: config.logLevel,
   ...(config.isProduction
@@ -23,7 +36,24 @@ declare global {
   }
 }
 
-/** Middleware: attach a unique request ID and log request start/end */
+/**
+ * Express middleware that assigns a unique request ID and logs every HTTP
+ * request's outcome on response finish.
+ *
+ * **Request ID:** Uses the incoming `X-Request-Id` header if present (for
+ * distributed tracing through reverse proxies), otherwise generates a UUID v4.
+ * The ID is attached to `req.requestId` and echoed back in the
+ * `X-Request-Id` response header.
+ *
+ * **Log levels by outcome:**
+ * - `error` -- 5xx status codes
+ * - `warn`  -- 4xx status codes or latency > 500 ms (marked `[SLOW]`)
+ * - `info`  -- everything else
+ *
+ * @param req  - Express request (extended with `requestId`).
+ * @param res  - Express response (receives `X-Request-Id` header).
+ * @param next - Always called immediately; logging happens on `res.finish`.
+ */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const requestId = (req.headers['x-request-id'] as string) || randomUUID();
   req.requestId = requestId;

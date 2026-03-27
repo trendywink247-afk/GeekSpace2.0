@@ -1,13 +1,30 @@
-// ============================================================
-// AgentConfigRepository — centralised DB access for `agent_configs`
-//
-// Extracts queries verbatim from existing inline route usage.
-// Does NOT replace any route code yet — additive only.
-// ============================================================
+/**
+ * @module AgentConfigRepository
+ *
+ * Centralised data-access layer for the **`agent_configs`** table.
+ *
+ * Each user owns at most **one** agent configuration row that controls
+ * personality, LLM model selection, creativity/formality dials, voice,
+ * notification preferences, and visual theming for the AI assistant.
+ *
+ * **Owned table:** `agent_configs`
+ *
+ * @remarks
+ * - The table has a 1-to-1 relationship with `users` (keyed on `user_id`).
+ * - Personality presets (`jarvis`, `weebo`, `edith`, etc.) drive both the
+ *   system prompt and the UI avatar/accent shown in the chat widget.
+ * - The generic {@link AgentConfigRepository.update | update()} helper
+ *   dynamically builds a `SET` clause; callers must validate field names.
+ */
 
 import type Database from 'better-sqlite3';
 
-/** Raw row shape from the `agent_configs` table. One row per user. */
+/**
+ * Raw row shape returned by `SELECT * FROM agent_configs`.
+ *
+ * There is at most one row per user.  All columns map 1-to-1 to the SQLite
+ * schema; numeric dials (`creativity`, `formality`) are integers 0--100.
+ */
 export interface AgentConfigRow {
   id: string;
   user_id: string;
@@ -46,9 +63,15 @@ export interface AgentConfigRow {
 
 /**
  * Centralised data-access layer for the `agent_configs` table.
- * Each user has at most one agent config row.
+ *
+ * Each user has at most one agent config row that governs personality,
+ * model routing, creativity/formality settings, and notification preferences.
+ * Prefer these methods over inline `db.prepare()` calls in route handlers.
  */
 export class AgentConfigRepository {
+  /**
+   * @param db - The shared better-sqlite3 database instance.
+   */
   constructor(private readonly db: Database.Database) {}
 
   /**
@@ -85,7 +108,20 @@ export class AgentConfigRepository {
   }
 
   /**
-   * Generic partial update. Only the keys present in `fields` are SET.
+   * Generic partial update -- only the keys present in `fields` are SET.
+   *
+   * Dynamically builds `UPDATE agent_configs SET col1 = ?, col2 = ? ... WHERE user_id = ?`.
+   * Fields whose value is `undefined` are silently skipped; if every field is
+   * `undefined` the method returns immediately without executing a query.
+   *
+   * @param userId - UUID of the owning user whose config should be updated.
+   * @param fields - A partial map of column names to new values.
+   *   The `id`, `user_id`, and `created_at` columns are excluded from the type
+   *   to prevent accidental mutation of immutable keys.
+   *
+   * @remarks
+   * Caller is responsible for validating field names -- this method trusts
+   * that the keys in `fields` correspond to real columns.
    */
   update(userId: string, fields: Partial<Omit<AgentConfigRow, 'id' | 'user_id' | 'created_at'>>): void {
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined);

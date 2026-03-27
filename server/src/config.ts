@@ -1,5 +1,25 @@
+/**
+ * @module config
+ *
+ * Centralized, validated environment configuration for the Agentin backend.
+ *
+ * All environment variables are read once at startup via `dotenv` and exposed
+ * through a single frozen `config` object. Variables marked **required** in
+ * production (JWT_SECRET, ENCRYPTION_KEY) trigger a hard `process.exit(1)`
+ * if missing, preventing the server from starting in an insecure state.
+ * Optional variables fall back to sensible development defaults.
+ *
+ * The config is organized into sections: server basics, JWT/auth, CORS,
+ * database, LLM providers (Ollama, OpenRouter, Groq, Kimi, Gemini, Together),
+ * integrations (Telegram, WhatsApp, n8n, Stripe, Razorpay), rate limiting,
+ * credits/billing, and infrastructure (Redis, Meilisearch, Qdrant).
+ *
+ * **Security note:** API keys and secrets are read from `process.env` and
+ * stored in memory only -- they are never logged or serialized to disk.
+ */
+
 // ============================================================
-// Validated environment configuration — crashes on missing required vars
+// Validated environment configuration -- crashes on missing required vars
 // ============================================================
 
 import dotenv from 'dotenv';
@@ -26,6 +46,12 @@ function optionalInt(key: string, fallback: number): number {
 const isProduction = optional('NODE_ENV', 'development') === 'production';
 const isTestMode = process.env.TEST_MODE === 'true' || process.env.TEST_MODE === '1';
 
+/**
+ * Immutable application configuration object (`as const`). Accessing any
+ * property is safe at runtime -- required vars have already been validated.
+ *
+ * @see The module-level JSDoc for the full section breakdown.
+ */
 export const config = {
   env: optional('NODE_ENV', 'development'),
   isProduction,

@@ -1,13 +1,34 @@
-// ============================================================
-// SubscriptionRepository — centralised DB access for `subscriptions`
-//
-// Extracts queries verbatim from existing inline route usage.
-// Does NOT replace any route code yet — additive only.
-// ============================================================
+/**
+ * @module SubscriptionRepository
+ *
+ * Centralised data-access layer for the **`subscriptions`** table.
+ *
+ * Paid users (`pro` or `team` plan) each have a single row here that tracks
+ * their billing cycle, credit allocation, and usage.  Free-tier users do
+ * **not** have a subscription row -- they fall back to the legacy
+ * `users.credits` column managed by {@link UserRepository}.
+ *
+ * **Owned table:** `subscriptions`
+ *
+ * @remarks
+ * - Credit deduction uses `MAX(0, credits_remaining - N)` to prevent the
+ *   balance from going negative.
+ * - Guest sessions (IDs starting with `guest:`) are silently skipped by
+ *   {@link SubscriptionRepository.deductCredits | deductCredits()}.
+ * - The `billing_cycle_end` timestamp is used by the auto-renewal job to
+ *   reset credits at the start of each new cycle.
+ * - Currency fields (`price_usd`, `price_inr`, `currency`) support the
+ *   India-launch Razorpay integration.
+ */
 
 import type Database from 'better-sqlite3';
 
-/** Raw row shape from the `subscriptions` table. One active row per paid user. */
+/**
+ * Raw row shape returned by `SELECT * FROM subscriptions`.
+ *
+ * One active row per paid user.  Free-tier users do not have a row in this
+ * table.  All timestamp columns use ISO 8601 format.
+ */
 export interface SubscriptionRow {
   id: string;
   user_id: string;
@@ -37,9 +58,15 @@ export interface SubscriptionRow {
 
 /**
  * Centralised data-access layer for the `subscriptions` table.
+ *
  * Paid users have one row here; free users fall back to `users.credits`.
+ * Prefer these methods over inline `db.prepare()` calls in route handlers
+ * and billing services.
  */
 export class SubscriptionRepository {
+  /**
+   * @param db - The shared better-sqlite3 database instance.
+   */
   constructor(private readonly db: Database.Database) {}
 
   /**
@@ -87,8 +114,21 @@ export class SubscriptionRepository {
   }
 
   /**
-   * Deduct credits from a subscription.
-   * Matches the pattern in services/llm.ts deductSubscriptionCredits().
+   * Deduct credits from a subscription after an LLM call.
+   *
+   * Matches the pattern in `services/llm.ts deductSubscriptionCredits()`.
+   * Uses `MAX(0, credits_remaining - amount)` to ensure the balance never
+   * goes negative.  Simultaneously increments `credits_used_this_cycle`.
+   *
+   * @param userId - UUID of the user.  Guest sessions (IDs starting with
+   *   `'guest:'`) are silently skipped.
+   * @param amount - Number of credits to deduct.  Non-positive values are
+   *   silently ignored.
+   *
+   * @remarks
+   * This method does **not** check whether sufficient credits remain before
+   * deducting.  Quota enforcement should happen upstream (e.g. in the chat
+   * middleware) before the LLM call is made.
    */
   deductCredits(userId: string, amount: number): void {
     if (userId.startsWith('guest:')) return;

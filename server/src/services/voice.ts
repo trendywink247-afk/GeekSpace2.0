@@ -1,10 +1,22 @@
-// ============================================================
-// Voice Service — Speech-to-Text (Groq Whisper) + Text-to-Speech (edge-tts)
-//
-// STT: Groq Whisper Large v3 Turbo — free, uses existing GROQ_API_KEY round-robin
-// TTS: edge-tts — Microsoft neural voices, zero API cost, local binary
-// Gracefully degrades when no Groq key is configured.
-// ============================================================
+/**
+ * Voice Service -- Speech-to-Text and Text-to-Speech
+ *
+ * **STT (Speech-to-Text):** Uses Groq's Whisper Large v3 Turbo endpoint.
+ * API keys are round-robined from `GROQ_API_KEY`, `GROQ_API_KEY2`, and
+ * `GROQ_API_KEY3` for load distribution. Accepts OGG/M4A audio buffers
+ * (typically voice messages from Telegram) and returns the transcribed text.
+ *
+ * **TTS (Text-to-Speech):** Uses `edge-tts` (Microsoft neural voices) with
+ * zero API cost. The output is converted to OGG Opus via `ffmpeg` for
+ * Telegram voice note compatibility. Script detection auto-selects the
+ * appropriate voice (Hindi, Telugu, Tamil, Bengali, Marathi, etc.).
+ *
+ * The service gracefully degrades: {@link isVoiceEnabled} returns `false`
+ * when no Groq API key is configured, allowing callers to skip voice
+ * features without errors.
+ *
+ * @module services/voice
+ */
 
 import { execFile } from 'child_process';
 import { promisify } from 'util';
@@ -63,6 +75,19 @@ export async function downloadTelegramVoice(fileId: string): Promise<Buffer> {
 
 // ---- Transcribe voice to text (Groq Whisper Large v3 Turbo) ----
 
+/**
+ * Transcribe an audio buffer to text using Groq Whisper Large v3 Turbo.
+ *
+ * Sends the audio as a multipart form upload to the Groq transcription
+ * endpoint with a 30-second timeout. The API key is selected via
+ * round-robin from configured Groq keys.
+ *
+ * @param audioBuffer - Raw audio data (typically from a Telegram voice message)
+ * @param mimeType    - MIME type of the audio (default `"audio/ogg"`)
+ * @returns The transcribed text string
+ * @throws If no Groq API key is configured
+ * @throws If the Groq API returns a non-OK status or an empty transcript
+ */
 export async function transcribeVoice(audioBuffer: Buffer, mimeType: string = 'audio/ogg'): Promise<string> {
   const apiKey = pickGroqKey();
   const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'ogg';
@@ -93,10 +118,30 @@ export async function transcribeVoice(audioBuffer: Buffer, mimeType: string = 'a
   return transcript;
 }
 
-// ---- Text-to-Speech (edge-tts → OGG Opus via ffmpeg) ----
+// ---- Text-to-Speech (edge-tts -> OGG Opus via ffmpeg) ----
 
 const MAX_TTS_CHARS = 500;
 
+/**
+ * Convert text to an OGG Opus audio buffer using edge-tts + ffmpeg.
+ *
+ * The input is sanitised (action blocks, markdown, special characters
+ * stripped) and truncated to 500 characters. A Microsoft neural voice
+ * is auto-selected based on detected script (Devanagari, Telugu, Tamil,
+ * etc.), falling back to the configured English voice.
+ *
+ * The pipeline: edge-tts generates an MP3 temp file, then ffmpeg
+ * converts it to OGG Opus for Telegram voice note compatibility.
+ * Temp files are cleaned up in a `finally` block.
+ *
+ * Results are cached by content hash to avoid regenerating identical
+ * audio within the cache TTL.
+ *
+ * @param text - The text to synthesise (max 500 chars after sanitisation)
+ * @returns An OGG Opus audio buffer ready to send as a voice note
+ * @throws If the sanitised input is empty
+ * @throws If edge-tts or ffmpeg fails
+ */
 export async function textToSpeech(text: string): Promise<Buffer> {
   const input = text
     .replace(/<<<ACTION[\s\S]*?ACTION>>>/g, '')  // strip tool action blocks

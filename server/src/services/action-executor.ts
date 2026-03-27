@@ -1,10 +1,26 @@
-// ============================================================
-// Action Executor — Runs Validated Tool Actions Against the DB
-//
-// Takes a parsed action (from action-parser) and executes the
-// corresponding database operation. Returns a structured result
-// so the caller can relay outcome back to the user/frontend.
-// ============================================================
+/**
+ * Action Executor -- Runs Validated Tool Actions Against the DB
+ *
+ * Bridges the gap between LLM-emitted tool calls (parsed by
+ * `action-parser.ts`) and actual side effects: database writes,
+ * media generation, web searches, email sending, etc.
+ *
+ * Each tool name maps to a branch in the internal `runAction` switch
+ * that performs the operation and returns an {@link ActionResult} with
+ * success/failure status, a human-readable message, optional artifact
+ * IDs, and optional receipt data for visual confirmation cards.
+ *
+ * The public entry point is {@link executeAction}, which wraps
+ * `runAction` with timing, logging, and error handling so callers
+ * (primarily the ReAct loop) never receive an unhandled throw.
+ *
+ * **Security note:** All DB operations are scoped to the authenticated
+ * `userId` passed by the caller. The executor trusts action params
+ * as-is since they originate from the LLM's tool-call output and the
+ * user's own conversation context.
+ *
+ * @module services/action-executor
+ */
 
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
@@ -1908,6 +1924,21 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
     }
 }
 
+/**
+ * Execute a single parsed tool action on behalf of a user.
+ *
+ * This is the sole public entry point for action execution. It delegates
+ * to the internal `runAction` switch, wrapping the call with duration
+ * tracking and structured logging. On success the underlying
+ * {@link ActionResult} is returned as-is; on failure a safe error result
+ * is returned so the ReAct loop can feed the error as an observation
+ * without crashing.
+ *
+ * @param userId - Authenticated user ID; all DB writes are scoped to this user
+ * @param action - Parsed action containing the tool name and parameter map
+ * @returns A structured result with `success`, `message`, and optional
+ *          artifact/media IDs. Never throws.
+ */
 export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
   const { tool, params } = action;
   const actionStart = Date.now();

@@ -1,12 +1,30 @@
-// ============================================================
-// Unified Message Router
-//
-// Normalizes incoming messages from any channel (Telegram, WhatsApp,
-// etc.) and routes them through the existing LLM pipeline.
-//
-// Flow: incoming message → resolve user → check credits →
-//       build system prompt → routeChat() → send response back
-// ============================================================
+/**
+ * Unified Message Router
+ *
+ * Central entry point for all non-web chat channels (Telegram, WhatsApp,
+ * future channels). Normalises incoming messages into a common shape,
+ * resolves the sender to an authenticated user, enforces credit quotas,
+ * builds a channel-aware system prompt, runs the ReAct tool-use loop,
+ * and delivers the final response back through the originating channel.
+ *
+ * **Pipeline:**
+ * ```
+ * incoming message
+ *   -> resolve user from channel_links
+ *   -> credit / quota check
+ *   -> fast-path detection (research, launch mode, keyword triggers)
+ *   -> buildChannelSystemPrompt() with personality + memory
+ *   -> runReactLoop() (multi-turn LLM + tool execution)
+ *   -> post-processing (memory extraction, training log, action cards)
+ *   -> sendChannelResponse() back to Telegram / WhatsApp / etc.
+ * ```
+ *
+ * Also exports helper utilities consumed by `agent.ts` (the web-chat
+ * handler): {@link buildPersonalityInstructions}, {@link buildChannelSystemPrompt},
+ * and {@link mapCreativityToTemperature}.
+ *
+ * @module services/message-router
+ */
 
 import { v4 as uuid } from 'uuid';
 import { DateTime } from 'luxon';
@@ -727,6 +745,21 @@ function resolveUserFromChannel(channel: string, externalId: string): ResolvedUs
 
 // ---- Channel-Aware System Prompt ----
 
+/**
+ * Assemble the full system prompt for a channel-based conversation.
+ *
+ * Combines personality profile, user memory context, current local
+ * datetime (in the user's timezone), custom system prompt, tool-use
+ * instructions, and channel-specific formatting rules into a single
+ * string suitable for the LLM system message.
+ *
+ * @param agentConfig  - User's agent configuration (personality sliders, custom prompt, etc.)
+ * @param user         - User record from the database
+ * @param userId       - Authenticated user ID
+ * @param channel      - Originating channel identifier (e.g. `"telegram"`, `"whatsapp"`)
+ * @param userMessage  - Current user message, used for memory relevance scoring
+ * @returns Fully assembled system prompt string
+ */
 export function buildChannelSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
   user: Record<string, unknown>,
@@ -816,6 +849,26 @@ export function buildActionChannelSuffix(finalReply: string, actionResults: Acti
 
 // ---- Main Handler ----
 
+/**
+ * Process an incoming message from any external channel end-to-end.
+ *
+ * This is the main exported function of the message router. It orchestrates
+ * user resolution, credit checking, content safety filtering, system-prompt
+ * assembly, LLM inference (via the ReAct loop), action execution, memory
+ * extraction, and response delivery -- all in a single async call.
+ *
+ * The function never throws to the caller; errors are caught internally,
+ * logged, and a user-facing error message is sent back through the channel.
+ *
+ * **Side effects:**
+ * - Deducts subscription credits proportional to token usage
+ * - Persists conversation to `conversation_log` for context reconstruction
+ * - Extracts and upserts memories from both user and assistant messages
+ * - Fires keyword-trigger automations if the message matches
+ * - Emits SSE agent-state events for the live office canvas
+ *
+ * @param msg - Normalised message from the channel adapter (Telegram, WhatsApp, etc.)
+ */
 export async function handleIncomingMessage(msg: NormalizedMessage): Promise<void> {
   const startTime = Date.now();
   const requestId = msg.requestId || uuid(); // Generate if not provided

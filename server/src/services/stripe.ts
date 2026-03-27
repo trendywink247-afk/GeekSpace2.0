@@ -1,7 +1,22 @@
-// ============================================================
-// Stripe Billing Service — Phase 89
-// Handles Pilot / Intro / Half-year / Yearly subscriptions
-// ============================================================
+/**
+ * Stripe Billing Service
+ *
+ * Manages the full Stripe subscription lifecycle: checkout session
+ * creation, webhook event processing, and plan/credit reconciliation.
+ * Supports Pilot, Intro, Half-year, and Yearly subscription tiers.
+ *
+ * The Stripe client is lazily initialised on first use so the server
+ * can boot without `STRIPE_SECRET_KEY` in development environments.
+ *
+ * **Webhook flow:** Stripe sends events to `/api/webhooks/stripe`,
+ * which passes the raw body + signature to {@link handleWebhook}.
+ * The handler verifies the HMAC signature, then updates the user's
+ * `subscription_plan`, `subscription_status`, and `subscription_expires_at`
+ * columns based on the event type (`checkout.session.completed`,
+ * `customer.subscription.updated`, `customer.subscription.deleted`).
+ *
+ * @module services/stripe
+ */
 
 import Stripe from 'stripe';
 import { config } from '../config.js';
@@ -38,8 +53,20 @@ export const STRIPE_PLAN_LABELS: Record<string, string> = {
 // ── createCheckoutSession ───────────────────────────────────
 
 /**
- * Create a Stripe Checkout session for a given plan.
- * Returns the hosted checkout URL to redirect the user to.
+ * Create a Stripe Checkout session for a subscription plan.
+ *
+ * Looks up or creates a Stripe Customer for the user, then opens a
+ * hosted checkout session configured for the requested plan. The
+ * `userId` and `plan` are attached as Stripe metadata so the webhook
+ * handler can reconcile the payment with the correct user.
+ *
+ * @param userId - Authenticated user ID
+ * @param plan   - Plan identifier: `"pilot"`, `"intro"`, `"monthly"`, `"halfyear"`, or `"yearly"`
+ * @returns The hosted Stripe Checkout URL to redirect the user to
+ * @throws If `STRIPE_SECRET_KEY` is not configured
+ * @throws If no Stripe price ID is mapped for the requested plan
+ * @throws If the user does not exist in the database
+ * @throws If Stripe does not return a checkout URL
  */
 export async function createCheckoutSession(
   userId: string,
@@ -91,8 +118,24 @@ export async function createCheckoutSession(
 // ── handleWebhook ───────────────────────────────────────────
 
 /**
- * Process a Stripe webhook event.
- * Updates user subscription_plan/status/expires_at based on event type.
+ * Verify and process an incoming Stripe webhook event.
+ *
+ * Validates the request signature using `STRIPE_WEBHOOK_SECRET`, then
+ * dispatches on event type:
+ *
+ * - `checkout.session.completed` -- activates the subscription and
+ *   updates the user's plan/status/expiry in the database.
+ * - `customer.subscription.updated` -- syncs plan changes or renewals.
+ * - `customer.subscription.deleted` -- downgrades the user to the free plan.
+ *
+ * If `STRIPE_WEBHOOK_SECRET` is not set, the handler logs a warning and
+ * returns without processing (safe for local development).
+ *
+ * @param rawBody - Raw request body buffer (required for signature verification)
+ * @param sig     - Value of the `stripe-signature` request header
+ * @throws If signature verification fails (invalid or tampered payload)
+ *
+ * @see https://docs.stripe.com/webhooks/signatures
  */
 export async function handleWebhook(rawBody: Buffer, sig: string): Promise<void> {
   if (!config.stripeWebhookSecret) {

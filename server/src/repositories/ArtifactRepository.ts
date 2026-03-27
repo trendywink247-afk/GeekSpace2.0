@@ -1,13 +1,35 @@
-// ============================================================
-// ArtifactRepository — centralised DB access for `generated_artifacts`
-//
-// Extracts queries verbatim from existing inline route usage.
-// Does NOT replace any route code yet — additive only.
-// ============================================================
+/**
+ * @module ArtifactRepository
+ *
+ * Centralised data-access layer for the **`generated_artifacts`** table.
+ *
+ * Artifacts are the user-visible outputs of code-generation and
+ * image-generation tools -- HTML pages, CSS themes, JS snippets, logos, etc.
+ * Each artifact is scoped to a single user and may optionally carry an
+ * expiry timestamp for auto-cleanup of ephemeral outputs.
+ *
+ * **Owned table:** `generated_artifacts`
+ *
+ * @remarks
+ * - Two lookup methods exist intentionally: {@link ArtifactRepository.getById | getById()}
+ *   performs an **unscoped** lookup (internal/admin use only), while
+ *   {@link ArtifactRepository.getByIdAndUser | getByIdAndUser()} enforces
+ *   row-level ownership and should be used in all route handlers.
+ * - The `metadata` column stores a JSON-encoded object with generation
+ *   context (prompt, model, dimensions, etc.) and must be parsed by the caller.
+ * - The `expires_at` column is nullable; `null` means the artifact is permanent.
+ */
 
 import type Database from 'better-sqlite3';
 
-/** Raw row shape from the `generated_artifacts` table. */
+/**
+ * Raw row shape returned by `SELECT * FROM generated_artifacts`.
+ *
+ * Each row represents a single generated output.  Text columns (`html`,
+ * `css`, `js`) may be empty strings for artifact types that do not use them.
+ * The `metadata` column is a JSON-encoded object and must be parsed by the
+ * caller.
+ */
 export interface ArtifactRow {
   id: string;
   user_id: string;
@@ -31,10 +53,19 @@ export interface ArtifactRow {
 
 /**
  * Centralised data-access layer for the `generated_artifacts` table.
- * Stores HTML/CSS/JS artifacts from code-generation and image-generation tools.
- * Use `getByIdAndUser` in route handlers (enforces ownership); `getById` for internal lookups only.
+ *
+ * Stores HTML/CSS/JS artifacts produced by code-generation and
+ * image-generation tools.  Use {@link ArtifactRepository.getByIdAndUser | getByIdAndUser()}
+ * in route handlers (enforces ownership); use {@link ArtifactRepository.getById | getById()}
+ * only for internal/admin lookups where ownership is already verified.
+ *
+ * Prefer these methods over inline `db.prepare()` calls in route handlers
+ * and the action executor.
  */
 export class ArtifactRepository {
+  /**
+   * @param db - The shared better-sqlite3 database instance.
+   */
   constructor(private readonly db: Database.Database) {}
 
   /**
@@ -61,8 +92,23 @@ export class ArtifactRepository {
   }
 
   /**
-   * Create a new artifact.
-   * Matches the INSERT pattern from routes/artifacts.ts and action-executor.ts.
+   * Create a new artifact (INSERT).
+   *
+   * Matches the INSERT pattern from `routes/artifacts.ts` and
+   * `action-executor.ts`.  Optional text columns default to empty strings
+   * and `metadata` defaults to `'{}'` so downstream queries never encounter NULL.
+   *
+   * @param artifact - The artifact payload.
+   * @param artifact.id - Pre-generated UUID for the new row.
+   * @param artifact.userId - UUID of the owning user.
+   * @param artifact.type - Artifact kind: `'logo'` | `'image'` | `'code'` | `'component'` | etc.
+   * @param artifact.title - Human-readable display name.
+   * @param artifact.html - Generated HTML markup (default: `''`).
+   * @param artifact.css - Generated CSS styles (default: `''`).
+   * @param artifact.js - Generated JavaScript code (default: `''`).
+   * @param artifact.metadata - JSON-encoded metadata object (default: `'{}'`).
+   * @param artifact.expiresAt - ISO 8601 expiry timestamp, or `null` / `undefined`
+   *   for permanent artifacts (default: `null`).
    */
   create(artifact: {
     id: string;
@@ -94,7 +140,20 @@ export class ArtifactRepository {
   }
 
   /**
-   * Partial update. Only provided fields are SET.
+   * Partial update -- only the provided fields are SET.
+   *
+   * Dynamically builds `UPDATE generated_artifacts SET col1 = ?, col2 = ? ... WHERE id = ?`.
+   * Fields whose value is `undefined` are silently skipped.  If every field is
+   * `undefined` the method skips the UPDATE and returns the current row as-is.
+   *
+   * @param id - UUID of the artifact to update.
+   * @param fields - A partial map of mutable column names to new values.
+   *   Only `title`, `html`, `css`, `js`, `metadata`, and `expires_at` are
+   *   accepted; immutable keys (`id`, `user_id`, `type`, `created_at`) are
+   *   excluded by the type.
+   * @returns The updated {@link ArtifactRow}, or `undefined` if the row does
+   *   not exist.  The returned row is re-fetched after the UPDATE so that
+   *   the caller sees the latest state.
    */
   update(id: string, fields: Partial<Pick<ArtifactRow, 'title' | 'html' | 'css' | 'js' | 'metadata' | 'expires_at'>>): ArtifactRow | undefined {
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined);

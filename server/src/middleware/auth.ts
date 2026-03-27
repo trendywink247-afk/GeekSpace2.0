@@ -8,12 +8,43 @@ import { db } from '../db/index.js';
 
 const { sign, verify, TokenExpiredError } = jwtPkg;
 
+/**
+ * Extended Express Request that carries the authenticated user's identity.
+ * Populated by {@link requireAuth} or {@link optionalAuth} after JWT verification.
+ *
+ * Downstream route handlers can safely read `req.userId` when preceded by
+ * `requireAuth` (guaranteed string) or check for its presence after
+ * `optionalAuth` (may be undefined for anonymous visitors).
+ */
 export interface AuthRequest extends Request {
+  /** The `sub` claim from the verified JWT -- a user ID or `guest:<uuid>`. */
   userId?: string;
   /** Set when a guest/visitor JWT contains a portfolioUsername claim */
   portfolioUsername?: string;
 }
 
+/**
+ * Express middleware that enforces JWT authentication on a route.
+ *
+ * Reads `Authorization: Bearer <token>` from the request header, verifies it
+ * with HS256 using the configured JWT secret, and populates `req.userId`.
+ *
+ * **Side effects beyond authentication:**
+ * 1. Checks the `token_blocklist` table -- rejects tokens that were explicitly
+ *    invalidated (e.g. on logout).
+ * 2. Rejects tokens issued before the user's last password change (`iat < password_changed_at`).
+ * 3. Updates `users.last_active` timestamp (fire-and-forget).
+ * 4. Upserts a `user_sessions` row for lightweight session tracking (the session
+ *    ID is a SHA-256 of user ID + User-Agent).
+ * 5. Sets `Cache-Control: no-store` to prevent proxies caching authed responses.
+ *
+ * All DB side effects are wrapped in try/catch so a missing table on first
+ * deploy does not block authentication.
+ *
+ * @param req  - The incoming request (extended to {@link AuthRequest}).
+ * @param res  - Express response; receives 401 JSON on failure.
+ * @param next - Called on successful authentication.
+ */
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
@@ -89,6 +120,18 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 }
 
+/**
+ * Express middleware that extracts user identity from a JWT if present, but
+ * never rejects the request. Invalid or expired tokens are silently ignored,
+ * and the request proceeds as anonymous (`req.userId` remains undefined).
+ *
+ * Use this on routes that behave differently for logged-in vs. anonymous users
+ * (e.g. portfolio public pages that show extra controls for the owner).
+ *
+ * @param req  - The incoming request (extended to {@link AuthRequest}).
+ * @param _res - Unused; always calls `next()`.
+ * @param next - Always called, regardless of token validity.
+ */
 export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) {
@@ -102,6 +145,15 @@ export function optionalAuth(req: AuthRequest, _res: Response, next: NextFunctio
   next();
 }
 
+/**
+ * Creates a signed HS256 JWT for a given user. The token includes a unique
+ * `jti` (JWT ID) so it can later be added to the blocklist on logout.
+ *
+ * Expiry is controlled by `config.jwtExpiresIn` (default `"15m"`).
+ *
+ * @param userId - The user's database ID, stored as the `sub` claim.
+ * @returns A compact JWT string suitable for the `Authorization: Bearer` header.
+ */
 export function signToken(userId: string): string {
   return sign({ sub: userId, jti: uuid() }, config.jwtSecret, {
     algorithm: 'HS256',
@@ -125,7 +177,19 @@ export function signGuestToken(portfolioUsername?: string): string {
   });
 }
 
-// Bearer token middleware — checks Authorization: Bearer <ADMIN_TOKEN>
+/**
+ * Express middleware that gates a route behind the server-level admin token.
+ * Compares the `Authorization: Bearer <token>` value against `config.adminToken`
+ * using a **timing-safe comparison** to prevent timing-based token leakage.
+ *
+ * Returns 503 if `ADMIN_TOKEN` is not configured, 401 if missing or invalid.
+ *
+ * @param req  - Standard Express request (no user context needed).
+ * @param res  - Receives 401 or 503 JSON on failure.
+ * @param next - Called only when the token matches.
+ *
+ * @security Uses `crypto.timingSafeEqual` -- safe against timing attacks.
+ */
 export function requireAdminToken(req: Request, res: Response, next: NextFunction): void {
   if (!config.adminToken) {
     res.status(503).json({ error: 'Admin token not configured' });
@@ -146,7 +210,17 @@ export function requireAdminToken(req: Request, res: Response, next: NextFunctio
   next();
 }
 
-// Admin middleware - checks for admin password header
+/**
+ * Express middleware that checks the `X-Admin-Password` header against the
+ * configured admin token. Unlike {@link requireAdminToken} (which uses Bearer
+ * auth), this reads a custom header -- used by the admin dashboard UI.
+ *
+ * @param req  - Must include `X-Admin-Password` header.
+ * @param res  - Receives 401 JSON on failure.
+ * @param next - Called only when the password matches.
+ *
+ * @security Uses `crypto.timingSafeEqual` -- safe against timing attacks.
+ */
 export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   const adminPassword = req.headers['x-admin-password'];
   if (typeof adminPassword !== 'string') {
