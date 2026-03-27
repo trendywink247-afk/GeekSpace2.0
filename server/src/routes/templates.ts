@@ -54,8 +54,14 @@ templatesRouter.get('/', (req, res) => {
 
   res.json({
     templates: templates.map(t => ({
-      ...t,
+      id: t.id,
+      name: t.name,
+      description: t.description,
+      category: t.category,
       thumbnail: t.thumbnail || '/template-placeholder.svg',
+      isOfficial: !!t.is_official,
+      cloneCount: t.clone_count,
+      createdAt: t.created_at,
     })),
   });
 });
@@ -83,8 +89,17 @@ templatesRouter.get('/:id', (req, res) => {
   }
 
   res.json({
-    ...template,
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    category: template.category,
     thumbnail: template.thumbnail || '/template-placeholder.svg',
+    html: template.html,
+    css: template.css,
+    js: template.js,
+    isOfficial: !!template.is_official,
+    cloneCount: template.clone_count,
+    createdAt: template.created_at,
   });
 });
 
