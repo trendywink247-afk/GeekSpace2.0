@@ -807,7 +807,7 @@ export function PlannerPage() {
               </div>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Main Layout (Day View) */}

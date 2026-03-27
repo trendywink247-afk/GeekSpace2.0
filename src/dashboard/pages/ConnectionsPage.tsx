@@ -1038,7 +1038,7 @@ export function ConnectionsPage() {
                                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">{customBotInfo.botName}</p>
                                     <p className="text-xs text-[var(--ag-text-muted)]">@{customBotInfo.botUsername}</p>
                                   </div>
-                                  <
+                                  <a
                                     href={`https://t.me/${customBotInfo.botUsername}`}
                                     target="_blank"
                                     rel="noopener noreferrer"

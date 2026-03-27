@@ -16,6 +16,7 @@ export function BeforeAfter({
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(50); // percentage 0-100
   const [dragging, setDragging] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
 
   const updatePosition = useCallback((clientX: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -71,6 +72,17 @@ export function BeforeAfter({
     };
   }, [dragging, updatePosition]);
 
+  /* track container width so we don't read ref.current during render */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   /* checkerboard CSS for transparency */
   const checkerboard = {
     backgroundImage: `
@@ -109,7 +121,7 @@ export function BeforeAfter({
             src={before}
             alt={beforeLabel}
             className="block h-full object-cover"
-            style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100%' }}
+            style={{ width: containerWidth != null ? `${containerWidth}px` : '100%' }}
             draggable={false}
           />
         </div>

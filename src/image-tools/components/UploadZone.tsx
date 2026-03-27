@@ -107,7 +107,7 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
     if (preview?.url) URL.revokeObjectURL(preview.url);
     setPreview(null);
     setError(null);
-  }, [preview?.url]);
+  }, [preview]);
 
   /* accepted formats display text */
   const acceptText = accept === 'image/*'

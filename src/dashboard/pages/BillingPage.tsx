@@ -487,35 +487,6 @@ export function BillingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {/* Basic plan */}
-          <div className="p-5 rounded-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all bg-[rgba(12,12,30,0.4)]">
-            <div className="font-bold text-[#F4F6FF] mb-1">Basic</div>
-            <div className="text-3xl font-bold text-[#F4F6FF] mb-3">
-              {currency === 'INR' ? '\u20B999' : '$1.19'}
-              <span className="text-sm font-normal text-[#9CA3AF]">/month</span>
-            </div>
-            <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> Image generation</li>
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> Voice transcription</li>
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> 30 voice calls/day</li>
-            </ul>
-            {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
-              <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
-            ) : (
-              <Button
-                onClick={() => handleCheckout('basic')}
-                disabled={checkingOut !== null}
-                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
-                data-testid="upgrade-basic-btn"
-              >
-                {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-                Upgrade to Basic
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
               <div className="font-bold text-[var(--ag-text-primary)] mb-1">Basic</div>
               <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '\u20B999' : '$1.19'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
@@ -562,26 +533,7 @@ export function BillingPage() {
                 </Button>
               )}
             </div>
-            <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> Everything in Basic</li>
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> 100 voice calls/day</li>
-              <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#10B981]" /> Priority support</li>
-            </ul>
-            {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
-              <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
-            ) : (
-              <Button
-                onClick={() => handleCheckout('pro')}
-                disabled={checkingOut !== null}
-                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
-                data-testid="upgrade-pro-btn"
-              >
-                {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-                Upgrade to Pro
-              </Button>
-            )}
           </div>
-        </div>
 
         {!stripeStatus?.isPaid && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-[#8B5CF6]/5 border border-[rgba(139,92,246,0.15)] text-sm text-[#9CA3AF]" data-testid="upgrade-to-unlock">

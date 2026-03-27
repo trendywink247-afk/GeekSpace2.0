@@ -920,7 +920,6 @@ export function CreativeStudioPage() {
           {toast.text}
         </div>
       )}
-    </div>
     </PageShell>
   );
 }
