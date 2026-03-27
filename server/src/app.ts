@@ -178,6 +178,7 @@ export function createApp(): express.Application {
   app.use('/api', (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(req.method);
     const isExcluded = req.path.startsWith('/billing/webhook')
+      || req.path.startsWith('/billing/razorpay/webhook')
       || req.path.startsWith('/webhooks/')
       || req.path.startsWith('/auth/google')
       || req.path.startsWith('/auth/github')
@@ -325,6 +326,8 @@ export function createApp(): express.Application {
     app.use('/api/billing/upgrade', billingMutationLimiter);
     app.use('/api/billing/checkout', billingMutationLimiter);
     app.use('/api/billing/day-pass', billingMutationLimiter);
+    app.use('/api/billing/razorpay/order', billingMutationLimiter);
+    app.use('/api/billing/razorpay/verify', billingMutationLimiter);
 
     // P2-6: Rate limit on password change — 3 per hour (security-sensitive operation)
     const passwordChangeLimiter = rateLimit({

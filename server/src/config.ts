@@ -197,6 +197,11 @@ export const config = {
   stripeProPriceId: process.env.STRIPE_PRO_PRICE_ID || '',
   stripeEnabled: !!process.env.STRIPE_SECRET_KEY,
 
+  // Razorpay billing (INR payments)
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || '',
+  razorpayEnabled: !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+
   // ---- Meilisearch (typo-tolerant instant search) ----
   meilisearchUrl: optional('MEILISEARCH_URL', 'http://geekspace-meilisearch:7700'),
   meilisearchApiKey: optional('MEILISEARCH_API_KEY', 'agentin-meili-2026'),

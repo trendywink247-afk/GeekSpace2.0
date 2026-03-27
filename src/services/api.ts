@@ -372,6 +372,18 @@ export const billingService = {
 
   createCheckout: (plan: 'basic' | 'pro') =>
     api.post<{ url: string }>('/billing/checkout', { plan }),
+
+  // Razorpay billing (Indian payments)
+  createRazorpayOrder: (plan: string) =>
+    api.post<{ orderId: string; amount: number; keyId: string }>('/billing/razorpay/order', { plan }),
+
+  verifyRazorpayPayment: (data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    plan: string;
+  }) =>
+    api.post<{ success: boolean; message: string }>('/billing/razorpay/verify', data),
 };
 
 // ----- Integrations ------------------------------------------
