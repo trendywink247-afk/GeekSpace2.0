@@ -45,7 +45,7 @@ function loadImageDimensions(file: File): Promise<{ width: number; height: numbe
   });
 }
 
-export function CompressTool() {
+export function CompressTool(_props: { onBack: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [originalInfo, setOriginalInfo] = useState<FileInfo | null>(null);
   const [originalUrl, setOriginalUrl] = useState('');
@@ -146,8 +146,8 @@ export function CompressTool() {
     <div className="space-y-5 p-4 pb-24 md:pb-4 max-w-3xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-white">Compress Image</h2>
-        <p className="text-xs text-white/50 mt-0.5">
+        <h2 className="text-lg font-semibold text-[var(--ag-text-primary)]">Compress Image</h2>
+        <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
           Reduce file size while preserving visual quality
         </p>
       </div>
@@ -159,14 +159,14 @@ export function CompressTool() {
       {originalInfo && (
         <>
           {/* File info card */}
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
+          <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-500/10">
-                <ImageIcon className="w-5 h-5 text-violet-400" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--ag-forge)]/10">
+                <ImageIcon className="w-5 h-5 text-[var(--ag-forge)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{originalInfo.name}</p>
-                <p className="text-xs text-white/50">
+                <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{originalInfo.name}</p>
+                <p className="text-xs text-[var(--ag-text-secondary)]">
                   {originalInfo.width} x {originalInfo.height} &middot; {formatBytes(originalInfo.size)}
                 </p>
               </div>
@@ -181,7 +181,7 @@ export function CompressTool() {
                   setCompressedSize(0);
                   setError('');
                 }}
-                className="text-xs text-white/50 hover:text-red-400 transition-colors"
+                className="text-xs min-h-[44px] text-[var(--ag-text-secondary)] hover:text-red-400 transition-colors"
               >
                 Remove
               </button>
@@ -189,14 +189,14 @@ export function CompressTool() {
           </div>
 
           {/* Controls */}
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 space-y-4">
+          <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-4 space-y-4">
             {/* Quality slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-white/50 font-medium uppercase tracking-wide">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide">
                   Quality
                 </label>
-                <span className="text-xs font-mono text-white">
+                <span className="text-xs font-mono text-[var(--ag-text-primary)]">
                   {Math.round(quality * 100)}%
                 </span>
               </div>
@@ -215,7 +215,7 @@ export function CompressTool() {
                   [&::-webkit-slider-thumb]:bg-violet-500
                   [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(139,92,246,0.5)]"
               />
-              <div className="flex justify-between text-[10px] text-white/50 mt-1">
+              <div className="flex justify-between text-[10px] text-[var(--ag-text-muted)] mt-1">
                 <span>Smallest file</span>
                 <span>Best quality</span>
               </div>
@@ -224,7 +224,7 @@ export function CompressTool() {
             {/* Max dimensions */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-1.5 block">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-1.5 block">
                   Max Width
                 </label>
                 <input
@@ -233,13 +233,13 @@ export function CompressTool() {
                   value={maxWidth}
                   onChange={(e) => setMaxWidth(e.target.value ? parseInt(e.target.value, 10) : '')}
                   placeholder={String(originalInfo.width)}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2
-                    text-sm text-white placeholder:text-white/20
-                    focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full min-h-[44px] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2
+                    text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]
+                    focus:outline-none focus:border-[var(--ag-violet)]/50 transition-colors"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-1.5 block">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-1.5 block">
                   Max Height
                 </label>
                 <input
@@ -248,16 +248,16 @@ export function CompressTool() {
                   value={maxHeight}
                   onChange={(e) => setMaxHeight(e.target.value ? parseInt(e.target.value, 10) : '')}
                   placeholder={String(originalInfo.height)}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2
-                    text-sm text-white placeholder:text-white/20
-                    focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full min-h-[44px] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2
+                    text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]
+                    focus:outline-none focus:border-[var(--ag-violet)]/50 transition-colors"
                 />
               </div>
             </div>
 
             {/* Output format */}
             <div>
-              <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-2 block">
                 Output Format
               </label>
               <div className="flex gap-2">
@@ -265,10 +265,10 @@ export function CompressTool() {
                   <button
                     key={opt.value}
                     onClick={() => setOutputFormat(opt.value)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                       outputFormat === opt.value
-                        ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                        : 'bg-white/[0.04] text-white/50 border border-white/[0.08] hover:text-white hover:border-white/[0.12]'
+                        ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                     }`}
                   >
                     {opt.label}
@@ -281,9 +281,9 @@ export function CompressTool() {
             <button
               onClick={handleCompress}
               disabled={compressing}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white
-                bg-gradient-to-r from-violet-600 to-violet-500
-                hover:from-violet-500 hover:to-violet-400
+              className="w-full min-h-[44px] rounded-lg text-sm font-semibold text-[var(--ag-text-primary)]
+                bg-gradient-to-r from-[var(--ag-violet)] to-[#7C3AED]
+                hover:brightness-110
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all flex items-center justify-center gap-2"
             >
@@ -313,12 +313,12 @@ export function CompressTool() {
           {compressedUrl && (
             <div className="space-y-4">
               {/* Size reduction summary */}
-              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
+              <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-white">
-                    <span className="text-white/50">{formatBytes(originalInfo.size)}</span>
-                    <span className="mx-2 text-white/50">&rarr;</span>
-                    <span className="font-semibold text-emerald-400">
+                  <div className="text-sm text-[var(--ag-text-primary)]">
+                    <span className="text-[var(--ag-text-secondary)]">{formatBytes(originalInfo.size)}</span>
+                    <span className="mx-2 text-[var(--ag-text-muted)]">&rarr;</span>
+                    <span className="font-semibold text-[var(--ag-green)]">
                       {formatBytes(compressedSize)}
                     </span>
                   </div>
@@ -336,7 +336,7 @@ export function CompressTool() {
                 </div>
 
                 {/* Size bar visualization */}
-                <div className="mt-3 h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                <div className="mt-3 h-2 rounded-full bg-[var(--ag-bg-elevated)] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-violet-500 to-emerald-400 transition-all duration-500"
                     style={{ width: `${Math.max(100 - reductionPercent, 2)}%` }}

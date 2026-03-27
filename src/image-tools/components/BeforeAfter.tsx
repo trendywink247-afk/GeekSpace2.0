@@ -87,7 +87,7 @@ export function BeforeAfter({
     <div className="space-y-2">
       <div
         ref={containerRef}
-        className="relative w-full rounded-xl overflow-hidden border border-white/[0.06] select-none"
+        className="relative w-full rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] select-none"
         style={{ ...checkerboard, cursor: dragging ? 'ew-resize' : 'default' }}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuthStore } from '@/stores/authStore';
 
 interface BrandKitColor { hex: string; usage: string }
 interface BrandKitFont { name: string; category: string; googleUrl: string }
@@ -60,7 +61,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/60 hover:bg-white/[0.06] hover:text-white/80"
+      className="min-h-[44px] px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-bg-surface-hover)] hover:text-[var(--ag-text-primary)]"
     >
       {copied ? 'Copied!' : label}
     </button>
@@ -74,6 +75,7 @@ export function BrandKitPanel({
   primaryColor,
   onGenerate,
 }: BrandKitPanelProps) {
+  const token = useAuthStore((s) => s.token);
   const [kit, setKit] = useState<BrandKitData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -87,7 +89,7 @@ export function BrandKitPanel({
     try {
       const res = await fetch('/api/logo/brand-kit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           companyName: companyName.trim(),
           industry: industry || undefined,
@@ -113,7 +115,7 @@ export function BrandKitPanel({
     } finally {
       setLoading(false);
     }
-  }, [companyName, industry, style, primaryColor, onGenerate]);
+  }, [companyName, industry, style, primaryColor, onGenerate, token]);
 
   // Auto-generate on mount if companyName is provided
   useEffect(() => {
@@ -137,19 +139,19 @@ export function BrandKitPanel({
     });
   }, [kit?.fonts]);
 
-  const sectionHeading = 'text-[11px] uppercase tracking-[0.12em] text-white/40 font-medium mb-3';
-  const card = 'rounded-xl border border-white/[0.06] bg-white/[0.02] p-4';
+  const sectionHeading = 'text-[11px] uppercase tracking-[0.12em] text-[var(--ag-text-secondary)] font-medium mb-3';
+  const card = 'rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-4';
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+    <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs uppercase tracking-[0.15em] text-white/30 font-medium">
+        <h3 className="text-xs uppercase tracking-[0.15em] text-[var(--ag-text-muted)] font-medium">
           Brand Kit
         </h3>
         <button
           onClick={generate}
           disabled={loading || !companyName.trim()}
-          className="px-4 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white flex items-center gap-2"
+          className="min-h-[44px] px-4 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white flex items-center gap-2"
         >
           {loading ? (
             <>
@@ -195,7 +197,7 @@ export function BrandKitPanel({
                 <div key={i} className="flex flex-col items-center gap-1.5">
                   <button
                     onClick={() => navigator.clipboard?.writeText(color.hex)}
-                    className="w-10 h-10 rounded-full border border-white/[0.06] cursor-pointer transition-transform hover:scale-110"
+                    className="min-w-[44px] min-h-[44px] rounded-full border border-[var(--ag-border-subtle)] cursor-pointer transition-transform hover:scale-110"
                     style={{ backgroundColor: color.hex }}
                     title={`Copy ${color.hex}`}
                   />
@@ -259,7 +261,7 @@ export function BrandKitPanel({
                     </span>
                   </div>
                   <button
-                    className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white/70"
+                    className="min-h-[44px] px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-bg-surface-hover)] hover:text-[var(--ag-text-primary)]"
                     title={`Download ${size.platform} (${size.width}x${size.height})`}
                   >
                     Download

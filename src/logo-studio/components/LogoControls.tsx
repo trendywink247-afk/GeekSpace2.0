@@ -13,12 +13,12 @@ function Slider({ label, value, min, max, step, onChange }: {
   return (
     <div className="space-y-1">
       <div className="flex justify-between">
-        <span className="text-xs text-[#94A3B8]">{label}</span>
+        <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">{label}</span>
         <span className="text-xs text-white/50 font-mono">{value}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(Number(e.target.value))}
-        className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-[#8B5CF6] cursor-pointer"
+        className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-[var(--ag-edith,#8B5CF6)] cursor-pointer"
       />
     </div>
   );
@@ -39,8 +39,8 @@ function Pill({ active, onClick, children }: {
   active: boolean; onClick: () => void; children: React.ReactNode;
 }) {
   return (
-    <button onClick={onClick} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-      active ? 'bg-[#8B5CF6] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+    <button onClick={onClick} className={`min-h-[44px] px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+      active ? 'bg-[var(--ag-edith,#8B5CF6)] text-white' : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-bg-surface-hover)]'
     }`}>
       {children}
     </button>
@@ -52,7 +52,7 @@ function ColorInput({ label, value, onChange }: {
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-[#94A3B8] w-10">{label}</span>
+      <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] w-10">{label}</span>
       <label className="relative cursor-pointer">
         <div className="w-5 h-5 rounded border border-white/[0.06]" style={{ backgroundColor: value }} />
         <input type="color" value={value} onChange={e => onChange(e.target.value)}
@@ -103,10 +103,10 @@ export function LogoControls({ params, onChange, onRandomize }: LogoControlsProp
         </div>
         <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-[#94A3B8]">{r.gradientAngle.label}</span>
+            <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">{r.gradientAngle.label}</span>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full border border-white/20 relative">
-                <div className="absolute w-1.5 h-0.5 bg-[#8B5CF6] rounded-full top-1/2 left-1/2 origin-left"
+                <div className="absolute w-1.5 h-0.5 bg-[var(--ag-edith,#8B5CF6)] rounded-full top-1/2 left-1/2 origin-left"
                   style={{ transform: `translate(-50%, -50%) rotate(${params.gradientAngle - 90}deg) translateX(25%)` }} />
               </div>
               <span className="text-xs text-white/50 font-mono">{params.gradientAngle}deg</span>
@@ -115,7 +115,7 @@ export function LogoControls({ params, onChange, onRandomize }: LogoControlsProp
           <input type="range" min={r.gradientAngle.min} max={r.gradientAngle.max}
             step={r.gradientAngle.step} value={params.gradientAngle}
             onChange={e => update('gradientAngle', Number(e.target.value))}
-            className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-[#8B5CF6] cursor-pointer" />
+            className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-[var(--ag-edith,#8B5CF6)] cursor-pointer" />
         </div>
       </Section>
 
@@ -162,14 +162,16 @@ export function LogoControls({ params, onChange, onRandomize }: LogoControlsProp
       {/* Effects */}
       <Section title="Effects">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#94A3B8]">Glow Ring</span>
+          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Glow Ring</span>
           <button onClick={() => update('showGlowRing', !params.showGlowRing)}
-            className={`w-[20px] h-[12px] rounded-full relative transition-colors ${
-              params.showGlowRing ? 'bg-[#8B5CF6]' : 'bg-white/20'
+            className={`min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer`}>
+            <span className={`block w-[20px] h-[12px] rounded-full relative transition-colors ${
+              params.showGlowRing ? 'bg-[var(--ag-edith,#8B5CF6)]' : 'bg-white/20'
             }`}>
-            <div className={`absolute top-[1px] w-[10px] h-[10px] rounded-full bg-white transition-transform ${
-              params.showGlowRing ? 'left-[9px]' : 'left-[1px]'
-            }`} />
+              <span className={`absolute top-[1px] w-[10px] h-[10px] rounded-full bg-white transition-transform ${
+                params.showGlowRing ? 'left-[9px]' : 'left-[1px]'
+              }`} />
+            </span>
           </button>
         </div>
         {params.showGlowRing && (
@@ -181,7 +183,7 @@ export function LogoControls({ params, onChange, onRandomize }: LogoControlsProp
 
       {/* Randomize */}
       <button onClick={onRandomize}
-        className="w-full mt-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] hover:opacity-90 transition-opacity">
+        className="w-full min-h-[44px] mt-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[var(--ag-edith,#8B5CF6)] to-[var(--ag-amber,#F59E0B)] hover:opacity-90 transition-opacity cursor-pointer">
         Randomize
       </button>
     </div>

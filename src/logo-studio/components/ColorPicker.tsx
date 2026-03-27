@@ -37,17 +37,18 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="w-6 h-6 rounded-md border border-white/20 cursor-pointer shrink-0"
-          style={{ backgroundColor: value }}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer shrink-0"
           aria-label={`Pick color for ${label}`}
-        />
+        >
+          <span className="w-6 h-6 rounded-md border border-white/20" style={{ backgroundColor: value }} />
+        </button>
         <span className="text-[10px] font-mono text-white/50 uppercase">
           {value}
         </span>
 
         {open && (
           <div
-            className="absolute top-full left-0 mt-2 bg-[#0a0a24] border border-white/[0.06]
+            className="absolute top-full left-0 mt-2 bg-[var(--ag-bg-elevated)] border border-[var(--ag-border-subtle)]
               rounded-xl p-3 shadow-xl z-50 transition-opacity duration-150"
           >
             <div className="grid grid-cols-5 gap-1.5 mb-2">
@@ -79,7 +80,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
               type="button"
               onClick={() => colorInputRef.current?.click()}
               className="w-full text-[10px] text-white/50 hover:text-white/80
-                py-1 rounded-md border border-white/[0.06] hover:border-white/[0.12]
+                py-1 rounded-md border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]
                 bg-gradient-to-r from-violet-500/10 via-emerald-500/10 to-amber-500/10
                 transition-colors cursor-pointer"
             >

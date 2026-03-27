@@ -139,7 +139,7 @@ function convertViaCanvas(
 
 // ── Component ────────────────────────────────────────────────
 
-export function ConvertTool() {
+export function ConvertTool(_props: { onBack: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [originalFormat, setOriginalFormat] = useState('');

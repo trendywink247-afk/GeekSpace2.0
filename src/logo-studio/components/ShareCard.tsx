@@ -200,8 +200,8 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
   const strokeProps = { stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-      <h3 className="text-xs uppercase tracking-[0.15em] text-white/30 font-medium mb-4">
+    <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5">
+      <h3 className="text-xs uppercase tracking-[0.15em] text-[var(--ag-text-muted)] font-medium mb-4">
         Share Your Logo
       </h3>
 
@@ -213,14 +213,14 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
       {/* Card preview */}
       <div className="mb-4">
         {rendering && (
-          <div className="flex items-center justify-center py-12 rounded-xl border border-white/[0.06] bg-[#06061a]">
+          <div className="flex items-center justify-center py-12 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-base)]">
             <Spinner />
             <span className="ml-2 text-sm text-white/40">Rendering card...</span>
           </div>
         )}
 
         {rendered && previewUrl && !rendering && (
-          <div className="rounded-xl overflow-hidden border border-white/[0.06]">
+          <div className="rounded-xl overflow-hidden border border-[var(--ag-border-subtle)]">
             <img
               src={previewUrl}
               alt={`Share card for ${brandName}`}
@@ -230,7 +230,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
         )}
 
         {!rendered && !rendering && !error && (
-          <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-white/[0.06] bg-[#06061a]">
+          <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-base)]">
             <p className="text-xs text-white/20 mb-3">
               {logoUrl
                 ? 'Preparing share card...'
@@ -239,7 +239,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
             {logoUrl && (
               <button
                 onClick={renderCard}
-                className="px-4 py-1.5 rounded-lg text-[11px] font-medium bg-violet-600/80 hover:bg-violet-600 text-white cursor-pointer"
+                className="min-h-[44px] px-4 py-1.5 rounded-lg text-[11px] font-medium bg-violet-600/80 hover:bg-violet-600 text-white cursor-pointer"
               >
                 Generate Card
               </button>
@@ -254,7 +254,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
         <button
           onClick={handleWhatsAppShare}
           disabled={!rendered}
-          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#25D366] hover:bg-[#22c55e] text-white flex items-center justify-center gap-2"
+          className="flex-1 min-h-[44px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-[#25D366] hover:bg-[#22c55e] text-white flex items-center justify-center gap-2"
         >
           <svg {...iconProps} viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
@@ -266,7 +266,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
         {/* Copy Link */}
         <button
           onClick={handleCopyLink}
-          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-white/[0.06] bg-white/[0.03] text-white/70 hover:bg-white/[0.06] flex items-center justify-center gap-2"
+          className="flex-1 min-h-[44px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-bg-surface-hover)] flex items-center justify-center gap-2"
         >
           <svg {...iconProps}>
             {linkCopied ? (
@@ -285,7 +285,7 @@ export function ShareCard({ logoUrl, brandName, onShare }: ShareCardProps) {
         <button
           onClick={handleDownloadCard}
           disabled={!rendered}
-          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] hover:opacity-90 text-white flex items-center justify-center gap-2"
+          className="flex-1 min-h-[44px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-edith,#8B5CF6)] to-[#7C3AED] hover:opacity-90 text-white flex items-center justify-center gap-2"
         >
           <svg {...iconProps}>
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17h16" {...strokeProps} />

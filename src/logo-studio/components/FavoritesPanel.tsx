@@ -29,15 +29,15 @@ export function FavoritesPanel({ favorites, onRemove, onClearAll }: Props) {
 
   return (
     <div
-      className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-opacity duration-500"
+      className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-white/80">Favorites</span>
+          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Favorites</span>
           {favorites.length > 0 && (
-            <span className="flex items-center justify-center rounded-full bg-white/[0.08] px-1.5 min-w-[20px] h-5 text-[10px] font-semibold text-white/60">
+            <span className="flex items-center justify-center rounded-full bg-[var(--ag-bg-surface-hover)] px-1.5 min-w-[20px] h-5 text-[10px] font-semibold text-[var(--ag-text-secondary)]">
               {favorites.length}
             </span>
           )}
@@ -45,7 +45,7 @@ export function FavoritesPanel({ favorites, onRemove, onClearAll }: Props) {
         {favorites.length > 0 && (
           <button
             onClick={onClearAll}
-            className="text-[11px] text-white/40 hover:text-white/70 transition-colors"
+            className="min-h-[44px] text-[11px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors cursor-pointer"
           >
             Clear All
           </button>
@@ -68,7 +68,7 @@ export function FavoritesPanel({ favorites, onRemove, onClearAll }: Props) {
               <div className="relative group">
                 <button
                   onClick={() => handleDownload(fav.url, fav.name)}
-                  className="block w-16 h-16 rounded-lg overflow-hidden border border-white/[0.08] bg-white/[0.04] hover:border-white/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  className="block min-w-[44px] min-h-[44px] w-16 h-16 rounded-lg overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-default)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 cursor-pointer"
                   title={`Download ${fav.name}`}
                 >
                   <img

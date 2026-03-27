@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { LogoSVG } from '../LogoEngine';
 import { MagicCard } from '@/components/magicui/magic-card';
 import { useFreeTrial } from '@/hooks/useFreeTrial';
+import { useAuthStore } from '@/stores/authStore';
 import type { LogoParams } from '../types';
 
 /* ---------- types ---------- */
@@ -19,6 +20,9 @@ export interface AiSuggestProps {
     colors: string[]; letAiChooseColors: boolean;
   } | null;
   onSelectForRefine?: (concept: { name: string; url: string; prompt?: string }) => void;
+  notifyStart?: (action: string) => Promise<void>;
+  notifyDone?: (result: string) => Promise<void>;
+  notifyFail?: (error: string) => Promise<void>;
 }
 
 /* ---------- constants ---------- */
@@ -59,7 +63,8 @@ const SparkleIcon = () => (
 
 /* ---------- component ---------- */
 
-export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRefine }: AiSuggestProps) {
+export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRefine, notifyStart, notifyDone, notifyFail }: AiSuggestProps) {
+  const token = useAuthStore((s) => s.token);
   const [variants, setVariants] = useState<AiVariant[]>([]);
   const [concepts, setConcepts] = useState<VisualConcept[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,6 +81,8 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
   const [similarity, setSimilarity] = useState(0.5);
   const [favorites, setFavorites] = useState<FavoriteConcept[]>(loadFavorites);
   const [industry, setIndustry] = useState('');
+
+  const authHeaders: Record<string, string> = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
   const { logoGenLimit, isLogoLimited, trackLogoGen, remainingLogoGens } = useFreeTrial();
 
@@ -148,27 +155,30 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
 
   const suggestParametric = async () => {
     setLoading(true); setError('');
+    notifyStart?.('parametric-suggest');
     try {
       const res = await fetch('/api/logo/ai-suggest', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: authHeaders,
         body: JSON.stringify({ currentParams, direction: direction || undefined, companyName }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({ error: 'Request failed' })); throw new Error(d.error || `HTTP ${res.status}`); }
-      setVariants((await res.json()).variants || []);
-    } catch (err: any) { setError(err.message || 'Failed to get suggestions'); }
+      const data = (await res.json()).variants || [];
+      setVariants(data);
+      notifyDone?.(`Generated ${data.length} parametric variants`);
+    } catch (err: any) { setError(err.message || 'Failed to get suggestions'); notifyFail?.(err.message || 'Parametric suggest failed'); }
     finally { setLoading(false); }
   };
 
   const doGenerateVisuals = async (ov?: { name?: string; style?: StylePreset; ind?: string; dir?: string }) => {
     if (isLogoLimited) return;
     setVisualLoading(true); setError('');
-    trackLogoGen();
+    notifyStart?.('generate-visuals');
     const batchNum = generateCount + 1; setGenerateCount(batchNum);
     try {
       const dirHint = ov?.dir ?? direction;
       const reqs = Array.from({ length: 3 }, (_, b) =>
         fetch('/api/logo/ai-visual', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: authHeaders,
           body: JSON.stringify({ ...buildBody(b, ov), direction: dirHint || undefined }),
         }).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))),
       );
@@ -178,7 +188,9 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       if (!all.length) throw new Error('No images generated -- try again');
       setConcepts(all.slice(0, 10).map((c, i) => ({ ...c, name: c.name || (dirHint ? `${dirHint} #${i + 1}` : `Concept ${i + 1}`) })));
       setSelectedConcepts(new Set());
-    } catch (err: any) { setError(err.message || 'Failed to generate'); }
+      trackLogoGen();
+      notifyDone?.(`Generated ${all.length} visual concepts`);
+    } catch (err: any) { setError(err.message || 'Failed to generate'); notifyFail?.(err.message || 'Visual generation failed'); }
     finally { setVisualLoading(false); }
   };
 
@@ -195,18 +207,20 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
   const evolveConcepts = async () => {
     if (!selectedConcepts.size) return;
     setEvolveLoading(true); setError('');
+    notifyStart?.('evolve-concepts');
     try {
       const prompts = Array.from(selectedConcepts).map((idx) => concepts[idx].prompt || `${concepts[idx].name} ${activeStyle}`.trim());
       const body: Record<string, unknown> = { selectedPrompts: prompts, direction: direction || undefined, similarity, companyName, style: activeStyle };
       if (industry) body.industry = industry;
-      const res = await fetch('/api/logo/ai-evolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch('/api/logo/ai-evolve', { method: 'POST', headers: authHeaders, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json().catch(() => ({ error: 'Request failed' })); throw new Error(d.error || `HTTP ${res.status}`); }
       const data = await res.json();
       const nc: VisualConcept[] = (data.concepts || []).map((c: VisualConcept, i: number) => ({ ...c, name: c.name || `Evolved ${concepts.length + i + 1}` }));
       if (!nc.length) throw new Error('No evolved concepts returned -- try again');
       setConcepts((prev) => [...prev, ...nc]);
       setSelectedConcepts(new Set());
-    } catch (err: any) { setError(err.message || 'Failed to evolve'); }
+      notifyDone?.(`Evolved ${nc.length} concepts`);
+    } catch (err: any) { setError(err.message || 'Failed to evolve'); notifyFail?.(err.message || 'Evolve failed'); }
     finally { setEvolveLoading(false); }
   };
 
@@ -218,8 +232,8 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
   const tabBtn = (tab: 'visual' | 'parametric', label: string) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`px-3 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-        activeTab === tab ? 'bg-violet-600/80 text-white' : 'text-white/40 hover:text-white/60'
+      className={`min-h-[44px] px-3 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+        activeTab === tab ? 'bg-violet-600/80 text-white' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
       }`}
     >{label}</button>
   );
@@ -251,8 +265,8 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
             <div ref={stylesRef} className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
               {STYLE_PRESETS.map((s) => (
                 <button key={s} onClick={() => setActiveStyle(s)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
-                    activeStyle === s ? 'bg-violet-600/80 text-white' : 'bg-white/[0.04] text-white/40 hover:text-white/60 border border-white/[0.06]'
+                  className={`min-h-[44px] px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                    activeStyle === s ? 'bg-violet-600/80 text-white' : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)]'
                   }`}>{s}</button>
               ))}
             </div>
@@ -282,7 +296,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
             className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white/80 placeholder:text-white/20 outline-none focus:border-violet-500/40" />
           <div className="flex flex-col items-end gap-1">
             <button onClick={handleSubmit} disabled={isLoading}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white whitespace-nowrap">
+              className="min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-violet-600/80 hover:bg-violet-600 text-white whitespace-nowrap">
               {visualLoading ? <span className="flex items-center gap-2"><Spinner /> Generating 10...</span>
                : loading ? <span className="flex items-center gap-2"><Spinner /> Suggesting...</span>
                : activeTab === 'visual' ? 'Generate 10' : 'Suggest'}
@@ -339,7 +353,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
                   className={`ls-card-reveal relative flex flex-col items-center gap-2 p-1.5 rounded-xl border transition-all duration-200 group/card ${
                     sel
                       ? 'border-violet-500 bg-violet-500/[0.08] ring-2 ring-violet-500/30 scale-[1.02]'
-                      : 'border-white/[0.06] bg-white/[0.02] hover:border-white/15 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/[0.08]'
+                      : 'border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/[0.08]'
                   }`}
                   style={{
                     animationDelay: `${i * 0.06}s`,
@@ -347,38 +361,44 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
                   }}>
                   {/* Heart */}
                   <button onClick={(e) => { e.stopPropagation(); toggleFavorite(c); }}
-                    className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-black/60 transition-all opacity-0 group-hover/card:opacity-100"
+                    className="absolute top-1 left-1 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full cursor-pointer transition-all opacity-0 group-hover/card:opacity-100"
                     aria-label={fav ? 'Remove from favorites' : 'Add to favorites'}>
-                    <svg className={`w-4 h-4 ${fav ? 'text-red-500' : 'text-white/40'}`} viewBox="0 0 24 24"
-                      fill={fav ? 'currentColor' : 'none'} stroke={fav ? undefined : 'currentColor'} strokeWidth={fav ? undefined : 2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={HEART_D} />
-                    </svg>
+                    <span className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60">
+                      <svg className={`w-4 h-4 ${fav ? 'text-red-500' : 'text-white/40'}`} viewBox="0 0 24 24"
+                        fill={fav ? 'currentColor' : 'none'} stroke={fav ? undefined : 'currentColor'} strokeWidth={fav ? undefined : 2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d={HEART_D} />
+                      </svg>
+                    </span>
                   </button>
                   {/* Always show heart if favorited */}
                   {fav && (
                     <button onClick={(e) => { e.stopPropagation(); toggleFavorite(c); }}
-                      className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-black/60 transition-all group-hover/card:hidden"
+                      className="absolute top-1 left-1 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full cursor-pointer transition-all group-hover/card:hidden"
                       aria-label="Remove from favorites">
-                      <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d={HEART_D} /></svg>
+                      <span className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60">
+                        <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d={HEART_D} /></svg>
+                      </span>
                     </button>
                   )}
                   {/* Selection badge */}
                   {sel && <div className="absolute top-3 right-3 z-10 w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-[11px] font-bold text-white shadow-lg shadow-violet-900/40">{order}</div>}
                   {/* Image */}
-                  <button onClick={() => toggleSelect(i)} className="w-full aspect-square rounded-lg overflow-hidden bg-[#06061a] relative cursor-pointer group/img">
+                  <button onClick={() => toggleSelect(i)} className="w-full min-h-[44px] aspect-square rounded-lg overflow-hidden bg-[var(--ag-bg-base)] relative cursor-pointer group/img">
                     <img src={c.url} alt={c.name} className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-[1.03]" loading="lazy" />
                   </button>
                   {/* Expand */}
                   <button onClick={() => setExpandedImg(c.url)} aria-label="Expand"
-                    className="absolute bottom-8 right-3 z-10 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-black/60 transition-all opacity-0 group-hover/card:opacity-100">
-                    <svg className="w-3 h-3 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d={EXPAND_D} />
-                    </svg>
+                    className="absolute bottom-8 right-1 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-all opacity-0 group-hover/card:opacity-100">
+                    <span className="w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60">
+                      <svg className="w-3 h-3 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={EXPAND_D} />
+                      </svg>
+                    </span>
                   </button>
                   {/* Refine with Jarvis */}
                   {sel && onSelectForRefine && (
                     <button onClick={(e) => { e.stopPropagation(); onSelectForRefine({ name: c.name, url: c.url, prompt: c.prompt }); }}
-                      className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-600/90 hover:bg-violet-500 text-white text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer shadow-lg shadow-violet-900/40">
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 min-h-[44px] flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-600/90 hover:bg-violet-500 text-white text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer shadow-lg shadow-violet-900/40">
                       <SparkleIcon /> Refine with Jarvis
                     </button>
                   )}
@@ -389,7 +409,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
           </div>
           {!isLoading && !isLogoLimited && (
             <div className="mt-3 flex justify-center">
-              <button onClick={generateVisuals} className="text-xs text-violet-400/50 hover:text-violet-400 cursor-pointer transition-colors">
+              <button onClick={generateVisuals} className="min-h-[44px] text-xs text-violet-400/50 hover:text-violet-400 cursor-pointer transition-colors">
                 Regenerate with new variations
               </button>
             </div>
@@ -400,12 +420,12 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       {/* Selection action bar */}
       {activeTab === 'visual' && selectedConcepts.size > 0 && (
         <div className="sticky bottom-0 mt-4 flex items-center gap-3 p-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/20 backdrop-blur-sm">
-          <span className="text-sm text-white/80 font-medium">{selectedConcepts.size} selected</span>
+          <span className="text-sm text-[var(--ag-text-primary)] font-medium">{selectedConcepts.size} selected</span>
           <div className="flex-1" />
           <button onClick={clearSelection}
-            className="px-3 py-1.5 rounded-lg text-xs bg-white/[0.06] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.1] cursor-pointer">Clear</button>
+            className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)] cursor-pointer">Clear</button>
           <button onClick={evolveConcepts} disabled={evolveLoading}
-            className="px-4 py-1.5 rounded-lg text-xs font-medium bg-violet-600/80 text-white hover:bg-violet-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+            className="min-h-[44px] px-4 py-1.5 rounded-lg text-xs font-medium bg-violet-600/80 text-white hover:bg-violet-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
             {evolveLoading ? <><Spinner /> Evolving...</> : 'Evolve'}
           </button>
         </div>
@@ -418,12 +438,12 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
             <img src={expandedImg} alt="Logo concept" className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl" />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3">
               <a href={expandedImg} download="logo-concept.jpg"
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-violet-600/80 text-white hover:bg-violet-600 cursor-pointer">Download</a>
+                className="min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium bg-violet-600/80 text-white hover:bg-violet-600 cursor-pointer inline-flex items-center">Download</a>
               <button onClick={() => setExpandedImg(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 cursor-pointer">Close</button>
+                className="min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 cursor-pointer">Close</button>
             </div>
           </div>
-          <button className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 cursor-pointer"
+          <button className="absolute top-6 right-6 min-w-[44px] min-h-[44px] rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 cursor-pointer"
             onClick={() => setExpandedImg(null)}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -437,8 +457,8 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {variants.map((v, i) => (
             <button key={i} onClick={() => onApply(v.params)}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-violet-500/40 hover:bg-violet-500/[0.04] transition-colors cursor-pointer">
-              <div className="w-16 h-16 rounded-lg bg-[#06061a] flex items-center justify-center"><LogoSVG params={v.params} size={48} /></div>
+              className="min-h-[44px] flex flex-col items-center gap-2 p-3 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-violet-500/40 hover:bg-violet-500/[0.04] transition-colors cursor-pointer">
+              <div className="w-16 h-16 rounded-lg bg-[var(--ag-bg-base)] flex items-center justify-center"><LogoSVG params={v.params} size={48} /></div>
               <span className="text-[10px] text-white/50 text-center leading-tight">{v.name}</span>
             </button>
           ))}

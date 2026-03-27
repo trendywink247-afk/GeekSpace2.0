@@ -157,12 +157,12 @@ export function ColorVariants({ imageUrl, brandName, onSelect, onClose }: Props)
       <canvas ref={canvasRef} className="hidden" />
 
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-white/60 uppercase tracking-[0.12em]">
-          Color Variants{brandName ? ` — ${brandName}` : ''}
+        <h3 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-[0.12em]">
+          Color Variants{brandName ? ` -- ${brandName}` : ''}
         </h3>
         {onClose && (
           <button onClick={onClose}
-            className="text-xs text-white/30 hover:text-white/60 transition-colors cursor-pointer">
+            className="min-h-[44px] text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-text-secondary)] transition-colors cursor-pointer">
             Close
           </button>
         )}
@@ -183,7 +183,7 @@ export function ColorVariants({ imageUrl, brandName, onSelect, onClose }: Props)
               className={`group relative rounded-xl border p-3 flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer ${
                 selected === -1
                   ? 'border-violet-500/60 bg-violet-500/[0.06] shadow-[0_0_20px_rgba(139,92,246,0.15)]'
-                  : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:-translate-y-1'
+                  : 'border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-white/[0.12] hover:-translate-y-1'
               }`}
             >
               <div className="absolute inset-0 rounded-xl opacity-10 blur-2xl pointer-events-none"
@@ -200,7 +200,7 @@ export function ColorVariants({ imageUrl, brandName, onSelect, onClose }: Props)
                 className={`group relative rounded-xl border p-3 flex flex-col items-center gap-2 transition-all duration-300 cursor-pointer ls-card-reveal ${
                   selected === i
                     ? 'border-violet-500/60 bg-violet-500/[0.06] shadow-[0_0_20px_rgba(139,92,246,0.15)]'
-                    : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:-translate-y-1'
+                    : 'border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-white/[0.12] hover:-translate-y-1'
                 }`}
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
@@ -217,7 +217,7 @@ export function ColorVariants({ imageUrl, brandName, onSelect, onClose }: Props)
           </div>
 
           {selected !== null && selected >= 0 && (
-            <div className="mt-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <div className="mt-4 p-4 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-8 h-8 rounded-lg" style={{ background: variants[selected].gradient }} />
                 <div>

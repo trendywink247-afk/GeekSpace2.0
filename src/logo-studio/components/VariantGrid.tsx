@@ -25,15 +25,15 @@ export function VariantGrid({ variants, activeId, onSelect, onDelete, onSave }: 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-white/80">Saved Variants</span>
-          <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full text-white/60">
+          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Saved Variants</span>
+          <span className="text-[10px] bg-[var(--ag-bg-surface-hover)] px-2 py-0.5 rounded-full text-[var(--ag-text-secondary)]">
             {variants.length}
           </span>
         </div>
         <button
           type="button"
           onClick={onSave}
-          className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg px-3 py-1.5
+          className="min-h-[44px] text-xs bg-[var(--ag-edith,#8B5CF6)] hover:bg-[#7C3AED] text-white rounded-lg px-3 py-1.5
             transition-colors cursor-pointer"
         >
           Save Current
@@ -53,11 +53,11 @@ export function VariantGrid({ variants, activeId, onSelect, onDelete, onSave }: 
               key={v.id}
               type="button"
               onClick={() => onSelect(v)}
-              className={`group relative rounded-xl border p-3 text-left cursor-pointer
+              className={`group relative min-h-[44px] rounded-xl border p-3 text-left cursor-pointer
                 transition-all duration-150
                 ${activeId === v.id
-                  ? 'border-[#8B5CF6]/50 bg-[#8B5CF6]/5'
-                  : 'border-white/[0.06] bg-white/[0.02] hover:border-white/15'
+                  ? 'border-[var(--ag-edith,#8B5CF6)]/50 bg-[var(--ag-edith,#8B5CF6)]/5'
+                  : 'border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-default)]'
                 }`}
             >
               {/* Delete */}
@@ -66,9 +66,9 @@ export function VariantGrid({ variants, activeId, onSelect, onDelete, onSave }: 
                 tabIndex={0}
                 onClick={(e) => { e.stopPropagation(); onDelete(v.id); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onDelete(v.id); } }}
-                className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100
+                className="absolute top-0 right-0 opacity-0 group-hover:opacity-100
                   text-white/20 hover:text-red-400 transition-opacity cursor-pointer
-                  w-5 h-5 flex items-center justify-center"
+                  min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label={`Delete ${v.name}`}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -77,7 +77,7 @@ export function VariantGrid({ variants, activeId, onSelect, onDelete, onSave }: 
               </span>
 
               {/* Preview */}
-              <div className="flex items-center justify-center w-14 h-14 rounded-lg bg-[#06061a] mx-auto mb-2">
+              <div className="flex items-center justify-center w-14 h-14 rounded-lg bg-[var(--ag-bg-base)] mx-auto mb-2">
                 <LogoSVG params={v.params} size={40} />
               </div>
 
