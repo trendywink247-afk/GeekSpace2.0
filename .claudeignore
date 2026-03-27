@@ -40,6 +40,7 @@ AGENTIN-MASTER-BRIEF.md
 agents/*.yaml
 audit/
 ops/reports/
+ops/phases/
 docs/internal/audit/
 reports/
 *.jsonl
