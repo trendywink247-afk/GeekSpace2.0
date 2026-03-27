@@ -200,12 +200,12 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
   return (
     <div
       className="flex flex-col h-full"
-      style={{ background: '#0A0A14' }}
+      style={{ background: 'var(--ag-bg-base, #06061a)' }}
     >
       {/* ── Tab bar ───────────────────────────────────────────────── */}
       <div
         className="flex items-center gap-1 px-2 py-2 flex-shrink-0 border-b"
-        style={{ borderColor: 'rgba(0,240,255,0.1)' }}
+        style={{ borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))' }}
       >
         {TABS.map(({ key, label, shortLabel }) => {
           const active = activeTab === key;
@@ -213,10 +213,10 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-150 min-h-[32px] text-[11px] sm:text-xs"
+              className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-150 min-h-[44px] text-[11px] sm:text-xs"
               style={{
                 background: active ? 'rgba(0,240,255,0.1)' : 'transparent',
-                color: active ? '#00F0FF' : '#8892A4',
+                color: active ? '#00F0FF' : '#9CA3AF',
                 border: active ? '1px solid rgba(0,240,255,0.2)' : '1px solid transparent',
               }}
             >
@@ -284,7 +284,7 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
       {/* ── Chat input (always visible) ───────────────────────────── */}
       <div
         className="flex items-center gap-2 px-3 py-2 flex-shrink-0 border-t pb-4 md:pb-2"
-        style={{ borderColor: 'rgba(0,240,255,0.1)', background: '#0A0A14' }}
+        style={{ borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))', background: 'var(--ag-bg-base, #06061a)' }}
       >
         <input
           ref={inputRef}
@@ -294,17 +294,17 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
           onKeyDown={handleKeyDown}
           placeholder="Ask an agent..."
           disabled={sending}
-          className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[36px]"
+          className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[44px]"
           style={{
-            background: '#12121F',
-            color: '#F4F6FF',
-            border: '1px solid rgba(0,240,255,0.1)',
+            background: 'var(--ag-bg-elevated, rgba(30,30,50,0.7))',
+            color: 'var(--ag-text-primary, #F4F6FF)',
+            border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))',
           }}
         />
         <button
           onClick={() => void handleSend()}
           disabled={!chatInput.trim() || sending}
-          className="flex items-center justify-center w-9 h-9 rounded-lg transition-opacity disabled:opacity-40 flex-shrink-0"
+          className="flex items-center justify-center w-11 h-11 rounded-lg transition-opacity disabled:opacity-40 flex-shrink-0"
           style={{ background: 'rgba(0,240,255,0.12)', color: '#00F0FF' }}
           aria-label="Send message"
         >

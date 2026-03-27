@@ -75,7 +75,7 @@ function StatItem({ label, value, color }: StatItemProps) {
       <span className="text-lg font-bold" style={{ color }}>
         {value}
       </span>
-      <span className="text-[10px] text-[#8892A4]">{label}</span>
+      <span className="text-[10px] text-[#9CA3AF]">{label}</span>
     </div>
   );
 }
@@ -184,12 +184,12 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                   <h2 className="text-lg font-bold text-[#F4F6FF]">
                     {id.charAt(0).toUpperCase() + id.slice(1)}
                   </h2>
-                  <p className="text-xs text-[#8892A4]">{meta?.role ?? 'Agent'}</p>
+                  <p className="text-xs text-[#9CA3AF]">{meta?.role ?? 'Agent'}</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X className="w-5 h-5 text-[#4B5563]" />
               </button>
@@ -197,7 +197,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
             {/* Description */}
             <div className="px-5 py-4">
-              <p className="text-xs leading-relaxed text-[#8892A4]">{description}</p>
+              <p className="text-xs leading-relaxed text-[#9CA3AF]">{description}</p>
             </div>
 
             {/* Current State */}
@@ -216,7 +216,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
             {/* Today's Stats */}
             <div className="px-5 pb-4">
-              <h3 className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-2">
                 Today&apos;s Stats
               </h3>
               <div className="flex gap-2">
@@ -230,7 +230,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
             {/* Specialists */}
             {specialists.length > 0 && (
               <div className="px-5 pb-4">
-                <h3 className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-2">
                   Specialists
                 </h3>
                 <div className="space-y-2">
@@ -242,7 +242,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                       <AgentTooltip key={sid} label={sDesc}>
                         <button
                           onClick={() => onNavigateToChat(sid)}
-                          className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] transition-colors text-left"
+                          className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] transition-colors text-left min-h-[44px]"
                         >
                           <span className="text-base">{sMeta?.emoji ?? '?'}</span>
                           <div className="min-w-0 flex-1">
@@ -270,7 +270,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
               <AgentTooltip label={`Start a conversation with ${id.charAt(0).toUpperCase() + id.slice(1)}`}>
                 <button
                   onClick={() => onNavigateToChat(id)}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-semibold transition-colors min-h-[44px]"
                   style={{
                     backgroundColor: `${color}15`,
                     color,
@@ -284,7 +284,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
               <AgentTooltip label="Create and assign a new task to this agent">
                 <button
                   onClick={() => setShowTaskModal(true)}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#8892A4] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06]"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#9CA3AF] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06] min-h-[44px]"
                 >
                   <ClipboardList className="w-4 h-4" />
                   Assign Task
@@ -332,7 +332,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
                     {/* Task type dropdown */}
                     <label className="block mb-3">
-                      <span className="text-[10px] uppercase tracking-wider text-[#8892A4] mb-1 block">
+                      <span className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1 block">
                         Task Type
                       </span>
                       <select
@@ -353,7 +353,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
                     {/* Task description input */}
                     <label className="block mb-4">
-                      <span className="text-[10px] uppercase tracking-wider text-[#8892A4] mb-1 block">
+                      <span className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1 block">
                         Description
                       </span>
                       <input
