@@ -5,15 +5,15 @@
 import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
-// Re-export route and services from existing locations (shim pattern)
-export { healthRouter, startHealthProbeCache, getCachedComponents } from '../../routes/health.js';
-export { runHealthTick, getServiceHealth } from '../../services/health-monitor.js';
+// Re-export from module-local files
+export { healthRouter, startHealthProbeCache, getCachedComponents } from './routes.js';
+export { runHealthTick, getServiceHealth } from './services.js';
 
 // Types
 export type { ComponentStatus, ServiceDetail, ServiceHealthMap } from './types.js';
 
 // Import for module registration
-import { healthRouter, startHealthProbeCache } from '../../routes/health.js';
+import { healthRouter, startHealthProbeCache } from './routes.js';
 
 export const healthModule: AppModule = {
   name: 'health',
