@@ -18,24 +18,27 @@ import { logger, requestLogger } from './logger.js';
 import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
-import { authRouter } from './routes/auth.js';
-import { oauthRouter } from './routes/oauth.js';
-import { routingDebugRouter } from './routes/debug-routing.js';
-import { usersRouter } from './routes/users.js';
-import { agentRouter } from './routes/agent/index.js';
-import { usageRouter } from './routes/usage.js';
-import { integrationsRouter } from './routes/integrations.js';
-// Wave 1 modules (health, portfolio, reminders, media) use AppModule pattern
+// Wave 1 modules
 import { healthModule } from './modules/health/index.js';
 import { portfolioModule } from './modules/portfolio/index.js';
 import { remindersModule } from './modules/reminders/index.js';
 import { mediaModule } from './modules/media/index.js';
+// Wave 2 modules
+import { authModule } from './modules/auth/index.js';
+import { billingModule } from './modules/billing/index.js';
+import { integrationsModule } from './modules/integrations/index.js';
+import { contentModule } from './modules/content/index.js';
+// Remaining direct imports (not yet modularized)
+import { routingDebugRouter } from './routes/debug-routing.js';
+import { usersRouter } from './routes/users.js';
+import { agentRouter } from './routes/agent/index.js';
+import { usageRouter } from './routes/usage.js';
 import { automationsRouter } from './routes/automations.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
-import { billingRouter } from './routes/billing.js';
+// billingRouter moved to billingModule
 import { modelsRouter } from './routes/models.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
@@ -45,10 +48,9 @@ import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
 import { agentStateRouter } from './routes/agent-state.js';
 // H-3: getServiceHealth no longer needed here (detailed info moved to admin-only /api/health/detailed)
-import { artifactsRouter } from './routes/artifacts.js';
-import { templatesRouter } from './routes/templates.js';
+// artifactsRouter, templatesRouter moved to contentModule
 // imagesRouter, videosRouter moved to mediaModule
-import { socialMediaRouter } from './routes/social-media.js';
+// socialMediaRouter moved to integrationsModule
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
 import { suggestionsRouter } from './routes/suggestions.js';
@@ -58,11 +60,11 @@ import { jobsRouter } from './routes/jobs.js';
 import { reportRouter } from './routes/report.js';
 import { proactiveRouter } from './routes/proactive.js';
 import { inboxRouter } from './routes/inbox.js';
-import { gmailRouter } from './routes/gmail.js';
+// gmailRouter moved to integrationsModule
 import { analyticsRouter } from './routes/analytics.js';
 import { focusRouter, habitsRouter } from './routes/focus.js';
 import { memoryRouter } from './routes/memory.js';
-import { calendarRouter } from './routes/calendar.js';
+// calendarRouter moved to integrationsModule
 import { workflowsRouter } from './routes/workflows.js';
 import { plannerRouter } from './routes/planner.js';
 import searchRouter from './routes/search.js';
@@ -79,7 +81,7 @@ import { recommendationsRouter } from './routes/recommendations.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { skillsRouter } from './routes/skills.js';
 import { logoAiRouter } from './routes/logo-ai.js';
-import { customBotRouter } from './routes/custom-bot.js';
+// customBotRouter moved to integrationsModule
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import { setupSwagger } from './shared/swagger.js';
@@ -444,24 +446,32 @@ export function createApp(): express.Application {
     res.redirect(301, `/api${req.path}${qs}`);
   });
 
-  // ---- Mount routes ----
-  app.use('/api/auth', authRouter);
-  app.use('/api/oauth', oauthRouter);
+  // ---- Static file mounts (must precede routers that share the prefix) ----
+  const __appDirname = path.dirname(fileURLToPath(import.meta.url));
+  const imgCacheStaticDir = path.join(__appDirname, '../../data/img-cache');
+  app.use('/api/images/cache', express.static(imgCacheStaticDir));
+
+  // ---- Mount domain modules ----
+  authModule.registerRoutes(app);
+  healthModule.registerRoutes(app);
+  portfolioModule.registerRoutes(app);
+  remindersModule.registerRoutes(app);
+  mediaModule.registerRoutes(app);
+  billingModule.registerRoutes(app);
+  integrationsModule.registerRoutes(app);
+  contentModule.registerRoutes(app);
+
+  // ---- Mount remaining routes (not yet modularized) ----
   app.use('/api/debug', routingDebugRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
-  app.use('/api/integrations/telegram/custom', customBotRouter);
-  app.use('/api/integrations', integrationsRouter);
-  // Wave 1 modules
-  remindersModule.registerRoutes(app);
-  portfolioModule.registerRoutes(app);
   app.use('/api/automations', automationsRouter);
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/directory', directoryRouter);
   app.use('/api/api-keys', apiKeysRouter);
   app.use('/api/features', featuresRouter);
-  app.use('/api/billing', billingRouter);
+  // billingRouter mounted by billingModule
   app.use('/api/models', modelsRouter);
   app.use('/api/webhooks', webhooksRouter);
   app.use('/api/pico', picoRouter);
@@ -470,18 +480,11 @@ export function createApp(): express.Application {
   app.use('/api/geekos', geekosBridgeRouter);
   app.use('/api/geekos-llm', geekosLlmProxyRouter);
   app.use('/api/agent-state', agentStateRouter);
-  healthModule.registerRoutes(app);
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);
-  app.use('/api/artifacts', artifactsRouter);
-  app.use('/api/templates', templatesRouter);
-  // Serve HuggingFace image cache as static files (Task 4)
-  // Must be BEFORE imagesRouter so /api/images/cache/* doesn't hit the DB lookup
-  const __appDirname = path.dirname(fileURLToPath(import.meta.url));
-  const imgCacheStaticDir = path.join(__appDirname, '../../data/img-cache');
-  app.use('/api/images/cache', express.static(imgCacheStaticDir));
-  mediaModule.registerRoutes(app);
-  app.use('/api/social-media', socialMediaRouter);
+  // artifactsRouter, templatesRouter mounted by contentModule
+  // imagesRouter, videosRouter, voiceRouter, imageAsyncRouter mounted by mediaModule
+  // socialMediaRouter mounted by integrationsModule
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
   app.use('/api/suggestions', suggestionsRouter);
@@ -491,12 +494,12 @@ export function createApp(): express.Application {
   app.use('/api/report', reportRouter);
   app.use('/api/proactive', proactiveRouter);
   app.use('/api/inbox', inboxRouter);
-  app.use('/api/gmail', gmailRouter);
+  // gmailRouter mounted by integrationsModule
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/focus', focusRouter);
   app.use('/api/habits', habitsRouter);
   app.use('/api/memory', memoryRouter);
-  app.use('/api/calendar', calendarRouter);
+  // calendarRouter mounted by integrationsModule
   app.use('/api/workflows', workflowsRouter);
   app.use('/api/planner', plannerRouter);
   app.use('/api/search', searchRouter);

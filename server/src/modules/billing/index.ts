@@ -1,5 +1,5 @@
 /**
- * Billing Domain — Barrel Export
+ * Billing Domain — Barrel Export + AppModule registration
  *
  * Re-exports for Stripe, Razorpay, credit management, subscriptions,
  * and plan definitions.
@@ -7,6 +7,9 @@
  * @module billing
  * @see docs/MICROSERVICES_ROADMAP.md — Wave 2 extraction candidate
  */
+
+import type { Application } from 'express';
+import type { AppModule } from '../../shared/module.js';
 
 // ── Routes ──────────────────────────────────────────────────────────
 export { billingRouter } from '../../routes/billing.js';
@@ -37,3 +40,17 @@ export type { CreditBalance, UsageReport } from '../../services/credit-service.j
 // ── Repositories ────────────────────────────────────────────────────
 export { SubscriptionRepository } from '../../repositories/SubscriptionRepository.js';
 export type { SubscriptionRow } from '../../repositories/SubscriptionRepository.js';
+
+// ── Types ──────────────────────────────────────────────────────────
+export type { Subscription, Plan, DayPass, UsageEvent } from './types.js';
+
+// ── Module Registration ─────────────────────────────────────────────
+import { billingRouter } from '../../routes/billing.js';
+
+export const billingModule: AppModule = {
+  name: 'billing',
+
+  registerRoutes(app: Application) {
+    app.use('/api/billing', billingRouter);
+  },
+};
