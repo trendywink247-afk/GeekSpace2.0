@@ -24,8 +24,8 @@ export {
 export type { AuthRequest } from '../../middleware/auth.js';
 
 // ── Routes ──────────────────────────────────────────────────────────
-export { authRouter } from '../../routes/auth.js';
-export { oauthRouter } from '../../routes/oauth.js';
+export { authRouter } from './routes/auth.js';
+export { oauthRouter } from './routes/oauth.js';
 
 // ── Services ────────────────────────────────────────────────────────
 export {
@@ -34,15 +34,15 @@ export {
   revokeAllRefreshTokens,
   revokeRefreshToken,
   cleanupExpiredRefreshTokens,
-} from '../../services/refresh-token.js';
+} from './services/refresh-token.js';
 
 export {
   requestPasswordReset,
   verifyResetOTP,
   resetPassword,
   getUserResetChannels,
-} from '../../services/passwordReset.js';
-export type { ResetChannel, ResetRequestResult, VerifyOTPResult } from '../../services/passwordReset.js';
+} from './services/passwordReset.js';
+export type { ResetChannel, ResetRequestResult, VerifyOTPResult } from './services/passwordReset.js';
 
 export {
   isLoginBlocked,
@@ -50,14 +50,14 @@ export {
   clearLoginAttempts,
   MAX_ATTEMPTS,
   WINDOW_MS,
-} from '../../services/login-guard.js';
+} from './services/login-guard.js';
 
 // ── Types ──────────────────────────────────────────────────────────
 export type { LoginRequest, SignupRequest, AuthResponse, OAuthProvider, PasswordResetRequest } from './types.js';
 
 // ── Module Registration ─────────────────────────────────────────────
-import { authRouter } from '../../routes/auth.js';
-import { oauthRouter } from '../../routes/oauth.js';
+import { authRouter } from './routes/auth.js';
+import { oauthRouter } from './routes/oauth.js';
 
 export const authModule: AppModule = {
   name: 'auth',
