@@ -259,6 +259,12 @@ Available tools:
 - create_calendar_event: Create a calendar event. Params: {"title": "<event title>", "start_time": "<ISO datetime or natural language>", "duration_minutes": 60, "attendees": ["email@example.com"], "location": "<location>"}. Use when user says "schedule a meeting", "create an event", "block time for", "add to calendar".
 - find_free_slot: Find available time slots in the calendar. Params: {"duration_minutes": 60, "days_ahead": 7, "preference": "morning|afternoon|evening"}. Use when user says "find free time", "when am I free", "find a slot", "available time", "free slots".
 - list_inbox: List recent email inbox messages. Params: {"limit": 5}. Use when user says "check my emails", "any new emails", "show inbox", "what emails do I have", "unread messages".
+- create_goal: Create a goal for autonomous pursuit. Params: {"title": "<goal>", "description": "<details>", "category": "general|career|health|finance|learning|creative|technical|personal", "target_date": "<YYYY-MM-DD>"}. Use when user says "I want to...", "my goal is...", "help me achieve...", "set a goal for...", "I need to accomplish...".
+- list_goals: List user's goals. Params: {"status": "active|completed|paused"}. Use when user says "show my goals", "what are my goals", "goal progress", "what am I working on".
+- plan_goal: AI-decompose a goal into actionable steps. Params: {"goal_id": "<id>"}. Use after creating a goal to break it into steps.
+- execute_goal_step: Execute the next available step on a goal. Params: {"goal_id": "<id>"}. Use when user says "work on my goal", "do the next step", "make progress on...".
+- goal_status: Get detailed status of a goal with steps. Params: {"goal_id": "<id>"}. Use when user asks "how's my goal going", "goal progress", "status of...".
+- save_artifact: Save a workspace artifact (research, draft, analysis). Params: {"title": "<title>", "content": "<content>", "type": "note|draft|research|code|plan|analysis", "goal_id": "<optional>"}. Use when an agent produces substantial output worth saving.
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
 

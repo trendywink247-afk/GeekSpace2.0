@@ -2319,3 +2319,119 @@ try {
     CREATE INDEX IF NOT EXISTS idx_delegation_counts_date ON delegation_counts(user_id, date);
   `);
 } catch { /* table already exists */ }
+
+// ============================================================
+// Agentic Experience — Goal System & Planning Engine
+// ============================================================
+
+// Goals — user-defined objectives that agents pursue autonomously
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      status TEXT DEFAULT 'active',
+      priority INTEGER DEFAULT 5,
+      category TEXT DEFAULT 'general',
+      assigned_agent TEXT DEFAULT 'cal',
+      target_date TEXT,
+      progress INTEGER DEFAULT 0,
+      outcome TEXT,
+      parent_goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_goals_user_status ON goals(user_id, status);
+    CREATE INDEX IF NOT EXISTS idx_goals_agent ON goals(user_id, assigned_agent);
+    CREATE INDEX IF NOT EXISTS idx_goals_parent ON goals(parent_goal_id);
+  `);
+} catch { /* table already exists */ }
+
+// Goal steps — decomposed actionable steps within a goal
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS goal_steps (
+      id TEXT PRIMARY KEY,
+      goal_id TEXT NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      assigned_agent TEXT DEFAULT 'cal',
+      step_order INTEGER DEFAULT 0,
+      depends_on TEXT DEFAULT '[]',
+      effort TEXT DEFAULT 'medium',
+      result TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_goal_steps_goal ON goal_steps(goal_id, step_order);
+    CREATE INDEX IF NOT EXISTS idx_goal_steps_status ON goal_steps(user_id, status);
+  `);
+} catch { /* table already exists */ }
+
+// Goal events — audit log of everything that happens on a goal
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS goal_events (
+      id TEXT PRIMARY KEY,
+      goal_id TEXT NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      agent_id TEXT,
+      step_id TEXT REFERENCES goal_steps(id) ON DELETE SET NULL,
+      message TEXT NOT NULL,
+      metadata TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_goal_events_goal ON goal_events(goal_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_goal_events_user ON goal_events(user_id, created_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Workspace artifacts — shared scratchpad for inter-agent collaboration
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_artifacts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT '',
+      artifact_type TEXT DEFAULT 'note',
+      created_by_agent TEXT,
+      tags TEXT DEFAULT '[]',
+      version INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_workspace_user ON workspace_artifacts(user_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_workspace_goal ON workspace_artifacts(goal_id);
+  `);
+} catch { /* table already exists */ }
+
+// Agent delegation log — detailed tracking of agent-to-agent handoffs
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS delegation_log (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      goal_id TEXT REFERENCES goals(id) ON DELETE SET NULL,
+      step_id TEXT REFERENCES goal_steps(id) ON DELETE SET NULL,
+      from_agent TEXT NOT NULL,
+      to_agent TEXT NOT NULL,
+      task_description TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      result TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_delegation_log_user ON delegation_log(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_delegation_log_status ON delegation_log(user_id, status);
+  `);
+} catch { /* table already exists */ }

@@ -1904,6 +1904,66 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: true, message: `📬 Inbox (${messages.length} messages):\n${lines.join('\n')}` };
       }
 
+      // ── Goal System Tools ────────────────────────────────────
+      case 'create_goal': {
+        const { createGoal } = await import('./goal-service.js');
+        const title = params.title || params.goal || params.name;
+        if (!title) return { tool, success: false, message: 'Goal title is required' };
+        const goal = createGoal(userId, {
+          title: String(title),
+          description: params.description ? String(params.description) : undefined,
+          category: params.category as any,
+          target_date: params.target_date ? String(params.target_date) : undefined,
+        });
+        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (${goal.category}, assigned to ${goal.assigned_agent})` };
+      }
+
+      case 'list_goals': {
+        const { getUserGoals } = await import('./goal-service.js');
+        const goals = getUserGoals(userId, params.status as any, 10);
+        if (goals.length === 0) return { tool, success: true, message: 'No goals found. Set one with "create_goal".' };
+        const lines = goals.map((g, i) => `${i + 1}. ${g.title} [${g.status}] ${g.progress}% — ${g.assigned_agent}`);
+        return { tool, success: true, message: `📋 Your goals:\n${lines.join('\n')}` };
+      }
+
+      case 'plan_goal': {
+        const { planGoal } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const plan = await planGoal(String(goalId), userId);
+        if (!plan) return { tool, success: false, message: 'Goal not found or planning failed' };
+        const stepLines = plan.steps.map((s, i) => `${i + 1}. ${s.title} (${s.assigned_agent}, ${s.effort})`);
+        return { tool, success: true, message: `🗺️ Plan for "${plan.goal.title}":\n${stepLines.join('\n')}\n\nEstimated: ${plan.estimated_effort}` };
+      }
+
+      case 'execute_goal_step': {
+        const { executeNextStep } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const step = await executeNextStep(String(goalId), userId);
+        if (!step) return { tool, success: false, message: 'No actionable step found for this goal' };
+        return { tool, success: true, message: `⚡ Executed step: "${step.title}" — Status: ${step.status}${step.result ? '\n\nResult: ' + step.result.slice(0, 500) : ''}` };
+      }
+
+      case 'goal_status': {
+        const { getGoalWithSteps } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const goal = getGoalWithSteps(String(goalId));
+        if (!goal) return { tool, success: false, message: 'Goal not found' };
+        const stepLines = goal.steps.map(s => `  ${s.status === 'completed' ? '✅' : s.status === 'in_progress' ? '🔄' : '⬜'} ${s.title} (${s.assigned_agent})`);
+        return { tool, success: true, message: `📊 "${goal.title}" — ${goal.progress}% complete\nStatus: ${goal.status}\nSteps:\n${stepLines.join('\n')}` };
+      }
+
+      case 'save_artifact': {
+        const { createWorkspaceArtifact } = await import('./goal-service.js');
+        const title = params.title || 'Untitled';
+        const content = params.content || '';
+        if (!content) return { tool, success: false, message: 'Artifact content is required' };
+        const artifact = createWorkspaceArtifact(userId, params.goal_id || null, String(title), String(content), (params.type as any) || 'note', params.agent);
+        return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
+      }
+
       // ── Unknown tool — try GeekOS plugin bridge as fallback
       default: {
         try {

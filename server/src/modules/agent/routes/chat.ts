@@ -158,7 +158,30 @@ Use search_memory when the user asks "what did I say about X", "find my note abo
 tool: portfolio_update_skills
 skills: ["Skill 1", "Skill 2", "Skill 3"]
 <<<END>>>
-Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.`;
+Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.
+<<<ACTION>>>
+tool: create_goal
+title: Launch my SaaS by April
+description: Build and launch the MVP
+category: technical
+target_date: 2026-04-30
+<<<END>>>
+Use create_goal when user says "I want to...", "my goal is...", "help me achieve...". After creating, use plan_goal to decompose into steps.
+<<<ACTION>>>
+tool: list_goals
+status: active
+<<<END>>>
+Use list_goals to show user's goals. Use goal_status with goal_id for detailed view with steps.
+<<<ACTION>>>
+tool: plan_goal
+goal_id: <id>
+<<<END>>>
+Use plan_goal to AI-decompose a goal into actionable steps assigned to specialist agents.
+<<<ACTION>>>
+tool: execute_goal_step
+goal_id: <id>
+<<<END>>>
+Use execute_goal_step to autonomously work on the next step of a goal.`;
 
   // Build personality instructions from slider values (uses shared function from message-router)
   const personalityInstructions = buildPersonalityInstructions(agentConfig as { creativity?: number; formality?: number; verbosity?: number; humor?: number; empathy?: number } | undefined);

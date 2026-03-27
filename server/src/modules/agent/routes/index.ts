@@ -25,6 +25,8 @@ import memoryRouter from './memory.js';
 import conversationsRouter from './conversations.js';
 import premiumRouter from './premium.js';
 import workflowsRouter from './workflows.js';
+import goalsRouter from './goals.js';
+import notificationsRouter from './notifications.js';
 
 export const agentRouter = Router();
 
@@ -36,5 +38,7 @@ agentRouter.use(memoryRouter);
 agentRouter.use(conversationsRouter);
 agentRouter.use(premiumRouter);
 agentRouter.use(workflowsRouter);
+agentRouter.use(goalsRouter);
+agentRouter.use(notificationsRouter);
 
 export default agentRouter;
