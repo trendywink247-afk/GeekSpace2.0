@@ -489,7 +489,7 @@ describe('Telegram Command Center', () => {
     it('telegram.ts contains registerBotCommands function', () => {
       // Verify the init function registers commands
       const telegramTs = fs.readFileSync(
-        path.resolve(__dirname, '../../services/telegram.ts'),
+        path.resolve(__dirname, '../../modules/integrations/services/telegram.ts'),
         'utf-8'
       );
       expect(telegramTs).toContain('setMyCommands');

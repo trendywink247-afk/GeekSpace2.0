@@ -125,7 +125,7 @@ describe('92.6 JWT token blocklist', () => {
   });
 
   it('/logout endpoint exists in routes/auth.ts', () => {
-    const src = readSrc('routes', 'auth.ts');
+    const src = readSrc('modules', 'auth', 'routes', 'auth.ts');
     expect(src).toMatch(/logout/);
     expect(src).toMatch(/token_blocklist/);
   });
@@ -148,19 +148,19 @@ describe('92.6 JWT token blocklist', () => {
 
 describe('92.7 WhatsApp webhook signature null guard', () => {
   it('whatsapp.ts guards against null signature', () => {
-    const src = readSrc('services', 'whatsapp.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'whatsapp.ts');
     expect(src).toMatch(/null/);
     expect(src).toMatch(/sha256=/);
   });
 
   it('whatsapp.ts has try/catch around timingSafeEqual', () => {
-    const src = readSrc('services', 'whatsapp.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'whatsapp.ts');
     expect(src).toMatch(/try/);
     expect(src).toMatch(/timingSafeEqual/);
   });
 
   it('whatsapp.ts strips sha256= prefix before comparison', () => {
-    const src = readSrc('services', 'whatsapp.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'whatsapp.ts');
     expect(src).toMatch(/replace.*sha256=/);
   });
 });
@@ -169,7 +169,7 @@ describe('92.7 WhatsApp webhook signature null guard', () => {
 
 describe('92.2 auth.ts login route brute-force integration', () => {
   it('imports isLoginBlocked, recordFailedLogin, clearLoginAttempts', () => {
-    const src = readSrc('routes', 'auth.ts');
+    const src = readSrc('modules', 'auth', 'routes', 'auth.ts');
     expect(src).toMatch(/isLoginBlocked/);
     expect(src).toMatch(/recordFailedLogin/);
     expect(src).toMatch(/clearLoginAttempts/);

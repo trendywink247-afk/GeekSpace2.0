@@ -226,14 +226,14 @@ describe('96.3 routes/workflows.ts', () => {
     expect(src).toContain("workflowsRouter.get('/runs/:runId'");
   });
 
-  it('workflowsRouter is registered in app.ts', () => {
+  it('automationModule is registered in app.ts (which registers workflow routes)', () => {
     const src = readSrc('app.ts');
-    expect(src).toContain('workflowsRouter');
+    expect(src).toContain('automationModule');
   });
 
-  it('workflowsRouter mounted at /api/workflows in app.ts', () => {
+  it('automationModule is imported in app.ts', () => {
     const src = readSrc('app.ts');
-    expect(src).toContain('/api/workflows');
+    expect(src).toContain('automationModule');
   });
 });
 

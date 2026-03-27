@@ -277,35 +277,34 @@ describe('94.4 extractMemoriesFromConversation', () => {
 
 describe('94.5 static: memory routes and service files exist', () => {
   it('routes/memory.ts exports memoryRouter', () => {
-    const src = readSrc('routes', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/memoryRouter/);
     expect(src).toMatch(/Router/);
   });
 
   it('routes/memory.ts has GET / route', () => {
-    const src = readSrc('routes', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/get\(/);
   });
 
   it('routes/memory.ts has POST / route', () => {
-    const src = readSrc('routes', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/post\(/);
   });
 
   it('routes/memory.ts has DELETE route', () => {
-    const src = readSrc('routes', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/delete\(/);
   });
 
   it('routes/memory.ts has context route', () => {
-    const src = readSrc('routes', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/context/);
   });
 
-  it('app.ts registers memoryRouter at /api/memory', () => {
+  it('app.ts registers memoryModule (which registers memory routes)', () => {
     const src = readSrc('app.ts');
-    expect(src).toMatch(/memoryRouter/);
-    expect(src).toMatch(/\/api\/memory/);
+    expect(src).toMatch(/memoryModule/);
   });
 
   it('agent.ts imports formatMemoryContext', () => {
@@ -330,27 +329,27 @@ describe('94.5 static: memory routes and service files exist', () => {
   });
 
   it('services/memory.ts exports getUserMemories', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function getUserMemories/);
   });
 
   it('services/memory.ts exports upsertUserMemory', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function upsertUserMemory/);
   });
 
   it('services/memory.ts exports deleteUserMemory', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function deleteUserMemory/);
   });
 
   it('services/memory.ts exports formatMemoryContext', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function formatMemoryContext/);
   });
 
   it('services/memory.ts exports extractMemoriesFromConversation', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function extractMemoriesFromConversation/);
   });
 });

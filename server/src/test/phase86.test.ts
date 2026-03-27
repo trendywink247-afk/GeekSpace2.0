@@ -321,42 +321,42 @@ describe('Environment keys', () => {
 
 describe('Message router wiring', () => {
   it('imports compressPrompt and trimConversationHistory', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('compressPrompt');
     expect(content).toContain('trimConversationHistory');
   });
 
   it('imports isSearchIntent and tavilySearch', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('isSearchIntent');
     expect(content).toContain('tavilySearch');
   });
 
   it('imports extractUrl and web-research for URL scraping', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('extractUrl');
     expect(content).toContain('fetchAndExtract');
   });
 
   it('compresses systemPrompt before LLM call', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('compressPrompt(systemPrompt)');
   });
 
   it('logs LLM call stats with token info', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('LLM call stats');
     expect(content).toContain('promptTokens');
     expect(content).toContain('completionTokens');
   });
 
   it('adds web search results to system prompt', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('WEB_SEARCH_RESULTS');
   });
 
   it('handles /research command for Firecrawl', () => {
-    const content = readServer('services/message-router.ts');
+    const content = readServer('modules/agent/services/message-router.ts');
     expect(content).toContain('/research');
     expect(content).toContain('PAGE_CONTENT');
   });

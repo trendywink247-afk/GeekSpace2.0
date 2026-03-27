@@ -33,22 +33,22 @@ describe('89.1 stripe.ts service', () => {
   });
 
   it('exports createCheckoutSession', () => {
-    const content = readServer('services/stripe.ts');
+    const content = readServer('modules/billing/services/stripe.ts');
     expect(content).toContain('export async function createCheckoutSession');
   });
 
   it('exports handleWebhook', () => {
-    const content = readServer('services/stripe.ts');
+    const content = readServer('modules/billing/services/stripe.ts');
     expect(content).toContain('export async function handleWebhook');
   });
 
   it('exports getStatus', () => {
-    const content = readServer('services/stripe.ts');
+    const content = readServer('modules/billing/services/stripe.ts');
     expect(content).toContain('export function getStatus');
   });
 
   it('exports isPaidPlan', () => {
-    const content = readServer('services/stripe.ts');
+    const content = readServer('modules/billing/services/stripe.ts');
     expect(content).toContain('export function isPaidPlan');
   });
 });
@@ -227,28 +227,28 @@ describe('89.6 POST /api/billing/webhook', () => {
 
 describe('89.7 Image generation plan gating', () => {
   it('images.ts imports db for plan check', () => {
-    const content = readServer('routes/images.ts');
+    const content = readServer('modules/media/routes/images.ts');
     expect(content).toContain('SELECT plan FROM users WHERE id = ?');
     expect(content).toContain('upgradeRequired');
   });
 
   it('free users have IMAGE_DAILY_CAPS of 3', () => {
-    const content = readServer('routes/images.ts');
+    const content = readServer('modules/media/routes/images.ts');
     expect(content).toContain("free: 3");
   });
 
   it('pilot users have IMAGE_DAILY_CAPS of 10', () => {
-    const content = readServer('routes/images.ts');
+    const content = readServer('modules/media/routes/images.ts');
     expect(content).toContain("pilot: 10");
   });
 
   it('yearly users have IMAGE_DAILY_CAPS of 100', () => {
-    const content = readServer('routes/images.ts');
+    const content = readServer('modules/media/routes/images.ts');
     expect(content).toContain("yearly: 100");
   });
 
   it('shows upgrade message for free users hitting cap', () => {
-    const content = readServer('routes/images.ts');
+    const content = readServer('modules/media/routes/images.ts');
     expect(content).toContain('Upgrade your plan to unlock more image generation');
   });
 });
@@ -257,17 +257,17 @@ describe('89.7 Image generation plan gating', () => {
 
 describe('89.8 Voice plan gating', () => {
   it('voice.ts has pilot plan cap', () => {
-    const content = readServer('routes/voice.ts');
+    const content = readServer('modules/media/routes/voice.ts');
     expect(content).toContain('pilot: 30');
   });
 
   it('voice.ts has yearly plan cap of 100', () => {
-    const content = readServer('routes/voice.ts');
+    const content = readServer('modules/media/routes/voice.ts');
     expect(content).toContain('yearly: 100');
   });
 
   it('shows upgrade message when free users hit voice cap', () => {
-    const content = readServer('routes/voice.ts');
+    const content = readServer('modules/media/routes/voice.ts');
     expect(content).toContain('Voice limit reached. Upgrade your plan to unlock more voice calls');
   });
 });

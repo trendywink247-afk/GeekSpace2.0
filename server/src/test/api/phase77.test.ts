@@ -172,7 +172,7 @@ describe('Phase 77 — Per-User Limits + Usage Dashboard', () => {
     });
 
     it('passwordReset service sendTelegramOTP function exists', () => {
-      const content = readFileSync(resolve(SERVER_ROOT, 'src/services/passwordReset.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_ROOT, 'src/modules/auth/services/passwordReset.ts'), 'utf-8');
       expect(content).toContain('sendTelegramOTP');
       expect(content).toContain('api.telegram.org');
     });
