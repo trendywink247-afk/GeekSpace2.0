@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/OfficePage.tsx
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Monitor } from 'lucide-react';
 import OfficeStage from './OfficeStage';
@@ -8,9 +8,11 @@ import { AgentProfileFlyout } from './AgentProfileFlyout';
 import SmartSidebar from './SmartSidebar';
 import { InsightToast } from './InsightToast';
 import { useOfficeData } from './useOfficeData';
+import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { isFirstVisit, markVisited } from './AnimationTierSelector';
 import { agentService, agentTasksService } from '@/services/api';
 import {
-  CELL, AGENT_META, AGENT_COLORS,
+  CELL, AGENT_META, AGENT_COLORS, CANVAS_W,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
@@ -20,35 +22,16 @@ import { AGENT_WORK_HOURS } from './types';
 /** All 9 agent IDs for iteration. */
 const ALL_AGENT_IDS: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
+/** Canvas height in pixels (25 rows x 32px). */
+const CANVAS_H_PX = 800;
+
 /**
  * Constructs a CanvasAgent object suitable for display in the SpotlightHUD.
- *
- * **Purpose:** Converts a raw agent ID into a fully-initialized CanvasAgent
- * with position, color, metadata, and initial animation state for the spotlight HUD.
- *
- * **Position Resolution:** Looks up desk position from either CORE_DESK_POSITIONS
- * or SPECIALIST_POSITIONS. Falls back to (0, 0) if agent not found.
- *
- * **Pixel Coordinates:** Converts grid coordinates (tiles) to pixel coordinates
- * by multiplying by CELL size (32px) and centering (+ CELL/2).
- *
- * **Dormancy:** Specialists start dormant (greyed out in UI) until their parent
- * core agent activates them. Core agents are never dormant.
- *
- * @param id - Agent identifier string (e.g., 'weebo', 'aria')
- * @returns CanvasAgent initialized and ready for rendering, or null if agent metadata not found
- *
- * @example
- * ```typescript
- * const agent = getAgentForHUD('weebo');
- * // Returns: { id: 'weebo', name: '✨ Weebo', color: '#00F0FF', ... }
- * ```
  */
 function getAgentForHUD(id: string): CanvasAgent | null {
   const meta = AGENT_META[id as AgentId];
   if (!meta) return null;
 
-  // Resolve grid position: core agents have fixed desks, specialists have reserved spots
   const pos =
     CORE_DESK_POSITIONS[id as CoreAgentId] ??
     SPECIALIST_POSITIONS[id as SpecialistId] ??
@@ -56,22 +39,18 @@ function getAgentForHUD(id: string): CanvasAgent | null {
 
   return {
     id: id as AgentId,
-    // Format name with emoji + capitalized agent ID (e.g., "✨ Weebo")
     name: meta.emoji + ' ' + id.charAt(0).toUpperCase() + id.slice(1),
     color: AGENT_COLORS[id as AgentId],
     emoji: meta.emoji,
     role: meta.role,
-    // Grid coordinates (tile-based, 0-26 x 0-24)
     x: pos.x,
     y: pos.y,
     targetX: pos.x,
     targetY: pos.y,
-    // Pixel coordinates (scaled by CELL size + centered for sprite drawing)
     renderX: pos.x * CELL + CELL / 2,
     renderY: pos.y * CELL + CELL / 2,
     speed: 5,
     state: 'idle',
-    // Specialists are a different agent class (not core team)
     isSpecialist: !CORE_AGENTS.includes(id as CoreAgentId),
     isDormant: false,
     path: [],
@@ -79,53 +58,137 @@ function getAgentForHUD(id: string): CanvasAgent | null {
   };
 }
 
-/**
- * @fileoverview Agent Office Mission Control page component.
- *
- * Main canvas-based UI for monitoring and interacting with the 9-agent system.
- * Features real-time agent animation, interactive task board, communication timeline,
- * and insight cards.
- *
- * **Layout:**
- * - Left (60% desktop / 35vh mobile): Pixel-art office canvas with 9 agents
- * - Right (40% desktop / full mobile): Sidebar with task board, comms, timeline
- * - Overlays: Connection badge, day/night theme toggle, spotlight HUD, agent profile
- *
- * **Data Flow:**
- * - `useOfficeData()` hook: SSE stream + polling of `/api/office/state`
- * - Canvas updates: Real-time from SSE events (50-200ms latency)
- * - Sidebar updates: Polled every 5s from backend
- * - Session expiry: Banner shown if JWT token expires (401 Unauthorized)
- *
- * **State Management:**
- * - `selectedAgentId`: For spotlight HUD and task assignment
- * - `flyoutAgentId`: For agent profile overlay (double-click)
- * - `officeTheme`: Persisted to localStorage, affects canvas lighting
- * - `dismissedInsights`: Locally suppresses insight cards already shown
- *
- * @component
- * @returns Full office page with canvas, sidebar, and overlays
- *
- * @example
- * ```tsx
- * import { OfficePage } from '@/dashboard/pages/office';
- *
- * export function Dashboard() {
- *   return (
- *     <div>
- *       <Header />
- *       <OfficePage />
- *     </div>
- *   );
- * }
- * ```
- */
+// ---------------------------------------------------------------------------
+// First-Visit Cinematic Overlay (Tier 3 -- simple, reliable)
+// Shows once per user; dismissed via "Get Started" button.
+// ---------------------------------------------------------------------------
+
+const AGENT_INTRO_ORDER: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
+
+function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
+  const [visible, setVisible] = useState(false);
+  const [cardsShown, setCardsShown] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    AGENT_INTRO_ORDER.forEach((_, i) => {
+      timers.push(setTimeout(() => setCardsShown(i + 1), 600 + i * 200));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [visible]);
+
+  const handleDismiss = () => {
+    markVisited();
+    setVisible(false);
+    setTimeout(onDismiss, 350);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{
+        backgroundColor: visible ? 'rgba(5,5,10,0.85)' : 'rgba(5,5,10,0)',
+        transition: 'background-color 0.4s ease',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+      }}
+    >
+      <h2
+        className="text-2xl md:text-3xl font-bold tracking-wide mb-6"
+        style={{
+          fontFamily: 'Syne, sans-serif',
+          color: '#F4F6FF',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s',
+        }}
+      >
+        Meet Your Agent Team
+      </h2>
+
+      <div className="grid grid-cols-3 gap-3 md:gap-4 px-4 max-w-md w-full mb-8">
+        {AGENT_INTRO_ORDER.map((id, i) => {
+          const meta = AGENT_META[id];
+          const color = AGENT_COLORS[id];
+          const shown = i < cardsShown;
+          return (
+            <div
+              key={id}
+              className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 md:py-4"
+              style={{
+                background: shown ? `${color}10` : 'transparent',
+                border: shown ? `1px solid ${color}25` : '1px solid transparent',
+                opacity: shown ? 1 : 0,
+                transform: shown ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.95)',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <span className="text-xl md:text-2xl">{meta.emoji}</span>
+              <span className="text-xs md:text-sm font-semibold" style={{ color }}>
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </span>
+              <span className="text-[10px] md:text-xs" style={{ color: '#8892A4' }}>
+                {meta.role}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={handleDismiss}
+        className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all"
+        style={{
+          background: 'rgba(0,240,255,0.15)',
+          color: '#00F0FF',
+          border: '1px solid rgba(0,240,255,0.3)',
+          opacity: cardsShown >= AGENT_INTRO_ORDER.length ? 1 : 0,
+          transform: cardsShown >= AGENT_INTRO_ORDER.length ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.4s ease, transform 0.4s ease, background 0.2s',
+          pointerEvents: cardsShown >= AGENT_INTRO_ORDER.length ? 'auto' : 'none',
+        }}
+        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = 'rgba(0,240,255,0.25)'; }}
+        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = 'rgba(0,240,255,0.15)'; }}
+      >
+        Get Started
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// OfficePage
+// ---------------------------------------------------------------------------
 
 type OfficeTheme = 'day' | 'night' | 'auto';
 
 export function OfficePage() {
   const navigate = useNavigate();
   const { sseEvents, officeData, connectionMode, sessionExpired } = useOfficeData();
+
+  // Mobile detection + viewport width for canvas scaling
+  const isMobile = useMobileDetect();
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 864,
+  );
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Mobile bottom-sheet sidebar state
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const touchStartY = useRef<number | null>(null);
+
+  // First-visit overlay
+  const [showFirstVisit, setShowFirstVisit] = useState(() => isFirstVisit());
 
   // State
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -153,7 +216,6 @@ export function OfficePage() {
         return insightKeywords.some(kw => lower.includes(kw));
       })
       .filter((item, index) => {
-        // Stable ID based on index + created_at
         const id = `insight-${index}-${item.created_at}`;
         return !dismissedInsights.includes(id);
       })
@@ -200,11 +262,32 @@ export function OfficePage() {
   // Determine which agents are within working hours for the status strip
   const currentHour = new Date().getHours();
 
+  // Mobile canvas scaling: fit 864px canvas into viewport width
+  const canvasScale = isMobile ? Math.min(viewportWidth / CANVAS_W, 1) : 1;
+  const scaledCanvasHeight = isMobile ? CANVAS_H_PX * canvasScale : 0;
+
+  // Touch handlers for mobile bottom-sheet sidebar
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const delta = touchStartY.current - e.changedTouches[0].clientY;
+    if (delta > 40) setSidebarExpanded(true);
+    if (delta < -40) setSidebarExpanded(false);
+    touchStartY.current = null;
+  };
+
   return (
     <div
       className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
       style={{ background: 'var(--ag-bg-deep, #05050A)' }}
     >
+      {/* First-visit cinematic overlay */}
+      {showFirstVisit && (
+        <FirstVisitOverlay onDismiss={() => setShowFirstVisit(false)} />
+      )}
+
       {/* Session expired banner */}
       {sessionExpired && (
         <div
@@ -212,7 +295,7 @@ export function OfficePage() {
           style={{ backgroundColor: '#FF2D7820', borderBottom: '1px solid #FF2D7860' }}
         >
           <div className="flex items-center gap-2 text-sm" style={{ color: '#FF2D78' }}>
-            Session expired — live feed paused
+            Session expired &mdash; live feed paused
           </div>
           <button
             onClick={() => {
@@ -231,8 +314,24 @@ export function OfficePage() {
       {/* Main content: Canvas + Sidebar */}
       <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
-      {/* Office Stage — 60% desktop, 35vh mobile */}
-      <div className="relative w-full md:w-[60%] h-[35vh] md:h-full flex-shrink-0">
+      {/* Office Stage -- 60% desktop, scaled-to-fit on mobile */}
+      <div
+        className="relative w-full md:w-[60%] flex-shrink-0 overflow-hidden"
+        style={isMobile
+          ? { height: `${scaledCanvasHeight}px` }
+          : { height: '100%' }
+        }
+      >
+        {/* Scale wrapper -- transforms 864px canvas to fit viewport on mobile */}
+        <div
+          className="relative w-full h-full"
+          style={isMobile ? {
+            transform: `scale(${canvasScale})`,
+            transformOrigin: 'top left',
+            width: `${CANVAS_W}px`,
+            height: `${CANVAS_H_PX}px`,
+          } : undefined}
+        >
         {/* Header overlay */}
         <div
           className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5"
@@ -330,7 +429,7 @@ export function OfficePage() {
           theme={resolvedTheme}
         />
 
-        {/* Insight toasts — float at top-center of canvas stage */}
+        {/* Insight toasts */}
         <InsightToast
           insights={insightCards}
           onDismiss={(id) => setDismissedInsights(prev => [...prev, id])}
@@ -358,23 +457,55 @@ export function OfficePage() {
             onDismiss={() => setSelectedAgentId(null)}
           />
         )}
+        </div>{/* end scale wrapper */}
       </div>
 
-      {/* Smart Sidebar — 40% desktop, remaining mobile */}
-      <div
-        className="flex-1 md:w-[40%] border-t md:border-t-0 md:border-l min-h-0 pb-24 md:pb-0"
-        style={{ borderColor: 'rgba(0,240,255,0.15)' }}
-      >
-        <SmartSidebar
-          officeData={officeData}
-          sseEvents={sseEvents}
-          onCreateTask={handleCreateTask}
-        />
-      </div>
+      {/* Smart Sidebar -- desktop: 40% inline | mobile: bottom sheet */}
+      {isMobile ? (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-30 flex flex-col"
+          style={{
+            height: sidebarExpanded ? '60vh' : '44px',
+            transition: 'height 0.3s ease',
+            background: '#0A0A14',
+            borderTop: '1px solid rgba(0,240,255,0.15)',
+            borderRadius: '16px 16px 0 0',
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Drag handle bar */}
+          <div
+            className="flex items-center justify-center flex-shrink-0 cursor-pointer"
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+          >
+            <div className="w-12 h-1 bg-[#6B7280] rounded-full mx-auto my-2" />
+          </div>
+          {/* Sidebar content */}
+          <div className={`flex-1 min-h-0 ${sidebarExpanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+            <SmartSidebar
+              officeData={officeData}
+              sseEvents={sseEvents}
+              onCreateTask={handleCreateTask}
+            />
+          </div>
+        </div>
+      ) : (
+        <div
+          className="flex-1 md:w-[40%] border-t md:border-t-0 md:border-l min-h-0 pb-0"
+          style={{ borderColor: 'rgba(0,240,255,0.15)' }}
+        >
+          <SmartSidebar
+            officeData={officeData}
+            sseEvents={sseEvents}
+            onCreateTask={handleCreateTask}
+          />
+        </div>
+      )}
 
       </div>{/* end main content flex row */}
 
-      {/* A.7 — Status strip: 9 agent dots with name + working status */}
+      {/* Status strip: 9 agent dots with name + working status */}
       <div
         className="flex-shrink-0 flex items-center justify-center gap-3 md:gap-4 px-3 py-2 border-t overflow-x-auto"
         style={{

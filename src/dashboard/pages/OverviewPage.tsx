@@ -26,6 +26,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { AgentStatusStrip } from '@/components/AgentStatusStrip';
+import { LiveAgentFeed } from '@/components/LiveAgentFeed';
 import { DiscoverCard } from '@/components/DiscoverCard';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
@@ -716,6 +717,9 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         <AgentStatusStrip
           onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
         />
+
+        {/* ─── Live Agent Feed ─── */}
+        <LiveAgentFeed onNavigate={onNavigate} />
 
         {/* ─── Sprint 4: Quick Actions Grid ─── */}
         <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
