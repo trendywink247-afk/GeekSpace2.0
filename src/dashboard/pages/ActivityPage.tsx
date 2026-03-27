@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download, Flame, Calendar, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { userService, activityService, type ActivityEntry } from '@/services/api';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
@@ -30,7 +30,7 @@ const FILTER_ICONS: Record<FilterType, typeof Activity> = {
 };
 
 const FILTER_COLORS: Record<FilterType, string> = {
-  All: '#00F0FF',
+  All: '#10B981',
   Portfolio: '#BF5FFF',
   Reminders: '#F59E0B',
   Integrations: '#00FF88',
@@ -88,10 +88,10 @@ const DAY_LABELS_MAP: Record<number, string> = { 0: 'Mon', 2: 'Wed', 4: 'Fri' };
 
 function getHeatmapColor(count: number): string {
   if (count === 0) return '#0C0C18';
-  if (count <= 2) return 'rgba(0,240,255,0.2)';
-  if (count <= 5) return 'rgba(0,240,255,0.4)';
-  if (count <= 10) return 'rgba(0,240,255,0.6)';
-  return '#00F0FF';
+  if (count <= 2) return 'rgba(16,185,129,0.2)';
+  if (count <= 5) return 'rgba(16,185,129,0.4)';
+  if (count <= 10) return 'rgba(16,185,129,0.6)';
+  return '#10B981';
 }
 
 function buildHeatmapGrid(raw: Array<{ date: string; count: number }>): { grid: HeatmapDay[][]; monthLabels: Array<{ label: string; col: number }> } {
@@ -172,98 +172,96 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
   const totalEvents = useMemo(() => data.reduce((sum, d) => sum + d.count, 0), [data]);
 
   return (
-    <Card className="border-[#00F0FF]/20">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-[var(--ag-cyan)]" />
-            <span className="text-sm font-medium text-[var(--ag-text-primary)]">Activity Heatmap</span>
-            <span className="text-xs text-[var(--ag-text-muted)]">last 90 days</span>
-          </div>
-          <span className="text-xs text-[var(--ag-text-muted)]">{totalEvents} total events</span>
+    <SectionCard>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Flame className="w-4 h-4 text-[var(--ag-green)]" />
+          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Activity Heatmap</span>
+          <span className="text-xs text-[var(--ag-text-muted)]">last 90 days</span>
         </div>
+        <span className="text-xs text-[var(--ag-text-muted)]">{totalEvents} total events</span>
+      </div>
 
-        {/* Scrollable container for mobile */}
-        <div className="overflow-x-auto -mx-1 px-1" ref={containerRef}>
-          <div className="min-w-[420px] relative">
-            {/* Month labels */}
-            <div className="flex ml-8 mb-1 h-4">
-              {monthLabels.map((m, i) => (
-                <span
-                  key={`${m.label}-${i}`}
-                  className="text-[10px] text-[var(--ag-text-muted)] absolute"
-                  style={{ left: `${32 + m.col * 15}px` }}
+      {/* Scrollable container for mobile */}
+      <div className="overflow-x-auto -mx-1 px-1" ref={containerRef}>
+        <div className="min-w-[420px] relative">
+          {/* Month labels */}
+          <div className="flex ml-8 mb-1 h-4">
+            {monthLabels.map((m, i) => (
+              <span
+                key={`${m.label}-${i}`}
+                className="text-[10px] text-[var(--ag-text-muted)] absolute"
+                style={{ left: `${32 + m.col * 15}px` }}
+              >
+                {m.label}
+              </span>
+            ))}
+          </div>
+
+          {/* Grid: rows = days (Mon-Sun), cols = weeks */}
+          <div className="flex gap-[1px]">
+            {/* Day labels */}
+            <div className="flex flex-col gap-[1px] mr-1 flex-shrink-0" style={{ width: '24px' }}>
+              {Array.from({ length: 7 }).map((_, dayIdx) => (
+                <div
+                  key={dayIdx}
+                  className="h-[13px] flex items-center justify-end pr-1"
                 >
-                  {m.label}
-                </span>
-              ))}
-            </div>
-
-            {/* Grid: rows = days (Mon-Sun), cols = weeks */}
-            <div className="flex gap-[1px]">
-              {/* Day labels */}
-              <div className="flex flex-col gap-[1px] mr-1 flex-shrink-0" style={{ width: '24px' }}>
-                {Array.from({ length: 7 }).map((_, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    className="h-[13px] flex items-center justify-end pr-1"
-                  >
-                    {DAY_LABELS_MAP[dayIdx] != null && (
-                      <span className="text-[9px] text-[var(--ag-text-muted)] leading-none">{DAY_LABELS_MAP[dayIdx]}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Week columns */}
-              {grid.map((week, colIdx) => (
-                <div key={colIdx} className="flex flex-col gap-[1px]">
-                  {/* Pad the start of the first column if it doesn't start on Monday */}
-                  {colIdx === 0 && week[0] && week[0].weekday > 0 &&
-                    Array.from({ length: week[0].weekday }).map((_, i) => (
-                      <div key={`pad-${i}`} className="w-[13px] h-[13px]" />
-                    ))
-                  }
-                  {week.map((day) => (
-                    <div
-                      key={day.date}
-                      className="w-[13px] h-[13px] rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-[#00F0FF]/50"
-                      style={{ backgroundColor: getHeatmapColor(day.count) }}
-                      onMouseEnter={(e) => handleMouseEnter(e, day)}
-                      onMouseLeave={handleMouseLeave}
-                      title={`${day.count} events on ${day.date}`}
-                    />
-                  ))}
+                  {DAY_LABELS_MAP[dayIdx] != null && (
+                    <span className="text-[9px] text-[var(--ag-text-muted)] leading-none">{DAY_LABELS_MAP[dayIdx]}</span>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Color legend */}
-            <div className="flex items-center gap-1.5 mt-2 justify-end">
-              <span className="text-[9px] text-[var(--ag-text-muted)]">Less</span>
-              {[0, 1, 3, 6, 11].map((threshold) => (
-                <div
-                  key={threshold}
-                  className="w-[10px] h-[10px] rounded-[2px]"
-                  style={{ backgroundColor: getHeatmapColor(threshold) }}
-                />
-              ))}
-              <span className="text-[9px] text-[var(--ag-text-muted)]">More</span>
-            </div>
-
-            {/* Tooltip */}
-            {tooltip && (
-              <div
-                className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[var(--ag-text-primary)] bg-[#12121F] border border-[#00F0FF]/20 shadow-lg whitespace-nowrap"
-                style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}
-              >
-                {tooltip.text}
+            {/* Week columns */}
+            {grid.map((week, colIdx) => (
+              <div key={colIdx} className="flex flex-col gap-[1px]">
+                {/* Pad the start of the first column if it doesn't start on Monday */}
+                {colIdx === 0 && week[0] && week[0].weekday > 0 &&
+                  Array.from({ length: week[0].weekday }).map((_, i) => (
+                    <div key={`pad-${i}`} className="w-[13px] h-[13px]" />
+                  ))
+                }
+                {week.map((day) => (
+                  <div
+                    key={day.date}
+                    className="w-[13px] h-[13px] rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-[#10B981]/50"
+                    style={{ backgroundColor: getHeatmapColor(day.count) }}
+                    onMouseEnter={(e) => handleMouseEnter(e, day)}
+                    onMouseLeave={handleMouseLeave}
+                    title={`${day.count} events on ${day.date}`}
+                  />
+                ))}
               </div>
-            )}
+            ))}
           </div>
+
+          {/* Color legend */}
+          <div className="flex items-center gap-1.5 mt-2 justify-end">
+            <span className="text-[9px] text-[var(--ag-text-muted)]">Less</span>
+            {[0, 1, 3, 6, 11].map((threshold) => (
+              <div
+                key={threshold}
+                className="w-[10px] h-[10px] rounded-[2px]"
+                style={{ backgroundColor: getHeatmapColor(threshold) }}
+              />
+            ))}
+            <span className="text-[9px] text-[var(--ag-text-muted)]">More</span>
+          </div>
+
+          {/* Tooltip */}
+          {tooltip && (
+            <div
+              className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[var(--ag-text-primary)] bg-[#12121F] border border-[var(--ag-border-subtle)] shadow-lg whitespace-nowrap"
+              style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}
+            >
+              {tooltip.text}
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -321,10 +319,10 @@ function StatsBar({ stats }: { stats: ActivityStats }) {
       {items.map(({ label, value, icon: Icon }) => (
         <div
           key={label}
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all"
         >
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#00F0FF]/10 flex-shrink-0">
-            <Icon className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#10B981]/10 flex-shrink-0">
+            <Icon className="w-3.5 h-3.5 text-[var(--ag-green)]" />
           </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-[var(--ag-text-primary)] tabular-nums">{value.toLocaleString()}</div>
@@ -337,6 +335,7 @@ function StatsBar({ stats }: { stats: ActivityStats }) {
 }
 
 export function ActivityPage() {
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'pulse', page: 'activity' });
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -357,37 +356,42 @@ export function ActivityPage() {
   // GAP-8: Heatmap data
   const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number }>>([]);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
+  // Prevent double-fire from onClick + onTouchEnd on delete
+  const deletingRef = useRef<Set<string>>(new Set());
 
   // GAP-8: Fetch heatmap data once on mount
-  useEffect(() => {
+  const fetchHeatmap = useCallback(() => {
     setHeatmapLoading(true);
-    activityService.getHeatmap()
+    return activityService.getHeatmap()
       .then(({ data }) => setHeatmapData(data.heatmap ?? []))
       .catch(() => setHeatmapData([]))
       .finally(() => setHeatmapLoading(false));
   }, []);
 
-  // Debounce search query → serverQ
+  useEffect(() => { fetchHeatmap(); }, [fetchHeatmap]);
+
+  // Debounce search query -> serverQ
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => { setServerQ(searchQuery); }, 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery]);
 
+  // Server-side category param — 'All' sends nothing, others send the category name
+  const serverCategory = activeFilter === 'All' ? undefined : activeFilter;
+
   // Reload when serverQ, date-range, or category filter changes
   useEffect(() => {
     setLoading(true);
-    // Fetch a larger batch when a specific category is selected so client-side filter has enough data
-    const limit = activeFilter === 'All' ? PAGE_SIZE : PAGE_SIZE * 4;
-    userService.getActivity(limit, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
+    userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined, serverCategory)
       .then(({ data }) => { setEntries(data.activity); setTotal(data.total ?? data.activity.length); })
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [serverQ, dateFrom, dateTo, activeFilter]);
+  }, [serverQ, dateFrom, dateTo, serverCategory]);
 
   const handleLoadMore = () => {
     setLoadingMore(true);
-    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined)
+    userService.getActivity(PAGE_SIZE, entries.length, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined, serverCategory)
       .then(({ data }) => { setEntries((prev) => [...prev, ...data.activity]); setTotal(data.total ?? (entries.length + data.activity.length)); })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
@@ -396,6 +400,7 @@ export function ActivityPage() {
   // 64.8: Download activity log as CSV
   const handleExport = async () => {
     setExporting(true);
+    void notifyStart('exporting activity CSV');
     try {
       const res = await activityService.export();
       const url = URL.createObjectURL(res.data as unknown as Blob);
@@ -405,43 +410,58 @@ export function ActivityPage() {
       a.download = `agentin-activity-${today}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch { /* non-fatal */ } finally {
+      void notifyDone('activity CSV exported');
+    } catch {
+      void notifyFail('CSV export failed');
+    } finally {
       setExporting(false);
     }
   };
 
   const handleClearAll = async () => {
     setIsClearing(true);
+    void notifyStart('clearing all activity');
     try {
       await userService.clearActivity();
       setEntries([]);
       setTotal(0);
       setShowClearConfirm(false);
-    } catch { /* ignore */ } finally {
+      void notifyDone('all activity cleared');
+    } catch {
+      void notifyFail('failed to clear activity');
+    } finally {
       setIsClearing(false);
     }
   };
 
-  // 64.3: text search is server-side; client-side only filters by category chip
-  const filtered = entries.filter((entry) => {
-    const matchesFilter = activeFilter === 'All' || getCategory(entry.icon) === activeFilter;
-    return matchesFilter;
-  });
+  // Delete handler guarded against double-fire
+  const handleDelete = useCallback(async (id: string) => {
+    if (deletingRef.current.has(id)) return;
+    deletingRef.current.add(id);
+    try {
+      await userService.deleteActivityEntry(id).catch(() => {});
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+    } finally {
+      deletingRef.current.delete(id);
+    }
+  }, []);
 
-  // Count per category for badge display
-  const counts: Record<FilterType, number> = {
-    All: entries.length,
-    Portfolio: entries.filter((e) => getCategory(e.icon) === 'Portfolio').length,
-    Reminders: entries.filter((e) => getCategory(e.icon) === 'Reminders').length,
-    Integrations: entries.filter((e) => getCategory(e.icon) === 'Integrations').length,
-    Agent: entries.filter((e) => getCategory(e.icon) === 'Agent').length,
-  };
+  // Server-side filtering: entries are already filtered by category, show them directly
+  const filtered = entries;
+
+  // Count is from server total when filtered
+  const displayTotal = total;
 
   // GAP-8: Compute stats from loaded entries
   const stats = useMemo(() => computeActivityStats(entries, total), [entries, total]);
 
   const handlePullRefresh = async () => {
-    const res = await userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined);
+    // Refresh entries, heatmap, and stats all at once
+    const [res] = await Promise.all([
+      userService.getActivity(PAGE_SIZE, 0, serverQ || undefined, undefined, dateFrom || undefined, dateTo || undefined, serverCategory),
+      fetchHeatmap(),
+    ]);
     setEntries(res.data.activity ?? []);
     setTotal(res.data.total ?? res.data.activity?.length ?? 0);
   };
@@ -450,80 +470,87 @@ export function ActivityPage() {
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <PageShell>
     <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Activity Log</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)]">Tracked by Pulse</span>
-          </div>
-          <p className="text-sm md:text-base text-[var(--ag-text-muted)]">
-            <span className="text-[var(--ag-cyan)] font-medium">{total || entries.length}</span> total events recorded
-          </p>
-        </div>
-        {/* 40.4: Clear all + 64.8: Export */}
-        {entries.length > 0 && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* 64.8: CSV export button */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExport}
-              disabled={exporting}
-              className="min-h-[44px] border-[#00F0FF]/30 text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/50"
-            >
-              <Download className="w-3 h-3 mr-1" />{exporting ? 'Exporting…' : 'Export CSV'}
-            </Button>
-            {showClearConfirm ? (
-              <>
-                <span className="text-xs text-[#FF6161]">Clear all activity?</span>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={handleClearAll}
-                  disabled={isClearing}
-                  className="min-h-[44px] bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
-                >
-                  {isClearing ? 'Clearing…' : 'Yes, clear'}
-                </Button>
-                <button onClick={() => setShowClearConfirm(false)} className="text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]">Cancel</button>
-              </>
-            ) : (
+      {/* Header — Pulse ownership */}
+      <PageHeader
+        icon={Activity}
+        title="Activity Log"
+        subtitle={`${displayTotal || entries.length} total events recorded`}
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
+            </span>
+            Pulse
+          </span>
+        }
+        actions={
+          entries.length > 0 ? (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* 64.8: CSV export button */}
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setShowClearConfirm(true)}
-                className="min-h-[44px] border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+                onClick={handleExport}
+                disabled={exporting}
+                className="min-h-[44px] border-[#10B981]/30 text-[#10B981]/70 hover:text-[#10B981] hover:border-[#10B981]/50"
               >
-                <Trash2 className="w-3 h-3 mr-1" />Clear all
+                <Download className="w-3.5 h-3.5 mr-1.5" />{exporting ? 'Exporting...' : 'Export CSV'}
               </Button>
-            )}
-          </div>
-        )}
-      </div>
+              {showClearConfirm ? (
+                <>
+                  <span className="text-xs text-[#FF6161]">Clear all?</span>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleClearAll}
+                    disabled={isClearing}
+                    className="min-h-[44px] bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                  >
+                    {isClearing ? 'Clearing...' : 'Yes, clear'}
+                  </Button>
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    className="text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] min-h-[44px] px-2 flex items-center"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="min-h-[44px] border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />Clear all
+                </Button>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* GAP-8: Stats Bar */}
       <StatsBar stats={stats} />
 
       {/* GAP-8: Activity Heatmap */}
       {heatmapLoading ? (
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-4 h-4 rounded bg-[#1a1a2e] animate-pulse" />
-              <div className="h-4 w-32 rounded bg-[#1a1a2e] animate-pulse" />
-            </div>
-            <div className="flex gap-[1px] ml-8">
-              {Array.from({ length: 13 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-[1px]">
-                  {Array.from({ length: 7 }).map((_, j) => (
-                    <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[#1a1a2e] animate-pulse" />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <SectionCard>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-4 h-4 rounded bg-[#1a1a2e] animate-pulse" />
+            <div className="h-4 w-32 rounded bg-[#1a1a2e] animate-pulse" />
+          </div>
+          <div className="flex gap-[1px] ml-8">
+            {Array.from({ length: 13 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-[1px]">
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[#1a1a2e] animate-pulse" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
       ) : (
         <ActivityHeatmap data={heatmapData} />
       )}
@@ -535,7 +562,7 @@ export function ActivityPage() {
           placeholder="Search by action or details..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[var(--ag-bg-surface)] border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[44px]"
+          className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[var(--ag-border-default)] text-[var(--ag-text-primary)] min-h-[44px]"
         />
       </div>
 
@@ -546,7 +573,7 @@ export function ActivityPage() {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
           aria-label="Filter from date"
         />
         <span>To:</span>
@@ -554,16 +581,16 @@ export function ActivityPage() {
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
           aria-label="Filter to date"
         />
         {(dateFrom || dateTo) && (
           <button
             onClick={() => { setDateFrom(''); setDateTo(''); }}
-            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors min-h-[44px]"
+            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors min-h-[44px] px-2 flex items-center"
             aria-label="Clear date range"
           >
-            ✕ Clear dates
+            Clear dates
           </button>
         )}
       </div>
@@ -582,16 +609,17 @@ export function ActivityPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border ${
                 isActive
                   ? 'border-current'
-                  : 'border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/40'
+                  : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)]'
               }`}
               style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
             >
               <Icon className="w-3 h-3" />
               {chip}
-              <span className={`px-1.5 py-0.5 rounded-full text-xs ${isActive ? 'bg-current/10' : 'bg-[var(--ag-bg-surface)]'}`}
-                style={isActive ? { color } : {}}>
-                {counts[chip]}
-              </span>
+              {isActive && (
+                <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ color, backgroundColor: `${color}15` }}>
+                  {displayTotal}
+                </span>
+              )}
             </button>
           );
         })}
@@ -609,99 +637,90 @@ export function ActivityPage() {
       </div>
 
       {/* Activity list */}
-      <Card className="border-[#00F0FF]/20">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-8 h-8 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+      <SectionCard padding="sm" className="!p-0">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 px-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center mx-auto mb-4">
+              <Activity className="w-8 h-8 text-[#10B981]/40" />
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
-                <Activity className="w-8 h-8 text-[var(--ag-cyan)]/40" />
-              </div>
-              <p className="text-[var(--ag-text-primary)] font-medium mb-1">
-                {serverQ || activeFilter !== 'All'
-                  ? 'No events match your filters'
-                  : 'No activity yet'}
-              </p>
-              <p className="text-sm text-[var(--ag-text-muted)]">
-                {serverQ || activeFilter !== 'All'
-                  ? 'Try adjusting your search or filters'
-                  : 'Every action you take — chats, reminders, habits, integrations — is tracked here so you can review what your AI has been doing for you'}
-              </p>
-              {(serverQ || activeFilter !== 'All') && (
-                <button
-                  onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                  className="text-xs text-[var(--ag-cyan)] hover:underline mt-3 min-h-[44px]"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="divide-y divide-[#00F0FF]/10">
-              {filtered.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="group flex items-start gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors"
-                >
-                  <ActivityIcon icon={entry.icon} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{entry.action}</p>
-                    {entry.details && (
-                      <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">{entry.details}</p>
-                    )}
-                  </div>
-                  <div className="flex-shrink-0 text-right flex items-start gap-2">
-                    <div>
-                      <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[#8888AA] whitespace-nowrap">
-                        {timeAgo(entry.created_at)}
-                      </span>
-                      <p className="text-xs text-[var(--ag-text-muted)]/60 mt-0.5">
-                        {getCategory(entry.icon)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        await userService.deleteActivityEntry(entry.id).catch(() => {});
-                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-                      }}
-                      onTouchEnd={async (e) => {
-                        e.preventDefault();
-                        await userService.deleteActivityEntry(entry.id).catch(() => {});
-                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-                      }}
-                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
-                      aria-label="Delete this entry"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+            <p className="text-[var(--ag-text-primary)] font-medium mb-1">
+              {serverQ || activeFilter !== 'All'
+                ? 'No events match your filters'
+                : 'No activity yet'}
+            </p>
+            <p className="text-sm text-[var(--ag-text-muted)]">
+              {serverQ || activeFilter !== 'All'
+                ? 'Try adjusting your search or filters'
+                : 'Every action you take -- chats, reminders, habits, integrations -- is tracked here so you can review what your AI has been doing for you'}
+            </p>
+            {(serverQ || activeFilter !== 'All') && (
+              <button
+                onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
+                className="text-xs text-[var(--ag-green)] hover:underline mt-3 min-h-[44px]"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--ag-border-subtle)]">
+            {filtered.map((entry) => (
+              <div
+                key={entry.id}
+                className="group flex items-start gap-3 px-4 py-3 hover:bg-[#10B981]/5 transition-colors"
+              >
+                <ActivityIcon icon={entry.icon} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{entry.action}</p>
+                  {entry.details && (
+                    <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">{entry.details}</p>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex-shrink-0 text-right flex items-start gap-2">
+                  <div>
+                    <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">
+                      {timeAgo(entry.created_at)}
+                    </span>
+                    <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">
+                      {getCategory(entry.icon)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { void handleDelete(entry.id); }}
+                    onTouchEnd={(e) => { e.preventDefault(); void handleDelete(entry.id); }}
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label="Delete this entry"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
 
       {entries.length > 0 && entries.length < total && (
         <div className="flex justify-center">
           <button
             onClick={handleLoadMore}
             disabled={loadingMore}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#00F0FF]/30 text-[var(--ag-cyan)] text-sm hover:bg-[#00F0FF]/10 disabled:opacity-50 transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#10B981]/30 text-[var(--ag-green)] text-sm hover:bg-[#10B981]/10 disabled:opacity-50 transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#10B981]/50"
           >
             {loadingMore ? (
-              <div className="w-4 h-4 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#10B981]/30 border-t-[#10B981] rounded-full animate-spin" />
             ) : null}
-            {loadingMore ? 'Loading…' : `Load more (${total - entries.length} remaining)`}
+            {loadingMore ? 'Loading...' : `Load more (${total - entries.length} remaining)`}
           </button>
         </div>
       )}
       {filtered.length > 0 && (
         <p className="text-xs text-[var(--ag-text-muted)] text-center">
-          Showing {filtered.length} of {total} events
+          Showing {filtered.length} of {displayTotal} events
         </p>
       )}
     </div>

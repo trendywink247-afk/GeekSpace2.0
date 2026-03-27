@@ -166,12 +166,13 @@ export const userService = {
   setPreferredModel: (model: string) =>
     api.put<{ preferredModel: string }>('/users/me/model', { model }),
 
-  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string, from?: string, to?: string) => {
+  getActivity: (limit = 50, offset = 0, q?: string, actionType?: string, from?: string, to?: string, category?: string) => {
     const params: Record<string, string | number> = { limit, offset };
     if (q) params.q = q;
     if (actionType) params.type = actionType;
     if (from) params.from = from;
     if (to) params.to = to;
+    if (category) params.category = category;
     return api.get<{ activity: ActivityEntry[]; total: number }>('/activity', { params });
   },
 

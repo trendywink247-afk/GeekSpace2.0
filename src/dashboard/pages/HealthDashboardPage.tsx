@@ -1,3 +1,10 @@
+// ============================================================
+// HealthDashboardPage — Real-time API health monitor
+// Owner agent: pulse (#10B981)
+// Revamped: design tokens, PageHeader, SectionCard, useAgentCanvas,
+//   SSE auth fix, component map sync with server, mobile QA (44px)
+// ============================================================
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Activity,
@@ -12,23 +19,32 @@ import {
   ArrowUpRight,
   Send,
   Loader2,
+  Search,
+  BookOpen,
+  Globe,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
-// ---- Types ----
+// ---- Types (synced with server/src/routes/health.ts) ----
 
 interface ComponentStatus {
   database: string;
   ollama: string;
   openrouter: string;
   edith: string;
-  weebo: string;
+  picoclaw: string;
   bridge: string;
   telegram: string;
   n8n: string;
+  searxng: string;
+  meilisearch: string;
+  qdrant: string;
+  browser: string;
+  [key: string]: string; // future-proof for new probes
 }
 
 interface TopEndpoint {
@@ -57,16 +73,17 @@ interface HealthSnapshot {
 
 // ---- Status helpers ----
 
+/** Maps component status string to green/amber/red/grey. */
 function statusColor(status: string): string {
   switch (status) {
     case 'ok': case 'reachable': case 'configured': case 'active':
-      return '#00FF88';
-    case 'unreachable': case 'down': case 'no_backends':
-      return '#FF6161';
+      return '#10B981'; // token green
+    case 'unreachable': case 'down': case 'no_backends': case 'not_running':
+      return '#EF4444'; // red
     case 'not_configured': case 'disabled':
-      return '#6B7280';
+      return '#6B7280'; // grey
     default:
-      return '#FFB800';
+      return '#F59E0B'; // amber
   }
 }
 
@@ -79,10 +96,14 @@ const componentIcons: Record<string, typeof Database> = {
   ollama: Cpu,
   openrouter: Wifi,
   edith: Server,
-  weebo: Zap,
+  picoclaw: Zap,
   bridge: ArrowUpRight,
   telegram: Send,
   n8n: RefreshCw,
+  searxng: Search,
+  meilisearch: BookOpen,
+  qdrant: Globe,
+  browser: Monitor,
 };
 
 const componentLabels: Record<string, string> = {
@@ -90,10 +111,14 @@ const componentLabels: Record<string, string> = {
   ollama: 'Local Engine',
   openrouter: 'Cloud Engine',
   edith: 'Premium Engine',
-  weebo: 'Weebo Engine',
+  picoclaw: 'PicoClaw LLM',
   bridge: 'Bridge',
   telegram: 'Telegram',
   n8n: 'n8n Automations',
+  searxng: 'SearXNG Search',
+  meilisearch: 'Meilisearch',
+  qdrant: 'Qdrant Vectors',
+  browser: 'Browser Agent',
 };
 
 function formatUptime(seconds: number): string {
@@ -108,9 +133,12 @@ function formatUptime(seconds: number): string {
 // ---- Component ----
 
 export function HealthDashboardPage() {
+  const { notifyDone, notifyFail } = useAgentCanvas({ agent: 'pulse', page: 'health-dashboard' });
+
   const [snapshot, setSnapshot] = useState<HealthSnapshot | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retriesRef = useRef(0);
@@ -119,25 +147,31 @@ export function HealthDashboardPage() {
   const MAX_DELAY_MS = 10000;
   const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Define fetchRestHealth first so connect can reference it
+  // REST fallback — /api/health is public (no auth required)
   const fetchRestHealth = useCallback(async () => {
     try {
       const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
       const res = await fetch(`${apiBase}/api/health`);
       if (res.ok) {
         const data = await res.json();
-        // Ensure topEndpoints is always an array (REST endpoint may be older)
         setSnapshot({ ...data, topEndpoints: data.topEndpoints ?? [] });
-        setConnected(false); // Not using SSE, but we have data
+        setConnected(false);
         setError(null);
+        notifyDone('Health data fetched via REST').catch(() => {});
       } else {
         setError('Health API returned an error. Click retry to try again.');
+        notifyFail('Health API error').catch(() => {});
       }
     } catch {
       setError('Failed to fetch health data. Click retry to try again.');
+      notifyFail('Health fetch failed').catch(() => {});
     }
-  }, []);
+  }, [notifyDone, notifyFail]);
 
+  // SSE stream — requires ADMIN_TOKEN (not the user JWT).
+  // The server's /api/health/stream checks config.adminToken via query param.
+  // Since the admin token is server-side only, SSE is used as a best-effort
+  // upgrade. If SSE fails (401), we fall back to REST polling which is public.
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -174,10 +208,9 @@ export function HealthDashboardPage() {
       setConnected(false);
 
       if (retriesRef.current >= MAX_RETRIES) {
-        setError('Health stream unavailable. Using REST fallback.');
-        // Fall back to REST polling
+        setError('Live stream unavailable. Using periodic refresh.');
+        // Fall back to REST polling (public endpoint, no auth needed)
         fetchRestHealth();
-        // Set up REST polling interval (every 10 seconds)
         restIntervalRef.current = setInterval(fetchRestHealth, 10000);
         return;
       }
@@ -192,16 +225,17 @@ export function HealthDashboardPage() {
   const handleRetry = () => {
     retriesRef.current = 0;
     setError(null);
-    // Clear any existing REST interval
+    setRefreshing(true);
     if (restIntervalRef.current) {
       clearInterval(restIntervalRef.current);
       restIntervalRef.current = null;
     }
+    // Fetch REST immediately, then attempt SSE
+    fetchRestHealth().finally(() => setRefreshing(false));
     connect();
   };
 
   useEffect(() => {
-    // Start REST fetch immediately so page loads even if SSE is slow/unavailable
     fetchRestHealth();
     connect();
     return () => {
@@ -211,25 +245,29 @@ export function HealthDashboardPage() {
     };
   }, [connect, fetchRestHealth]);
 
+  // ---- Loading state ----
   if (!snapshot) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="w-8 h-8 text-[var(--ag-cyan)] animate-spin" />
-        {error && (
-          <div className="text-center space-y-3">
-            <p className="text-sm text-[var(--ag-text-muted)]">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRetry}
-              className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 min-h-[44px] min-w-[44px]"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Retry
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageShell>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
+          <p className="text-sm text-[#9CA3AF]">Connecting to health service...</p>
+          {error && (
+            <div className="text-center space-y-3">
+              <p className="text-sm text-[#9CA3AF]">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[rgba(139,92,246,0.05)] min-h-[44px] min-w-[44px] text-[#F4F6FF]"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          )}
+        </div>
+      </PageShell>
     );
   }
 
@@ -237,170 +275,198 @@ export function HealthDashboardPage() {
     ? Math.round((snapshot.metrics.totalErrors / snapshot.metrics.totalRequests) * 100 * 10) / 10
     : 0;
 
-  return (
-    <PageShell className="animate-in fade-in duration-500">
-    <div data-testid="health-page" className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>API Health</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[var(--ag-violet)]">Monitored by Edith</span>
-          </div>
-          <p className="text-[var(--ag-text-muted)] flex items-center gap-2 text-sm md:text-base">
-            {connected ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse shrink-0" />
-                <span className="truncate">Live — updates every 5s</span>
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-[#FF6161] shrink-0" />
-                <span className="truncate">{error || 'Disconnected'}</span>
-                {error && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRetry}
-                    className="ml-2 min-h-[44px] px-3 text-xs border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                  >
-                    Retry
-                  </Button>
-                )}
-              </>
-            )}
-          </p>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-[#00F0FF]/40 text-[var(--ag-cyan)] shrink-0 text-xs"
-        >
-          {new Date(snapshot.timestamp).toLocaleTimeString()}
-        </Badge>
-      </div>
+  const healthyCount = Object.values(snapshot.components).filter(s =>
+    s === 'ok' || s === 'reachable' || s === 'configured' || s === 'active'
+  ).length;
+  const totalCount = Object.keys(snapshot.components).length;
 
-      {/* Stats Row */}
+  return (
+    <PageShell>
+    <div data-testid="health-page" className="space-y-6">
+
+      {/* ---- Page Header with Pulse ownership dot (#10B981) ---- */}
+      <PageHeader
+        icon={Activity}
+        title="API Health"
+        subtitle={connected
+          ? 'Live stream active — updates every 15s'
+          : error || 'Periodic refresh — updates every 10s'}
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
+            </span>
+            Pulse
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Connection status indicator */}
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${
+                connected
+                  ? 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]'
+                  : 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-[#10B981] animate-pulse' : 'bg-[#F59E0B]'}`} />
+              {connected ? 'SSE' : 'REST'}
+            </span>
+            {/* Timestamp */}
+            <span className="text-xs text-[#9CA3AF] hidden sm:inline">
+              {new Date(snapshot.timestamp).toLocaleTimeString()}
+            </span>
+            {/* Retry / Refresh */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRetry}
+              disabled={refreshing}
+              aria-label="Refresh health data"
+              className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        }
+      />
+
+      {/* ---- Stats Row ---- */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Requests', value: snapshot.metrics.totalRequests, icon: Activity, color: '#00F0FF' },
-          { label: 'Errors', value: snapshot.metrics.totalErrors, icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#FF6161' : '#00FF88' },
-          { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? '#FFB800' : '#00FF88' },
-          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute, icon: Zap, color: '#00F0FF' },
-          { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#00FF88' },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-[#00F0FF]/20 press-scale">
-            <CardContent className="p-3 md:p-4">
+          { label: 'Requests', value: snapshot.metrics.totalRequests.toLocaleString(), icon: Activity, color: '#8B5CF6' },
+          { label: 'Errors', value: snapshot.metrics.totalErrors.toLocaleString(), icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#EF4444' : '#10B981' },
+          { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? '#F59E0B' : '#10B981' },
+          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute.toString(), icon: Zap, color: '#8B5CF6' },
+          { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#10B981' },
+        ].map((stat, i) => (
+          <BlurFade key={stat.label} delay={0.05 * i}>
+            <SectionCard padding="sm">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                <span className="text-xs text-[var(--ag-text-muted)]">{stat.label}</span>
+                <span className="text-xs text-[#9CA3AF]">{stat.label}</span>
               </div>
-              <p className="text-2xl md:text-xl font-bold text-[var(--ag-text-primary)]">{stat.value}</p>
-            </CardContent>
-          </Card>
+              <p className="text-2xl md:text-xl font-bold text-[#F4F6FF]">{stat.value}</p>
+            </SectionCard>
+          </BlurFade>
         ))}
       </div>
 
-      {/* Component Status Grid */}
+      {/* ---- Component Status Grid ---- */}
       <div>
-        <h2 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-          <Server className="w-5 h-5 text-[var(--ag-cyan)]" />
+        <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+          <Server className="w-5 h-5 text-[#10B981]" />
           Components
+          <span className="text-xs text-[#9CA3AF] font-normal ml-1">
+            {healthyCount}/{totalCount} healthy
+          </span>
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(snapshot.components).map(([key, status]) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {Object.entries(snapshot.components).map(([key, status], i) => {
             const Icon = componentIcons[key] || Wifi;
             const color = statusColor(status);
+            const isHealthy = color === '#10B981';
             return (
-              <Card key={key} className="transition-all hover:border-[#00F0FF]/40 press-scale" style={{ borderColor: `${color}40` }}>
-                <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
-                    <Icon className="w-4 h-4" style={{ color }} />
+              <BlurFade key={key} delay={0.03 * i}>
+                <SectionCard padding="sm" className="!p-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${color}15` }}
+                    >
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[#F4F6FF] truncate">
+                        {componentLabels[key] || key}
+                      </p>
+                      <p className="text-xs flex items-center gap-1.5" style={{ color }}>
+                        <span
+                          className={`w-2 h-2 rounded-full inline-block shrink-0${isHealthy ? ' animate-pulse' : ''}`}
+                          style={{ backgroundColor: color }}
+                        />
+                        {statusLabel(status)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{componentLabels[key] || key}</p>
-                    <p className="text-xs flex items-center gap-1.5" style={{ color }}>
-                      <span
-                        className={`w-2 h-2 rounded-full inline-block shrink-0${color === '#00FF88' ? ' animate-pulse' : ''}`}
-                        style={{ backgroundColor: color }}
-                      />
-                      {statusLabel(status)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </SectionCard>
+              </BlurFade>
             );
           })}
         </div>
       </div>
 
-      {/* Error Rate + Memory */}
+      {/* ---- Error Rate + Memory ---- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-5">
-            <h3 className="text-sm text-[var(--ag-text-muted)] mb-2 flex items-center gap-1.5">
+        <BlurFade delay={0.1}>
+          <SectionCard>
+            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4" />
               Error Rate (5-min window)
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#FF6161' : errorRate > 0 ? '#FFB800' : '#00FF88' }}>
+              <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? '#F59E0B' : '#10B981' }}>
                 {errorRate}%
               </span>
-              <span className="text-sm text-[var(--ag-text-muted)] mb-1">
+              <span className="text-sm text-[#9CA3AF] mb-1">
                 {snapshot.metrics.totalErrors} / {snapshot.metrics.totalRequests} requests
               </span>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/20">
-          <CardContent className="p-5">
-            <h3 className="text-sm text-[var(--ag-text-muted)] mb-2 flex items-center gap-1.5">
+          </SectionCard>
+        </BlurFade>
+        <BlurFade delay={0.15}>
+          <SectionCard>
+            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
               <Cpu className="w-4 h-4" />
               Memory Usage
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[var(--ag-cyan)]">{snapshot.system.memoryMb} MB</span>
-              <span className="text-sm text-[var(--ag-text-muted)] mb-1">heap used</span>
+              <span className="text-3xl font-bold text-[#8B5CF6]">{snapshot.system.memoryMb} MB</span>
+              <span className="text-sm text-[#9CA3AF] mb-1">heap used</span>
             </div>
-          </CardContent>
-        </Card>
+          </SectionCard>
+        </BlurFade>
       </div>
 
-      {/* Top Endpoints */}
+      {/* ---- Top Endpoints ---- */}
       {(snapshot.topEndpoints ?? []).length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-[#FFB800]" />
-            Hot Endpoints (5-min window)
-          </h2>
-          <Card className="border-[#00F0FF]/20 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#00F0FF]/10">
-                    <th className="text-left text-[var(--ag-text-muted)] font-medium px-4 py-3">Endpoint</th>
-                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Hits</th>
-                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Errors</th>
-                    <th className="text-right text-[var(--ag-text-muted)] font-medium px-4 py-3">Avg Latency</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(snapshot.topEndpoints ?? []).map((ep) => (
-                    <tr key={ep.path} className="border-b border-[#00F0FF]/5 hover:bg-[#00F0FF]/5 transition-colors">
-                      <td className="px-4 py-2.5 font-mono text-[var(--ag-text-primary)] text-xs whitespace-nowrap">{ep.path}</td>
-                      <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)]">{ep.count}</td>
-                      <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#FF6161' : '#00FF88' }}>{ep.errors}</td>
-                      <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#FFB800' : '#9CA3AF' }}>{ep.avgMs}ms</td>
+        <BlurFade delay={0.2}>
+          <div>
+            <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[#F59E0B]" />
+              Hot Endpoints (5-min window)
+            </h2>
+            <SectionCard padding="sm" className="!p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[rgba(139,92,246,0.08)]">
+                      <th className="text-left text-[#9CA3AF] font-medium px-4 py-3">Endpoint</th>
+                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Hits</th>
+                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Errors</th>
+                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Avg Latency</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+                  </thead>
+                  <tbody>
+                    {(snapshot.topEndpoints ?? []).map((ep) => (
+                      <tr key={ep.path} className="border-b border-[rgba(139,92,246,0.04)] hover:bg-[rgba(139,92,246,0.04)] transition-colors">
+                        <td className="px-4 py-2.5 font-mono text-[#F4F6FF] text-xs whitespace-nowrap">{ep.path}</td>
+                        <td className="px-4 py-2.5 text-right text-[#F4F6FF]">{ep.count}</td>
+                        <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#EF4444' : '#10B981' }}>{ep.errors}</td>
+                        <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#F59E0B' : '#9CA3AF' }}>{ep.avgMs}ms</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </SectionCard>
+          </div>
+        </BlurFade>
       )}
 
-      {/* Footer */}
-      <div className="text-center text-xs text-[var(--ag-text-muted)]/50 py-2">
+      {/* ---- Footer ---- */}
+      <div className="text-center text-xs text-[#6B7280] py-2">
         {snapshot.metrics.activeConnections} active stream{snapshot.metrics.activeConnections !== 1 ? 's' : ''} · Window resets every 5 min
       </div>
     </div>

@@ -58,12 +58,27 @@ activityRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
   const from = typeof req.query.from === 'string' && req.query.from.match(/^\d{4}-\d{2}-\d{2}$/) ? req.query.from : null;
   const to = typeof req.query.to === 'string' && req.query.to.match(/^\d{4}-\d{2}-\d{2}$/) ? req.query.to : null;
 
+  // Server-side category filter — maps category name to icon values
+  const CATEGORY_ICONS: Record<string, string[]> = {
+    Portfolio: ['briefcase', 'portfolio', 'image', 'code', 'file'],
+    Reminders: ['bell', 'clock', 'alarm', 'reminder'],
+    Integrations: ['link', 'link2', 'webhook', 'zap', 'automation'],
+    Agent: ['bot', 'brain', 'cpu', 'sparkles', 'message'],
+  };
+  const rawCategory = typeof req.query.category === 'string' ? req.query.category.trim() : '';
+  const categoryIcons = CATEGORY_ICONS[rawCategory] ?? null;
+
   const whereClauses: string[] = ['user_id = ?'];
   const params: unknown[] = [userId];
   if (q) { whereClauses.push('(action LIKE ? OR details LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
   if (actionType) { whereClauses.push('action = ?'); params.push(actionType); }
   if (from) { whereClauses.push("date(created_at) >= ?"); params.push(from); }
   if (to) { whereClauses.push("date(created_at) <= ?"); params.push(to); }
+  if (categoryIcons) {
+    const placeholders = categoryIcons.map(() => '?').join(', ');
+    whereClauses.push(`icon IN (${placeholders})`);
+    params.push(...categoryIcons);
+  }
   const where = whereClauses.join(' AND ');
 
   try {
@@ -79,7 +94,7 @@ activityRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
 
     const payload = { activity: entries, total };
 
-    if (!q && !actionType && !from && !to && offset === 0) {
+    if (!q && !actionType && !from && !to && !categoryIcons && offset === 0) {
       cacheSet(`activity:${userId}`, JSON.stringify(payload), 8).catch(() => {});
     }
 

@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { PageShell } from '@/components/agentin/PageShell';
+import { PageHeader } from '@/components/agentin/PageHeader';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useTerminalStore } from '@/stores/terminalStore';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { agentService, reminderService, dashboardService, usageService, memoryService } from '@/services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
@@ -91,6 +93,7 @@ export function TerminalPage() {
   const [autocompleteIndex, setAutocompleteIndex] = useState(0);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'jarvis', page: 'terminal' });
 
   // Build commands array from store history
   const commands: Command[] = useMemo(() => [
@@ -163,7 +166,7 @@ Usage this month:
   Cost: $${usage.totalCostUSD.toFixed(2)}
   Forecast: $${usage.forecastUSD.toFixed(2)}`,
 
-    'gs usage today': 'Fetching today\'s usage...',
+    'gs usage today': 'Fetching today\'s usage (actual daily data)...',
 
     'gs usage month': `Monthly Usage Report:
   Total Messages: ${usage.totalMessages.toLocaleString()}
@@ -204,15 +207,18 @@ ${Object.entries(usage.byTool).map(([k, v]) => `  ${k}: $${(v as number).toFixed
       return `Automations:\n${lines.join('\n')}`;
     },
 
-    'gs deploy': `Deploy is handled by CI/CD. See /docs/deployment
-View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
+    'gs deploy': `Deployments are handled automatically by CI/CD.
+Merging a PR to main triggers: static checks → unit tests → staging → production.
+Manual deploys are not available from the terminal.
+Portfolio: https://${user?.username || 'user'}.agentin.chat`,
 
     'help': helpText,
   });
 
   // Stream AI response using SSE
   const streamAiResponse = useCallback(async (cmd: string, prompt: string) => {
-    addCommand({ command: cmd, output: '[Weebo]: ...', type: 'output' });
+    addCommand({ command: cmd, output: '[Jarvis]: ...', type: 'output' });
+    notifyStart(`ai: ${prompt.slice(0, 60)}`);
 
     try {
       const response = await agentService.chatStream(prompt, 'terminal');
@@ -239,7 +245,7 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
             const parsed = JSON.parse(data);
             if (parsed.text) {
               accumulated += parsed.text;
-              updateLastOutput(`[Weebo]: ${accumulated}\u258B`);
+              updateLastOutput(`[Jarvis]: ${accumulated}\u258B`);
             }
           } catch {
             /* ignore parse errors for non-JSON SSE lines */
@@ -249,15 +255,18 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
 
       // Final update — remove cursor block
       if (accumulated) {
-        updateLastOutput(`[Weebo]: ${accumulated}`);
+        updateLastOutput(`[Jarvis]: ${accumulated}`);
+        notifyDone('ai response complete');
       } else {
-        updateLastOutput('[Weebo]: (no response)');
+        updateLastOutput('[Jarvis]: (no response)');
+        notifyDone('ai response empty');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to reach AI agent';
       addCommand({ command: cmd, output: `Error: ${msg}`, type: 'error' });
+      notifyFail(`ai stream failed: ${msg}`);
     }
-  }, [addCommand, updateLastOutput]);
+  }, [addCommand, updateLastOutput, notifyStart, notifyDone, notifyFail]);
 
   // Execute slash commands that call real API endpoints
   const executeSlashCommand = useCallback(async (cmd: string, trimmedCmd: string): Promise<boolean> => {
@@ -461,26 +470,38 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
       return;
     }
 
-    // Handle gs usage today -- fetch actual daily usage from API
+    // Handle gs usage today -- fetch actual daily data (NOT monthly / 30)
     if (trimmedCmd === 'gs usage today') {
       addCommand({ command: cmd, output: 'Fetching today\'s usage...', type: 'output' });
       setHistory((prev) => [...prev, cmd]);
       setHistoryIndex(-1);
       setInput('');
-      usageService.summary('day').then(({ data: s }) => {
-        const out = `Usage Today (actual):
+      notifyStart('gs usage today');
+      Promise.all([
+        usageService.summary('day'),
+        usageService.today(),
+      ]).then(([summaryRes, todayRes]) => {
+        const s = summaryRes.data;
+        const t = todayRes.data;
+        let out = `Usage Today (actual daily data):
   Messages: ${s.totalMessages?.toLocaleString() ?? 0}
   Tokens In: ${s.totalTokensIn?.toLocaleString() ?? 0}
   Tokens Out: ${s.totalTokensOut?.toLocaleString() ?? 0}
   Tool Calls: ${s.totalToolCalls ?? 0}
-  Cost: $${s.totalCostUSD?.toFixed(3) ?? '0.000'}${
-          s.byProvider && Object.keys(s.byProvider).length > 0
-            ? '\n\nBy Provider:\n' + Object.entries(s.byProvider).map(([k, v]) => `  ${k}: $${(v as number).toFixed(3)}`).join('\n')
-            : ''
-        }`;
+  Cost: $${s.totalCostUSD?.toFixed(3) ?? '0.000'}`;
+        if (t.tokenBudget > 0) {
+          out += `\n\nDaily Budget:
+  Tokens: ${t.tokenUsed.toLocaleString()} / ${t.tokenBudget.toLocaleString()} (${t.tokenPercentage}%)
+  Messages: ${t.messages.used} / ${t.messages.limit} (${t.messages.percentage}%)`;
+        }
+        if (s.byProvider && Object.keys(s.byProvider).length > 0) {
+          out += '\n\nBy Provider:\n' + Object.entries(s.byProvider).map(([k, v]) => `  ${k}: $${(v as number).toFixed(3)}`).join('\n');
+        }
         updateLastOutput(out);
+        notifyDone('gs usage today');
       }).catch(() => {
         updateLastOutput('Error: Failed to fetch daily usage');
+        notifyFail('gs usage today failed');
       });
       return;
     }
@@ -603,40 +624,55 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
   return (
     <PageShell>
     <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Terminal</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">Powered by Edith</span>
+      {/* Header — uses shared PageHeader with Jarvis branding */}
+      <PageHeader
+        icon={TerminalIcon}
+        title="Terminal"
+        subtitle="Direct CLI access to Agentin API + Jarvis AI"
+        badge={
+          <span className="text-xs px-2 py-0.5 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-[#ADFF2F]">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF2F] animate-pulse" />
+              Jarvis
+            </span>
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#ADFF2F]" />
+              <span className="text-xs text-[#ADFF2F] font-mono">AI Ready</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearTerminal}
+              className="border-[var(--ag-border-default)] text-[var(--ag-text-muted)] hover:border-[#ADFF2F]/40 min-h-[44px]"
+              aria-label="Clear terminal"
+            >
+              <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
+            </Button>
           </div>
-          <p className="text-[var(--ag-text-muted)] flex items-center gap-2 text-sm">
-            <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
-            <span className="hidden md:inline">Direct CLI access to Agentin API + AI Agent</span>
-            <span className="md:hidden">CLI + AI Agent</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
-            <span className="text-xs text-[#00FF88] font-mono">AI Ready</span>
-          </div>
-          <Button variant="outline" size="sm" onClick={clearTerminal} className="border-[#00F0FF]/30 text-[var(--ag-text-muted)] min-h-[44px]" aria-label="Clear terminal">
-            <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Terminal Window */}
+      {/* Terminal Window — Jarvis-themed chrome */}
       <div
-        className="flex-1 rounded-2xl glass-card-v2 border border-[#00F0FF]/30 overflow-hidden flex flex-col"
+        className="flex-1 rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: 'linear-gradient(135deg, rgba(12,12,24,0.8), rgba(16,16,30,0.6))',
+          backdropFilter: 'blur(24px) saturate(1.4)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+          border: '1px solid rgba(173,255,47,0.12)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}
         onClick={() => inputRef.current?.focus()}
       >
-        {/* Terminal Header */}
-        <div className="h-10 bg-[#06060B] border-b border-[#00F0FF]/20 flex items-center px-4 gap-2">
+        {/* Terminal Header Bar */}
+        <div className="h-10 bg-[var(--ag-bg-deep)] border-b border-[#ADFF2F]/15 flex items-center px-4 gap-2">
           <div className="w-3 h-3 rounded-full bg-[#FF6161]" />
           <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
-          <div className="w-3 h-3 rounded-full bg-[#00FF88]" />
+          <div className="w-3 h-3 rounded-full bg-[#ADFF2F]" />
           <div className="flex-1 text-center">
             <span className="text-xs text-[var(--ag-text-muted)] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
           </div>
@@ -644,33 +680,33 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
         </div>
 
         {/* Terminal Content */}
-        <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-[#06060B]">
+        <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-[var(--ag-bg-deep)]">
           {commands.map((cmd) => (
             <div key={cmd.id} className="mb-4">
               {cmd.input && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[#00FF88]">➜</span>
-                  <span className="text-[var(--ag-cyan)]">~</span>
+                  <span className="text-[#ADFF2F]">{'\u27A4'}</span>
+                  <span className="text-[var(--ag-text-secondary)]">~</span>
                   <span className="text-[var(--ag-text-primary)]">{cmd.input}</span>
                 </div>
               )}
               {cmd.isLoading ? (
-                <div className="mt-1 flex items-center gap-2 text-[var(--ag-cyan)]">
-                  <div className="w-3 h-3 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="w-3 h-3 border-2 border-[#ADFF2F]/30 border-t-[#ADFF2F] rounded-full animate-spin" />
                   <span className="text-[var(--ag-text-muted)]">Thinking...</span>
                 </div>
               ) : cmd.output ? (
                 <div className="mt-1 relative group">
-                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#00FF88]/90'}`}>
+                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#ADFF2F]/90'}`}>
                     {cmd.output}
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[#06060B] border border-[#00F0FF]/20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity min-w-[44px] min-h-[44px] flex items-center justify-center"
                     aria-label="Copy output"
                   >
                     {copiedId === cmd.id ? (
-                      <Check className="w-3 h-3 text-[#00FF88]" />
+                      <Check className="w-3 h-3 text-[#ADFF2F]" />
                     ) : (
                       <Copy className="w-3 h-3 text-[var(--ag-text-muted)]" />
                     )}
@@ -682,8 +718,8 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
 
           {/* Input Line */}
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <span className="text-[#00FF88]">➜</span>
-            <span className="text-[var(--ag-cyan)]">~</span>
+            <span className="text-[#ADFF2F]">{'\u27A4'}</span>
+            <span className="text-[var(--ag-text-secondary)]">~</span>
             <input
               ref={inputRef}
               type="text"
@@ -695,9 +731,9 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
               autoComplete="off"
               spellCheck={false}
             />
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[var(--ag-cyan)] font-mono whitespace-nowrap select-none">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 text-[10px] text-[#ADFF2F] font-mono whitespace-nowrap select-none">
               <Bot className="w-3 h-3" />
-              AI Help
+              Jarvis
             </span>
           </form>
 
@@ -708,9 +744,9 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
                 <button
                   key={s}
                   onClick={() => { setInput(s); setAutocompleteSuggestions([]); inputRef.current?.focus(); }}
-                  className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                  className={`px-2 py-1 min-h-[44px] rounded text-xs font-mono transition-colors ${
                     i === autocompleteIndex
-                      ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40'
+                      ? 'bg-[#ADFF2F]/20 text-[#ADFF2F] border border-[#ADFF2F]/40'
                       : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent'
                   }`}
                 >
@@ -734,17 +770,17 @@ View your portfolio: https://${user?.username || 'user'}.agentin.chat`,
             onClick={() => executeCommand(cmd)}
             className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
               cmd.startsWith('ai ') || cmd.startsWith('/')
-                ? 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20'
-                : 'bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/50 hover:text-[var(--ag-text-primary)]'
+                ? 'bg-[#ADFF2F]/10 border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/20'
+                : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
             {cmd}
           </button>
         ))}
         <span className="text-[10px] text-[var(--ag-text-muted)]/50 ml-auto hidden sm:inline">
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[var(--ag-cyan)] font-mono">Tab</kbd> autocomplete
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[var(--ag-border-subtle)] text-[#ADFF2F] font-mono">Tab</kbd> autocomplete
           <span className="mx-1.5">|</span>
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/15 text-[var(--ag-cyan)] font-mono">&uarr;&darr;</kbd> history
+          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[var(--ag-border-subtle)] text-[#ADFF2F] font-mono">&uarr;&darr;</kbd> history
         </span>
       </div>
     </div>
