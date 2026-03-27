@@ -1,13 +1,15 @@
+// VoiceChatPage — owner: weebo (#00F0FF)
+// Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useVoice } from '@/hooks/useVoice';
 import { useTTS } from '@/hooks/useTTS';
-import type { AgentPersonality } from '@/types';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // -- Types --
 
@@ -32,30 +34,15 @@ const MAX_TURNS = 20;
 
 const SPEED_OPTIONS = [0.75, 1, 1.25] as const;
 
-const PERSONALITY_EMOJI: Record<AgentPersonality, string> = {
-  edith: '🔷', jarvis: '🟣', weebo: '💚',
-  aria: '🎨', forge: '🔧', pulse: '📊',
-  echo: '💙', cal: '📅', nova: '🔭',
-};
-
-const PERSONALITY_COLOR: Record<AgentPersonality, string> = {
-  edith: '#8B5CF6',
-  jarvis: '#ADFF2F',
-  weebo: '#00F0FF',
-  aria: '#F59E0B',
-  forge: '#FF6B35',
-  pulse: '#10B981',
-  echo: '#3B82F6',
-  cal: '#06B6D4',
-  nova: '#A855F7',
-};
-
 // -- Component --
 
 export function VoiceChatPage() {
   const navigate = useNavigate();
   const { agent } = useDashboardStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Agent canvas notifications
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'weebo', page: 'voice-chat' });
 
   // Voice state
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -139,10 +126,12 @@ export function VoiceChatPage() {
   const sendToAgent = useCallback(async (text: string) => {
     addTurn('user', text);
     setVoiceState('processing');
+    void notifyStart(`voice: ${text.slice(0, 60)}`);
     try {
       const res = await agentService.chat(text, 'voice');
       const reply = res.data.text || 'No response';
       addTurn('agent', reply);
+      void notifyDone('voice response complete');
       if (settings.ttsEnabled && tts.isSupported) {
         setVoiceState('speaking');
         tts.speak(reply, { rate: settings.speed });
@@ -152,10 +141,11 @@ export function VoiceChatPage() {
     } catch {
       setVoiceState('error');
       setErrorMessage('Failed to get response. Try again.');
+      void notifyFail('voice chat error');
       toast.error('Voice chat error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addTurn, settings.ttsEnabled, settings.speed, tts.isSupported]);
+  }, [addTurn, settings.ttsEnabled, settings.speed, tts.isSupported, notifyStart, notifyDone, notifyFail]);
 
   const toggleRecording = useCallback(() => {
     if (voiceState === 'speaking') {
@@ -190,9 +180,6 @@ export function VoiceChatPage() {
   }, []);
 
   // Derive display state
-  const agentEmoji = PERSONALITY_EMOJI[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣';
-  const agentColor = PERSONALITY_COLOR[(agent.personality as AgentPersonality) || 'jarvis'] || '#8B5CF6';
-
   const statusText = (() => {
     switch (voiceState) {
       case 'recording': return 'Listening...';
@@ -204,148 +191,128 @@ export function VoiceChatPage() {
   })();
 
   return (
-    <PageShell>
+    <PageShell maxWidth="4xl">
       <div className="flex flex-col h-[100dvh] md:h-full min-h-0">
       {/* -- Header -- */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0">
-        <h1 className="text-lg font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Voice Chat <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">🎙️ Voice with Weebo</span>
-        </h1>
-        <button
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
-          aria-label="Voice settings"
-        >
-          <Settings2 className="w-5 h-5 text-[#8892A4]" />
-        </button>
-      </div>
+      <PageHeader
+        icon={Mic}
+        title="Voice Chat"
+        subtitle="Voice with Weebo"
+        actions={
+          <button
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-colors"
+            aria-label="Voice settings"
+          >
+            <Settings2 className="w-5 h-5 text-[var(--ag-text-muted)]" />
+          </button>
+        }
+      />
 
       {/* -- Settings Panel (collapsible) -- */}
       {settingsOpen && (
-        <div className="px-4 py-3 border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)] flex-shrink-0 animate-page-enter">
+        <SectionCard padding="sm" className="mt-3 animate-page-enter">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Voice On/Off */}
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none min-h-[44px]">
               <input
                 type="checkbox"
                 checked={settings.ttsEnabled}
                 onChange={e => setSettings(s => ({ ...s, ttsEnabled: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[#1A1A2E] peer-checked:bg-[#00F0FF]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[#00F0FF]' : 'bg-[#6B7280]'}`} />
+              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
-              <span className="text-[#8892A4]">Voice replies</span>
+              <span className="text-[var(--ag-text-secondary)]">Voice replies</span>
             </label>
 
             {/* Auto-send toggle */}
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none min-h-[44px]">
               <input
                 type="checkbox"
                 checked={settings.autoSend}
                 onChange={e => setSettings(s => ({ ...s, autoSend: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[#1A1A2E] peer-checked:bg-[#00F0FF]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[#00F0FF]' : 'bg-[#6B7280]'}`} />
+              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
-              <span className="text-[#8892A4]">Auto-send</span>
+              <span className="text-[var(--ag-text-secondary)]">Auto-send</span>
             </label>
 
             {/* Speed selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-[#8892A4]">Speed</span>
+            <div className="flex items-center gap-2 min-h-[44px]">
+              <span className="text-[var(--ag-text-secondary)]">Speed</span>
               <div className="relative">
                 <select
                   value={settings.speed}
                   onChange={e => setSettings(s => ({ ...s, speed: Number(e.target.value) }))}
-                  className="appearance-none bg-[#1A1A2E] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[#00F0FF]/10 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/40"
+                  className="appearance-none bg-[var(--ag-bg-elevated)] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[var(--ag-border-subtle)] focus:outline-none focus:ring-1 focus:ring-[var(--ag-cyan)]/40 min-h-[36px]"
                 >
                   {SPEED_OPTIONS.map(s => (
                     <option key={s} value={s}>{s}x</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6B7280] pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--ag-text-muted)] pointer-events-none" />
               </div>
             </div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
-      {/* -- Main Content — glass card -- */}
-      <div className="flex-1 flex flex-col items-center justify-between min-h-0 px-4 py-6 gap-4">
+      {/* -- Main Content -- */}
+      <div className="flex-1 flex flex-col items-center justify-between min-h-0 py-6 gap-4">
         {/* Glass card: orb + status */}
-        <div
-          className="flex flex-col items-center gap-4 flex-shrink-0 pt-4 w-full max-w-sm rounded-2xl border px-6 py-6"
-          style={{
-            background: 'rgba(12,12,24,0.7)',
-            backdropFilter: 'blur(16px)',
-            borderColor: voiceState === 'recording'
-              ? 'rgba(0,240,255,0.25)'
-              : voiceState === 'speaking'
-                ? `${agentColor}40`
-                : 'rgba(0,240,255,0.1)',
-            boxShadow: voiceState === 'recording'
-              ? '0 0 40px rgba(0,240,255,0.08)'
-              : voiceState === 'speaking'
-                ? `0 0 32px ${agentColor}15`
-                : 'none',
-          }}
-        >
+        <SectionCard className="flex flex-col items-center gap-4 pt-4 w-full max-w-sm">
           {/* Central orb (80px) with animated states */}
           <div className="relative flex items-center justify-center">
             {/* Concentric rings for listening/recording */}
             {voiceState === 'recording' && (
               <>
-                <span className="absolute w-32 h-32 rounded-full border border-[#00F0FF]/40 animate-voice-ring-1" />
-                <span className="absolute w-44 h-44 rounded-full border border-[#00F0FF]/25 animate-voice-ring-2" />
-                <span className="absolute w-56 h-56 rounded-full border border-[#00F0FF]/12 animate-voice-ring-3" />
+                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-cyan)]/40 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-cyan)]/25 animate-voice-ring-2" />
+                <span className="absolute w-56 h-56 rounded-full border border-[var(--ag-cyan)]/12 animate-voice-ring-3" />
               </>
             )}
 
-            {/* Speaking pulse rings using agent color */}
+            {/* Speaking pulse rings — weebo cyan */}
             {voiceState === 'speaking' && (
               <>
-                <span
-                  className="absolute w-32 h-32 rounded-full border animate-voice-ring-1"
-                  style={{ borderColor: `${agentColor}50` }}
-                />
-                <span
-                  className="absolute w-44 h-44 rounded-full border animate-voice-ring-2"
-                  style={{ borderColor: `${agentColor}25` }}
-                />
+                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-weebo)]/50 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-weebo)]/25 animate-voice-ring-2" />
               </>
             )}
 
             {/* Idle pulse glow */}
             {voiceState === 'idle' && (
-              <span className="absolute w-28 h-28 rounded-full bg-[#00F0FF]/5 animate-voice-idle-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-cyan)]/5 animate-voice-idle-pulse" />
             )}
 
             {/* Error glow */}
             {voiceState === 'error' && (
-              <span className="absolute w-28 h-28 rounded-full bg-[#FF2D78]/10 animate-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-pink)]/10 animate-pulse" />
             )}
 
-            {/* Main orb — 80px */}
+            {/* Main orb — 80px with weebo dot */}
             <div
-              className="relative w-20 h-20 rounded-full flex items-center justify-center text-4xl transition-all duration-300"
+              className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300"
               style={{
                 background: voiceState === 'recording'
                   ? 'radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(12,12,24,1) 80%)'
                   : voiceState === 'speaking'
-                    ? `radial-gradient(circle, ${agentColor}20 0%, rgba(12,12,24,1) 80%)`
+                    ? 'radial-gradient(circle, rgba(0,240,255,0.12) 0%, rgba(12,12,24,1) 80%)'
                     : 'radial-gradient(circle, rgba(12,12,24,0.8) 0%, rgba(12,12,24,1) 80%)',
                 border: `2px solid ${
-                  voiceState === 'recording' ? '#00F0FF'
-                  : voiceState === 'speaking' ? agentColor
-                  : voiceState === 'error' ? '#FF2D78'
+                  voiceState === 'recording' ? 'var(--ag-cyan)'
+                  : voiceState === 'speaking' ? 'var(--ag-weebo)'
+                  : voiceState === 'error' ? 'var(--ag-pink)'
                   : 'rgba(0,240,255,0.2)'
                 }`,
                 boxShadow: voiceState === 'recording'
                   ? '0 0 32px rgba(0,240,255,0.35)'
                   : voiceState === 'speaking'
-                    ? `0 0 24px ${agentColor}40`
+                    ? '0 0 24px rgba(0,240,255,0.25)'
                     : voiceState === 'error'
                       ? '0 0 20px rgba(255,45,120,0.25)'
                       : 'none',
@@ -355,7 +322,15 @@ export function VoiceChatPage() {
               {voiceState === 'processing' ? (
                 <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
               ) : (
-                <span role="img" aria-label="agent avatar">{agentEmoji}</span>
+                /* Weebo dot — #00F0FF */
+                <span
+                  className="w-4 h-4 rounded-full"
+                  style={{
+                    backgroundColor: 'var(--ag-weebo)',
+                    boxShadow: '0 0 12px rgba(0,240,255,0.5)',
+                  }}
+                  aria-label="Weebo agent"
+                />
               )}
             </div>
           </div>
@@ -366,7 +341,7 @@ export function VoiceChatPage() {
               {[0, 1, 2, 3, 4, 5, 6].map(i => (
                 <span
                   key={i}
-                  className="w-1.5 bg-[#00F0FF] rounded-full animate-voice-wave"
+                  className="w-1.5 bg-[var(--ag-cyan)] rounded-full animate-voice-wave"
                   style={{
                     animationDelay: `${i * 0.1}s`,
                     animationDuration: `${0.5 + (i % 3) * 0.15}s`,
@@ -382,11 +357,10 @@ export function VoiceChatPage() {
               {[0, 1, 2, 3, 4].map(i => (
                 <span
                   key={i}
-                  className="w-1.5 rounded-full animate-voice-bar"
+                  className="w-1.5 rounded-full animate-voice-bar bg-[var(--ag-weebo)]"
                   style={{
                     animationDelay: `${i * 0.12}s`,
                     animationDuration: `${0.4 + i * 0.08}s`,
-                    backgroundColor: agentColor,
                   }}
                 />
               ))}
@@ -397,11 +371,11 @@ export function VoiceChatPage() {
           <p
             className="text-sm font-medium transition-colors"
             style={{
-              color: voiceState === 'recording' ? '#00F0FF'
+              color: voiceState === 'recording' ? 'var(--ag-cyan)'
                 : voiceState === 'processing' ? 'rgba(0,240,255,0.7)'
-                : voiceState === 'speaking' ? agentColor
-                : voiceState === 'error' ? '#FF2D78'
-                : '#8892A4',
+                : voiceState === 'speaking' ? 'var(--ag-weebo)'
+                : voiceState === 'error' ? 'var(--ag-pink)'
+                : 'var(--ag-text-secondary)',
             }}
           >
             {voiceState === 'error' && <AlertCircle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
@@ -410,45 +384,44 @@ export function VoiceChatPage() {
 
           {/* Interim transcript preview */}
           {interimText && voiceState === 'recording' && (
-            <p className="text-xs text-[#8892A4] italic max-w-xs text-center truncate px-4">
+            <p className="text-xs text-[var(--ag-text-secondary)] italic max-w-xs text-center truncate px-4">
               &ldquo;{interimText}&rdquo;
             </p>
           )}
-        </div>
+        </SectionCard>
 
         {/* -- Transcript History -- */}
-        <div
-          ref={scrollRef}
-          className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 rounded-xl bg-[var(--ag-bg-surface)]/60 border border-[#00F0FF]/10 p-3 space-y-2"
-        >
-          {transcript.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-8">
-              <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
-              <p className="text-sm text-[#6B7280]">No conversation yet</p>
-              <p className="text-xs text-[#6B7280]/60 mt-1">Tap the microphone to start</p>
-            </div>
-          ) : (
-            transcript.map(turn => (
-              <div
-                key={turn.id}
-                className={[
-                  'flex gap-2 text-sm rounded-lg px-3 py-2',
-                  turn.role === 'user'
-                    ? 'bg-[#00F0FF]/5 ml-4'
-                    : 'bg-[#12121F] mr-4',
-                ].join(' ')}
-              >
-                <span className={[
-                  'font-semibold flex-shrink-0 text-xs mt-0.5',
-                  turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[#ADFF2F]',
-                ].join(' ')}>
-                  {turn.role === 'user' ? 'You' : agent.name || 'Agent'}:
-                </span>
-                <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
+        <SectionCard className="flex-1 w-full max-w-lg overflow-y-auto min-h-0" padding="sm">
+          <div ref={scrollRef} className="space-y-2 overflow-y-auto max-h-full">
+            {transcript.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
+                <p className="text-sm text-[var(--ag-text-muted)]">No conversation yet</p>
+                <p className="text-xs text-[var(--ag-text-muted)]/60 mt-1">Tap the microphone to start</p>
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              transcript.map(turn => (
+                <div
+                  key={turn.id}
+                  className={[
+                    'flex gap-2 text-sm rounded-lg px-3 py-2',
+                    turn.role === 'user'
+                      ? 'bg-[var(--ag-cyan)]/5 ml-4'
+                      : 'bg-[var(--ag-bg-elevated)] mr-4',
+                  ].join(' ')}
+                >
+                  <span className={[
+                    'font-semibold flex-shrink-0 text-xs mt-0.5',
+                    turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-weebo)]',
+                  ].join(' ')}>
+                    {turn.role === 'user' ? 'You' : agent.name || 'Weebo'}:
+                  </span>
+                  <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </SectionCard>
 
         {/* -- Mic Button (primary action) -- */}
         <div className="flex flex-col items-center gap-3 flex-shrink-0">
@@ -462,11 +435,11 @@ export function VoiceChatPage() {
             }
             className={[
               'relative min-h-[64px] min-w-[64px] w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200',
-              !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-[#1A1A2E]' :
-              voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-[#1A1A2E]' :
-              voiceState === 'recording' ? 'bg-[#FF2D78] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[#FF2D78]/90 cursor-pointer active:scale-95' :
-              voiceState === 'speaking' ? 'bg-[#ADFF2F]/20 border-2 border-[#ADFF2F]/40 hover:bg-[#ADFF2F]/30 cursor-pointer active:scale-95' :
-              'bg-[#00F0FF]/15 border-2 border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 hover:border-[#00F0FF]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
+              !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
+              voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
+              voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-95' :
+              voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-95' :
+              'bg-[var(--ag-cyan)]/15 border-2 border-[var(--ag-cyan)]/30 hover:bg-[var(--ag-cyan)]/25 hover:border-[var(--ag-cyan)]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
@@ -474,14 +447,14 @@ export function VoiceChatPage() {
             ) : voiceState === 'recording' ? (
               <MicOff className="w-7 h-7 text-white" />
             ) : voiceState === 'speaking' ? (
-              <span className="w-5 h-5 rounded-sm bg-[#ADFF2F]" />
+              <span className="w-5 h-5 rounded-sm bg-[var(--ag-weebo)]" />
             ) : (
-              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[#6B7280]'}`} />
+              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
             )}
           </button>
 
           {!voice.isSupported && (
-            <p className="text-xs text-[#FF2D78]">Voice not supported in this browser</p>
+            <p className="text-xs text-[var(--ag-pink)]">Voice not supported in this browser</p>
           )}
         </div>
 
@@ -489,7 +462,7 @@ export function VoiceChatPage() {
         <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Text Mode</span>
@@ -498,7 +471,7 @@ export function VoiceChatPage() {
           <button
             onClick={clearTranscript}
             disabled={transcript.length === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear</span>
@@ -506,7 +479,7 @@ export function VoiceChatPage() {
 
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
