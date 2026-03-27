@@ -954,17 +954,16 @@ export function AnalyticsPage() {
     [],
   );
 
-  const AGENT_COLORS: Record<string, string> = {
-    Weebo: '#ADFF2F',
-    Cal: '#00F0FF',
-    Echo: '#8B5CF6',
-    Forge: '#FF2D78',
-    Aria: '#F59E0B',
-    Pulse: '#10B981',
-    Nova: '#EC4899',
-  };
-
   const delegationChartData = useMemo(() => {
+    const AGENT_COLORS: Record<string, string> = {
+      Weebo: '#ADFF2F',
+      Cal: '#00F0FF',
+      Echo: '#8B5CF6',
+      Forge: '#FF2D78',
+      Aria: '#F59E0B',
+      Pulse: '#10B981',
+      Nova: '#EC4899',
+    };
     const agents = ['Weebo', 'Cal', 'Echo', 'Forge', 'Aria', 'Pulse', 'Nova'];
     const agentMap = new Map(data.agents.map((a) => [a.agent.toLowerCase(), a.count]));
     return agents.map((name) => {

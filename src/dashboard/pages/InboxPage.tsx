@@ -485,7 +485,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
     }
   };
 
-  const handleArchive = async (id: number) => {
+  const handleArchive = useCallback(async (id: number) => {
     try {
       await api.patch('/inbox/' + id + '/archive');
       setMessages(prev => prev.filter(m => m.id !== id));
@@ -493,7 +493,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
     } catch {
       void notifyFail('failed to archive message');
     }
-  };
+  }, [notifyDone, notifyFail]);
 
   const handleDelete = async (id: number) => {
     try {
@@ -595,7 +595,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusIdx, sortedMessages, expanded]);
+  }, [focusIdx, sortedMessages, expanded, handleArchive]);
 
   // ---- Triage stats ----
 

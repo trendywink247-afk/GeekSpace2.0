@@ -148,7 +148,7 @@ export function ChatRefine({
         setLoading(false);
       }
     },
-    [loading, currentPrompt, companyName, style],
+    [loading, currentPrompt, companyName, style, token],
   );
 
   const handleSubmit = useCallback(() => {

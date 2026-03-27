@@ -322,7 +322,7 @@ export function CalendarPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [notifyFail]);
 
   useEffect(() => {
     void fetchData();
@@ -381,7 +381,7 @@ export function CalendarPage() {
     } finally {
       setSyncing(false);
     }
-  }, [fetchData]);
+  }, [fetchData, notifyFail]);
 
   const handleDisconnect = useCallback(async () => {
     setDisconnecting(true);
@@ -394,7 +394,7 @@ export function CalendarPage() {
     } finally {
       setDisconnecting(false);
     }
-  }, [fetchData]);
+  }, [fetchData, notifyFail]);
 
   // ── Calendar grid data ─────────────────────────────────────────────────────
 

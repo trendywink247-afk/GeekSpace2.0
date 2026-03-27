@@ -88,7 +88,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
     } catch {
       setError('Could not read image.');
     }
-  }, []);
+  }, [drawOriginal]);
 
   const drawOriginal = useCallback((img: HTMLImageElement) => {
     const canvas = canvasRef.current;
