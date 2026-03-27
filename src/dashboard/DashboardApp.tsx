@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
   X, Menu, Clock, Brain, Cpu, Activity, Monitor,
-  Code, Rocket, CalendarCheck, MoreHorizontal, Share2, Sparkles, WifiOff,
+  Code, Rocket, CalendarCheck, Share2, Sparkles, WifiOff,
   Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search,
   ImageIcon, Video, BookOpen, HelpCircle, Star, GitBranch, Mail, BarChart3, CreditCard, Map
 } from 'lucide-react';
@@ -57,13 +57,13 @@ const PicoFleetPage = lazyRetry(() =>
 const HealthDashboardPage = lazyRetry(() => import('./pages/HealthDashboardPage').then(m => ({ default: m.HealthDashboardPage })));
 const WebsiteBuilderPage = lazyRetry(() => import('./pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
 const RoadmapPage = lazyRetry(() => import('./pages/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
-const ImageGenPage = lazyRetry(() => import('./pages/ImageGenPage').then(m => ({ default: m.ImageGenPage })));
+// ImageGenPage + ImageGalleryPage unified into ImageCreatorPage (tabbed)
+const ImageCreatorPage = lazyRetry(() => import('./pages/ImageCreatorPage').then(m => ({ default: m.ImageCreatorPage })));
 const VideoGenPage = lazyRetry(() => import('./pages/VideoGenPage').then(m => ({ default: m.VideoGenPage })));
 const PlannerPage = lazyRetry(() => import('./pages/PlannerPage').then(m => ({ default: m.PlannerPage })));
 const SocialMediaPage = lazyRetry(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
-const ImageGalleryPage = lazyRetry(() => import('./pages/ImageGalleryPage').then(m => ({ default: m.ImageGalleryPage })));
 const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
 const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
 const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
@@ -82,8 +82,9 @@ const OfficeHomePage = lazyRetry(() => import('./pages/office/index').then(m => 
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
+const ConnectInboxPage = lazyRetry(() => import('./pages/ConnectInboxPage').then(m => ({ default: m.ConnectInboxPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio' | 'connect-inbox';
 
 
 interface MenuItem {
@@ -155,7 +156,8 @@ const menuGroups: MenuGroup[] = [
     label: 'Connect',
     icon: MessageSquare,
     items: [
-      { id: 'inbox', label: 'Inbox', icon: Inbox },
+      { id: 'connect-inbox', label: 'Inbox', icon: Inbox },
+      { id: 'inbox', label: 'All Messages', icon: Inbox },
       { id: 'gmail', label: 'Gmail', icon: Mail },
       { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
       { id: 'pico', label: 'Fleet', icon: Cpu },
@@ -181,15 +183,15 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-// Bottom tabs for mobile (5 max for thumb reach)
-// "more" is a special ID that opens the sidebar drawer instead of navigating
+// Bottom tabs for mobile — 6 zone icons (icon-only, no labels on mobile)
 type MobileTabId = PageType | 'more';
-const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'overview', label: 'Home', icon: LayoutDashboard },
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'reminders', label: 'Reminders', icon: Bell },
-  { id: 'focus', label: 'Habits', icon: Target },
-  { id: 'more', label: 'More', icon: MoreHorizontal },
+const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard; color: string }[] = [
+  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: '#00F0FF' },
+  { id: 'office', label: 'Agent', icon: Bot, color: '#8B5CF6' },
+  { id: 'creative-studio', label: 'Create', icon: Sparkles, color: '#F59E0B' },
+  { id: 'reminders', label: 'Work', icon: Zap, color: '#ADFF2F' },
+  { id: 'inbox', label: 'Connect', icon: MessageSquare, color: '#00F0FF' },
+  { id: 'settings', label: 'Control', icon: Settings, color: '#8B5CF680' },
 ];
 
 
@@ -239,7 +241,7 @@ export function DashboardApp() {
   ).length;
 
   // All pending (non-completed) reminders count for mobile badge
-  const pendingReminderCount = reminders.filter((r) => !r.completed).length;
+  // pendingReminderCount removed — unused variable
 
   // Pending integrations count for nav badge
   const pendingConnectionCount = integrations.filter((i) => i.status === 'pending').length;
@@ -355,7 +357,7 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio'];
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -460,9 +462,9 @@ export function DashboardApp() {
       case 'website-builder':
         return <WebsiteBuilderPage />;
       case 'image-gen':
-        return <ImageGenPage />;
+        return <ImageCreatorPage />;
       case 'gallery':
-        return <ImageGalleryPage />;
+        return <ImageCreatorPage />;
       case 'video-gen':
         return <VideoGenPage />;
       case 'planner':
@@ -484,6 +486,8 @@ export function DashboardApp() {
         return <ActivityPage />;
       case 'proactive':
         return <ProactivePage />;
+      case 'connect-inbox':
+        return <ConnectInboxPage />;
       case 'inbox':
         return <InboxPage />;
       case 'gmail':
@@ -538,16 +542,18 @@ export function DashboardApp() {
     <>
       {/* Logo */}
       <div className="h-14 flex items-center px-4" style={{ borderBottom: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
-        <div className="flex items-center gap-3 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/10 border border-[#00F0FF]/15 flex items-center justify-center flex-shrink-0 pulse-glow" style={{ boxShadow: '0 0 12px rgba(0, 240, 255, 0.1)' }}>
-            <Hexagon className="w-5 h-5 text-[#00F0FF]" />
-          </div>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
+          aria-label="Go to dashboard home"
+        >
+          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
           {!sidebarCollapsed && (
             <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
               <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
             </span>
           )}
-        </div>
+        </button>
         {/* Close button — mobile only */}
         <button
           onClick={() => setSidebarOpen(false)}
@@ -808,7 +814,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className={`min-h-dvh bg-[#06060B] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
+    <div className={`min-h-dvh bg-[#06061a] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">
@@ -867,16 +873,16 @@ export function DashboardApp() {
         />
       )}
 
-      {/* ---- Desktop Sidebar — floating glass panel ---- */}
+      {/* ---- Desktop Sidebar — icon rail (64px collapsed) / full (240px expanded) ---- */}
       <aside
-        className={`hidden md:flex fixed top-3 left-3 bottom-3 rounded-2xl transition-all duration-300 ease-out z-50 flex-col backdrop-blur-xl ${
-          sidebarCollapsed ? 'w-16' : 'w-64'
+        className={`hidden md:flex fixed top-0 left-0 bottom-0 transition-all duration-300 ease-out z-50 flex-col ${
+          sidebarCollapsed ? 'w-16' : 'w-60'
         }`}
         style={{
-          background: 'linear-gradient(180deg, var(--ag-bg-surface, rgba(12, 12, 24, 0.85)), rgba(16, 16, 30, 0.75))',
+          background: 'rgba(6, 6, 26, 0.9)',
           backdropFilter: 'blur(24px) saturate(1.3)',
-          border: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
-          boxShadow: 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 8px 32px rgba(0, 0, 0, 0.4)',
+          WebkitBackdropFilter: 'blur(24px) saturate(1.3)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.06)',
         }}
         role="navigation"
         aria-label="Main navigation"
@@ -887,12 +893,14 @@ export function DashboardApp() {
 
       {/* ---- Mobile Sidebar Drawer ---- */}
       <aside
-        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ease-out backdrop-blur-xl ${
+        className={`md:hidden fixed left-0 top-0 h-full w-64 z-50 flex flex-col transition-transform duration-300 ease-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          background: 'linear-gradient(180deg, var(--ag-bg-surface, rgba(12, 12, 24, 0.95)), rgba(16, 16, 30, 0.9))',
-          borderRight: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
+          background: 'rgba(6, 6, 26, 0.9)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.06)',
         }}
         role="navigation"
         aria-label="Mobile navigation"
@@ -904,7 +912,7 @@ export function DashboardApp() {
       {/* ---- Main Content ---- */}
       <main
         className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ease-out pb-24 md:pb-0 ${
-          sidebarCollapsed ? 'md:ml-[82px]' : 'md:ml-[272px]'
+          sidebarCollapsed ? 'md:ml-16' : 'md:ml-60'
         }`}
         id="main-content"
         data-testid="dashboard-shell"
@@ -1072,65 +1080,57 @@ export function DashboardApp() {
         </div>
       </main>
 
-      {/* ---- Mobile Bottom Tab Bar — pill-shaped floating ---- */}
+      {/* ---- Mobile Bottom Nav — 6 zone icons, fixed 60px ---- */}
       <nav
-        className="md:hidden fixed left-3 right-3 h-16 backdrop-blur-xl rounded-2xl z-30 flex items-center justify-around px-2"
+        className="md:hidden fixed left-0 right-0 h-[60px] backdrop-blur-xl z-30 flex items-center justify-around px-1"
         style={{
-          bottom: 'max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px))',
-          background: 'linear-gradient(180deg, rgba(5, 5, 10, 0.92), rgba(5, 5, 10, 0.88))',
-          border: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))',
-          boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.4), var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1))',
+          bottom: 0,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          background: 'rgba(6, 6, 26, 0.9)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
         }}
         role="tablist"
         aria-label="Main tabs"
       >
         {mobileTabs.map((tab) => {
-          const isActive = tab.id !== 'more' && currentPage === tab.id;
+          const isActive = currentPage === tab.id;
           return (
             <button
               key={tab.id}
               role="tab"
               aria-selected={isActive}
+              aria-label={tab.label}
               onClick={() => {
-                if (tab.id === 'more') {
-                  setSidebarOpen(true);
-                } else {
-                  navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
-                }
+                navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
               }}
-              className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-lg transition-colors touch-highlight"
-              style={{ color: isActive ? 'var(--ag-text-accent, #00F0FF)' : 'var(--ag-text-muted, #6B7280)' }}
+              className="flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[44px] rounded-lg transition-colors"
+              style={{ color: isActive ? tab.color : 'var(--ag-text-muted, #6B7280)' }}
             >
+              {/* Active dot indicator above icon */}
+              <div
+                className={`h-[3px] w-[3px] rounded-full transition-all ${isActive ? '' : 'opacity-0'}`}
+                style={isActive ? { background: tab.color, boxShadow: `0 0 6px ${tab.color}` } : undefined}
+              />
               <div className="relative">
-                <tab.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(0,240,255,0.4)]' : ''}`} />
+                <tab.icon className={`w-5 h-5 ${isActive ? `drop-shadow-[0_0_6px_${tab.color}]` : ''}`} />
                 {tab.id === 'reminders' && dueReminderCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FF2D78] text-white text-[9px] font-bold flex items-center justify-center leading-none">
                     {dueReminderCount > 9 ? '9+' : dueReminderCount}
                   </span>
                 )}
-                {tab.id === 'connections' && pendingConnectionCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#F59E0B] text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                    {pendingConnectionCount > 9 ? '9+' : pendingConnectionCount}
+                {tab.id === 'inbox' && inboxUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[9px] font-bold flex items-center justify-center leading-none">
+                    {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                   </span>
                 )}
-                {/* 52.8: Unread activity badge on Agent tab */}
-                {tab.id === 'agent' && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#BF5FFF] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                {tab.id === 'office' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#8B5CF6] text-white text-[9px] font-bold flex items-center justify-center leading-none">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
-                {tab.id === 'more' && pendingReminderCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#F59E0B] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                    {pendingReminderCount > 9 ? '9+' : pendingReminderCount}
-                  </span>
-                )}
               </div>
-              <span className="text-[10px] font-medium">{tab.label}</span>
-              {/* Active tab glow indicator */}
-              <div
-                className={`h-0.5 w-4 rounded-full transition-all ${isActive ? 'bg-[#00F0FF]' : 'bg-transparent'}`}
-                style={isActive ? { boxShadow: '0 0 8px #00F0FF' } : undefined}
-              />
             </button>
           );
         })}

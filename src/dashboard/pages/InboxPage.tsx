@@ -1,5 +1,6 @@
 // InboxPage.tsx -- Overhauled AI Inbox with triage, priority cards, keyboard nav
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   Send, Archive, Trash2, AlertCircle,
   RefreshCw, Check, Inbox, ChevronDown, ChevronUp,
@@ -91,7 +92,7 @@ function TriageSummary({ messages }: TriageSummaryProps) {
   if (total === 0) return null;
 
   return (
-    <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl p-4 space-y-2">
+    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-4 space-y-2">
       <div className="flex items-center gap-3 flex-wrap text-sm">
         <Sparkles className="w-4 h-4 text-[#00F0FF] shrink-0" />
         <span className="text-[#F4F6FF] font-medium">AI Triage:</span>
@@ -155,7 +156,7 @@ function MessageCard({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
       className={[
         'rounded-xl border transition-all duration-200 outline-none group',
-        'bg-[#0C0C18] border-[#00F0FF]/10',
+        'bg-[var(--ag-bg-surface)] border-[#00F0FF]/10',
         priorityBorder,
         isFocused ? 'ring-1 ring-[#00F0FF]/40' : '',
         isUnread ? 'shadow-[0_0_12px_rgba(0,240,255,0.04)]' : 'opacity-80',
@@ -410,7 +411,7 @@ function KeyboardHints() {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function InboxPage() {
+export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   const [messages, setMessages] = useState<InboxMessage[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(false);
@@ -577,8 +578,12 @@ export function InboxPage() {
 
   // ---- Render ----
 
+  const Wrapper = shell ? PageShell : 'div';
+  const wrapperProps = shell ? { maxWidth: '3xl' as const } : {};
+
   return (
-    <div className="max-w-3xl mx-auto p-4 pb-24 md:pb-6 space-y-6">
+    <Wrapper {...wrapperProps}>
+    <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -587,7 +592,7 @@ export function InboxPage() {
           </div>
           <h1 className="text-xl font-semibold text-[#F4F6FF]">AI Inbox <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📥 Triaged by Edith</span></h1>
           {unreadCount > 0 && (
-            <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold">
+            <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold animate-pulse">
               {unreadCount}
             </Badge>
           )}
@@ -659,7 +664,7 @@ export function InboxPage() {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl p-4 space-y-3 animate-pulse">
+            <div key={i} className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-4 space-y-3 animate-pulse">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-24 bg-white/5 rounded" />
                 <div className="h-4 w-10 bg-white/5 rounded" />
@@ -715,5 +720,6 @@ export function InboxPage() {
         </p>
       )}
     </div>
+    </Wrapper>
   );
 }

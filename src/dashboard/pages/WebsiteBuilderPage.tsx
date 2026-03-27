@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageShell } from '@/components/agentin';
 import {
   Code, LayoutTemplate, Wand2, Wrench, Send, Loader2, Eye,
   Play, X, Sparkles, Terminal, Bot, Plus, Trash2, Clock,
@@ -317,10 +318,11 @@ export function WebsiteBuilderPage() {
   const emptySlots = [1, 2, 3, 4, 5, 6].filter(s => !fleetAgents.some(a => a.slot === s));
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
+      <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#E8E8F0]">Website Builder</h1>
-        <p className="text-sm text-[#9CA3AF] mt-1">Build, manage, and deploy your web projects</p>
+        <h1 className="text-2xl font-bold text-[var(--ag-text-primary)]">Website Builder</h1>
+        <p className="text-sm text-[var(--ag-text-muted)] mt-1">Build, manage, and deploy your web projects</p>
       </div>
 
       {/* Toast */}
@@ -334,12 +336,12 @@ export function WebsiteBuilderPage() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/10 flex w-max min-w-full">
-            <TabsTrigger value="projects" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2 flex-shrink-0 whitespace-nowrap">
+          <TabsList className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 flex w-max min-w-full">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)] gap-2 flex-shrink-0 whitespace-nowrap">
               <Code className="w-4 h-4" />
               My Projects
             </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF] gap-2 flex-shrink-0 whitespace-nowrap">
+            <TabsTrigger value="templates" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)] gap-2 flex-shrink-0 whitespace-nowrap">
               <LayoutTemplate className="w-4 h-4" />
               Templates
             </TabsTrigger>
@@ -367,20 +369,20 @@ export function WebsiteBuilderPage() {
         <TabsContent value="builder" className="mt-6">
           {/* Project selector */}
           <div className="mb-6">
-            <label className="text-sm text-[#9CA3AF] mb-2 block">Working on:</label>
+            <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Working on:</label>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedProject(null)}
                 className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                   !selectedProject
-                    ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
-                    : 'bg-[#0C0C18] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                    ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
+                    : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                 }`}
               >
                 New Project
               </button>
               {projectsLoading ? (
-                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm px-3">
+                <div className="flex items-center gap-2 text-[var(--ag-text-muted)] text-sm px-3">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading...
                 </div>
@@ -391,8 +393,8 @@ export function WebsiteBuilderPage() {
                     onClick={() => loadProjectForDev(p)}
                     className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate max-w-[200px] ${
                       selectedProject?.id === p.id
-                        ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
-                        : 'bg-[#0C0C18] text-[#9CA3AF] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                        ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_10px_rgba(0,240,255,0.1)]'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
                     }`}
                   >
                     {p.title}
@@ -410,7 +412,7 @@ export function WebsiteBuilderPage() {
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'imagine'
                   ? 'border-[#ADFF2F]/40 bg-[#ADFF2F]/5 shadow-[0_0_20px_rgba(173,255,47,0.08)]'
-                  : 'border-[#00F0FF]/10 hover:border-[#ADFF2F]/30 hover:shadow-[0_0_15px_rgba(173,255,47,0.06)] bg-[#0C0C18]/50'
+                  : 'border-[#00F0FF]/10 hover:border-[#ADFF2F]/30 hover:shadow-[0_0_15px_rgba(173,255,47,0.06)] bg-[var(--ag-bg-surface)]/50'
               }`}
               style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             >
@@ -418,14 +420,14 @@ export function WebsiteBuilderPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'imagine' ? 'bg-[#ADFF2F]/20' : 'bg-[#00F0FF]/10'
                 }`}>
-                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[#ADFF2F]' : 'text-[#00F0FF]'}`} />
+                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[#ADFF2F]' : 'text-[var(--ag-cyan)]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[#E8E8F0] font-semibold">Imagine & Add</h3>
-                  <p className="text-xs text-[#9CA3AF]">Let AI build it for you</p>
+                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Imagine & Add</h3>
+                  <p className="text-xs text-[var(--ag-text-muted)]">Let AI build it for you</p>
                 </div>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 Describe what you want and the agent will create or update your project.
               </p>
             </button>
@@ -441,7 +443,7 @@ export function WebsiteBuilderPage() {
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'dev'
                   ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
-                  : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[#0C0C18]/50'
+                  : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[var(--ag-bg-surface)]/50'
               }`}
               style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             >
@@ -449,14 +451,14 @@ export function WebsiteBuilderPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
                 }`}>
-                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
+                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[#E8E8F0] font-semibold">Feelin&apos; to be a Dev</h3>
-                  <p className="text-xs text-[#9CA3AF]">I&apos;ll input on it myself</p>
+                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Feelin&apos; to be a Dev</h3>
+                  <p className="text-xs text-[var(--ag-text-muted)]">I&apos;ll input on it myself</p>
                 </div>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 Write HTML, CSS, and JavaScript directly. Full control over your code.
               </p>
             </button>
@@ -467,11 +469,11 @@ export function WebsiteBuilderPage() {
             <div className="rounded-2xl border border-[#ADFF2F]/20 p-6" style={{ background: 'rgba(173, 255, 47, 0.03)' }}>
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-[#ADFF2F]" />
-                <h3 className="text-[#E8E8F0] font-semibold">
+                <h3 className="text-[var(--ag-text-primary)] font-semibold">
                   {selectedProject ? `Update "${selectedProject.title}"` : 'Create Something New'}
                 </h3>
               </div>
-              <p className="text-sm text-[#9CA3AF] mb-4">
+              <p className="text-sm text-[var(--ag-text-muted)] mb-4">
                 {selectedProject
                   ? 'Describe changes you want — the agent will update your existing project.'
                   : 'Describe what you want to build — the agent will create a new project for you.'}
@@ -484,7 +486,7 @@ export function WebsiteBuilderPage() {
                     ? 'e.g. "Add a contact form section with a dark theme..."'
                     : 'e.g. "A modern landing page for a SaaS product with pricing cards..."'}
                   rows={3}
-                  className="flex-1 bg-[#06060B] border border-[#ADFF2F]/20 rounded-xl px-4 py-3 text-[#E8E8F0] placeholder-[#6B7280]/50 resize-none focus:border-[#ADFF2F]/50 outline-none text-sm"
+                  className="flex-1 bg-[#06060B] border border-[#ADFF2F]/20 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none focus:border-[#ADFF2F]/50 outline-none text-sm"
                 />
               </div>
               <div className="flex justify-end mt-3">
@@ -514,8 +516,8 @@ export function WebsiteBuilderPage() {
             <div className="space-y-4">
               {/* Title input — only shown for new projects */}
               {!selectedProject && (
-                <div className="rounded-xl border border-[#00F0FF]/15 bg-[#0C0C18]/50 p-4 space-y-3">
-                  <p className="text-sm text-[#9CA3AF]">
+                <div className="rounded-xl border border-[#00F0FF]/15 bg-[var(--ag-bg-surface)]/50 p-4 space-y-3">
+                  <p className="text-sm text-[var(--ag-text-muted)]">
                     Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
                   </p>
                   <input
@@ -523,7 +525,7 @@ export function WebsiteBuilderPage() {
                     value={devTitle}
                     onChange={(e) => setDevTitle(e.target.value)}
                     placeholder="Project name (e.g. Hello World)"
-                    className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[#E8E8F0] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
+                    className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
                   />
                 </div>
               )}
@@ -531,42 +533,42 @@ export function WebsiteBuilderPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {/* HTML */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#E8E8F0]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-xs rounded font-mono">HTML</span>
                       </label>
                       <textarea
                         value={devHtml}
                         onChange={(e) => setDevHtml(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[#E8E8F0] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
                         placeholder="<div>Your HTML here...</div>"
                       />
                     </div>
 
                     {/* CSS */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#E8E8F0]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#3B82F6]/20 text-[#3B82F6] text-xs rounded font-mono">CSS</span>
                       </label>
                       <textarea
                         value={devCss}
                         onChange={(e) => setDevCss(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[#E8E8F0] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
                         placeholder="body { color: white; }"
                       />
                     </div>
 
                     {/* JavaScript */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#E8E8F0]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#FFD700]/20 text-[#FFD700] text-xs rounded font-mono">JS</span>
                       </label>
                       <textarea
                         value={devJs}
                         onChange={(e) => setDevJs(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[#E8E8F0] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
+                        className="w-full h-64 bg-[#06060B] border border-[#00F0FF]/15 rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[#00F0FF]/40 outline-none leading-relaxed"
                         placeholder="console.log('Hello world');"
                       />
                     </div>
@@ -605,7 +607,7 @@ export function WebsiteBuilderPage() {
                           }, 50);
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors text-sm"
+                      className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:border-[#00F0FF]/40 transition-colors text-sm"
                     >
                       <Eye className="w-4 h-4" />
                       {showPreview ? 'Hide Preview' : 'Preview'}
@@ -615,9 +617,9 @@ export function WebsiteBuilderPage() {
                   {/* Live Preview */}
               {showPreview && (
                 <div className="rounded-2xl border border-[#00F0FF]/20 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 bg-[#0C0C18] border-b border-[#00F0FF]/10">
-                    <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
-                    <button onClick={() => setShowPreview(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close preview">
+                  <div className="flex items-center justify-between px-4 py-2 bg-[var(--ag-bg-surface)] border-b border-[#00F0FF]/10">
+                    <span className="text-xs text-[var(--ag-text-muted)] font-mono">Preview</span>
+                    <button onClick={() => setShowPreview(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close preview">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -625,7 +627,7 @@ export function WebsiteBuilderPage() {
                     ref={previewRef}
                     title="Live Preview"
                     sandbox="allow-scripts allow-modals allow-forms"
-                    className="w-full h-[500px] bg-[#0C0C18]"
+                    className="w-full h-[500px] bg-[var(--ag-bg-surface)]"
                   />
                 </div>
               )}
@@ -644,10 +646,10 @@ export function WebsiteBuilderPage() {
               {/* Assigned agents */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[#E8E8F0] flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#00FF88]" />
                     Assigned Weebos
-                    <span className="text-xs text-[#9CA3AF] font-normal ml-1">
+                    <span className="text-xs text-[var(--ag-text-muted)] font-normal ml-1">
                       {assignedAgents.length}/{MAX_ASSIGNED} max
                     </span>
                   </h3>
@@ -658,8 +660,8 @@ export function WebsiteBuilderPage() {
                     <div className="w-14 h-14 rounded-2xl bg-[#00FF88]/10 flex items-center justify-center mx-auto mb-4">
                       <Bot className="w-7 h-7 text-[#00FF88]/50" />
                     </div>
-                    <p className="text-[#E8E8F0] font-medium text-sm mb-1">No agents assigned yet</p>
-                    <p className="text-[#9CA3AF] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
+                    <p className="text-[var(--ag-text-primary)] font-medium text-sm mb-1">No agents assigned yet</p>
+                    <p className="text-[var(--ag-text-muted)] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -677,8 +679,8 @@ export function WebsiteBuilderPage() {
                             <div className="flex items-center gap-3">
                               <span className="text-xl">{personality}</span>
                               <div>
-                                <div className="font-semibold text-[#E8E8F0] text-sm">{agent.name}</div>
-                                <div className="text-xs text-[#9CA3AF] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
+                                <div className="font-semibold text-[var(--ag-text-primary)] text-sm">{agent.name}</div>
+                                <div className="text-xs text-[var(--ag-text-muted)] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -695,7 +697,7 @@ export function WebsiteBuilderPage() {
                               {/* Unassign */}
                               <button
                                 onClick={() => toggleAssign(agent.slot)}
-                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                                 aria-label={`Unassign ${agent.name} from Builder`}
                               >
                                 <X className="w-4 h-4" />
@@ -706,11 +708,11 @@ export function WebsiteBuilderPage() {
                           {/* Stats row */}
                           <div className="flex gap-3 mb-3">
                             <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#00FF88]/10">
-                              <div className="text-xs text-[#9CA3AF]">Completed</div>
+                              <div className="text-xs text-[var(--ag-text-muted)]">Completed</div>
                               <div className="text-lg font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                             </div>
                             <div className="flex-1 p-2.5 rounded-lg bg-[#06060B] border border-[#FF6161]/10">
-                              <div className="text-xs text-[#9CA3AF]">Failed</div>
+                              <div className="text-xs text-[var(--ag-text-muted)]">Failed</div>
                               <div className="text-lg font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                             </div>
                           </div>
@@ -718,15 +720,15 @@ export function WebsiteBuilderPage() {
                           {/* Current work progress */}
                           {agentTasks.length > 0 ? (
                             <div className="space-y-2">
-                              <div className="text-xs text-[#9CA3AF] font-medium">Current Work</div>
+                              <div className="text-xs text-[var(--ag-text-muted)] font-medium">Current Work</div>
                               {agentTasks.slice(0, 2).map(task => (
                                 <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
                                   {task.status === 'running' ? (
                                     <Loader2 className="w-3.5 h-3.5 text-[#FFB800] animate-spin shrink-0" />
                                   ) : (
-                                    <Clock className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                                    <Clock className="w-3.5 h-3.5 text-[var(--ag-cyan)] shrink-0" />
                                   )}
-                                  <span className="text-xs text-[#E8E8F0] truncate flex-1">{task.description}</span>
+                                  <span className="text-xs text-[var(--ag-text-primary)] truncate flex-1">{task.description}</span>
                                   <span className="text-xs capitalize shrink-0"
                                     style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
                                     {task.status}
@@ -736,12 +738,12 @@ export function WebsiteBuilderPage() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                              <CheckCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                              <span className="text-xs text-[#9CA3AF]">No active tasks — ready for work</span>
+                              <CheckCircle className="w-3.5 h-3.5 text-[var(--ag-text-muted)]" />
+                              <span className="text-xs text-[var(--ag-text-muted)]">No active tasks — ready for work</span>
                             </div>
                           )}
 
-                          <div className="mt-2 text-xs text-[#9CA3AF] flex items-center gap-1">
+                          <div className="mt-2 text-xs text-[var(--ag-text-muted)] flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Created {formatTimeAgo(agent.created_at)}
                           </div>
@@ -756,15 +758,15 @@ export function WebsiteBuilderPage() {
               {assignedAgents.length > 0 && (
                 <div className="rounded-2xl border border-[#00F0FF]/20 p-5" style={{ background: 'rgba(0, 240, 255, 0.02)' }}>
                   <div className="flex items-center gap-2 mb-3">
-                    <Send className="w-4 h-4 text-[#00F0FF]" />
-                    <h3 className="text-sm font-semibold text-[#E8E8F0]">Assign Task</h3>
+                    <Send className="w-4 h-4 text-[var(--ag-cyan)]" />
+                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Assign Task</h3>
                   </div>
                   <div className="flex gap-3">
                     <input
                       value={taskInput}
                       onChange={e => setTaskInput(e.target.value)}
                       placeholder="Describe a website task for your agents..."
-                      className="flex-1 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[#E8E8F0] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
+                      className="flex-1 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none"
                       onKeyDown={e => e.key === 'Enter' && !planningTask && handleAssignTask()}
                       disabled={planningTask}
                     />
@@ -783,7 +785,7 @@ export function WebsiteBuilderPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mt-2">
+                  <p className="text-xs text-[var(--ag-text-muted)] mt-2">
                     The planner will break your request into tasks and assign them to available agents.
                   </p>
                 </div>
@@ -792,8 +794,8 @@ export function WebsiteBuilderPage() {
               {/* Assign from fleet */}
               {unassignedAgents.length > 0 && assignedSlots.size < MAX_ASSIGNED && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-[#00F0FF]" />
+                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-[var(--ag-cyan)]" />
                     Assign from Fleet
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -804,12 +806,12 @@ export function WebsiteBuilderPage() {
                         <button
                           key={agent.id}
                           onClick={() => toggleAssign(agent.slot)}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-[#00F0FF]/10 bg-[#0C0C18]/50 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all text-left cursor-pointer group"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-[#00F0FF]/10 bg-[var(--ag-bg-surface)]/50 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all text-left cursor-pointer group"
                         >
                           <span className="text-lg">{personality}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-[#E8E8F0] truncate">{agent.name}</div>
-                            <div className="text-xs text-[#9CA3AF]">Slot {agent.slot}</div>
+                            <div className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{agent.name}</div>
+                            <div className="text-xs text-[var(--ag-text-muted)]">Slot {agent.slot}</div>
                           </div>
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
                             style={{ background: `${color}15`, color }}>
@@ -826,14 +828,14 @@ export function WebsiteBuilderPage() {
               {/* Deploy new agent */}
               {emptySlots.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#ADFF2F]" />
                     Deploy New Agent
                   </h3>
 
                   {creatingSlot !== null ? (
                     <div className="rounded-2xl border border-dashed border-[#00F0FF]/30 p-5 max-w-md">
-                      <p className="text-sm text-[#9CA3AF] mb-3">Choose personality for Slot {creatingSlot}</p>
+                      <p className="text-sm text-[var(--ag-text-muted)] mb-3">Choose personality for Slot {creatingSlot}</p>
                       <div className="flex gap-2 mb-3">
                         {([
                           { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
@@ -858,14 +860,14 @@ export function WebsiteBuilderPage() {
                         value={newAgentName}
                         onChange={e => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[#E8E8F0] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none mb-3"
+                        className="w-full bg-[#06060B] border border-[#00F0FF]/20 rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[#00F0FF]/50 outline-none mb-3"
                         onKeyDown={e => e.key === 'Enter' && handleDeployAgent()}
                         autoFocus
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
-                          className="px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-[#9CA3AF] text-sm hover:text-[#E8E8F0] transition-colors"
+                          className="px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-[var(--ag-text-muted)] text-sm hover:text-[var(--ag-text-primary)] transition-colors"
                         >
                           Cancel
                         </button>
@@ -886,8 +888,8 @@ export function WebsiteBuilderPage() {
                           onClick={() => setCreatingSlot(slot)}
                           className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[#00F0FF]/20 hover:border-[#00FF88]/40 hover:bg-[#00FF88]/5 transition-all cursor-pointer group"
                         >
-                          <Plus className="w-5 h-5 text-[#00F0FF] group-hover:text-[#00FF88]" />
-                          <span className="text-sm text-[#9CA3AF] group-hover:text-[#E8E8F0]">Slot {slot}</span>
+                          <Plus className="w-5 h-5 text-[var(--ag-cyan)] group-hover:text-[#00FF88]" />
+                          <span className="text-sm text-[var(--ag-text-muted)] group-hover:text-[var(--ag-text-primary)]">Slot {slot}</span>
                         </button>
                       ))}
                     </div>
@@ -899,20 +901,20 @@ export function WebsiteBuilderPage() {
               {assignedAgents.length > 0 && (
                 <div className="pt-4 border-t border-[#00F0FF]/10">
                   <details className="group">
-                    <summary className="text-xs text-[#9CA3AF] cursor-pointer hover:text-[#E8E8F0] transition-colors flex items-center gap-1">
+                    <summary className="text-xs text-[var(--ag-text-muted)] cursor-pointer hover:text-[var(--ag-text-primary)] transition-colors flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       Manage assigned agents
                     </summary>
                     <div className="mt-3 space-y-2">
                       {assignedAgents.map(agent => (
                         <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-[#06060B] border border-[#00F0FF]/10">
-                          <span className="text-sm text-[#E8E8F0]">
+                          <span className="text-sm text-[var(--ag-text-primary)]">
                             {agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'} {agent.name} (Slot {agent.slot})
                           </span>
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleAssign(agent.slot)}
-                              className="px-3 py-1 rounded-lg text-xs text-[#9CA3AF] border border-[#00F0FF]/10 hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 transition-colors"
+                              className="px-3 py-1 rounded-lg text-xs text-[var(--ag-text-muted)] border border-[#00F0FF]/10 hover:text-[var(--ag-text-primary)] hover:border-[#00F0FF]/30 transition-colors"
                             >
                               Unassign
                             </button>
@@ -936,6 +938,7 @@ export function WebsiteBuilderPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </PageShell>
   );
 }

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from 'react';
+import { PageShell } from '@/components/agentin';
 import { useSearchParams } from 'react-router-dom';
 import {
   Bell,
@@ -668,8 +669,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     };
   };
 
-  const isOverdue = (datetime: string, completed?: boolean) => {
-    return !completed && new Date(datetime) < new Date();
+  const isOverdue = (datetime: string, completed?: boolean | number) => {
+    // Handle both boolean and SQLite integer (0/1) for completed
+    if (completed === true || completed === 1) return false;
+    const reminderTime = new Date(datetime).getTime();
+    if (isNaN(reminderTime)) return false;
+    return reminderTime < Date.now();
   };
 
   // 39.2: "due soon" = active reminder within the next 24h but not yet overdue
@@ -683,6 +688,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
+    <PageShell>
     <div className="space-y-6 pb-24 md:pb-6" data-testid="reminders-page">
       {/* 61.5: Snooze feedback toast */}
       {snoozeToast && (
@@ -750,7 +756,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             Reminders
           </h1>
           <span className="text-[10px] text-[#4B5563] font-medium">📅 Managed by Jarvis</span>
-          <p className="text-[#9CA3AF]">
+          <p className="text-[var(--ag-text-muted)]">
             {activeReminders.length} active, {completedReminders.length} completed
           </p>
         </div>
@@ -759,11 +765,11 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)' }}>
               <Flame className="w-3.5 h-3.5 text-[#F59E0B]" />
               <span className="text-sm font-semibold text-[#F59E0B]">{streak.streak}</span>
-              <span className="text-xs text-[#9CA3AF]">day streak</span>
+              <span className="text-xs text-[var(--ag-text-muted)]">day streak</span>
             </div>
           )}
           <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30">
-            <span className="text-sm text-[#00F0FF]">{activeReminders.length} active</span>
+            <span className="text-sm text-[var(--ag-cyan)]">{activeReminders.length} active</span>
           </div>
           <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
             <Plus className="w-4 h-4 mr-2" />
@@ -776,9 +782,9 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/5 border-[#00F0FF]/20">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-[#00F0FF]" />
-            <span className="text-sm font-medium text-[#E8E8F0]">Quick Add</span>
-            <span className="text-xs text-[#9CA3AF]">Type naturally like "tomorrow at 3pm call mom"</span>
+            <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
+            <span className="text-sm font-medium text-[var(--ag-text-primary)]">Quick Add</span>
+            <span className="text-xs text-[var(--ag-text-muted)]">Type naturally like "tomorrow at 3pm call mom"</span>
           </div>
           <div className="flex gap-2">
             <div className="flex-1 relative">
@@ -793,7 +799,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     handleNaturalAdd();
                   }
                 }}
-                className="w-full px-4 py-3 bg-[#06060B] border border-[#00F0FF]/20 rounded-xl text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40"
+                className="w-full px-4 py-3 border border-[#00F0FF]/20 rounded-xl text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40"
               />
               {parsedReminder && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -807,7 +813,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               className={`p-3 rounded-xl transition-colors min-h-[44px] min-w-[44px] ${
                 isListening
                   ? 'bg-[#FF6161]/20 text-[#FF6161]'
-                  : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-white'
+                  : ' border border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-white'
               }`}
             >
               <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
@@ -824,9 +830,9 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           
           {/* Parsed preview card — live preview of what will be created */}
           {parsedReminder && (
-            <div className="mt-3 p-3.5 rounded-xl bg-[#06060B]/80 border border-[#00FF88]/20 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="mt-3 p-3.5 rounded-xl /80 border border-[#00FF88]/20 animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">Preview</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ag-text-muted)]">Preview</span>
                 {/* Confidence indicator */}
                 <span
                   className="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -840,11 +846,11 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">Task</span>
-                  <span className="text-sm font-medium text-[#E8E8F0]">{parsedReminder.text}</span>
+                  <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">Task</span>
+                  <span className="text-sm font-medium text-[var(--ag-text-primary)]">{parsedReminder.text}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">When</span>
+                  <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">When</span>
                   <span className="text-sm text-[#FFB800] flex items-center gap-1.5">
                     <Calendar className="w-3 h-3" />
                     {parsedReminder.datetime.toLocaleString('en-US', {
@@ -858,8 +864,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                 </div>
                 {parsedReminder.recurring && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#9CA3AF] w-12 flex-shrink-0">Repeat</span>
-                    <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
+                    <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">Repeat</span>
+                    <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs">
                       <Repeat className="w-3 h-3 mr-1" />
                       {parsedReminder.recurring}
                     </Badge>
@@ -873,7 +879,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           <div className="mt-3">
             <button
               onClick={() => setShowExamples(!showExamples)}
-              className="text-xs text-[#9CA3AF] hover:text-[#00F0FF] transition-colors"
+              className="text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors"
             >
               {showExamples ? 'Hide' : 'Show'} examples
             </button>
@@ -883,7 +889,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   <button
                     key={example}
                     onClick={() => handleExampleClick(example)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-[#06060B] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-full border border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:border-[#00F0FF]/40 transition-colors"
                   >
                     {example}
                   </button>
@@ -897,17 +903,17 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
           <Input
             placeholder="Search reminders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[#0C0C18] border-[#00F0FF]/20"
+            className="pl-10 bg-[var(--ag-bg-surface)] border-[#00F0FF]/20"
           />
         </div>
         <div className="flex flex-col gap-2">
           <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-            <TabsList className="bg-[#0C0C18] border border-[#00F0FF]/20">
+            <TabsList className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
@@ -923,8 +929,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   recurrenceFilter === opt
                     ? opt === 'recurring'
                       ? 'bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B]'
-                      : 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[#00F0FF]'
-                    : 'border-[#00F0FF]/10 text-[#9CA3AF] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                      : 'bg-[#00F0FF]/10 border-[#00F0FF]/30 text-[var(--ag-cyan)]'
+                    : 'border-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
                 }`}
               >
                 {opt === 'all' ? 'All types' : opt === 'recurring' ? '↺ Recurring' : '• One-off'}
@@ -935,7 +941,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <Button
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-xs border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/40"
+              className="h-7 px-2 text-xs border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/40"
               onClick={async () => {
                 try {
                   const { data } = await reminderService.exportCsv(filter);
@@ -957,7 +963,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs border-[#00F0FF]/20 text-[#00F0FF] hover:bg-[#00F0FF]/10 px-2"
+              className="h-7 text-xs border-[#00F0FF]/20 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 px-2"
               onClick={async () => {
                 try {
                   const { data } = await reminderService.exportIcs('active');
@@ -987,7 +993,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   key={cat}
                   onClick={() => setCategoryFilter(cat)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[#9CA3AF] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
                   }`}
                   style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
                 >
@@ -1007,7 +1013,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   key={pri}
                   onClick={() => setPriorityFilter(pri)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[#9CA3AF] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                    isActive ? 'border-current' : 'border-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
                   }`}
                   style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
                 >
@@ -1035,12 +1041,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         </div>
         <div className="flex items-center gap-2">
           {/* 66.8: Sort-by toggle */}
-          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 rounded-lg p-1">
             <button
               onClick={() => setSortMode('priority')}
               aria-label="Sort by priority"
               title="Sort by priority"
-              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'priority' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'priority' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[var(--ag-text-muted)]'}`}
             >
               P↑
             </button>
@@ -1048,18 +1054,18 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               onClick={() => setSortMode('due')}
               aria-label="Sort by due date"
               title="Sort by due date"
-              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'due' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'due' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`}
             >
               Due↑
             </button>
           </div>
           {/* 63.3: Group-by toggle */}
-          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 rounded-lg p-1">
             <button
               onClick={() => setGroupMode('date')}
               aria-label="Group by date"
               title="Group by date"
-              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'date' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'date' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`}
             >
               <Calendar className="w-3.5 h-3.5" />
             </button>
@@ -1067,23 +1073,23 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               onClick={() => setGroupMode('category')}
               aria-label="Group by category"
               title="Group by category"
-              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'category' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'category' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[var(--ag-text-muted)]'}`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 rounded-lg p-1">
             <button
               onClick={() => setViewMode('list')}
               aria-label="List view"
-              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`}
             >
               <List className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('calendar')}
               aria-label="Calendar view"
-              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}`}
+              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -1107,12 +1113,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             }}
             aria-label="Select all active reminders"
           />
-          <label htmlFor="select-all-active" className="text-sm text-[#9CA3AF] cursor-pointer select-none">
+          <label htmlFor="select-all-active" className="text-sm text-[var(--ag-text-muted)] cursor-pointer select-none">
             Select active ({activeReminders.length})
           </label>
           {selectedActiveIds.size > 0 && (
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs text-[#9CA3AF]">Snooze {selectedActiveIds.size} selected:</span>
+              <span className="text-xs text-[var(--ag-text-muted)]">Snooze {selectedActiveIds.size} selected:</span>
               <button
                 onClick={() => handleBulkSnooze('1h')}
                 disabled={isBulkSnoozing}
@@ -1156,7 +1162,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               <select
                 disabled={isBatchEditing}
                 onChange={(e) => { if (e.target.value) { void handleBatchEdit(Array.from(selectedActiveIds), { priority: e.target.value }); e.target.value = ''; } }}
-                className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
+                className="text-xs px-2 py-1 rounded-lg bg-[var(--ag-bg-surface)] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
                 aria-label="Set priority for selected reminders"
               >
                 <option value="">Priority…</option>
@@ -1168,7 +1174,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               <select
                 disabled={isBatchEditing}
                 onChange={(e) => { if (e.target.value) { void handleBatchEdit(Array.from(selectedActiveIds), { category: e.target.value }); e.target.value = ''; } }}
-                className="text-xs px-2 py-1 rounded-lg bg-[#0C0C18] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
+                className="text-xs px-2 py-1 rounded-lg bg-[var(--ag-bg-surface)] border border-[#BF5FFF]/30 text-[#BF5FFF] disabled:opacity-50"
                 aria-label="Set category for selected reminders"
               >
                 <option value="">Category…</option>
@@ -1195,13 +1201,13 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             onCheckedChange={handleSelectAllCompleted}
             aria-label="Select all completed reminders"
           />
-          <label htmlFor="select-all-completed" className="text-sm text-[#9CA3AF] cursor-pointer select-none">
+          <label htmlFor="select-all-completed" className="text-sm text-[var(--ag-text-muted)] cursor-pointer select-none">
             Select all completed ({completedReminders.length})
           </label>
           {selectedIds.size > 0 && (
             <div className="ml-auto flex items-center gap-2 flex-wrap">
               {/* 53.4: Restore + Snooze completed reminders back to active */}
-              <span className="text-xs text-[#9CA3AF]">Restore {selectedIds.size} selected:</span>
+              <span className="text-xs text-[var(--ag-text-muted)]">Restore {selectedIds.size} selected:</span>
               <button
                 onClick={() => handleBulkRestoreSnooze('1h')}
                 disabled={isBulkRestoringSnooze}
@@ -1244,12 +1250,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           {filteredReminders.length === 0 ? (
             <div className="text-center py-16 flex flex-col items-center">
               <div className="relative mb-6">
-                <Bell className="w-14 h-14 text-[#00F0FF]/30 animate-bounce" style={{ animationDuration: '2s' }} />
+                <Bell className="w-14 h-14 text-[var(--ag-cyan)]/30 animate-bounce" style={{ animationDuration: '2s' }} />
                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00F0FF]/20 animate-ping" />
               </div>
-              <p className="text-lg font-medium text-[#E8E8F0] mb-1">No reminders yet</p>
-              <p className="text-sm text-[#9CA3AF]/70 mt-1 max-w-xs">
-                Try typing: <span className="text-[#00F0FF]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
+              <p className="text-lg font-medium text-[var(--ag-text-primary)] mb-1">No reminders yet</p>
+              <p className="text-sm text-[var(--ag-text-muted)]/70 mt-1 max-w-xs">
+                Try typing: <span className="text-[var(--ag-cyan)]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
               </p>
               <Button
                 onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
@@ -1282,7 +1288,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       <Card
                         key={reminder.id}
                         data-testid={`reminder-card-${reminder.id}`}
-                        className={`bg-[#0C0C18] border transition-all duration-300 ${
+                        className={`bg-[var(--ag-bg-surface)] border transition-all duration-300 ${
                           isCompleting
                             ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
                             : isJustCompleted
@@ -1322,10 +1328,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                 ? 'bg-[#FF6161]/10'
                                 : 'bg-[#00F0FF]/10'
                             }`}>
-                              <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#00F0FF]'}`}>
+                              <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-cyan)]'}`}>
                                 {formatted.month}
                               </div>
-                              <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
+                              <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-text-primary)]'}`}>
                                 {formatted.day}
                               </div>
                             </div>
@@ -1339,7 +1345,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     <input
                                       ref={inlineEditRef}
                                       autoFocus
-                                      className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[#E8E8F0] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
+                                      className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[var(--ag-text-primary)] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
                                       value={inlineEditValue}
                                       onChange={(e) => setInlineEditValue(e.target.value)}
                                       onKeyDown={(e) => {
@@ -1351,7 +1357,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                   ) : (
                                     <p
                                       className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-all duration-300 ${
-                                        isCompleting ? 'line-through text-[#9CA3AF] opacity-60' : reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'
+                                        isCompleting ? 'line-through text-[var(--ag-text-muted)] opacity-60' : reminder.completed ? 'line-through text-[var(--ag-text-muted)]' : 'text-[var(--ag-text-primary)]'
                                       }`}
                                       style={{ textDecorationColor: isCompleting ? '#00FF88' : undefined }}
                                       title="Click to edit"
@@ -1361,7 +1367,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     </p>
                                   )}
                                   <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#9CA3AF]'}`}>
+                                    <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-text-muted)]'}`}>
                                       <Clock className="w-3 h-3" />
                                       {formatted.time}
                                     </span>
@@ -1373,12 +1379,12 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     )}
                                     {/* 68.2: human-readable due label */}
                                     {!reminder.completed && !overdue && (
-                                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
                                         {humanDue(reminder.datetime)}
                                       </span>
                                     )}
                                     {/* 63.10: relative time */}
-                                    <span className={`text-xs font-medium ${overdue ? 'text-[#FF6161]/80' : 'text-[#9CA3AF]/60'}`}>
+                                    <span className={`text-xs font-medium ${overdue ? 'text-[#FF6161]/80' : 'text-[var(--ag-text-muted)]/60'}`}>
                                       {formatRelativeTime(reminder.datetime)}
                                     </span>
                                     {dueSoon && (
@@ -1393,7 +1399,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                       {reminder.category}
                                     </Badge>
                                     {reminder.recurring && (
-                                      <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
+                                      <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs">
                                         <Repeat className="w-3 h-3 mr-1" />
                                         {reminder.recurring}
                                       </Badge>
@@ -1433,18 +1439,18 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                           Snoozed {reminder.snoozeCount}×
                                         </button>
                                         {snoozeHistoryId === reminder.id && (
-                                          <div className="absolute left-0 top-full mt-1 z-20 bg-[#0C0C18] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                          <div className="absolute left-0 top-full mt-1 z-20 bg-[var(--ag-bg-surface)] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
                                             <p className="text-xs font-medium text-[#F59E0B] mb-2">Snooze history</p>
                                             {snoozeHistoryLoading ? (
                                               <div className="w-4 h-4 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mx-auto" />
                                             ) : snoozeHistory.length === 0 ? (
-                                              <p className="text-xs text-[#9CA3AF]">No history yet</p>
+                                              <p className="text-xs text-[var(--ag-text-muted)]">No history yet</p>
                                             ) : (
                                               <>
                                                 <div className="space-y-1.5">
                                                   {snoozeHistory.map((h) => (
-                                                    <div key={h.id} className="text-xs text-[#9CA3AF]">
-                                                      <span className="text-[#E8E8F0]">{h.preset}</span>
+                                                    <div key={h.id} className="text-xs text-[var(--ag-text-muted)]">
+                                                      <span className="text-[var(--ag-text-primary)]">{h.preset}</span>
                                                       {' → '}
                                                       {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                     </div>
@@ -1456,7 +1462,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                                   snoozeHistory.forEach((h) => { counts[h.preset] = (counts[h.preset] ?? 0) + 1; });
                                                   const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
                                                   return (
-                                                    <p className="text-xs text-[#9CA3AF]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
+                                                    <p className="text-xs text-[var(--ag-text-muted)]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
                                                       Total {snoozeHistory.length} snooze{snoozeHistory.length !== 1 ? 's' : ''}
                                                       {mostUsed ? <>{' · Most used: '}<span className="text-[#F59E0B]">{mostUsed}</span></> : null}
                                                     </p>
@@ -1479,7 +1485,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                         ? 'bg-[#00FF88]/30 text-[#00FF88] scale-125'
                                         : reminder.completed
                                         ? 'bg-[#00FF88]/20 text-[#00FF88] scale-100'
-                                        : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88] scale-100'
+                                        : ' text-[var(--ag-text-muted)] hover:text-[#00FF88] scale-100'
                                     }`}
                                   >
                                     <Check className="w-4 h-4" />
@@ -1489,21 +1495,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                       <button
                                         onClick={() => setSnoozeOpenId(snoozeOpenId === reminder.id ? null : reminder.id)}
                                         aria-label="Snooze reminder"
-                                        className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                        className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                                       >
                                         <AlarmClock className="w-4 h-4" />
                                       </button>
                                       {snoozeOpenId === reminder.id && (
-                                        <div className="absolute right-0 top-full mt-1 z-10 bg-[#0C0C18] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
-                                          <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
-                                          <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
-                                          <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                        <div className="absolute right-0 top-full mt-1 z-10 bg-[var(--ag-bg-surface)] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
+                                          <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">+1 hour</button>
+                                          <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">Tomorrow 9am</button>
+                                          <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">Next week</button>
                                           <button onClick={() => setSnoozeCustomId(snoozeCustomId === reminder.id ? null : reminder.id)} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#FFB800] whitespace-nowrap">Custom time…</button>
                                           {snoozeCustomId === reminder.id && (
                                             <div className="flex gap-1 mt-1 px-1">
                                               <input
                                                 type="datetime-local"
-                                                className="text-xs bg-[#06060B] border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[#E8E8F0] flex-1 min-w-0"
+                                                className="text-xs border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[var(--ag-text-primary)] flex-1 min-w-0"
                                                 value={snoozeCustomValue}
                                                 onChange={(e) => setSnoozeCustomValue(e.target.value)}
                                               />
@@ -1522,21 +1528,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     onClick={() => void handleDuplicate(reminder.id)}
                                     aria-label="Duplicate reminder"
                                     disabled={duplicatingId === reminder.id}
-                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                                    className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
                                   >
                                     <Copy className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => handleEditClick(reminder)}
                                     aria-label="Edit reminder"
-                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                    className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                                   >
                                     <Pencil className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => handleDelete(reminder.id)}
                                     aria-label="Delete reminder"
-                                    className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                    className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1563,7 +1569,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               return (
                 <Card
                   key={reminder.id}
-                  className={`bg-[#0C0C18] border transition-all duration-300 ${
+                  className={`bg-[var(--ag-bg-surface)] border transition-all duration-300 ${
                     isCompleting
                       ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
                       : isJustCompleted
@@ -1603,10 +1609,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                           ? 'bg-[#FF6161]/10'
                           : 'bg-[#00F0FF]/10'
                       }`}>
-                        <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#00F0FF]'}`}>
+                        <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-cyan)]'}`}>
                           {formatted.month}
                         </div>
-                        <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[#E8E8F0]'}`}>
+                        <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-text-primary)]'}`}>
                           {formatted.day}
                         </div>
                       </div>
@@ -1619,7 +1625,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               <input
                                 ref={inlineEditRef}
                                 autoFocus
-                                className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[#E8E8F0] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
+                                className="w-full bg-[#0A0A14] border border-[#00F0FF]/40 rounded px-2 py-0.5 text-[var(--ag-text-primary)] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/60"
                                 value={inlineEditValue}
                                 onChange={(e) => setInlineEditValue(e.target.value)}
                                 onKeyDown={(e) => {
@@ -1631,7 +1637,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                             ) : (
                               <p
                                 className={`font-medium cursor-text hover:bg-[#00F0FF]/5 rounded px-1 -mx-1 transition-all duration-300 ${
-                                  isCompleting ? 'line-through text-[#9CA3AF] opacity-60' : reminder.completed ? 'line-through text-[#9CA3AF]' : 'text-[#E8E8F0]'
+                                  isCompleting ? 'line-through text-[var(--ag-text-muted)] opacity-60' : reminder.completed ? 'line-through text-[var(--ag-text-muted)]' : 'text-[var(--ag-text-primary)]'
                                 }`}
                                 style={{ textDecorationColor: isCompleting ? '#00FF88' : undefined }}
                                 title="Click to edit"
@@ -1641,7 +1647,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[#9CA3AF]'}`}>
+                              <span className={`text-xs flex items-center gap-1 ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-text-muted)]'}`}>
                                 <Clock className="w-3 h-3" />
                                 {formatted.time}
                               </span>
@@ -1663,7 +1669,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                 {reminder.category}
                               </Badge>
                               {reminder.recurring && (
-                                <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs">
+                                <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs">
                                   <Repeat className="w-3 h-3 mr-1" />
                                   {reminder.recurring}
                                 </Badge>
@@ -1703,18 +1709,18 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                     Snoozed {reminder.snoozeCount}×
                                   </button>
                                   {snoozeHistoryId === reminder.id && (
-                                    <div className="absolute left-0 top-full mt-1 z-20 bg-[#0C0C18] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                    <div className="absolute left-0 top-full mt-1 z-20 bg-[var(--ag-bg-surface)] border border-[#F59E0B]/30 rounded-xl shadow-lg p-3 min-w-[200px]">
                                       <p className="text-xs font-medium text-[#F59E0B] mb-2">Snooze history</p>
                                       {snoozeHistoryLoading ? (
                                         <div className="w-4 h-4 border-2 border-[#F59E0B]/30 border-t-[#F59E0B] rounded-full animate-spin mx-auto" />
                                       ) : snoozeHistory.length === 0 ? (
-                                        <p className="text-xs text-[#9CA3AF]">No history yet</p>
+                                        <p className="text-xs text-[var(--ag-text-muted)]">No history yet</p>
                                       ) : (
                                         <>
                                           <div className="space-y-1.5">
                                             {snoozeHistory.map((h) => (
-                                              <div key={h.id} className="text-xs text-[#9CA3AF]">
-                                                <span className="text-[#E8E8F0]">{h.preset}</span>
+                                              <div key={h.id} className="text-xs text-[var(--ag-text-muted)]">
+                                                <span className="text-[var(--ag-text-primary)]">{h.preset}</span>
                                                 {' → '}
                                                 {new Date(h.new_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                               </div>
@@ -1726,7 +1732,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                             snoozeHistory.forEach((h) => { counts[h.preset] = (counts[h.preset] ?? 0) + 1; });
                                             const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
                                             return (
-                                              <p className="text-xs text-[#9CA3AF]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
+                                              <p className="text-xs text-[var(--ag-text-muted)]/70 border-t border-[#F59E0B]/20 pt-1.5 mt-1.5">
                                                 Total {snoozeHistory.length} snooze{snoozeHistory.length !== 1 ? 's' : ''}
                                                 {mostUsed ? <>{' · Most used: '}<span className="text-[#F59E0B]">{mostUsed}</span></> : null}
                                               </p>
@@ -1749,7 +1755,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                   ? 'bg-[#00FF88]/30 text-[#00FF88] scale-125'
                                   : reminder.completed
                                   ? 'bg-[#00FF88]/20 text-[#00FF88] scale-100'
-                                  : 'bg-[#06060B] text-[#9CA3AF] hover:text-[#00FF88] scale-100'
+                                  : ' text-[var(--ag-text-muted)] hover:text-[#00FF88] scale-100'
                               }`}
                             >
                               <Check className="w-4 h-4" />
@@ -1759,21 +1765,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                                 <button
                                   onClick={() => setSnoozeOpenId(snoozeOpenId === reminder.id ? null : reminder.id)}
                                   aria-label="Snooze reminder"
-                                  className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FFB800] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 >
                                   <AlarmClock className="w-4 h-4" />
                                 </button>
                                 {snoozeOpenId === reminder.id && (
-                                  <div className="absolute right-0 top-full mt-1 z-10 bg-[#0C0C18] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
-                                    <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">+1 hour</button>
-                                    <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Tomorrow 9am</button>
-                                    <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#E8E8F0] whitespace-nowrap">Next week</button>
+                                  <div className="absolute right-0 top-full mt-1 z-10 bg-[var(--ag-bg-surface)] border border-[#FFB800]/30 rounded-xl shadow-lg p-2 flex flex-col gap-1 min-w-[120px]">
+                                    <button onClick={() => handleSnooze(reminder.id, '1h')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">+1 hour</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'tomorrow')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">Tomorrow 9am</button>
+                                    <button onClick={() => handleSnooze(reminder.id, 'next-week')} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[var(--ag-text-primary)] whitespace-nowrap">Next week</button>
                                     <button onClick={() => setSnoozeCustomId(snoozeCustomId === reminder.id ? null : reminder.id)} className="text-xs text-left px-3 py-2 rounded-lg hover:bg-[#FFB800]/10 text-[#FFB800] whitespace-nowrap">Custom time…</button>
                                     {snoozeCustomId === reminder.id && (
                                       <div className="flex gap-1 mt-1 px-1">
                                         <input
                                           type="datetime-local"
-                                          className="text-xs bg-[#06060B] border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[#E8E8F0] flex-1 min-w-0"
+                                          className="text-xs border border-[#FFB800]/30 rounded-lg px-2 py-1 text-[var(--ag-text-primary)] flex-1 min-w-0"
                                           value={snoozeCustomValue}
                                           onChange={(e) => setSnoozeCustomValue(e.target.value)}
                                         />
@@ -1792,21 +1798,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               onClick={() => void handleDuplicate(reminder.id)}
                               aria-label="Duplicate reminder"
                               disabled={duplicatingId === reminder.id}
-                              className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#00F0FF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                              className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
                             >
                               <Copy className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEditClick(reminder)}
                               aria-label="Edit reminder"
-                              className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                              className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#BF5FFF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(reminder.id)}
                               aria-label="Delete reminder"
-                              className="p-2.5 rounded-lg bg-[#06060B] text-[#9CA3AF] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                              className="p-2.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1825,21 +1831,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         <Card className="border-[#00F0FF]/20">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#00F0FF]" />
+              <Calendar className="w-5 h-5 text-[var(--ag-cyan)]" />
               Calendar View
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 gap-2 text-center">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-xs text-[#9CA3AF] py-2">
+                <div key={day} className="text-xs text-[var(--ag-text-muted)] py-2">
                   {day}
                 </div>
               ))}
               {Array.from({ length: 35 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-square rounded-lg bg-[#06060B] border border-[#00F0FF]/10 p-1 text-xs text-[#9CA3AF]"
+                  className="aspect-square rounded-lg border border-[#00F0FF]/10 p-1 text-xs text-[var(--ag-text-muted)]"
                 >
                   {i + 1}
                 </div>
@@ -1867,7 +1873,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             {!editingReminder && (
               <>
                 <div>
-                  <label className="text-sm text-[#9CA3AF] mb-2 block">
+                  <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">
                     Type naturally (e.g., "tomorrow at 3pm call mom")
                   </label>
                   <div className="flex gap-2">
@@ -1877,7 +1883,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       placeholder="Remind me..."
                       value={naturalInput}
                       onChange={(e) => setNaturalInput(e.target.value)}
-                      className="flex-1 bg-[#06060B] border-[#00F0FF]/20"
+                      className="flex-1 border-[#00F0FF]/20"
                       autoFocus
                     />
                     <Button
@@ -1890,9 +1896,9 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   </div>
 
                   {parsedReminder && (
-                    <div className="mt-2 p-3.5 rounded-xl bg-[#06060B]/80 border border-[#00FF88]/20 animate-in fade-in duration-200">
+                    <div className="mt-2 p-3.5 rounded-xl /80 border border-[#00FF88]/20 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">Will create</span>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ag-text-muted)]">Will create</span>
                         <span
                           className="text-xs font-medium px-2 py-0.5 rounded-full"
                           style={{
@@ -1903,7 +1909,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                           {Math.round(parsedReminder.confidence * 100)}%
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-[#E8E8F0]">{parsedReminder.text}</p>
+                      <p className="text-sm font-medium text-[var(--ag-text-primary)]">{parsedReminder.text}</p>
                       <p className="text-xs text-[#FFB800] mt-1 flex items-center gap-1.5">
                         <Calendar className="w-3 h-3" />
                         {parsedReminder.datetime.toLocaleString('en-US', {
@@ -1911,7 +1917,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                           hour: '2-digit', minute: '2-digit',
                         })}
                         {parsedReminder.recurring && (
-                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] text-xs ml-1">
+                          <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs ml-1">
                             <Repeat className="w-3 h-3 mr-1" />
                             {parsedReminder.recurring}
                           </Badge>
@@ -1926,7 +1932,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     <div className="w-full border-t border-[#00F0FF]/20" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="px-2 bg-[#0C0C18] text-xs text-[#9CA3AF]">Or manually</span>
+                    <span className="px-2 bg-[var(--ag-bg-surface)] text-xs text-[var(--ag-text-muted)]">Or manually</span>
                   </div>
                 </div>
               </>
@@ -1935,26 +1941,26 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             {/* Manual Form */}
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1 block">What to remind?</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">What to remind?</label>
                 <Input
                   placeholder="Enter reminder text..."
                   value={newReminder.text}
                   onChange={(e) => setNewReminder({ ...newReminder, text: e.target.value })}
-                  className="bg-[#06060B] border-[#00F0FF]/20"
+                  className="border-[#00F0FF]/20"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">When?</label>
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">When?</label>
                   <Input
                     type="datetime-local"
                     value={newReminder.datetime}
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
-                    className="bg-[#06060B] border-[#00F0FF]/20"
+                    className="border-[#00F0FF]/20"
                   />
                   {/* 69.3: Friendly due label in edit mode */}
                   {editingReminder && newReminder.datetime && (
-                    <p className="text-xs text-[#00F0FF] mt-1">
+                    <p className="text-xs text-[var(--ag-cyan)] mt-1">
                       {humanDue(new Date(newReminder.datetime).toISOString())}
                     </p>
                   )}
@@ -2000,7 +2006,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                         key={preset.label}
                         type="button"
                         onClick={() => setNewReminder({ ...newReminder, datetime: preset.getDatetime() })}
-                        className="px-2 py-2.5 rounded text-xs bg-[#06060B] border border-[#00F0FF]/20 text-[#9CA3AF] hover:border-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors min-h-[44px]"
+                        className="px-2 py-2.5 rounded text-xs border border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:border-[#00F0FF]/60 hover:text-[var(--ag-cyan)] transition-colors min-h-[44px]"
                       >
                         {preset.label}
                       </button>
@@ -2008,11 +2014,11 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Category</label>
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Category</label>
                   <select
                     value={newReminder.category}
                     onChange={(e) => setNewReminder({ ...newReminder, category: e.target.value as ReminderCategory })}
-                    className="w-full px-3 py-2 rounded-md bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] text-sm"
+                    className="w-full px-3 py-2 rounded-md border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm"
                   >
                     <option value="personal">Personal</option>
                     <option value="work">Work</option>
@@ -2023,7 +2029,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               </div>
               {/* 62.2: Visual recurring rule builder — unified, replaces split Recurring+Repeat UI */}
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1.5 block">Recurrence</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Recurrence</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {([
                     { label: 'Never', value: '' as const, desc: 'One-time' },
@@ -2037,8 +2043,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       onClick={() => setNewReminder({ ...newReminder, recurrence: value, recurring: value })}
                       className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border text-center transition-colors ${
                         (newReminder.recurrence || '') === value
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[#00F0FF]'
-                          : 'border-[#1C1C2E] bg-[#06060B] text-[#9CA3AF] hover:border-[#00F0FF]/30 hover:text-[#E8E8F0]'
+                          ? 'border-[#00F0FF] bg-[#00F0FF]/10 text-[var(--ag-cyan)]'
+                          : 'border-[#1C1C2E]  text-[var(--ag-text-muted)] hover:border-[#00F0FF]/30 hover:text-[var(--ag-text-primary)]'
                       }`}
                     >
                       <span className="text-xs font-semibold">{label}</span>
@@ -2048,7 +2054,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                 </div>
               </div>
               <div data-testid="priority-selector">
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Priority</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Priority</label>
                 <div className="flex gap-2">
                   {(['low', 'normal', 'high', 'urgent'] as const).map((p) => {
                     const cfg = priorityConfig[p];
@@ -2104,8 +2110,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {recurringEditChoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)' }}>
           <div className="w-full max-w-sm rounded-2xl border border-[#BF5FFF]/30 p-6" style={{ background: '#06060B' }}>
-            <h3 className="text-base font-semibold text-[#E8E8F0] mb-1">Edit recurring reminder</h3>
-            <p className="text-sm text-[#9CA3AF] mb-5">This is a <span className="text-[#BF5FFF]">{recurringEditChoice.recurrence}</span> reminder. What would you like to edit?</p>
+            <h3 className="text-base font-semibold text-[var(--ag-text-primary)] mb-1">Edit recurring reminder</h3>
+            <p className="text-sm text-[var(--ag-text-muted)] mb-5">This is a <span className="text-[#BF5FFF]">{recurringEditChoice.recurrence}</span> reminder. What would you like to edit?</p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
@@ -2125,13 +2131,13 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   setEditAsOneOff(false);
                   handleEditClick(r, true);
                 }}
-                className="w-full py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-sm font-medium transition-colors"
+                className="w-full py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-sm font-medium transition-colors"
               >
                 All future occurrences
               </button>
               <button
                 onClick={() => setRecurringEditChoice(null)}
-                className="w-full py-2 text-sm text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors"
+                className="w-full py-2 text-sm text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors"
               >
                 Cancel
               </button>
@@ -2140,6 +2146,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         </div>
       )}
     </div>
+    </PageShell>
     </PullToRefreshWrapper>
   );
 }

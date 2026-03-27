@@ -202,18 +202,17 @@ describe('Phase 81 — Image Generation Pipeline', () => {
       expect(src).toContain('imageCapError');
     });
 
-    it('ImageGalleryPage component exists', () => {
-      const src = readFile('src/dashboard/pages/ImageGalleryPage.tsx');
-      expect(src).toContain('ImageGalleryPage');
-      // B6: unified to use imageService.list (GET /api/images) instead of the
-      // old /image/gallery endpoint so generated images appear in the gallery
+    // ImageGalleryPage was merged into ImageCreatorPage (tabbed)
+    it('ImageCreatorPage component exists (successor to ImageGalleryPage)', () => {
+      const src = readFile('src/dashboard/pages/ImageCreatorPage.tsx');
+      expect(src).toContain('ImageCreatorPage');
       expect(src).toContain('imageService');
     });
 
     it('gallery route is registered in DashboardApp', () => {
       const src = readFile('src/dashboard/DashboardApp.tsx');
       expect(src).toContain("'gallery'");
-      expect(src).toContain('ImageGalleryPage');
+      expect(src).toContain('ImageCreatorPage');
     });
   });
 

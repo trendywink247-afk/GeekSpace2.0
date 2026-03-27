@@ -9,6 +9,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { readFileSync, statSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { timingSafeEqual } from 'crypto';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { getMetricsSnapshot } from '../middleware/metrics.js';
@@ -21,6 +22,18 @@ import { invalidateClustersCache } from '../routes/suggestions.js';
 import { v4 as uuidV4 } from 'uuid';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** Timing-safe string comparison to prevent timing side-channel attacks. */
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    // Compare against self to burn constant time, then return false
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
 
 // Task 68.5: In-memory rate limit for triage endpoint (max 1 per 60s)
 let lastTriageTime = 0;
@@ -64,7 +77,7 @@ function requireAdminPassword(req: Request, res: Response, next: NextFunction): 
     return;
   }
   const provided = req.headers['x-admin-password'] as string;
-  if (!provided || provided !== config.adminDashboardPassword) {
+  if (!provided || !safeCompare(provided, config.adminDashboardPassword)) {
     res.status(401).json({ error: 'Invalid admin password' });
     return;
   }
@@ -79,7 +92,7 @@ function requireAdminToken(req: Request, res: Response, next: NextFunction): voi
   }
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (!token || token !== config.adminToken) {
+  if (!token || !safeCompare(token, config.adminToken)) {
     res.status(401).json({ error: 'Invalid admin token' });
     return;
   }

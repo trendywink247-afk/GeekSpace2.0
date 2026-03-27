@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   Mail, RefreshCw, Link, Unlink, Send, X, ChevronDown, ChevronUp,
   Star, Paperclip, Search, Plus, Sparkles, Reply, Forward,
@@ -53,7 +54,7 @@ const PRIORITY_COLOR: Record<string, string> = {
   urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
   high: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   normal: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  low: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  low: 'bg-gray-500/20 text-[var(--ag-text-muted)] border-gray-500/30',
 };
 
 const FILTER_OPTIONS: { key: FilterKey; label: string; icon: typeof Mail }[] = [
@@ -98,7 +99,7 @@ function hasAttachmentHeuristic(msg: GmailMessage): boolean {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function GmailPage() {
+export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
   /* ---------- State ---------- */
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [messages, setMessages] = useState<GmailMessage[]>([]);
@@ -275,7 +276,7 @@ export function GmailPage() {
   };
 
   const handleReply = async () => {
-    if (!selected?.id || !replyText.trim()) return;
+    if (!selected?.id || !selected.inbox_id || !replyText.trim()) return;
     setSending(true);
     setError('');
     try {
@@ -443,7 +444,7 @@ export function GmailPage() {
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
-          <span className="text-[#E8E8F0]/40 text-sm">Loading Gmail...</span>
+          <span className="text-[var(--ag-text-primary)]/40 text-sm">Loading Gmail...</span>
         </div>
       </div>
     );
@@ -457,10 +458,10 @@ export function GmailPage() {
         <Card className="bg-[#0D0D1A] border-white/10">
           <CardContent className="py-12 text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mx-auto">
-              <Mail className="w-8 h-8 text-[#00F0FF]" />
+              <Mail className="w-8 h-8 text-[var(--ag-cyan)]" />
             </div>
             <h2 className="text-[#F4F6FF] text-lg font-semibold">Gmail Integration</h2>
-            <p className="text-[#E8E8F0]/50 text-sm max-w-md mx-auto">
+            <p className="text-[var(--ag-text-primary)]/50 text-sm max-w-md mx-auto">
               Gmail integration requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be configured by your administrator.
             </p>
           </CardContent>
@@ -479,23 +480,23 @@ export function GmailPage() {
 
             <div className="relative space-y-6">
               <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto">
-                <Mail className="w-10 h-10 text-[#00F0FF]" />
+                <Mail className="w-10 h-10 text-[var(--ag-cyan)]" />
               </div>
 
               <div className="space-y-2">
                 <h2 className="text-[#F4F6FF] text-xl font-semibold">Connect Gmail</h2>
-                <p className="text-[#E8E8F0]/50 text-sm max-w-sm mx-auto">
+                <p className="text-[var(--ag-text-primary)]/50 text-sm max-w-sm mx-auto">
                   Sync your Gmail inbox with AI-powered summaries, smart replies, and priority sorting.
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3 text-xs text-[#E8E8F0]/40">
+              <div className="flex flex-wrap justify-center gap-3 text-xs text-[var(--ag-text-primary)]/40">
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
                   <Sparkles className="w-3 h-3 text-[#BF5FFF]" />
                   AI Summaries
                 </span>
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
-                  <Reply className="w-3 h-3 text-[#00F0FF]" />
+                  <Reply className="w-3 h-3 text-[var(--ag-cyan)]" />
                   Smart Replies
                 </span>
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
@@ -505,7 +506,7 @@ export function GmailPage() {
               </div>
 
               <Button onClick={handleConnect}
-                className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 transition-all px-6 py-2.5 text-sm font-medium min-h-[44px]">
+                className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 transition-all px-6 py-2.5 text-sm font-medium min-h-[44px]">
                 <Link className="w-4 h-4 mr-2" />
                 Connect Gmail Account
               </Button>
@@ -518,17 +519,21 @@ export function GmailPage() {
 
   /* ---------- Connected state ---------- */
 
+  const Wrapper = shell ? PageShell : 'div';
+  const wrapperProps = shell ? { maxWidth: '6xl' as const } : {};
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 p-4 pb-24 md:p-0 md:pb-6">
+    <Wrapper {...wrapperProps}>
+    <div className="space-y-6">
       {/* Stats header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center shrink-0">
-            <Mail className="w-5 h-5 text-[#00F0FF]" />
+            <Mail className="w-5 h-5 text-[var(--ag-cyan)]" />
           </div>
           <div>
             <h1 className="text-[#F4F6FF] text-lg font-semibold">Gmail <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📧 Managed by Jarvis</span></h1>
-            <div className="flex items-center gap-1.5 text-xs text-[#E8E8F0]/40">
+            <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-primary)]/40">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
               <span className="truncate max-w-[180px]">{status.email}</span>
             </div>
@@ -539,7 +544,7 @@ export function GmailPage() {
           {/* Stats pills */}
           <div className="flex items-center gap-2 text-xs">
             {stats.unread > 0 && (
-              <span className="bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20 px-2.5 py-1 rounded-full font-medium">
+              <span className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20 px-2.5 py-1 rounded-full font-medium">
                 {stats.unread} unread
               </span>
             )}
@@ -548,7 +553,7 @@ export function GmailPage() {
                 {stats.starred} starred
               </span>
             )}
-            <span className="text-[#E8E8F0]/30">
+            <span className="text-[var(--ag-text-primary)]/30">
               {stats.total} total
             </span>
           </div>
@@ -556,12 +561,12 @@ export function GmailPage() {
           {/* Last sync + actions */}
           <div className="flex items-center gap-2">
             {status.lastSync && (
-              <span className="text-[#E8E8F0]/30 text-xs hidden md:block">
+              <span className="text-[var(--ag-text-primary)]/30 text-xs hidden md:block">
                 Synced {timeSince(new Date(status.lastSync).getTime())}
               </span>
             )}
             <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}
-              className="border-white/10 text-[#E8E8F0] hover:bg-white/5 text-xs h-9 min-h-[44px] px-3">
+              className="border-white/10 text-[var(--ag-text-primary)] hover:bg-white/5 text-xs h-9 min-h-[44px] px-3">
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing...' : 'Sync'}
             </Button>
@@ -590,7 +595,7 @@ export function GmailPage() {
       {/* Search bar + filters */}
       <div className="space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#E8E8F0]/30 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-primary)]/30 pointer-events-none" />
           <Input
             type="text"
             value={searchQuery}
@@ -601,7 +606,7 @@ export function GmailPage() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#E8E8F0]/30 hover:text-[#E8E8F0]/60 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-3"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-primary)]/30 hover:text-[var(--ag-text-primary)]/60 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-3"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -617,14 +622,14 @@ export function GmailPage() {
               onClick={() => setActiveFilter(key)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 activeFilter === key
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
-                  : 'bg-white/5 text-[#E8E8F0]/50 hover:text-[#E8E8F0]/80 hover:bg-white/10 border border-transparent'
+                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
+                  : 'bg-white/5 text-[var(--ag-text-primary)]/50 hover:text-[var(--ag-text-primary)]/80 hover:bg-white/10 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               {label}
               {key === 'unread' && stats.unread > 0 && (
-                <span className="bg-[#00F0FF]/20 text-[#00F0FF] text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                <span className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                   {stats.unread}
                 </span>
               )}
@@ -638,11 +643,11 @@ export function GmailPage() {
         {/* Email thread list */}
         <div className="lg:col-span-2 space-y-1">
           {filteredMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center border border-white/5 rounded-xl bg-[#0D0D1A]">
+            <div className="flex flex-col items-center justify-center py-16 text-center border border-[var(--ag-border-subtle)] rounded-xl bg-[#0D0D1A]">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                <Mail className="w-6 h-6 text-[#E8E8F0]/20" />
+                <Mail className="w-6 h-6 text-[var(--ag-text-primary)]/20" />
               </div>
-              <p className="text-[#E8E8F0]/40 text-sm">
+              <p className="text-[var(--ag-text-primary)]/40 text-sm">
                 {searchQuery
                   ? 'No emails match your search'
                   : activeFilter !== 'all'
@@ -652,7 +657,7 @@ export function GmailPage() {
               {!searchQuery && activeFilter === 'all' && (
                 <button
                   onClick={handleSync}
-                  className="mt-3 text-[#00F0FF] text-xs hover:underline min-h-[44px] flex items-center"
+                  className="mt-3 text-[var(--ag-cyan)] text-xs hover:underline min-h-[44px] flex items-center"
                 >
                   Sync now to fetch emails
                 </button>
@@ -675,15 +680,15 @@ export function GmailPage() {
                         ? 'border-[#00F0FF]/30 bg-[#00F0FF]/5'
                         : isUnread
                           ? 'border-white/10 bg-[#0D0D1A] hover:border-[#00F0FF]/20 hover:bg-[#0D0D1A]/80'
-                          : 'border-white/5 bg-[#0D0D1A]/60 hover:border-white/10 hover:bg-[#0D0D1A]/80'
+                          : 'border-[var(--ag-border-subtle)] bg-[#0D0D1A]/60 hover:border-white/10 hover:bg-[#0D0D1A]/80'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       {/* Avatar */}
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
                         isUnread
-                          ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
-                          : 'bg-white/10 text-[#E8E8F0]/50'
+                          ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)]'
+                          : 'bg-white/10 text-[var(--ag-text-primary)]/50'
                       }`}>
                         {senderInitial(msg.sender)}
                       </div>
@@ -692,11 +697,11 @@ export function GmailPage() {
                         {/* Sender + timestamp row */}
                         <div className="flex items-center justify-between gap-2 mb-0.5">
                           <span className={`text-xs truncate ${
-                            isUnread ? 'text-[#F4F6FF] font-semibold' : 'text-[#E8E8F0]/70'
+                            isUnread ? 'text-[#F4F6FF] font-semibold' : 'text-[var(--ag-text-primary)]/70'
                           }`}>
                             {senderName(msg.sender)}
                           </span>
-                          <span className="text-[10px] text-[#E8E8F0]/30 shrink-0">
+                          <span className="text-[10px] text-[var(--ag-text-primary)]/30 shrink-0">
                             {timeSince(msg.synced_at)}
                           </span>
                         </div>
@@ -704,7 +709,7 @@ export function GmailPage() {
                         {/* Subject */}
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className={`text-xs truncate ${
-                            isUnread ? 'text-[#F4F6FF] font-medium' : 'text-[#E8E8F0]/60'
+                            isUnread ? 'text-[#F4F6FF] font-medium' : 'text-[var(--ag-text-primary)]/60'
                           }`}>
                             {msg.subject || '(no subject)'}
                           </span>
@@ -712,7 +717,7 @@ export function GmailPage() {
 
                         {/* Snippet */}
                         {msg.snippet && (
-                          <p className="text-[11px] text-[#E8E8F0]/30 truncate">
+                          <p className="text-[11px] text-[var(--ag-text-primary)]/30 truncate">
                             {msg.snippet}
                           </p>
                         )}
@@ -728,7 +733,7 @@ export function GmailPage() {
                             <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] shrink-0" />
                           )}
                           {hasAttachment && (
-                            <Paperclip className="w-3 h-3 text-[#E8E8F0]/25" />
+                            <Paperclip className="w-3 h-3 text-[var(--ag-text-primary)]/25" />
                           )}
                           <div className="flex-1" />
                           {/* Star toggle */}
@@ -741,7 +746,7 @@ export function GmailPage() {
                             <Star className={`w-3.5 h-3.5 ${
                               isStarred
                                 ? 'text-amber-400 fill-amber-400'
-                                : 'text-[#E8E8F0]/20'
+                                : 'text-[var(--ag-text-primary)]/20'
                             }`} />
                           </button>
                         </div>
@@ -759,7 +764,7 @@ export function GmailPage() {
           {selected ? (
             <Card className="bg-[#0D0D1A] border-white/10 overflow-hidden">
               {/* Detail header */}
-              <CardHeader className="pb-3 border-b border-white/5">
+              <CardHeader className="pb-3 border-b border-[var(--ag-border-subtle)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-[#F4F6FF] text-base font-semibold leading-snug mb-1">
@@ -767,12 +772,12 @@ export function GmailPage() {
                     </CardTitle>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-[#00F0FF]/15 flex items-center justify-center text-[10px] font-bold text-[#00F0FF]">
+                        <div className="w-6 h-6 rounded-full bg-[#00F0FF]/15 flex items-center justify-center text-[10px] font-bold text-[var(--ag-cyan)]">
                           {senderInitial(selected.sender)}
                         </div>
-                        <span className="text-[#E8E8F0]/60 text-xs">{selected.sender}</span>
+                        <span className="text-[var(--ag-text-primary)]/60 text-xs">{selected.sender}</span>
                       </div>
-                      <span className="text-[#E8E8F0]/20 text-xs">
+                      <span className="text-[var(--ag-text-primary)]/20 text-xs">
                         {timeSince(selected.synced_at)}
                       </span>
                       {selected.priority && selected.priority !== 'normal' && (
@@ -783,7 +788,7 @@ export function GmailPage() {
                     </div>
                   </div>
                   <button onClick={() => { setSelected(null); setShowReply(false); setShowForward(false); setSmartReplies([]); setThreadSummary(''); setSummaryExpanded(false); }}
-                    className="text-[#E8E8F0]/30 hover:text-[#E8E8F0]/60 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                    className="text-[var(--ag-text-primary)]/30 hover:text-[var(--ag-text-primary)]/60 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                     aria-label="Close detail view">
                     <X className="w-4 h-4" />
                   </button>
@@ -793,36 +798,36 @@ export function GmailPage() {
               <CardContent className="space-y-4 pt-4">
                 {/* AI Summary (from sync) */}
                 {selected.summary && (
-                  <div className="bg-[#BF5FFF]/8 border border-[#BF5FFF]/15 rounded-xl p-3">
+                  <div className="bg-[#BF5FFF]/5 border border-[#BF5FFF]/15 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#BF5FFF]" />
                       <span className="text-[#BF5FFF] text-xs font-medium">AI Summary</span>
                     </div>
-                    <p className="text-[#E8E8F0]/70 text-sm leading-relaxed">{selected.summary}</p>
+                    <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed">{selected.summary}</p>
                   </div>
                 )}
 
                 {/* On-demand Thread Summary */}
                 {(threadSummary || summarizing) && (
-                  <div className="bg-[#8B5CF6]/8 border border-[#8B5CF6]/15 rounded-xl overflow-hidden">
+                  <div className="bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 rounded-xl overflow-hidden">
                     <button
                       onClick={() => setSummaryExpanded(!summaryExpanded)}
                       className="flex items-center gap-2 w-full px-3 py-2.5 text-left min-h-[44px]"
                     >
-                      <FileText className="w-3.5 h-3.5 text-[#8B5CF6] shrink-0" />
-                      <span className="text-[#8B5CF6] text-xs font-medium flex-1">Thread Summary</span>
+                      <FileText className="w-3.5 h-3.5 text-[var(--ag-violet)] shrink-0" />
+                      <span className="text-[var(--ag-violet)] text-xs font-medium flex-1">Thread Summary</span>
                       {summarizing ? (
-                        <Loader2 className="w-3.5 h-3.5 text-[#8B5CF6] animate-spin shrink-0" />
+                        <Loader2 className="w-3.5 h-3.5 text-[var(--ag-violet)] animate-spin shrink-0" />
                       ) : (
-                        <ChevronDown className={`w-3.5 h-3.5 text-[#8B5CF6]/50 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 text-[var(--ag-violet)]/50 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} />
                       )}
                     </button>
                     {summaryExpanded && (
                       <div className="px-3 pb-3">
                         {summarizing ? (
-                          <p className="text-[#E8E8F0]/40 text-xs italic">Summarizing email...</p>
+                          <p className="text-[var(--ag-text-primary)]/40 text-xs italic">Summarizing email...</p>
                         ) : (
-                          <p className="text-[#E8E8F0]/70 text-sm leading-relaxed whitespace-pre-wrap">{threadSummary}</p>
+                          <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed whitespace-pre-wrap">{threadSummary}</p>
                         )}
                       </div>
                     )}
@@ -834,7 +839,7 @@ export function GmailPage() {
                   <div className="space-y-1">
                     <button
                       onClick={() => setExpandedThread(expandedThread === selected.thread_id ? null : selected.thread_id)}
-                      className="flex items-center gap-1.5 text-xs text-[#E8E8F0]/40 hover:text-[#E8E8F0]/60 transition-colors min-h-[44px]"
+                      className="flex items-center gap-1.5 text-xs text-[var(--ag-text-primary)]/40 hover:text-[var(--ag-text-primary)]/60 transition-colors min-h-[44px]"
                     >
                       {expandedThread === selected.thread_id ? (
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -845,17 +850,17 @@ export function GmailPage() {
                     </button>
 
                     {expandedThread === selected.thread_id && (
-                      <div className="space-y-2 pl-2 border-l-2 border-white/5">
+                      <div className="space-y-2 pl-2 border-l-2 border-[var(--ag-border-subtle)]">
                         {threadMessages.filter(m => m.id !== selected.id).map(msg => (
-                          <div key={msg.id} className="bg-white/3 rounded-lg p-3">
+                          <div key={msg.id} className="bg-white/5 rounded-lg p-3">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold text-[#E8E8F0]/50">
+                              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold text-[var(--ag-text-primary)]/50">
                                 {senderInitial(msg.sender)}
                               </div>
-                              <span className="text-[#E8E8F0]/50 text-xs truncate">{senderName(msg.sender)}</span>
-                              <span className="text-[#E8E8F0]/20 text-[10px] ml-auto shrink-0">{timeSince(msg.synced_at)}</span>
+                              <span className="text-[var(--ag-text-primary)]/50 text-xs truncate">{senderName(msg.sender)}</span>
+                              <span className="text-[var(--ag-text-primary)]/20 text-[10px] ml-auto shrink-0">{timeSince(msg.synced_at)}</span>
                             </div>
-                            <p className="text-[#E8E8F0]/40 text-xs">{msg.snippet || msg.subject}</p>
+                            <p className="text-[var(--ag-text-primary)]/40 text-xs">{msg.snippet || msg.subject}</p>
                           </div>
                         ))}
                       </div>
@@ -864,8 +869,8 @@ export function GmailPage() {
                 )}
 
                 {/* Email content */}
-                <div className="bg-white/3 rounded-xl p-4">
-                  <p className="text-[#E8E8F0]/70 text-sm leading-relaxed whitespace-pre-wrap">
+                <div className="bg-white/5 rounded-xl p-4">
+                  <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed whitespace-pre-wrap">
                     {selected.snippet || selected.summary || '(no content preview available)'}
                   </p>
                 </div>
@@ -873,11 +878,11 @@ export function GmailPage() {
                 {/* Smart Reply Chips */}
                 {(smartReplies.length > 0 || loadingReplies) && (
                   <div className="space-y-2">
-                    <span className="text-[#E8E8F0]/30 text-[11px] font-medium uppercase tracking-wider">Smart Replies</span>
+                    <span className="text-[var(--ag-text-primary)]/30 text-[11px] font-medium uppercase tracking-wider">Smart Replies</span>
                     {loadingReplies ? (
                       <div className="flex items-center gap-2">
-                        <Loader2 className="w-3.5 h-3.5 text-[#00F0FF]/50 animate-spin" />
-                        <span className="text-[#E8E8F0]/30 text-xs">Generating suggestions...</span>
+                        <Loader2 className="w-3.5 h-3.5 text-[var(--ag-cyan)]/50 animate-spin" />
+                        <span className="text-[var(--ag-text-primary)]/30 text-xs">Generating suggestions...</span>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -887,8 +892,8 @@ export function GmailPage() {
                             onClick={() => { setReplyText(reply.text); setShowReply(true); setShowForward(false); }}
                             className={`px-3 py-1.5 rounded-full text-xs border transition-all hover:bg-white/5 min-h-[36px] ${
                               reply.tone === 'positive' ? 'border-[#00FF88]/30 text-[#00FF88] hover:border-[#00FF88]/50' :
-                              reply.tone === 'action' ? 'border-[#00F0FF]/30 text-[#00F0FF] hover:border-[#00F0FF]/50' :
-                              'border-[#9CA3AF]/30 text-[#9CA3AF] hover:border-[#9CA3AF]/50'
+                              reply.tone === 'action' ? 'border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:border-[#00F0FF]/50' :
+                              'border-[#9CA3AF]/30 text-[var(--ag-text-muted)] hover:border-[#9CA3AF]/50'
                             }`}
                           >
                             {reply.text}
@@ -900,19 +905,26 @@ export function GmailPage() {
                 )}
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  {selected.inbox_id == null ? (
+                    <span className="flex items-center gap-1.5 text-[var(--ag-text-primary)]/30 text-xs px-3 py-2 rounded-lg border border-[var(--ag-border-subtle)] bg-white/5 min-h-[44px]">
+                      <Reply className="w-3.5 h-3.5 shrink-0" />
+                      Connect Gmail first to reply
+                    </span>
+                  ) : (
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowReply(true); setShowForward(false); }}
-                    className="border-white/10 text-[#E8E8F0]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
+                    className="border-white/10 text-[var(--ag-text-primary)]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
                   >
                     <Reply className="w-3.5 h-3.5 mr-1.5" />
                     Reply
                   </Button>
+                  )}
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowForward(true); setShowReply(false); }}
-                    className="border-white/10 text-[#E8E8F0]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
+                    className="border-white/10 text-[var(--ag-text-primary)]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
                   >
                     <Forward className="w-3.5 h-3.5 mr-1.5" />
                     Forward
@@ -921,7 +933,7 @@ export function GmailPage() {
                     variant="outline" size="sm"
                     onClick={() => handleSummarize(selected.subject, selected.snippet || selected.summary || '')}
                     disabled={summarizing || !!threadSummary}
-                    className="border-[#8B5CF6]/30 text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs h-9 min-h-[44px]"
+                    className="border-[#8B5CF6]/30 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 text-xs h-9 min-h-[44px]"
                   >
                     {summarizing ? (
                       <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -943,10 +955,10 @@ export function GmailPage() {
 
                 {/* Reply section */}
                 {showReply && (
-                  <div className="space-y-3 border-t border-white/5 pt-4">
+                  <div className="space-y-3 border-t border-[var(--ag-border-subtle)] pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Reply className="w-3.5 h-3.5 text-[#00F0FF]" />
-                      <span className="text-[#E8E8F0]/60 text-xs">
+                      <Reply className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+                      <span className="text-[var(--ag-text-primary)]/60 text-xs">
                         Replying to {senderName(selected.sender)}
                       </span>
                     </div>
@@ -958,12 +970,12 @@ export function GmailPage() {
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowReply(false)}
-                        className="border-white/10 text-[#E8E8F0]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+                        className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
                         Cancel
                       </Button>
                       <Button size="sm" onClick={handleReply}
                         disabled={sending || !replyText.trim()}
-                        className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+                        className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
                         <Send className="w-3.5 h-3.5 mr-1.5" />
                         {sending ? 'Sending...' : 'Send Reply'}
                       </Button>
@@ -973,10 +985,10 @@ export function GmailPage() {
 
                 {/* Forward section */}
                 {showForward && (
-                  <div className="space-y-3 border-t border-white/5 pt-4">
+                  <div className="space-y-3 border-t border-[var(--ag-border-subtle)] pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Forward className="w-3.5 h-3.5 text-[#00F0FF]" />
-                      <span className="text-[#E8E8F0]/60 text-xs">Forward this email</span>
+                      <Forward className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+                      <span className="text-[var(--ag-text-primary)]/60 text-xs">Forward this email</span>
                     </div>
                     <Input
                       type="email"
@@ -993,12 +1005,12 @@ export function GmailPage() {
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowForward(false)}
-                        className="border-white/10 text-[#E8E8F0]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+                        className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
                         Cancel
                       </Button>
                       <Button size="sm" onClick={handleForward}
                         disabled={sending || !forwardTo.trim()}
-                        className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+                        className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
                         <Forward className="w-3.5 h-3.5 mr-1.5" />
                         {sending ? 'Sending...' : 'Forward'}
                       </Button>
@@ -1008,12 +1020,12 @@ export function GmailPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-white/5 rounded-xl bg-[#0D0D1A]">
+            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-[var(--ag-border-subtle)] rounded-xl bg-[#0D0D1A]">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                <MailOpen className="w-6 h-6 text-[#E8E8F0]/15" />
+                <MailOpen className="w-6 h-6 text-[var(--ag-text-primary)]/15" />
               </div>
-              <p className="text-[#E8E8F0]/30 text-sm">Select an email to read</p>
-              <p className="text-[#E8E8F0]/15 text-xs mt-1">Choose from the list on the left</p>
+              <p className="text-[var(--ag-text-primary)]/30 text-sm">Select an email to read</p>
+              <p className="text-[var(--ag-text-primary)]/15 text-xs mt-1">Choose from the list on the left</p>
             </div>
           )}
         </div>
@@ -1033,14 +1045,14 @@ export function GmailPage() {
         <DialogContent className="bg-[#0D0D1A] border-white/10 sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-[#F4F6FF] text-base flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#00F0FF]" />
+              <Mail className="w-4 h-4 text-[var(--ag-cyan)]" />
               Compose Email
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
-              <label className="text-[#E8E8F0]/50 text-xs mb-1 block">To</label>
+              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">To</label>
               <Input
                 type="email"
                 value={composeTo}
@@ -1050,7 +1062,7 @@ export function GmailPage() {
               />
             </div>
             <div>
-              <label className="text-[#E8E8F0]/50 text-xs mb-1 block">Subject</label>
+              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">Subject</label>
               <Input
                 type="text"
                 value={composeSubject}
@@ -1060,7 +1072,7 @@ export function GmailPage() {
               />
             </div>
             <div>
-              <label className="text-[#E8E8F0]/50 text-xs mb-1 block">Body</label>
+              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">Body</label>
               <Textarea
                 value={composeBody}
                 onChange={e => setComposeBody(e.target.value)}
@@ -1082,12 +1094,12 @@ export function GmailPage() {
             </Button>
             <div className="flex-1" />
             <Button variant="outline" size="sm" onClick={() => { setComposeOpen(false); resetCompose(); }}
-              className="border-white/10 text-[#E8E8F0]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+              className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
               Cancel
             </Button>
             <Button size="sm" onClick={handleComposeSend}
               disabled={composeSending || !composeTo.trim() || !composeBody.trim()}
-              className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+              className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
               <Send className="w-3.5 h-3.5 mr-1.5" />
               {composeSending ? 'Sending...' : 'Send'}
             </Button>
@@ -1095,5 +1107,6 @@ export function GmailPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </Wrapper>
   );
 }

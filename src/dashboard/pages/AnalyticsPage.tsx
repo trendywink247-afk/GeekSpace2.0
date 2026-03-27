@@ -1,5 +1,6 @@
 // AnalyticsPage.tsx -- "Agentin Wrapped" -- Personal Analytics Dashboard
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { PageShell } from '@/components/agentin';
 import {
   TrendingUp,
   TrendingDown,
@@ -144,7 +145,7 @@ function computeTrend(data: number[]): 'up' | 'down' | 'flat' {
 
 function SkeletonCard() {
   return (
-    <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
+    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-xl bg-[#1a1a2e]" />
         <div className="flex-1 space-y-2">
@@ -158,7 +159,7 @@ function SkeletonCard() {
 
 function SkeletonHeatmap() {
   return (
-    <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
+    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
       <div className="h-4 w-48 bg-[#1a1a2e] rounded mb-4" />
       <div className="flex gap-1">
         {Array.from({ length: 14 }).map((_, i) => (
@@ -251,7 +252,7 @@ function OverviewCard({
   color?: string;
 }) {
   return (
-    <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5 flex flex-col gap-3 min-w-0">
+    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 flex flex-col gap-3 min-w-0">
       <div className="flex items-start justify-between">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -491,7 +492,7 @@ function AIInsightCard({ insight }: { insight: AIInsight }) {
 
 function SkeletonInsightCard() {
   return (
-    <div className="border-l-2 border-[#1a1a2e] pl-4 py-3 animate-pulse">
+    <div className="border-l-2 border-[var(--ag-border-subtle)] pl-4 py-3 animate-pulse">
       <div className="flex items-start gap-2.5">
         <div className="w-5 h-5 rounded bg-[#1a1a2e] flex-shrink-0" />
         <div className="flex-1 space-y-2">
@@ -522,7 +523,7 @@ function UsageBarChart({
             <span className="text-xs text-[#8892A4] w-20 text-right flex-shrink-0">
               {item.label}
             </span>
-            <div className="flex-1 h-6 bg-[#0C0C18] rounded-full overflow-hidden relative">
+            <div className="flex-1 h-6 bg-[var(--ag-bg-surface)] rounded-full overflow-hidden relative">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
@@ -558,14 +559,14 @@ function PeriodTabs({
   ];
 
   return (
-    <div className="flex gap-1 bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl p-1">
+    <div className="flex gap-1 bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-1">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
             value === tab.key
-              ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
+              ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
               : 'text-[#8892A4] hover:text-[#F4F6FF] border border-transparent'
           }`}
         >
@@ -1071,12 +1072,13 @@ export function AnalyticsPage() {
   // ── Render ────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 md:p-6 pb-24 md:pb-6 space-y-6 max-w-5xl mx-auto">
+    <PageShell maxWidth="5xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#F4F6FF] flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-[#00F0FF]" />
+            <BarChart3 className="w-6 h-6 text-[var(--ag-cyan)]" />
             Agentin Wrapped <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📊 Analyzed by Pulse</span>
           </h1>
           <p className="text-sm text-[#8892A4] mt-1">
@@ -1088,7 +1090,7 @@ export function AnalyticsPage() {
           <button
             onClick={handleExportCSV}
             disabled={exporting || loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#ADFF2F]/10 text-[#8892A4] hover:text-[#ADFF2F] hover:border-[#ADFF2F]/30 transition-all text-sm min-h-[44px] disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#ADFF2F]/10 text-[#8892A4] hover:text-[#ADFF2F] hover:border-[#ADFF2F]/30 transition-all text-sm min-h-[44px] disabled:opacity-40"
             aria-label="Export analytics as CSV"
             title="Export as CSV"
           >
@@ -1098,7 +1100,7 @@ export function AnalyticsPage() {
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all text-sm min-h-[44px]"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/30 transition-all text-sm min-h-[44px]"
             aria-label="Refresh analytics"
           >
             <RefreshCw
@@ -1182,9 +1184,9 @@ export function AnalyticsPage() {
       </section>
 
       {/* 2. Activity Heatmap */}
-      <section className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
         <h2 className="text-sm font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[#00F0FF]" />
+          <Calendar className="w-4 h-4 text-[var(--ag-cyan)]" />
           Activity Heatmap
           <span className="text-xs text-[#8892A4] font-normal ml-1">
             Last 16 weeks
@@ -1201,7 +1203,7 @@ export function AnalyticsPage() {
       </section>
 
       {/* 3. AI-Generated Insights Panel */}
-      <section className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-[#F4F6FF] flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#ADFF2F]" />
@@ -1210,7 +1212,7 @@ export function AnalyticsPage() {
           <button
             onClick={() => void loadAiInsights(true)}
             disabled={aiInsightsLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#12121F] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[#00F0FF] hover:border-[#00F0FF]/30 transition-all text-xs min-h-[36px]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#12121F] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/30 transition-all text-xs min-h-[36px]"
             title="Regenerate insights"
           >
             <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
@@ -1248,12 +1250,12 @@ export function AnalyticsPage() {
       {!loading && (
         <section>
           <h2 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#00F0FF]" />
+            <Activity className="w-4 h-4 text-[var(--ag-cyan)]" />
             Agent Metrics
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Line: Response Latency */}
-            <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
               <h3 className="text-xs font-medium text-[#8892A4] mb-3">
                 Response Latency
                 <span className="text-[#4B5563] ml-1.5">Last 7 days</span>
@@ -1264,7 +1266,7 @@ export function AnalyticsPage() {
             </div>
 
             {/* Doughnut: LLM Provider Distribution */}
-            <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
               <h3 className="text-xs font-medium text-[#8892A4] mb-3">
                 LLM Provider Distribution
               </h3>
@@ -1274,7 +1276,7 @@ export function AnalyticsPage() {
             </div>
 
             {/* Bar: Delegation Counts (full width) */}
-            <div className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5 lg:col-span-2">
+            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 lg:col-span-2">
               <h3 className="text-xs font-medium text-[#8892A4] mb-3">
                 Daily Delegation Counts by Agent
               </h3>
@@ -1287,9 +1289,9 @@ export function AnalyticsPage() {
       )}
 
       {/* 5. Usage by Feature (horizontal bar chart) */}
-      <section className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
         <h2 className="text-sm font-semibold text-[#F4F6FF] mb-5 flex items-center gap-2">
-          <Target className="w-4 h-4 text-[#00F0FF]" />
+          <Target className="w-4 h-4 text-[var(--ag-cyan)]" />
           Usage by Feature
         </h2>
         {loading ? (
@@ -1301,9 +1303,9 @@ export function AnalyticsPage() {
 
       {/* 6. Agent Breakdown (bonus section, retained from original) */}
       {!loading && data.agents.length > 0 && (
-        <section className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-2xl p-5">
+        <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
           <h2 className="text-sm font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#8B5CF6]" />
+            <Activity className="w-4 h-4 text-[var(--ag-violet)]" />
             Agent Usage
             <span className="text-xs text-[#8892A4] font-normal ml-1">
               Last 30 days
@@ -1351,5 +1353,6 @@ export function AnalyticsPage() {
         Insights update in real time as you use Agentin
       </p>
     </div>
+    </PageShell>
   );
 }

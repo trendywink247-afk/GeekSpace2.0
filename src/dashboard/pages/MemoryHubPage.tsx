@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { PageShell } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, Search, Trash2, Clock, RefreshCw,
@@ -295,7 +296,8 @@ export function MemoryHubPage() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24 md:pb-6">
+    <PageShell>
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -328,7 +330,7 @@ export function MemoryHubPage() {
       </div>
 
       {/* Hub tab switcher */}
-      <div className="flex items-center bg-[#0C0C18] border border-white/10 rounded-lg p-0.5 w-fit">
+      <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5 w-fit">
         {hubTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -519,7 +521,7 @@ export function MemoryHubPage() {
                 const isEditing = editingId === memory.id;
 
                 return (
-                  <Card key={memory.id} className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl hover:border-[#00F0FF]/25 transition-all group">
+                  <Card key={memory.id} className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl hover:border-[#00F0FF]/25 transition-all group">
                     <CardContent className="p-4">
                       {isEditing ? (
                         <div className="space-y-3">
@@ -741,5 +743,6 @@ export function MemoryHubPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </PageShell>
   );
 }

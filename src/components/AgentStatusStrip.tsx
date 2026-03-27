@@ -23,9 +23,15 @@ interface AgentStatusStripProps {
 }
 
 const AGENT_META: Record<string, { emoji: string; color: string; glow: string }> = {
-  weebo: { emoji: '\u2728', color: '#ADFF2F', glow: 'shadow-[0_0_8px_rgba(173,255,47,0.3)]' },
+  weebo: { emoji: '\u2728', color: '#00F0FF', glow: 'shadow-[0_0_8px_rgba(0,240,255,0.3)]' },
   edith: { emoji: '\uD83D\uDD37', color: '#8B5CF6', glow: 'shadow-[0_0_8px_rgba(139,92,246,0.3)]' },
-  jarvis: { emoji: '\uD83E\uDD16', color: '#00F0FF', glow: 'shadow-[0_0_8px_rgba(0,240,255,0.3)]' },
+  jarvis: { emoji: '\uD83E\uDD16', color: '#ADFF2F', glow: 'shadow-[0_0_8px_rgba(173,255,47,0.3)]' },
+  aria: { emoji: '\uD83C\uDFA8', color: '#FF6B9D', glow: 'shadow-[0_0_8px_rgba(255,107,157,0.3)]' },
+  forge: { emoji: '\uD83D\uDD27', color: '#F59E0B', glow: 'shadow-[0_0_8px_rgba(245,158,11,0.3)]' },
+  pulse: { emoji: '\uD83D\uDCCA', color: '#10B981', glow: 'shadow-[0_0_8px_rgba(16,185,129,0.3)]' },
+  echo: { emoji: '\uD83D\uDC99', color: '#6366F1', glow: 'shadow-[0_0_8px_rgba(99,102,241,0.3)]' },
+  cal: { emoji: '\uD83D\uDCC5', color: '#84CC16', glow: 'shadow-[0_0_8px_rgba(132,204,22,0.3)]' },
+  nova: { emoji: '\uD83D\uDD2D', color: '#EC4899', glow: 'shadow-[0_0_8px_rgba(236,72,153,0.3)]' },
 };
 
 const STATE_LABELS: Record<string, string> = {
@@ -39,21 +45,37 @@ const STATE_LABELS: Record<string, string> = {
   task_started: 'Working...',
 };
 
+const ALL_AGENTS = [
+  { agentId: 'weebo', agentName: 'Weebo' },
+  { agentId: 'edith', agentName: 'Edith' },
+  { agentId: 'jarvis', agentName: 'Jarvis' },
+  { agentId: 'aria', agentName: 'Aria' },
+  { agentId: 'forge', agentName: 'Forge' },
+  { agentId: 'pulse', agentName: 'Pulse' },
+  { agentId: 'echo', agentName: 'Echo' },
+  { agentId: 'cal', agentName: 'Cal' },
+  { agentId: 'nova', agentName: 'Nova' },
+];
+
 export function AgentStatusStrip({ onAgentClick }: AgentStatusStripProps) {
   const [agents, setAgents] = useState<AgentState[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Initial fetch
+  // Initial fetch -- merge API data with defaults for all 9 agents
   useEffect(() => {
     agentStateService.getStates().then(res => {
-      setAgents(res.data || []);
+      const fetched = res.data || [];
+      const merged = ALL_AGENTS.map(def => {
+        const found = fetched.find((a: AgentState) => a.agentId === def.agentId);
+        return found || { ...def, state: 'idle', timestamp: new Date().toISOString() };
+      });
+      setAgents(merged);
     }).catch(() => {
-      // Default idle state
-      setAgents([
-        { agentId: 'weebo', agentName: 'Weebo', state: 'idle', timestamp: new Date().toISOString() },
-        { agentId: 'edith', agentName: 'Edith', state: 'idle', timestamp: new Date().toISOString() },
-        { agentId: 'jarvis', agentName: 'Jarvis', state: 'idle', timestamp: new Date().toISOString() },
-      ]);
+      setAgents(ALL_AGENTS.map(def => ({
+        ...def,
+        state: 'idle',
+        timestamp: new Date().toISOString(),
+      })));
     });
   }, []);
 
@@ -88,9 +110,9 @@ export function AgentStatusStrip({ onAgentClick }: AgentStatusStripProps) {
   if (agents.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {agents.filter(a => ['weebo', 'edith', 'jarvis'].includes(a.agentId)).map(agent => {
-        const meta = AGENT_META[agent.agentId] || AGENT_META.jarvis;
+    <div className="flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-none -mx-1 px-1">
+      {agents.map(agent => {
+        const meta = AGENT_META[agent.agentId] || AGENT_META.weebo;
         const isActive = agent.state !== 'idle' && agent.state !== 'done';
 
         return (
@@ -98,16 +120,27 @@ export function AgentStatusStrip({ onAgentClick }: AgentStatusStripProps) {
             key={agent.agentId}
             onClick={() => onAgentClick?.(agent.agentId)}
             className={[
-              'flex items-center gap-3 p-3 rounded-xl border transition-all',
-              'bg-[#0C0C18] hover:bg-[#12121F]',
+              'flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all snap-start shrink-0 min-h-[44px]',
+              'backdrop-blur-md',
               isActive
-                ? `border-[${meta.color}]/20 ${meta.glow}`
-                : 'border-[#00F0FF]/5 hover:border-[#00F0FF]/15',
+                ? `${meta.glow}`
+                : 'hover:border-[var(--ag-border-default)]',
             ].join(' ')}
+            style={{
+              background: isActive
+                ? `linear-gradient(135deg, ${meta.color}12, ${meta.color}08)`
+                : 'var(--ag-glass-bg)',
+              borderColor: isActive ? `${meta.color}30` : 'var(--ag-border-subtle)',
+            }}
           >
-            {/* Avatar */}
+            {/* Avatar dot */}
             <div className="relative shrink-0">
-              <span className="text-2xl">{meta.emoji}</span>
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+                style={{ background: `${meta.color}18` }}
+              >
+                <span className="text-sm">{meta.emoji}</span>
+              </div>
               {isActive && (
                 <motion.div
                   className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
@@ -117,16 +150,19 @@ export function AgentStatusStrip({ onAgentClick }: AgentStatusStripProps) {
                 />
               )}
               {!isActive && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#4B5563]" />
+                <div
+                  className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: '#4B5563' }}
+                />
               )}
             </div>
 
             {/* Info */}
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-semibold text-[#F4F6FF]">{agent.agentName}</p>
+            <div className="min-w-0 text-left">
+              <p className="text-[11px] font-semibold text-[var(--ag-text-primary)]">{agent.agentName}</p>
               <p className={[
-                'text-[10px] truncate',
-                isActive ? 'text-[#A0A8C0]' : 'text-[#4B5563]',
+                'text-[9px] truncate max-w-[80px]',
+                isActive ? 'text-[#A0A8C0]' : 'text-[var(--ag-text-muted)]',
               ].join(' ')}>
                 {agent.content || STATE_LABELS[agent.state] || agent.state}
               </p>

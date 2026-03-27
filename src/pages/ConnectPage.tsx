@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle2, XCircle, Loader2, UserPlus, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,7 +69,7 @@ export function ConnectPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
-            <Zap className="w-6 h-6 text-[#00F0FF]" />
+            <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
             <span className="text-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Agentin Chat</span>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
+import { PageShell } from '@/components/agentin';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -276,11 +277,11 @@ export function DesignAssistantPage() {
   const liveColors = parseHexColors(currentResponse);
 
   return (
-    <div className="space-y-6 pb-24 md:pb-6">
+    <PageShell>
       {/* ---- Header ---- */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00F0FF]/20 to-[#8B5CF6]/20 flex items-center justify-center">
-          <Palette className="w-5 h-5 text-[#00F0FF]" />
+          <Palette className="w-5 h-5 text-[var(--ag-cyan)]" />
         </div>
         <div>
           <h1 className="text-xl font-bold text-[#F4F6FF]">Design Assistant</h1>
@@ -289,7 +290,7 @@ export function DesignAssistantPage() {
       </div>
 
       {/* ---- Prompt Bar ---- */}
-      <div className="rounded-xl border border-[rgba(0,240,255,0.1)] bg-[#0C0C18] p-4 space-y-3">
+      <div className="rounded-xl border border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] p-4 space-y-3">
         <div className="flex gap-2">
           <textarea
             value={prompt}
@@ -326,7 +327,7 @@ export function DesignAssistantPage() {
               onClick={() => setStyle(s.id)}
               className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                 style === s.id
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30'
+                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
                   : 'bg-[#12121F] text-[#8892A4] border border-transparent hover:border-[rgba(0,240,255,0.1)] hover:text-[#F4F6FF]'
               }`}
             >
@@ -347,8 +348,8 @@ export function DesignAssistantPage() {
               onClick={() => setActiveType(dt.id)}
               className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                 isActive
-                  ? 'bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/25'
-                  : 'bg-[#0C0C18] text-[#8892A4] border border-[rgba(0,240,255,0.08)] hover:text-[#F4F6FF] hover:border-[rgba(0,240,255,0.15)]'
+                  ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/25'
+                  : 'bg-[var(--ag-bg-surface)] text-[#8892A4] border border-[rgba(0,240,255,0.08)] hover:text-[#F4F6FF] hover:border-[rgba(0,240,255,0.15)]'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -361,7 +362,7 @@ export function DesignAssistantPage() {
       {/* ---- Type description / redirect hint ---- */}
       {activeType !== 'color-palette' && (
         <div className="flex items-center gap-2 rounded-lg bg-[#12121F]/60 border border-[rgba(0,240,255,0.06)] px-4 py-3">
-          <Sparkles className="w-4 h-4 text-[#8B5CF6] flex-shrink-0" />
+          <Sparkles className="w-4 h-4 text-[var(--ag-violet)] flex-shrink-0" />
           <p className="text-xs text-[#8892A4]">
             {activeType === 'image' && 'Your prompt will be enhanced and sent to the Image Generator for visual creation.'}
             {activeType === 'website' && 'Your design brief will open in the Website Builder with AI-powered layout suggestions.'}
@@ -372,9 +373,9 @@ export function DesignAssistantPage() {
 
       {/* ---- Results Area ---- */}
       {(isGenerating || currentResponse) && (
-        <div className="rounded-xl border border-[rgba(0,240,255,0.1)] bg-[#0C0C18] p-5 space-y-4">
+        <div className="rounded-xl border border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] p-5 space-y-4">
           <div className="flex items-center gap-2">
-            {isGenerating && <Loader2 className="w-4 h-4 text-[#00F0FF] animate-spin" />}
+            {isGenerating && <Loader2 className="w-4 h-4 text-[var(--ag-cyan)] animate-spin" />}
             <h3 className="text-sm font-semibold text-[#F4F6FF]">
               {isGenerating ? 'Generating design...' : 'Design Result'}
             </h3>
@@ -426,17 +427,17 @@ export function DesignAssistantPage() {
             {results.map((result) => (
               <div
                 key={result.id}
-                className="rounded-xl border border-[rgba(0,240,255,0.08)] bg-[#0C0C18] p-4 space-y-3 group"
+                className="rounded-xl border border-[rgba(0,240,255,0.08)] bg-[var(--ag-bg-surface)] p-4 space-y-3 group"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#F4F6FF] truncate">{result.prompt}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF] capitalize">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)] capitalize">
                         {result.style}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[var(--ag-violet)]">
                         {DESIGN_TYPES.find((dt) => dt.id === result.type)?.label}
                       </span>
                       <span className="text-[10px] text-[#8892A4]">{formatTimestamp(result.timestamp)}</span>
@@ -446,7 +447,7 @@ export function DesignAssistantPage() {
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleReuseResult(result)}
-                      className="min-w-[32px] min-h-[32px] rounded-lg bg-[#12121F] hover:bg-[#00F0FF]/10 text-[#8892A4] hover:text-[#00F0FF] flex items-center justify-center transition-colors"
+                      className="min-w-[32px] min-h-[32px] rounded-lg bg-[#12121F] hover:bg-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] flex items-center justify-center transition-colors"
                       title="Reuse prompt"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -496,7 +497,7 @@ export function DesignAssistantPage() {
 
       {/* ---- Empty state ---- */}
       {!isGenerating && !currentResponse && results.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[rgba(0,240,255,0.1)] bg-[#0C0C18]/50 p-8 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="rounded-xl border border-dashed border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)]/50 p-8 flex flex-col items-center justify-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#8B5CF6]/10 flex items-center justify-center">
             <Sparkles className="w-7 h-7 text-[#8892A4]" />
           </div>
@@ -509,7 +510,7 @@ export function DesignAssistantPage() {
               <button
                 key={example}
                 onClick={() => setPrompt(example)}
-                className="text-xs px-3 py-1.5 rounded-full bg-[#12121F] text-[#8892A4] hover:text-[#00F0FF] border border-[rgba(0,240,255,0.06)] hover:border-[#00F0FF]/20 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-full bg-[#12121F] text-[#8892A4] hover:text-[var(--ag-cyan)] border border-[rgba(0,240,255,0.06)] hover:border-[#00F0FF]/20 transition-colors"
               >
                 {example}
               </button>
@@ -517,6 +518,6 @@ export function DesignAssistantPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

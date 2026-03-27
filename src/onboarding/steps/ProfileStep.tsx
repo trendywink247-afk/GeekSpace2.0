@@ -1,11 +1,10 @@
-import { User } from 'lucide-react';
+import { User, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-// Seeded avatar options — initial-based with distinct background colors
+// 9 preset avatar colors — colored circles with user's initial
 const AVATAR_COLORS = [
-  '#8B5CF6', '#00F0FF', '#00FF88', '#F59E0B', '#EC4899',
-  '#10B981', '#FF3366', '#6366F1', '#14B8A6', '#F97316',
-  '#A855F7', '#3B82F6',
+  '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EC4899',
+  '#FF3366', '#6366F1', '#F97316', '#14B8A6',
 ];
 
 function getInitials(name: string): string {
@@ -25,6 +24,18 @@ interface ProfileStepProps {
 
 export function ProfileStep({ name, username, avatar, onNameChange, onUsernameChange, onAvatarChange }: ProfileStepProps) {
   const initials = getInitials(name || 'You');
+  const isCustomPhoto = avatar.startsWith('http') || avatar.startsWith('data:');
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target?.result;
+      if (typeof url === 'string') onAvatarChange(url);
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="space-y-6">
@@ -38,19 +49,19 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
         Let's start with the essentials. You can always change these later.
       </p>
 
-      {/* Avatar Picker */}
+      {/* Avatar Picker — 9 color presets + Upload */}
       <div>
-        <label className="text-sm text-[#9CA3AF] mb-3 block">Pick your avatar color</label>
-        <div className="flex flex-wrap gap-3 justify-center">
+        <label className="text-sm text-[#9CA3AF] mb-3 block">Choose your avatar</label>
+        <div className="grid grid-cols-5 gap-2.5 justify-items-center">
           {AVATAR_COLORS.map((color) => {
-            const isSelected = avatar === color;
+            const isSelected = !isCustomPhoto && avatar === color;
             return (
               <button
                 key={color}
                 type="button"
                 onClick={() => onAvatarChange(color)}
                 className={[
-                  'w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-sm sm:text-base font-bold text-white transition-all',
+                  'w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white transition-all min-w-[44px] min-h-[44px]',
                   isSelected
                     ? 'ring-[3px] ring-white/80 scale-110'
                     : 'hover:scale-105 opacity-70 hover:opacity-100',
@@ -63,7 +74,31 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
               </button>
             );
           })}
+          {/* Upload option */}
+          <label
+            className={[
+              'w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all min-w-[44px] min-h-[44px] overflow-hidden',
+              isCustomPhoto
+                ? 'ring-[3px] ring-[#06B6D4]/80 scale-110'
+                : 'border-2 border-dashed border-white/20 hover:border-[#8B5CF6]/60 opacity-70 hover:opacity-100',
+            ].join(' ')}
+            aria-label="Upload custom avatar"
+            title="Upload your own photo"
+          >
+            {isCustomPhoto && avatar.startsWith('data:') ? (
+              <img src={avatar} alt="Custom avatar" className="w-full h-full object-cover" />
+            ) : (
+              <Upload className="w-4 h-4 text-[#9CA3AF]" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleUpload}
+            />
+          </label>
         </div>
+        <p className="text-xs text-[#6B7280]/60 text-center mt-2">Pick a color or upload a photo</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

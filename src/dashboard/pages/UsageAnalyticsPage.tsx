@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageShell } from '@/components/agentin/PageShell';
 import {
   DollarSign,
   MessageSquare,
@@ -92,8 +93,8 @@ function CreditCircle({ used, total }: { used: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold text-[#E8E8F0] font-mono">{fmt(remaining)}</span>
-        <span className="text-[10px] text-[#9CA3AF]">left</span>
+        <span className="text-lg font-bold text-[var(--ag-text-primary)] font-mono">{fmt(remaining)}</span>
+        <span className="text-[10px] text-[var(--ag-text-muted)]">left</span>
       </div>
     </div>
   );
@@ -243,29 +244,32 @@ export function UsageAnalyticsPage() {
 
   if (error && !summary && !chartData.length) {
     return (
+      <PageShell>
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <AlertTriangle className="w-10 h-10 text-[#FF6161]" />
-        <p className="text-[#9CA3AF]">{error}</p>
+        <p className="text-[var(--ag-text-muted)]">{error}</p>
         <Button variant="outline" onClick={() => window.location.reload()} className="border-[#00F0FF]/30">
           Retry
         </Button>
       </div>
+      </PageShell>
     );
   }
 
   return (
+    <PageShell>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <div className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Usage Analytics</h1>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">Analyzed by Pulse</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)]">Analyzed by Pulse</span>
           </div>
-          <p className="text-sm text-[#9CA3AF] mt-1">Deep-dive into your AI costs and activity</p>
+          <p className="text-sm text-[var(--ag-text-muted)] mt-1">Deep-dive into your AI costs and activity</p>
         </div>
-        <div className="flex gap-1 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+        <div className="flex gap-1 bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 rounded-lg p-1">
           {(['day', 'week', 'month'] as SummaryRange[]).map((r) => (
             <button
               key={r}
@@ -273,7 +277,7 @@ export function UsageAnalyticsPage() {
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                 summaryRange === r
                   ? 'bg-[#00F0FF] text-white'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
               }`}
             >
               {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -310,10 +314,10 @@ export function UsageAnalyticsPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#00FF88] transition-colors font-mono">
+                <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#00FF88] transition-colors font-mono">
                   ${(summary?.totalCostUSD ?? 0).toFixed(2)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#9CA3AF]">Total Cost</div>
+                <div className="text-xs sm:text-sm text-[var(--ag-text-muted)]">Total Cost</div>
               </CardContent>
             </Card>
 
@@ -325,10 +329,10 @@ export function UsageAnalyticsPage() {
                     <MessageSquare className="w-5 h-5" style={{ color: KPI_COLORS.messages }} />
                   </div>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[var(--ag-cyan)] transition-colors">
                   {fmt(summary?.totalMessages ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#9CA3AF]">Messages</div>
+                <div className="text-xs sm:text-sm text-[var(--ag-text-muted)]">Messages</div>
               </CardContent>
             </Card>
 
@@ -340,10 +344,10 @@ export function UsageAnalyticsPage() {
                     <Coins className="w-5 h-5" style={{ color: KPI_COLORS.tokens }} />
                   </div>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FFB800] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FFB800] transition-colors">
                   {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#9CA3AF]">Tokens In / Out</div>
+                <div className="text-xs sm:text-sm text-[var(--ag-text-muted)]">Tokens In / Out</div>
               </CardContent>
             </Card>
 
@@ -355,10 +359,10 @@ export function UsageAnalyticsPage() {
                     <Wrench className="w-5 h-5" style={{ color: KPI_COLORS.tools }} />
                   </div>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FF2D78] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FF2D78] transition-colors">
                   {fmt(summary?.totalToolCalls ?? 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-[#9CA3AF]">Tool Calls</div>
+                <div className="text-xs sm:text-sm text-[var(--ag-text-muted)]">Tool Calls</div>
               </CardContent>
             </Card>
           </>
@@ -370,7 +374,7 @@ export function UsageAnalyticsPage() {
         <Card className="border-[#00F0FF]/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#00F0FF]" />
+              <Activity className="w-5 h-5 text-[var(--ag-cyan)]" />
               Today's Usage
               <Badge variant="outline" className="border-[#ADFF2F]/30 text-[#ADFF2F] text-xs ml-2">
                 Live
@@ -383,8 +387,8 @@ export function UsageAnalyticsPage() {
               <div className="flex flex-col items-center gap-2 col-span-2 sm:col-span-1">
                 <CreditCircle used={todayUsage.tokenUsed} total={todayUsage.tokenBudget} />
                 <div className="text-center">
-                  <div className="text-xs text-[#9CA3AF]">Token Budget</div>
-                  <div className="text-xs font-mono text-[#E8E8F0]">
+                  <div className="text-xs text-[var(--ag-text-muted)]">Token Budget</div>
+                  <div className="text-xs font-mono text-[var(--ag-text-primary)]">
                     {fmt(todayUsage.tokenUsed)} / {fmt(todayUsage.tokenBudget)}
                   </div>
                 </div>
@@ -393,8 +397,8 @@ export function UsageAnalyticsPage() {
               <div className="flex flex-col items-center gap-2">
                 <CreditCircle used={todayUsage.messages.used} total={todayUsage.messages.limit} />
                 <div className="text-center">
-                  <div className="text-xs text-[#9CA3AF]">Messages</div>
-                  <div className="text-xs font-mono text-[#E8E8F0]">
+                  <div className="text-xs text-[var(--ag-text-muted)]">Messages</div>
+                  <div className="text-xs font-mono text-[var(--ag-text-primary)]">
                     {todayUsage.messages.used} / {todayUsage.messages.limit}
                   </div>
                 </div>
@@ -403,8 +407,8 @@ export function UsageAnalyticsPage() {
               <div className="flex flex-col items-center gap-2">
                 <CreditCircle used={todayUsage.voice.used} total={todayUsage.voice.limit} />
                 <div className="text-center">
-                  <div className="text-xs text-[#9CA3AF]">Voice</div>
-                  <div className="text-xs font-mono text-[#E8E8F0]">
+                  <div className="text-xs text-[var(--ag-text-muted)]">Voice</div>
+                  <div className="text-xs font-mono text-[var(--ag-text-primary)]">
                     {todayUsage.voice.used} / {todayUsage.voice.limit}
                   </div>
                 </div>
@@ -413,8 +417,8 @@ export function UsageAnalyticsPage() {
               <div className="flex flex-col items-center gap-2">
                 <CreditCircle used={todayUsage.images.used} total={todayUsage.images.limit} />
                 <div className="text-center">
-                  <div className="text-xs text-[#9CA3AF]">Images</div>
-                  <div className="text-xs font-mono text-[#E8E8F0]">
+                  <div className="text-xs text-[var(--ag-text-muted)]">Images</div>
+                  <div className="text-xs font-mono text-[var(--ag-text-primary)]">
                     {todayUsage.images.used} / {todayUsage.images.limit}
                   </div>
                 </div>
@@ -443,7 +447,7 @@ export function UsageAnalyticsPage() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#00F0FF]" />
+              <TrendingUp className="w-5 h-5 text-[var(--ag-cyan)]" />
               Cost Over Time
             </CardTitle>
             <div className="flex gap-1 bg-[#06060B] border border-[#00F0FF]/20 rounded-lg p-0.5">
@@ -454,7 +458,7 @@ export function UsageAnalyticsPage() {
                   className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
                     chartRange === r
                       ? 'bg-[#00F0FF] text-white'
-                      : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                      : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
                   }`}
                 >
                   {r}
@@ -509,9 +513,9 @@ export function UsageAnalyticsPage() {
               <Skeleton className="w-full h-[220px] rounded-lg" />
             ) : pieData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[220px] gap-2">
-                <BarChart3 className="w-8 h-8 text-[#00F0FF]/20" />
-                <p className="text-sm text-[#9CA3AF]">No provider data yet</p>
-                <p className="text-xs text-[#9CA3AF]/60">Start chatting to see provider breakdown</p>
+                <BarChart3 className="w-8 h-8 text-[var(--ag-cyan)]/20" />
+                <p className="text-sm text-[var(--ag-text-muted)]">No provider data yet</p>
+                <p className="text-xs text-[var(--ag-text-muted)]/60">Start chatting to see provider breakdown</p>
               </div>
             ) : (
               <>
@@ -545,7 +549,7 @@ export function UsageAnalyticsPage() {
                   {pieData.map((p) => (
                     <div key={p.provider} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                      <span className="text-xs text-[#9CA3AF]">{friendlyProvider(p.provider)}</span>
+                      <span className="text-xs text-[var(--ag-text-muted)]">{friendlyProvider(p.provider)}</span>
                     </div>
                   ))}
                 </div>
@@ -564,9 +568,9 @@ export function UsageAnalyticsPage() {
               <Skeleton className="w-full h-[250px] rounded-lg" />
             ) : hourlyData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[250px] gap-2">
-                <Activity className="w-8 h-8 text-[#00F0FF]/20" />
-                <p className="text-sm text-[#9CA3AF]">No activity data yet</p>
-                <p className="text-xs text-[#9CA3AF]/60">Your hourly usage patterns will appear here</p>
+                <Activity className="w-8 h-8 text-[var(--ag-cyan)]/20" />
+                <p className="text-sm text-[var(--ag-text-muted)]">No activity data yet</p>
+                <p className="text-xs text-[var(--ag-text-muted)]/60">Your hourly usage patterns will appear here</p>
               </div>
             ) : (
               <div className="min-h-[180px] h-[250px]">
@@ -603,8 +607,8 @@ export function UsageAnalyticsPage() {
             ) : toolData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[200px] gap-2">
                 <Wrench className="w-8 h-8 text-[#FF2D78]/20" />
-                <p className="text-sm text-[#9CA3AF]">No tool usage yet</p>
-                <p className="text-xs text-[#9CA3AF]/60">Tool call costs will appear after your first agent run</p>
+                <p className="text-sm text-[var(--ag-text-muted)]">No tool usage yet</p>
+                <p className="text-xs text-[var(--ag-text-muted)]/60">Tool call costs will appear after your first agent run</p>
               </div>
             ) : (
               <div className="min-h-[180px] h-[200px]">
@@ -656,8 +660,8 @@ export function UsageAnalyticsPage() {
             ) : !billing ? (
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <DollarSign className="w-8 h-8 text-[#00FF88]/20" />
-                <p className="text-sm text-[#9CA3AF]">No billing data</p>
-                <p className="text-xs text-[#9CA3AF]/60">Billing info will appear after your first cycle</p>
+                <p className="text-sm text-[var(--ag-text-muted)]">No billing data</p>
+                <p className="text-xs text-[var(--ag-text-muted)]/60">Billing info will appear after your first cycle</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -677,14 +681,14 @@ export function UsageAnalyticsPage() {
                   { label: 'Resets', value: new Date(billing.resetDate).toLocaleDateString() },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between text-sm">
-                    <span className="text-[#9CA3AF]">{item.label}</span>
-                    <span className="text-[#E8E8F0] font-mono">{item.value}</span>
+                    <span className="text-[var(--ag-text-muted)]">{item.label}</span>
+                    <span className="text-[var(--ag-text-primary)] font-mono">{item.value}</span>
                   </div>
                 ))}
 
                 {/* Usage progress bar */}
                 <div className="pt-2">
-                  <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-1.5">
+                  <div className="flex items-center justify-between text-xs text-[var(--ag-text-muted)] mb-1.5">
                     <span>Usage</span>
                     <span>{billing.monthlyAllowance > 0 ? `${Math.min(100, ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance * 100)).toFixed(0)}%` : '0%'}</span>
                   </div>
@@ -721,7 +725,7 @@ export function UsageAnalyticsPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold">Usage Events</CardTitle>
             {eventsTotal > 0 && (
-              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF]">
+              <Badge variant="outline" className="border-[#00F0FF]/30 text-[var(--ag-text-muted)]">
                 {eventsTotal.toLocaleString()} total
               </Badge>
             )}
@@ -736,9 +740,9 @@ export function UsageAnalyticsPage() {
             </div>
           ) : events.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 gap-2">
-              <MessageSquare className="w-8 h-8 text-[#00F0FF]/20" />
-              <p className="text-sm text-[#9CA3AF]">No usage events yet</p>
-              <p className="text-xs text-[#9CA3AF]/60">Each AI request will be logged here with cost details</p>
+              <MessageSquare className="w-8 h-8 text-[var(--ag-cyan)]/20" />
+              <p className="text-sm text-[var(--ag-text-muted)]">No usage events yet</p>
+              <p className="text-xs text-[var(--ag-text-muted)]/60">Each AI request will be logged here with cost details</p>
             </div>
           ) : (
             <>
@@ -747,21 +751,21 @@ export function UsageAnalyticsPage() {
                   {
                     key: 'time', label: 'Time', primary: true,
                     render: (event) => (
-                      <span className="text-[#9CA3AF] font-mono text-xs">
+                      <span className="text-[var(--ag-text-muted)] font-mono text-xs">
                         {new Date(event.createdAt).toLocaleString(undefined, {
                           month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                         })}
                       </span>
                     ),
                   },
-                  { key: 'provider', label: 'Provider', render: (event) => <span className="text-[#E8E8F0]">{friendlyProvider(event.provider)}</span> },
-                  { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#9CA3AF] font-mono text-xs">{friendlyModel(event.model)}</span> },
-                  { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[#E8E8F0] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
+                  { key: 'provider', label: 'Provider', render: (event) => <span className="text-[var(--ag-text-primary)]">{friendlyProvider(event.provider)}</span> },
+                  { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[var(--ag-text-muted)] font-mono text-xs">{friendlyModel(event.model)}</span> },
+                  { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[var(--ag-text-primary)] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
                   { key: 'cost', label: 'Cost', render: (event) => <span className="text-[#00FF88] font-mono text-xs">{fmtCost(event.costUSD)}</span> },
                   {
                     key: 'channel', label: 'Channel', hideOnMobile: true,
                     render: (event) => (
-                      <Badge variant="outline" className="border-[#00F0FF]/30 text-[#9CA3AF] text-xs">
+                      <Badge variant="outline" className="border-[#00F0FF]/30 text-[var(--ag-text-muted)] text-xs">
                         {event.channel}
                       </Badge>
                     ),
@@ -776,7 +780,7 @@ export function UsageAnalyticsPage() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
-                  <span className="text-xs text-[#9CA3AF]">
+                  <span className="text-xs text-[var(--ag-text-muted)]">
                     Page {eventsPage} of {totalPages}
                   </span>
                   <div className="flex gap-2">
@@ -785,7 +789,7 @@ export function UsageAnalyticsPage() {
                       size="sm"
                       disabled={eventsPage <= 1}
                       onClick={() => handleEventsPage(eventsPage - 1)}
-                      className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0] disabled:opacity-40"
+                      className="border-[#00F0FF]/30 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] disabled:opacity-40"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Prev
@@ -795,7 +799,7 @@ export function UsageAnalyticsPage() {
                       size="sm"
                       disabled={eventsPage >= totalPages}
                       onClick={() => handleEventsPage(eventsPage + 1)}
-                      className="border-[#00F0FF]/30 text-[#9CA3AF] hover:text-[#E8E8F0] disabled:opacity-40"
+                      className="border-[#00F0FF]/30 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] disabled:opacity-40"
                     >
                       Next
                       <ChevronRight className="w-4 h-4 ml-1" />
@@ -809,5 +813,6 @@ export function UsageAnalyticsPage() {
       </Card>
     </div>
     </PullToRefreshWrapper>
+    </PageShell>
   );
 }

@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { InsightCard } from './types';
-import { AGENT_META, AGENT_COLORS } from './constants';
+import { AGENT_COLORS } from './constants';
 import type { AgentId } from './types';
 import {
   TOAST_DURATION_MS,
@@ -124,61 +124,104 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
     return () => clearTimers();
   }, [clearTimers]);
 
+  // Track progress bar animation start time
+  const progressStartRef = useRef<number>(0);
+  const [progressPct, setProgressPct] = useState(100);
+
+  // Animate progress bar countdown
+  useEffect(() => {
+    if (fadeState !== 'in' || !current) return;
+    progressStartRef.current = Date.now();
+    setProgressPct(100);
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - progressStartRef.current;
+      const remaining = Math.max(0, 100 - (elapsed / TOAST_DURATION_MS) * 100);
+      setProgressPct(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 50);
+    return () => clearInterval(interval);
+  }, [current, fadeState]);
+
   // Nothing to show
   if (!current || fadeState === 'hidden') return null;
 
-  const agentEmoji = AGENT_META[current.agentId as AgentId]?.emoji ?? '🤖';
   const agentColor = AGENT_COLORS[current.agentId as AgentId] ?? '#F59E0B';
 
   return (
     <div
-      className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-start gap-2"
+      className="absolute top-4 left-1/2 -translate-x-1/2 z-20 overflow-hidden"
       style={{
-        maxWidth: 'min(80%, 480px)',
-        // mobile override handled via inline style below
-        padding: '8px 16px',
-        background: 'rgba(245,158,11,0.12)',
-        border: '1px solid rgba(245,158,11,0.4)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderRadius: '10px',
+        maxWidth: 'min(85%, 480px)',
+        minWidth: '280px',
+        borderRadius: 'var(--ag-radius-md, 12px)',
         opacity: fadeState === 'in' ? 1 : 0,
         transition: `opacity ${TOAST_FADE_MS}ms ease`,
         pointerEvents: 'auto',
+        background: 'var(--ag-glass-bg, rgba(12,12,30,0.4))',
+        backdropFilter: 'blur(var(--ag-glass-blur, 16px))',
+        WebkitBackdropFilter: 'blur(var(--ag-glass-blur, 16px))',
+        border: `1px solid ${agentColor}30`,
+        boxShadow: `0 0 20px ${agentColor}10`,
       }}
     >
-      {/* Agent emoji / icon */}
-      <span
-        className="text-base flex-shrink-0 mt-0.5"
-        style={{ color: agentColor }}
-        aria-hidden="true"
-      >
-        {agentEmoji}
-      </span>
+      <div className="flex items-start gap-2.5 p-3">
+        {/* Agent colored avatar dot */}
+        <div className="flex-shrink-0 mt-1">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{
+              backgroundColor: agentColor,
+              boxShadow: `0 0 8px ${agentColor}60`,
+            }}
+          />
+        </div>
 
-      {/* Insight text */}
-      <button
-        className="flex-1 text-left text-xs leading-snug cursor-pointer bg-transparent border-0 p-0"
-        style={{ color: '#F4F6FF' }}
-        onClick={() => onClickInsight?.(current.id)}
-        aria-label={`Insight from ${current.agentName}: ${current.text}`}
-      >
-        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#F59E0B' }}>
-          {current.agentName}
-        </span>
-        <br />
-        <span className="sm:text-xs text-[11px]">{current.text}</span>
-      </button>
+        {/* Insight content */}
+        <button
+          className="flex-1 text-left cursor-pointer bg-transparent border-0 p-0"
+          onClick={() => onClickInsight?.(current.id)}
+          aria-label={`Insight from ${current.agentName}: ${current.text}`}
+        >
+          {/* Agent name header in their color */}
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider block mb-0.5"
+            style={{ color: agentColor }}
+          >
+            {current.agentName}
+          </span>
+          <span
+            className="text-xs leading-snug block"
+            style={{ color: 'var(--ag-text-primary, #F4F6FF)' }}
+          >
+            {current.text}
+          </span>
+        </button>
 
-      {/* Dismiss button */}
-      <button
-        onClick={() => dismissCurrent(current.id)}
-        className="flex-shrink-0 text-xs leading-none opacity-60 hover:opacity-100 transition-opacity mt-0.5 ml-1"
-        style={{ color: '#F4F6FF', background: 'transparent', border: 'none', cursor: 'pointer' }}
-        aria-label="Dismiss insight"
+        {/* Dismiss button */}
+        <button
+          onClick={() => dismissCurrent(current.id)}
+          className="flex-shrink-0 text-xs leading-none opacity-60 hover:opacity-100 transition-opacity mt-0.5 ml-1 min-h-[44px] min-w-[44px] flex items-start justify-center pt-0.5"
+          style={{ color: 'var(--ag-text-primary, #F4F6FF)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          aria-label="Dismiss insight"
+        >
+          x
+        </button>
+      </div>
+
+      {/* Progress bar — auto-dismiss countdown */}
+      <div
+        className="h-[2px] w-full"
+        style={{ background: `${agentColor}15` }}
       >
-        ✕
-      </button>
+        <div
+          className="h-full transition-none"
+          style={{
+            width: `${progressPct}%`,
+            background: agentColor,
+            opacity: 0.6,
+          }}
+        />
+      </div>
     </div>
   );
 }

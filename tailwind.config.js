@@ -30,7 +30,7 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
           violet: '#8B5CF6',
-          cyan: '#10B981',
+          cyan: '#00F0FF',
           gold: '#F59E0B',
           rose: '#F43F5E',
         },
@@ -57,7 +57,7 @@ module.exports = {
           ring: "hsl(var(--sidebar-ring))",
         },
         agentin: {
-          cyan: '#10B981',
+          cyan: '#00F0FF',
           magenta: '#FF2D78',
           violet: '#8B5CF6',
           black: '#06060f',

@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import api from "@/services/api";
+import { PageShell } from "@/components/agentin";
 
 // ---- Types ---------------------------------------------------------------
 
@@ -559,7 +560,8 @@ export function ProactivePage() {
   // ---- Render ---
 
   return (
-    <div className="p-4 md:p-6 pb-24 md:pb-6">
+    <PageShell>
+    <div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ===== Main Feed Column ===== */}
         <div className="flex-1 min-w-0 space-y-6">
@@ -752,6 +754,7 @@ export function ProactivePage() {
         />
       </div>
     </div>
+    </PageShell>
   );
 }
 
@@ -817,7 +820,7 @@ function ConfigPanel({
         className={
           // Mobile: slide-in from right
           "fixed top-0 right-0 bottom-0 z-50 w-[320px] max-w-[85vw] overflow-y-auto " +
-          "bg-[#0C0C18] border-l border-white/[0.06] transition-transform duration-300 ease-in-out " +
+          "bg-[var(--ag-bg-surface)] border-l border-[var(--ag-border-subtle)] transition-transform duration-300 ease-in-out " +
           "lg:static lg:z-auto lg:w-[340px] lg:shrink-0 lg:border-l-0 lg:border-0 lg:bg-transparent " +
           "lg:translate-x-0 lg:transition-none " +
           (show ? "translate-x-0" : "translate-x-full lg:translate-x-0")
@@ -979,7 +982,7 @@ function ConfigPanel({
             <CardContent className="pt-5 pb-5 space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-purple-400" />
-                <p className="text-sm font-medium">Schedule (IST)</p>
+                <p className="text-sm font-medium">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">

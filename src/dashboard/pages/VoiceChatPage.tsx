@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageShell } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
@@ -35,6 +36,18 @@ const PERSONALITY_EMOJI: Record<AgentPersonality, string> = {
   edith: '🔷', jarvis: '🟣', weebo: '💚',
   aria: '🎨', forge: '🔧', pulse: '📊',
   echo: '💙', cal: '📅', nova: '🔭',
+};
+
+const PERSONALITY_COLOR: Record<AgentPersonality, string> = {
+  edith: '#8B5CF6',
+  jarvis: '#ADFF2F',
+  weebo: '#00F0FF',
+  aria: '#F59E0B',
+  forge: '#FF6B35',
+  pulse: '#10B981',
+  echo: '#3B82F6',
+  cal: '#06B6D4',
+  nova: '#A855F7',
 };
 
 // -- Component --
@@ -178,6 +191,7 @@ export function VoiceChatPage() {
 
   // Derive display state
   const agentEmoji = PERSONALITY_EMOJI[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣';
+  const agentColor = PERSONALITY_COLOR[(agent.personality as AgentPersonality) || 'jarvis'] || '#8B5CF6';
 
   const statusText = (() => {
     switch (voiceState) {
@@ -190,10 +204,11 @@ export function VoiceChatPage() {
   })();
 
   return (
-    <div className="flex flex-col h-[100dvh] md:h-full min-h-0 pb-24 md:pb-6">
+    <PageShell>
+      <div className="flex flex-col h-[100dvh] md:h-full min-h-0">
       {/* -- Header -- */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10 flex-shrink-0">
-        <h1 className="text-lg font-bold text-[#E8E8F0]" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <h1 className="text-lg font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
           Voice Chat <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">🎙️ Voice with Weebo</span>
         </h1>
         <button
@@ -207,7 +222,7 @@ export function VoiceChatPage() {
 
       {/* -- Settings Panel (collapsible) -- */}
       {settingsOpen && (
-        <div className="px-4 py-3 border-b border-[#00F0FF]/10 bg-[#0C0C18] flex-shrink-0 animate-page-enter">
+        <div className="px-4 py-3 border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)] flex-shrink-0 animate-page-enter">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Voice On/Off */}
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -244,7 +259,7 @@ export function VoiceChatPage() {
                 <select
                   value={settings.speed}
                   onChange={e => setSettings(s => ({ ...s, speed: Number(e.target.value) }))}
-                  className="appearance-none bg-[#1A1A2E] text-[#E8E8F0] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[#00F0FF]/10 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/40"
+                  className="appearance-none bg-[#1A1A2E] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[#00F0FF]/10 focus:outline-none focus:ring-1 focus:ring-[#00F0FF]/40"
                 >
                   {SPEED_OPTIONS.map(s => (
                     <option key={s} value={s}>{s}x</option>
@@ -257,59 +272,121 @@ export function VoiceChatPage() {
         </div>
       )}
 
-      {/* -- Main Content -- */}
+      {/* -- Main Content — glass card -- */}
       <div className="flex-1 flex flex-col items-center justify-between min-h-0 px-4 py-6 gap-4">
-        {/* Agent Avatar + Status */}
-        <div className="flex flex-col items-center gap-3 flex-shrink-0 pt-4">
-          {/* Avatar with animated rings */}
+        {/* Glass card: orb + status */}
+        <div
+          className="flex flex-col items-center gap-4 flex-shrink-0 pt-4 w-full max-w-sm rounded-2xl border px-6 py-6"
+          style={{
+            background: 'rgba(12,12,24,0.7)',
+            backdropFilter: 'blur(16px)',
+            borderColor: voiceState === 'recording'
+              ? 'rgba(0,240,255,0.25)'
+              : voiceState === 'speaking'
+                ? `${agentColor}40`
+                : 'rgba(0,240,255,0.1)',
+            boxShadow: voiceState === 'recording'
+              ? '0 0 40px rgba(0,240,255,0.08)'
+              : voiceState === 'speaking'
+                ? `0 0 32px ${agentColor}15`
+                : 'none',
+          }}
+        >
+          {/* Central orb (80px) with animated states */}
           <div className="relative flex items-center justify-center">
-            {/* Concentric rings for recording state */}
+            {/* Concentric rings for listening/recording */}
             {voiceState === 'recording' && (
               <>
-                <span className="absolute w-28 h-28 rounded-full border border-[#00F0FF]/40 animate-voice-ring-1" />
-                <span className="absolute w-36 h-36 rounded-full border border-[#00F0FF]/25 animate-voice-ring-2" />
-                <span className="absolute w-44 h-44 rounded-full border border-[#00F0FF]/15 animate-voice-ring-3" />
+                <span className="absolute w-32 h-32 rounded-full border border-[#00F0FF]/40 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[#00F0FF]/25 animate-voice-ring-2" />
+                <span className="absolute w-56 h-56 rounded-full border border-[#00F0FF]/12 animate-voice-ring-3" />
+              </>
+            )}
+
+            {/* Speaking pulse rings using agent color */}
+            {voiceState === 'speaking' && (
+              <>
+                <span
+                  className="absolute w-32 h-32 rounded-full border animate-voice-ring-1"
+                  style={{ borderColor: `${agentColor}50` }}
+                />
+                <span
+                  className="absolute w-44 h-44 rounded-full border animate-voice-ring-2"
+                  style={{ borderColor: `${agentColor}25` }}
+                />
               </>
             )}
 
             {/* Idle pulse glow */}
             {voiceState === 'idle' && (
-              <span className="absolute w-24 h-24 rounded-full bg-[#00F0FF]/5 animate-voice-idle-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[#00F0FF]/5 animate-voice-idle-pulse" />
             )}
 
             {/* Error glow */}
             {voiceState === 'error' && (
-              <span className="absolute w-24 h-24 rounded-full bg-[#FF2D78]/10 animate-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[#FF2D78]/10 animate-pulse" />
             )}
 
-            {/* Avatar circle */}
-            <div className={[
-              'relative w-20 h-20 rounded-full flex items-center justify-center text-3xl transition-all duration-300',
-              'bg-[#0C0C18] border-2',
-              voiceState === 'recording' ? 'border-[#00F0FF] shadow-[0_0_24px_rgba(0,240,255,0.3)]' :
-              voiceState === 'processing' ? 'border-[#00F0FF]/50' :
-              voiceState === 'speaking' ? 'border-[#ADFF2F]/50 shadow-[0_0_16px_rgba(173,255,47,0.2)]' :
-              voiceState === 'error' ? 'border-[#FF2D78]/50 shadow-[0_0_16px_rgba(255,45,120,0.2)]' :
-              'border-[#00F0FF]/20',
-            ].join(' ')}>
+            {/* Main orb — 80px */}
+            <div
+              className="relative w-20 h-20 rounded-full flex items-center justify-center text-4xl transition-all duration-300"
+              style={{
+                background: voiceState === 'recording'
+                  ? 'radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(12,12,24,1) 80%)'
+                  : voiceState === 'speaking'
+                    ? `radial-gradient(circle, ${agentColor}20 0%, rgba(12,12,24,1) 80%)`
+                    : 'radial-gradient(circle, rgba(12,12,24,0.8) 0%, rgba(12,12,24,1) 80%)',
+                border: `2px solid ${
+                  voiceState === 'recording' ? '#00F0FF'
+                  : voiceState === 'speaking' ? agentColor
+                  : voiceState === 'error' ? '#FF2D78'
+                  : 'rgba(0,240,255,0.2)'
+                }`,
+                boxShadow: voiceState === 'recording'
+                  ? '0 0 32px rgba(0,240,255,0.35)'
+                  : voiceState === 'speaking'
+                    ? `0 0 24px ${agentColor}40`
+                    : voiceState === 'error'
+                      ? '0 0 20px rgba(255,45,120,0.25)'
+                      : 'none',
+                animation: voiceState === 'speaking' ? 'agent-pulse 1.4s ease-in-out infinite' : 'none',
+              }}
+            >
               {voiceState === 'processing' ? (
-                <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
+                <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
               ) : (
                 <span role="img" aria-label="agent avatar">{agentEmoji}</span>
               )}
             </div>
           </div>
 
-          {/* Speaking: audio visualizer bars */}
+          {/* Waveform bars — listening state */}
+          {voiceState === 'recording' && (
+            <div className="flex items-end gap-1 h-8" aria-hidden="true">
+              {[0, 1, 2, 3, 4, 5, 6].map(i => (
+                <span
+                  key={i}
+                  className="w-1.5 bg-[#00F0FF] rounded-full animate-voice-wave"
+                  style={{
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: `${0.5 + (i % 3) * 0.15}s`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Audio visualizer bars — speaking state */}
           {voiceState === 'speaking' && (
-            <div className="flex items-end gap-1 h-6" aria-hidden="true">
+            <div className="flex items-end gap-1 h-8" aria-hidden="true">
               {[0, 1, 2, 3, 4].map(i => (
                 <span
                   key={i}
-                  className="w-1 bg-[#ADFF2F] rounded-full animate-voice-bar"
+                  className="w-1.5 rounded-full animate-voice-bar"
                   style={{
                     animationDelay: `${i * 0.12}s`,
                     animationDuration: `${0.4 + i * 0.08}s`,
+                    backgroundColor: agentColor,
                   }}
                 />
               ))}
@@ -317,14 +394,16 @@ export function VoiceChatPage() {
           )}
 
           {/* Status text */}
-          <p className={[
-            'text-sm font-medium transition-colors',
-            voiceState === 'recording' ? 'text-[#00F0FF]' :
-            voiceState === 'processing' ? 'text-[#00F0FF]/70' :
-            voiceState === 'speaking' ? 'text-[#ADFF2F]' :
-            voiceState === 'error' ? 'text-[#FF2D78]' :
-            'text-[#8892A4]',
-          ].join(' ')}>
+          <p
+            className="text-sm font-medium transition-colors"
+            style={{
+              color: voiceState === 'recording' ? '#00F0FF'
+                : voiceState === 'processing' ? 'rgba(0,240,255,0.7)'
+                : voiceState === 'speaking' ? agentColor
+                : voiceState === 'error' ? '#FF2D78'
+                : '#8892A4',
+            }}
+          >
             {voiceState === 'error' && <AlertCircle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
             {statusText}
           </p>
@@ -340,11 +419,11 @@ export function VoiceChatPage() {
         {/* -- Transcript History -- */}
         <div
           ref={scrollRef}
-          className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 rounded-xl bg-[#0C0C18]/60 border border-[#00F0FF]/10 p-3 space-y-2"
+          className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 rounded-xl bg-[var(--ag-bg-surface)]/60 border border-[#00F0FF]/10 p-3 space-y-2"
         >
           {transcript.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-8">
-              <Mic className="w-8 h-8 text-[#00F0FF]/20 mb-3" />
+              <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
               <p className="text-sm text-[#6B7280]">No conversation yet</p>
               <p className="text-xs text-[#6B7280]/60 mt-1">Tap the microphone to start</p>
             </div>
@@ -361,11 +440,11 @@ export function VoiceChatPage() {
               >
                 <span className={[
                   'font-semibold flex-shrink-0 text-xs mt-0.5',
-                  turn.role === 'user' ? 'text-[#00F0FF]' : 'text-[#ADFF2F]',
+                  turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[#ADFF2F]',
                 ].join(' ')}>
                   {turn.role === 'user' ? 'You' : agent.name || 'Agent'}:
                 </span>
-                <span className="text-[#E8E8F0]/90 break-words">{turn.text}</span>
+                <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
               </div>
             ))
           )}
@@ -391,13 +470,13 @@ export function VoiceChatPage() {
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
-              <Loader2 className="w-7 h-7 text-[#00F0FF] animate-spin" />
+              <Loader2 className="w-7 h-7 text-[var(--ag-cyan)] animate-spin" />
             ) : voiceState === 'recording' ? (
               <MicOff className="w-7 h-7 text-white" />
             ) : voiceState === 'speaking' ? (
               <span className="w-5 h-5 rounded-sm bg-[#ADFF2F]" />
             ) : (
-              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
+              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[#6B7280]'}`} />
             )}
           </button>
 
@@ -410,7 +489,7 @@ export function VoiceChatPage() {
         <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Text Mode</span>
@@ -419,7 +498,7 @@ export function VoiceChatPage() {
           <button
             onClick={clearTranscript}
             disabled={transcript.length === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear</span>
@@ -427,7 +506,7 @@ export function VoiceChatPage() {
 
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[#E8E8F0] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#12121F] hover:bg-[#1A1A2E] border border-[#00F0FF]/10 text-sm text-[#8892A4] hover:text-[var(--ag-text-primary)] transition-colors"
           >
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -465,7 +544,20 @@ export function VoiceChatPage() {
           animation: voice-bar 0.5s ease-in-out infinite alternate;
           min-height: 4px;
         }
+        @keyframes voice-wave {
+          0%, 100% { height: 4px; }
+          50% { height: 28px; }
+        }
+        .animate-voice-wave {
+          animation: voice-wave 0.6s ease-in-out infinite alternate;
+          min-height: 4px;
+        }
+        @keyframes agent-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.06); }
+        }
       `}</style>
-    </div>
+      </div>
+    </PageShell>
   );
 }

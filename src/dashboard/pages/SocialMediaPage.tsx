@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { PageShell } from '@/components/agentin/PageShell';
 import {
   Share2, Plus, Trash2, CheckCircle, XCircle, Clock, Loader2,
   Instagram, Facebook, Webhook, Key, Send, Calendar,
@@ -98,8 +99,8 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
           onClick={() => onChange(t.value)}
           className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
             selected === t.value
-              ? 'bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
-              : 'bg-[#06060B] text-[#9CA3AF] border border-[#1a1a2e] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+              ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
+              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
           }`}
         >
           {t.label}
@@ -121,7 +122,7 @@ function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: 
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
             selected === p.value
               ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
-              : 'bg-[#06060B] text-[#9CA3AF] border border-[#1a1a2e] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
           }`}
           style={selected === p.value ? { background: `${p.color}20`, color: p.color, borderColor: `${p.color}60` } : undefined}
         >
@@ -169,14 +170,14 @@ function HashtagSuggestions({ text }: { text: string }) {
   if (hashtags.length === 0) return null;
 
   return (
-    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e]">
+    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center gap-1.5 mb-2">
-        <Hash className="w-3.5 h-3.5 text-[#00F0FF]" />
-        <span className="text-xs font-medium text-[#9CA3AF]">Suggested Hashtags</span>
+        <Hash className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+        <span className="text-xs font-medium text-[var(--ag-text-muted)]">Suggested Hashtags</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {hashtags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF] text-xs">
+          <span key={tag} className="px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs">
             {tag}
           </span>
         ))}
@@ -196,8 +197,8 @@ function PostPreviewCard({ text, platform }: { text: string; platform: Platform 
   return (
     <div className="mt-3">
       <div className="flex items-center gap-1.5 mb-2">
-        <Eye className="w-3.5 h-3.5 text-[#9CA3AF]" />
-        <span className="text-xs font-medium text-[#9CA3AF]">Preview on {info.label}</span>
+        <Eye className="w-3.5 h-3.5 text-[var(--ag-text-muted)]" />
+        <span className="text-xs font-medium text-[var(--ag-text-muted)]">Preview on {info.label}</span>
       </div>
       <div
         className="rounded-xl border p-4 space-y-2"
@@ -212,23 +213,23 @@ function PostPreviewCard({ text, platform }: { text: string; platform: Platform 
             <PlatformIcon platform={platform} className="w-4 h-4" style={{ color: info.color } as React.CSSProperties} />
           </div>
           <div>
-            <span className="text-xs font-semibold text-[#E8E8F0]">Your Brand</span>
-            <span className="text-[10px] text-[#9CA3AF] block">
+            <span className="text-xs font-semibold text-[var(--ag-text-primary)]">Your Brand</span>
+            <span className="text-[10px] text-[var(--ag-text-muted)] block">
               {platform === 'twitter' ? '@yourbrand' : platform === 'linkedin' ? 'Your Brand Inc.' : '@yourbrand'}
             </span>
           </div>
         </div>
         {/* Body text */}
-        <p className="text-sm text-[#E8E8F0] whitespace-pre-wrap leading-relaxed">{truncated}</p>
+        <p className="text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap leading-relaxed">{truncated}</p>
         {/* Mock engagement bar */}
-        <div className="flex items-center gap-4 pt-2 border-t border-[#1a1a2e]">
-          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+        <div className="flex items-center gap-4 pt-2 border-t border-[var(--ag-border-subtle)]">
+          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
             <Heart className="w-3 h-3" /> 0
           </span>
-          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
             <MessageCircle className="w-3 h-3" /> 0
           </span>
-          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
             <Share2 className="w-3 h-3" /> 0
           </span>
         </div>
@@ -286,11 +287,11 @@ function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: stri
   const fullThread = numbered.join('\n\n');
 
   return (
-    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e]">
+    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <Scissors className="w-3.5 h-3.5 text-[#00F0FF]" />
-          <span className="text-xs font-medium text-[#9CA3AF]">Thread Preview ({tweets.length} tweets)</span>
+          <Scissors className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+          <span className="text-xs font-medium text-[var(--ag-text-muted)]">Thread Preview ({tweets.length} tweets)</span>
         </div>
         <CopyButton
           text={fullThread}
@@ -305,7 +306,7 @@ function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: stri
           return (
             <div
               key={i}
-              className="p-2.5 rounded-lg border text-sm text-[#E8E8F0] whitespace-pre-wrap"
+              className="p-2.5 rounded-lg border text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap"
               style={{
                 borderColor: isOver ? '#FF616140' : '#1a1a2e',
                 background: isOver ? '#FF616108' : '#0C0C18',
@@ -415,20 +416,20 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
   const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
-    <Card className="bg-[#0C0C18] border-[#1a1a2e]">
+    <Card className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[#00F0FF]" />
+          <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-[var(--ag-cyan)]" />
             Content Calendar
           </CardTitle>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o - 1)}>
-              <ChevronLeft className="w-4 h-4 text-[#9CA3AF]" />
+              <ChevronLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />
             </Button>
-            <span className="text-xs text-[#9CA3AF] min-w-[120px] text-center">{monthLabel}</span>
+            <span className="text-xs text-[var(--ag-text-muted)] min-w-[120px] text-center">{monthLabel}</span>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o + 1)}>
-              <ChevronRight className="w-4 h-4 text-[#9CA3AF]" />
+              <ChevronRight className="w-4 h-4 text-[var(--ag-text-muted)]" />
             </Button>
           </div>
         </div>
@@ -437,7 +438,7 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
         {/* Weekday headers */}
         <div className="grid grid-cols-7 gap-1 mb-1">
           {weekdays.map((d) => (
-            <div key={d} className="text-center text-[10px] text-[#9CA3AF] font-medium py-1">{d}</div>
+            <div key={d} className="text-center text-[10px] text-[var(--ag-text-muted)] font-medium py-1">{d}</div>
           ))}
         </div>
         {/* Day cells */}
@@ -455,10 +456,10 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
                 key={day}
                 className={`aspect-square rounded-md flex flex-col items-center justify-center text-[11px] relative transition-colors ${
                   isToday
-                    ? 'bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] font-bold'
+                    ? 'bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)] font-bold'
                     : count > 0
-                      ? 'bg-[#00FF88]/5 text-[#E8E8F0]'
-                      : 'text-[#9CA3AF]'
+                      ? 'bg-[#00FF88]/5 text-[var(--ag-text-primary)]'
+                      : 'text-[var(--ag-text-muted)]'
                 }`}
               >
                 {day}
@@ -470,11 +471,11 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
           })}
         </div>
         {/* Legend */}
-        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1a1a2e]">
-          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[var(--ag-border-subtle)]">
+          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
             <span className="w-2 h-2 rounded-sm bg-[#00F0FF]/40" /> Today
           </span>
-          <span className="flex items-center gap-1 text-[10px] text-[#9CA3AF]">
+          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
             <span className="w-2 h-2 rounded-sm bg-[#00FF88]/40" /> Scheduled
           </span>
         </div>
@@ -503,7 +504,7 @@ function StatsSummary({ accounts, items }: { accounts: SocialAccount[]; items: C
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {stats.map((s) => (
-        <Card key={s.label} className="bg-[#0C0C18] border-[#1a1a2e]">
+        <Card key={s.label} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
           <CardContent className="p-3 flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -512,8 +513,8 @@ function StatsSummary({ accounts, items }: { accounts: SocialAccount[]; items: C
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#E8E8F0] leading-none">{s.value}</p>
-              <p className="text-[10px] text-[#9CA3AF] mt-0.5">{s.label}</p>
+              <p className="text-lg font-bold text-[var(--ag-text-primary)] leading-none">{s.value}</p>
+              <p className="text-[10px] text-[var(--ag-text-muted)] mt-0.5">{s.label}</p>
             </div>
           </CardContent>
         </Card>
@@ -615,7 +616,7 @@ function AccountsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[#00F0FF]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
       </div>
     );
   }
@@ -623,21 +624,21 @@ function AccountsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#9CA3AF]">Connect your social media accounts for automated posting.</p>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20">
+        <p className="text-sm text-[var(--ag-text-muted)]">Connect your social media accounts for automated posting.</p>
+        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20">
           <Plus className="w-4 h-4 mr-1" /> Add Account
         </Button>
       </div>
 
       {/* Add Account Form */}
       {showForm && (
-        <Card className="bg-[#0C0C18] border-[#00F0FF]/20">
+        <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
           <CardContent className="p-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Platform</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Platform</label>
                 <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger className="bg-[#06060B] border-[#1a1a2e]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -645,15 +646,15 @@ function AccountsTab() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Account Name</label>
-                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[#06060B] border-[#1a1a2e]" />
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Account Name</label>
+                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-[#9CA3AF] mb-1 block">Posting Method</label>
+              <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Posting Method</label>
               <Select value={postingMethod} onValueChange={setPostingMethod}>
-                <SelectTrigger className="bg-[#06060B] border-[#1a1a2e]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="webhook">Webhook</SelectItem>
                   <SelectItem value="api">Direct API</SelectItem>
@@ -663,20 +664,20 @@ function AccountsTab() {
 
             {postingMethod === 'webhook' && (
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Webhook URL</label>
-                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[#06060B] border-[#1a1a2e]" />
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Webhook URL</label>
+                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
               </div>
             )}
 
             {postingMethod === 'api' && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Page ID</label>
-                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[#06060B] border-[#1a1a2e]" />
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Page ID</label>
+                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Access Token</label>
-                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[#06060B] border-[#1a1a2e]" />
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Access Token</label>
+                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
                 </div>
               </div>
             )}
@@ -698,17 +699,17 @@ function AccountsTab() {
       {/* Account Cards */}
       {accounts.length === 0 && !showForm && (
         <div className="text-center py-12 px-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF2D78]/10 to-[#00F0FF]/10 border border-[#1a1a2e] flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF2D78]/10 to-[#00F0FF]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
             <Globe className="w-8 h-8 text-[#FF2D78] opacity-40" />
           </div>
-          <p className="text-sm font-medium text-[#E8E8F0] mb-1">No social accounts connected</p>
-          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto mb-4">
+          <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">No social accounts connected</p>
+          <p className="text-xs text-[var(--ag-text-muted)] max-w-xs mx-auto mb-4">
             Connect your Instagram or Facebook to start auto-posting AI-generated content on schedule.
           </p>
           <Button
             size="sm"
             onClick={() => setShowForm(true)}
-            className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+            className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
           >
             <Plus className="w-4 h-4 mr-1" /> Connect Account
           </Button>
@@ -717,7 +718,7 @@ function AccountsTab() {
 
       <div className="grid gap-3">
         {accounts.map((account) => (
-          <Card key={account.id} className="bg-[#0C0C18] border-[#1a1a2e] hover:border-[#00F0FF]/20 transition-colors">
+          <Card key={account.id} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 {/* Platform icon */}
@@ -738,14 +739,14 @@ function AccountsTab() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[#E8E8F0] truncate">{account.account_name}</span>
+                    <span className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{account.account_name}</span>
                     <StatusBadge status={account.status} />
-                    <Badge variant="outline" className="text-xs text-[#9CA3AF] border-[#1a1a2e]">
+                    <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
                       {account.posting_method === 'webhook' ? <Webhook className="w-3 h-3 mr-1" /> : <Key className="w-3 h-3 mr-1" />}
                       {account.posting_method}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#9CA3AF]">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
                     <span>{account.posts_count} posts</span>
                     {account.last_post_at && (
                       <span>Last: {new Date(account.last_post_at).toLocaleDateString()}</span>
@@ -755,10 +756,10 @@ function AccountsTab() {
 
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleToggleStatus(account)} aria-label={account.status === 'active' ? 'Pause ' + account.account_name : 'Activate ' + account.account_name}>
-                    {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[#9CA3AF]" />}
+                    {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />}
                   </Button>
                   <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleTest(account.id)} disabled={testing === account.id} aria-label={'Test ' + account.account_name}>
-                    {testing === account.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#00F0FF]" />}
+                    {testing === account.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[var(--ag-cyan)]" />}
                   </Button>
                   <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleDelete(account.id)} aria-label={'Delete ' + account.account_name}>
                     <Trash2 className="w-4 h-4 text-[#FF6161]" />
@@ -1015,7 +1016,7 @@ function ContentPlanTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[#00F0FF]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
       </div>
     );
   }
@@ -1028,17 +1029,17 @@ function ContentPlanTab() {
         {plans.length === 0 && !showComposer && (
           <div className="text-center py-10 px-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#FF2D78]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-[#00F0FF]" />
+              <Sparkles className="w-8 h-8 text-[var(--ag-cyan)]" />
             </div>
-            <h3 className="text-base font-semibold text-[#E8E8F0] mb-1">Create your first social media post</h3>
-            <p className="text-sm text-[#9CA3AF] max-w-md mx-auto mb-4">
+            <h3 className="text-base font-semibold text-[var(--ag-text-primary)] mb-1">Create your first social media post</h3>
+            <p className="text-sm text-[var(--ag-text-muted)] max-w-md mx-auto mb-4">
               Describe your topic and I'll write 3 variations for different platforms, or generate a full 10-day content plan.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button
                 size="sm"
                 onClick={() => setShowComposer(true)}
-                className="bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+                className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
               >
                 <Wand2 className="w-4 h-4 mr-1" /> Quick Post
               </Button>
@@ -1046,7 +1047,7 @@ function ContentPlanTab() {
                 size="sm"
                 variant="ghost"
                 onClick={() => {}}
-                className="text-[#9CA3AF] hover:text-[#E8E8F0]"
+                className="text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]"
               >
                 <CalendarDays className="w-4 h-4 mr-1" /> Generate Plan
               </Button>
@@ -1056,38 +1057,38 @@ function ContentPlanTab() {
 
         {/* Post Composer */}
         {(showComposer || plans.length > 0) && (
-          <Card className="bg-[#0C0C18] border-[#00F0FF]/20 overflow-hidden">
+          <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-[#00F0FF]" />
+              <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-[var(--ag-cyan)]" />
                 Quick Post Composer
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Tone selector */}
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1.5 block">Tone</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Tone</label>
                 <TonePills selected={composerTone} onChange={setComposerTone} />
               </div>
 
               {/* Platform selector */}
               <div>
-                <label className="text-xs text-[#9CA3AF] mb-1.5 block">Platform</label>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Platform</label>
                 <PlatformBadges selected={composerPlatform} onChange={setComposerPlatform} />
               </div>
 
               {/* AI Generate section */}
-              <div className="p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e] space-y-2">
+              <div className="p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-2">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
-                  <span className="text-xs font-medium text-[#9CA3AF]">AI Generate</span>
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+                  <span className="text-xs font-medium text-[var(--ag-text-muted)]">AI Generate</span>
                 </div>
                 <div className="flex gap-2">
                   <Input
                     value={composerTopic}
                     onChange={(e) => setComposerTopic(e.target.value)}
                     placeholder="Describe your topic (e.g., AI productivity tips for developers)"
-                    className="bg-[#0C0C18] border-[#1a1a2e] text-sm flex-1"
+                    className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-sm flex-1"
                     onKeyDown={(e) => { if (e.key === 'Enter' && composerTopic.trim() && !aiGenerating) handleAiGenerate(); }}
                     disabled={aiGenerating}
                   />
@@ -1117,7 +1118,7 @@ function ContentPlanTab() {
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
                   placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}, or use AI Generate above...`}
-                  className="bg-[#06060B] border-[#1a1a2e] text-sm min-h-[100px] focus:border-[#00F0FF]/30"
+                  className="bg-[#06060B] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#00F0FF]/30"
                   disabled={aiGenerating}
                 />
                 <CharacterCounter count={composerText.length} platform={composerPlatform} />
@@ -1156,21 +1157,21 @@ function ContentPlanTab() {
         )}
 
         {/* Content plan generator */}
-        <Card className="bg-[#0C0C18] border-[#00F0FF]/20">
+        <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
           <CardHeader>
-            <CardTitle className="text-sm text-[#E8E8F0] flex items-center gap-2">
+            <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
               <Target className="w-4 h-4 text-[#FF2D78]" />
               Generate 10-Day Content Plan
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <label className="text-xs text-[#9CA3AF] mb-1 block">Topic</label>
-              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[#1a1a2e]" />
+              <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Topic</label>
+              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
             </div>
             <div>
-              <label className="text-xs text-[#9CA3AF] mb-1 block">Niche</label>
-              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[#1a1a2e]" />
+              <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Niche</label>
+              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
             </div>
             <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40">
               {generating ? (
@@ -1185,15 +1186,15 @@ function ContentPlanTab() {
         {/* Existing plans */}
         {plans.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-[#E8E8F0] mb-2">Existing Plans</h3>
+            <h3 className="text-sm font-medium text-[var(--ag-text-primary)] mb-2">Existing Plans</h3>
             <div className="grid gap-2">
               {plans.map((plan) => (
-                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 rounded-xl bg-[#0C0C18] border border-[#1a1a2e] hover:border-[#00F0FF]/20 transition-colors">
+                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#E8E8F0]">{plan.title}</span>
+                    <span className="text-sm text-[var(--ag-text-primary)]">{plan.title}</span>
                     <StatusBadge status={plan.status} />
                   </div>
-                  <span className="text-xs text-[#9CA3AF]">{new Date(plan.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">{new Date(plan.created_at).toLocaleDateString()}</span>
                 </button>
               ))}
             </div>
@@ -1215,16 +1216,16 @@ function ContentPlanTab() {
   return (
     <div className="space-y-4">
       {/* Plan header */}
-      <Card className="bg-[#0C0C18] border-[#00F0FF]/20">
+      <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
         <CardContent className="p-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h3 className="text-sm font-medium text-[#E8E8F0]">{activePlan.title}</h3>
+              <h3 className="text-sm font-medium text-[var(--ag-text-primary)]">{activePlan.title}</h3>
               <div className="flex items-center gap-2 mt-1">
                 <StatusBadge status={activePlan.status} />
-                <span className="text-xs text-[#9CA3AF]">{items.length} items</span>
+                <span className="text-xs text-[var(--ag-text-muted)]">{items.length} items</span>
                 {activePlan.start_date && (
-                  <span className="text-xs text-[#9CA3AF]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
                 )}
               </div>
             </div>
@@ -1245,16 +1246,16 @@ function ContentPlanTab() {
 
           {/* Activate form */}
           {showActivate && (
-            <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[#1a1a2e] space-y-3">
+            <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Start Date</label>
-                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[#0C0C18] border-[#1a1a2e]" />
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Start Date</label>
+                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Social Account</label>
+                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Social Account</label>
                   <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                    <SelectTrigger className="bg-[#0C0C18] border-[#1a1a2e]"><SelectValue placeholder="Select account" /></SelectTrigger>
+                    <SelectTrigger className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]"><SelectValue placeholder="Select account" /></SelectTrigger>
                     <SelectContent>
                       {accounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>{a.account_name} ({a.platform})</SelectItem>
@@ -1277,16 +1278,16 @@ function ContentPlanTab() {
 
       {/* Day cards */}
       {Array.from(dayGroups.entries()).sort(([a], [b]) => a - b).map(([dayNum, dayItems]) => (
-        <Card key={dayNum} className="bg-[#0C0C18] border-[#1a1a2e]">
+        <Card key={dayNum} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-[#00F0FF]">Day {dayNum}</CardTitle>
+            <CardTitle className="text-sm text-[var(--ag-cyan)]">Day {dayNum}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {dayItems.map((item) => (
-              <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[#06060B] border-[#1a1a2e]' : 'bg-[#06060B]/50 border-[#1a1a2e]/50 opacity-60'}`}>
+              <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[#06060B] border-[var(--ag-border-subtle)]' : 'bg-[#06060B]/50 border-[var(--ag-border-subtle)]/50 opacity-60'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-[#9CA3AF]">Slot {item.slot}</span>
+                    <span className="text-xs font-mono text-[var(--ag-text-muted)]">Slot {item.slot}</span>
                     <StatusIcon status={item.status} />
                     <StatusBadge status={item.status} />
                   </div>
@@ -1298,12 +1299,12 @@ function ContentPlanTab() {
                       </Button>
                     ) : (
                       <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => { setEditingItem(item.id); setEditCaption(item.caption); setEditMediaId(item.media_id); }} aria-label="Edit item">
-                        <Edit3 className="w-4 h-4 text-[#9CA3AF]" />
+                        <Edit3 className="w-4 h-4 text-[var(--ag-text-muted)]" />
                       </Button>
                     )}
                     {item.enabled && activePlan.status === 'active' && item.status !== 'posted' && (
                       <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handlePostNow(item)} disabled={postingItem === item.id} aria-label="Post now">
-                        {postingItem === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#00F0FF]" />}
+                        {postingItem === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[var(--ag-cyan)]" />}
                       </Button>
                     )}
                   </div>
@@ -1312,22 +1313,22 @@ function ContentPlanTab() {
                 {/* Caption */}
                 {editingItem === item.id ? (
                   <div className="space-y-2">
-                    <Textarea value={editCaption} onChange={(e) => setEditCaption(e.target.value)} className="bg-[#0C0C18] border-[#1a1a2e] text-sm min-h-[80px]" maxLength={2200} />
+                    <Textarea value={editCaption} onChange={(e) => setEditCaption(e.target.value)} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-sm min-h-[80px]" maxLength={2200} />
                     <div className="flex items-center gap-2">
-                      <Input value={editMediaId} onChange={(e) => setEditMediaId(e.target.value)} placeholder="Media ID (img-xxx or vid-xxx)" className="bg-[#0C0C18] border-[#1a1a2e] text-xs flex-1" />
+                      <Input value={editMediaId} onChange={(e) => setEditMediaId(e.target.value)} placeholder="Media ID (img-xxx or vid-xxx)" className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-xs flex-1" />
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-[#E8E8F0] whitespace-pre-wrap">{item.caption}</p>
+                  <p className="text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap">{item.caption}</p>
                 )}
 
                 {/* Media preview */}
                 {item.media_id && editingItem !== item.id && (
                   <div className="mt-2 flex items-center gap-2">
-                    {item.media_type === 'image' ? <Image className="w-4 h-4 text-[#00F0FF]" /> : item.media_type === 'video' ? <Film className="w-4 h-4 text-[#FFB800]" /> : null}
-                    <span className="text-xs text-[#9CA3AF] font-mono">{item.media_id}</span>
+                    {item.media_type === 'image' ? <Image className="w-4 h-4 text-[var(--ag-cyan)]" /> : item.media_type === 'video' ? <Film className="w-4 h-4 text-[#FFB800]" /> : null}
+                    <span className="text-xs text-[var(--ag-text-muted)] font-mono">{item.media_id}</span>
                     {item.media_url && (
-                      <a href={item.media_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#00F0FF] hover:underline">
+                      <a href={item.media_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--ag-cyan)] hover:underline">
                         <Eye className="w-3 h-3 inline mr-1" />preview
                       </a>
                     )}
@@ -1336,7 +1337,7 @@ function ContentPlanTab() {
 
                 {/* Scheduled time */}
                 {item.scheduled_at && (
-                  <div className="mt-1 text-xs text-[#9CA3AF]">
+                  <div className="mt-1 text-xs text-[var(--ag-text-muted)]">
                     <Clock className="w-3 h-3 inline mr-1" />
                     {new Date(item.scheduled_at).toLocaleString()}
                   </div>
@@ -1389,7 +1390,7 @@ function PostsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[#00F0FF]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
       </div>
     );
   }
@@ -1401,7 +1402,7 @@ function PostsTab() {
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {['all', 'scheduled', 'posted', 'failed'].map((f) => (
-          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={filter === f ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#9CA3AF]'}>
+          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={filter === f ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f !== 'all' && (
               <span className="ml-1 text-xs opacity-60">({allItems.filter(i => f === 'all' || i.status === f).length})</span>
@@ -1412,11 +1413,11 @@ function PostsTab() {
 
       {filtered.length === 0 && (
         <div className="text-center py-12 px-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#8B5CF6]/10 border border-[#1a1a2e] flex items-center justify-center mx-auto mb-4">
-            <Megaphone className="w-7 h-7 text-[#00F0FF] opacity-40" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#8B5CF6]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
+            <Megaphone className="w-7 h-7 text-[var(--ag-cyan)] opacity-40" />
           </div>
-          <p className="text-sm font-medium text-[#E8E8F0] mb-1">No posts to show</p>
-          <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto">
+          <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">No posts to show</p>
+          <p className="text-xs text-[var(--ag-text-muted)] max-w-xs mx-auto">
             {filter === 'all'
               ? 'Generate a content plan and activate it to start scheduling posts.'
               : `No ${filter} posts yet. Switch to "All" to see everything.`}
@@ -1426,23 +1427,23 @@ function PostsTab() {
 
       <div className="grid gap-2">
         {filtered.map((item) => (
-          <Card key={item.id} className="bg-[#0C0C18] border-[#1a1a2e]">
+          <Card key={item.id} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
             <CardContent className="p-3">
               <div className="flex items-start gap-3">
                 <StatusIcon status={item.status} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono text-[#9CA3AF]">Day {item.day_number}</span>
+                    <span className="text-xs font-mono text-[var(--ag-text-muted)]">Day {item.day_number}</span>
                     <StatusBadge status={item.status} />
                     {item.media_type && (
-                      <Badge variant="outline" className="text-xs text-[#9CA3AF] border-[#1a1a2e]">
+                      <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
                         {item.media_type === 'image' ? <Image className="w-3 h-3 mr-1" /> : <Film className="w-3 h-3 mr-1" />}
                         {item.media_type}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-[#E8E8F0] mt-1 line-clamp-2">{item.caption}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#9CA3AF]">
+                  <p className="text-sm text-[var(--ag-text-primary)] mt-1 line-clamp-2">{item.caption}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
                     {item.scheduled_at && <span><Clock className="w-3 h-3 inline mr-1" />{new Date(item.scheduled_at).toLocaleString()}</span>}
                     {item.posted_at && <span><CheckCircle className="w-3 h-3 inline mr-1" />Posted {new Date(item.posted_at).toLocaleString()}</span>}
                   </div>
@@ -1492,14 +1493,15 @@ export function SocialMediaPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-6">
+    <PageShell maxWidth="4xl">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2D78]/20 to-[#00F0FF]/20 border border-[#FF2D78]/20 flex items-center justify-center">
           <Share2 className="w-5 h-5 text-[#FF2D78]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[#E8E8F0]">Social Media Handler <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📱 Powered by Weebo</span></h1>
-          <p className="text-sm text-[#9CA3AF]">Connect accounts, generate content plans, and auto-post on schedule.</p>
+          <h1 className="text-xl font-bold text-[var(--ag-text-primary)]">Social Media Handler <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📱 Powered by Weebo</span></h1>
+          <p className="text-sm text-[var(--ag-text-muted)]">Connect accounts, generate content plans, and auto-post on schedule.</p>
         </div>
       </div>
 
@@ -1509,10 +1511,10 @@ export function SocialMediaPage() {
       )}
 
       <Tabs defaultValue="accounts" className="w-full">
-        <TabsList className="bg-[#0C0C18] border border-[#1a1a2e]">
-          <TabsTrigger value="accounts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF]">Accounts</TabsTrigger>
-          <TabsTrigger value="plan" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF]">Content Plan</TabsTrigger>
-          <TabsTrigger value="posts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[#00F0FF]">Posts</TabsTrigger>
+        <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
+          <TabsTrigger value="accounts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Accounts</TabsTrigger>
+          <TabsTrigger value="plan" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Content Plan</TabsTrigger>
+          <TabsTrigger value="posts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Posts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="accounts" className="mt-4">
@@ -1528,5 +1530,6 @@ export function SocialMediaPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </PageShell>
   );
 }

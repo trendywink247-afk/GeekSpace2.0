@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { PageShell } from '@/components/agentin';
 import { CreditCard, Check, ArrowUpRight, Calendar, Zap, TrendingUp, Sparkles, CheckCircle2, Lock, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -132,6 +133,7 @@ export function BillingPage() {
 
   if (loading) {
     return (
+      <PageShell>
       <div className="space-y-6">
         <PageProgress loading />
         {/* Header skeleton */}
@@ -156,6 +158,7 @@ export function BillingPage() {
           ))}
         </div>
       </div>
+      </PageShell>
     );
   }
 
@@ -164,6 +167,7 @@ export function BillingPage() {
     : 0;
 
   return (
+    <PageShell>
     <div data-testid="billing-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* Toast */}
       {toast && (
@@ -182,11 +186,11 @@ export function BillingPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
             Billing
           </h1>
-          <p className="text-[#9CA3AF]">Manage your plan and credits</p>
+          <p className="text-[var(--ag-text-muted)]">Manage your plan and credits</p>
         </div>
 
         {/* Currency toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20">
           {(['USD', 'INR'] as const).map((c) => (
             <button
               key={c}
@@ -194,7 +198,7 @@ export function BillingPage() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
                 currency === c
                   ? 'bg-[#00F0FF] text-white'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
               }`}
             >
               {c === 'USD' ? '$ USD' : '₹ INR'}
@@ -209,8 +213,8 @@ export function BillingPage() {
           <div className="flex items-center gap-3">
             <Star className="w-5 h-5 text-[#BF5FFF]" />
             <div>
-              <CardTitle className="text-[#E8E8F0]">Premium Subscription</CardTitle>
-              <p className="text-sm text-[#9CA3AF]">Basic (Rs 99/mo) and Pro (Rs 299/mo) via Stripe</p>
+              <CardTitle className="text-[var(--ag-text-primary)]">Premium Subscription</CardTitle>
+              <p className="text-sm text-[var(--ag-text-muted)]">Basic (Rs 99/mo) and Pro (Rs 299/mo) via Stripe</p>
             </div>
             {stripeStatus?.isPaid && (
               <Badge className="bg-[#BF5FFF]/20 text-[#BF5FFF] border-[#BF5FFF]/30 ml-auto">{stripeStatus.label} Active</Badge>
@@ -220,15 +224,15 @@ export function BillingPage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
-              <div className="font-bold text-[#E8E8F0] mb-1">Basic</div>
-              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹99' : '$1.19'}<span className="text-sm font-normal text-[#9CA3AF]">/month</span></div>
-              <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
+              <div className="font-bold text-[var(--ag-text-primary)] mb-1">Basic</div>
+              <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '₹99' : '$1.19'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
+              <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Image generation</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Voice transcription</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 30 voice calls/day</li>
               </ul>
               {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
-                <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+                <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
                 <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
                   {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
@@ -236,15 +240,15 @@ export function BillingPage() {
               )}
             </div>
             <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
-              <div className="font-bold text-[#E8E8F0] mb-1">Pro</div>
-              <div className="text-3xl font-bold text-[#E8E8F0] mb-3">{currency === 'INR' ? '₹299' : '$3.59'}<span className="text-sm font-normal text-[#9CA3AF]">/month</span></div>
-              <ul className="text-sm text-[#9CA3AF] space-y-1 mb-4">
+              <div className="font-bold text-[var(--ag-text-primary)] mb-1">Pro</div>
+              <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '₹299' : '$3.59'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
+              <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Everything in Basic</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 100 voice calls/day</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Priority support</li>
               </ul>
               {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
-                <p className="text-xs text-[#9CA3AF]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+                <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : (
                 <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
                   {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
@@ -253,7 +257,7 @@ export function BillingPage() {
             </div>
           </div>
           {!stripeStatus?.isPaid && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#BF5FFF]/5 border border-[#BF5FFF]/20 text-sm text-[#9CA3AF]" data-testid="upgrade-to-unlock">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-[#BF5FFF]/5 border border-[#BF5FFF]/20 text-sm text-[var(--ag-text-muted)]" data-testid="upgrade-to-unlock">
               <Lock className="w-4 h-4 text-[#BF5FFF] flex-shrink-0" />
               <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
             </div>
@@ -268,11 +272,11 @@ export function BillingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-[#00F0FF]" />
+                  <CreditCard className="w-6 h-6 text-[var(--ag-cyan)]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#E8E8F0] capitalize">{subscription.plan} Plan</h2>
-                  <p className="text-sm text-[#9CA3AF]">
+                  <h2 className="text-xl font-bold text-[var(--ag-text-primary)] capitalize">{subscription.plan} Plan</h2>
+                  <p className="text-sm text-[var(--ag-text-muted)]">
                     {subscription.price_usd > 0
                       ? `${currency === 'INR' ? `₹${subscription.price_inr.toLocaleString()}` : `$${subscription.price_usd}`} / ${plans.find(p => p.id === subscription.plan)?.intervalLabel || 'cycle'}`
                       : 'Free forever'}
@@ -294,45 +298,45 @@ export function BillingPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
+              <div className="p-4 rounded-xl /80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-[#00F0FF]" />
-                  <span className="text-xs text-[#9CA3AF]">Credits Remaining</span>
+                  <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
+                  <span className="text-xs text-[var(--ag-text-muted)]">Credits Remaining</span>
                 </div>
-                <div className="text-2xl font-bold text-[#E8E8F0] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
                   {formatCredits(subscription.credits_remaining)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">of {formatCredits(subscription.monthly_credits)}</div>
+                <div className="text-xs text-[var(--ag-text-muted)]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
-              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
+              <div className="p-4 rounded-xl /80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[#FFB800]" />
-                  <span className="text-xs text-[#9CA3AF]">Credits Used</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">Credits Used</span>
                 </div>
-                <div className="text-2xl font-bold text-[#E8E8F0] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
                   {formatCredits(subscription.credits_used_this_cycle)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">this cycle</div>
+                <div className="text-xs text-[var(--ag-text-muted)]">this cycle</div>
               </div>
-              <div className="p-4 rounded-xl bg-[#06060B]/80 border border-[#00F0FF]/10">
+              <div className="p-4 rounded-xl /80 border border-[#00F0FF]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-[#00FF88]" />
-                  <span className="text-xs text-[#9CA3AF]">Cycle Ends</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">Cycle Ends</span>
                 </div>
-                <div className="text-2xl font-bold text-[#E8E8F0]">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
                   {formatDate(subscription.billing_cycle_end)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">{subscription.billing_interval_days} day cycle</div>
+                <div className="text-xs text-[var(--ag-text-muted)]">{subscription.billing_interval_days} day cycle</div>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-[#9CA3AF]">Credit usage</span>
-                <span className="text-xs text-[#9CA3AF] font-mono">{usedPercent.toFixed(1)}%</span>
+                <span className="text-xs text-[var(--ag-text-muted)]">Credit usage</span>
+                <span className="text-xs text-[var(--ag-text-muted)] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
-              <div className="h-3 sm:h-2 bg-[#06060B] rounded-full overflow-hidden">
+              <div className="h-3 sm:h-2 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     usedPercent > 90 ? 'bg-[#FF6161]' : usedPercent > 70 ? 'bg-[#FFB800]' : 'bg-gradient-to-r from-[#00F0FF] to-[#00FF88]'
@@ -347,7 +351,7 @@ export function BillingPage() {
 
       {/* Plan Cards Grid */}
       <div>
-        <h2 className="text-xl font-bold text-[#E8E8F0] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <h2 className="text-xl font-bold text-[var(--ag-text-primary)] mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
           Available Plans
         </h2>
         {isMobile ? (
@@ -360,7 +364,7 @@ export function BillingPage() {
               return (
                 <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
                   <Card
-                    className={`bg-[#0C0C18] transition-all h-full relative overflow-hidden ${
+                    className={`bg-[var(--ag-bg-surface)] transition-all h-full relative overflow-hidden ${
                       isCurrent
                         ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
                         : isHighlighted
@@ -396,9 +400,9 @@ export function BillingPage() {
                     )}
                     <CardHeader className="pb-3 pt-6">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="capitalize text-[#E8E8F0]">{plan.id}</CardTitle>
+                        <CardTitle className="capitalize text-[var(--ag-text-primary)]">{plan.id}</CardTitle>
                         {isCurrent && (
-                          <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">
+                          <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] border-[#00F0FF]/30">
                             Current
                           </Badge>
                         )}
@@ -407,42 +411,42 @@ export function BillingPage() {
                     <CardContent className="space-y-4">
                       {/* Price with slashed old price */}
                       <div className="flex items-baseline flex-wrap gap-2">
-                        <span className="text-4xl font-bold text-[#E8E8F0]">{price(plan)}</span>
+                        <span className="text-4xl font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
                         {display.oldPrice > 0 && (
-                          <span className="text-lg text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
+                          <span className="text-lg text-[var(--ag-text-muted)] line-through">{oldPrice(plan)}</span>
                         )}
                         {plan.priceUsd > 0 && (
-                          <span className="text-sm text-[#9CA3AF]">/ {plan.intervalLabel}</span>
+                          <span className="text-sm text-[var(--ag-text-muted)]">/ {plan.intervalLabel}</span>
                         )}
                       </div>
-                      <div className="text-sm text-[#9CA3AF]">{plan.description}</div>
+                      <div className="text-sm text-[var(--ag-text-muted)]">{plan.description}</div>
 
                       {/* Features */}
                       <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#9CA3AF]">Agent Slots</span>
-                          <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
+                          <span className="text-[var(--ag-text-muted)]">Agent Slots</span>
+                          <span className="text-[var(--ag-text-primary)] font-medium">{display.agentSlots}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#9CA3AF]">Token Budget</span>
-                          <span className="text-[#E8E8F0] font-medium">{display.tokenBudget}</span>
+                          <span className="text-[var(--ag-text-muted)]">Token Budget</span>
+                          <span className="text-[var(--ag-text-primary)] font-medium">{display.tokenBudget}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#9CA3AF]">Kimi Access</span>
+                          <span className="text-[var(--ag-text-muted)]">Kimi Access</span>
                           {display.hasKimi ? (
                             <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
                           ) : (
-                            <span className="text-[#9CA3AF]">—</span>
+                            <span className="text-[var(--ag-text-muted)]">—</span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-[#E8E8F0]">
-                        <Zap className="w-4 h-4 text-[#00F0FF]" />
+                      <div className="flex items-center gap-2 text-sm text-[var(--ag-text-primary)]">
+                        <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
                         {formatCredits(plan.credits)} credits
                       </div>
                       {isCurrent ? (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[#00F0FF]">
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[var(--ag-cyan)]">
                           <Check className="w-4 h-4" />
                           Active plan
                         </div>
@@ -463,7 +467,7 @@ export function BillingPage() {
                       {subscription?.plan === 'free' && plan.id === 'free' && (
                         <button
                           onClick={handleDayPass}
-                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00F0FF]/30 text-[#00F0FF] text-xs hover:bg-[#00F0FF]/10 transition-colors min-h-[44px]"
+                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00F0FF]/30 text-[var(--ag-cyan)] text-xs hover:bg-[#00F0FF]/10 transition-colors min-h-[44px]"
                         >
                           Try Weebo for $1/day →
                         </button>
@@ -484,7 +488,7 @@ export function BillingPage() {
               return (
                 <Card
                   key={plan.id}
-                  className={`bg-[#0C0C18] transition-all relative overflow-hidden ${
+                  className={`bg-[var(--ag-bg-surface)] transition-all relative overflow-hidden ${
                     isCurrent
                       ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
                       : isHighlighted
@@ -520,9 +524,9 @@ export function BillingPage() {
                   )}
                   <CardHeader className="pb-3 pt-6">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="capitalize text-[#E8E8F0]">{plan.id}</CardTitle>
+                      <CardTitle className="capitalize text-[var(--ag-text-primary)]">{plan.id}</CardTitle>
                       {isCurrent && (
-                        <Badge className="bg-[#00F0FF]/20 text-[#00F0FF] border-[#00F0FF]/30">
+                        <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] border-[#00F0FF]/30">
                           Current
                         </Badge>
                       )}
@@ -531,42 +535,42 @@ export function BillingPage() {
                   <CardContent className="space-y-4">
                     {/* Price with slashed old price */}
                     <div className="flex items-baseline flex-wrap gap-2">
-                      <span className="text-3xl font-bold text-[#E8E8F0]">{price(plan)}</span>
+                      <span className="text-3xl font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
                       {display.oldPrice > 0 && (
-                        <span className="text-sm text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
+                        <span className="text-sm text-[var(--ag-text-muted)] line-through">{oldPrice(plan)}</span>
                       )}
                       {plan.priceUsd > 0 && (
-                        <span className="text-sm text-[#9CA3AF]">/ {plan.intervalLabel}</span>
+                        <span className="text-sm text-[var(--ag-text-muted)]">/ {plan.intervalLabel}</span>
                       )}
                     </div>
-                    <div className="text-sm text-[#9CA3AF]">{plan.description}</div>
+                    <div className="text-sm text-[var(--ag-text-muted)]">{plan.description}</div>
 
                     {/* Features */}
                     <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#9CA3AF]">Agent Slots</span>
-                        <span className="text-[#E8E8F0] font-medium">{display.agentSlots}</span>
+                        <span className="text-[var(--ag-text-muted)]">Agent Slots</span>
+                        <span className="text-[var(--ag-text-primary)] font-medium">{display.agentSlots}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#9CA3AF]">Token Budget</span>
-                        <span className="text-[#E8E8F0] font-medium">{display.tokenBudget}</span>
+                        <span className="text-[var(--ag-text-muted)]">Token Budget</span>
+                        <span className="text-[var(--ag-text-primary)] font-medium">{display.tokenBudget}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#9CA3AF]">Kimi Access</span>
+                        <span className="text-[var(--ag-text-muted)]">Kimi Access</span>
                         {display.hasKimi ? (
                           <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
                         ) : (
-                          <span className="text-[#9CA3AF]">—</span>
+                          <span className="text-[var(--ag-text-muted)]">—</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-[#E8E8F0]">
-                      <Zap className="w-4 h-4 text-[#00F0FF]" />
+                    <div className="flex items-center gap-2 text-sm text-[var(--ag-text-primary)]">
+                      <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
                       {formatCredits(plan.credits)} credits
                     </div>
                     {isCurrent ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[#00F0FF]">
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[var(--ag-cyan)]">
                         <Check className="w-4 h-4" />
                         Active plan
                       </div>
@@ -587,7 +591,7 @@ export function BillingPage() {
                     {subscription?.plan === 'free' && plan.id === 'free' && (
                       <button
                         onClick={handleDayPass}
-                        className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#00F0FF]/30 text-[#00F0FF] text-xs hover:bg-[#00F0FF]/10 transition-colors"
+                        className="w-full mt-2 py-1.5 px-3 rounded-lg border border-[#00F0FF]/30 text-[var(--ag-cyan)] text-xs hover:bg-[#00F0FF]/10 transition-colors"
                       >
                         Try Weebo for $1/day →
                       </button>
@@ -603,24 +607,24 @@ export function BillingPage() {
       {/* Plan Comparison Table */}
       <Card className="border-[#00F0FF]/20">
         <CardHeader>
-          <CardTitle className="text-[#E8E8F0] flex items-center gap-2">
+          <CardTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#FFB800]" />
             Plan Comparison
           </CardTitle>
-          <p className="text-sm text-[#9CA3AF]">Compare features across all plans</p>
+          <p className="text-sm text-[var(--ag-text-muted)]">Compare features across all plans</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto -mx-4 px-4">
             <table className="w-full min-w-[500px]">
               <thead>
                 <tr className="border-b border-[#00F0FF]/20">
-                  <th className="text-left py-3 px-2 text-sm font-medium text-[#9CA3AF]">Feature</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-[var(--ag-text-muted)]">Feature</th>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
                       <th key={plan.id} className="text-center py-3 px-2 text-sm font-medium">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-[#E8E8F0] capitalize">{plan.id}</span>
+                          <span className="text-[var(--ag-text-primary)] capitalize">{plan.id}</span>
                           {display?.badge && (
                             <span
                               className="text-xs px-1.5 py-0.5 rounded"
@@ -639,30 +643,30 @@ export function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-[#00F0FF]/10 bg-[#0C0C18]/40">
-                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Agent Slots</td>
+                <tr className="border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)]/40">
+                  <td className="py-3 px-2 text-sm text-[var(--ag-text-muted)]">Agent Slots</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
-                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#E8E8F0]">
+                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                         {display?.agentSlots || 1}
                       </td>
                     );
                   })}
                 </tr>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Token Budget</td>
+                  <td className="py-3 px-2 text-sm text-[var(--ag-text-muted)]">Token Budget</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
-                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#E8E8F0]">
+                      <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                         {display?.tokenBudget || '50K'}
                       </td>
                     );
                   })}
                 </tr>
-                <tr className="border-b border-[#00F0FF]/10 bg-[#0C0C18]/40">
-                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Kimi Access</td>
+                <tr className="border-b border-[#00F0FF]/10 bg-[var(--ag-bg-surface)]/40">
+                  <td className="py-3 px-2 text-sm text-[var(--ag-text-muted)]">Kimi Access</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
@@ -670,30 +674,30 @@ export function BillingPage() {
                         {display?.hasKimi ? (
                           <CheckCircle2 className="w-5 h-5 text-[#00FF88] mx-auto" />
                         ) : (
-                          <span className="text-[#9CA3AF]">—</span>
+                          <span className="text-[var(--ag-text-muted)]">—</span>
                         )}
                       </td>
                     );
                   })}
                 </tr>
                 <tr className="border-b border-[#00F0FF]/10">
-                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Credits / Cycle</td>
+                  <td className="py-3 px-2 text-sm text-[var(--ag-text-muted)]">Credits / Cycle</td>
                   {plans.map((plan) => (
-                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#E8E8F0]">
+                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                       {formatCredits(plan.credits)}
                     </td>
                   ))}
                 </tr>
                 <tr>
-                  <td className="py-3 px-2 text-sm text-[#9CA3AF]">Price</td>
+                  <td className="py-3 px-2 text-sm text-[var(--ag-text-muted)]">Price</td>
                   {plans.map((plan) => {
                     const display = PLAN_DISPLAY[plan.id];
                     return (
                       <td key={plan.id} className="text-center py-3 px-2">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-sm font-bold text-[#E8E8F0]">{price(plan)}</span>
+                          <span className="text-sm font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
                           {display?.oldPrice > 0 && (
-                            <span className="text-xs text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
+                            <span className="text-xs text-[var(--ag-text-muted)] line-through">{oldPrice(plan)}</span>
                           )}
                         </div>
                       </td>
@@ -709,23 +713,23 @@ export function BillingPage() {
       {/* Usage History Table */}
       <Card className="border-[#00F0FF]/20">
         <CardHeader>
-          <CardTitle className="text-[#E8E8F0]">Usage History</CardTitle>
-          <p className="text-sm text-[#9CA3AF]">Last 30 days of daily usage</p>
+          <CardTitle className="text-[var(--ag-text-primary)]">Usage History</CardTitle>
+          <p className="text-sm text-[var(--ag-text-muted)]">Last 30 days of daily usage</p>
         </CardHeader>
         <CardContent>
           {usage.length === 0 ? (
             <div className="text-center py-8">
-              <TrendingUp className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#9CA3AF]">No usage data yet</p>
-              <p className="text-sm text-[#9CA3AF]">Start chatting and usage will appear here</p>
+              <TrendingUp className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+              <p className="text-[var(--ag-text-muted)]">No usage data yet</p>
+              <p className="text-sm text-[var(--ag-text-muted)]">Start chatting and usage will appear here</p>
             </div>
           ) : (
             <MobileTable<DailyUsage>
               columns={[
-                { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[#E8E8F0]">{formatDate(row.day)}</span> },
-                { key: 'calls', label: 'Calls', render: (row) => <span className="text-[#9CA3AF] font-mono">{row.calls}</span> },
-                { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[#9CA3AF] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
-                { key: 'cost', label: 'Cost', render: (row) => <span className="text-[#E8E8F0] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
+                { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[var(--ag-text-primary)]">{formatDate(row.day)}</span> },
+                { key: 'calls', label: 'Calls', render: (row) => <span className="text-[var(--ag-text-muted)] font-mono">{row.calls}</span> },
+                { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[var(--ag-text-muted)] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
+                { key: 'cost', label: 'Cost', render: (row) => <span className="text-[var(--ag-text-primary)] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
               ]}
               data={usage}
               keyExtractor={(row) => row.day}
@@ -739,15 +743,15 @@ export function BillingPage() {
       {/* Credit History — per-event detail */}
       <Card className="border-[#00F0FF]/20">
         <CardHeader>
-          <CardTitle className="text-[#E8E8F0]">Credit History</CardTitle>
-          <p className="text-sm text-[#9CA3AF]">Last 20 AI requests with cost breakdown</p>
+          <CardTitle className="text-[var(--ag-text-primary)]">Credit History</CardTitle>
+          <p className="text-sm text-[var(--ag-text-muted)]">Last 20 AI requests with cost breakdown</p>
         </CardHeader>
         <CardContent>
           {events.length === 0 ? (
             <div className="text-center py-8">
-              <Zap className="w-10 h-10 text-[#00F0FF]/30 mx-auto mb-3" />
-              <p className="text-[#9CA3AF]">No credit events yet</p>
-              <p className="text-sm text-[#9CA3AF]">Credit usage will appear here after your first AI request</p>
+              <Zap className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+              <p className="text-[var(--ag-text-muted)]">No credit events yet</p>
+              <p className="text-sm text-[var(--ag-text-muted)]">Credit usage will appear here after your first AI request</p>
             </div>
           ) : (
             <MobileTable<UsageEvent>
@@ -757,7 +761,7 @@ export function BillingPage() {
                   label: 'Date',
                   primary: true,
                   render: (row) => (
-                    <span className="text-[#E8E8F0] text-xs whitespace-nowrap">
+                    <span className="text-[var(--ag-text-primary)] text-xs whitespace-nowrap">
                       {formatDate((row as unknown as Record<string, string>).created_at || row.createdAt)}
                     </span>
                   ),
@@ -765,13 +769,13 @@ export function BillingPage() {
                 {
                   key: 'channel',
                   label: 'Channel',
-                  render: (row) => <span className="text-[#9CA3AF] capitalize">{row.channel || '—'}</span>,
+                  render: (row) => <span className="text-[var(--ag-text-muted)] capitalize">{row.channel || '—'}</span>,
                 },
                 {
                   key: 'model',
                   label: 'Model',
                   render: (row) => (
-                    <span className="text-[#9CA3AF] font-mono text-xs truncate max-w-[100px] block">
+                    <span className="text-[var(--ag-text-muted)] font-mono text-xs truncate max-w-[100px] block">
                       {row.model || row.provider || '—'}
                     </span>
                   ),
@@ -782,7 +786,7 @@ export function BillingPage() {
                   render: (row) => {
                     const tokensIn = (row as unknown as Record<string, number>).tokens_in ?? row.tokensIn ?? 0;
                     const tokensOut = (row as unknown as Record<string, number>).tokens_out ?? row.tokensOut ?? 0;
-                    return <span className="text-[#9CA3AF] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
+                    return <span className="text-[var(--ag-text-muted)] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
                   },
                 },
                 {
@@ -790,7 +794,7 @@ export function BillingPage() {
                   label: 'Cost',
                   render: (row) => {
                     const cost = (row as unknown as Record<string, number>).cost_usd ?? row.costUSD ?? 0;
-                    return <span className="text-[#E8E8F0] font-mono">${cost.toFixed(4)}</span>;
+                    return <span className="text-[var(--ag-text-primary)] font-mono">${cost.toFixed(4)}</span>;
                   },
                 },
               ]}
@@ -803,5 +807,6 @@ export function BillingPage() {
         </CardContent>
       </Card>
     </div>
+    </PageShell>
   );
 }

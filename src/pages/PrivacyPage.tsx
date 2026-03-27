@@ -1,8 +1,7 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Shield, Lock, Eye, Server, Trash2, Mail, Database, Globe } from 'lucide-react';
 
 export function PrivacyPage() {
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-dvh pb-24 md:pb-8 text-[#94A3B8]" style={{ background: '#06061a' }}>
@@ -62,15 +61,15 @@ export function PrivacyPage() {
       >
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6 w-full">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
+            <Link
+              to="/"
               className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="hidden sm:inline">Back to Agentin</span>
-            </button>
+            </Link>
             <div className="flex items-center gap-2">
               <img src="/logo-agentin.png" alt="Agentin" className="w-6 h-6 object-contain" />
               <div>

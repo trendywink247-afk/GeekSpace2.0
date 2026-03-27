@@ -189,3 +189,46 @@ export interface OfficeMetrics {
 
 /** Active tab in the office sidebar. */
 export type SidebarTab = 'timeline' | 'tasks' | 'metrics';
+
+// ---------------------------------------------------------------------------
+// A.2 — Working Hours & Mood States
+// ---------------------------------------------------------------------------
+
+/** Emotional/productivity state of an agent — influences behavior and visual cues. */
+export type AgentMood = 'focused' | 'relaxed' | 'busy' | 'collaborative' | 'creative';
+
+/**
+ * Real-time work state for an agent.
+ * Tracks mood, energy, break status, and daily progress.
+ * Updated by the behavior tick loop and consumed by the sidebar status strip.
+ */
+export interface AgentWorkState {
+  agentId: AgentId;
+  mood: AgentMood;
+  /** Energy level 0-100. Decreases with task work, replenishes on breaks. */
+  energy: number;
+  /** ID of the task currently being worked on, or null if idle. */
+  currentTaskId: string | null;
+  /** Working hours as { start: hour, end: hour } in 24h format. */
+  workingHours: { start: number; end: number };
+  /** True when the agent is on a self-initiated break. */
+  isOnBreak: boolean;
+  /** Count of tasks completed in the current day. */
+  tasksCompletedToday: number;
+}
+
+/**
+ * Per-agent work schedules in 24h format.
+ * Outside these hours agents show as "off duty" in the status strip.
+ */
+export const AGENT_WORK_HOURS: Record<AgentId, { start: number; end: number }> = {
+  weebo:  { start: 8,  end: 20 },
+  edith:  { start: 9,  end: 18 },
+  jarvis: { start: 7,  end: 23 },
+  aria:   { start: 10, end: 22 },
+  forge:  { start: 9,  end: 19 },
+  pulse:  { start: 8,  end: 17 },
+  echo:   { start: 11, end: 21 },
+  cal:    { start: 7,  end: 18 },
+  nova:   { start: 10, end: 23 },
+};

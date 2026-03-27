@@ -31,6 +31,7 @@ import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
+import { PageShell } from '@/components/agentin';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -602,12 +603,37 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
     messagesToday === 0 &&
     activityData.every((v) => v === 0);
 
+  // Touch handlers for mobile stat drag on glance cards
+  const touchStartRef = useRef<{ x: number; scrollLeft: number } | null>(null);
+  const glanceScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const container = glanceScrollRef.current;
+    if (!container) return;
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      scrollLeft: container.scrollLeft,
+    };
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const container = glanceScrollRef.current;
+    const start = touchStartRef.current;
+    if (!container || !start) return;
+    const dx = start.x - e.touches[0].clientX;
+    container.scrollLeft = start.scrollLeft + dx;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartRef.current = null;
+  }, []);
+
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
+      <PageShell maxWidth="6xl" spacing={6}>
       <div
         data-testid="dashboard-overview"
-        className="space-y-6 pb-24 md:pb-6"
-        style={{ background: '#05050A' }}
+        className="space-y-6"
       >
         {/* ─── iOS Install Banner ─── */}
         {showIOSBanner && (
@@ -752,16 +778,27 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           >
             Today at a glance
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-4 md:overflow-visible">
+          <div
+            ref={glanceScrollRef}
+            className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-4 md:overflow-visible"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             {loading
               ? Array.from({ length: 4 }).map((_, i) => <GlanceCardSkeleton key={i} />)
               : glanceCards.map((card, idx) => (
                   <div
                     key={card.key}
-                    className={`min-w-[160px] flex-shrink-0 snap-start rounded-2xl border border-[#00F0FF]/10 bg-[#0C0C18] p-4 transition-all duration-500 hover:border-[#00F0FF]/25 hover:scale-[1.02] cursor-pointer ${
+                    className={`min-w-[160px] flex-shrink-0 snap-start rounded-2xl border p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer backdrop-blur-xl ${
                       mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                     }`}
-                    style={{ transitionDelay: `${idx * 80}ms` }}
+                    style={{
+                      transitionDelay: `${idx * 80}ms`,
+                      background: 'var(--ag-glass-bg)',
+                      borderColor: 'var(--ag-glass-border)',
+                      boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 20px ${card.color}08`,
+                    }}
                     onClick={() => {
                       if (card.key === 'reminders') onNavigate?.('reminders');
                       else if (card.key === 'messages') onOpenChat?.();
@@ -792,8 +829,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     >
                       {card.value}
                     </div>
-                    <div className="text-sm font-medium text-[#F4F6FF] mt-0.5">{card.label}</div>
-                    <div className="text-xs text-[#8892A4] mt-0.5">{card.sub}</div>
+                    <div className="text-sm font-medium text-[var(--ag-text-primary)] mt-0.5">{card.label}</div>
+                    <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{card.sub}</div>
                   </div>
                 ))}
           </div>
@@ -853,8 +890,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               </button>
             </div>
             <Card
-              className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
-              style={{ background: '#0C0C18' }}
+              className="rounded-2xl overflow-hidden backdrop-blur-xl"
+              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
             >
               <CardContent className="p-0">
                 {loading ? (
@@ -951,8 +988,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               </button>
             </div>
             <Card
-              className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl"
-              style={{ background: '#0C0C18' }}
+              className="rounded-2xl backdrop-blur-xl"
+              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
             >
               <CardContent className="p-4">
                 {loading ? (
@@ -1525,7 +1562,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             }}
             className="relative"
           >
-            <div className="flex items-center gap-2 rounded-2xl border border-[#00F0FF]/15 bg-[#0C0C18] p-2 transition-all focus-within:border-[#00F0FF]/40 focus-within:shadow-[0_0_20px_rgba(0,240,255,0.05)]">
+            <div className="flex items-center gap-2 rounded-2xl border p-2 transition-all backdrop-blur-xl focus-within:shadow-[var(--ag-glow-sm)]" style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
               <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0 ml-1">
                 <MessageSquare className="w-4 h-4 text-[#ADFF2F]" />
               </div>
@@ -1549,6 +1586,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           </form>
         </section>
       </div>
+      </PageShell>
     </PullToRefreshWrapper>
   );
 }

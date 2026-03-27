@@ -180,6 +180,12 @@ export function OnboardingWizard() {
 
       {/* Progress Bar */}
       <div className="mb-6 sm:mb-8">
+        <style>{`
+          @keyframes ob-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
+        `}</style>
         <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -189,9 +195,18 @@ export function OnboardingWizard() {
         </div>
         <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(6, 6, 26, 0.9)' }}>
           <div
-            className="h-full transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%`, background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
-          />
+            className="h-full transition-all duration-500 ease-out relative overflow-hidden"
+            style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #06B6D4, #8B5CF6)' }}
+          >
+            {/* Shimmer sweep */}
+            <div
+              className="absolute inset-0 w-1/3"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                animation: 'ob-shimmer 2s ease-in-out infinite',
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -227,7 +242,9 @@ export function OnboardingWizard() {
       </div>
 
       {/* Step Content */}
-      <div className={`p-4 sm:p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl mb-6 shadow-xl shadow-[#8B5CF6]/5 ${stepAnimClass}`}>
+      <div className={`p-4 sm:p-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl mb-6 shadow-xl shadow-[#8B5CF6]/10 mx-auto w-full ${stepAnimClass}`}
+        style={{ boxShadow: '0 8px 32px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+      >
         {step === 0 && (
           <ProfileStep
             name={onboarding.profile.name}
