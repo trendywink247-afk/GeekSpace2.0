@@ -1,12 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, MessageCircle, ArrowRight, Sparkles, Braces, Wrench, FileText, Palette, GitCompare, Lock, Clock } from 'lucide-react';
+import { Search, Star, MessageCircle, Sparkles, Braces, Wrench, FileText, Palette, GitCompare, Lock, Clock, Zap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { JsonFormatterPage } from './tools/JsonFormatterPage';
 import { BorderBeam } from '@/components/magicui/border-beam';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -204,20 +206,20 @@ const CATEGORY_COLORS: Record<string, string> = {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: () => void }) {
-  const catColor = CATEGORY_COLORS[specialist.category] ?? '#00F0FF';
+function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; onActivate: () => void }) {
+  const catColor = CATEGORY_COLORS[specialist.category] ?? '#6366F1';
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#ADFF2F]/30 bg-gradient-to-br from-[#ADFF2F]/5 via-transparent to-[#00F0FF]/3 p-5 sm:p-6">
-      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#ADFF2F]/5 blur-3xl pointer-events-none" />
+    <SectionCard padding="md" className="relative overflow-hidden border-[#6366F1]/20 bg-gradient-to-br from-[#6366F1]/5 via-transparent to-[#8B5CF6]/3">
+      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#6366F1]/5 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${catColor}08` }} />
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-14 h-14 rounded-2xl bg-[#ADFF2F]/10 flex items-center justify-center flex-shrink-0 ring-2 ring-[#ADFF2F]/20">
+          <div className="w-14 h-14 rounded-2xl bg-[#6366F1]/10 flex items-center justify-center flex-shrink-0 ring-2 ring-[#6366F1]/20">
             <span className="text-3xl" role="img" aria-label={specialist.name}>{specialist.emoji}</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge className="bg-[#ADFF2F]/20 text-[#ADFF2F] border-[#ADFF2F]/30 text-[10px] uppercase tracking-wider">
+              <Badge className="bg-[#6366F1]/20 text-[#6366F1] border-[#6366F1]/30 text-[10px] uppercase tracking-wider">
                 <Sparkles className="w-3 h-3 mr-1" />
                 Featured This Week
               </Badge>
@@ -228,14 +230,14 @@ function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: 
                 {specialist.category}
               </Badge>
             </div>
-            <h3 className="text-lg font-semibold text-[#F4F6FF] mt-1 truncate">
+            <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mt-1 truncate">
               {specialist.name}
               {specialist.codename && (
-                <span className="text-[#8892A4] font-normal text-sm ml-2">({specialist.codename})</span>
+                <span className="text-[var(--ag-text-secondary)] font-normal text-sm ml-2">({specialist.codename})</span>
               )}
             </h3>
-            <p className="text-sm text-[#8892A4] mt-0.5">{specialist.description}</p>
-            <div className="flex items-center gap-3 mt-2 text-[11px] text-[#8892A4]">
+            <p className="text-sm text-[var(--ag-text-secondary)] mt-0.5">{specialist.description}</p>
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-[var(--ag-text-muted)]">
               <span className="flex items-center gap-1">
                 <MessageCircle className="w-3 h-3" />
                 {specialist.conversations} conversations
@@ -248,30 +250,30 @@ function FeaturedBanner({ specialist, onTry }: { specialist: Specialist; onTry: 
           </div>
         </div>
         <Button
-          onClick={onTry}
-          className="bg-[#ADFF2F] text-[#05050A] hover:bg-[#ADFF2F]/80 font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center"
+          onClick={onActivate}
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center"
         >
-          Try It
-          <ArrowRight className="w-4 h-4 ml-1" />
+          <Zap className="w-4 h-4 mr-1" />
+          Activate
         </Button>
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
 function SpecialistCard({
   specialist,
-  onTry,
+  onActivate,
   onPromptClick,
 }: {
   specialist: Specialist;
-  onTry: () => void;
+  onActivate: () => void;
   onPromptClick: (prompt: string) => void;
 }) {
-  const catColor = CATEGORY_COLORS[specialist.category] ?? '#00F0FF';
+  const catColor = CATEGORY_COLORS[specialist.category] ?? '#6366F1';
 
   return (
-    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-2xl p-5 transition-all duration-200 hover:border-[var(--ag-cyan)]/30 hover:shadow-[0_0_24px_rgba(0,240,255,0.06)]">
+    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-2xl p-5 transition-all duration-300 hover:border-[#6366F1]/25 hover:shadow-[0_0_24px_rgba(99,102,241,0.08)]">
       {/* Category badge */}
       <Badge
         className="absolute top-3 right-3 text-[10px] uppercase tracking-wider border-0"
@@ -294,7 +296,7 @@ function SpecialistCard({
       </h3>
 
       {/* Description */}
-      <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1 line-clamp-1">{specialist.description}</p>
+      <p className="text-xs text-[var(--ag-text-secondary)] text-center mt-1 line-clamp-1">{specialist.description}</p>
 
       {/* Stats */}
       <div className="flex items-center justify-center gap-3 mt-3 text-[11px] text-[var(--ag-text-muted)]">
@@ -308,13 +310,13 @@ function SpecialistCard({
         </span>
       </div>
 
-      {/* Example prompts */}
+      {/* Example prompts — skills list */}
       <div className="flex flex-col gap-1.5 mt-4">
         {specialist.examplePrompts.map((prompt) => (
           <button
             key={prompt}
             onClick={() => onPromptClick(prompt)}
-            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/5 truncate min-h-[30px] flex items-center"
+            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[#6366F1] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#6366F1]/5 truncate min-h-[30px] flex items-center"
             title={prompt}
           >
             <span className="truncate">&ldquo;{prompt}&rdquo;</span>
@@ -322,13 +324,13 @@ function SpecialistCard({
         ))}
       </div>
 
-      {/* Try It button */}
+      {/* Activate button */}
       <Button
-        onClick={onTry}
-        className="mt-4 w-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/20 border border-[var(--ag-cyan)]/20 hover:border-[var(--ag-cyan)]/40 font-medium min-h-[44px]"
+        onClick={onActivate}
+        className="mt-4 w-full bg-[#6366F1]/10 text-[#6366F1] hover:bg-[#6366F1]/20 border border-[#6366F1]/20 hover:border-[#6366F1]/40 font-medium min-h-[44px]"
       >
-        Try It
-        <ArrowRight className="w-4 h-4 ml-1" />
+        <Zap className="w-4 h-4 mr-1" />
+        Activate
       </Button>
     </div>
   );
@@ -340,6 +342,7 @@ function SpecialistCard({
 
 export function AISpecialistPage() {
   const navigate = useNavigate();
+  const { notifyDone } = useAgentCanvas({ agent: 'echo', page: 'ai-specialist' });
   const [activeTab, setActiveTab] = useState<TopTab>('specialists');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<Category>('all');
@@ -367,11 +370,12 @@ export function AISpecialistPage() {
     });
   }, [searchQuery, activeCategory]);
 
-  const navigateToChat = (specialistId: string, prompt?: string) => {
+  const activateSpecialist = useCallback((specialistId: string, prompt?: string) => {
+    void notifyDone(`Activated specialist: ${specialistId}`);
     const params = new URLSearchParams({ specialist: specialistId });
     if (prompt) params.set('prompt', prompt);
     navigate(`/dashboard/chat?${params.toString()}`);
-  };
+  }, [navigate, notifyDone]);
 
   // -----------------------------------------------------------------------
   // Tools tab — JSON Formatter + 4 Coming Soon stubs
@@ -410,18 +414,20 @@ export function AISpecialistPage() {
 
     return (
       <PageShell className="w-full max-w-full overflow-x-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[var(--ag-amber)]/20 flex items-center justify-center flex-shrink-0">
-            <Wrench className="w-4 h-4 text-[var(--ag-amber)]" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-[var(--ag-amber)] to-[var(--ag-cyan)] bg-clip-text text-transparent">
-              AI Tools
-            </h1>
-            <p className="text-sm text-[var(--ag-text-secondary)]">Developer utilities powered by AI</p>
-          </div>
-        </div>
+        <PageHeader
+          icon={Wrench}
+          title="AI Tools"
+          subtitle="Developer utilities powered by AI"
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/30 text-[#6366F1]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#6366F1] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#6366F1]" />
+              </span>
+              Echo
+            </span>
+          }
+        />
 
         {/* Top tab strip */}
         <div className="overflow-x-auto scrollbar-hide w-full">
@@ -433,7 +439,7 @@ export function AISpecialistPage() {
               <Sparkles className="w-3.5 h-3.5" />
               Specialists
             </button>
-            <button className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[var(--ag-amber)] text-[var(--ag-text-primary)] transition-colors min-h-[44px]">
+            <button className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[#6366F1] text-[var(--ag-text-primary)] transition-colors min-h-[44px]">
               <Braces className="w-3.5 h-3.5" />
               AI Tools
             </button>
@@ -442,59 +448,62 @@ export function AISpecialistPage() {
 
         <div className="space-y-6">
           {/* Coming Soon tool stubs */}
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[var(--ag-amber)]" />
-              Coming Soon
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {COMING_SOON_TOOLS.map(tool => {
-                const Icon = tool.icon;
-                return (
-                  <div
-                    key={tool.id}
-                    className="relative group rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5 overflow-hidden cursor-not-allowed opacity-80 hover:opacity-100 transition-opacity"
-                    style={{ backdropFilter: 'blur(var(--ag-glass-blur))' }}
-                  >
-                    {/* Glass shimmer on hover */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                      style={{ background: `radial-gradient(ellipse at 50% 0%, ${tool.accentColor}08 0%, transparent 70%)` }} />
-
-                    {/* Coming Soon badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-bg-elevated)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)]">
-                        Soon
-                      </span>
-                    </div>
-
+          <BlurFade delay={0.1}>
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#6366F1]" />
+                Coming Soon
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {COMING_SOON_TOOLS.map(tool => {
+                  const Icon = tool.icon;
+                  return (
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                      style={{ backgroundColor: `${tool.accentColor}15` }}
+                      key={tool.id}
+                      className="relative group rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-5 overflow-hidden cursor-not-allowed opacity-80 hover:opacity-100 transition-opacity"
                     >
-                      <Icon className="w-5 h-5" style={{ color: tool.accentColor }} />
-                    </div>
-                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{tool.name}</h3>
-                    <p className="text-xs text-[var(--ag-text-secondary)] leading-relaxed">{tool.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                      {/* Glass shimmer on hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                        style={{ background: `radial-gradient(ellipse at 50% 0%, ${tool.accentColor}08 0%, transparent 70%)` }} />
 
-          {/* JSON Formatter — revamped with glass panels */}
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Braces className="w-4 h-4 text-[var(--ag-amber)]" />
-              Available Now
-            </h2>
-            <div className="relative rounded-2xl border border-[var(--ag-amber)]/20 overflow-hidden"
-              style={{ background: 'rgba(245,158,11,0.03)', backdropFilter: 'blur(var(--ag-glass-blur))' }}>
-              <BorderBeam size={200} duration={15} colorFrom="var(--ag-amber)" colorTo="var(--ag-cyan)" borderWidth={1} />
-              <div className="p-1">
-                <JsonFormatterPage />
+                      {/* Coming Soon badge */}
+                      <div className="absolute top-3 right-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-bg-elevated)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)]">
+                          Soon
+                        </span>
+                      </div>
+
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                        style={{ backgroundColor: `${tool.accentColor}15` }}
+                      >
+                        <Icon className="w-5 h-5" style={{ color: tool.accentColor }} />
+                      </div>
+                      <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{tool.name}</h3>
+                      <p className="text-xs text-[var(--ag-text-secondary)] leading-relaxed">{tool.description}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          </BlurFade>
+
+          {/* JSON Formatter */}
+          <BlurFade delay={0.15}>
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Braces className="w-4 h-4 text-[#6366F1]" />
+                Available Now
+              </h2>
+              <div className="relative rounded-2xl border border-[#6366F1]/20 overflow-hidden"
+                style={{ background: 'rgba(99,102,241,0.03)', backdropFilter: 'blur(16px)' }}>
+                <BorderBeam size={200} duration={15} colorFrom="#6366F1" colorTo="#8B5CF6" borderWidth={1} />
+                <div className="p-1">
+                  <JsonFormatterPage />
+                </div>
+              </div>
+            </div>
+          </BlurFade>
         </div>
       </PageShell>
     );
@@ -505,22 +514,27 @@ export function AISpecialistPage() {
   // -----------------------------------------------------------------------
   return (
     <PageShell className="w-full max-w-full overflow-x-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[var(--ag-cyan)]/20 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4.5 h-4.5 text-[var(--ag-cyan)]" />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--ag-text-primary)]">AI Specialists</h1>
-          <p className="text-sm text-[var(--ag-text-muted)]">Pre-built AI modes you can activate with one click</p>
-        </div>
-      </div>
+      {/* Header with Echo agent dot */}
+      <PageHeader
+        icon={Sparkles}
+        title="AI Specialists"
+        subtitle="Pre-built AI modes you can activate with one click"
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/30 text-[#6366F1]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#6366F1] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#6366F1]" />
+            </span>
+            Echo
+          </span>
+        }
+      />
 
       {/* Top tab strip */}
       <div className="overflow-x-auto scrollbar-hide w-full">
         <div className="flex gap-1 border-b border-[var(--ag-border-subtle)] w-max min-w-full">
           <button
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[var(--ag-cyan)] text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[#6366F1] text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
           >
             <Sparkles className="w-3.5 h-3.5" />
             Specialists
@@ -537,69 +551,75 @@ export function AISpecialistPage() {
 
       <div className="space-y-6 pb-24 md:pb-6">
         {/* Featured banner */}
-        <FeaturedBanner
-          specialist={featuredSpecialist}
-          onTry={() => navigateToChat(featuredSpecialist.id)}
-        />
+        <BlurFade delay={0.1}>
+          <FeaturedBanner
+            specialist={featuredSpecialist}
+            onActivate={() => activateSpecialist(featuredSpecialist.id)}
+          />
+        </BlurFade>
 
         {/* Search + category filters */}
-        <div className="space-y-4">
-          {/* Search bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)] pointer-events-none" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search specialists..."
-              className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]/60 focus-visible:border-[var(--ag-cyan)]/30 focus-visible:ring-[var(--ag-cyan)]/20 min-h-[44px]"
-            />
-          </div>
+        <BlurFade delay={0.15}>
+          <div className="space-y-4">
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)] pointer-events-none" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search specialists..."
+                className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]/60 focus-visible:border-[#6366F1]/30 focus-visible:ring-[#6366F1]/20 min-h-[44px]"
+              />
+            </div>
 
-          {/* Category pills */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-            {CATEGORIES.map((cat) => {
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
-                    isActive
-                      ? 'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30'
-                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-cyan)]/20 hover:text-[var(--ag-text-primary)]'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
+            {/* Category pills — 44px touch targets */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+              {CATEGORIES.map((cat) => {
+                const isActive = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
+                      isActive
+                        ? 'bg-[#6366F1]/15 text-[#6366F1] border border-[#6366F1]/30'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#6366F1]/20 hover:text-[var(--ag-text-primary)]'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </BlurFade>
 
         {/* Specialist grid */}
-        {filteredSpecialists.length > 0 ? (
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredSpecialists.map((specialist) => (
-              <SpecialistCard
-                key={specialist.id}
-                specialist={specialist}
-                onTry={() => navigateToChat(specialist.id)}
-                onPromptClick={(prompt) => navigateToChat(specialist.id, prompt)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="w-10 h-10 text-[var(--ag-text-muted)]/40 mb-3" />
-            <p className="text-[var(--ag-text-muted)] text-sm">No specialists match your search.</p>
-            <button
-              onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-              className="text-[var(--ag-cyan)] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
-            >
-              Clear filters
-            </button>
-          </div>
-        )}
+        <BlurFade delay={0.2}>
+          {filteredSpecialists.length > 0 ? (
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredSpecialists.map((specialist) => (
+                <SpecialistCard
+                  key={specialist.id}
+                  specialist={specialist}
+                  onActivate={() => activateSpecialist(specialist.id)}
+                  onPromptClick={(prompt) => activateSpecialist(specialist.id, prompt)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Search className="w-10 h-10 text-[var(--ag-text-muted)]/40 mb-3" />
+              <p className="text-[var(--ag-text-muted)] text-sm">No specialists match your search.</p>
+              <button
+                onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
+                className="text-[#6366F1] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </BlurFade>
       </div>
     </PageShell>
   );

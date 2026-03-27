@@ -7,9 +7,9 @@ import {
   Brain, Clock, Tag, BarChart3,
   User, Briefcase, Heart, Target, BookOpen,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SectionCard } from '@/components/agentin';
 import type { MemoryEntry } from '@/types';
 
 // ── Constants ──────────────────────────────────────────────────
@@ -92,38 +92,34 @@ export function getCategoryIcon(category: string) {
 
 export function StatCardSkeleton() {
   return (
-    <Card className="border-[#00F0FF]/10">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-lg" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-12" />
-            <Skeleton className="h-3 w-20" />
-          </div>
+    <SectionCard>
+      <div className="flex items-center gap-3">
+        <Skeleton className="w-10 h-10 rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-3 w-20" />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SectionCard>
   );
 }
 
 export function MemoryCardSkeleton() {
   return (
-    <Card className="bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-20 rounded-full" />
-            <Skeleton className="h-5 w-16 rounded-full" />
-          </div>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <div className="flex items-center gap-3 pt-1">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-16" />
-          </div>
+    <SectionCard>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
         </div>
-      </CardContent>
-    </Card>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <div className="flex items-center gap-3 pt-1">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -160,7 +156,7 @@ export function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) 
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {breakdown.map(({ category, count, pct }) => (
-          <div key={category} className="flex items-center gap-1.5 text-xs text-[#8892A4]">
+          <div key={category} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }} />
             <span className="capitalize">{category}</span>
             <span className="text-[#F4F6FF] font-medium">{count}</span>
@@ -205,8 +201,8 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
     <div className="flex flex-col lg:flex-row gap-6">
       <div className="flex-1 flex items-center justify-center">
         <svg viewBox="0 0 400 360" className="w-full max-w-[400px]">
-          <circle cx="200" cy="180" r="30" fill="#00F0FF" opacity={0.15} stroke="#00F0FF" strokeWidth={1} />
-          <text x="200" y="184" textAnchor="middle" fill="#00F0FF" fontSize="11" fontWeight="bold">You</text>
+          <circle cx="200" cy="180" r="30" fill="#6366F1" opacity={0.15} stroke="#6366F1" strokeWidth={1} />
+          <text x="200" y="184" textAnchor="middle" fill="#6366F1" fontSize="11" fontWeight="bold">You</text>
           {nodes.map(n => (
             <g key={n.id} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered(null)} className="cursor-pointer">
               <line x1={200} y1={180} x2={n.cx} y2={n.cy} stroke={hovered === n.id ? n.color : 'rgba(255,255,255,0.1)'} strokeWidth={hovered === n.id ? 2 : 1} strokeDasharray={hovered === n.id ? undefined : '4 4'} />
@@ -226,15 +222,15 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
             <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
               {hovMems.slice(0, 10).map(m => (
                 <div key={m.id} className="p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
-                  <span className="text-[#00F0FF] font-mono">{m.key}</span>
-                  <span className="text-[#8892A4] mx-1">=</span>
+                  <span className="text-[#6366F1] font-mono">{m.key}</span>
+                  <span className="text-[var(--ag-text-secondary)] mx-1">=</span>
                   <span className="text-[#F4F6FF]">{m.value}</span>
                 </div>
               ))}
             </div>
           </>
         ) : (
-          <p className="text-sm text-[#8892A4]">Hover a node to see memories.</p>
+          <p className="text-sm text-[var(--ag-text-secondary)]">Hover a node to see memories.</p>
         )}
       </div>
     </div>
@@ -258,96 +254,82 @@ export function StatsTab({ memories, stats }: StatsTabProps) {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-[#00F0FF]/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center shrink-0">
-                <Brain className="w-5 h-5 text-[#00F0FF]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.total}</div>
-                <div className="text-xs text-[#8892A4]">Total Memories</div>
-              </div>
+        <SectionCard>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#6366F1]/10 flex items-center justify-center shrink-0">
+              <Brain className="w-5 h-5 text-[#6366F1]" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#ADFF2F]/10 flex items-center justify-center shrink-0">
-                <Tag className="w-5 h-5 text-[#ADFF2F]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.categoryCount}</div>
-                <div className="text-xs text-[#8892A4]">Categories</div>
-              </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{stats.total}</div>
+              <div className="text-xs text-[var(--ag-text-secondary)]">Total Memories</div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5 text-[#FFB800]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{stats.thisWeek}</div>
-                <div className="text-xs text-[#8892A4]">This Week</div>
-              </div>
+          </div>
+        </SectionCard>
+        <SectionCard>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[var(--ag-lime)]/10 flex items-center justify-center shrink-0">
+              <Tag className="w-5 h-5 text-[var(--ag-lime)]" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#00F0FF]/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center shrink-0">
-                <BarChart3 className="w-5 h-5 text-[#8B5CF6]" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[#F4F6FF] truncate max-w-[120px]" title={stats.mostAccessed?.key}>
-                  {stats.mostAccessed ? stats.mostAccessed.accessCount : 0}
-                </div>
-                <div className="text-xs text-[#8892A4]">Most Referenced</div>
-              </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{stats.categoryCount}</div>
+              <div className="text-xs text-[var(--ag-text-secondary)]">Categories</div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
+        <SectionCard>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[var(--ag-amber)]/10 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-[var(--ag-amber)]" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{stats.thisWeek}</div>
+              <div className="text-xs text-[var(--ag-text-secondary)]">This Week</div>
+            </div>
+          </div>
+        </SectionCard>
+        <SectionCard>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet)]/10 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5 text-[var(--ag-violet)]" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--ag-text-primary)] truncate max-w-[120px]" title={stats.mostAccessed?.key}>
+                {stats.mostAccessed ? stats.mostAccessed.accessCount : 0}
+              </div>
+              <div className="text-xs text-[var(--ag-text-secondary)]">Most Referenced</div>
+            </div>
+          </div>
+        </SectionCard>
       </div>
 
       {/* Category breakdown */}
-      <Card className="border-[#00F0FF]/10">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-[#F4F6FF] mb-3">Category Breakdown</h3>
-          <CategoryBreakdownBar memories={memories} />
-        </CardContent>
-      </Card>
+      <SectionCard title="Category Breakdown">
+        <CategoryBreakdownBar memories={memories} />
+      </SectionCard>
 
       {/* Per-source breakdown */}
-      <Card className="border-[#00F0FF]/10">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-[#F4F6FF] mb-3">Sources</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Object.entries(
-              memories.reduce<Record<string, number>>((acc, m) => {
-                acc[m.source] = (acc[m.source] || 0) + 1;
-                return acc;
-              }, {})
-            )
-              .sort((a, b) => b[1] - a[1])
-              .map(([source, count]) => {
-                const style = getSourceStyle(source);
-                return (
-                  <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
-                    <Badge className={`${style.bg} ${style.text} text-xs px-2 py-0.5 rounded-full border-0`}>
-                      {style.label}
-                    </Badge>
-                    <span className="text-sm font-bold text-[#F4F6FF]">{count}</span>
-                  </div>
-                );
-              })}
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard title="Sources">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {Object.entries(
+            memories.reduce<Record<string, number>>((acc, m) => {
+              acc[m.source] = (acc[m.source] || 0) + 1;
+              return acc;
+            }, {})
+          )
+            .sort((a, b) => b[1] - a[1])
+            .map(([source, count]) => {
+              const style = getSourceStyle(source);
+              return (
+                <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
+                  <Badge className={`${style.bg} ${style.text} text-xs px-2 py-0.5 rounded-full border-0`}>
+                    {style.label}
+                  </Badge>
+                  <span className="text-sm font-bold text-[var(--ag-text-primary)]">{count}</span>
+                </div>
+              );
+            })}
+        </div>
+      </SectionCard>
     </div>
   );
 }

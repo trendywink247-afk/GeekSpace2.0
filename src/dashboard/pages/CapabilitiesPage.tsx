@@ -1,20 +1,15 @@
-// ============================================================
-// Capabilities Page — "What Can Your Agent Do?"
-//
-// A cinematic showcase of every agent capability:
-// chat, creation, automation, connections, and analysis.
-// Includes interactive prompt chips, pipeline visualizer,
-// and a "Hidden Powers" reveal section.
-// ============================================================
+// CapabilitiesPage — owner: weebo (#00F0FF)
+// Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 
 import { useState } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
   User, Bell, Mail, Cpu, ChevronRight, Sparkles, Eye, TrendingUp,
   Shield, ArrowRight, CheckCircle2, ExternalLink, Star, Lock,
   Workflow, Play, Copy, Check, Layers, Telescope, Activity,
-  Camera, Link, Search
+  Camera, Link, Link2, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -523,13 +518,13 @@ function CapabilityCard({
 
   return (
     <div
-      className="relative rounded-2xl border border-white/8 bg-[#0A0A14] transition-all duration-300 hover:border-opacity-40 hover:-translate-y-1 hover:shadow-lg group overflow-hidden flex flex-col"
+      className="relative rounded-2xl border border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-surface,rgba(12,12,30,0.6))] backdrop-blur-xl transition-all duration-300 hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 hover:shadow-lg group overflow-hidden flex flex-col"
       style={{
         animationDelay: `${idx * 60}ms`,
         '--cap-color': cap.color,
       } as React.CSSProperties}
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 24px ${cap.glow}`; (e.currentTarget as HTMLDivElement).style.borderColor = `${cap.color}30`; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.borderColor = ''; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(139,92,246,0.08)'; }}
     >
       {/* Top glow bar */}
       <div
@@ -575,7 +570,7 @@ function CapabilityCard({
 
         {/* Title + description */}
         <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{cap.title}</h3>
-        <p className="text-xs text-[#6B7280] leading-relaxed flex-1 mb-3">{cap.description}</p>
+        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed flex-1 mb-3">{cap.description}</p>
 
         {/* Wow factor */}
         {cap.wow && (
@@ -594,9 +589,9 @@ function CapabilityCard({
             <button
               key={i}
               onClick={() => handleCopy(ex)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
+              className="w-full flex items-center justify-between gap-2 px-2.5 min-h-[44px] rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
             >
-              <span className="text-[11px] text-[#9BA3C9] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
+              <span className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
                 {ex}
               </span>
               {copied === ex ? (
@@ -623,7 +618,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-white/10 text-[#9BA3C9] hover:border-white/25 hover:text-[var(--ag-text-primary)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all"
             >
               Open
             </button>
@@ -646,26 +641,14 @@ function PipelineVisualizer() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#0A0A14] overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-[var(--ag-border-subtle)]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/15 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">How Every Message Works</h2>
-            <p className="text-xs text-[#6B7280]">From your chat to the response — the full request lifecycle</p>
-          </div>
-        </div>
-      </div>
+    <SectionCard title="How Every Message Works" subtitle="From your chat to the response — the full request lifecycle">
 
       {/* Pipeline */}
-      <div className="p-6">
+      <div>
         {/* Example message */}
         <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
-          <span className="text-xs text-[#9BA3C9]">You type: </span>
-          <span className="text-sm text-[var(--ag-cyan)] font-mono">"build me a hello world page"</span>
+          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">You type: </span>
+          <span className="text-sm text-[var(--ag-cyan,#00F0FF)] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -673,10 +656,10 @@ function PipelineVisualizer() {
           {pipelineSteps.map((step, i) => (
             <div key={i} className="flex items-center flex-1">
               <button
-                className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer group ${
+                className={`flex-1 flex flex-col items-center gap-2 p-3 min-h-[44px] rounded-xl border transition-all cursor-pointer group ${
                   activeStep === i
                     ? 'border-opacity-60 bg-opacity-20'
-                    : 'border-white/8 hover:border-white/20'
+                    : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                 }`}
                 style={activeStep === i ? {
                   borderColor: step.color,
@@ -690,7 +673,7 @@ function PipelineVisualizer() {
                 >
                   <step.icon className="w-4 h-4" style={{ color: step.color }} />
                 </div>
-                <span className="text-[10px] text-[#9BA3C9] font-medium text-center leading-tight">{step.label}</span>
+                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] font-medium text-center leading-tight">{step.label}</span>
                 {activeStep === i && (
                   <span className="text-[9px] text-center leading-tight font-mono px-1" style={{ color: step.color }}>
                     {step.detail}
@@ -709,7 +692,7 @@ function PipelineVisualizer() {
           {pipelineSteps.map((step, i) => (
             <div key={i}>
               <button
-                className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/8 hover:border-white/20 transition-all text-left"
+                className="w-full flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all text-left"
                 onClick={() => setActiveStep(activeStep === i ? null : i)}
               >
                 <div
@@ -724,7 +707,7 @@ function PipelineVisualizer() {
                     <div className="text-[10px] font-mono mt-0.5" style={{ color: step.color }}>{step.detail}</div>
                   )}
                 </div>
-                <span className="text-[10px] text-[#6B7280]">{i + 1}/{pipelineSteps.length}</span>
+                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">{i + 1}/{pipelineSteps.length}</span>
               </button>
               {i < pipelineSteps.length - 1 && (
                 <div className="flex justify-center">
@@ -735,11 +718,11 @@ function PipelineVisualizer() {
           ))}
         </div>
 
-        <p className="text-xs text-[#6B7280] text-center mt-4">
+        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] text-center mt-4">
           Click any step to see the exact data flowing through it
         </p>
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
@@ -748,26 +731,13 @@ function HiddenPowers() {
   const visiblePowers = expanded ? hiddenPowers : hiddenPowers.slice(0, 4);
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#0A0A14] overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-[var(--ag-border-subtle)]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/15 flex items-center justify-center">
-            <Star className="w-4 h-4 text-[#BF5FFF]" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">Hidden Powers</h2>
-            <p className="text-xs text-[#6B7280]">Things most users never discover — but you should know</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6">
+    <SectionCard title="Hidden Powers" subtitle="Things most users never discover — but you should know">
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {visiblePowers.map((power, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/3 border border-[var(--ag-border-subtle)] hover:border-white/12 transition-all group"
+              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/3 border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all group"
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform group-hover:scale-110"
@@ -777,7 +747,7 @@ function HiddenPowers() {
               </div>
               <div>
                 <div className="text-xs font-semibold text-[var(--ag-text-primary)] mb-1">{power.title}</div>
-                <div className="text-[11px] text-[#6B7280] leading-relaxed">{power.description}</div>
+                <div className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed">{power.description}</div>
               </div>
             </div>
           ))}
@@ -786,14 +756,14 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-white/8 text-xs text-[#9BA3C9] hover:border-white/20 hover:text-[var(--ag-text-primary)] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all flex items-center justify-center gap-2"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
-    </div>
+    </SectionCard>
   );
 }
 
@@ -802,6 +772,9 @@ function HiddenPowers() {
 export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPageProps) {
   const [activeCategory, setActiveCategory] = useState<Category>('all');
   const [copiedHint, setCopiedHint] = useState(false);
+
+  // Agent canvas — weebo owns this page
+  useAgentCanvas({ agent: 'weebo', page: 'capabilities' });
 
   const filtered = capabilities.filter(c =>
     activeCategory === 'all' || c.category === activeCategory
@@ -822,11 +795,24 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
   );
 
   return (
-    <PageShell>
-    <div className="max-w-6xl mx-auto space-y-6 pb-24 md:pb-8">
+    <PageShell maxWidth="6xl">
+    <div className="space-y-6 pb-24 md:pb-8">
+
+      {/* ── PageHeader with Weebo dot ──────────────────────── */}
+      <PageHeader
+        icon={Sparkles}
+        title="Capabilities"
+        subtitle={`${capabilities.length} powers across chat, creation, automation, and intelligence`}
+        badge={
+          <span className="relative flex h-2.5 w-2.5" title="Weebo online">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-50" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+          </span>
+        }
+      />
 
       {/* ── Hero ──────────────────────────────────────────── */}
-      <div className="relative rounded-2xl overflow-hidden border border-white/8 p-8 md:p-10">
+      <div className="relative rounded-2xl overflow-hidden border border-[rgba(139,92,246,0.08)] p-8 md:p-10">
         {/* Layered background */}
         <div
           className="absolute inset-0"
@@ -862,7 +848,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-[var(--ag-text-primary,#F4F6FF)] mb-4 leading-tight">
             Your Agent Can Do{' '}
             <span
               className="bg-clip-text text-transparent"
@@ -872,7 +858,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             </span>
           </h1>
 
-          <p className="text-[#9BA3C9] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
+          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
             {capabilities.length} capabilities across chat, creation, automation, and intelligence.
             Powered by 5 AI models that route to the right brain for each task — automatically.
           </p>
@@ -887,11 +873,11 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             ].map(stat => (
               <div
                 key={stat.label}
-                className="rounded-xl p-4 border border-white/8"
+                className="rounded-xl p-4 border border-[rgba(139,92,246,0.08)]"
                 style={{ background: `${stat.color}08` }}
               >
                 <div className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.value}</div>
-                <div className="text-xs text-[#6B7280] mt-0.5 font-medium">{stat.label}</div>
+                <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -921,7 +907,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
               style={
                 isActive
                   ? { backgroundColor: cfg.color, color: '#05050A', boxShadow: `0 0 16px ${cfg.color}40` }
-                  : { backgroundColor: 'rgba(255,255,255,0.05)', color: '#9BA3C9' }
+                  : { backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }
               }
             >
               <span>{cfg.emoji}</span>
@@ -957,25 +943,22 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
       <HiddenPowers />
 
       {/* ── CTA ───────────────────────────────────────────── */}
-      <div
-        className="rounded-2xl border border-white/8 p-8 text-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.04), rgba(191,95,255,0.04))' }}
-      >
+      <SectionCard className="text-center relative overflow-hidden">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
             backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(0,240,255,0.15) 0%, transparent 60%)',
           }}
         />
         <div className="relative z-10">
-          <h3 className="text-xl font-bold text-white mb-2">Ready to explore?</h3>
-          <p className="text-[#9BA3C9] text-sm mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] mb-2">Ready to explore?</h3>
+          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm mb-6 max-w-md mx-auto">
             Click any prompt above to copy it, then open the chat and paste. Your agent is waiting.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={() => onOpenChat?.()}
-              className="bg-[#00F0FF] text-[#05050A] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] font-semibold px-6 transition-all duration-200"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-6 min-h-[44px] transition-all duration-200"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Open Agent Chat
@@ -983,25 +966,15 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <Button
               variant="outline"
               onClick={() => onNavigate?.('connections')}
-              className="border-white/15 text-[#9BA3C9] hover:border-white/30 hover:text-white"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
             >
-              <Link2Icon className="w-4 h-4 mr-2" />
+              <Link2 className="w-4 h-4 mr-2" />
               Set Up Integrations
             </Button>
           </div>
         </div>
-      </div>
+      </SectionCard>
     </div>
     </PageShell>
-  );
-}
-
-// Need Link2 icon reference
-function Link2Icon({ className }: { className?: string }) {
-  return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-    </svg>
   );
 }

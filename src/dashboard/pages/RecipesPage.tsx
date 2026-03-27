@@ -1,6 +1,10 @@
+// RecipesPage.tsx — Echo (#6366F1) ownership
+// Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   BookOpen,
   Sunrise,
@@ -12,12 +16,17 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Clock,
+  Zap,
+  Timer,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { recipeService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
+
+// ----- Echo agent colour ----------------------------------------
+const ECHO = '#6366F1';
 
 // ----- Icon map ------------------------------------------------
 const iconMap: Record<string, typeof Sunrise> = {
@@ -31,10 +40,20 @@ const iconMap: Record<string, typeof Sunrise> = {
 
 // ----- Category colours ----------------------------------------
 const categoryColors: Record<string, string> = {
-  productivity: '#00F0FF',
+  productivity: '#8B5CF6',
   monitoring: '#FFB800',
   communication: '#00FF88',
   analytics: '#FF2D78',
+};
+
+// ----- Trigger type per recipe ---------------------------------
+const triggerTypes: Record<string, { label: string; icon: typeof Clock }> = {
+  'morning-briefing': { label: 'Scheduled', icon: Clock },
+  'git-watcher':      { label: 'Event',     icon: Zap },
+  'weekly-review':    { label: 'Scheduled', icon: Clock },
+  'deadline-enforcer':{ label: 'Event',     icon: Zap },
+  'api-health-monitor':{ label: 'Interval', icon: Timer },
+  'portfolio-traffic':{ label: 'Scheduled', icon: Clock },
 };
 
 // ----- Types ---------------------------------------------------
@@ -58,6 +77,7 @@ interface Toast {
 export function RecipesPage() {
   const navigate = useNavigate();
   const { integrations } = useDashboardStore();
+  const { notifyDone, notifyFail } = useAgentCanvas({ agent: 'echo', page: 'recipes' });
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -94,6 +114,7 @@ export function RecipesPage() {
       );
       if (!telegramConnected) {
         showToast('Please connect Telegram first to use this recipe', 'error');
+        void notifyFail('Telegram not connected for recipe: ' + (recipe?.name ?? id));
         setTimeout(() => navigate('/dashboard/connections'), 1500);
         return;
       }
@@ -107,14 +128,17 @@ export function RecipesPage() {
         )
       );
       showToast('Recipe activated successfully', 'success');
+      void notifyDone('Recipe installed: ' + (recipe?.name ?? id));
     } catch {
       showToast('Failed to activate recipe', 'error');
+      void notifyFail('Failed to install recipe: ' + id);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleUninstall = async (id: string) => {
+    const recipe = recipes.find((r) => r.id === id);
     try {
       setActionLoading(id);
       await recipeService.uninstall(id);
@@ -124,8 +148,10 @@ export function RecipesPage() {
         )
       );
       showToast('Recipe deactivated', 'success');
+      void notifyDone('Recipe deactivated: ' + (recipe?.name ?? id));
     } catch {
       showToast('Failed to deactivate recipe', 'error');
+      void notifyFail('Failed to deactivate recipe: ' + id);
     } finally {
       setActionLoading(null);
     }
@@ -136,16 +162,15 @@ export function RecipesPage() {
   if (loading) {
     return (
       <PageShell>
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin" />
-      </div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: ECHO }} />
+        </div>
       </PageShell>
     );
   }
 
   return (
     <PageShell>
-    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Inline toast */}
       {toast && (
         <div
@@ -160,49 +185,58 @@ export function RecipesPage() {
           ) : (
             <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
           )}
-          <span className="text-sm text-[var(--ag-text-primary)] font-medium">{toast.message}</span>
+          <span className="text-sm text-[#F4F6FF] font-medium">{toast.message}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1
-          className="text-3xl md:text-4xl font-bold mb-1"
-          style={{ fontFamily: 'Syne, sans-serif' }}
-        >
-          Recipes
-        </h1>
-        <p className="text-[var(--ag-text-muted)]">
-          <span className="text-[#00F0FF] font-medium">{activeCount}</span> active of{' '}
-          {recipes.length} recipes
-        </p>
-      </div>
+      {/* Header — Echo dot */}
+      <PageHeader
+        icon={BookOpen}
+        title="Recipes"
+        subtitle={`${activeCount} active of ${recipes.length} automation recipes`}
+        badge={
+          <span
+            className="inline-block w-2 h-2 rounded-full animate-pulse"
+            style={{ backgroundColor: ECHO, boxShadow: `0 0 8px ${ECHO}80` }}
+            title="Echo agent"
+          />
+        }
+      />
 
       {/* Recipe Grid */}
       {recipes.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-[#00F0FF]/30" />
-          </div>
-          <p className="text-[var(--ag-text-primary)] font-medium mb-1">No recipes available yet</p>
-          <p className="text-sm text-[var(--ag-text-muted)]">Discover pre-built automation recipes to supercharge your workflow</p>
-        </div>
+        <BlurFade delay={0.1}>
+          <SectionCard className="text-center py-12">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: `${ECHO}0d`, border: `1px solid ${ECHO}1a` }}
+            >
+              <BookOpen className="w-8 h-8" style={{ color: `${ECHO}4d` }} />
+            </div>
+            <p className="text-[#F4F6FF] font-medium mb-1">No recipes available yet</p>
+            <p className="text-sm text-[#9CA3AF]">
+              Discover pre-built automation recipes to supercharge your workflow
+            </p>
+          </SectionCard>
+        </BlurFade>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recipes.map((recipe) => {
+          {recipes.map((recipe, idx) => {
             const IconComponent = iconMap[recipe.icon] || BookOpen;
-            const catColor = categoryColors[recipe.category] || '#00F0FF';
+            const catColor = categoryColors[recipe.category] || ECHO;
+            const trigger = triggerTypes[recipe.id];
             const isActionInProgress = actionLoading === recipe.id;
 
             return (
-              <Card
-                key={recipe.id}
-                className={`bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 transition-all duration-300 hover:border-[#00F0FF]/40 ${
-                  recipe.installed ? 'ring-1 ring-[#00FF88]/20' : ''
-                }`}
-              >
-                <CardContent className="p-5 flex flex-col h-full">
-                  {/* Icon + Category */}
+              <BlurFade key={recipe.id} delay={0.05 * idx}>
+                <SectionCard
+                  className={`flex flex-col h-full ${
+                    recipe.installed
+                      ? 'ring-1 ring-[#00FF88]/20'
+                      : ''
+                  }`}
+                >
+                  {/* Icon + Badges */}
                   <div className="flex items-start justify-between mb-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -210,7 +244,7 @@ export function RecipesPage() {
                     >
                       <IconComponent className="w-5 h-5" style={{ color: catColor }} />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       {recipe.installed && (
                         <Badge
                           variant="outline"
@@ -230,25 +264,38 @@ export function RecipesPage() {
                       >
                         {recipe.category}
                       </Badge>
+                      {trigger && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs gap-1"
+                          style={{
+                            borderColor: `${ECHO}30`,
+                            color: `${ECHO}cc`,
+                          }}
+                        >
+                          <trigger.icon className="w-3 h-3" />
+                          {trigger.label}
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
                   {/* Name + Description */}
-                  <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{recipe.name}</h3>
-                  <p className="text-sm text-[var(--ag-text-muted)] mb-4 flex-1">{recipe.description}</p>
+                  <h3 className="font-semibold text-[#F4F6FF] mb-1">{recipe.name}</h3>
+                  <p className="text-sm text-[#9CA3AF] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
                     <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-[var(--ag-text-muted)]">Requires:</span>
+                      <span className="text-xs text-[#9CA3AF]">Requires:</span>
                       {recipe.requiredIntegrations.map((int) => (
                         <span
                           key={int}
-                          className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                          className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize"
                           style={{
-                            color: catColor,
-                            borderColor: `${catColor}30`,
-                            backgroundColor: `${catColor}10`,
+                            color: ECHO,
+                            borderColor: `${ECHO}30`,
+                            backgroundColor: `${ECHO}10`,
                           }}
                         >
                           {int}
@@ -257,11 +304,11 @@ export function RecipesPage() {
                     </div>
                   )}
 
-                  {/* Action Button */}
+                  {/* Action Button — 44px min-height for mobile */}
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors min-h-[44px]"
+                      className="w-full min-h-[44px] border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -272,7 +319,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-all hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] min-h-[44px]"
+                      className="w-full min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.3)]"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -282,13 +329,12 @@ export function RecipesPage() {
                       Activate
                     </Button>
                   )}
-                </CardContent>
-              </Card>
+                </SectionCard>
+              </BlurFade>
             );
           })}
         </div>
       )}
-    </div>
     </PageShell>
   );
 }
