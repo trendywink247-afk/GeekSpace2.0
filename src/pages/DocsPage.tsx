@@ -491,14 +491,14 @@ export function DocsPage() {
 
       {/* sticky header */}
       <header
-        className="relative sticky top-0 z-40 border-b border-white/[0.06] bg-[#06061a]/80"
-        style={{ backdropFilter: 'blur(20px) saturate(180%)' }}
+        className="relative sticky top-0 z-40 border-b border-[rgba(139,92,246,0.08)] bg-[#06061a]/80"
+        style={{ backdropFilter: 'blur(24px) saturate(180%)' }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs"
+              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs min-h-[44px] min-w-[44px] justify-center"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -524,27 +524,27 @@ export function DocsPage() {
         {/* hero text */}
         <div className="text-center mb-8">
           <h2
-            className="text-3xl sm:text-4xl font-bold text-[#F1F5F9] tracking-tight"
+            className="text-3xl sm:text-4xl font-bold text-[#F4F6FF] tracking-tight"
             style={{ fontFamily: 'Syne, sans-serif' }}
           >
             Documentation
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-[#94A3B8] max-w-lg mx-auto leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base text-[#9CA3AF] max-w-lg mx-auto leading-relaxed">
             Everything you need to know about Agentin -- {docs.reduce((n, s) => n + s.articles.length, 0)} articles across {docs.length} sections
           </p>
         </div>
 
         {/* Search */}
         <div className="relative mb-8" style={{ animation: 'docs-card-in 0.4s cubic-bezier(0.16,1,0.3,1) 0ms both' }}>
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8]" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
           <input
             placeholder="Search documentation..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 text-base rounded-xl border border-white/[0.06] text-[#F1F5F9] placeholder:text-[#94A3B8]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:border-[#8B5CF6]/30 transition-all"
+            className="w-full pl-12 pr-4 py-4 text-base rounded-xl border border-[rgba(139,92,246,0.08)] text-[#F4F6FF] placeholder:text-[#9CA3AF]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:border-[#8B5CF6]/30 transition-all"
             style={{
-              background: 'rgba(6,6,26,0.9)',
-              backdropFilter: 'blur(20px) saturate(180%)',
+              background: 'rgba(12,12,30,0.6)',
+              backdropFilter: 'blur(24px) saturate(180%)',
             }}
           />
         </div>
@@ -554,10 +554,10 @@ export function DocsPage() {
           {filtered.map((section, i) => (
             <div
               key={section.id}
-              className="rounded-2xl border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 overflow-hidden"
+              className="rounded-2xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-300 overflow-hidden"
               style={{
-                background: 'rgba(6,6,26,0.9)',
-                backdropFilter: 'blur(20px) saturate(180%)',
+                background: 'rgba(12,12,30,0.6)',
+                backdropFilter: 'blur(24px) saturate(180%)',
                 animation: `docs-card-in 0.4s cubic-bezier(0.16,1,0.3,1) ${(i + 1) * 60}ms both`,
               }}
             >
@@ -570,27 +570,27 @@ export function DocsPage() {
                     <section.icon className="w-5 h-5 text-[#8B5CF6]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-[#F1F5F9]">{section.title}</h3>
-                    <p className="text-sm text-[#94A3B8]">{section.description}</p>
+                    <h3 className="font-semibold text-[#F4F6FF]">{section.title}</h3>
+                    <p className="text-sm text-[#9CA3AF]">{section.description}</p>
                   </div>
-                  <span className="text-xs text-[#94A3B8] mr-2 hidden sm:inline">{section.articles.length} articles</span>
+                  <span className="text-xs text-[#9CA3AF] mr-2 hidden sm:inline">{section.articles.length} articles</span>
                   <ChevronRight
-                    className={`w-5 h-5 text-[#94A3B8] transition-transform duration-300 flex-shrink-0 ${
+                    className={`w-5 h-5 text-[#9CA3AF] transition-transform duration-300 flex-shrink-0 ${
                       expandedSection === section.id ? 'rotate-90' : ''
                     }`}
                   />
                 </button>
 
                 {expandedSection === section.id && (
-                  <div className="mt-4 ml-0 sm:ml-14 space-y-3 border-t border-white/[0.06] pt-4">
+                  <div className="mt-4 ml-0 sm:ml-14 space-y-3 border-t border-[rgba(139,92,246,0.08)] pt-4">
                     {section.articles.map((article) => {
                       const key = articleKey(section.id, article.title);
                       const isOpen = expandedArticle === key;
                       return (
                         <div
                           key={article.title}
-                          className="rounded-lg border border-white/[0.06] hover:border-white/[0.12] transition-colors overflow-hidden"
-                          style={{ background: 'rgba(6,6,26,0.7)' }}
+                          className="rounded-lg border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-colors overflow-hidden"
+                          style={{ background: 'rgba(12,12,30,0.5)' }}
                         >
                           <button
                             className="flex items-center gap-3 w-full text-left p-4 min-h-[44px]"
@@ -600,19 +600,19 @@ export function DocsPage() {
                             }}
                           >
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-[#F1F5F9] mb-0.5">{article.title}</h4>
-                              <p className="text-xs text-[#94A3B8] line-clamp-2">{article.summary}</p>
+                              <h4 className="font-medium text-sm text-[#F4F6FF] mb-0.5">{article.title}</h4>
+                              <p className="text-xs text-[#9CA3AF] line-clamp-2">{article.summary}</p>
                             </div>
                             {isOpen ? (
                               <ChevronDown className="w-4 h-4 text-[#8B5CF6] flex-shrink-0" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-[#94A3B8] flex-shrink-0" />
+                              <ChevronRight className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
                             )}
                           </button>
 
                           {isOpen && (
-                            <div className="px-4 pb-4 border-t border-white/[0.04]">
-                              <div className="pt-4 text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-line">
+                            <div className="px-4 pb-4 border-t border-[rgba(139,92,246,0.06)]">
+                              <div className="pt-4 text-sm text-[#9CA3AF] leading-relaxed whitespace-pre-line">
                                 {article.content}
                               </div>
                             </div>
@@ -630,20 +630,20 @@ export function DocsPage() {
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-4" />
-            <p className="text-[#94A3B8]">No docs match your search</p>
+            <p className="text-[#9CA3AF]">No docs match your search</p>
           </div>
         )}
 
         {/* contact footer */}
         <div
-          className="mt-12 p-6 rounded-2xl border border-white/[0.06]"
+          className="mt-12 p-6 rounded-2xl border border-[rgba(139,92,246,0.08)]"
           style={{
-            background: 'rgba(6,6,26,0.9)',
-            backdropFilter: 'blur(20px) saturate(180%)',
+            background: 'rgba(12,12,30,0.6)',
+            backdropFilter: 'blur(24px) saturate(180%)',
             animation: `docs-card-in 0.4s cubic-bezier(0.16,1,0.3,1) ${(filtered.length + 1) * 60}ms both`,
           }}
         >
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-[#9CA3AF]">
             Need help? Contact us at{' '}
             <a href="mailto:support@agentin.chat" className="text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors">
               support@agentin.chat

@@ -32,7 +32,7 @@ export function TermsPage() {
   ];
 
   return (
-    <div className="relative min-h-dvh text-[#F1F5F9] overflow-hidden" style={{ background: '#06061a' }}>
+    <div className="relative min-h-dvh text-[#F4F6FF] overflow-hidden" style={{ background: '#06061a' }}>
       {/* Aurora gradient background */}
       <div
         className="fixed inset-0 pointer-events-none"
@@ -62,14 +62,14 @@ export function TermsPage() {
 
       {/* Sticky header */}
       <header
-        className="relative sticky top-0 z-40 border-b border-white/[0.06] bg-[#06061a]/80"
+        className="relative sticky top-0 z-40 border-b border-[rgba(139,92,246,0.08)] bg-[#06061a]/80"
         style={{ backdropFilter: 'blur(20px) saturate(180%)' }}
       >
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs"
+              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs min-h-[44px] min-w-[44px] px-2 -ml-2"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -91,21 +91,21 @@ export function TermsPage() {
       {/* Content */}
       <main className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pt-10 pb-24 md:pb-8">
         <h2
-          className="text-3xl sm:text-4xl font-bold mb-2 text-[#F1F5F9]"
+          className="text-3xl sm:text-4xl font-bold mb-2 text-[#F4F6FF]"
           style={{ fontFamily: 'Syne, sans-serif' }}
         >
           Terms of Service
         </h2>
-        <p className="text-[#94A3B8] mb-10">Last updated: February 2026</p>
+        <p className="text-[#9CA3AF] mb-10">Last updated: February 2026</p>
 
         <div className="space-y-6">
           {sections.map((section, idx) => (
             <div
               key={section.title}
-              className="rounded-2xl border border-white/[0.06] p-6 transition-all duration-300"
+              className="rounded-2xl border border-[rgba(139,92,246,0.08)] p-6 transition-all duration-300"
               style={{
-                background: 'rgba(6,6,26,0.9)',
-                backdropFilter: 'blur(20px) saturate(180%)',
+                background: 'rgba(12,12,30,0.6)',
+                backdropFilter: 'blur(24px) saturate(180%)',
                 animation: `terms-fade-in 0.5s ease-out ${idx * 0.1}s both`,
               }}
             >
@@ -114,8 +114,8 @@ export function TermsPage() {
                   <section.icon className="w-5 h-5 text-[#8B5CF6]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-[#F1F5F9] mb-2">{section.title}</h3>
-                  <p className="text-[#94A3B8] leading-relaxed">{section.content}</p>
+                  <h3 className="text-lg font-semibold text-[#F4F6FF] mb-2">{section.title}</h3>
+                  <p className="text-[#9CA3AF] leading-relaxed">{section.content}</p>
                 </div>
               </div>
             </div>
@@ -124,14 +124,14 @@ export function TermsPage() {
 
         {/* Contact footer */}
         <div
-          className="mt-10 rounded-2xl border border-white/[0.06] p-6"
+          className="mt-10 rounded-2xl border border-[rgba(139,92,246,0.08)] p-6"
           style={{
-            background: 'rgba(6,6,26,0.9)',
-            backdropFilter: 'blur(20px) saturate(180%)',
+            background: 'rgba(12,12,30,0.6)',
+            backdropFilter: 'blur(24px) saturate(180%)',
             animation: `terms-fade-in 0.5s ease-out ${sections.length * 0.1}s both`,
           }}
         >
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-[#9CA3AF]">
             Questions about terms? Reach us at{' '}
             <a href="mailto:legal@agentin.chat" className="text-[#8B5CF6] hover:underline transition-colors">legal@agentin.chat</a>
           </p>

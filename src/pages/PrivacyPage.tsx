@@ -4,7 +4,7 @@ import { Shield, Lock, Eye, Server, Trash2, Mail, Database, Globe } from 'lucide
 export function PrivacyPage() {
 
   return (
-    <div className="min-h-dvh pb-24 md:pb-8 text-[#94A3B8]" style={{ background: '#06061a' }}>
+    <div className="min-h-dvh pb-24 md:pb-8 text-[#9CA3AF]" style={{ background: '#06061a' }}>
       {/* animations */}
       <style>{`
         @keyframes pp-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.05)}}
@@ -56,14 +56,14 @@ export function PrivacyPage() {
 
       {/* sticky header */}
       <header
-        className="relative sticky top-0 z-40 border-b border-white/[0.06] bg-[#06061a]/80"
+        className="relative sticky top-0 z-40 border-b border-[rgba(139,92,246,0.08)] bg-[#06061a]/80"
         style={{ backdropFilter: 'blur(20px) saturate(180%)' }}
       >
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6 w-full">
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs"
+              className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs min-h-[44px] min-w-[44px] px-2 -ml-2"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -84,8 +84,8 @@ export function PrivacyPage() {
 
       {/* content */}
       <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pt-10">
-        <p className="text-[#94A3B8] mb-4">Last updated: March 2026</p>
-        <p className="text-[#94A3B8] mb-8 leading-relaxed">
+        <p className="text-[#9CA3AF] mb-4">Last updated: March 2026</p>
+        <p className="text-[#9CA3AF] mb-8 leading-relaxed">
           Agentin Chat ("Agentin", "we", "our", "us") is committed to protecting your privacy.
           This Privacy Policy explains how we collect, use, store, and share your information
           when you use our AI assistant platform at ai.agentin.chat and associated services.
@@ -94,12 +94,12 @@ export function PrivacyPage() {
         <div className="space-y-6">
           {/* 1. Data Collection */}
           <Section icon={Database} title="1. Data We Collect" delay={0}>
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Account Information</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Account Information</h3>
             <p>When you create an account, we collect your name, email address, and username. If you sign up
             via Google or GitHub OAuth, we receive your public profile information (name, email, profile photo)
             from those services.</p>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Google User Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Google User Data</h3>
             <p>When you connect Google services, we access the following data with your explicit consent:</p>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li><strong>Google Calendar</strong> (scope: calendar.events) — We read and create calendar events
@@ -111,15 +111,15 @@ export function PrivacyPage() {
               for authentication and to personalize your experience.</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Conversation Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Conversation Data</h3>
             <p>We store your conversations with AI agents, including messages sent via web chat, Telegram, and
             other connected channels. This includes user messages and AI responses.</p>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Usage Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Usage Data</h3>
             <p>We collect information about how you use the platform, including features used, AI model
             interactions, token consumption, and session activity for analytics and billing purposes.</p>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">User-Created Content</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">User-Created Content</h3>
             <p>We store content you create through the platform: reminders, notes, documents, habits,
             automations, generated images/videos, and portfolio data.</p>
           </Section>
@@ -142,7 +142,7 @@ export function PrivacyPage() {
               new features based on aggregate usage patterns (never individual conversations).</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">What We Do NOT Do With Your Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">What We Do NOT Do With Your Data</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>We do <strong>not</strong> sell, rent, or share your personal data with third parties for advertising.</li>
               <li>We do <strong>not</strong> use your Google user data for AI/ML model training.</li>
@@ -155,11 +155,11 @@ export function PrivacyPage() {
 
           {/* 3. Data Storage */}
           <Section icon={Server} title="3. Data Storage &amp; Security" delay={2}>
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Where We Store Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Where We Store Data</h3>
             <p>Your data is stored on secure servers hosted by Hostinger (data center location: India/EU).
             We use Docker containerization with isolated services for security.</p>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">How We Protect Data</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">How We Protect Data</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li><strong>Encryption at rest:</strong> All sensitive data (API keys, OAuth tokens) is encrypted
               using AES-256-GCM with per-user encryption keys.</li>
@@ -172,7 +172,7 @@ export function PrivacyPage() {
               <li><strong>Rate limiting:</strong> All API endpoints are rate-limited to prevent abuse.</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Data Retention</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Data Retention</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>Account data: retained while your account is active.</li>
               <li>Conversation history: retained for 90 days unless you choose to keep it longer.</li>
@@ -190,33 +190,33 @@ export function PrivacyPage() {
             className="text-[#8B5CF6] hover:underline" target="_blank" rel="noopener noreferrer">
             Google API Services User Data Policy</a>.</p>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Scopes We Request</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Scopes We Request</h3>
             <div className="overflow-x-auto">
               <table className="w-full mt-2 text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="text-left py-2 text-[#94A3B8]">Scope</th>
-                    <th className="text-left py-2 text-[#94A3B8]">Purpose</th>
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
+                    <th className="text-left py-2 text-[#9CA3AF]">Scope</th>
+                    <th className="text-left py-2 text-[#9CA3AF]">Purpose</th>
                   </tr>
                 </thead>
-                <tbody className="text-[#94A3B8]">
-                  <tr className="border-b border-white/[0.06]">
+                <tbody className="text-[#9CA3AF]">
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
                     <td className="py-2 font-mono text-xs">openid</td>
                     <td className="py-2">Verify your identity for sign-in</td>
                   </tr>
-                  <tr className="border-b border-white/[0.06]">
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
                     <td className="py-2 font-mono text-xs">email</td>
                     <td className="py-2">Read your email address for account creation</td>
                   </tr>
-                  <tr className="border-b border-white/[0.06]">
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
                     <td className="py-2 font-mono text-xs">profile</td>
                     <td className="py-2">Read your name and photo for personalization</td>
                   </tr>
-                  <tr className="border-b border-white/[0.06]">
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
                     <td className="py-2 font-mono text-xs">calendar.events</td>
                     <td className="py-2">Read/create calendar events for AI scheduling</td>
                   </tr>
-                  <tr className="border-b border-white/[0.06]">
+                  <tr className="border-b border-[rgba(139,92,246,0.08)]">
                     <td className="py-2 font-mono text-xs">gmail.readonly</td>
                     <td className="py-2">Read emails for inbox summaries and smart replies</td>
                   </tr>
@@ -228,7 +228,7 @@ export function PrivacyPage() {
               </table>
             </div>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">How Google Data Is Used</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">How Google Data Is Used</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>Calendar data is used solely to display events on your dashboard, find free time slots,
               and create events when you ask the AI agent.</li>
@@ -237,7 +237,7 @@ export function PrivacyPage() {
               <li>Google profile data is used solely for authentication and displaying your name/avatar.</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">How Google Data Is Stored</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">How Google Data Is Stored</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>OAuth refresh tokens are stored encrypted (AES-256-GCM) in our database.</li>
               <li>Calendar events are cached locally for display and synced every 30 minutes.</li>
@@ -245,7 +245,7 @@ export function PrivacyPage() {
               <li>No Google user data is stored permanently — disconnecting removes all cached data.</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">How Google Data Is Shared</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">How Google Data Is Shared</h3>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>Google user data is <strong>never shared</strong> with third parties.</li>
               <li>Google user data is <strong>never sold</strong> or used for advertising.</li>
@@ -255,7 +255,7 @@ export function PrivacyPage() {
               they do not receive raw Google data.</li>
             </ul>
 
-            <h3 className="font-medium text-[#F1F5F9] mt-3 mb-1">Revoking Access</h3>
+            <h3 className="font-medium text-[#F4F6FF] mt-3 mb-1">Revoking Access</h3>
             <p>You can disconnect Google services at any time from your Agentin Settings page. You can also
             revoke access from your <a href="https://myaccount.google.com/permissions" className="text-[#8B5CF6] hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions page</a>.
             Upon disconnection, all cached Google data is deleted immediately.</p>
@@ -307,18 +307,18 @@ export function PrivacyPage() {
 
         {/* contact footer */}
         <div
-          className="mt-12 p-6 rounded-xl border border-white/[0.06]"
+          className="mt-12 p-6 rounded-xl border border-[rgba(139,92,246,0.08)]"
           style={{
-            background: 'rgba(6,6,26,0.9)',
-            backdropFilter: 'blur(20px) saturate(180%)',
+            background: 'rgba(12,12,30,0.6)',
+            backdropFilter: 'blur(24px) saturate(180%)',
             animation: 'pp-card-in 0.5s ease-out 0.9s both',
           }}
         >
-          <p className="text-sm text-[#94A3B8]">
+          <p className="text-sm text-[#9CA3AF]">
             Questions about privacy? Contact us at{' '}
             <a href="mailto:privacy@agentin.chat" className="text-[#8B5CF6] hover:underline">privacy@agentin.chat</a>
           </p>
-          <p className="text-sm text-[#94A3B8] mt-2">
+          <p className="text-sm text-[#9CA3AF] mt-2">
             Agentin Chat is operated by the Agentin team. Domain: ai.agentin.chat
           </p>
         </div>
@@ -330,10 +330,10 @@ export function PrivacyPage() {
 function Section({ icon: Icon, title, children, delay = 0 }: { icon: typeof Shield; title: string; children: React.ReactNode; delay?: number }) {
   return (
     <div
-      className="rounded-xl border border-white/[0.06] p-5 sm:p-6"
+      className="rounded-xl border border-[rgba(139,92,246,0.08)] p-5 sm:p-6"
       style={{
-        background: 'rgba(6,6,26,0.9)',
-        backdropFilter: 'blur(20px) saturate(180%)',
+        background: 'rgba(12,12,30,0.6)',
+        backdropFilter: 'blur(24px) saturate(180%)',
         animation: `pp-card-in 0.5s ease-out ${0.1 + delay * 0.08}s both`,
       }}
     >
@@ -341,9 +341,9 @@ function Section({ icon: Icon, title, children, delay = 0 }: { icon: typeof Shie
         <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center flex-shrink-0">
           <Icon className="w-5 h-5 text-[#8B5CF6]" />
         </div>
-        <h2 className="text-xl font-semibold text-[#F1F5F9]" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
+        <h2 className="text-xl font-semibold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>{title}</h2>
       </div>
-      <div className="text-[#94A3B8] leading-relaxed pl-[52px] space-y-2">
+      <div className="text-[#9CA3AF] leading-relaxed pl-[52px] space-y-2">
         {children}
       </div>
     </div>
