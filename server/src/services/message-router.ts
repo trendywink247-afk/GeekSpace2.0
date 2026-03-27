@@ -1225,9 +1225,10 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       );
       if (upcomingReminders.length) {
         lines.push('', 'Upcoming:');
+        const briefingUserTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata';
         upcomingReminders.forEach(r => {
           let t = r.datetime;
-          try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }); } catch { }
+          try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: briefingUserTz, dateStyle: 'short', timeStyle: 'short' }); } catch { }
           lines.push(`  ${r.text} — ${t}`);
         });
       }

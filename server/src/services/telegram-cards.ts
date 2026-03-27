@@ -23,12 +23,12 @@ export interface TelegramCard {
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function formatDatetime(dt: string | number | null): string {
+function formatDatetime(dt: string | number | null, timezone = 'Asia/Kolkata'): string {
   if (!dt) return 'soon';
   const d = new Date(typeof dt === 'number' ? dt : dt);
   if (isNaN(d.getTime())) return 'soon';
   return d.toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
+    timeZone: timezone,
     day: '2-digit', month: 'short',
     hour: '2-digit', minute: '2-digit', hour12: true,
   });
@@ -54,8 +54,8 @@ export function storeTelegramMessage(
 
 // ── Reminder Card ────────────────────────────────────────────
 
-export function buildReminderCard(reminder: { id: string; text: string; datetime?: string | number | null }): TelegramCard {
-  const dt = formatDatetime(reminder.datetime ?? null);
+export function buildReminderCard(reminder: { id: string; text: string; datetime?: string | number | null }, timezone = 'Asia/Kolkata'): TelegramCard {
+  const dt = formatDatetime(reminder.datetime ?? null, timezone);
   return {
     text: `🔔 *${escapeMarkdown(reminder.text)}*\n⏰ ${dt}`,
     parse_mode: 'Markdown',

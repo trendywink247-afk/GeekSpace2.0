@@ -977,11 +977,12 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           return { tool, success: true, message: 'You have no pending reminders.' };
         }
 
+        const listUserTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata';
         const list = rows.map((r, i) => {
           let time = r.scheduled_time;
           try {
             time = new Date(r.scheduled_time).toLocaleString('en-IN',
-              { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
+              { timeZone: listUserTz, dateStyle: 'medium', timeStyle: 'short' });
           } catch { /* use raw */ }
           return `${i + 1}. ${r.text} — ${time}`;
         }).join('\n');
@@ -1310,9 +1311,10 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         ];
         if (upcomingReminders.length) {
           lines.push('', '⏰ **Upcoming:**');
+          const briefUserTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata';
           upcomingReminders.forEach(r => {
             let t = r.datetime;
-            try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }); } catch { }
+            try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: briefUserTz, dateStyle: 'short', timeStyle: 'short' }); } catch { }
             lines.push(`  • ${r.text} — ${t}`);
           });
         }

@@ -1228,7 +1228,7 @@ async function executeTask(task: PicoTask): Promise<void> {
 
         db.prepare('INSERT INTO reminders (id, user_id, text, datetime, channel, category, recurrence, created_by, pico_task_id, scheduled_for) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
           .run(reminderId, task.user_id, text, dueAt, channel, 'general', picoRecurrence, 'pico-fleet', task.id, scheduledFor);
-        const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })})` : '';
+        const timeNote = dueAt ? ` (due ${new Date(dueAt).toLocaleString('en-US', { timeZone: userTimezone })})` : '';
         output = `Reminder created: ${text}${timeNote}`;
 
         // Create memory entry for the reminder

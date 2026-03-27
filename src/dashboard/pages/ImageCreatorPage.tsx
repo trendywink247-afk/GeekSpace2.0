@@ -10,7 +10,7 @@ import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,
   Clock, Bot, Wifi, WifiOff, Upload, Wand2, ChevronDown,
   Download, X, ZoomIn, AlertCircle, Zap, Palette,
-  Calendar, RefreshCw, Images
+  Calendar, RefreshCw, Images, MessageCircle
 } from 'lucide-react';
 import { imageService, picoService, agentService } from '@/services/api';
 import type { UserImage, ImageModel } from '@/services/api';
@@ -335,6 +335,16 @@ export function ImageCreatorPage() {
                 >
                   <Download className="w-4 h-4" />
                   Download
+                </a>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent('Check out what I created with Agentin! ' + previewImage.image_url)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 min-w-[44px] min-h-[44px] bg-[#25D366]/20 text-[#25D366] rounded-lg hover:bg-[#25D366]/30 transition-colors font-medium text-sm"
+                  aria-label="Share on WhatsApp"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  WhatsApp
                 </a>
                 <button
                   onClick={() => setPreviewImage(null)}
@@ -1055,6 +1065,16 @@ export function ImageCreatorPage() {
                         aria-label="Download image"
                       >
                         <Download className="w-4 h-4" />
+                      </a>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent('Check out what I created with Agentin! ' + img.image_url)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#25D366]/80 text-white hover:bg-[#25D366] transition-colors shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Share on WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
                       </a>
                       <button
                         onClick={(e) => { e.stopPropagation(); void handleDelete(img.id); }}

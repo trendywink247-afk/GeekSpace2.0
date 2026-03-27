@@ -3,7 +3,7 @@ import { PageShell } from '@/components/agentin';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
-  BarChart3, Eye, TrendingUp, Copy, Link, Download, GripVertical
+  BarChart3, Eye, TrendingUp, Copy, Link, Download, GripVertical, MessageCircle
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -524,6 +524,16 @@ export function PortfolioPage() {
             >
               <ExternalLink className="w-4 h-4" />
               View Live
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent('Check out my portfolio: ' + window.location.origin + '/portfolio/' + user.username)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[44px]"
+              style={{ color: '#25D366', borderColor: 'rgba(37,211,102,0.3)' }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
             </a>
           </div>
         </div>

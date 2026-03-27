@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Plus, ExternalLink, Trash2, Edit3, Download, Globe, Code,
-  Copy, Check, X, Folder, AlertTriangle, Clock, Monitor, Smartphone
+  Copy, Check, X, Folder, AlertTriangle, Clock, Monitor, Smartphone, MessageCircle
 } from 'lucide-react';
 import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
@@ -263,6 +263,17 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 >
                   <Download className="w-4 h-4" />
                 </button>
+
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent('Check out what I built with Agentin! ' + artifact.previewUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#25D366] hover:bg-[#25D366]/10 rounded-lg transition-colors"
+                  title="Share on WhatsApp"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </a>
 
                 <button
                   onClick={() => handleDomainSetup(artifact)}
