@@ -1,17 +1,13 @@
-/**
- * Reminders Domain — Barrel Export
- *
- * Re-exports for reminder CRUD, scheduling, recurrence computation,
- * and multi-channel delivery.
- *
- * @module reminders
- * @see docs/MICROSERVICES_ROADMAP.md — Wave 1 extraction candidate
- */
+// ============================================================
+// Reminders module — barrel export + AppModule registration
+// ============================================================
 
-// ── Routes ──────────────────────────────────────────────────────────
+import type { Application } from 'express';
+import type { AppModule } from '../../shared/module.js';
+
+// Re-export routes and services from existing locations (shim pattern)
 export { remindersRouter, computeNextOccurrence } from '../../routes/reminders.js';
 
-// ── Services ────────────────────────────────────────────────────────
 export {
   startReminderScheduler,
   stopReminderScheduler,
@@ -19,3 +15,34 @@ export {
   scheduleTestReminder,
   getReminderDriftStats,
 } from '../../services/reminder-scheduler.js';
+
+// Types
+export type {
+  Reminder,
+  ReminderResponse,
+  RecurrencePattern,
+  ReminderPriority,
+  ReminderCategory,
+  ReminderChannel,
+  SnoozePreset,
+  CreateReminderBody,
+  UpdateReminderBody,
+  SnoozeReminderBody,
+  BulkDeleteBody,
+} from './types.js';
+
+// Import for module registration
+import { remindersRouter } from '../../routes/reminders.js';
+import { startReminderScheduler } from '../../services/reminder-scheduler.js';
+
+export const remindersModule: AppModule = {
+  name: 'reminders',
+
+  registerRoutes(app: Application) {
+    app.use('/api/reminders', remindersRouter);
+  },
+
+  async initialize() {
+    startReminderScheduler();
+  },
+};

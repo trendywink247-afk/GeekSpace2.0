@@ -25,8 +25,11 @@ import { usersRouter } from './routes/users.js';
 import { agentRouter } from './routes/agent/index.js';
 import { usageRouter } from './routes/usage.js';
 import { integrationsRouter } from './routes/integrations.js';
-import { remindersRouter } from './routes/reminders.js';
-import { portfolioRouter } from './routes/portfolio.js';
+// Wave 1 modules (health, portfolio, reminders, media) use AppModule pattern
+import { healthModule } from './modules/health/index.js';
+import { portfolioModule } from './modules/portfolio/index.js';
+import { remindersModule } from './modules/reminders/index.js';
+import { mediaModule } from './modules/media/index.js';
 import { automationsRouter } from './routes/automations.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { directoryRouter } from './routes/directory.js';
@@ -44,15 +47,14 @@ import { agentStateRouter } from './routes/agent-state.js';
 // H-3: getServiceHealth no longer needed here (detailed info moved to admin-only /api/health/detailed)
 import { artifactsRouter } from './routes/artifacts.js';
 import { templatesRouter } from './routes/templates.js';
-import { imagesRouter } from './routes/images.js';
-import { videosRouter } from './routes/videos.js';
+// imagesRouter, videosRouter moved to mediaModule
 import { socialMediaRouter } from './routes/social-media.js';
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
 import { suggestionsRouter } from './routes/suggestions.js';
-import { voiceRouter } from './routes/voice.js';
+// voiceRouter moved to mediaModule
 import { jobsRouter } from './routes/jobs.js';
-import { imageAsyncRouter } from './routes/image.js';
+// imageAsyncRouter moved to mediaModule
 import { reportRouter } from './routes/report.js';
 import { proactiveRouter } from './routes/proactive.js';
 import { inboxRouter } from './routes/inbox.js';
@@ -68,7 +70,7 @@ import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
 import { gateRouter } from './routes/gate.js';
 import { officeRouter } from './routes/office.js';
-import { healthRouter } from './routes/health.js';
+// healthRouter moved to healthModule
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
 import { agentTasksRouter } from './routes/agent-tasks.js';
@@ -80,6 +82,7 @@ import { logoAiRouter } from './routes/logo-ai.js';
 import { customBotRouter } from './routes/custom-bot.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
+import { setupSwagger } from './shared/swagger.js';
 import {
   generateOutput,
   packageAsTodo,
@@ -450,8 +453,9 @@ export function createApp(): express.Application {
   app.use('/api/usage', usageRouter);
   app.use('/api/integrations/telegram/custom', customBotRouter);
   app.use('/api/integrations', integrationsRouter);
-  app.use('/api/reminders', remindersRouter);
-  app.use('/api/portfolio', portfolioRouter);
+  // Wave 1 modules
+  remindersModule.registerRoutes(app);
+  portfolioModule.registerRoutes(app);
   app.use('/api/automations', automationsRouter);
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/directory', directoryRouter);
@@ -466,7 +470,7 @@ export function createApp(): express.Application {
   app.use('/api/geekos', geekosBridgeRouter);
   app.use('/api/geekos-llm', geekosLlmProxyRouter);
   app.use('/api/agent-state', agentStateRouter);
-  app.use('/api/health', healthRouter);
+  healthModule.registerRoutes(app);
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);
   app.use('/api/artifacts', artifactsRouter);
@@ -476,15 +480,14 @@ export function createApp(): express.Application {
   const __appDirname = path.dirname(fileURLToPath(import.meta.url));
   const imgCacheStaticDir = path.join(__appDirname, '../../data/img-cache');
   app.use('/api/images/cache', express.static(imgCacheStaticDir));
-  app.use('/api/images', imagesRouter);
-  app.use('/api/videos', videosRouter);
+  mediaModule.registerRoutes(app);
   app.use('/api/social-media', socialMediaRouter);
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
   app.use('/api/suggestions', suggestionsRouter);
-  app.use('/api/voice', voiceRouter);
+  // voiceRouter mounted by mediaModule
   app.use('/api/jobs', jobsRouter);
-  app.use('/api/image', imageAsyncRouter);
+  // imageAsyncRouter mounted by mediaModule
   app.use('/api/report', reportRouter);
   app.use('/api/proactive', proactiveRouter);
   app.use('/api/inbox', inboxRouter);
@@ -676,6 +679,9 @@ export function createApp(): express.Application {
 
   // ---- Admin dashboard ----
   app.get('/admin', serveAdminDashboard);
+
+  // ---- Swagger API docs ----
+  setupSwagger(app);
 
   // ---- Global error handler (MUST be last) ----
   app.use(errorHandler);

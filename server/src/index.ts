@@ -19,8 +19,9 @@ import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
 // DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
 // import { startBriefingScheduler } from './services/daily-briefing.js';
-import { startReminderScheduler } from './services/reminder-scheduler.js';
-import { startHealthProbeCache } from './routes/health.js';
+// startReminderScheduler and startHealthProbeCache now managed by module lifecycle hooks
+import { healthModule } from './modules/health/index.js';
+import { remindersModule } from './modules/reminders/index.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
 import { startArtifactCleanupScheduler } from './services/artifact-cleanup.js';
 import { initProactiveEngine } from './services/proactive-engine.js';
@@ -88,8 +89,8 @@ const httpServer = app.listen(config.port, () => {
   ensureDefaultAgents();
   seedDefaultTemplates();
 
-  // Health probe cache — runs in every worker
-  startHealthProbeCache();
+  // Health probe cache — runs in every worker (via module lifecycle)
+  healthModule.initialize?.();
 
   // Schedulers, Telegram bot, and cron jobs — run ONLY in the primary worker
   const instanceId = process.env.NODE_APP_INSTANCE ?? 'standalone';
@@ -115,7 +116,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('ollama-keepalive', startOllamaKeepalive);
     // DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
     // safeStart('briefing-scheduler', startBriefingScheduler);
-    safeStart('reminder-scheduler', startReminderScheduler);
+    safeStart('reminder-scheduler', () => remindersModule.initialize?.());
     safeStart('memory-sync', startMemorySyncScheduler);
     safeStart('memory-weekly-summary', startWeeklySummaryScheduler);
     safeStart('model-sync', startModelSyncScheduler);
