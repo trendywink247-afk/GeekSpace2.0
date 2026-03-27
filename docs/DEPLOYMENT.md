@@ -1,5 +1,7 @@
 # Agentin — Deployment Guide
 
+> For Docker service details, see [`docs/DEVOPS.md`](DEVOPS.md). For infrastructure components, see [`infra/README.md`](../infra/README.md).
+
 ## Prerequisites
 
 | Requirement | Minimum | Recommended |
