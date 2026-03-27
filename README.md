@@ -311,6 +311,53 @@ Staging has isolated Redis (64MB cap) and a separate DB volume.
 
 ---
 
+## Project Structure
+
+```
+GeekSpace2.0/
+├── src/                        # React 19 frontend (TypeScript)
+│   ├── components/             #   Reusable UI components (shadcn/ui)
+│   ├── dashboard/pages/        #   38 dashboard pages (chat, reminders, billing, etc.)
+│   ├── services/api.ts         #   Axios API client with JWT interceptor
+│   ├── stores/                 #   Zustand state management
+│   ├── hooks/                  #   14 custom React hooks
+│   ├── i18n/                   #   Internationalization (Hindi, English)
+│   └── landing/                #   Public landing page
+├── server/                     # Express 4 backend (TypeScript)
+│   └── src/
+│       ├── app.ts              #   Express app factory + middleware stack
+│       ├── config.ts           #   Validated env configuration (100+ vars)
+│       ├── db/index.ts         #   SQLite schema (60+ tables, WAL mode)
+│       ├── routes/             #   65+ API endpoints by domain
+│       │   ├── agent/          #     AI chat, streaming, memory, workflows
+│       │   ├── auth.ts         #     Signup, login, OAuth, password reset
+│       │   ├── billing.ts      #     Stripe/Razorpay checkout + webhooks
+│       │   └── ...             #     reminders, portfolio, automations, admin
+│       ├── services/           #   98 business logic services
+│       │   ├── llm.ts          #     7-tier LLM router + intent classification
+│       │   ├── message-router.ts #   Unified message handling (web/Telegram)
+│       │   ├── react-loop.ts   #     ReAct loop with 17 tools
+│       │   └── ...             #     memory, billing, scheduling, media, etc.
+│       ├── middleware/         #   Auth (JWT), validation (Zod), errors, metrics
+│       ├── repositories/      #   Data access (User, Conversation, Subscription, etc.)
+│       └── test/              #   2552 unit tests (Vitest)
+├── e2e/                       # Playwright E2E tests (22 specs)
+├── docs/                      # Technical documentation
+├── ops/                       # Operational docs and audit reports
+├── scripts/                   # 38+ deployment/automation scripts
+├── infra/                     # Infrastructure documentation
+├── openapi/                   # OpenAPI 3.1 specification
+├── picoclaw/                  # PicoClaw AI triage sidecar
+├── caddy/                     # Reverse proxy configuration
+├── docker-compose.yml         # 15+ service orchestration
+├── Dockerfile                 # Multi-stage production build (Node 20)
+└── .github/workflows/         # CI/CD (lint, test, build, deploy)
+```
+
+> See [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) for annotated walkthroughs of each directory.
+
+---
+
 ## Quick Start
 
 ### Docker (Recommended)
@@ -413,10 +460,10 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 
 ## API
 
-> Full reference: [`docs/API.md`](docs/API.md)
+> Full reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | OpenAPI spec: [`openapi/openapi.yaml`](openapi/openapi.yaml) | Legacy: [`docs/API.md`](docs/API.md)
 
 <details>
-<summary><strong>Key endpoints</strong></summary>
+<summary><strong>Key endpoints (65+ total)</strong></summary>
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -425,14 +472,16 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 | `POST` | `/api/auth/forgot-password` | — | Request password reset OTP |
 | `POST` | `/api/agent/chat` | JWT | Chat with AI agent |
 | `POST` | `/api/agent/chat/stream` | JWT | SSE streaming chat |
+| `GET` | `/api/agent/memory` | JWT | List memory entries |
+| `GET` | `/api/reminders` | JWT | List reminders |
+| `GET` | `/api/automations` | JWT | List automations |
 | `GET` | `/api/portfolio/:username` | — | Public portfolio |
-| `POST` | `/api/pico/tasks/plan` | JWT | Queue background task |
-| `GET` | `/api/billing/plans` | — | List pricing plans |
-| `GET` | `/api/agent/delegation/status` | JWT | Delegation usage + limits |
-| `GET` | `/api/office/state` | JWT | Office page state |
+| `POST` | `/api/billing/checkout` | JWT | Initiate payment |
+| `POST` | `/api/billing/webhook` | Stripe | Payment events |
 | `GET` | `/api/health` | — | Public health status |
 | `GET` | `/api/health/detailed` | Admin | Full health with internals |
-| `GET` | `/admin` | Admin | Ops dashboard |
+
+See [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) for all 65+ endpoints with request/response schemas.
 
 </details>
 
@@ -498,9 +547,28 @@ Plus 13 additional medium/low findings addressed.
 
 ---
 
+## Documentation
+
+| Document | Audience | Description |
+|----------|----------|-------------|
+| [`docs/SOLUTION_ARCHITECTURE.md`](docs/SOLUTION_ARCHITECTURE.md) | Engineers, Architects | C4 diagrams, request flows, domain boundaries, security model |
+| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Engineers | Local setup, repo structure, recipes, debugging, conventions |
+| [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | Engineers, Integrators | All 65+ endpoints, auth, errors, webhooks, SSE streaming |
+| [`openapi/openapi.yaml`](openapi/openapi.yaml) | Engineers, Integrators | OpenAPI 3.1 spec with schemas and webhook payloads |
+| [`docs/BUSINESS_FEATURES.md`](docs/BUSINESS_FEATURES.md) | PMs, BAs, QA | Feature inventory, credit economy, agent personalities |
+| [`docs/DEVOPS.md`](docs/DEVOPS.md) | DevOps, SREs | Docker services, CI/CD, monitoring, backups, runbooks |
+| [`docs/TESTING.md`](docs/TESTING.md) | Engineers, QA | Test inventory, coverage, patterns, CI integration |
+| [`docs/MICROSERVICES_ROADMAP.md`](docs/MICROSERVICES_ROADMAP.md) | Architects, Leads | 13 domain boundaries, extraction waves, migration strategy |
+| [`docs/ENV_VARS.md`](docs/ENV_VARS.md) | Engineers, DevOps | 100+ environment variables with defaults and notes |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | DevOps | Production deployment procedures |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | DevOps, SREs | Operational runbook, backup/restore, troubleshooting |
+| [`docs/DOC_MAP.md`](docs/DOC_MAP.md) | Everyone | Master index of all project documentation |
+
+---
+
 ## Contributing
 
-We welcome contributions! See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup instructions, coding standards, and PR guidelines.
+We welcome contributions! See [`CONTRIBUTING.md`](CONTRIBUTING.md) for coding standards and PR guidelines, or [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) for full setup instructions.
 
 ---
 
