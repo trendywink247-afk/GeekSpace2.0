@@ -5,9 +5,9 @@
 import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
-// Re-export routes from existing locations (shim pattern)
-export { memoryRouter } from '../../routes/memory.js';
-export { default as searchRouter } from '../../routes/search.js';
+// Re-export routes from local module paths
+export { memoryRouter } from './routes/memory.js';
+export { default as searchRouter } from './routes/search.js';
 
 // Re-export services — memory core
 export {
@@ -16,38 +16,52 @@ export {
   getMemories,
   getRelevantMemories,
   deleteMemory,
+  logTrainingExample,
   logConversation,
   getRecentConversations,
   getConversationContext,
   extractMemories,
   extractMemoriesWithAI,
+  extractMemoriesWithOllama,
   buildMemoryContext,
   buildOwnerContextForVisitor,
   startMemorySyncScheduler,
   startWeeklySummaryScheduler,
   getUserMemories,
+  getTopUserMemories,
   upsertUserMemory,
   deleteUserMemory,
   formatMemoryContext,
-} from '../../services/memory.js';
+  extractMemoriesFromConversation,
+} from './services/memory.js';
+
+export type { UserMemory } from './services/memory.js';
 
 // Re-export services — vector search (Qdrant)
 export {
   initQdrant,
   upsertMemoryVector,
   semanticSearch,
+  deleteMemoryVector,
+  bulkUpsertMemories,
   isQdrantHealthy,
-} from '../../services/search-vector.js';
+  isEmbeddingAvailable,
+} from './services/search-vector.js';
 
 // Re-export services — full-text search (Meilisearch)
 export {
   initMeilisearch,
   searchContent,
   indexDocument,
+  indexNote,
   indexMemory,
+  indexReminder,
+  indexHabit,
+  removeDocument,
+  bulkIndex,
   bulkIndexExistingData,
   isMeilisearchHealthy,
-} from '../../services/search-index.js';
+} from './services/search-index.js';
 
 // Re-export services — graph memory
 export {
@@ -57,18 +71,17 @@ export {
   extractEntitiesFromText,
   processMessageEntities,
   getUserEntities,
-} from '../../services/graph-memory.js';
+} from './services/graph-memory.js';
 
 // Re-export services — memory summarizer
 export {
   summarizeUserDay,
   summarizeConversationSession,
-} from '../../services/memory-summarizer.js';
+} from './services/memory-summarizer.js';
 
 // Types
 export type {
   MemoryEntry,
-  UserMemory,
   ConversationEntry,
   SemanticResult,
   MeiliDocument,
@@ -77,8 +90,8 @@ export type {
 } from './types.js';
 
 // Import for module registration
-import { memoryRouter } from '../../routes/memory.js';
-import searchRouter from '../../routes/search.js';
+import { memoryRouter } from './routes/memory.js';
+import searchRouter from './routes/search.js';
 
 export const memoryModule: AppModule = {
   name: 'memory',
