@@ -1,4 +1,7 @@
-# Agentin — API Reference
+# Agentin -- API Reference
+
+> **DEPRECATED:** This document is no longer maintained. Please refer to
+> **[docs/API_REFERENCE.md](API_REFERENCE.md)** for the current, comprehensive API reference.
 
 Base URL: `http://localhost:3001/api` (dev) or `https://api.agentin.chat/api` (prod)
 
