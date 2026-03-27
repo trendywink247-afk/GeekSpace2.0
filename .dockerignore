@@ -1,18 +1,52 @@
+# Dependencies (installed fresh in container)
 node_modules
 server/node_modules
+
+# Build artifacts (rebuilt in container)
 dist
 server/dist
+
+# Database files
 *.db
 *.db-journal
+
+# Environment / secrets
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+
+# Git
 .git
 .gitignore
+
+# IDE
 .vscode
 .idea
+
+# Documentation (not needed in image)
 *.md
 !RUNBOOK.md
-AUDIT.md
-RELEASE_NOTES.md
+docs/
+
+# Tests (not needed in production image)
+server/src/test/
+server/src/modules/*/__tests__/
+server/vitest.config.ts
+**/*.test.ts
+**/*.spec.ts
+
+# CI/CD config
+.github/
+.claudeignore
+
+# Dev tooling / scripts
+scripts/
+.superpowers/
+agents/
+ops/
+
+# Misc build context bloat
 nginx
+searxng/
+*.tgz
+*.tar.gz
