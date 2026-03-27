@@ -2,10 +2,37 @@
 // Request validation middleware using Zod schemas
 // ============================================================
 
+/**
+ * @module validate
+ *
+ * Express middleware factories and Zod schemas for request validation.
+ *
+ * Every mutating API route pipes its request body or query params through
+ * one of these schemas via {@link validateBody} or {@link validateQuery}.
+ * On failure, the middleware short-circuits with a structured 400 JSON
+ * response containing per-field error details -- the route handler is
+ * never reached.
+ *
+ * Schemas are intentionally co-located here (rather than per-route) so
+ * that max-length, regex, and enum constraints are auditable in one place.
+ */
+
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
-/** Validate request body against a Zod schema */
+/**
+ * Returns Express middleware that validates `req.body` against the given Zod
+ * schema. On success, `req.body` is replaced with the parsed (and potentially
+ * transformed/defaulted) output. On failure, responds with 400 and an array
+ * of `{ path, message }` error details.
+ *
+ * @typeParam T - The Zod schema type.
+ * @param schema - A Zod schema to validate against.
+ * @returns Express middleware function.
+ *
+ * @example
+ * router.post('/signup', validateBody(signupSchema), signupHandler);
+ */
 export function validateBody<T extends z.ZodType>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
@@ -22,7 +49,15 @@ export function validateBody<T extends z.ZodType>(schema: T) {
   };
 }
 
-/** Validate query params against a Zod schema */
+/**
+ * Returns Express middleware that validates `req.query` against the given Zod
+ * schema. On success, `req.query` is replaced with the parsed output. On
+ * failure, responds with 400 and structured error details.
+ *
+ * @typeParam T - The Zod schema type.
+ * @param schema - A Zod schema to validate against.
+ * @returns Express middleware function.
+ */
 export function validateQuery<T extends z.ZodType>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.query);
@@ -41,6 +76,7 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
 
 // ---- Common schemas ----
 
+/** User registration: email, password (min 8), username (alphanumeric + `_-`), optional name. */
 export const signupSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
@@ -48,11 +84,13 @@ export const signupSchema = z.object({
   name: z.string().max(100).optional(),
 });
 
+/** User login: email + password. */
 export const loginSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(1).max(128),
 });
 
+/** Agent chat message: 1-4000 chars, optional conversation history (max 20 turns). */
 export const chatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(4000, 'Message too long (4000 chars max)'),
   messageCount: z.number().int().min(0).optional(),
@@ -66,10 +104,12 @@ export const chatSchema = z.object({
   })).max(20).optional(),
 });
 
+/** Slash command input (max 500 chars). */
 export const commandSchema = z.object({
   command: z.string().min(1).max(500),
 });
 
+/** Create a reminder: text, optional datetime, delivery channel, recurrence, and priority. */
 export const reminderCreateSchema = z.object({
   text: z.string().min(1).max(500),
   datetime: z.string().max(50).optional().refine(
@@ -84,6 +124,7 @@ export const reminderCreateSchema = z.object({
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
 });
 
+/** Create an automation rule: trigger type/config + action type/config. Validates webhook URLs. */
 export const automationCreateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional().default(''),
@@ -105,6 +146,7 @@ export const automationCreateSchema = z.object({
   } catch { return false; }
 }, { message: 'actionConfig.url must be a valid http:// or https:// URL', path: ['actionConfig'] });
 
+/** Store a user-provided API key for a third-party provider (encrypted at rest). */
 export const apiKeyCreateSchema = z.object({
   provider: z.string().min(1).max(50),
   key: z.string().min(1).max(500),
@@ -112,6 +154,7 @@ export const apiKeyCreateSchema = z.object({
   isDefault: z.boolean().optional(),
 });
 
+/** Public contact form submission: name, email, optional company, message (max 5000). */
 export const contactSchema = z.object({
   name: z.string().min(1).max(200),
   email: z.string().email().max(255),
@@ -121,6 +164,7 @@ export const contactSchema = z.object({
 
 // ---- Onboarding schema ----
 
+/** Post-signup onboarding: profile basics, agent mode selection, integration list. */
 export const onboardingSchema = z.object({
   profile: z.object({
     name: z.string().max(100).optional(),
@@ -134,6 +178,7 @@ export const onboardingSchema = z.object({
 
 // ---- PATCH schemas (partial updates with bounds) ----
 
+/** Partial update for the user's AI agent configuration (personality, model, budget, etc.). Uses `.strict()` to reject unknown fields. */
 export const agentConfigUpdateSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   displayName: z.string().max(50).optional(),
@@ -168,6 +213,7 @@ export const agentConfigUpdateSchema = z.object({
   use_case: z.string().max(100).nullable().optional(),
 }).strict();
 
+/** Partial update for user profile, theme, notification prefs, and privacy settings. */
 export const userUpdateSchema = z.object({
   name: z.string().max(100).optional(),
   username: z.string().min(2).max(30).regex(/^[a-zA-Z0-9_-]+$/).optional(),
@@ -200,6 +246,7 @@ export const userUpdateSchema = z.object({
 // HTML tag stripper for plain-text fields (XSS hardening — 24.3)
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').trim();
 
+/** Partial update for the user's public portfolio. Plain-text fields are HTML-stripped for XSS safety. */
 export const portfolioUpdateSchema = z.object({
   headline: z.string().max(200).transform(stripHtml).optional(),
   about: z.string().max(2000).transform(stripHtml).optional(),

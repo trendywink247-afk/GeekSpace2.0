@@ -1,13 +1,35 @@
-// ============================================================
-// ConversationRepository — centralised DB access for `conversation_log`
-//
-// Extracts queries verbatim from existing inline route/service usage.
-// Does NOT replace any route code yet — additive only.
-// ============================================================
+/**
+ * @module ConversationRepository
+ *
+ * Centralised data-access layer for the **`conversation_log`** table.
+ *
+ * Every message exchanged between a user and the AI agent is persisted here --
+ * user prompts, assistant responses, and system messages.  The repository
+ * provides CRUD helpers for logging, starring, quality-rating, and querying
+ * conversation entries.
+ *
+ * **Owned table:** `conversation_log`
+ *
+ * @remarks
+ * - All multi-argument queries require both `id` *and* `userId` to enforce
+ *   row-level ownership.  Never expose `getById(id)` without a user scope.
+ * - The `tags` column stores a JSON-encoded string array of topic labels
+ *   and must be parsed by the caller.
+ * - The `quality_score` column is nullable; a value of `null` means the user
+ *   has not rated the assistant response yet.
+ * - The `request_id` column ties a user message to its corresponding
+ *   assistant reply within the same request chain.
+ */
 
 import type Database from 'better-sqlite3';
 
-/** Raw row shape from the `conversation_log` table. */
+/**
+ * Raw row shape returned by `SELECT * FROM conversation_log`.
+ *
+ * Each row represents a single message in a user-agent conversation.
+ * JSON-encoded fields (`tags`) are stored as plain strings and must be
+ * parsed by the caller.
+ */
 export interface ConversationRow {
   id: string;
   user_id: string;
@@ -35,9 +57,18 @@ export interface ConversationRow {
 
 /**
  * Centralised data-access layer for the `conversation_log` table.
- * Enforces row-level access — all multi-arg queries require both `id` and `userId`.
+ *
+ * Enforces row-level access -- all multi-argument queries require both
+ * `id` and `userId` so that one user can never read or mutate another
+ * user's conversation history.
+ *
+ * Prefer these methods over inline `db.prepare()` calls in route handlers
+ * and services such as `memory.ts`.
  */
 export class ConversationRepository {
+  /**
+   * @param db - The shared better-sqlite3 database instance.
+   */
   constructor(private readonly db: Database.Database) {}
 
   /**
@@ -53,8 +84,15 @@ export class ConversationRepository {
   }
 
   /**
-   * Get recent conversations for a user, ordered newest-first.
-   * Mirrors the pattern used in memory.ts and route handlers.
+   * Get recent conversation entries for a user, ordered newest-first.
+   *
+   * Mirrors the query pattern used in `memory.ts` and chat route handlers
+   * to build context windows for the LLM.
+   *
+   * @param userId - UUID of the owning user.
+   * @param limit - Maximum number of rows to return (default: 50).
+   * @returns An array of {@link ConversationRow} objects, newest first.
+   *   Returns an empty array when no entries exist.
    */
   getRecent(userId: string, limit = 50): ConversationRow[] {
     return this.db
@@ -63,8 +101,22 @@ export class ConversationRepository {
   }
 
   /**
-   * Log a new conversation entry.
-   * Matches the INSERT pattern used across agent chat routes.
+   * Log a new conversation entry (INSERT).
+   *
+   * Matches the INSERT pattern used across agent chat routes.  Optional
+   * fields default to empty strings or `'[]'` for JSON arrays so that
+   * downstream queries never encounter NULL in text columns.
+   *
+   * @param entry - The conversation entry payload.
+   * @param entry.id - Pre-generated UUID for the new row.
+   * @param entry.userId - UUID of the owning user.
+   * @param entry.role - Message role: `'user'` | `'assistant'` | `'system'`.
+   * @param entry.content - Full message text.
+   * @param entry.provider - LLM provider identifier (default: `''`).
+   * @param entry.model - LLM model identifier (default: `''`).
+   * @param entry.summary - Short auto-generated summary for memory retrieval (default: `''`).
+   * @param entry.tags - JSON-encoded string array of topic tags (default: `'[]'`).
+   * @param entry.requestId - UUID tying this entry to a request chain (default: `''`).
    */
   logConversation(entry: {
     id: string;

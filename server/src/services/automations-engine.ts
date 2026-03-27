@@ -1,10 +1,29 @@
-// ============================================================
-// Automations Execution Engine
-//
-// Turns the automations CRUD into a real execution platform.
-// Supports triggers: cron/time, webhook, health_down, manual
-// Supports actions: call_api, log, send_message, create_reminder
-// ============================================================
+/**
+ * Automations Execution Engine
+ *
+ * Turns the user-facing automations CRUD into a live execution platform.
+ * Each automation consists of a **trigger** and an **action**:
+ *
+ * **Supported triggers:**
+ * - `time` / `cron` -- interval-based or cron-expression scheduling
+ * - `webhook` -- fires when an external service POSTs to the automation URL
+ * - `keyword` -- fires when the user's chat message contains a keyword
+ * - `health_down` -- fires when the health monitor detects a service outage
+ * - `portfolio_visit` -- fires when someone views the user's public portfolio
+ * - `manual` -- fires on explicit user click in the dashboard
+ *
+ * **Supported actions:**
+ * - `call_api` / `n8n-webhook` -- HTTP request with exponential-backoff retry
+ * - `telegram-message` -- send a message via the user's linked Telegram
+ * - `portfolio-update` -- update a portfolio field (headline/about)
+ * - `create_reminder` -- insert a reminder 1 hour in the future
+ * - `log` -- write to the automation execution log
+ *
+ * Execution results (success/failure, output, duration) are persisted
+ * in `automation_logs` for the dashboard's run-history view.
+ *
+ * @module services/automations-engine
+ */
 
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
@@ -348,6 +367,17 @@ function startHealthMonitor() {
 
 // ---- Keyword Trigger (called from chat pipeline) ----
 
+/**
+ * Scan a user message for keyword-triggered automations and fire any matches.
+ *
+ * Loads all enabled `keyword` automations for the user, checks if the
+ * message contains the configured keyword (case-insensitive), and
+ * executes the associated action for each match. Called from the
+ * message-router pipeline after every incoming chat message.
+ *
+ * @param userId  - Authenticated user ID
+ * @param message - The user's raw chat message text
+ */
 export async function checkKeywordTriggers(userId: string, message: string): Promise<void> {
   const keywordAutomations = db.prepare(
     "SELECT * FROM automations WHERE user_id = ? AND trigger_type = 'keyword' AND enabled = 1"
@@ -393,6 +423,16 @@ export async function executeManualTrigger(automationId: string, userId: string)
 
 // ---- Engine Lifecycle ----
 
+/**
+ * Initialise the automations engine on server startup.
+ *
+ * Creates the `automation_logs` table if it does not exist, registers
+ * all active cron/time triggers as in-memory intervals, starts the
+ * health monitor polling loop, and starts the overdue-reminder
+ * escalation checker (30-minute interval).
+ *
+ * Safe to call multiple times (idempotent table creation and interval guards).
+ */
 export function initAutomationsEngine() {
   // Create execution log table
   db.exec(`

@@ -1,5 +1,31 @@
+/**
+ * @module db
+ *
+ * SQLite database layer using `better-sqlite3` (synchronous, single-file).
+ *
+ * **Initialization sequence (runs at import time):**
+ * 1. Ensures the data directory exists (`fs.mkdirSync`).
+ * 2. Opens (or creates) the SQLite file at `DB_PATH`.
+ * 3. Applies performance pragmas:
+ *    - `journal_mode = WAL` -- concurrent reads with a single writer.
+ *    - `synchronous = NORMAL` -- safe with WAL; avoids fsync on every write.
+ *    - `cache_size = -32000` -- 32 MB page cache.
+ *    - `temp_store = MEMORY` -- temp tables in RAM.
+ *    - `mmap_size = 268435456` -- 256 MB memory-mapped I/O.
+ *    - `busy_timeout = 5000` -- wait 5 s instead of instant SQLITE_BUSY.
+ *    - `foreign_keys = ON` -- enforce FK constraints.
+ * 4. Runs `ANALYZE` to refresh query-planner statistics.
+ * 5. Creates all tables with `CREATE TABLE IF NOT EXISTS` (inline schema).
+ * 6. Applies incremental `ALTER TABLE` migrations wrapped in try/catch so
+ *    they are idempotent across restarts.
+ * 7. Optionally seeds demo data when `config.seedDemoData` is true (dev only).
+ *
+ * **Exported:** the `db` instance (a `better-sqlite3.Database`) and the
+ * `seedDemoData()` helper.
+ */
+
 // ============================================================
-// GeekSpace Database — SQLite via better-sqlite3
+// GeekSpace Database -- SQLite via better-sqlite3
 // ============================================================
 
 import Database from 'better-sqlite3';

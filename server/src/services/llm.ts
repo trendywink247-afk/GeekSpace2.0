@@ -33,14 +33,43 @@ import { cacheGet, cacheSet } from './cache.js';
 
 // ---- Types ----
 
+/**
+ * Classified complexity of a user message, used to decide which LLM tier
+ * handles the request. The classifier in {@link classifyIntent} assigns this
+ * based on keyword scoring and message length heuristics.
+ *
+ * - `simple`     — short factual questions, greetings
+ * - `code-micro` — very terse coding asks (<=2 words) routed to PicoClaw
+ * - `planning`   — roadmaps, schedules, multi-step outlines
+ * - `coding`     — implementation, debugging, refactoring tasks
+ * - `automation` — triggers, webhooks, cron, monitoring (also URLs)
+ * - `complex`    — long or analytical prompts (>40 words or 2+ complex keywords)
+ */
 export type Intent = 'simple' | 'code-micro' | 'planning' | 'coding' | 'automation' | 'complex';
+
+/**
+ * Identifies which LLM backend actually served a response. Used for cost
+ * estimation, credit billing, routing traces, and fallback logic.
+ *
+ * Free tier: `ollama`, `openrouter-free`, `groq`, `picoclaw`, `builtin`
+ * Paid tier: `openrouter`, `kimi`, `gemini`, `together`, `together-qwen`, `edith`
+ */
 export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'together-qwen' | 'edith' | 'picoclaw' | 'builtin';
 
+/**
+ * A single message in a chat conversation, matching the OpenAI-style
+ * `messages` array format used by most LLM providers.
+ */
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
+/**
+ * Unified response envelope returned by {@link routeChat}. Includes the
+ * reply text, which provider/model served it, token counts, latency,
+ * estimated USD cost, and the credit amount billed to the user's subscription.
+ */
 export interface LLMResponse {
   reply: string;
   provider: Provider;
@@ -55,6 +84,12 @@ export interface LLMResponse {
 
 // ---- Routing Trace (for debugging/monitoring) ----
 
+/**
+ * Diagnostic record emitted on every {@link routeChat} call. Captures which
+ * provider was selected, why, how long it took, and whether Ollama was
+ * reachable. The last 1 000 traces are kept in memory and exposed via
+ * {@link getRoutingTraces} for the admin dashboard.
+ */
 export interface RoutingTrace {
   timestamp: string;
   userId: string;
@@ -80,6 +115,13 @@ export interface RoutingTrace {
 
 const routingTraces: RoutingTrace[] = [];
 
+/**
+ * Returns the most recent routing traces for admin monitoring.
+ * Traces are stored in a bounded in-memory ring buffer (max 1 000 entries).
+ *
+ * @param limit - Maximum number of traces to return (default 100, most recent first).
+ * @returns The last `limit` {@link RoutingTrace} entries in chronological order.
+ */
 export function getRoutingTraces(limit = 100): RoutingTrace[] {
   return routingTraces.slice(-limit);
 }
@@ -195,6 +237,23 @@ const AUTOMATION_KEYWORDS = [
   'heartbeat', 'monitor', 'uptime', 'daily summary', 'notify', 'ping',
 ];
 
+/**
+ * Classifies a user message into an {@link Intent} category that determines
+ * which LLM provider tier handles the request.
+ *
+ * Classification is purely heuristic (keyword scoring + word count) -- no LLM
+ * call is made. Messages containing URLs are always classified as `automation`
+ * so the tool-use path fires. Messages over 80 words are always `complex`.
+ *
+ * @param message - The raw user message text.
+ * @param userId  - Optional user ID for structured logging.
+ * @returns The classified {@link Intent}.
+ *
+ * @example
+ * classifyIntent('debug this SQL query');        // 'coding'
+ * classifyIntent('hi');                          // 'simple'
+ * classifyIntent('https://example.com status');  // 'automation'
+ */
 export function classifyIntent(message: string, userId?: string): Intent {
   const lower = message.toLowerCase();
   const wordCount = message.split(/\s+/).length;
@@ -898,6 +957,20 @@ const TOKEN_CREDIT_RATES: Partial<Record<Provider, number>> = {
 
 const MIN_PREMIUM_CREDITS = 10;
 
+/**
+ * Calculates how many subscription credits a single LLM call costs based on
+ * the provider used and token counts. Free-tier providers (ollama, groq,
+ * picoclaw, builtin) return 0. Paid providers use per-1K-token rates with a
+ * minimum of {@link MIN_PREMIUM_CREDITS} (10) credits per call.
+ *
+ * The result is passed to {@link deductSubscriptionCredits} after a successful
+ * response, and is also included in the {@link LLMResponse.creditCost} field.
+ *
+ * @param provider  - Which backend served the response.
+ * @param tokensIn  - Input/prompt token count.
+ * @param tokensOut - Output/completion token count.
+ * @returns Credit cost as a non-negative integer (0 for free providers).
+ */
 export function computeCreditCost(provider: Provider, tokensIn: number, tokensOut: number): number {
   const flat = FLAT_CREDIT_COSTS[provider];
   if (flat !== undefined) return flat;
@@ -969,6 +1042,38 @@ export function getManualOverride(): Provider | null {
 
 // ---- Main Router ----
 
+/**
+ * Primary LLM routing function -- the single entry point for all chat requests.
+ *
+ * Executes a sequential waterfall across provider tiers (see module header for
+ * the full tier list). Each tier is tried in order; on failure, the next tier
+ * is attempted until one succeeds or every tier is exhausted (returns a
+ * hardcoded "builtin" apology).
+ *
+ * **Key behaviors:**
+ * - Two-layer cache (in-memory L1 + Redis L2) with 5-minute TTL deduplicates
+ *   identical single-message requests. Greetings/trivial messages bypass cache.
+ * - In-flight request deduplication prevents duplicate concurrent calls.
+ * - Budget-aware: when a user's daily or monthly budget is exceeded, paid
+ *   providers are skipped and routing degrades to free-tier only.
+ * - Premium-only tiers (Together Maverick, Kimi, Edith) are gated behind
+ *   `opts.userPlan` -- free users never reach them.
+ * - Each call emits a {@link RoutingTrace} for admin observability.
+ * - On success, subscription credits are deducted via
+ *   {@link deductSubscriptionCredits} and token usage is recorded for budget
+ *   tracking.
+ *
+ * @param messages - The conversation history in OpenAI-style format.
+ * @param opts     - Optional routing hints: forced provider, user plan/credits,
+ *                   system prompt, agent name, user ID, and request headers
+ *                   (used for `x-model-route` override in TEST_MODE).
+ * @returns A {@link LLMResponse} with the reply text, provider metadata,
+ *          token counts, latency, cost estimate, and credit cost.
+ *
+ * @throws Never throws -- all provider errors are caught internally and
+ *         trigger fallback to the next tier. The worst case returns a
+ *         `builtin` apology response.
+ */
 export async function routeChat(
   messages: ChatMessage[],
   opts?: {

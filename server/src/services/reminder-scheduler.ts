@@ -1,16 +1,29 @@
-// ============================================================
-// Reminder Scheduler
-//
-// Checks every 5 seconds for due reminders and delivers them
-// through the appropriate channel (Telegram, email, push).
-//
-// Drift tracking: logs drift_ms = actual_fire_time - scheduled_time
-// Target: reminders fire within 30 seconds of scheduled time
-//
-// Snooze expiry: each tick first resumes reminders whose
-// snooze_until has passed (clears snooze_until so the main
-// query picks them up on the next tick).
-// ============================================================
+/**
+ * Reminder Scheduler
+ *
+ * Polls the `reminders` table every 5 seconds for due items and
+ * delivers them through the user's preferred channel (Telegram,
+ * email, or push notification). Designed for single-process
+ * deployments with SQLite.
+ *
+ * **Timing guarantees:**
+ * - Poll interval: 5 seconds (`POLL_INTERVAL_MS`)
+ * - Target drift: reminders fire within 30 seconds of `scheduled_for`
+ * - Drift is logged per delivery for monitoring
+ *
+ * **Per-tick pipeline:**
+ *  1. Send 5-minute "heads-up" alerts for upcoming reminders (Telegram only)
+ *  2. Resume reminders whose `snooze_until` has expired
+ *  3. Query due reminders (completed = 0, scheduled_for <= now)
+ *  4. Deliver each via the appropriate channel
+ *  5. Mark as completed, or compute next occurrence for recurring items
+ *
+ * **Recurring reminders:** When a recurring reminder fires, its
+ * `datetime` and `scheduled_for` are advanced to the next occurrence
+ * (via `computeNextOccurrence`) rather than being marked completed.
+ *
+ * @module services/reminder-scheduler
+ */
 
 import { v4 as uuid } from 'uuid';
 import { DateTime } from 'luxon';
@@ -51,6 +64,16 @@ interface ChannelLink {
 const POLL_INTERVAL_MS = 5_000; // 5 seconds for <=30s drift requirement
 let schedulerInterval: ReturnType<typeof setInterval> | null = null;
 
+/**
+ * Start the reminder polling loop.
+ *
+ * Runs the first tick immediately, then schedules subsequent ticks
+ * every 5 seconds via `setInterval`. Calling this function multiple
+ * times is safe -- subsequent calls are no-ops if the scheduler is
+ * already running.
+ *
+ * @see {@link stopReminderScheduler} to cleanly shut down the loop
+ */
 export function startReminderScheduler(): void {
   if (schedulerInterval) return;
 

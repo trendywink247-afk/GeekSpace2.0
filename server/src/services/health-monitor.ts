@@ -1,10 +1,26 @@
-// ============================================================
-// Self-Healing Health Monitor
-//
-// Tracks Ollama and Redis health. Alerts Telegram-connected users
-// on state transitions (DOWN / RECOVERED). Called every ~60s from
-// the durable scheduler.
-// ============================================================
+/**
+ * Self-Healing Health Monitor
+ *
+ * Periodically probes Ollama and Redis, tracks their status in memory,
+ * and broadcasts Telegram alerts on state transitions (DOWN / RECOVERED).
+ * Called every ~60 seconds from the automations engine scheduler.
+ *
+ * **Alert behaviour:**
+ * - Ollama outages trigger user-facing Telegram alerts after 3
+ *   consecutive failures (`ALERT_THRESHOLD`) to suppress transient blips.
+ * - Redis outages are logged but not user-alerted (Redis is non-fatal;
+ *   the app falls back to direct DB access).
+ * - Alerts are rate-limited to once per 5 minutes per service+status
+ *   via a Redis-backed TTL key (falls through if Redis itself is down).
+ *
+ * **Recovery:** When a previously-down service passes its probe, a
+ * recovery alert is sent and the in-memory state is reset.
+ *
+ * The public API exposes {@link runHealthTick} (one probe cycle) and
+ * {@link getServiceHealth} (read-only snapshot for the `/api/health` route).
+ *
+ * @module services/health-monitor
+ */
 
 import { config } from '../config.js';
 import { db } from '../db/index.js';
@@ -214,7 +230,15 @@ function handleRedisRecovery(): void {
 // ---- Public API ----
 
 /**
- * Run a single health-check tick. Call from scheduler every ~60s.
+ * Run a single health-check tick for all monitored services.
+ *
+ * Probes Ollama (HTTP GET to `/api/tags`) and Redis (cache read)
+ * sequentially, then updates the in-memory state machine. On state
+ * transitions (up->down or down->up), triggers the appropriate
+ * handler which may broadcast Telegram alerts and log activity entries.
+ *
+ * Designed to be called from a `setInterval` every ~60 seconds.
+ * Each tick is independent and idempotent.
  */
 export async function runHealthTick(): Promise<void> {
   const now = new Date().toISOString();
@@ -257,7 +281,13 @@ export async function runHealthTick(): Promise<void> {
 }
 
 /**
- * Returns a snapshot of all tracked service statuses.
+ * Return a read-only snapshot of all tracked service statuses.
+ *
+ * Returns shallow copies of the Ollama and Redis state objects so
+ * callers (e.g. the `/api/health` route) cannot mutate internal state.
+ *
+ * @returns Current {@link ServiceHealthMap} with status, lastCheck,
+ *          lastError, alertSent, and consecutiveFailures for each service
  */
 export function getServiceHealth(): ServiceHealthMap {
   return {

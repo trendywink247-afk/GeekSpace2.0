@@ -1,9 +1,24 @@
-// ============================================================
-// Telegram Bot API Service
-//
-// Sends/receives messages via Telegram Bot API.
-// Webhook-based (no polling). Registered on startup.
-// ============================================================
+/**
+ * Telegram Bot API Service
+ *
+ * Low-level adapter for the Telegram Bot API. Handles sending and
+ * receiving messages, photos, videos, typing indicators, inline
+ * button keyboards, and callback query answers. All communication
+ * is webhook-based (no long-polling).
+ *
+ * **Outbound messages** are sanitised to strip LLM tool-call artifacts,
+ * markdown formatting, and XML-like tags before sending as plain text.
+ * Messages exceeding Telegram's 4096-character limit are automatically
+ * split into multiple chunks.
+ *
+ * **Inbound updates** are parsed into {@link NormalizedMessage} objects
+ * by {@link parseTelegramUpdate} for consumption by the message router.
+ *
+ * The webhook is registered on startup via {@link registerTelegramWebhook}
+ * and verified using an optional `TELEGRAM_WEBHOOK_SECRET` header.
+ *
+ * @module services/telegram
+ */
 
 import { config } from '../config.js';
 import { logger } from '../logger.js';
@@ -139,6 +154,20 @@ function sanitizeForTelegram(text: string): string {
 
 // ---- Send Message ----
 
+/**
+ * Send a text message to a Telegram chat.
+ *
+ * Sanitises the text by stripping LLM artifacts (action blocks, markdown,
+ * XML tool-call tags), splits it into chunks if it exceeds 4096 characters,
+ * and sends each chunk as a separate message. Retries up to 3 times per
+ * chunk on transient server errors (5xx). Returns the ID of the last
+ * successfully sent message.
+ *
+ * @param chatId           - Telegram chat/user ID to send to
+ * @param text             - Raw message text (will be sanitised)
+ * @param replyToMessageId - Optional message ID to reply to (threaded reply)
+ * @returns `{ messageId, success }` -- messageId is 0 on failure
+ */
 export async function sendTelegramMessage(
   chatId: string | number,
   text: string,
@@ -378,6 +407,17 @@ export async function downloadTelegramFile(fileId: string): Promise<Buffer | nul
 
 // ---- Register Webhook ----
 
+/**
+ * Register the Telegram webhook URL with the Bot API.
+ *
+ * Calls the `setWebhook` endpoint with the provided URL, allowed
+ * update types (`message`, `callback_query`), and the optional
+ * `secret_token` for signature verification. Returns `false` if
+ * the bot token is not configured or the API call fails.
+ *
+ * @param webhookUrl - Fully-qualified HTTPS URL for the webhook endpoint
+ * @returns `true` if Telegram accepted the webhook, `false` otherwise
+ */
 export async function registerTelegramWebhook(webhookUrl: string): Promise<boolean> {
   if (!config.telegramBotToken) return false;
 

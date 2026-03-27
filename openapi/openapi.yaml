@@ -1,0 +1,2849 @@
+openapi: 3.1.0
+info:
+  title: Agentin API
+  version: "3.2.0"
+  description: |
+    Production API for the Agentin platform — a personal AI agent with chat,
+    reminders, automations, portfolio hosting, voice, billing, and multi-channel
+    integrations (Telegram, WhatsApp, n8n).
+
+    ## Authentication
+    Most endpoints require a JWT bearer token obtained via `/api/auth/login` or
+    `/api/auth/signup`. Admin endpoints require a separate `ADMIN_TOKEN` bearer.
+
+    ## Rate Limiting
+    Rate limits are returned via standard `RateLimit-*` headers (RFC draft).
+    Exceeding the limit returns `429` with a `Retry-After` header.
+
+    ## Note
+    This specification covers the ~50 most important endpoints. The full API
+    contains 80+ route files with additional endpoints for analytics, calendar,
+    planner, search, office, sandbox, skills, and more.
+  contact:
+    name: Agentin Engineering
+    url: https://agentin.chat
+  license:
+    name: Proprietary
+    url: https://agentin.chat/terms
+
+servers:
+  - url: http://localhost:3001/api
+    description: Local development
+  - url: https://api.agentin.chat/api
+    description: Production
+
+tags:
+  - name: auth
+    description: Authentication, sessions, password reset
+  - name: users
+    description: User profile and settings
+  - name: agent
+    description: AI chat, streaming, config, memory, conversations
+  - name: billing
+    description: Plans, checkout, Stripe/Razorpay webhooks, day passes
+  - name: reminders
+    description: Reminder CRUD, snoozing, bulk ops, export
+  - name: automations
+    description: Automation CRUD, triggers, dry-run, dead-letter queue
+  - name: portfolio
+    description: Public developer portfolio and visitor chat
+  - name: integrations
+    description: Telegram, WhatsApp, GitHub, n8n channel connections
+  - name: webhooks
+    description: Inbound webhooks for Telegram, WhatsApp, n8n callbacks
+  - name: health
+    description: Health checks, readiness probes, live dashboard
+  - name: admin
+    description: Admin-only platform management (requires ADMIN_TOKEN)
+  - name: models
+    description: Free LLM model discovery and changelog
+  - name: voice
+    description: Voice transcription and text-to-speech
+  - name: jobs
+    description: Async job status polling
+  - name: dashboard
+    description: User dashboard stats
+  - name: usage
+    description: Token and credit usage analytics
+  - name: outputs
+    description: Output generation (PDF, todo, plan, summarize)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ================================================================
+  # AUTH
+  # ================================================================
+  /auth/signup:
+    post:
+      tags: [auth]
+      operationId: signup
+      summary: Register a new account
+      description: |
+        Creates a new user with agent config, portfolio, subscription, and
+        default integrations. May require an invite code when INVITE_REQUIRED=true.
+      x-rate-limit:
+        max: 5
+        windowSeconds: 900
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "200":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "403":
+          description: Invite code required or invalid
+        "409":
+          description: Email or username already taken
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Authenticate with email and password
+      description: |
+        Returns a JWT access token and a refresh token. Brute-force protected
+        with per-IP lockout after 5 failed attempts within 15 minutes.
+      x-rate-limit:
+        max: 20
+        windowSeconds: 900
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Invalid credentials
+        "429":
+          $ref: "#/components/responses/RateLimitError"
+
+  /auth/demo:
+    post:
+      tags: [auth]
+      operationId: demoLogin
+      summary: Log in as the demo user
+      description: Seeds demo data (non-production only) and returns a demo JWT.
+      x-rate-limit:
+        max: 20
+        windowSeconds: 900
+      security: []
+      responses:
+        "200":
+          description: Demo session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "500":
+          description: Demo account setup failed
+
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getAuthenticatedUser
+      summary: Get the currently authenticated user
+      description: Returns the full user profile for the JWT bearer. Cached in Redis (30s TTL).
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: User not found
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshToken
+      summary: Rotate refresh token and issue new access token
+      description: |
+        Accepts a valid refresh token and returns a new access + refresh token pair.
+        The old refresh token is revoked (one-time use). 10 req/15min rate limit.
+      x-rate-limit:
+        max: 10
+        windowSeconds: 900
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: New token pair issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        "401":
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Revoke all refresh tokens for the user
+      responses:
+        "200":
+          description: Logged out
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      summary: Request a password reset OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: OTP sent (or silently accepted if email not found)
+
+  /auth/verify-reset-otp:
+    post:
+      tags: [auth]
+      operationId: verifyResetOtp
+      summary: Verify a password reset OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email:
+                  type: string
+                  format: email
+                otp:
+                  type: string
+      responses:
+        "200":
+          description: OTP valid, returns a reset token
+        "400":
+          description: Invalid or expired OTP
+
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: Set a new password using a reset token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, token, newPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset successful
+        "400":
+          description: Invalid token or weak password
+
+  /auth/sessions:
+    get:
+      tags: [auth]
+      operationId: listSessions
+      summary: List active refresh token sessions
+      responses:
+        "200":
+          description: Array of active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    device:
+                      type: string
+                    maskedIp:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+    delete:
+      tags: [auth]
+      operationId: revokeAllSessions
+      summary: Revoke all refresh token sessions
+      responses:
+        "200":
+          description: All sessions revoked
+
+  /auth/delete-account:
+    post:
+      tags: [auth]
+      operationId: deleteAccount
+      summary: Permanently delete the authenticated user's account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Account deleted
+        "401":
+          description: Wrong password
+
+  # ================================================================
+  # USERS
+  # ================================================================
+  /users/me:
+    get:
+      tags: [users]
+      operationId: getMyProfile
+      summary: Get current user profile
+      description: Returns full profile with theme, notifications, and privacy settings. Cached 60s.
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+    patch:
+      tags: [users]
+      operationId: updateMyProfile
+      summary: Update profile fields
+      description: Partially updates name, bio, avatar, theme, notifications, privacy, etc.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Username already taken
+
+  /users/me/change-password:
+    post:
+      tags: [users]
+      operationId: changePassword
+      summary: Change the authenticated user's password
+      x-rate-limit:
+        max: 3
+        windowSeconds: 3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password changed
+        "401":
+          description: Current password is incorrect
+
+  /users/{username}/public:
+    get:
+      tags: [users]
+      operationId: getPublicProfile
+      summary: Get a user's public profile
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public profile data
+        "404":
+          description: User not found
+
+  # ================================================================
+  # AGENT — Chat
+  # ================================================================
+  /agent/chat:
+    post:
+      tags: [agent]
+      operationId: chat
+      summary: Send a message to the AI agent
+      description: |
+        Core chat endpoint with ReAct tool-use loop. Supports intent classification,
+        action execution (reminders, code gen, web research), and multi-provider routing
+        (Ollama, OpenRouter, Groq, Edith). Returns a structured response with receipts.
+      x-rate-limit:
+        max: 60
+        windowSeconds: 900
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Agent response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/RateLimitError"
+
+  /agent/chat/stream:
+    post:
+      tags: [agent]
+      operationId: chatStream
+      summary: Stream a chat response via SSE
+      description: |
+        Server-Sent Events streaming endpoint. Emits `delta` (token chunks),
+        `action` (tool results), `done` (completion metadata), and `error` events.
+        Complex intents trigger a visible ReAct thinking loop.
+      x-rate-limit:
+        max: 60
+        windowSeconds: 900
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: "SSE events: delta, action, done, error"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/RateLimitError"
+
+  /agent/chat/public/{username}:
+    post:
+      tags: [agent]
+      operationId: publicChat
+      summary: Chat with a user's public portfolio agent
+      description: |
+        Unauthenticated endpoint for portfolio visitors. IP rate-limited to 10/hr.
+        Falls back Groq -> openrouter-free. Supports escalation to the portfolio
+        owner via Telegram.
+      x-rate-limit:
+        max: 10
+        windowSeconds: 900
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Agent response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "404":
+          description: User not found or public chat disabled
+        "429":
+          $ref: "#/components/responses/RateLimitError"
+
+  /agent/command:
+    post:
+      tags: [agent]
+      operationId: agentCommand
+      summary: Execute a slash command via the agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command:
+                  type: string
+                  maxLength: 500
+      responses:
+        "200":
+          description: Command result
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  # ================================================================
+  # AGENT — Config
+  # ================================================================
+  /agent/config:
+    get:
+      tags: [agent]
+      operationId: getAgentConfig
+      summary: Get the agent configuration
+      responses:
+        "200":
+          description: Agent config row
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentConfig"
+        "404":
+          description: Config not found
+    patch:
+      tags: [agent]
+      operationId: updateAgentConfig
+      summary: Update agent personality, mode, or settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                mode:
+                  type: string
+                  enum: [builder, assistant, creative, analyst]
+                voice:
+                  type: string
+                systemPrompt:
+                  type: string
+                personality:
+                  type: string
+                primaryModel:
+                  type: string
+      responses:
+        "200":
+          description: Config updated
+
+  # ================================================================
+  # AGENT — Memory
+  # ================================================================
+  /agent/memory:
+    get:
+      tags: [agent]
+      operationId: listMemories
+      summary: List agent memories
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+      responses:
+        "200":
+          description: Array of memory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Memory"
+    post:
+      tags: [agent]
+      operationId: createMemory
+      summary: Create or upsert a memory entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, key, value]
+              properties:
+                category:
+                  type: string
+                key:
+                  type: string
+                value:
+                  type: string
+                confidence:
+                  type: number
+                source:
+                  type: string
+      responses:
+        "201":
+          description: Memory created
+
+  /agent/memory/{id}:
+    put:
+      tags: [agent]
+      operationId: updateMemory
+      summary: Update a specific memory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+                confidence:
+                  type: number
+      responses:
+        "200":
+          description: Memory updated
+        "404":
+          description: Memory not found
+    delete:
+      tags: [agent]
+      operationId: deleteMemory
+      summary: Delete a specific memory entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Memory deleted
+
+  # ================================================================
+  # AGENT — Conversations
+  # ================================================================
+  /agent/conversations:
+    get:
+      tags: [agent]
+      operationId: listConversations
+      summary: Get recent conversation history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Array of conversation messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+
+  /agent/conversations/export:
+    get:
+      tags: [agent]
+      operationId: exportConversations
+      summary: Export conversation history as JSON or Markdown
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, markdown]
+            default: json
+      responses:
+        "200":
+          description: Exported file attachment
+
+  /agent/conversations/{id}/star:
+    post:
+      tags: [agent]
+      operationId: toggleStar
+      summary: Toggle star status on a message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Star toggled
+
+  /agent/conversations/{id}/rating:
+    post:
+      tags: [agent]
+      operationId: rateMessage
+      summary: Set a 1-5 quality score on an assistant message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+      responses:
+        "200":
+          description: Rating recorded
+
+  # ================================================================
+  # AGENT — Premium
+  # ================================================================
+  /agent/quality:
+    get:
+      tags: [agent]
+      operationId: getQualityMetrics
+      summary: Get satisfaction rate from message reactions
+      responses:
+        "200":
+          description: Quality metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  satisfactionRate:
+                    type: integer
+                    nullable: true
+                  totalMessages:
+                    type: integer
+                  positive:
+                    type: integer
+                  negative:
+                    type: integer
+
+  /agent/deploy-premium:
+    post:
+      tags: [agent]
+      operationId: deployPremiumSession
+      summary: Deploy a named specialist session (paid plans only, 100 credits)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [specialistType]
+              properties:
+                specialistType:
+                  type: string
+      responses:
+        "200":
+          description: Session deployed
+        "402":
+          description: Payment required (free plan)
+
+  # ================================================================
+  # BILLING
+  # ================================================================
+  /billing/plans:
+    get:
+      tags: [billing]
+      operationId: listPlans
+      summary: List all available subscription plans
+      security: []
+      responses:
+        "200":
+          description: Array of plan definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    credits:
+                      type: integer
+                    priceUsd:
+                      type: number
+                    priceInr:
+                      type: number
+                    intervalDays:
+                      type: integer
+
+  /billing/plan:
+    get:
+      tags: [billing]
+      operationId: getCurrentPlan
+      summary: Get current subscription and credit balance
+      responses:
+        "200":
+          description: Subscription details
+
+  /billing/upgrade:
+    post:
+      tags: [billing]
+      operationId: upgradePlan
+      summary: Change plan (dev/test only when Stripe is disabled)
+      x-rate-limit:
+        max: 5
+        windowSeconds: 3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                currency:
+                  type: string
+                  enum: [USD, INR]
+      responses:
+        "200":
+          description: Plan updated
+        "403":
+          description: Stripe is enabled; use /checkout instead
+
+  /billing/checkout:
+    post:
+      tags: [billing]
+      operationId: createCheckout
+      summary: Create a Stripe Checkout session
+      x-rate-limit:
+        max: 5
+        windowSeconds: 3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                  enum: [pilot, intro, halfyear, yearly]
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        "503":
+          description: Stripe not configured
+
+  /billing/usage:
+    get:
+      tags: [billing]
+      operationId: getBillingUsage
+      summary: Get daily usage for the current billing cycle
+      responses:
+        "200":
+          description: Array of daily usage rows
+
+  /billing/status:
+    get:
+      tags: [billing]
+      operationId: getBillingStatus
+      summary: Get current Stripe subscription status and expiry
+      responses:
+        "200":
+          description: Subscription status
+
+  /billing/events:
+    get:
+      tags: [billing]
+      operationId: getBillingEvents
+      summary: Last 20 usage events for credit history
+      responses:
+        "200":
+          description: Array of usage events
+
+  /billing/day-pass:
+    get:
+      tags: [billing]
+      operationId: checkDayPass
+      summary: Check if user has an active day pass
+      responses:
+        "200":
+          description: Day pass status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    type: boolean
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+    post:
+      tags: [billing]
+      operationId: activateDayPass
+      summary: Activate a 24-hour day pass (free plan, dev mode only)
+      x-rate-limit:
+        max: 5
+        windowSeconds: 3600
+      responses:
+        "200":
+          description: Day pass activated
+        "400":
+          description: Already active or not on free plan
+        "503":
+          description: Stripe is enabled; day pass via Stripe not yet available
+
+  /billing/razorpay/order:
+    post:
+      tags: [billing]
+      operationId: createRazorpayOrder
+      summary: Create a Razorpay order for INR payment
+      x-rate-limit:
+        max: 5
+        windowSeconds: 3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan]
+              properties:
+                plan:
+                  type: string
+                  enum: [pilot, intro, halfyear, yearly]
+      responses:
+        "200":
+          description: Razorpay order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  amount:
+                    type: integer
+                  currency:
+                    type: string
+                  keyId:
+                    type: string
+        "503":
+          description: Razorpay not configured
+
+  /billing/razorpay/verify:
+    post:
+      tags: [billing]
+      operationId: verifyRazorpayPayment
+      summary: Verify Razorpay payment signature and upgrade subscription
+      x-rate-limit:
+        max: 5
+        windowSeconds: 3600
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [razorpay_order_id, razorpay_payment_id, razorpay_signature, plan]
+              properties:
+                razorpay_order_id:
+                  type: string
+                razorpay_payment_id:
+                  type: string
+                razorpay_signature:
+                  type: string
+                plan:
+                  type: string
+      responses:
+        "200":
+          description: Payment verified and plan upgraded
+        "400":
+          description: Signature verification failed
+
+  /billing/webhook:
+    post:
+      tags: [billing]
+      operationId: stripeWebhook
+      summary: Stripe webhook receiver
+      description: |
+        Receives Stripe webhook events (checkout.session.completed, etc.).
+        Requires raw body for signature verification via `Stripe-Signature` header.
+        Endpoint uses `express.raw()` middleware.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Webhook received
+        "400":
+          description: Invalid signature
+
+  # ================================================================
+  # REMINDERS
+  # ================================================================
+  /reminders:
+    get:
+      tags: [reminders]
+      operationId: listReminders
+      summary: List all reminders for the authenticated user
+      description: Returns reminders sorted by datetime ASC. Supports ETag-based conditional GET.
+      responses:
+        "200":
+          description: Array of reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+        "304":
+          description: Not modified (ETag match)
+    post:
+      tags: [reminders]
+      operationId: createReminder
+      summary: Create a new reminder
+      description: Includes near-duplicate detection (warns if a similar active reminder exists).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderCreate"
+      responses:
+        "201":
+          description: Reminder created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /reminders/{id}:
+    patch:
+      tags: [reminders]
+      operationId: updateReminder
+      summary: Update a reminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                datetime:
+                  type: string
+                channel:
+                  type: string
+                category:
+                  type: string
+                priority:
+                  type: string
+      responses:
+        "200":
+          description: Updated reminder
+        "404":
+          description: Reminder not found
+    delete:
+      tags: [reminders]
+      operationId: deleteReminder
+      summary: Delete a reminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reminder deleted
+
+  /reminders/{id}/complete:
+    post:
+      tags: [reminders]
+      operationId: completeReminder
+      summary: Mark a reminder as completed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reminder completed
+
+  /reminders/{id}/snooze:
+    post:
+      tags: [reminders]
+      operationId: snoozeReminder
+      summary: Snooze a reminder to a new time
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [duration]
+              properties:
+                duration:
+                  type: string
+                  description: "e.g., '15m', '1h', '1d'"
+      responses:
+        "200":
+          description: Reminder snoozed
+
+  /reminders/stats:
+    get:
+      tags: [reminders]
+      operationId: getReminderStats
+      summary: Get reminder statistics and completion analytics
+      responses:
+        "200":
+          description: Reminder stats
+
+  /reminders/streak:
+    get:
+      tags: [reminders]
+      operationId: getReminderStreak
+      summary: Get completion streak info
+      responses:
+        "200":
+          description: Streak data
+
+  /reminders/bulk:
+    delete:
+      tags: [reminders]
+      operationId: bulkDeleteReminders
+      summary: Delete multiple reminders by ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Reminders deleted
+
+  # ================================================================
+  # AUTOMATIONS
+  # ================================================================
+  /automations:
+    get:
+      tags: [automations]
+      operationId: listAutomations
+      summary: List all automations
+      description: Supports optional `enabled` query filter. Cached in Redis (30s TTL).
+      parameters:
+        - name: enabled
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Array of automations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Automation"
+    post:
+      tags: [automations]
+      operationId: createAutomation
+      summary: Create a new automation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationCreate"
+      responses:
+        "201":
+          description: Automation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Automation"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /automations/stats:
+    get:
+      tags: [automations]
+      operationId: getAutomationStats
+      summary: Get automation summary counts
+      responses:
+        "200":
+          description: Stats including total, enabled, by trigger type, recent runs
+
+  /automations/{id}:
+    patch:
+      tags: [automations]
+      operationId: updateAutomation
+      summary: Update an automation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                triggerType:
+                  type: string
+                triggerConfig:
+                  type: object
+                actionType:
+                  type: string
+                actionConfig:
+                  type: object
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Automation updated
+        "404":
+          description: Not found
+    delete:
+      tags: [automations]
+      operationId: deleteAutomation
+      summary: Delete an automation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Automation deleted
+
+  /automations/{id}/trigger:
+    post:
+      tags: [automations]
+      operationId: triggerAutomation
+      summary: Manually trigger an automation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trigger result
+
+  /automations/{id}/dry-run:
+    post:
+      tags: [automations]
+      operationId: dryRunAutomation
+      summary: Dry-run an automation without executing actions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dry-run result (would-execute preview)
+
+  # ================================================================
+  # PORTFOLIO
+  # ================================================================
+  /portfolio/me:
+    get:
+      tags: [portfolio]
+      operationId: getMyPortfolio
+      summary: Get the authenticated user's portfolio
+      responses:
+        "200":
+          description: Portfolio data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+        "404":
+          description: Portfolio not found
+    patch:
+      tags: [portfolio]
+      operationId: updateMyPortfolio
+      summary: Update portfolio fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                headline:
+                  type: string
+                bio:
+                  type: string
+                skills:
+                  type: array
+                  items:
+                    type: object
+                projects:
+                  type: array
+                  items:
+                    type: object
+                social:
+                  type: object
+                isPublic:
+                  type: boolean
+                agentEnabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Portfolio updated
+
+  /portfolio/{username}:
+    get:
+      tags: [portfolio]
+      operationId: getPublicPortfolio
+      summary: View a user's public portfolio
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public portfolio
+        "404":
+          description: Portfolio not found or private
+
+  /portfolio/ai-edit:
+    post:
+      tags: [portfolio]
+      operationId: aiEditPortfolio
+      summary: Use AI to edit a portfolio section
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [instruction]
+              properties:
+                instruction:
+                  type: string
+                section:
+                  type: string
+      responses:
+        "200":
+          description: AI-edited content
+
+  # ================================================================
+  # INTEGRATIONS
+  # ================================================================
+  /integrations:
+    get:
+      tags: [integrations]
+      operationId: listIntegrations
+      summary: List all integrations for the user
+      description: Returns Telegram, WhatsApp, GitHub, n8n, etc. with live status synced from channel_links.
+      responses:
+        "200":
+          description: Array of integrations
+
+  /integrations/{type}/connect:
+    post:
+      tags: [integrations]
+      operationId: connectIntegration
+      summary: Connect an integration
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Integration connected
+        "404":
+          description: Integration not found
+
+  /integrations/telegram/link:
+    post:
+      tags: [integrations]
+      operationId: linkTelegram
+      summary: Link a Telegram account to the user
+      responses:
+        "200":
+          description: Link token and bot instructions
+    delete:
+      tags: [integrations]
+      operationId: unlinkTelegram
+      summary: Unlink the Telegram account
+      responses:
+        "200":
+          description: Telegram unlinked
+
+  /integrations/telegram/status:
+    get:
+      tags: [integrations]
+      operationId: getTelegramStatus
+      summary: Check Telegram link status
+      responses:
+        "200":
+          description: Link status and chat ID
+
+  /integrations/whatsapp/link:
+    post:
+      tags: [integrations]
+      operationId: linkWhatsapp
+      summary: Link a WhatsApp account
+      responses:
+        "200":
+          description: Link token
+
+  /integrations/whatsapp/status:
+    get:
+      tags: [integrations]
+      operationId: getWhatsappStatus
+      summary: Check WhatsApp link status
+      responses:
+        "200":
+          description: WhatsApp link status
+
+  # ================================================================
+  # WEBHOOKS (Inbound, Unauthenticated)
+  # ================================================================
+  /webhooks/telegram:
+    post:
+      tags: [webhooks]
+      operationId: telegramWebhook
+      summary: Telegram Bot API webhook receiver
+      description: |
+        Receives Telegram updates (messages, callback queries, voice notes).
+        Verified via `X-Telegram-Bot-Api-Secret-Token` header. Responds with
+        200 immediately, then processes asynchronously. Per-chat rate limit: 20/min.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramUpdate"
+      responses:
+        "200":
+          description: Acknowledged
+        "401":
+          description: Webhook secret not configured
+        "403":
+          description: Invalid secret token
+
+  /webhooks/n8n/callback:
+    post:
+      tags: [webhooks]
+      operationId: n8nCallback
+      summary: n8n workflow callback webhook
+      description: Receives results from n8n workflow executions triggered by automations.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Callback processed
+
+  /webhooks/whatsapp:
+    post:
+      tags: [webhooks]
+      operationId: whatsappWebhook
+      summary: WhatsApp webhook receiver
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Acknowledged
+
+  # ================================================================
+  # HEALTH
+  # ================================================================
+  /health:
+    get:
+      tags: [health]
+      operationId: healthCheck
+      summary: Public health check
+      description: Returns `{"status":"ok"}` when DB is reachable, `503` when degraded.
+      security: []
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+        "503":
+          description: Database degraded
+
+  /ready:
+    get:
+      tags: [health]
+      operationId: readinessProbe
+      summary: Kubernetes readiness probe
+      description: Returns 200 when DB is reachable, 503 otherwise. Includes automations count.
+      security: []
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  db:
+                    type: string
+                  automations:
+                    type: integer
+        "503":
+          description: Not ready
+
+  /version:
+    get:
+      tags: [health]
+      operationId: getVersion
+      summary: App version and build info
+      security: []
+      responses:
+        "200":
+          description: Version info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  gitSha:
+                    type: string
+                  env:
+                    type: string
+                    enum: [production, development]
+                  buildTime:
+                    type: string
+                    format: date-time
+                  nodeVersion:
+                    type: string
+
+  /health/detailed:
+    get:
+      tags: [health]
+      operationId: healthDetailed
+      summary: Detailed health with component probes (admin only)
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Component-level health
+
+  /health/stream:
+    get:
+      tags: [health]
+      operationId: healthStream
+      summary: Live health dashboard via SSE
+      description: Pushes health snapshots every 15 seconds. Probes run in background every 30s.
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: SSE stream of health snapshots
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ================================================================
+  # MODELS
+  # ================================================================
+  /models/free:
+    get:
+      tags: [models]
+      operationId: listFreeModels
+      summary: List all active free LLM models
+      security: []
+      responses:
+        "200":
+          description: Free model list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        displayName:
+                          type: string
+                        provider:
+                          type: string
+                        summary:
+                          type: string
+                        contextLength:
+                          type: integer
+                        curated:
+                          type: boolean
+                  lastUpdated:
+                    type: string
+                    format: date-time
+                    nullable: true
+
+  /models/changelog:
+    get:
+      tags: [models]
+      operationId: getModelChangelog
+      summary: Last 30 days of model status changes
+      security: []
+      responses:
+        "200":
+          description: Changelog entries
+
+  # ================================================================
+  # VOICE
+  # ================================================================
+  /voice/transcribe:
+    post:
+      tags: [voice]
+      operationId: transcribeVoice
+      summary: Transcribe an audio file to text
+      description: |
+        Accepts audio blob (webm/ogg/mp4). Enqueues a voice:transcribe job.
+        Poll result via GET /api/jobs/:id. Daily cap per plan tier.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Job enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+        "429":
+          description: Daily voice cap exceeded
+
+  /voice/speak:
+    post:
+      tags: [voice]
+      operationId: textToSpeech
+      summary: Convert text to speech audio
+      description: Enqueues a voice:synthesize job. Poll via GET /api/jobs/:id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                voice:
+                  type: string
+      responses:
+        "200":
+          description: Job enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+
+  # ================================================================
+  # JOBS
+  # ================================================================
+  /jobs/{id}:
+    get:
+      tags: [jobs]
+      operationId: getJobStatus
+      summary: Poll an async job's status
+      description: Returns job status (pending, processing, done, failed) and result/error when complete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Job not found
+
+  # ================================================================
+  # DASHBOARD
+  # ================================================================
+  /dashboard/stats:
+    get:
+      tags: [dashboard]
+      operationId: getDashboardStats
+      summary: Get user dashboard statistics
+      description: Returns message counts, reminder breakdown, weekly chart data, integrations status.
+      responses:
+        "200":
+          description: Dashboard stats
+
+  /dashboard/contact:
+    post:
+      tags: [dashboard]
+      operationId: submitContactForm
+      summary: Submit a contact form message
+      x-rate-limit:
+        max: 10
+        windowSeconds: 900
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                company:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Message received
+
+  # ================================================================
+  # USAGE
+  # ================================================================
+  /usage/summary:
+    get:
+      tags: [usage]
+      operationId: getUsageSummary
+      summary: Get token and credit usage summary
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: month
+      responses:
+        "200":
+          description: Usage summary with cost, tokens, provider/channel/tool breakdown
+
+  # ================================================================
+  # OUTPUTS
+  # ================================================================
+  /outputs/generate:
+    post:
+      tags: [outputs]
+      operationId: generateOutput
+      summary: Generate a formatted output (PDF, markdown, etc.)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [format, title, content]
+              properties:
+                format:
+                  type: string
+                title:
+                  type: string
+                content:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: Generated output
+        "400":
+          description: Missing required fields
+
+  /outputs/summarize:
+    post:
+      tags: [outputs]
+      operationId: summarizeChat
+      summary: Summarize a conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+      responses:
+        "200":
+          description: Summary generated
+
+  # ================================================================
+  # ADMIN (selected endpoints)
+  # ================================================================
+  /admin/health:
+    get:
+      tags: [admin]
+      operationId: adminHealth
+      summary: Detailed system health (DB, Redis, Ollama, PicoClaw)
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Component health statuses
+
+  /admin/stats:
+    get:
+      tags: [admin]
+      operationId: adminStats
+      summary: Platform statistics
+      description: Total users, active today, agents, tasks, DB size, memory, suggestions.
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Platform stats
+
+  /admin/users:
+    get:
+      tags: [admin]
+      operationId: adminListUsers
+      summary: List all users with pagination
+      security:
+        - adminAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated user list
+
+  /admin/usage:
+    get:
+      tags: [admin]
+      operationId: adminUsage
+      summary: Platform-wide usage analytics
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Usage analytics
+
+  /admin/audit:
+    get:
+      tags: [admin]
+      operationId: adminAuditLog
+      summary: Security and admin audit log
+      security:
+        - adminAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit log entries
+
+  /admin/stream:
+    get:
+      tags: [admin]
+      operationId: adminStream
+      summary: Live admin event stream via SSE
+      description: Real-time events for the admin dashboard. Token passed via query parameter for EventSource compatibility.
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /admin/invite:
+    post:
+      tags: [admin]
+      operationId: createInviteCode
+      summary: Generate an invite code for new user registration
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Invite code created
+
+  /admin/invites:
+    get:
+      tags: [admin]
+      operationId: listInviteCodes
+      summary: List all invite codes
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: Array of invite codes
+
+  # ================================================================
+  # PUBLIC STATS
+  # ================================================================
+  /stats/public:
+    get:
+      tags: [health]
+      operationId: getPublicStats
+      summary: Aggregate platform metrics for landing page
+      description: Unauthenticated. Cached 5 minutes. Returns user count, conversations, etc.
+      security: []
+      responses:
+        "200":
+          description: Public stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: integer
+                  conversations:
+                    type: integer
+                  messages_today:
+                    type: integer
+                  reminders_created:
+                    type: integer
+                  automations_active:
+                    type: integer
+                  uptime_pct:
+                    type: number
+
+# ================================================================
+# WEBHOOKS (OpenAPI 3.1 webhooks section)
+# ================================================================
+webhooks:
+  telegramUpdate:
+    post:
+      operationId: telegramWebhookEvent
+      summary: Telegram Bot API update
+      description: |
+        Telegram sends updates to `/api/webhooks/telegram` when users message
+        the bot. Verified via `X-Telegram-Bot-Api-Secret-Token` header matching
+        the configured `TELEGRAM_WEBHOOK_SECRET` env var.
+
+        **Verification**: Compare `X-Telegram-Bot-Api-Secret-Token` header.
+        **Idempotency**: Telegram may retry on timeout; use `update_id` for dedup.
+        **Retry**: Telegram retries if no 200 response within ~60s.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramUpdate"
+      responses:
+        "200":
+          description: Acknowledged
+
+  stripeEvent:
+    post:
+      operationId: stripeWebhookEvent
+      summary: Stripe payment webhook
+      description: |
+        Stripe sends events (checkout.session.completed, etc.) to
+        `/api/billing/webhook`. Request body must be parsed as raw bytes
+        for signature verification.
+
+        **Verification**: `Stripe-Signature` header + `stripe.webhooks.constructEvent()`.
+        **Idempotency**: Stripe includes an `id` field; store processed event IDs.
+        **Retry**: Stripe retries with exponential backoff for 72 hours on non-2xx.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                type:
+                  type: string
+                data:
+                  type: object
+      responses:
+        "200":
+          description: Event processed
+
+  razorpayEvent:
+    post:
+      operationId: razorpayWebhookEvent
+      summary: Razorpay payment webhook
+      description: |
+        Razorpay sends payment events to `/api/billing/razorpay/webhook`.
+        Verified via HMAC-SHA256 signature in `X-Razorpay-Signature` header
+        using the webhook secret.
+
+        **Verification**: HMAC-SHA256 of raw body with Razorpay webhook secret.
+        **Idempotency**: Use `event.id` for dedup; Razorpay may send duplicates.
+        **Retry**: Razorpay retries up to 24 hours on failure.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                payload:
+                  type: object
+      responses:
+        "200":
+          description: Event processed
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from /auth/login or /auth/signup
+    adminAuth:
+      type: http
+      scheme: bearer
+      description: Admin token (ADMIN_TOKEN env var) for admin-only endpoints
+
+  responses:
+    ValidationError:
+      description: Request body failed Zod schema validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Validation failed
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                    message:
+                      type: string
+
+    UnauthorizedError:
+      description: Missing or invalid JWT bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    RateLimitError:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the rate limit window resets
+        RateLimit-Limit:
+          schema:
+            type: integer
+        RateLimit-Remaining:
+          schema:
+            type: integer
+        RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix epoch seconds when the window resets
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Too many requests. Please slow down.
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - NOT_FOUND
+            - UNAUTHORIZED
+            - QUOTA_EXCEEDED
+            - VALIDATION_ERROR
+            - PAYMENT_REQUIRED
+
+    SignupRequest:
+      type: object
+      required: [email, password, username]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        username:
+          type: string
+          minLength: 2
+          maxLength: 30
+          pattern: "^[a-zA-Z0-9_-]+$"
+        name:
+          type: string
+          maxLength: 100
+        invite_code:
+          type: string
+          description: Required when INVITE_REQUIRED=true
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: Opaque refresh token (login only)
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: string
+          nullable: true
+        bio:
+          type: string
+        location:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        theme:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum: [dark, light]
+            accentColor:
+              type: string
+        plan:
+          type: string
+          enum: [free, pilot, intro, halfyear, yearly]
+        credits:
+          type: integer
+        timezone:
+          type: string
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            agentUpdates:
+              type: boolean
+            reminders:
+              type: boolean
+            weeklyDigest:
+              type: boolean
+            proactiveEnabled:
+              type: boolean
+        privacy:
+          type: object
+          properties:
+            showProfile:
+              type: boolean
+            showActivity:
+              type: boolean
+            allowAgentChat:
+              type: boolean
+            showLocation:
+              type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        bio:
+          type: string
+        avatar:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+        role:
+          type: string
+        company:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        theme:
+          type: object
+          properties:
+            mode:
+              type: string
+            accentColor:
+              type: string
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            agentUpdates:
+              type: boolean
+            reminders:
+              type: boolean
+            weeklyDigest:
+              type: boolean
+            proactiveEnabled:
+              type: boolean
+        privacy:
+          type: object
+          properties:
+            showProfile:
+              type: boolean
+            showActivity:
+              type: boolean
+            allowAgentChat:
+              type: boolean
+            showLocation:
+              type: boolean
+
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        messageCount:
+          type: integer
+          minimum: 0
+        channel:
+          type: string
+          maxLength: 50
+        context:
+          type: string
+          maxLength: 50
+        existingArtifactId:
+          type: string
+          format: uuid
+        history:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+                maxLength: 4000
+
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        provider:
+          type: string
+        model:
+          type: string
+        creditsUsed:
+          type: number
+        intent:
+          type: string
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              result:
+                type: object
+        rateLimitStatus:
+          type: object
+          properties:
+            remaining:
+              type: integer
+            limit:
+              type: integer
+            windowMinutes:
+              type: integer
+
+    AgentConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        displayName:
+          type: string
+        mode:
+          type: string
+          enum: [builder, assistant, creative, analyst]
+        voice:
+          type: string
+        systemPrompt:
+          type: string
+        personality:
+          type: string
+        primaryModel:
+          type: string
+        status:
+          type: string
+
+    Memory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        category:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+        confidence:
+          type: number
+        source:
+          type: string
+        accessCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        provider:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        summary:
+          type: string
+          nullable: true
+        tags:
+          type: string
+          nullable: true
+        starred:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        datetime:
+          type: string
+        channel:
+          type: string
+          enum: [telegram, email, push]
+        category:
+          type: string
+          enum: [personal, work, health, finance, general, other]
+        recurring:
+          type: string
+        recurrence:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ReminderCreate:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        datetime:
+          type: string
+          description: ISO 8601 datetime
+        channel:
+          type: string
+          enum: [telegram, email, push]
+          default: push
+        category:
+          type: string
+          enum: [personal, work, health, other, general]
+          default: personal
+        recurring:
+          type: string
+          enum: ["", daily, weekly, monthly]
+        recurrence:
+          type: string
+          nullable: true
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+
+    Automation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        triggerType:
+          type: string
+          enum: [time, event, webhook, manual, keyword, health_down]
+        triggerConfig:
+          type: object
+        actionType:
+          type: string
+          enum:
+            - n8n-webhook
+            - telegram-message
+            - portfolio-update
+            - manychat-broadcast
+            - whatsapp-message
+            - call_api
+            - create_reminder
+            - log
+        actionConfig:
+          type: object
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    AutomationCreate:
+      type: object
+      required: [name, triggerType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        triggerType:
+          type: string
+          enum: [time, event, webhook, manual, keyword, health_down]
+        triggerConfig:
+          type: object
+        actionType:
+          type: string
+          enum:
+            - n8n-webhook
+            - telegram-message
+            - portfolio-update
+            - manychat-broadcast
+            - whatsapp-message
+            - call_api
+            - create_reminder
+            - log
+        actionConfig:
+          type: object
+        enabled:
+          type: boolean
+          default: true
+
+    Portfolio:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        headline:
+          type: string
+        bio:
+          type: string
+        skills:
+          type: array
+          items:
+            type: object
+        projects:
+          type: array
+          items:
+            type: object
+        milestones:
+          type: array
+          items:
+            type: object
+        social:
+          type: object
+        visibility:
+          type: object
+        agentEnabled:
+          type: boolean
+        isPublic:
+          type: boolean
+        viewCount:
+          type: integer
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, done, failed]
+        result:
+          type: object
+          nullable: true
+          description: Present only when status is "done"
+        error:
+          type: string
+          nullable: true
+          description: Present only when status is "failed"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TelegramUpdate:
+      type: object
+      description: Telegram Bot API Update object
+      properties:
+        update_id:
+          type: integer
+        message:
+          type: object
+          properties:
+            message_id:
+              type: integer
+            chat:
+              type: object
+              properties:
+                id:
+                  type: integer
+                type:
+                  type: string
+            from:
+              type: object
+              properties:
+                id:
+                  type: integer
+                first_name:
+                  type: string
+                username:
+                  type: string
+            text:
+              type: string
+            voice:
+              type: object
+              nullable: true
+        callback_query:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            data:
+              type: string

@@ -1,9 +1,24 @@
-// ============================================================
-// Edith Memory System
-//
-// Short-term (session context), long-term (persistent facts),
-// and episodic (conversation log) memory for the AI agent.
-// ============================================================
+/**
+ * Edith Memory System
+ *
+ * Provides short-term (session context), long-term (persistent facts),
+ * and episodic (conversation log) memory for the AI agent. All memory
+ * is stored in SQLite (`agent_memory` and `conversation_log` tables)
+ * and keyed by user ID.
+ *
+ * The module exposes three layers:
+ *  1. **Structured memory** -- category/key/value facts with confidence
+ *     scores, upserted via regex extraction or LLM inference after each turn.
+ *  2. **Conversation log** -- raw user/assistant messages persisted for
+ *     context window reconstruction and training-data export.
+ *  3. **Memory context builder** -- assembles a markdown block of relevant
+ *     memories to inject into the system prompt before each LLM call.
+ *
+ * Guest users (userId starting with `guest:`) are silently skipped to
+ * avoid FK violations against the `users` table.
+ *
+ * @module services/memory
+ */
 
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
@@ -62,6 +77,21 @@ export function initMemoryTables() {
 
 // ---- Memory CRUD ----
 
+/**
+ * Insert or update a single memory fact for a user.
+ *
+ * Uses SQLite `ON CONFLICT` upsert keyed on `(user_id, category, key)`.
+ * When a conflict occurs the value, confidence, and source are overwritten
+ * and `access_count` is incremented. Guest users are silently skipped
+ * because they have no row in the `users` table (FK constraint).
+ *
+ * @param userId     - Authenticated user ID (skipped if starts with `guest:`)
+ * @param category   - Logical grouping, e.g. `"fact"`, `"preference"`, `"health"`
+ * @param key        - Unique fact identifier within the category, e.g. `"name"`, `"location"`
+ * @param value      - The memorised value, e.g. `"Amit"`, `"Bangalore"`
+ * @param confidence - 0..1 score indicating certainty (default 1.0)
+ * @param source     - How the memory was obtained: `"observed"`, `"inferred"`, `"explicit"`
+ */
 export function upsertMemory(
   userId: string,
   category: string,
@@ -93,6 +123,22 @@ export function getMemories(userId: string, category?: string, limit = 20): Memo
   ).all(userId, limit) as MemoryEntry[];
 }
 
+/**
+ * Retrieve memories ranked by keyword relevance to a user query.
+ *
+ * Splits the query into words (length > 3), scores each memory by how
+ * many query words appear in its key/value/category text, and returns
+ * the top matches sorted by score then confidence. Access counts are
+ * incremented for returned memories (LRU-style freshness signal).
+ *
+ * Falls back to {@link getMemories} when no meaningful keywords are
+ * extracted from the query.
+ *
+ * @param userId - The user whose memories to search
+ * @param query  - Free-text search query from the user's message
+ * @param limit  - Maximum number of memories to return (default 10)
+ * @returns Scored memory entries, highest relevance first
+ */
 export function getRelevantMemories(userId: string, query: string, limit = 10): MemoryEntry[] {
   // Simple keyword-based relevance (no vector DB needed for now)
   const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 3);
@@ -450,6 +496,18 @@ export function buildOwnerContextForVisitor(userId: string, query?: string): { g
 
 // ---- Build memory context for system prompt ----
 
+/**
+ * Build a markdown-formatted memory block for injection into the LLM system prompt.
+ *
+ * When a `userMessage` is provided, uses {@link getRelevantMemories} for
+ * query-aware retrieval; otherwise returns the top 8 memories by confidence.
+ * Returns an empty string when the user has no stored memories.
+ *
+ * @param userId      - The user whose memories to include
+ * @param userMessage - Optional current user message for relevance scoring
+ * @returns A markdown section starting with `## What you remember about this user:`,
+ *          or an empty string if no memories exist
+ */
 export function buildMemoryContext(userId: string, userMessage?: string): string {
   const memories = userMessage
     ? getRelevantMemories(userId, userMessage, 8)

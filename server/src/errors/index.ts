@@ -8,7 +8,17 @@
 
 /**
  * Base error for all Agentin domain errors.
- * Carries a machine-readable `code` and HTTP `statusCode`.
+ *
+ * Every subclass carries a machine-readable `code` string (e.g. `"NOT_FOUND"`)
+ * and an HTTP `statusCode` so the global error handler can map caught errors
+ * directly to structured JSON responses without a switch/case.
+ *
+ * Uses `Object.setPrototypeOf` to restore the prototype chain broken by
+ * ES2015 class inheritance from `Error` -- this ensures `instanceof` checks
+ * work correctly even when transpiled to ES5.
+ *
+ * @example
+ * throw new AgentinError('Flux capacitor overheated', 'FLUX_ERROR', 500);
  */
 export class AgentinError extends Error {
   public readonly statusCode: number;
@@ -24,7 +34,14 @@ export class AgentinError extends Error {
   }
 }
 
-/** 404 — resource not found */
+/**
+ * HTTP 404 -- the requested resource does not exist.
+ *
+ * Thrown by route handlers when a database lookup returns no rows (e.g.
+ * user, reminder, automation, artifact not found by ID).
+ *
+ * @param message - Human-readable detail (default: `"Not found"`).
+ */
 export class NotFoundError extends AgentinError {
   constructor(message = 'Not found') {
     super(message, 'NOT_FOUND', 404);
@@ -32,7 +49,13 @@ export class NotFoundError extends AgentinError {
   }
 }
 
-/** 401 — authentication required or invalid */
+/**
+ * HTTP 401 -- authentication is required or the provided credentials are
+ * invalid. Typically caught by the global error handler and returned as
+ * `{ error: message }`.
+ *
+ * @param message - Human-readable detail (default: `"Unauthorized"`).
+ */
 export class UnauthorizedError extends AgentinError {
   constructor(message = 'Unauthorized') {
     super(message, 'UNAUTHORIZED', 401);
@@ -40,7 +63,12 @@ export class UnauthorizedError extends AgentinError {
   }
 }
 
-/** 429 — rate limit or quota exceeded */
+/**
+ * HTTP 429 -- the user has exceeded their rate limit, credit quota, or
+ * daily token budget. The client should back off or upgrade their plan.
+ *
+ * @param message - Human-readable detail (default: `"Quota exceeded"`).
+ */
 export class QuotaExceededError extends AgentinError {
   constructor(message = 'Quota exceeded') {
     super(message, 'QUOTA_EXCEEDED', 429);
@@ -48,7 +76,13 @@ export class QuotaExceededError extends AgentinError {
   }
 }
 
-/** 400 — invalid input */
+/**
+ * HTTP 400 -- the request body or query parameters failed schema validation.
+ * Typically thrown when Zod parsing fails outside the middleware layer, or
+ * for semantic validation that schemas cannot express.
+ *
+ * @param message - Human-readable detail (default: `"Validation failed"`).
+ */
 export class ValidationError extends AgentinError {
   constructor(message = 'Validation failed') {
     super(message, 'VALIDATION_ERROR', 400);
@@ -56,7 +90,12 @@ export class ValidationError extends AgentinError {
   }
 }
 
-/** 402 — payment required (e.g. free plan trying premium feature) */
+/**
+ * HTTP 402 -- the requested feature requires a paid subscription that the
+ * user does not have (e.g. premium LLM tiers, advanced automations).
+ *
+ * @param message - Human-readable detail (default: `"Payment required"`).
+ */
 export class PaymentRequiredError extends AgentinError {
   constructor(message = 'Payment required') {
     super(message, 'PAYMENT_REQUIRED', 402);

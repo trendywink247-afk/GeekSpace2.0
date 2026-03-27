@@ -1,11 +1,28 @@
-// ============================================================
-// ReAct Loop — Multi-turn Tool-Use Reasoning
-//
-// Runs up to MAX_REACT_ITERATIONS of: LLM → parse actions →
-// execute actions → inject observations → repeat.
-// Returns when no actions in response or max iterations hit.
-// Supports onStep callback for visible thinking (SSE streaming).
-// ============================================================
+/**
+ * ReAct Loop -- Multi-turn Tool-Use Reasoning
+ *
+ * Implements a Reason + Act (ReAct) agent loop that alternates between
+ * LLM inference and tool execution for up to {@link MAX_REACT_ITERATIONS}
+ * iterations. Each iteration:
+ *
+ *  1. Sends the conversation (including prior observations) to the LLM
+ *     via `routeChat`.
+ *  2. Parses the response for `<<<ACTION ... ACTION>>>` tool-call blocks.
+ *  3. If no actions are found, the loop terminates and returns the final text.
+ *  4. Otherwise, each action is executed via {@link executeAction} and the
+ *     resulting observations are appended to the working message history
+ *     as assistant/user turn pairs, then the loop repeats.
+ *
+ * The loop emits {@link ThinkingStep} callbacks (via `opts.onStep`) and
+ * SSE events (via `agent-state-bus`) so the frontend can display a
+ * real-time "thinking" indicator with tool names and progress.
+ *
+ * Actions whose execution requires the HTTP base URL (e.g. `generate_code`)
+ * are collected into `deferredActions` and returned to the caller for
+ * post-processing by the HTTP/channel layer.
+ *
+ * @module services/react-loop
+ */
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
 import { parseActions, type ParsedAction } from './action-parser.js';
@@ -45,10 +62,23 @@ export interface ReactLoopResult {
 }
 
 /**
- * Run a multi-turn ReAct loop.
+ * Run a multi-turn ReAct (Reason + Act) loop over the given conversation.
  *
- * @param messages - The conversation so far (system prompt NOT included — pass via opts.systemPrompt)
- * @param opts     - LLM routing options including userId (required for action execution)
+ * Iterates up to `MAX_REACT_ITERATIONS` (5) times, calling the LLM,
+ * parsing tool-call actions from its response, executing them, and
+ * feeding observations back. Terminates early when the LLM produces
+ * a response with no action blocks, indicating it is ready to answer.
+ *
+ * Token counts, credit costs, and action results are accumulated across
+ * all iterations and returned in a single {@link ReactLoopResult}.
+ *
+ * @param messages - The conversation history so far. The system prompt is
+ *                   **not** included here; pass it via `opts.systemPrompt`.
+ * @param opts     - Loop configuration: system prompt, user ID, optional
+ *                   provider override, and an `onStep` callback for
+ *                   streaming thinking indicators to the frontend.
+ * @returns Aggregated result containing the final reply text, all action
+ *          outcomes, deferred actions, token usage, and cost.
  */
 export async function runReactLoop(
   messages: ChatMessage[],

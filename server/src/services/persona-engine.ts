@@ -1,7 +1,21 @@
-// ============================================================
-// PersonaEngine — Persona-voiced responses for button interactions
-// Templates for instant response, LLM fallback for edge cases
-// ============================================================
+/**
+ * PersonaEngine -- Persona-voiced Responses for Button Interactions
+ *
+ * Generates personality-consistent confirmation messages when users
+ * tap inline action buttons in Telegram (done, delete, snooze,
+ * habit_logged, expense_ok, etc.).
+ *
+ * Each persona (weebo, edith, aria, forge, ...) has a bank of
+ * pre-written templates per action type stored in
+ * {@link PERSONA_TEMPLATES}. A template is picked randomly and
+ * hydrated with context variables (`{title}`, `{mins}`, `{streak}`).
+ *
+ * For edge cases -- milestone streaks (7-day, 30-day), double-tap
+ * on already-completed items, and focus session endings -- the engine
+ * falls back to an LLM call for a richer, contextual response.
+ *
+ * @module services/persona-engine
+ */
 
 import { logger } from '../logger.js';
 
@@ -321,6 +335,21 @@ No markdown. No quotes. Just the message text.`;
 
 // ── Main Export ───────────────────────────────────────────────
 
+/**
+ * Generate a persona-voiced response for a button action.
+ *
+ * For standard cases, picks a random template from
+ * {@link PERSONA_TEMPLATES} matching the user's active persona and
+ * the button action, then hydrates it with context variables.
+ * For edge cases (milestone streaks, double-taps, focus endings),
+ * delegates to the LLM for a more contextual reply.
+ *
+ * @param userId - Authenticated user ID (used for LLM fallback context)
+ * @param action - The button action that was tapped (e.g. `"done"`, `"snooze"`)
+ * @param ctx    - Contextual data: entity type/title, persona, streak count, etc.
+ * @returns A short persona-voiced confirmation string suitable for
+ *          Telegram inline reply
+ */
 export async function getPersonaResponse(
   userId: string,
   action: ButtonAction,
