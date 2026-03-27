@@ -12,7 +12,7 @@ import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
 // ── Routes ──────────────────────────────────────────────────────────
-export { billingRouter } from '../../routes/billing.js';
+export { billingRouter } from './routes.js';
 
 // ── Services ────────────────────────────────────────────────────────
 export {
@@ -21,31 +21,31 @@ export {
   getStatus,
   isPaidPlan,
   STRIPE_PLAN_LABELS,
-} from '../../services/stripe.js';
+} from './services/stripe.js';
 
 export {
   razorpayEnabled,
   createRazorpayOrder,
   verifyRazorpaySignature,
-} from '../../services/razorpay.js';
+} from './services/razorpay.js';
 
 export {
   getBalance,
   deduct,
   checkQuota,
   getUsage,
-} from '../../services/credit-service.js';
-export type { CreditBalance, UsageReport } from '../../services/credit-service.js';
+} from './services/credit-service.js';
+export type { CreditBalance, UsageReport } from './services/credit-service.js';
 
 // ── Repositories ────────────────────────────────────────────────────
-export { SubscriptionRepository } from '../../repositories/SubscriptionRepository.js';
-export type { SubscriptionRow } from '../../repositories/SubscriptionRepository.js';
+export { SubscriptionRepository } from './repositories/SubscriptionRepository.js';
+export type { SubscriptionRow } from './repositories/SubscriptionRepository.js';
 
 // ── Types ──────────────────────────────────────────────────────────
 export type { Subscription, Plan, DayPass, UsageEvent } from './types.js';
 
 // ── Module Registration ─────────────────────────────────────────────
-import { billingRouter } from '../../routes/billing.js';
+import { billingRouter } from './routes.js';
 
 export const billingModule: AppModule = {
   name: 'billing',

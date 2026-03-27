@@ -5,11 +5,11 @@
 import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
-// ── Routes (re-export from existing locations — shim pattern) ──
-export { imagesRouter, cleanupExpiredImages } from '../../routes/images.js';
-export { imageAsyncRouter } from '../../routes/image.js';
-export { videosRouter } from '../../routes/videos.js';
-export { voiceRouter } from '../../routes/voice.js';
+// ── Routes (co-located in module) ────────────────────────────
+export { imagesRouter, cleanupExpiredImages } from './routes/images.js';
+export { imageAsyncRouter } from './routes/image.js';
+export { videosRouter } from './routes/videos.js';
+export { voiceRouter } from './routes/voice.js';
 
 // ── Services ────────────────────────────────────────────────
 export {
@@ -18,8 +18,8 @@ export {
   checkMediaStatus,
   generateAvatar,
   generateProjectThumbnail,
-} from '../../services/media-generation.js';
-export type { ImageGenerationOptions, VideoGenerationOptions } from '../../services/media-generation.js';
+} from './services/media-generation.js';
+export type { ImageGenerationOptions, VideoGenerationOptions } from './services/media-generation.js';
 
 export {
   isVoiceEnabled,
@@ -28,7 +28,7 @@ export {
   textToSpeech,
   sendTelegramVoice,
   voiceCreditCost,
-} from '../../services/voice.js';
+} from './services/voice.js';
 
 // ── Types ───────────────────────────────────────────────────
 export type {
@@ -49,10 +49,10 @@ export type {
 
 // ── Module registration ─────────────────────────────────────
 
-import { imagesRouter } from '../../routes/images.js';
-import { imageAsyncRouter } from '../../routes/image.js';
-import { videosRouter } from '../../routes/videos.js';
-import { voiceRouter } from '../../routes/voice.js';
+import { imagesRouter } from './routes/images.js';
+import { imageAsyncRouter } from './routes/image.js';
+import { videosRouter } from './routes/videos.js';
+import { voiceRouter } from './routes/voice.js';
 
 export const mediaModule: AppModule = {
   name: 'media',
