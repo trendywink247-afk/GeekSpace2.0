@@ -5,8 +5,8 @@
 import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
-// Re-export routes and services from existing locations (shim pattern)
-export { remindersRouter, computeNextOccurrence } from '../../routes/reminders.js';
+// Re-export routes and services from local module files
+export { remindersRouter, computeNextOccurrence } from './routes.js';
 
 export {
   startReminderScheduler,
@@ -14,7 +14,7 @@ export {
   scheduleNextRecurrence,
   scheduleTestReminder,
   getReminderDriftStats,
-} from '../../services/reminder-scheduler.js';
+} from './services.js';
 
 // Types
 export type {
@@ -32,8 +32,8 @@ export type {
 } from './types.js';
 
 // Import for module registration
-import { remindersRouter } from '../../routes/reminders.js';
-import { startReminderScheduler } from '../../services/reminder-scheduler.js';
+import { remindersRouter } from './routes.js';
+import { startReminderScheduler } from './services.js';
 
 export const remindersModule: AppModule = {
   name: 'reminders',

@@ -5,12 +5,12 @@
 import type { Application } from 'express';
 import type { AppModule } from '../../shared/module.js';
 
-// Re-export route and services from existing locations (shim pattern)
-export { portfolioRouter } from '../../routes/portfolio.js';
+// Re-export from module-local files
+export { portfolioRouter } from './routes.js';
 export {
   generatePortfolioSuggestions,
   applySuggestion,
-} from '../../services/portfolio-suggestions.js';
+} from './services.js';
 
 // Types
 export type {
@@ -25,7 +25,7 @@ export type {
 } from './types.js';
 
 // Import for module registration
-import { portfolioRouter } from '../../routes/portfolio.js';
+import { portfolioRouter } from './routes.js';
 
 export const portfolioModule: AppModule = {
   name: 'portfolio',
