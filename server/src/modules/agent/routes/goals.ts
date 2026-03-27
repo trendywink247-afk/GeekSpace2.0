@@ -24,21 +24,21 @@ router.get('/goals', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const status = req.query.status as GoalStatus | undefined;
   const limit = Math.min(Number(req.query.limit) || 50, 100);
-  const goals = getUserGoals(authReq.user!.id, status, limit);
+  const goals = getUserGoals(authReq.userId!, status, limit);
   res.json({ goals });
 });
 
 // GET /goals/stats — goal statistics
 router.get('/goals/stats', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
-  const stats = getGoalStats(authReq.user!.id);
+  const stats = getGoalStats(authReq.userId!);
   res.json(stats);
 });
 
 // GET /goals/actionable — goals with executable next steps
 router.get('/goals/actionable', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
-  const actionable = getActionableGoals(authReq.user!.id);
+  const actionable = getActionableGoals(authReq.userId!);
   res.json({ actionable });
 });
 
@@ -52,7 +52,7 @@ router.post('/goals', requireAuth, (req, res) => {
     return;
   }
 
-  const goal = createGoal(authReq.user!.id, {
+  const goal = createGoal(authReq.userId!, {
     title: body.title.trim(),
     description: body.description?.trim(),
     category: body.category,
@@ -69,7 +69,7 @@ router.get('/goals/:id', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const goal = getGoalWithSteps(req.params.id);
 
-  if (!goal || goal.user_id !== authReq.user!.id) {
+  if (!goal || goal.user_id !== authReq.userId!) {
     res.status(404).json({ error: 'Goal not found' });
     return;
   }
@@ -81,7 +81,7 @@ router.get('/goals/:id', requireAuth, (req, res) => {
 router.patch('/goals/:id', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const updates = req.body as UpdateGoalRequest;
-  const goal = updateGoal(req.params.id, authReq.user!.id, updates);
+  const goal = updateGoal(req.params.id, authReq.userId!, updates);
 
   if (!goal) {
     res.status(404).json({ error: 'Goal not found' });
@@ -94,7 +94,7 @@ router.patch('/goals/:id', requireAuth, (req, res) => {
 // DELETE /goals/:id — delete a goal
 router.delete('/goals/:id', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
-  const deleted = deleteGoal(req.params.id, authReq.user!.id);
+  const deleted = deleteGoal(req.params.id, authReq.userId!);
 
   if (!deleted) {
     res.status(404).json({ error: 'Goal not found' });
@@ -110,7 +110,7 @@ router.delete('/goals/:id', requireAuth, (req, res) => {
 router.post('/goals/:id/plan', requireAuth, async (req, res) => {
   const authReq = req as AuthRequest;
   try {
-    const plan = await planGoal(req.params.id, authReq.user!.id);
+    const plan = await planGoal(req.params.id, authReq.userId!);
     if (!plan) {
       res.status(404).json({ error: 'Goal not found or planning failed' });
       return;
@@ -126,7 +126,7 @@ router.post('/goals/:id/plan', requireAuth, async (req, res) => {
 router.post('/goals/:id/execute', requireAuth, async (req, res) => {
   const authReq = req as AuthRequest;
   try {
-    const step = await executeNextStep(req.params.id, authReq.user!.id);
+    const step = await executeNextStep(req.params.id, authReq.userId!);
     if (!step) {
       res.status(404).json({ error: 'No actionable step found' });
       return;
@@ -144,7 +144,7 @@ router.post('/goals/:id/execute', requireAuth, async (req, res) => {
 router.get('/goals/:id/steps', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const goal = getGoal(req.params.id);
-  if (!goal || goal.user_id !== authReq.user!.id) {
+  if (!goal || goal.user_id !== authReq.userId!) {
     res.status(404).json({ error: 'Goal not found' });
     return;
   }
@@ -162,7 +162,7 @@ router.post('/goals/:id/steps', requireAuth, (req, res) => {
     return;
   }
 
-  const step = addStep(req.params.id, authReq.user!.id, {
+  const step = addStep(req.params.id, authReq.userId!, {
     title: body.title.trim(),
     description: body.description?.trim(),
     assigned_agent: body.assigned_agent,
@@ -188,7 +188,7 @@ router.patch('/goals/:goalId/steps/:stepId', requireAuth, (req, res) => {
     return;
   }
 
-  const step = updateStepStatus(req.params.stepId, authReq.user!.id, status, result);
+  const step = updateStepStatus(req.params.stepId, authReq.userId!, status, result);
   if (!step) {
     res.status(404).json({ error: 'Step not found' });
     return;
@@ -203,7 +203,7 @@ router.patch('/goals/:goalId/steps/:stepId', requireAuth, (req, res) => {
 router.get('/goals/:id/events', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const goal = getGoal(req.params.id);
-  if (!goal || goal.user_id !== authReq.user!.id) {
+  if (!goal || goal.user_id !== authReq.userId!) {
     res.status(404).json({ error: 'Goal not found' });
     return;
   }
@@ -219,7 +219,7 @@ router.get('/workspace', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const goalId = req.query.goal_id as string | undefined;
   const limit = Math.min(Number(req.query.limit) || 30, 100);
-  const artifacts = getWorkspaceArtifacts(authReq.user!.id, goalId, limit);
+  const artifacts = getWorkspaceArtifacts(authReq.userId!, goalId, limit);
   res.json({ artifacts });
 });
 
@@ -236,7 +236,7 @@ router.post('/workspace', requireAuth, (req, res) => {
   }
 
   const artifact = createWorkspaceArtifact(
-    authReq.user!.id, goal_id || null, title.trim(), content,
+    authReq.userId!, goal_id || null, title.trim(), content,
     (artifact_type as any) || 'note',
   );
   res.status(201).json({ artifact });
@@ -252,7 +252,7 @@ router.patch('/workspace/:id', requireAuth, (req, res) => {
     return;
   }
 
-  const artifact = updateWorkspaceArtifact(req.params.id, authReq.user!.id, content, title);
+  const artifact = updateWorkspaceArtifact(req.params.id, authReq.userId!, content, title);
   if (!artifact) {
     res.status(404).json({ error: 'Artifact not found' });
     return;
@@ -263,7 +263,7 @@ router.patch('/workspace/:id', requireAuth, (req, res) => {
 // DELETE /workspace/:id — delete an artifact
 router.delete('/workspace/:id', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
-  const deleted = deleteWorkspaceArtifact(req.params.id, authReq.user!.id);
+  const deleted = deleteWorkspaceArtifact(req.params.id, authReq.userId!);
   if (!deleted) {
     res.status(404).json({ error: 'Artifact not found' });
     return;
