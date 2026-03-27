@@ -78,3 +78,14 @@ server/SANDBOX_PERF_SUMMARY.md
 # Tool state
 .gstack/
 .worktrees/
+
+# Stale docs / audit / reports (not source code)
+AGENTIN-MASTER-BRIEF.md
+agents/*.yaml
+audit/
+ops/reports/
+docs/internal/audit/
+reports/
+
+# Test run artifacts
+*.jsonl

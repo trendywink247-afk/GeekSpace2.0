@@ -22,8 +22,34 @@ build/
 server/data/*.db
 *.sqlite
 *.sqlite3
+package-lock.json
+
+# Runtime / tool state
+tmp-screenshots/
+apminsightdata/
+.gstack/
+.superpowers/
 
 # Logs
 logs/
 *.log
 npm-debug.log*
+
+# Stale docs / audit / reports — not useful for coding context
+AGENTIN-MASTER-BRIEF.md
+agents/*.yaml
+audit/
+ops/reports/
+docs/internal/audit/
+reports/
+*.jsonl
+
+# Coverage & test artifacts
+coverage/
+server/coverage/
+playwright-report/
+test-results/
+
+# Runtime / pid files
+*.pid
+.superpowers/
