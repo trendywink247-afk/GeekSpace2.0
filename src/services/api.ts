@@ -398,6 +398,16 @@ export const integrationService = {
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
 
+  // Custom Telegram bot
+  connectCustomTelegramBot: (data: { botToken: string }) =>
+    api.post<{ botName: string; botUsername: string; connected: boolean }>('/integrations/telegram/custom/connect', data),
+
+  disconnectCustomTelegramBot: () =>
+    api.delete('/integrations/telegram/custom/connect'),
+
+  getCustomTelegramBotStatus: () =>
+    api.get<{ connected: boolean; botName?: string; botUsername?: string }>('/integrations/telegram/custom/status'),
+
   // WhatsApp linking (old token-based)
   linkWhatsApp: () => api.post<{ linked: boolean; token?: string; qrUrl?: string; expiresIn?: number; message?: string }>('/integrations/whatsapp/link'),
   checkWhatsAppStatus: () => api.get<{ linked: boolean; externalId?: string; linkedAt?: string }>('/integrations/whatsapp/status'),

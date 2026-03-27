@@ -77,6 +77,7 @@ import { recommendationsRouter } from './routes/recommendations.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { skillsRouter } from './routes/skills.js';
 import { logoAiRouter } from './routes/logo-ai.js';
+import { customBotRouter } from './routes/custom-bot.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
@@ -444,6 +445,7 @@ export function createApp(): express.Application {
   app.use('/api/users', usersRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
+  app.use('/api/integrations/telegram/custom', customBotRouter);
   app.use('/api/integrations', integrationsRouter);
   app.use('/api/reminders', remindersRouter);
   app.use('/api/portfolio', portfolioRouter);
