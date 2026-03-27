@@ -1906,7 +1906,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       // ── Goal System Tools ────────────────────────────────────
       case 'create_goal': {
-        const { createGoal } = await import('./goal-service.js');
+        const { createGoal, planGoal } = await import('./goal-service.js');
         const title = params.title || params.goal || params.name;
         if (!title) return { tool, success: false, message: 'Goal title is required' };
         const goal = createGoal(userId, {
@@ -1915,7 +1915,18 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           category: params.category as any,
           target_date: params.target_date ? String(params.target_date) : undefined,
         });
-        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (${goal.category}, assigned to ${goal.assigned_agent})` };
+
+        // Auto-plan: immediately decompose goal into steps so the user gets a full plan
+        let planMessage = '';
+        try {
+          const plan = await planGoal(goal.id, userId);
+          if (plan && plan.steps.length > 0) {
+            const stepLines = plan.steps.map((s, i) => `  ${i + 1}. ${s.title} (${s.assigned_agent}, ${s.effort})`);
+            planMessage = `\n\n🗺️ Auto-planned ${plan.steps.length} steps:\n${stepLines.join('\n')}\n\nEstimated: ${plan.estimated_effort}`;
+          }
+        } catch { /* planning is best-effort */ }
+
+        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (${goal.category}, assigned to ${goal.assigned_agent})${planMessage}` };
       }
 
       case 'list_goals': {
@@ -1960,7 +1971,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const title = params.title || 'Untitled';
         const content = params.content || '';
         if (!content) return { tool, success: false, message: 'Artifact content is required' };
-        const artifact = createWorkspaceArtifact(userId, params.goal_id || null, String(title), String(content), (params.type as any) || 'note', params.agent);
+        const artifact = createWorkspaceArtifact(userId, params.goal_id ? String(params.goal_id) : null, String(title), String(content), (params.type as any) || 'note', params.agent ? String(params.agent) : undefined);
         return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
       }
 

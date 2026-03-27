@@ -89,7 +89,7 @@ export async function sendAgentNotification(
   broadcastAgentState(userId, {
     agentId,
     agentName: personality.name,
-    state: 'notification',
+    state: 'responding',
     content: `${personality.emoji} ${title}: ${message}`,
   });
 

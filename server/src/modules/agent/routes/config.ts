@@ -79,6 +79,7 @@ router.patch('/config', requireAuth, validateBody(agentConfigUpdateSchema), (req
     greeting: 'greeting',
     snooze_presets: 'snooze_presets',
     use_case: 'use_case',
+    autonomy_level: 'autonomy_level',
   };
 
   for (const [key, col] of Object.entries(allowedFields)) {

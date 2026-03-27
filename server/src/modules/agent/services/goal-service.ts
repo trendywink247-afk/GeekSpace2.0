@@ -13,6 +13,9 @@ import { routeChat, type ChatMessage } from './llm.js';
 import { getPersonalityPrompt } from '../../../prompts/personalities.js';
 import { emitThinking, emitResponding, emitDone, emitDelegation } from './agent-state-bus.js';
 import { sendAgentComm } from './agent-comms.js';
+import {
+  notifyGoalProgress, notifyStepCompleted, sendAgentNotification,
+} from './agent-notifications.js';
 import type {
   Goal, GoalStep, GoalEvent, GoalWithSteps, GoalPlan,
   GoalStatus, StepStatus, GoalCategory, GoalEventType,
@@ -156,8 +159,26 @@ export function updateStepStatus(stepId: string, userId: string, status: StepSta
   const steps = getGoalSteps(step.goal_id);
   const allDone = steps.length > 0 && steps.every(s => s.status === 'completed' || s.status === 'skipped');
   if (allDone) {
+    const goal = getGoal(step.goal_id);
     db.prepare("UPDATE goals SET status = 'completed', progress = 100, updated_at = ? WHERE id = ?").run(now, step.goal_id);
     recordGoalEvent(step.goal_id, userId, 'completed', step.assigned_agent, null, 'All steps completed — goal achieved!');
+
+    // Celebration notification
+    if (goal) {
+      sendAgentNotification(userId, goal.assigned_agent as AnyAgentId, 'celebration',
+        'Goal achieved!', `Congratulations! "${goal.title}" is complete. All ${steps.length} steps done.`,
+        { actionUrl: `/goals/${goal.id}`, sendTelegram: true },
+      ).catch(() => { /* non-critical */ });
+    }
+  }
+
+  // Notify step completion
+  if (status === 'completed') {
+    const goal = getGoal(step.goal_id);
+    if (goal) {
+      notifyStepCompleted(userId, step.assigned_agent as AnyAgentId, step.title, goal.title)
+        .catch(() => { /* non-critical */ });
+    }
   }
 
   return getStep(stepId);
@@ -167,8 +188,23 @@ function recalculateProgress(goalId: string): void {
   const steps = getGoalSteps(goalId);
   if (steps.length === 0) return;
   const done = steps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
+  const oldGoal = getGoal(goalId);
   const progress = Math.round((done / steps.length) * 100);
   db.prepare('UPDATE goals SET progress = ?, updated_at = ? WHERE id = ?').run(progress, new Date().toISOString(), goalId);
+
+  // Fire milestone notifications at 25%, 50%, 75%, 100%
+  if (oldGoal) {
+    const oldProgress = oldGoal.progress;
+    const milestones = [25, 50, 75, 100];
+    for (const milestone of milestones) {
+      if (progress >= milestone && oldProgress < milestone) {
+        // Fire-and-forget notification (don't block progress update)
+        notifyGoalProgress(oldGoal.user_id, oldGoal.assigned_agent as AnyAgentId, oldGoal.title, milestone, goalId)
+          .catch(() => { /* non-critical */ });
+        break; // Only one notification per recalculation
+      }
+    }
+  }
 }
 
 // ── Goal Events ─────────────────────────────────────────────

@@ -20,6 +20,8 @@ import { getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 import { parseActions } from '../../../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
 import { runReactLoop } from '../services/react-loop.js';
+import { runDeepReasoning } from '../services/deep-reasoning.js';
+import { classifyMessageComplexity } from '../services/unified-agent-router.js';
 import { formatReceiptCompact, type ReceiptItem } from '../../../services/receipts.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 import { fetchAndExtract } from '../../../services/web-research.js';
@@ -977,13 +979,28 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
     const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
 
-    const result = await runReactLoop(messages, {
-      systemPrompt: effectiveSystemPrompt,
-      agentName: (effectiveAgentConfig?.name as string) || 'Geek',
-      userCredits,
-      forceProvider: resolvedProvider,
-      userId,
-    });
+    // Route complex queries through deep reasoning engine (10 iterations + self-reflection + delegation)
+    const complexity = classifyMessageComplexity(message);
+    const useDeepReasoning = complexity === 'multi_step' || complexity === 'multi_agent';
+
+    const result = useDeepReasoning
+      ? await runDeepReasoning(messages, {
+          systemPrompt: effectiveSystemPrompt,
+          agentName: (effectiveAgentConfig?.name as string) || 'Geek',
+          agentId: (effectiveAgentConfig?.personality as any) || undefined,
+          userCredits,
+          forceProvider: resolvedProvider,
+          userId,
+          enableDelegation: true,
+          enableReflection: true,
+        })
+      : await runReactLoop(messages, {
+          systemPrompt: effectiveSystemPrompt,
+          agentName: (effectiveAgentConfig?.name as string) || 'Geek',
+          userCredits,
+          forceProvider: resolvedProvider,
+          userId,
+        });
 
     // Guard: if the 120s HTTP timeout already sent a 503, don't try to send another response
     if (res.headersSent) {

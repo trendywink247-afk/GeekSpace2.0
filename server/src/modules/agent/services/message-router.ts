@@ -33,6 +33,8 @@ import { logger } from '../../../logger.js';
 import { config } from '../../../config.js';
 import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
+import { runDeepReasoning } from './deep-reasoning.js';
+import { classifyMessageComplexity } from './unified-agent-router.js';
 import { bridgeChat, type BridgeRequest } from '../../../services/pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext, upsertMemory } from '../../../services/memory.js';
 import { logActivity } from '../../../services/activity-log.js';
@@ -267,6 +269,14 @@ Available tools:
 - save_artifact: Save a workspace artifact (research, draft, analysis). Params: {"title": "<title>", "content": "<content>", "type": "note|draft|research|code|plan|analysis", "goal_id": "<optional>"}. Use when an agent produces substantial output worth saving.
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
+
+// ---- Deep Reasoning Detection ----
+// Returns true for complex, multi-step queries that benefit from
+// the deep reasoning engine (10 iterations + self-reflection + delegation)
+function shouldUseDeepReasoning(message: string): boolean {
+  const complexity = classifyMessageComplexity(message);
+  return complexity === 'multi_step' || complexity === 'multi_agent';
+}
 
 // ---- Tool Trigger Detection ----
 // Detects phrases that should bypass the bridge and use the ReAct loop directly,
@@ -1820,7 +1830,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const reason = hasNonLatinScript ? 'non-latin-script' : 'hinglish';
     logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq via ReAct loop');
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const reactResult = await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
+    const reactResult = shouldUseDeepReasoning(msg.text)
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: 'groq', enableDelegation: true })
+      : await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
     replyText = reactResult.text;
     provider = reactResult.provider;
     model = reactResult.model;
@@ -1858,15 +1870,17 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       }, 'Channel message routed via bridge');
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to ReAct loop');
-      // Fallback to ReAct loop
+      // Fallback to ReAct loop (or deep reasoning for complex queries)
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-      const reactResult = await runReactLoop(messages, {
-        systemPrompt,
-        agentName: (agentConfig?.name as string) || 'Geek',
-        agentId: effectivePersonalityId,
-        userCredits,
-        userId,
-      });
+      const reactResult = shouldUseDeepReasoning(msg.text)
+        ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, enableDelegation: true })
+        : await runReactLoop(messages, {
+            systemPrompt,
+            agentName: (agentConfig?.name as string) || 'Geek',
+            agentId: effectivePersonalityId,
+            userCredits,
+            userId,
+          });
       replyText = reactResult.text;
       provider = reactResult.provider;
       model = reactResult.model;
@@ -1876,18 +1890,20 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       reactDeferredActions = reactResult.deferredActions;
     }
   } else {
-    // Bridge not enabled or tool trigger detected — use ReAct loop
+    // Bridge not enabled or tool trigger detected — use ReAct loop (or deep reasoning for complex queries)
     // Force Groq for tool-triggered messages (free models don't emit <<<ACTION>>> reliably)
     const forceGroqForTools = hasToolTrigger(msg.text) ? 'groq' as const : undefined;
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const reactResult = await runReactLoop(messages, {
-      systemPrompt,
-      agentName: (agentConfig?.name as string) || 'Geek',
-      agentId: effectivePersonalityId,
-      userCredits,
-      userId,
-      forceProvider: forceGroqForTools,
-    });
+    const reactResult = shouldUseDeepReasoning(msg.text)
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: forceGroqForTools, enableDelegation: true })
+      : await runReactLoop(messages, {
+          systemPrompt,
+          agentName: (agentConfig?.name as string) || 'Geek',
+          agentId: effectivePersonalityId,
+          userCredits,
+          userId,
+          forceProvider: forceGroqForTools,
+        });
     replyText = reactResult.text;
     provider = reactResult.provider;
     model = reactResult.model;
