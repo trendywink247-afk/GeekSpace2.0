@@ -6,6 +6,7 @@ import { logger } from '../logger.js';
 import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
 import { eventBus } from './event-bus.js';
+import { getUpcomingFestivals } from './festival-calendar.js';
 
 export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report' | 'streak_milestone' | 'expense_spike';
 
@@ -189,6 +190,14 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
     const evtWord = plural(calendarEvents.length, "event");
     message += ' You have ' + String(calendarEvents.length) + ' calendar ' + evtWord + ' today: ' + eventList + moreStr + '.';
   }
+  // Festival awareness: include upcoming Indian festivals/holidays in briefing
+  try {
+    const upcomingFestivals = getUpcomingFestivals(3);
+    if (upcomingFestivals.length > 0) {
+      const festivalList = upcomingFestivals.map(f => f.name + ' (' + f.nameHi + ')').join(', ');
+      message += ' Upcoming: ' + festivalList + '.';
+    }
+  } catch { /* festival calendar is non-critical */ }
   await sendViaTelegram(userId, message);
   // Fire-and-forget: send TTS voice note after text message — failure must not block text delivery
   {
