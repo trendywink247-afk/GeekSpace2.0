@@ -406,7 +406,7 @@ export function PortfolioPage() {
             <>
               <button
                 onClick={handleCopyLink}
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 min-h-[36px] ${linkCopied ? 'scale-105' : ''}`}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 min-h-[44px] ${linkCopied ? 'scale-105' : ''}`}
                 style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 12px rgba(0,255,136,0.15)' } : { color: '#BF5FFF', borderColor: 'rgba(191,95,255,0.3)' }}
                 title="Copy portfolio link"
               >
@@ -1351,17 +1351,17 @@ export function PortfolioPage() {
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                   {/* 66.6: Date range filter for export */}
                   <input type="date" value={analyticsFrom} onChange={(e) => setAnalyticsFrom(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] h-8"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] min-h-[44px]"
                     aria-label="Analytics export from date" />
                   <span className="text-xs text-[var(--ag-text-muted)]">–</span>
                   <input type="date" value={analyticsTo} onChange={(e) => setAnalyticsTo(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] h-8"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] min-h-[44px]"
                     aria-label="Analytics export to date" />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleExportCsv}
-                    className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0 h-8"
+                    className="border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/10 shrink-0 min-h-[44px]"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export CSV

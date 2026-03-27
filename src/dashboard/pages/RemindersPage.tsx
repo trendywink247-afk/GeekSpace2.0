@@ -821,7 +821,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <Button
               onClick={handleNaturalAdd}
               disabled={!parsedReminder}
-              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
+              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px]"
             >
               <Wand2 className="w-4 h-4 mr-2" />
               Add

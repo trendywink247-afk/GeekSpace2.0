@@ -470,7 +470,7 @@ export function ActivityPage() {
               variant="outline"
               onClick={handleExport}
               disabled={exporting}
-              className="h-8 border-[#00F0FF]/30 text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/50"
+              className="min-h-[44px] border-[#00F0FF]/30 text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/50"
             >
               <Download className="w-3 h-3 mr-1" />{exporting ? 'Exporting…' : 'Export CSV'}
             </Button>
@@ -482,7 +482,7 @@ export function ActivityPage() {
                   variant="destructive"
                   onClick={handleClearAll}
                   disabled={isClearing}
-                  className="h-8 bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                  className="min-h-[44px] bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
                 >
                   {isClearing ? 'Clearing…' : 'Yes, clear'}
                 </Button>
@@ -493,7 +493,7 @@ export function ActivityPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => setShowClearConfirm(true)}
-                className="h-8 border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+                className="min-h-[44px] border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
               >
                 <Trash2 className="w-3 h-3 mr-1" />Clear all
               </Button>
@@ -560,7 +560,7 @@ export function ActivityPage() {
         {(dateFrom || dateTo) && (
           <button
             onClick={() => { setDateFrom(''); setDateTo(''); }}
-            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors"
+            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors min-h-[44px]"
             aria-label="Clear date range"
           >
             ✕ Clear dates
@@ -633,7 +633,7 @@ export function ActivityPage() {
               {(serverQ || activeFilter !== 'All') && (
                 <button
                   onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                  className="text-xs text-[var(--ag-cyan)] hover:underline mt-3"
+                  className="text-xs text-[var(--ag-cyan)] hover:underline mt-3 min-h-[44px]"
                 >
                   Clear filters
                 </button>

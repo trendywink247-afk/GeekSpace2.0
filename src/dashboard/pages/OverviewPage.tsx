@@ -707,7 +707,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF] hover:border-[#00F0FF]/40 self-start sm:self-auto"
+              className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF] hover:border-[#00F0FF]/40 self-start sm:self-auto min-h-[44px]"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
@@ -964,7 +964,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2 text-[#00F0FF]"
+                      className="mt-2 text-[#00F0FF] min-h-[44px]"
                       onClick={() => onOpenChat?.()}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1258,7 +1258,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1.5 text-[#00F0FF]"
+                    className="mt-1.5 text-[#00F0FF] min-h-[44px]"
                     onClick={() => onNavigate?.('reminders')}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />

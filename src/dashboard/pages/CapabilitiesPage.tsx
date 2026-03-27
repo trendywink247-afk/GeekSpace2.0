@@ -612,7 +612,7 @@ function CapabilityCard({
         <div className="flex gap-2 mt-auto">
           <button
             onClick={() => { handleCopy(cap.examples[0]); onTry(cap.examples[0]); }}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-[#05050A] transition-all duration-200 hover:opacity-90 active:scale-95"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium text-[#05050A] transition-all duration-200 hover:opacity-90 active:scale-95"
             style={{ background: cap.color, boxShadow: `0 0 0 0 ${cap.color}00` }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 16px ${cap.color}40`; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 0 0 ${cap.color}00`; }}
@@ -623,7 +623,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 rounded-xl text-xs font-medium border border-white/10 text-[#9BA3C9] hover:border-white/25 hover:text-[var(--ag-text-primary)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-white/10 text-[#9BA3C9] hover:border-white/25 hover:text-[var(--ag-text-primary)] transition-all"
             >
               Open
             </button>
@@ -631,7 +631,7 @@ function CapabilityCard({
           {cap.needsSetup && (
             <button
               onClick={() => onNavigate?.('connections')}
-              className="px-3 py-2 rounded-xl text-xs font-medium border border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/10 transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/10 transition-all"
             >
               Connect
             </button>
@@ -786,7 +786,7 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 rounded-xl border border-white/8 text-xs text-[#9BA3C9] hover:border-white/20 hover:text-[var(--ag-text-primary)] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-white/8 text-xs text-[#9BA3C9] hover:border-white/20 hover:text-[var(--ag-text-primary)] transition-all flex items-center justify-center gap-2"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
@@ -915,7 +915,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`flex-none flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`flex-none flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 isActive ? 'shadow-lg' : 'hover:bg-white/8'
               }`}
               style={

@@ -477,7 +477,7 @@ export function ConnectionsPage() {
 
   return (
     <PageShell className="animate-in fade-in duration-500">
-    <div data-testid="connections-page" className="space-y-6">
+    <div data-testid="connections-page" className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

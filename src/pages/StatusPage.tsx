@@ -82,8 +82,8 @@ export function StatusPage() {
 
   return (
     <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
+      <div className="max-w-3xl mx-auto px-6 py-12 pb-24 md:pb-12">
+        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
@@ -101,7 +101,7 @@ export function StatusPage() {
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh

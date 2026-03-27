@@ -13,7 +13,7 @@ export function ConnectInboxPage() {
 
   return (
     <PageShell>
-    <div className="flex flex-col min-h-0">
+    <div className="flex flex-col min-h-0 pb-24 md:pb-6">
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-4 pt-0 pb-0 border-b border-[var(--ag-border-subtle)]">
         <button

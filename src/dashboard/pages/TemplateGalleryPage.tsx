@@ -127,14 +127,14 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
             placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[var(--ag-bg-surface)] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.15)] outline-none transition-all duration-200"
+            className="w-full pl-10 pr-4 py-2 min-h-[44px] bg-[var(--ag-bg-surface)] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:border-[#00F0FF] focus:shadow-[0_0_12px_rgba(0,240,255,0.15)] outline-none transition-all duration-200"
           />
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 min-w-0">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
+            className={`flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
               selectedCategory === 'all'
                 ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
                 : 'bg-[var(--ag-bg-surface)] text-[#6B7280] hover:text-[var(--ag-text-primary)] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
@@ -150,7 +150,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
+                className={`flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
                   selectedCategory === cat.id
                     ? 'bg-[#00F0FF] text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
                     : 'bg-[var(--ag-bg-surface)] text-[#6B7280] hover:text-[var(--ag-text-primary)] border border-[#00F0FF]/30 hover:border-[#00F0FF]/50'
@@ -230,7 +230,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePreview(template)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF]/20 text-[var(--ag-cyan)] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[#00F0FF]/20 text-[var(--ag-cyan)] rounded-lg hover:bg-[#00F0FF]/30 transition-colors"
                   >
                     <Globe className="w-4 h-4" />
                     <span>Preview</span>
@@ -239,7 +239,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                   <button
                     onClick={() => handleClone(template)}
                     disabled={cloningId === template.id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
                   >
                     {cloningId === template.id ? (
                       <>

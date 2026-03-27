@@ -535,7 +535,7 @@ export function AISpecialistPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-6">
         {/* Featured banner */}
         <FeaturedBanner
           specialist={featuredSpecialist}
@@ -563,7 +563,7 @@ export function AISpecialistPage() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[36px] flex-shrink-0 ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
                     isActive
                       ? 'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30'
                       : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-cyan)]/20 hover:text-[var(--ag-text-primary)]'
