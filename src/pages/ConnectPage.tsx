@@ -64,7 +64,7 @@ export function ConnectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] flex items-center justify-center p-4" data-testid="connect-page">
+    <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] flex items-center justify-center p-4 pb-24 md:pb-4" data-testid="connect-page">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -89,7 +89,7 @@ export function ConnectPage() {
                 <h2 className="text-xl font-bold mb-2">Invalid Invite</h2>
                 <p className="text-[#9CA3AF] mb-6">{errorMsg}</p>
                 <Link to="/">
-                  <Button variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
+                  <Button variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
                     Go to Homepage
                   </Button>
                 </Link>
@@ -107,7 +107,7 @@ export function ConnectPage() {
                   They'll be able to collaborate with you through Agentin Chat.
                 </p>
                 <Link to="/login?signup=1">
-                  <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
+                  <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
                     Sign up to Agentin Chat
                   </Button>
                 </Link>
@@ -163,7 +163,7 @@ export function ConnectPage() {
                   <Button
                     onClick={handleAccept}
                     disabled={stage === 'submitting'}
-                    className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                    className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]"
                   >
                     {stage === 'submitting' ? (
                       <>

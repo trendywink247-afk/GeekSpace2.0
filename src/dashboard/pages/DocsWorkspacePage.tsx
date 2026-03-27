@@ -201,7 +201,7 @@ export function DocsWorkspacePage() {
               key={v.id}
               onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
-                min-h-[40px]
+                min-h-[44px]
                 ${viewFilter === v.id && !activeFolder
                   ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)]'
                   : 'text-[#8892B0] hover:text-[#CCD6F6] hover:bg-white/5'
@@ -232,7 +232,7 @@ export function DocsWorkspacePage() {
               key={f.id}
               onClick={() => { setActiveFolder(f.id); setViewFilter('all'); }}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
-                min-h-[40px]
+                min-h-[44px]
                 ${activeFolder === f.id
                   ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]'
                   : 'text-[#8892B0] hover:text-[#CCD6F6] hover:bg-white/5'
@@ -272,7 +272,7 @@ export function DocsWorkspacePage() {
               <button
                 key={v.id}
                 onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
-                className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[36px]
+                className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[44px]
                   ${viewFilter === v.id
                     ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
                     : 'bg-white/5 text-[#8892B0] border border-white/10'
@@ -311,7 +311,7 @@ export function DocsWorkspacePage() {
             />
             {quickCapture && (
               <Button size="sm" onClick={handleQuickCapture}
-                className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] min-h-[40px]">
+                className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] min-h-[44px]">
                 Capture
               </Button>
             )}
@@ -660,7 +660,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
           size="sm"
           onClick={openConversationModal}
           className="gap-1.5 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[var(--ag-violet)]
-                     hover:bg-[#8B5CF6]/30 min-h-[40px]"
+                     hover:bg-[#8B5CF6]/30 min-h-[44px]"
           title="Create from Conversation"
         >
           <MessageSquare className="w-4 h-4" />
@@ -679,7 +679,7 @@ function DocEditorInline({ doc, onBack }: { doc: Doc; onBack: () => void }) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
                        text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10
                        transition-colors whitespace-nowrap disabled:opacity-50
-                       min-h-[36px]"
+                       min-h-[44px]"
           >
             {aiProcessing === id ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ag-cyan)]" />

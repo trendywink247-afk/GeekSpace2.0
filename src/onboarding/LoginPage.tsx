@@ -130,13 +130,13 @@ export function LoginPage() {
               <Button
                 onClick={() => logout()}
                 variant="outline"
-                className="w-full border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]"
+                className="w-full min-h-[44px] border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/10 hover:border-[#F59E0B]"
               >
                 Yes, sign out
               </Button>
               <Button
                 onClick={() => navigate('/dashboard', { replace: true })}
-                className="w-full bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/20"
+                className="w-full min-h-[44px] bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/20"
               >
                 Stay signed in
               </Button>

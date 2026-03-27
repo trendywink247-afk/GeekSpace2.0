@@ -77,6 +77,7 @@ import { recommendationsRouter } from './routes/recommendations.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { skillsRouter } from './routes/skills.js';
 import { logoAiRouter } from './routes/logo-ai.js';
+import { customBotRouter } from './routes/custom-bot.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import {
@@ -177,6 +178,7 @@ export function createApp(): express.Application {
   app.use('/api', (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(req.method);
     const isExcluded = req.path.startsWith('/billing/webhook')
+      || req.path.startsWith('/billing/razorpay/webhook')
       || req.path.startsWith('/webhooks/')
       || req.path.startsWith('/auth/google')
       || req.path.startsWith('/auth/github')
@@ -324,6 +326,8 @@ export function createApp(): express.Application {
     app.use('/api/billing/upgrade', billingMutationLimiter);
     app.use('/api/billing/checkout', billingMutationLimiter);
     app.use('/api/billing/day-pass', billingMutationLimiter);
+    app.use('/api/billing/razorpay/order', billingMutationLimiter);
+    app.use('/api/billing/razorpay/verify', billingMutationLimiter);
 
     // P2-6: Rate limit on password change — 3 per hour (security-sensitive operation)
     const passwordChangeLimiter = rateLimit({
@@ -444,6 +448,7 @@ export function createApp(): express.Application {
   app.use('/api/users', usersRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
+  app.use('/api/integrations/telegram/custom', customBotRouter);
   app.use('/api/integrations', integrationsRouter);
   app.use('/api/reminders', remindersRouter);
   app.use('/api/portfolio', portfolioRouter);

@@ -261,7 +261,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                      className="w-full border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors min-h-[44px]"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -272,7 +272,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-all hover:shadow-[0_0_16px_rgba(0,240,255,0.3)]"
+                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-white transition-all hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] min-h-[44px]"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

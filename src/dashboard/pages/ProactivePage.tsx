@@ -561,7 +561,7 @@ export function ProactivePage() {
 
   return (
     <PageShell>
-    <div>
+    <div className="pb-24 md:pb-6 overflow-x-hidden">
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ===== Main Feed Column ===== */}
         <div className="flex-1 min-w-0 space-y-6">

@@ -1073,7 +1073,7 @@ export function AnalyticsPage() {
 
   return (
     <PageShell maxWidth="5xl">
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

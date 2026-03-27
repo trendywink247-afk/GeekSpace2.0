@@ -26,12 +26,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { AgentStatusStrip } from '@/components/AgentStatusStrip';
+import { LiveAgentFeed } from '@/components/LiveAgentFeed';
 import { DiscoverCard } from '@/components/DiscoverCard';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
 import { PageShell } from '@/components/agentin';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -378,6 +380,7 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
 // ---------------------------------------------------------------------------
 
 export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { stats, reminders } = useDashboardStore();
   const loadErrors = useDashboardStore((s) => s.loadErrors);
@@ -650,7 +653,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 className="text-3xl md:text-4xl font-bold tracking-tight"
                 style={{ fontFamily: 'Syne, sans-serif', color: '#F4F6FF' }}
               >
-                {greeting},{' '}
+                {t(greeting)},{' '}
                 <span
                   className="bg-clip-text text-transparent"
                   style={{ backgroundImage: 'linear-gradient(135deg, #00F0FF, #ADFF2F)' }}
@@ -704,7 +707,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF] hover:border-[#00F0FF]/40 self-start sm:self-auto"
+              className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF] hover:border-[#00F0FF]/40 self-start sm:self-auto min-h-[44px]"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
@@ -716,6 +719,9 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         <AgentStatusStrip
           onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
         />
+
+        {/* ─── Live Agent Feed ─── */}
+        <LiveAgentFeed onNavigate={onNavigate} />
 
         {/* ─── Sprint 4: Quick Actions Grid ─── */}
         <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
@@ -958,7 +964,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2 text-[#00F0FF]"
+                      className="mt-2 text-[#00F0FF] min-h-[44px]"
                       onClick={() => onOpenChat?.()}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1252,7 +1258,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1.5 text-[#00F0FF]"
+                    className="mt-1.5 text-[#00F0FF] min-h-[44px]"
                     onClick={() => onNavigate?.('reminders')}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />

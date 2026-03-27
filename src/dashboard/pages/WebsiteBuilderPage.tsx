@@ -319,7 +319,7 @@ export function WebsiteBuilderPage() {
 
   return (
     <PageShell>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-bold text-[var(--ag-text-primary)]">Website Builder</h1>
         <p className="text-sm text-[var(--ag-text-muted)] mt-1">Build, manage, and deploy your web projects</p>

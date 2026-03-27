@@ -33,6 +33,11 @@ import {
   WifiOff,
   Wifi,
   Bell,
+  ChevronDown,
+  ChevronUp,
+  Bot,
+  Key,
+  Unplug,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -141,6 +146,13 @@ export function ConnectionsPage() {
 
   // 55.9: Mobile tap-to-expand connection cards
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Custom Telegram bot state
+  const [customBotToken, setCustomBotToken] = useState('');
+  const [customBotStatus, setCustomBotStatus] = useState<'idle' | 'verifying' | 'connected' | 'error'>('idle');
+  const [customBotInfo, setCustomBotInfo] = useState<{ botName: string; botUsername: string } | null>(null);
+  const [customBotError, setCustomBotError] = useState<string | null>(null);
+  const [customBotExpanded, setCustomBotExpanded] = useState(false);
 
   const handleGenerateInvite = async () => {
     setInviteLoading(true);
@@ -372,6 +384,53 @@ export function ConnectionsPage() {
     loadIntegrations();
   };
 
+  // Custom Telegram bot: verify & connect
+  const handleCustomBotConnect = async () => {
+    if (!customBotToken.trim()) return;
+    setCustomBotStatus('verifying');
+    setCustomBotError(null);
+    try {
+      const res = await integrationService.connectCustomTelegramBot({ botToken: customBotToken.trim() });
+      setCustomBotInfo({ botName: res.data.botName, botUsername: res.data.botUsername });
+      setCustomBotStatus('connected');
+      notify('Custom Telegram bot connected!', 'success');
+      loadIntegrations();
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || 'Failed to verify bot token. Please check and try again.';
+      setCustomBotError(message);
+      setCustomBotStatus('error');
+    }
+  };
+
+  // Custom Telegram bot: disconnect
+  const handleCustomBotDisconnect = async () => {
+    try {
+      await integrationService.disconnectCustomTelegramBot();
+      setCustomBotInfo(null);
+      setCustomBotStatus('idle');
+      setCustomBotToken('');
+      setCustomBotError(null);
+      notify('Custom bot disconnected', 'info');
+      loadIntegrations();
+    } catch {
+      notify('Failed to disconnect custom bot', 'error');
+    }
+  };
+
+  // On mount, check if a custom bot is already connected
+  useEffect(() => {
+    integrationService.getCustomTelegramBotStatus()
+      .then((r) => {
+        if (r.data.connected && r.data.botName && r.data.botUsername) {
+          setCustomBotInfo({ botName: r.data.botName, botUsername: r.data.botUsername });
+          setCustomBotStatus('connected');
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const getStatusDot = (status: string, type?: string) => {
     const health = type ? healthStatus[type] : undefined;
     switch (status) {
@@ -418,7 +477,7 @@ export function ConnectionsPage() {
 
   return (
     <PageShell className="animate-in fade-in duration-500">
-    <div data-testid="connections-page" className="space-y-6">
+    <div data-testid="connections-page" className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -920,6 +979,133 @@ export function ConnectionsPage() {
                             Open
                           </a>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Custom Telegram Bot — "Connect Your Own Bot" */}
+                    {connection.type === 'telegram' && (
+                      <div className="mb-4">
+                        {/* Divider */}
+                        <div className="flex items-center gap-3 my-4">
+                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                          <span className="text-xs text-[var(--ag-text-muted)] whitespace-nowrap">— or —</span>
+                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                        </div>
+
+                        {/* Expandable header */}
+                        <button
+                          onClick={() => setCustomBotExpanded(!customBotExpanded)}
+                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group/cbot"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
+                            <span className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Your Own Bot</span>
+                            {customBotStatus === 'connected' && customBotInfo && (
+                              <Badge className="bg-[#00FF88]/15 text-[#00FF88] border border-[#00FF88]/30 text-[10px] px-1.5 py-0">
+                                Active
+                              </Badge>
+                            )}
+                          </div>
+                          {customBotExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
+                          )}
+                        </button>
+
+                        {/* Expanded content */}
+                        {customBotExpanded && (
+                          <div className="mt-3 p-4 rounded-lg bg-[#06060B] border border-[#00F0FF]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                            {/* Already connected state */}
+                            {customBotStatus === 'connected' && customBotInfo ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#00FF88]/5 border border-[#00FF88]/20">
+                                  <CheckCircle2 className="w-5 h-5 text-[#00FF88] flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">{customBotInfo.botName}</p>
+                                    <p className="text-xs text-[var(--ag-text-muted)]">@{customBotInfo.botUsername}</p>
+                                  </div>
+                                  <a
+                                    href={`https://t.me/${customBotInfo.botUsername}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[#0088cc]/20 hover:bg-[#0088cc]/30 text-[#0088cc] text-xs font-medium transition-colors min-h-[36px]"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Open
+                                  </a>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCustomBotDisconnect}
+                                  className="w-full border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/50 min-h-[44px]"
+                                >
+                                  <Unplug className="w-3.5 h-3.5 mr-1.5" />
+                                  Disconnect Custom Bot
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                {/* Token input */}
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
+                                    <Key className="w-3 h-3" />
+                                    Paste your BotFather token
+                                  </label>
+                                  <Input
+                                    type="text"
+                                    placeholder="123456:ABC-DEF..."
+                                    value={customBotToken}
+                                    onChange={(e) => {
+                                      setCustomBotToken(e.target.value);
+                                      if (customBotStatus === 'error') {
+                                        setCustomBotStatus('idle');
+                                        setCustomBotError(null);
+                                      }
+                                    }}
+                                    className="bg-[#0C0C18] border-[#00F0FF]/20 text-[var(--ag-text-primary)] font-mono text-sm placeholder:text-[#8888AA]/50 min-h-[44px]"
+                                  />
+                                </div>
+
+                                {/* Error message */}
+                                {customBotStatus === 'error' && customBotError && (
+                                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#FF6161]/5 border border-[#FF6161]/20">
+                                    <AlertTriangle className="w-4 h-4 text-[#FF6161] flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-[#FF6161]">{customBotError}</p>
+                                  </div>
+                                )}
+
+                                {/* Verify button */}
+                                <Button
+                                  onClick={handleCustomBotConnect}
+                                  disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
+                                  className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
+                                >
+                                  {customBotStatus === 'verifying' ? (
+                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
+                                  ) : (
+                                    <><CheckCircle2 className="w-4 h-4 mr-2" />Verify & Connect</>
+                                  )}
+                                </Button>
+
+                                {/* Instructions */}
+                                <p className="text-[11px] text-[var(--ag-text-muted)] leading-relaxed">
+                                  Open{' '}
+                                  <a
+                                    href="https://t.me/BotFather"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[var(--ag-cyan)] hover:underline"
+                                  >
+                                    @BotFather
+                                  </a>
+                                  {' '}in Telegram → /newbot → copy the token
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 

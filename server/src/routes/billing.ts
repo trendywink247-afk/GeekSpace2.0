@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import express from 'express';
+import crypto from 'crypto';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { createCheckoutSession, handleWebhook, getStatus } from '../services/stripe.js';
+import { createRazorpayOrder, verifyRazorpaySignature, razorpayEnabled } from '../services/razorpay.js';
 import { config } from '../config.js';
 import { validateBody, billingUpgradeSchema } from '../middleware/validate.js';
 import { db } from '../db/index.js';
 import { PLAN_DEFINITIONS } from '../db/index.js';
 import { v4 as uuid } from 'uuid';
 import { cacheGet, cacheSet } from '../services/cache.js';
+import { logger } from '../logger.js';
 
 export const billingRouter = Router();
 
@@ -198,3 +201,218 @@ billingRouter.get('/status', requireAuth, (req: AuthRequest, res) => {
   const status = getStatus(req.userId!);
   res.json(status);
 });
+
+// ============================================================
+// Razorpay Routes — INR payments for Indian users
+// ============================================================
+
+const RAZORPAY_PAID_PLANS = ['pilot', 'intro', 'halfyear', 'yearly'];
+
+// POST /api/billing/razorpay/order — create a Razorpay order for a plan
+billingRouter.post('/razorpay/order', requireAuth, async (req: AuthRequest, res) => {
+  if (!razorpayEnabled) {
+    res.status(503).json({ error: 'Razorpay billing is not configured on this server.' });
+    return;
+  }
+
+  const { plan } = req.body as { plan?: string };
+  if (!plan || !RAZORPAY_PAID_PLANS.includes(plan)) {
+    res.status(400).json({ error: `Plan must be one of: ${RAZORPAY_PAID_PLANS.join(', ')}` });
+    return;
+  }
+
+  const planInfo = PLAN_DEFINITIONS[plan];
+  if (!planInfo || planInfo.priceInr <= 0) {
+    res.status(400).json({ error: 'This plan is not available for INR payment.' });
+    return;
+  }
+
+  try {
+    const order = await createRazorpayOrder(planInfo.priceInr, req.userId!, plan);
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: 'INR',
+      keyId: config.razorpayKeyId,
+    });
+  } catch (err) {
+    logger.error({ err, plan, userId: req.userId }, 'Razorpay order creation failed');
+    res.status(500).json({ error: 'Failed to create Razorpay order' });
+  }
+});
+
+// POST /api/billing/razorpay/verify — verify payment and upgrade subscription
+billingRouter.post('/razorpay/verify', requireAuth, async (req: AuthRequest, res) => {
+  if (!razorpayEnabled) {
+    res.status(503).json({ error: 'Razorpay billing is not configured on this server.' });
+    return;
+  }
+
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan } = req.body as {
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
+    plan?: string;
+  };
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    res.status(400).json({ error: 'Missing required Razorpay payment fields.' });
+    return;
+  }
+
+  if (!plan || !RAZORPAY_PAID_PLANS.includes(plan)) {
+    res.status(400).json({ error: `Plan must be one of: ${RAZORPAY_PAID_PLANS.join(', ')}` });
+    return;
+  }
+
+  const isValid = verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+  if (!isValid) {
+    logger.warn({ razorpay_order_id, userId: req.userId }, 'Razorpay signature verification failed');
+    res.status(400).json({ error: 'Payment verification failed. Invalid signature.' });
+    return;
+  }
+
+  // Signature valid — upgrade user subscription
+  const planInfo = PLAN_DEFINITIONS[plan];
+  if (!planInfo) {
+    res.status(400).json({ error: 'Invalid plan' });
+    return;
+  }
+
+  const cycleEnd = `+${planInfo.intervalDays} days`;
+
+  db.prepare(`
+    INSERT INTO subscriptions (id, user_id, plan, monthly_credits, credits_remaining, billing_interval_days, billing_cycle_start, billing_cycle_end, price_usd, price_inr, currency)
+    VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now', ?), ?, ?, 'INR')
+    ON CONFLICT(user_id) DO UPDATE SET
+      plan = excluded.plan,
+      monthly_credits = excluded.monthly_credits,
+      credits_remaining = excluded.credits_remaining,
+      credits_used_this_cycle = 0,
+      billing_interval_days = excluded.billing_interval_days,
+      billing_cycle_start = excluded.billing_cycle_start,
+      billing_cycle_end = excluded.billing_cycle_end,
+      price_usd = excluded.price_usd,
+      price_inr = excluded.price_inr,
+      currency = 'INR'
+  `).run(uuid(), req.userId, plan, planInfo.credits, planInfo.credits, planInfo.intervalDays, cycleEnd, planInfo.priceUsd, planInfo.priceInr);
+
+  // Also update users table subscription fields (mirrors Stripe webhook behavior)
+  db.prepare(`
+    UPDATE users SET
+      subscription_plan = ?,
+      subscription_status = 'active',
+      subscription_expires_at = strftime('%s', datetime('now', ?))
+    WHERE id = ?
+  `).run(plan, cycleEnd, req.userId);
+
+  logger.info({ userId: req.userId, plan, razorpay_order_id, razorpay_payment_id }, 'Razorpay payment verified — subscription upgraded');
+  res.json({ success: true, plan });
+});
+
+// POST /api/billing/razorpay/webhook — Razorpay webhook (no auth, signature-verified)
+billingRouter.post(
+  '/razorpay/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const signature = req.headers['x-razorpay-signature'] as string | undefined;
+    if (!signature) {
+      res.status(400).json({ error: 'Missing X-Razorpay-Signature header' });
+      return;
+    }
+
+    if (!config.razorpayKeySecret) {
+      logger.warn('Razorpay webhook secret not configured — ignoring webhook');
+      res.status(503).json({ error: 'Razorpay not configured' });
+      return;
+    }
+
+    // Verify webhook signature
+    const rawBody = typeof req.body === 'string' ? req.body : (req.body as Buffer).toString('utf8');
+    const expectedSig = crypto
+      .createHmac('sha256', config.razorpayKeySecret)
+      .update(rawBody)
+      .digest('hex');
+
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSig);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      logger.warn('Razorpay webhook signature verification failed');
+      res.status(400).json({ error: 'Invalid webhook signature' });
+      return;
+    }
+
+    // Parse event
+    let event: { event: string; payload: { payment?: { entity: { id: string; order_id: string; status: string; notes?: { userId?: string; plan?: string } } } } };
+    try {
+      event = JSON.parse(rawBody);
+    } catch {
+      res.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
+
+    logger.debug({ type: event.event }, 'Processing Razorpay webhook event');
+
+    switch (event.event) {
+      case 'payment.captured': {
+        const payment = event.payload.payment?.entity;
+        if (!payment) break;
+
+        const userId = payment.notes?.userId;
+        const plan = payment.notes?.plan;
+        if (!userId || !plan) {
+          logger.warn({ paymentId: payment.id }, 'payment.captured missing notes (userId/plan)');
+          break;
+        }
+
+        const planInfo = PLAN_DEFINITIONS[plan];
+        if (!planInfo) {
+          logger.warn({ plan }, 'payment.captured references unknown plan');
+          break;
+        }
+
+        const cycleEnd = `+${planInfo.intervalDays} days`;
+
+        db.prepare(`
+          INSERT INTO subscriptions (id, user_id, plan, monthly_credits, credits_remaining, billing_interval_days, billing_cycle_start, billing_cycle_end, price_usd, price_inr, currency)
+          VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now', ?), ?, ?, 'INR')
+          ON CONFLICT(user_id) DO UPDATE SET
+            plan = excluded.plan,
+            monthly_credits = excluded.monthly_credits,
+            credits_remaining = excluded.credits_remaining,
+            credits_used_this_cycle = 0,
+            billing_interval_days = excluded.billing_interval_days,
+            billing_cycle_start = excluded.billing_cycle_start,
+            billing_cycle_end = excluded.billing_cycle_end,
+            price_usd = excluded.price_usd,
+            price_inr = excluded.price_inr,
+            currency = 'INR'
+        `).run(uuid(), userId, plan, planInfo.credits, planInfo.credits, planInfo.intervalDays, cycleEnd, planInfo.priceUsd, planInfo.priceInr);
+
+        db.prepare(`
+          UPDATE users SET
+            subscription_plan = ?,
+            subscription_status = 'active',
+            subscription_expires_at = strftime('%s', datetime('now', ?))
+          WHERE id = ?
+        `).run(plan, cycleEnd, userId);
+
+        logger.info({ userId, plan, paymentId: payment.id }, 'Razorpay payment.captured — subscription activated');
+        break;
+      }
+
+      case 'payment.failed': {
+        const payment = event.payload.payment?.entity;
+        if (!payment) break;
+        const userId = payment.notes?.userId;
+        logger.warn({ userId, paymentId: payment.id, orderId: payment.order_id }, 'Razorpay payment failed');
+        break;
+      }
+
+      default:
+        logger.debug({ type: event.event }, 'Unhandled Razorpay webhook event');
+    }
+
+    res.json({ received: true });
+  },
+);

@@ -464,7 +464,7 @@ export function VideoGenPage() {
 
   return (
     <PageShell>
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${

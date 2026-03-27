@@ -159,7 +159,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Steps</label>
-            <Button variant="ghost" size="sm" onClick={addStep}><Plus className="h-3 w-3 mr-1" />Add Step</Button>
+            <Button variant="ghost" size="sm" onClick={addStep} className="min-h-[44px]"><Plus className="h-3 w-3 mr-1" />Add Step</Button>
           </div>
 
           {steps.map((step, idx) => (
@@ -179,7 +179,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                   <select
                     value={step.agent}
                     onChange={(e) => updateStep(idx, "agent", e.target.value)}
-                    className="w-full mt-1 rounded border border-input bg-background px-2 py-1 text-sm"
+                    className="w-full mt-1 rounded border border-input bg-background px-2 py-1 text-sm min-h-[44px]"
                   >
                     <option value="weebo">Weebo</option>
                     <option value="jarvis">Jarvis</option>
@@ -386,7 +386,7 @@ function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete: ()
                 placeholder="Input for {{user_input}} (optional)"
                 className="text-sm"
               />
-              <Button onClick={handleRun} disabled={running} size="sm" className="w-full bg-violet-500 hover:bg-violet-600 text-white">
+              <Button onClick={handleRun} disabled={running} size="sm" className="w-full bg-violet-500 hover:bg-violet-600 text-white min-h-[44px]">
                 {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
                 {running ? "Running\u2026" : "Run Workflow"}
               </Button>
@@ -519,7 +519,7 @@ export function WorkflowsPage() {
           <Button variant="ghost" size="icon" onClick={() => void fetchWorkflows(true)} disabled={refreshing} aria-label="Refresh" className="min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50">
             <RefreshCw className={"h-4 w-4 " + spinCls} />
           </Button>
-          <Button onClick={() => setShowForm(true)} size="sm" className="bg-violet-500 hover:bg-violet-600 text-white">
+          <Button onClick={() => setShowForm(true)} size="sm" className="bg-violet-500 hover:bg-violet-600 text-white min-h-[44px]">
             <Plus className="h-4 w-4 mr-1" />
             New
           </Button>
@@ -574,7 +574,7 @@ export function WorkflowsPage() {
           </div>
           <p className="font-medium text-foreground">No workflows yet</p>
           <p className="text-sm mt-1 max-w-xs mx-auto">Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.</p>
-          <Button onClick={() => setShowForm(true)} size="sm" className="mt-4 bg-violet-500 hover:bg-violet-600 text-white">
+          <Button onClick={() => setShowForm(true)} size="sm" className="mt-4 bg-violet-500 hover:bg-violet-600 text-white min-h-[44px]">
             <Plus className="h-4 w-4 mr-1" />Create Workflow
           </Button>
         </div>

@@ -9,6 +9,7 @@ import { PageProgress } from '@/components/ui/page-progress';
 import { MobileTable } from '@/components/ui/mobile-table';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
+import { useAuthStore } from '@/stores/authStore';
 import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
 // Plan display metadata for sale styling
@@ -43,6 +44,7 @@ function formatDate(dateStr: string): string {
 
 export function BillingPage() {
   const isMobile = useMobileDetect();
+  const user = useAuthStore((s) => s.user);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plans, setPlans] = useState<PlanDefinition[]>([]);
   const [usage, setUsage] = useState<DailyUsage[]>([]);
@@ -53,6 +55,17 @@ export function BillingPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [stripeStatus, setStripeStatus] = useState<{ plan: string; status: string; expiresAt: number | null; label: string; isPaid: boolean } | null>(null);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
+  const [razorpayLoading, setRazorpayLoading] = useState<string | null>(null);
+
+  // Auto-detect Indian user on mount (don't force — user can toggle)
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const isLikelyIndian =
+      navigator.language?.startsWith('hi') ||
+      tz.includes('Calcutta') ||
+      tz.includes('Kolkata');
+    if (isLikelyIndian) setCurrency('INR');
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -114,6 +127,64 @@ export function BillingPage() {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Checkout failed';
       setToast({ message, type: 'error' });
       setCheckingOut(null);
+    }
+  };
+
+  const loadRazorpaySdk = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (document.getElementById('razorpay-sdk')) return resolve();
+      const script = document.createElement('script');
+      script.id = 'razorpay-sdk';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+      document.body.appendChild(script);
+    });
+
+  const handleRazorpayCheckout = async (plan: string, planName: string, _displayAmount?: number) => {
+    setRazorpayLoading(plan);
+    try {
+      await loadRazorpaySdk();
+      const { data } = await billingService.createRazorpayOrder(plan);
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'Agentin',
+        description: `${planName} Plan`,
+        order_id: data.orderId,
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            await billingService.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              plan,
+            });
+            setToast({ message: `Payment successful! Upgraded to ${planName} plan.`, type: 'success' });
+            const { data: sub } = await billingService.getPlan();
+            setSubscription(sub);
+            const { data: stripeData } = await billingService.getStripeStatus();
+            if (stripeData) setStripeStatus(stripeData);
+          } catch {
+            setToast({ message: 'Payment verification failed. Please contact support.', type: 'error' });
+          }
+        },
+        prefill: {
+          email: user?.email || '',
+          name: user?.name || '',
+        },
+        theme: { color: '#00F0FF' },
+      };
+
+      const rzp = new (window as unknown as Record<string, unknown> & { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options);
+      rzp.open();
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Razorpay checkout failed';
+      setToast({ message, type: 'error' });
+    } finally {
+      setRazorpayLoading(null);
     }
   };
 
@@ -233,6 +304,13 @@ export function BillingPage() {
               </ul>
               {stripeStatus?.plan === 'basic' && stripeStatus.isPaid ? (
                 <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+              ) : currency === 'INR' ? (
+                <div>
+                  <Button onClick={() => handleRazorpayCheckout('basic', 'Basic', 99)} disabled={razorpayLoading !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
+                    {razorpayLoading === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Pay &#8377;99 with Razorpay
+                  </Button>
+                  <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
+                </div>
               ) : (
                 <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
                   {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
@@ -249,6 +327,13 @@ export function BillingPage() {
               </ul>
               {stripeStatus?.plan === 'pro' && stripeStatus.isPaid ? (
                 <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
+              ) : currency === 'INR' ? (
+                <div>
+                  <Button onClick={() => handleRazorpayCheckout('pro', 'Pro', 299)} disabled={razorpayLoading !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
+                    {razorpayLoading === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Pay &#8377;299 with Razorpay
+                  </Button>
+                  <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
+                </div>
               ) : (
                 <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
                   {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
@@ -450,6 +535,22 @@ export function BillingPage() {
                           <Check className="w-4 h-4" />
                           Active plan
                         </div>
+                      ) : currency === 'INR' && !isFree ? (
+                        <div>
+                          <Button
+                            onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
+                            disabled={razorpayLoading === plan.id}
+                            className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
+                          >
+                            {razorpayLoading === plan.id ? (
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                            ) : (
+                              <ArrowUpRight className="w-4 h-4 mr-2" />
+                            )}
+                            Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
+                          </Button>
+                          <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
+                        </div>
                       ) : (
                         <Button
                           onClick={() => handleUpgrade(plan.id)}
@@ -573,6 +674,22 @@ export function BillingPage() {
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[var(--ag-cyan)]">
                         <Check className="w-4 h-4" />
                         Active plan
+                      </div>
+                    ) : currency === 'INR' && !isFree ? (
+                      <div>
+                        <Button
+                          onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
+                          disabled={razorpayLoading === plan.id}
+                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
+                        >
+                          {razorpayLoading === plan.id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 mr-2" />
+                          )}
+                          Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
+                        </Button>
+                        <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
                       </div>
                     ) : (
                       <Button

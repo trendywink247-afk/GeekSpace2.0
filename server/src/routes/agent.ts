@@ -19,6 +19,7 @@ import { getPersonalityPrompt, getPersonality, PERSONALITIES } from '../prompts/
 import { checkKeywordTriggers } from '../services/automations-engine.js';
 import { buildMemoryContext, buildOwnerContextForVisitor, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, getMemories, getRelevantMemories, deleteMemory, upsertMemory, getRecentConversations, formatMemoryContext, extractMemoriesFromConversation } from '../services/memory.js';
 import { loadPicoContext, formatContextBlock } from '../services/pico-context.js';
+import { getFestivalContext } from '../services/festival-calendar.js';
 import { checkContent } from '../services/content-filter.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
 import { bridgeChat, classifyComplexity, getRecentBridgeEvents, type BridgeRequest } from '../services/pico-kimi-bridge.js';
@@ -162,6 +163,10 @@ Use portfolio_update_skills when the user says "update my skills", "add skills t
   // Build personality instructions from slider values (uses shared function from message-router)
   const personalityInstructions = buildPersonalityInstructions(agentConfig as { creativity?: number; formality?: number; verbosity?: number; humor?: number; empathy?: number } | undefined);
 
+  // Indian festival / cultural context (injected when relevant)
+  const festivalCtx = getFestivalContext();
+  const festivalBlock = festivalCtx ? `\n--- CULTURAL CONTEXT ---\n${festivalCtx}` : '';
+
   return `LANGUAGE RULE: Detect the language the user writes in. ALWAYS reply in that exact language — no exceptions. Hindi → Hindi. Telugu → Telugu. Tamil → Tamil. English → English. Never switch languages unless the user does first.
 
 YOUR IDENTITY: Your name is ${agentName}. If asked who you are or what your name is, say your name is ${agentName}.
@@ -179,6 +184,7 @@ User: ${userName}. Voice: ${voice}. Mode: ${mode}. Credits: ${credits ?? 0}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
 ${memoryBlock}
 ${formatMemoryContext(userId)}
+${festivalBlock}
 
 ${toolsBlock}
 

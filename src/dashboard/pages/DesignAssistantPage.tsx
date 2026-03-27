@@ -325,7 +325,7 @@ export function DesignAssistantPage() {
             <button
               key={s.id}
               onClick={() => setStyle(s.id)}
-              className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+              className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                 style === s.id
                   ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
                   : 'bg-[#12121F] text-[#8892A4] border border-transparent hover:border-[rgba(0,240,255,0.1)] hover:text-[#F4F6FF]'
@@ -447,14 +447,14 @@ export function DesignAssistantPage() {
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleReuseResult(result)}
-                      className="min-w-[32px] min-h-[32px] rounded-lg bg-[#12121F] hover:bg-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] flex items-center justify-center transition-colors"
+                      className="min-w-[44px] min-h-[44px] rounded-lg bg-[#12121F] hover:bg-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] flex items-center justify-center transition-colors"
                       title="Reuse prompt"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteResult(result.id)}
-                      className="min-w-[32px] min-h-[32px] rounded-lg bg-[#12121F] hover:bg-red-500/10 text-[#8892A4] hover:text-red-400 flex items-center justify-center transition-colors"
+                      className="min-w-[44px] min-h-[44px] rounded-lg bg-[#12121F] hover:bg-red-500/10 text-[#8892A4] hover:text-red-400 flex items-center justify-center transition-colors"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -510,7 +510,7 @@ export function DesignAssistantPage() {
               <button
                 key={example}
                 onClick={() => setPrompt(example)}
-                className="text-xs px-3 py-1.5 rounded-full bg-[#12121F] text-[#8892A4] hover:text-[var(--ag-cyan)] border border-[rgba(0,240,255,0.06)] hover:border-[#00F0FF]/20 transition-colors"
+                className="text-xs px-3 py-1.5 min-h-[44px] rounded-full bg-[#12121F] text-[#8892A4] hover:text-[var(--ag-cyan)] border border-[rgba(0,240,255,0.06)] hover:border-[#00F0FF]/20 transition-colors"
               >
                 {example}
               </button>

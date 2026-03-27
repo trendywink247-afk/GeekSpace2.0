@@ -37,6 +37,7 @@ import { isResearchRequest, runResearchJob } from './research-job.js';
 import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived, emitTaskStarted, emitTaskCompleted } from './agent-state-bus.js';
 import { detectDelegationTarget, routeDelegation } from './delegation.js';
 import { cacheDel } from './cache.js';
+import { getTodayFestival } from './festival-calendar.js';
 
 // ---- Fast-path collaboration events ----
 // Emit delegation + task events so the office canvas shows agents collaborating on user requests,
@@ -66,36 +67,26 @@ function emitFastPathCollab(userId: string, fastPath: string, summary: string): 
 }
 
 // ---- Indian Festival Calendar ----
-// Returns a festival greeting if today falls on/near a major Indian festival (approximate fixed dates).
+// Delegates to festival-calendar.ts service. Returns a greeting string for backward compatibility.
 function getIndianFestival(): string | null {
-  const now = new Date();
-  const m = now.getMonth() + 1;
-  const d = now.getDate();
-
-  // [month, startDay, endDay, greeting]
-  const festivals: [number, number, number, string][] = [
-    [1, 1, 1, 'Happy New Year!'],
-    [1, 14, 14, 'Happy Makar Sankranti!'],
-    [1, 26, 26, 'Happy Republic Day!'],
-    [3, 24, 26, 'Happy Holi!'],
-    [4, 13, 14, 'Happy Baisakhi!'],
-    [8, 15, 15, 'Happy Independence Day!'],
-    [8, 26, 26, 'Happy Janmashtami!'],
-    [9, 15, 24, 'Happy Navratri!'],
-    [10, 2, 2, 'Happy Gandhi Jayanti!'],
-    [10, 12, 12, 'Happy Dussehra!'],
-    [10, 20, 22, 'Happy Diwali!'],
-    [10, 31, 31, 'Happy Halloween!'],
-    [11, 1, 1, 'Happy Diwali!'],
-    [11, 14, 14, "Happy Children's Day!"],
-    [11, 27, 27, 'Happy Guru Nanak Jayanti!'],
-    [12, 25, 25, 'Merry Christmas!'],
-  ];
-
-  for (const [fm, fd1, fd2, msg] of festivals) {
-    if (m === fm && d >= fd1 && d <= fd2) return msg;
-  }
-  return null;
+  const festival = getTodayFestival();
+  if (!festival) return null;
+  // Map festival type to appropriate greeting prefix
+  const greetingMap: Record<string, string> = {
+    'Republic Day': 'Happy Republic Day!',
+    'Holi': 'Happy Holi!',
+    'Eid ul-Fitr': 'Eid Mubarak!',
+    'Ambedkar Jayanti': 'Happy Ambedkar Jayanti!',
+    'Baisakhi': 'Happy Baisakhi!',
+    'Good Friday': 'Good Friday greetings!',
+    'Independence Day': 'Happy Independence Day!',
+    'Gandhi Jayanti': 'Happy Gandhi Jayanti!',
+    'Dussehra': 'Happy Dussehra!',
+    'Diwali': 'Happy Diwali!',
+    'Govardhan Puja': 'Happy Govardhan Puja!',
+    'Christmas': 'Merry Christmas!',
+  };
+  return greetingMap[festival.name] || `Happy ${festival.name}!`;
 }
 
 // ---- Hinglish Greeting ----
@@ -1234,9 +1225,10 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       );
       if (upcomingReminders.length) {
         lines.push('', 'Upcoming:');
+        const briefingUserTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata';
         upcomingReminders.forEach(r => {
           let t = r.datetime;
-          try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'short', timeStyle: 'short' }); } catch { }
+          try { t = new Date(r.datetime).toLocaleString('en-IN', { timeZone: briefingUserTz, dateStyle: 'short', timeStyle: 'short' }); } catch { }
           lines.push(`  ${r.text} — ${t}`);
         });
       }

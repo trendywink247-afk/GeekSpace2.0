@@ -461,8 +461,9 @@ function startOverdueReminderEscalation() {
 
         if (link) {
           const { sendTelegramMessage } = await import('./telegram.js');
+          const overdueUserTz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(reminder.user_id) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata';
           const dt = new Date(reminder.datetime);
-          const formatted = dt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+          const formatted = dt.toLocaleString('en-IN', { timeZone: overdueUserTz, hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
           await sendTelegramMessage(link.external_id, `⏰ *Overdue reminder*: ${reminder.text}\n_Was due: ${formatted}_`);
           logger.info({ reminderId: reminder.id, userId: reminder.user_id }, 'Overdue escalation sent');
         }

@@ -343,7 +343,7 @@ export function OnboardingWizard() {
             </div>
             <Button
               variant="outline"
-              className="w-full border-[#8B5CF6]/30 text-[#6B7280]"
+              className="w-full border-[#8B5CF6]/30 text-[#6B7280] min-h-[44px]"
               onClick={() => setShowSkipModal(false)}
             >
               Continue Setup
@@ -394,7 +394,7 @@ export function OnboardingWizard() {
           <div className="flex justify-center">
             <button
               onClick={handleBack}
-              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1"
+              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1 min-h-[44px]"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -407,7 +407,7 @@ export function OnboardingWizard() {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowSkipModal(true)}
-              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded px-2 py-1"
+              className="text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded px-2 py-1 min-h-[44px]"
             >
               <SkipForward className="w-4 h-4" />
               Skip this step
@@ -415,7 +415,7 @@ export function OnboardingWizard() {
             <span className="text-[#6B7280]/30">|</span>
             <button
               onClick={() => handleSkip(true)}
-              className="text-sm text-[#6B7280] hover:text-[#ef4444] transition-colors focus-visible:ring-2 focus-visible:ring-[#ef4444]/50 rounded px-2 py-1"
+              className="text-sm text-[#6B7280] hover:text-[#ef4444] transition-colors focus-visible:ring-2 focus-visible:ring-[#ef4444]/50 rounded px-2 py-1 min-h-[44px]"
             >
               Skip all setup
             </button>
@@ -441,7 +441,7 @@ export function OnboardingWizard() {
               await completeOnboarding();
               navigate('/dashboard', { replace: true });
             }}
-            className="text-xs text-[#6B7280]/50 hover:text-[#6B7280] transition-colors underline underline-offset-2"
+            className="text-xs text-[#6B7280]/50 hover:text-[#6B7280] transition-colors underline underline-offset-2 min-h-[44px] inline-flex items-center"
           >
             I'll finish setup later
           </button>
@@ -450,7 +450,7 @@ export function OnboardingWizard() {
               <span className="text-[#6B7280]/20">|</span>
               <button
                 onClick={logout}
-                className="flex items-center gap-1 text-xs text-[#6B7280]/40 hover:text-[#6B7280] transition-colors"
+                className="flex items-center gap-1 text-xs text-[#6B7280]/40 hover:text-[#6B7280] transition-colors min-h-[44px]"
               >
                 <LogOut className="w-3 h-3" />
                 Not {user.name.split(' ')[0]}?

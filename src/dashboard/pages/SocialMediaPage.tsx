@@ -97,7 +97,7 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
         <button
           key={t.value}
           onClick={() => onChange(t.value)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+          className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === t.value
               ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
               : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
@@ -119,7 +119,7 @@ function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: 
         <button
           key={p.value}
           onClick={() => onChange(p.value)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === p.value
               ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
               : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
@@ -424,11 +424,11 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
             Content Calendar
           </CardTitle>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o - 1)}>
+            <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0" onClick={() => setMonthOffset((o) => o - 1)}>
               <ChevronLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />
             </Button>
             <span className="text-xs text-[var(--ag-text-muted)] min-w-[120px] text-center">{monthLabel}</span>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMonthOffset((o) => o + 1)}>
+            <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0" onClick={() => setMonthOffset((o) => o + 1)}>
               <ChevronRight className="w-4 h-4 text-[var(--ag-text-muted)]" />
             </Button>
           </div>
@@ -686,8 +686,8 @@ function AccountsTab() {
               <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{saveError}</p>
             )}
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setSaveError(''); }}>Cancel</Button>
-              <Button size="sm" onClick={handleCreate} disabled={saving || !accountName}>
+              <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => { setShowForm(false); setSaveError(''); }}>Cancel</Button>
+              <Button size="sm" className="min-h-[44px]" onClick={handleCreate} disabled={saving || !accountName}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
                 Create
               </Button>
@@ -1189,7 +1189,7 @@ function ContentPlanTab() {
             <h3 className="text-sm font-medium text-[var(--ag-text-primary)] mb-2">Existing Plans</h3>
             <div className="grid gap-2">
               {plans.map((plan) => (
-                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
+                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[var(--ag-text-primary)]">{plan.title}</span>
                     <StatusBadge status={plan.status} />
@@ -1231,11 +1231,11 @@ function ContentPlanTab() {
             </div>
             <div className="flex gap-2">
               {activePlan.status === 'draft' && (
-                <Button size="sm" onClick={() => setShowActivate(!showActivate)} className="bg-[#00FF88]/10 text-[#00FF88] hover:bg-[#00FF88]/20 border border-[#00FF88]/20">
+                <Button size="sm" onClick={() => setShowActivate(!showActivate)} className="min-h-[44px] bg-[#00FF88]/10 text-[#00FF88] hover:bg-[#00FF88]/20 border border-[#00FF88]/20">
                   <Calendar className="w-4 h-4 mr-1" /> Activate
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => { setActivePlan(null); loadData(); }}>
+              <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => { setActivePlan(null); loadData(); }}>
                 Back
               </Button>
               <Button size="sm" variant="ghost" onClick={handleDeletePlan} className="text-[#FF6161] min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Delete plan">
@@ -1494,7 +1494,7 @@ export function SocialMediaPage() {
 
   return (
     <PageShell maxWidth="4xl">
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2D78]/20 to-[#00F0FF]/20 border border-[#FF2D78]/20 flex items-center justify-center">
           <Share2 className="w-5 h-5 text-[#FF2D78]" />

@@ -372,6 +372,18 @@ export const billingService = {
 
   createCheckout: (plan: 'basic' | 'pro') =>
     api.post<{ url: string }>('/billing/checkout', { plan }),
+
+  // Razorpay billing (Indian payments)
+  createRazorpayOrder: (plan: string) =>
+    api.post<{ orderId: string; amount: number; keyId: string }>('/billing/razorpay/order', { plan }),
+
+  verifyRazorpayPayment: (data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    plan: string;
+  }) =>
+    api.post<{ success: boolean; message: string }>('/billing/razorpay/verify', data),
 };
 
 // ----- Integrations ------------------------------------------
@@ -397,6 +409,16 @@ export const integrationService = {
 
   unlinkTelegram: () =>
     api.delete('/integrations/telegram/link'),
+
+  // Custom Telegram bot
+  connectCustomTelegramBot: (data: { botToken: string }) =>
+    api.post<{ botName: string; botUsername: string; connected: boolean }>('/integrations/telegram/custom/connect', data),
+
+  disconnectCustomTelegramBot: () =>
+    api.delete('/integrations/telegram/custom/connect'),
+
+  getCustomTelegramBotStatus: () =>
+    api.get<{ connected: boolean; botName?: string; botUsername?: string }>('/integrations/telegram/custom/status'),
 
   // WhatsApp linking (old token-based)
   linkWhatsApp: () => api.post<{ linked: boolean; token?: string; qrUrl?: string; expiresIn?: number; message?: string }>('/integrations/whatsapp/link'),

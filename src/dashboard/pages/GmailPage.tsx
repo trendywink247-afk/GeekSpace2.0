@@ -524,7 +524,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   return (
     <Wrapper {...wrapperProps}>
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Stats header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">

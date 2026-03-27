@@ -242,7 +242,7 @@ function MessageCard({
                 onChange={e => onReplyChange(e.target.value)}
                 placeholder="Type a reply..."
                 rows={3}
-                className="w-full bg-white/5 border border-[#00F0FF]/10 rounded-lg px-3 py-2.5 text-sm text-[#F4F6FF] placeholder-[#8892A4]/60 focus:outline-none focus:border-[#00F0FF]/30 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/20 resize-none transition-colors"
+                className="w-full min-h-[44px] bg-white/5 border border-[#00F0FF]/10 rounded-lg px-3 py-2.5 text-sm text-[#F4F6FF] placeholder-[#8892A4]/60 focus:outline-none focus:border-[#00F0FF]/30 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/20 resize-none transition-colors"
               />
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[#8892A4]">
@@ -583,7 +583,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
 
   return (
     <Wrapper {...wrapperProps}>
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Plus, ExternalLink, Trash2, Edit3, Download, Globe, Code,
-  Copy, Check, X, Folder, AlertTriangle, Clock, Monitor, Smartphone
+  Copy, Check, X, Folder, AlertTriangle, Clock, Monitor, Smartphone, MessageCircle
 } from 'lucide-react';
 import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
@@ -182,7 +182,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         </div>
         <button
           onClick={() => onNavigate?.('templates')}
-          className="flex items-center gap-2 px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
+          className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
         >
           <Plus className="w-4 h-4" />
           <span>New Project</span>
@@ -199,7 +199,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
           <p className="text-[#6B7280] text-sm mb-6 max-w-xs mx-auto">Create your first website from a template or ask your AI agent to build one for you</p>
           <button
             onClick={() => onNavigate?.('templates')}
-            className="px-5 py-2.5 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all duration-200 font-medium text-sm"
+            className="px-5 py-2.5 min-h-[44px] bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all duration-200 font-medium text-sm"
           >
             Browse Templates
           </button>
@@ -230,7 +230,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               <div className="p-3 flex flex-wrap gap-2">
                 <button
                   onClick={() => setPreviewArtifact(previewArtifact?.id === artifact.id ? null : artifact)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg transition-colors text-sm ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg transition-colors text-sm ${
                     previewArtifact?.id === artifact.id
                       ? 'bg-[#00F0FF] text-white'
                       : 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/30'
@@ -263,6 +263,17 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 >
                   <Download className="w-4 h-4" />
                 </button>
+
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent('Check out what I built with Agentin! ' + artifact.previewUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#25D366] hover:bg-[#25D366]/10 rounded-lg transition-colors"
+                  title="Share on WhatsApp"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </a>
 
                 <button
                   onClick={() => handleDomainSetup(artifact)}
@@ -355,7 +366,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   type="text"
                   value={editForm.title}
                   onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 bg-[#06060B] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] focus:border-[#00F0FF] outline-none"
+                  className="w-full px-3 py-2 min-h-[44px] bg-[#06060B] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] focus:border-[#00F0FF] outline-none"
                 />
               </div>
 
@@ -392,13 +403,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             <div className="flex justify-end gap-3 p-4 border-t border-[#00F0FF]/20">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-[#6B7280] hover:text-[var(--ag-text-primary)] transition-colors"
+                className="px-4 py-2 min-h-[44px] text-[#6B7280] hover:text-[var(--ag-text-primary)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
+                className="px-4 py-2 min-h-[44px] bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200"
               >
                 Save Changes
               </button>
@@ -440,14 +451,14 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                       value={domainInput}
                       onChange={e => setDomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                       placeholder="my-project"
-                      className="flex-1 px-3 py-2 bg-[#06060B] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] focus:border-[#00F0FF] outline-none"
+                      className="flex-1 px-3 py-2 min-h-[44px] bg-[#06060B] border border-[#00F0FF]/30 rounded-lg text-[var(--ag-text-primary)] focus:border-[#00F0FF] outline-none"
                     />
-                    <span className="px-3 py-2 text-[#6B7280]">.agentin.chat</span>
+                    <span className="px-3 py-2 min-h-[44px] flex items-center text-[#6B7280]">.agentin.chat</span>
                   </div>
                   <button
                     onClick={handleSaveDomain}
                     disabled={!domainInput || domainInput.length < 2}
-                    className="mt-3 w-full px-4 py-2 bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
+                    className="mt-3 w-full px-4 py-2 min-h-[44px] bg-[#00F0FF] text-white rounded-lg hover:bg-[#00F0FF]/90 hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
                   >
                     Set Domain
                   </button>
@@ -474,13 +485,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 text-[#6B7280] hover:text-[var(--ag-text-primary)] transition-colors"
+                  className="px-4 py-2 min-h-[44px] text-[#6B7280] hover:text-[var(--ag-text-primary)] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDelete(selectedArtifact.id)}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="px-4 py-2 min-h-[44px] bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
                   Delete
                 </button>

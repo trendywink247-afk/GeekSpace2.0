@@ -313,7 +313,7 @@ export function AgentSettingsPage() {
                 <button
                   key={a.id}
                   onClick={() => handleAgentSwitch(a.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px] ${
                     isActive
                       ? 'text-white'
                       : 'text-[#8892A4] hover:text-[#F4F6FF]  hover:bg-[#12121F]'
@@ -638,7 +638,7 @@ export function AgentSettingsPage() {
               size="lg"
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] font-semibold px-8 transition-all duration-200"
+              className="bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] font-semibold px-8 transition-all duration-200 min-h-[44px]"
             >
               {isSaving ? (
                 <>
@@ -714,7 +714,7 @@ export function AgentSettingsPage() {
             <Button
               variant="outline"
               onClick={handleClearAllMemories}
-              className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78]"
+              className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78] min-h-[44px]"
               disabled={memoryCount === 0 || isClearing}
             >
               {isClearing ? (
@@ -820,7 +820,7 @@ export function AgentSettingsPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => navigate('/dashboard/connections')}
-                      className="border-[#0088CC]/30 text-[#0088CC] hover:bg-[#0088CC]/10 hover:text-[#0088CC] text-xs"
+                      className="border-[#0088CC]/30 text-[#0088CC] hover:bg-[#0088CC]/10 hover:text-[#0088CC] text-xs min-h-[44px]"
                     >
                       Setup
                     </Button>
