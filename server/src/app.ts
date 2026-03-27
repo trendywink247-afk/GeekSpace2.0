@@ -18,20 +18,18 @@ import { logger, requestLogger } from './logger.js';
 import { errorHandler } from './middleware/errors.js';
 import { db } from './db/index.js';
 
-// Wave 1 modules
+// Domain modules
 import { healthModule } from './modules/health/index.js';
 import { portfolioModule } from './modules/portfolio/index.js';
 import { remindersModule } from './modules/reminders/index.js';
 import { mediaModule } from './modules/media/index.js';
-// Wave 2 modules
 import { authModule } from './modules/auth/index.js';
 import { billingModule } from './modules/billing/index.js';
 import { integrationsModule } from './modules/integrations/index.js';
 import { contentModule } from './modules/content/index.js';
-// Wave 3 modules
 import { memoryModule } from './modules/memory/index.js';
 import { agentModule } from './modules/agent/index.js';
-// Remaining direct imports (not yet modularized)
+// Remaining direct route imports (not yet modularized)
 import { routingDebugRouter } from './routes/debug-routing.js';
 import { usersRouter } from './routes/users.js';
 import { usageRouter } from './routes/usage.js';
@@ -40,7 +38,6 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { directoryRouter } from './routes/directory.js';
 import { apiKeysRouter } from './routes/apiKeys.js';
 import { featuresRouter } from './routes/features.js';
-// billingRouter moved to billingModule
 import { modelsRouter } from './routes/models.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
@@ -48,41 +45,27 @@ import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
-// agentStateRouter moved to agentModule
-// H-3: getServiceHealth no longer needed here (detailed info moved to admin-only /api/health/detailed)
-// artifactsRouter, templatesRouter moved to contentModule
-// imagesRouter, videosRouter moved to mediaModule
-// socialMediaRouter moved to integrationsModule
 import { activityRouter } from './routes/activity.js';
 import { routesListRouter } from './routes/routes-list.js';
 import { suggestionsRouter } from './routes/suggestions.js';
-// voiceRouter moved to mediaModule
 import { jobsRouter } from './routes/jobs.js';
-// imageAsyncRouter moved to mediaModule
 import { reportRouter } from './routes/report.js';
 import { proactiveRouter } from './routes/proactive.js';
 import { inboxRouter } from './routes/inbox.js';
-// gmailRouter moved to integrationsModule
 import { analyticsRouter } from './routes/analytics.js';
 import { focusRouter, habitsRouter } from './routes/focus.js';
-// memoryRouter moved to memoryModule
-// calendarRouter moved to integrationsModule
 import { workflowsRouter } from './routes/workflows.js';
 import { plannerRouter } from './routes/planner.js';
-// searchRouter moved to memoryModule
 import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
 import { gateRouter } from './routes/gate.js';
 import { officeRouter } from './routes/office.js';
-// healthRouter moved to healthModule
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
-// agentTasksRouter, agentCommsRouter moved to agentModule
 import { recommendationsRouter } from './routes/recommendations.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { skillsRouter } from './routes/skills.js';
 import { logoAiRouter } from './routes/logo-ai.js';
-// customBotRouter moved to integrationsModule
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import { setupSwagger } from './shared/swagger.js';
@@ -473,7 +456,6 @@ export function createApp(): express.Application {
   app.use('/api/directory', directoryRouter);
   app.use('/api/api-keys', apiKeysRouter);
   app.use('/api/features', featuresRouter);
-  // billingRouter mounted by billingModule
   app.use('/api/models', modelsRouter);
   app.use('/api/webhooks', webhooksRouter);
   app.use('/api/pico', picoRouter);
@@ -481,35 +463,24 @@ export function createApp(): express.Application {
   app.use('/api/recipes', recipesRouter);
   app.use('/api/geekos', geekosBridgeRouter);
   app.use('/api/geekos-llm', geekosLlmProxyRouter);
-  // agentStateRouter mounted by agentModule
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);
-  // artifactsRouter, templatesRouter mounted by contentModule
-  // imagesRouter, videosRouter, voiceRouter, imageAsyncRouter mounted by mediaModule
-  // socialMediaRouter mounted by integrationsModule
   app.use('/api/activity', activityRouter);
   app.use('/api/routes', routesListRouter);
   app.use('/api/suggestions', suggestionsRouter);
-  // voiceRouter mounted by mediaModule
   app.use('/api/jobs', jobsRouter);
-  // imageAsyncRouter mounted by mediaModule
   app.use('/api/report', reportRouter);
   app.use('/api/proactive', proactiveRouter);
   app.use('/api/inbox', inboxRouter);
-  // gmailRouter mounted by integrationsModule
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/focus', focusRouter);
   app.use('/api/habits', habitsRouter);
-  // memoryRouter mounted by memoryModule
-  // calendarRouter mounted by integrationsModule
   app.use('/api/workflows', workflowsRouter);
   app.use('/api/planner', plannerRouter);
-  // searchRouter mounted by memoryModule
   app.use('/api/docs', docsRouter);
   app.use('/api/files', filesRouter);
   app.use('/api/gate/v1', gateRouter);
   app.use('/api/office', officeRouter);
-  // agentTasksRouter, agentCommsRouter mounted by agentModule
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/sandbox', sandboxRouter);
   app.use('/api/skills', skillsRouter);

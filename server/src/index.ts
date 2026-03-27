@@ -17,9 +17,6 @@ import { initTelegramBot } from './services/telegram.js';
 import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
 import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
-// DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
-// import { startBriefingScheduler } from './services/daily-briefing.js';
-// startReminderScheduler and startHealthProbeCache now managed by module lifecycle hooks
 import { healthModule } from './modules/health/index.js';
 import { remindersModule } from './modules/reminders/index.js';
 import { startModelSyncScheduler } from './services/model-sync.js';
@@ -114,8 +111,6 @@ const httpServer = app.listen(config.port, () => {
     safeStart('pico-worker', startPicoWorker);
     safeStart('telegram-bot', () => initTelegramBot().catch(err => logger.warn({ err }, 'Telegram bot init failed (non-fatal)')));
     safeStart('ollama-keepalive', startOllamaKeepalive);
-    // DEPRECATED: briefing scheduler removed — proactive-engine.ts handles all scheduled briefings
-    // safeStart('briefing-scheduler', startBriefingScheduler);
     safeStart('reminder-scheduler', () => remindersModule.initialize?.());
     safeStart('memory-sync', startMemorySyncScheduler);
     safeStart('memory-weekly-summary', startWeeklySummaryScheduler);
