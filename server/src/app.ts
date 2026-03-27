@@ -41,6 +41,7 @@ import { officeModule } from './modules/office/index.js';
 import { directoryRouter } from './routes/directory.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
+import { artifactsRouter } from './modules/content/index.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import { setupSwagger } from './shared/swagger.js';
