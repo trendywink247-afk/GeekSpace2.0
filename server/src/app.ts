@@ -29,43 +29,18 @@ import { integrationsModule } from './modules/integrations/index.js';
 import { contentModule } from './modules/content/index.js';
 import { memoryModule } from './modules/memory/index.js';
 import { agentModule } from './modules/agent/index.js';
-// Remaining direct route imports (not yet modularized)
-import { routingDebugRouter } from './routes/debug-routing.js';
-import { usersRouter } from './routes/users.js';
-import { usageRouter } from './routes/usage.js';
-import { automationsRouter } from './routes/automations.js';
-import { dashboardRouter } from './routes/dashboard.js';
+import { usersModule } from './modules/users/index.js';
+import { adminModule } from './modules/admin/index.js';
+import { automationModule } from './modules/automation/index.js';
+import { dashboardModule } from './modules/dashboard/index.js';
+import { focusModule } from './modules/focus/index.js';
+import { commsModule } from './modules/comms/index.js';
+import { geekosModule } from './modules/geekos/index.js';
+import { officeModule } from './modules/office/index.js';
+// Remaining direct route imports (not covered by modules)
 import { directoryRouter } from './routes/directory.js';
-import { apiKeysRouter } from './routes/apiKeys.js';
-import { featuresRouter } from './routes/features.js';
-import { modelsRouter } from './routes/models.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
-import { briefingsRouter } from './routes/briefings.js';
-import { recipesRouter } from './routes/recipes.js';
-import { geekosBridgeRouter } from './routes/geekos-bridge.js';
-import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
-import { activityRouter } from './routes/activity.js';
-import { routesListRouter } from './routes/routes-list.js';
-import { suggestionsRouter } from './routes/suggestions.js';
-import { jobsRouter } from './routes/jobs.js';
-import { reportRouter } from './routes/report.js';
-import { proactiveRouter } from './routes/proactive.js';
-import { inboxRouter } from './routes/inbox.js';
-import { analyticsRouter } from './routes/analytics.js';
-import { focusRouter, habitsRouter } from './routes/focus.js';
-import { workflowsRouter } from './routes/workflows.js';
-import { plannerRouter } from './routes/planner.js';
-import { docsRouter } from './routes/docs.js';
-import { filesRouter } from './routes/files.js';
-import { gateRouter } from './routes/gate.js';
-import { officeRouter } from './routes/office.js';
-import { adminRouter, serveAdminDashboard } from './routes/admin.js';
-import { devRouter } from './routes/dev.js';
-import { recommendationsRouter } from './routes/recommendations.js';
-import { sandboxRouter } from './routes/sandbox.js';
-import { skillsRouter } from './routes/skills.js';
-import { logoAiRouter } from './routes/logo-ai.js';
 import { metricsMiddleware } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import { setupSwagger } from './shared/swagger.js';
@@ -446,45 +421,19 @@ export function createApp(): express.Application {
   contentModule.registerRoutes(app);
   memoryModule.registerRoutes(app);
   agentModule.registerRoutes(app);
+  usersModule.registerRoutes(app);
+  adminModule.registerRoutes(app);
+  automationModule.registerRoutes(app);
+  dashboardModule.registerRoutes(app);
+  focusModule.registerRoutes(app);
+  commsModule.registerRoutes(app);
+  geekosModule.registerRoutes(app);
+  officeModule.registerRoutes(app);
 
-  // ---- Mount remaining routes (not yet modularized) ----
-  app.use('/api/debug', routingDebugRouter);
-  app.use('/api/users', usersRouter);
-  app.use('/api/usage', usageRouter);
-  app.use('/api/automations', automationsRouter);
-  app.use('/api/dashboard', dashboardRouter);
+  // ---- Remaining routes (standalone, not grouped into a module) ----
   app.use('/api/directory', directoryRouter);
-  app.use('/api/api-keys', apiKeysRouter);
-  app.use('/api/features', featuresRouter);
-  app.use('/api/models', modelsRouter);
   app.use('/api/webhooks', webhooksRouter);
   app.use('/api/pico', picoRouter);
-  app.use('/api/briefings', briefingsRouter);
-  app.use('/api/recipes', recipesRouter);
-  app.use('/api/geekos', geekosBridgeRouter);
-  app.use('/api/geekos-llm', geekosLlmProxyRouter);
-  app.use('/api/admin', adminRouter);
-  app.use('/api/dev', devRouter);
-  app.use('/api/activity', activityRouter);
-  app.use('/api/routes', routesListRouter);
-  app.use('/api/suggestions', suggestionsRouter);
-  app.use('/api/jobs', jobsRouter);
-  app.use('/api/report', reportRouter);
-  app.use('/api/proactive', proactiveRouter);
-  app.use('/api/inbox', inboxRouter);
-  app.use('/api/analytics', analyticsRouter);
-  app.use('/api/focus', focusRouter);
-  app.use('/api/habits', habitsRouter);
-  app.use('/api/workflows', workflowsRouter);
-  app.use('/api/planner', plannerRouter);
-  app.use('/api/docs', docsRouter);
-  app.use('/api/files', filesRouter);
-  app.use('/api/gate/v1', gateRouter);
-  app.use('/api/office', officeRouter);
-  app.use('/api/recommendations', recommendationsRouter);
-  app.use('/api/sandbox', sandboxRouter);
-  app.use('/api/skills', skillsRouter);
-  app.use('/api/logo', logoAiRouter);
 
   // ---- Gate password verification (sets access cookie server-side) ----
   app.post('/api/gate-verify', (req, res) => {
@@ -651,9 +600,6 @@ export function createApp(): express.Application {
 
   // ---- Root redirect ----
   app.get('/', (_req, res) => res.redirect('/admin'));
-
-  // ---- Admin dashboard ----
-  app.get('/admin', serveAdminDashboard);
 
   // ---- Swagger API docs ----
   setupSwagger(app);
