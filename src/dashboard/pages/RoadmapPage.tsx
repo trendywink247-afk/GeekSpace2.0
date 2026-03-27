@@ -1,9 +1,13 @@
 // ============================================================
-// Roadmap Page - Upcoming features and company vision
+// Roadmap Page — Upcoming features and company vision
+// Owner agent: nova (#EC4899)
+// Revamped: design tokens, PageShell + PageHeader + SectionCard,
+//   useAgentCanvas, Dialog delete confirm, mobile QA (44px), nova dot
 // ============================================================
 
 import { useState, useEffect } from 'react';
-import { PageShell } from '@/components/agentin/PageShell';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Rocket,
   Users,
@@ -17,7 +21,6 @@ import {
   CheckCircle2,
   Circle,
   ArrowRight,
-  History,
   Lightbulb,
   Gift,
   Star,
@@ -25,16 +28,17 @@ import {
   ThumbsUp,
   ThumbsDown,
   Eye,
-  X,
   Trash2,
   Layers,
   Pencil,
   ChevronDown,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -308,6 +312,8 @@ const roadmapItems: RoadmapItem[] = [
 ];
 
 export function RoadmapPage() {
+  const { notifyDone } = useAgentCanvas({ agent: 'nova', page: 'roadmap' });
+
   const completedCount = roadmapItems.filter(i => i.status === 'completed').length;
   const plannedCount = roadmapItems.filter(i => i.status === 'planned').length;
   const progressPercent = (completedCount / roadmapItems.length) * 100;
@@ -328,22 +334,23 @@ export function RoadmapPage() {
   const [loadError, setLoadError] = useState('');
   const [voteState, setVoteState] = useState<Record<string, { upvotes: number; downvotes: number; voting: boolean }>>({});
 
-  // Task 69.10: Suggestion detail modal state
+  // Suggestion detail modal state
   const [detailSuggestion, setDetailSuggestion] = useState<{id: string; title: string; body: string; status: string; created_at: string; upvotes?: number; downvotes?: number} | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  // Phase 72.4: Events for detail modal timeline
+  // Delete confirmation dialog (replaces two-click confirmDeleteId)
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
+  // Events for detail modal timeline
   const [detailEvents, setDetailEvents] = useState<Array<{id: string; oldStatus: string; newStatus: string; changedAt: string}>>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  // Phase 71: Edit state for "new" status suggestions
+  // Edit state for "new" status suggestions
   const [editingSuggestion, setEditingSuggestion] = useState<{id: string; title: string; body: string} | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editBody, setEditBody] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
-  // Phase 71: Show all suggestions toggle
+  // Show all suggestions toggle
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
   useEffect(() => {
@@ -372,6 +379,7 @@ export function RoadmapPage() {
     try {
       const res = await suggestionService.vote(id, 1);
       setVoteState(prev => ({ ...prev, [id]: { upvotes: res.data.upvotes, downvotes: res.data.downvotes, voting: false } }));
+      void notifyDone(`Voted on suggestion ${id}`);
     } catch {
       setVoteState(prev => {
         const existing = prev[id];
@@ -409,8 +417,7 @@ export function RoadmapPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return; }
-    setConfirmDeleteId(null);
+    setDeleteDialogId(null);
     setDeletingId(id);
     try {
       await suggestionService.delete(id);
@@ -469,262 +476,212 @@ export function RoadmapPage() {
       case 'completed':
         return <Badge className="bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30 shadow-[0_0_8px_rgba(0,255,136,0.1)]">Shipped</Badge>;
       case 'in-progress':
-        return <Badge className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-[#00F0FF]/30 shadow-[0_0_8px_rgba(0,240,255,0.1)]">In Progress</Badge>;
+        return <Badge className="bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30 shadow-[0_0_8px_rgba(139,92,246,0.1)]">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#6B7280]/15 text-[var(--ag-text-muted)] border-[#6B7280]/30">Planned</Badge>;
+        return <Badge className="bg-[#6B7280]/15 text-[#9CA3AF] border-[#6B7280]/30">Planned</Badge>;
     }
   };
 
   return (
     <PageShell>
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 mb-4">
-          <Rocket className="w-4 h-4 text-[var(--ag-cyan)]" />
-          <span className="text-sm text-[var(--ag-cyan)] font-medium">Our Vision</span>
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Agentin Roadmap
-        </h1>
-        <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
-          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-[#FF2D78]">Explored by Nova</span>
-          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)]">v{pkgJson.version}</span>
-          <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-[#6B7280]/10 border border-[#6B7280]/30 text-[var(--ag-text-muted)]">
-            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      {/* Header — PageHeader + Nova dot */}
+      <PageHeader
+        icon={Rocket}
+        title="Agentin Roadmap"
+        subtitle="Building the future of AI-powered personal workspaces."
+        badge={
+          <span className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5" title="Nova">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EC4899] opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#EC4899]" />
+            </span>
+            <Badge className="bg-[#EC4899]/15 text-[#EC4899] border-[#EC4899]/30 text-xs">Nova</Badge>
+            <Badge className="bg-[rgba(139,92,246,0.1)] text-[#8B5CF6] border-[rgba(139,92,246,0.15)] text-xs">v{pkgJson.version}</Badge>
           </span>
-        </div>
-        <p className="text-[var(--ag-text-muted)]">
-          Building the future of AI-powered personal workspaces. Here's what we're working on.
-        </p>
-      </div>
+        }
+      />
 
       {/* Recent Changes */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/20 flex items-center justify-center">
-            <History className="w-5 h-5 text-[#F59E0B]" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Recent Changes</h2>
-            <p className="text-sm text-[var(--ag-text-muted)]">Latest shipped improvements</p>
-          </div>
-        </div>
+      <SectionCard title="Recent Changes" subtitle="Latest shipped improvements">
         <div className="space-y-3">
           {releaseNotes.map((note) => (
-            <Card key={note.phase} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/25 transition-all duration-200">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div
-                    className="w-2 h-full min-h-[40px] rounded-full flex-shrink-0"
-                    style={{ backgroundColor: note.color, opacity: 0.7 }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <Badge
-                        className="text-xs"
-                        style={{ backgroundColor: `${note.color}20`, color: note.color, borderColor: `${note.color}40` }}
-                      >
-                        {note.phase}
-                      </Badge>
-                      <span className="font-semibold text-[var(--ag-text-primary)] text-sm">{note.title}</span>
-                      <span className="text-xs text-[var(--ag-text-muted)] ml-auto">{note.date}</span>
-                    </div>
-                    <ul className="space-y-1">
-                      {note.items.map((item, i) => (
-                        <li key={i} className="text-xs text-[var(--ag-text-muted)] flex items-start gap-1.5">
-                          <span className="text-[#00FF88] mt-0.5 flex-shrink-0">+</span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+            <div key={note.phase} className="flex items-start gap-3 p-3 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-200">
+              <div
+                className="w-2 h-full min-h-[40px] rounded-full flex-shrink-0"
+                style={{ backgroundColor: note.color, opacity: 0.7 }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <Badge
+                    className="text-xs"
+                    style={{ backgroundColor: `${note.color}20`, color: note.color, borderColor: `${note.color}40` }}
+                  >
+                    {note.phase}
+                  </Badge>
+                  <span className="font-semibold text-[#F4F6FF] text-sm">{note.title}</span>
+                  <span className="text-xs text-[#9CA3AF] ml-auto">{note.date}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <ul className="space-y-1">
+                  {note.items.map((item, i) => (
+                    <li key={i} className="text-xs text-[#9CA3AF] flex items-start gap-1.5">
+                      <span className="text-[#00FF88] mt-0.5 flex-shrink-0">+</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
       {/* Progress */}
-      <Card className="border-[#00F0FF]/20">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[var(--ag-text-muted)]">Overall Progress</span>
-            <span className="text-sm font-medium text-[var(--ag-text-primary)]">{Math.round(progressPercent)}%</span>
+      <SectionCard padding="lg">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-[#9CA3AF]">Overall Progress</span>
+          <span className="text-sm font-medium text-[#F4F6FF]">{Math.round(progressPercent)}%</span>
+        </div>
+        <div className="h-3 bg-[#06061a] rounded-full overflow-hidden mb-4">
+          <div
+            className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#EC4899] rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
+            <span className="text-[#F4F6FF]">{completedCount} Completed</span>
           </div>
-          <div className="h-3 bg-[#06060B] rounded-full overflow-hidden mb-4">
-            <div
-              className="h-full bg-gradient-to-r from-[#00F0FF] to-[#FF2D78] rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#FFB800]" />
+            <span className="text-[#9CA3AF]">0 In Progress</span>
           </div>
-          <div className="flex items-center justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
-              <span className="text-[var(--ag-text-primary)]">{completedCount} Completed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#FFB800]" />
-              <span className="text-[var(--ag-text-muted)]">0 In Progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Circle className="w-4 h-4 text-[var(--ag-cyan)]" />
-              <span className="text-[var(--ag-text-muted)]">{plannedCount} Planned</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Circle className="w-4 h-4 text-[#8B5CF6]" />
+            <span className="text-[#9CA3AF]">{plannedCount} Planned</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
       {/* Timeline */}
       <div className="space-y-6">
         {/* 2026 Q1 */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#00FF88]/20 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-[#00FF88]" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q1 2026</h2>
-              <p className="text-sm text-[var(--ag-text-muted)]">Recently Shipped</p>
-            </div>
-          </div>
-
+        <SectionCard title="Q1 2026" subtitle="Recently Shipped">
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q1 2026').map(item => (
-              <Card key={item.id} className="border-[#00FF88]/30 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,255,136,0.08)] transition-all duration-300">
+              <div key={item.id} className="rounded-xl border border-[#00FF88]/30 bg-[rgba(12,12,30,0.6)] overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,255,136,0.08)] transition-all duration-300">
                 <div className="h-[3px] bg-gradient-to-r from-[#00FF88] to-[#00FF88]/40" />
-                <CardContent className="p-4">
+                <div className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center text-[#00FF88]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[rgba(139,92,246,0.15)] text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
 
         {/* 2026 Q2 */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/20 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-[var(--ag-cyan)]" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q2 2026</h2>
-              <p className="text-sm text-[var(--ag-text-muted)]">Coming Next</p>
-            </div>
-          </div>
-
+        <SectionCard title="Q2 2026" subtitle="Coming Next">
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter === 'Q2 2026').map(item => (
-              <Card key={item.id} className="border-[#00F0FF]/20 hover:border-[#00F0FF]/40 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,240,255,0.08)] overflow-hidden transition-all duration-300">
-                <div className="h-[3px] bg-gradient-to-r from-[#00F0FF] to-[#00F0FF]/40" />
-                <CardContent className="p-4">
+              <div key={item.id} className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(139,92,246,0.06)] overflow-hidden transition-all duration-300">
+                <div className="h-[3px] bg-gradient-to-r from-[#8B5CF6] to-[#8B5CF6]/40" />
+                <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center text-[var(--ag-cyan)]">
+                    <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[rgba(139,92,246,0.15)] text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
 
         {/* 2026 Q3-Q4 */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#6B7280]/20 flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-[var(--ag-text-muted)]" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Q3-Q4 2026</h2>
-              <p className="text-sm text-[var(--ag-text-muted)]">Future Vision</p>
-            </div>
-          </div>
-
+        <SectionCard title="Q3-Q4 2026" subtitle="Future Vision">
           <div className="grid md:grid-cols-2 gap-4">
             {roadmapItems.filter(i => i.quarter.startsWith('Q3') || i.quarter.startsWith('Q4')).map(item => (
-              <Card key={item.id} className="border-[#00F0FF]/10 hover:border-[#00F0FF]/30 hover:-translate-y-0.5 overflow-hidden transition-all duration-300 opacity-80 hover:opacity-100">
+              <div key={item.id} className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-0.5 overflow-hidden transition-all duration-300 opacity-80 hover:opacity-100">
                 <div className="h-[3px] bg-gradient-to-r from-[#6B7280] to-[#6B7280]/30" />
-                <CardContent className="p-4">
+                <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[var(--ag-text-muted)]">
+                    <div className="w-10 h-10 rounded-lg bg-[#6B7280]/10 flex items-center justify-center text-[#9CA3AF]">
                       {item.icon}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-[var(--ag-text-primary)]">{item.title}</h3>
+                        <h3 className="font-semibold text-[#F4F6FF]">{item.title}</h3>
                         {getStatusBadge(item.status)}
                       </div>
-                      <p className="text-sm text-[var(--ag-text-muted)]">{item.description}</p>
-                      <Badge variant="outline" className="mt-2 border-[#00F0FF]/20 text-[var(--ag-text-muted)]">
+                      <p className="text-sm text-[#9CA3AF]">{item.description}</p>
+                      <Badge variant="outline" className="mt-2 border-[rgba(139,92,246,0.15)] text-[#9CA3AF]">
                         {item.category}
                       </Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
       </div>
 
       {/* Suggest & Earn */}
-      <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#BF5FFF]/5 border-[#00F0FF]/20">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <Lightbulb className="w-5 h-5 text-[var(--ag-cyan)]" />
-                <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Suggest & Earn</h3>
-              </div>
-              <p className="text-sm text-[var(--ag-text-muted)]">
-                Submit feature ideas. Earn credits when they're accepted, shipped, or go live.
-              </p>
-              <div className="flex gap-4 mt-2 text-xs text-[var(--ag-text-muted)]">
-                <span className="flex items-center gap-1"><span className="text-[#00FF88] font-bold">+10</span> Accepted</span>
-                <span className="flex items-center gap-1"><span className="text-[#BF5FFF] font-bold">+50</span> Shipped</span>
-                <span className="flex items-center gap-1"><span className="text-[#F59E0B] font-bold">+100</span> Live</span>
-              </div>
+      <SectionCard padding="lg">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <Lightbulb className="w-5 h-5 text-[#EC4899]" />
+              <h3 className="text-lg font-semibold text-[#F4F6FF]">Suggest & Earn</h3>
             </div>
-            <Dialog open={suggestionOpen} onOpenChange={setSuggestionOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#00F0FF] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] text-[#05050A] font-semibold gap-2 shrink-0 transition-all duration-200">
-                  <Lightbulb className="w-4 h-4" />
+            <p className="text-sm text-[#9CA3AF]">
+              Submit feature ideas. Earn credits when they're accepted, shipped, or go live.
+            </p>
+            <div className="flex gap-4 mt-2 text-xs text-[#9CA3AF]">
+              <span className="flex items-center gap-1"><span className="text-[#00FF88] font-bold">+10</span> Accepted</span>
+              <span className="flex items-center gap-1"><span className="text-[#BF5FFF] font-bold">+50</span> Shipped</span>
+              <span className="flex items-center gap-1"><span className="text-[#F59E0B] font-bold">+100</span> Live</span>
+            </div>
+          </div>
+          <Dialog open={suggestionOpen} onOpenChange={setSuggestionOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold gap-2 shrink-0 transition-all duration-200 min-h-[44px]">
+                <Lightbulb className="w-4 h-4" />
+                Suggest a Feature
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#06061a] border-[rgba(139,92,246,0.15)]">
+              <DialogHeader>
+                <DialogTitle className="text-[#F4F6FF] flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-[#EC4899]" />
                   Suggest a Feature
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
-                <DialogHeader>
-                  <DialogTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-[var(--ag-cyan)]" />
-                    Suggest a Feature
-                  </DialogTitle>
-                </DialogHeader>
+                </DialogTitle>
+              </DialogHeader>
                 {submitSuccess ? (
                   <div className="py-8 text-center">
                     <div className="w-16 h-16 rounded-full bg-[#00FF88]/20 flex items-center justify-center mx-auto mb-4">
@@ -741,249 +698,245 @@ export function RoadmapPage() {
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <Label className="text-[var(--ag-text-primary)] text-sm">Title <span className="text-[#FF2D78]">*</span></Label>
+                      <Label className="text-[#F4F6FF] text-sm">Title <span className="text-[#FF2D78]">*</span></Label>
                       <Input
                         placeholder="e.g. Dark mode calendar view"
                         value={formTitle}
                         onChange={e => setFormTitle(e.target.value)}
                         maxLength={100}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
+                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[var(--ag-text-primary)] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[var(--ag-text-muted)] font-normal">(min 20 chars)</span></Label>
+                      <Label className="text-[#F4F6FF] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
                       <Textarea
                         placeholder="Describe the feature and why it would be useful..."
                         value={formBody}
                         onChange={e => setFormBody(e.target.value)}
                         rows={4}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)] resize-none"
+                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF] resize-none"
                       />
-                      <p className="text-right text-xs text-[var(--ag-text-muted)]">{formBody.length}/2000</p>
+                      <p className="text-right text-xs text-[#9CA3AF]">{formBody.length}/2000</p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[var(--ag-text-primary)] text-sm">Tags <span className="text-[var(--ag-text-muted)] font-normal">(comma-separated, max 5)</span></Label>
+                      <Label className="text-[#F4F6FF] text-sm">Tags <span className="text-[#9CA3AF] font-normal">(comma-separated, max 5)</span></Label>
                       <Input
                         placeholder="e.g. calendar, mobile, ai"
                         value={formTags}
                         onChange={e => setFormTags(e.target.value)}
-                        className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
+                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
                       />
                     </div>
                     {submitError && <p className="text-xs text-[#FF2D78]">{submitError}</p>}
                     <Button
                       onClick={handleSubmit}
                       disabled={submitting || !formTitle.trim() || formBody.trim().length < 20}
-                      className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold"
+                      className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
                     >
                       {submitting ? 'Submitting\u2026' : 'Submit Idea'}
                     </Button>
                   </div>
                 )}
-              </DialogContent>
-            </Dialog>
-          </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-          {/* My Suggestions list */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[var(--ag-cyan)]" />
-              My Suggestions
-              {mySuggestions.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-bold border border-[#00F0FF]/30">
-                  {mySuggestions.length}
-                </span>
-              )}
-            </h4>
-            {loadError && (
-              <div className="mb-3 px-3 py-2 rounded-lg bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-xs text-[#FF2D78]">
-                {loadError}
-              </div>
+        {/* My Suggestions list */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-[#EC4899]" />
+            My Suggestions
+            {mySuggestions.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-[#EC4899]/15 text-[#EC4899] text-xs font-bold border border-[#EC4899]/30">
+                {mySuggestions.length}
+              </span>
             )}
-            {loadingSuggestions ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10 animate-pulse">
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3.5 bg-[#1A1A2E] rounded w-3/4" />
-                      <div className="h-2.5 bg-[#1A1A2E] rounded w-1/2" />
-                    </div>
-                    <div className="h-6 w-16 bg-[#1A1A2E] rounded-full" />
+          </h4>
+          {loadError && (
+            <div className="mb-3 px-3 py-2 rounded-lg bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-xs text-[#FF2D78]">
+              {loadError}
+            </div>
+          )}
+          {loadingSuggestions ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] animate-pulse">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3.5 bg-[rgba(139,92,246,0.06)] rounded w-3/4" />
+                    <div className="h-2.5 bg-[rgba(139,92,246,0.04)] rounded w-1/2" />
                   </div>
-                ))}
-              </div>
-            ) : mySuggestions.length === 0 ? (
-              <p className="text-xs text-[var(--ag-text-muted)]">No suggestions yet. Be the first to suggest a feature!</p>
-            ) : (
-              <div className="space-y-2">
-                {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
-                  const vs = voteState[s.id];
-                  const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
-                  const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
-                  return (
-                    <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#05050A] border border-[#00F0FF]/10">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[var(--ag-text-primary)] truncate">{s.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-[var(--ag-text-muted)]">{new Date(s.created_at).toLocaleDateString()}</p>
-                          <span className="flex items-center gap-0.5 text-xs text-[var(--ag-cyan)]">
-                            <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
-                          </span>
-                          {downvotes > 0 && (
-                            <span className="flex items-center gap-0.5 text-xs text-[#FF6161]">
-                              <ThumbsDown className="w-2.5 h-2.5" /> {downvotes}
-                            </span>
-                          )}
-                          {s.trending === 1 && (
-                            <span className="text-xs text-[#F59E0B] font-semibold">trending</span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setDetailSuggestion(s);
-                          setDetailEvents([]);
-                          setLoadingEvents(true);
-                          suggestionService.events(s.id)
-                            .then(res => setDetailEvents(res.data.events))
-                            .catch(() => {})
-                            .finally(() => setLoadingEvents(false));
-                        }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#BF5FFF]/10 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-medium transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
-                        aria-label="View details"
-                      >
-                        <Eye className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => void handleVote(s.id)}
-                        disabled={vs?.voting}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-h-[44px]"
-                        aria-label="Upvote this suggestion"
-                      >
-                        <ThumbsUp className="w-3 h-3" />
-                        <span>{upvotes}</span>
-                      </button>
-                      {/* Phase 71: Edit button for 'new' status suggestions */}
-                      {s.status === 'new' && (
-                        <button
-                          onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#00F0FF]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
-                          aria-label="Edit suggestion"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      )}
-                      {s.status === 'new' && (
-                        <button
-                          onClick={() => void handleDelete(s.id)}
-                          disabled={deletingId === s.id}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 flex-shrink-0 ${confirmDeleteId === s.id ? 'bg-[#FF2D78]/20 text-[#FF2D78]' : 'bg-transparent hover:bg-[#FF2D78]/10 text-[var(--ag-text-muted)] hover:text-[#FF2D78]'}`}
-                          aria-label="Delete suggestion"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          {confirmDeleteId === s.id && <span>Confirm?</span>}
-                        </button>
-                      )}
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
-                        style={{ color: getStatusColor(s.status), borderColor: `${getStatusColor(s.status)}40`, backgroundColor: `${getStatusColor(s.status)}15` }}
-                      >
-                        {getStatusLabel(s.status)}
-                      </span>
-                    </div>
-                  );
-                })}
-                {/* Phase 71: Show all / Show less toggle */}
-                {mySuggestions.length > 5 && (
-                  <button
-                    onClick={() => setShowAllSuggestions(prev => !prev)}
-                    className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 hover:bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs font-medium transition-colors"
-                  >
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
-                    {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Task 70.6: Popular Ideas (top clusters) */}
-          {topClusters.length > 0 && (
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#BF5FFF]" />
-                Popular Ideas
-              </h4>
-              <div className="space-y-2">
-                {topClusters.map(cluster => (
-                  <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#05050A] border border-[#BF5FFF]/10">
+                  <div className="h-6 w-16 bg-[rgba(139,92,246,0.06)] rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : mySuggestions.length === 0 ? (
+            <p className="text-xs text-[#9CA3AF]">No suggestions yet. Be the first to suggest a feature!</p>
+          ) : (
+            <div className="space-y-2">
+              {(showAllSuggestions ? mySuggestions : mySuggestions.slice(0, 5)).map(s => {
+                const vs = voteState[s.id];
+                const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
+                const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
+                return (
+                  <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[var(--ag-text-primary)] truncate">
-                        {cluster.name || cluster.canonical_summary}
-                      </p>
-                      {cluster.name && cluster.name !== cluster.canonical_summary && (
-                        <p className="text-xs text-[var(--ag-text-muted)] truncate">{cluster.canonical_summary}</p>
-                      )}
+                      <p className="text-sm text-[#F4F6FF] truncate">{s.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-[#9CA3AF]">{new Date(s.created_at).toLocaleDateString()}</p>
+                        <span className="flex items-center gap-0.5 text-xs text-[#8B5CF6]">
+                          <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
+                        </span>
+                        {downvotes > 0 && (
+                          <span className="flex items-center gap-0.5 text-xs text-[#FF6161]">
+                            <ThumbsDown className="w-2.5 h-2.5" /> {downvotes}
+                          </span>
+                        )}
+                        {s.trending === 1 && (
+                          <span className="text-xs text-[#F59E0B] font-semibold">trending</span>
+                        )}
+                      </div>
                     </div>
-                    {cluster.total_votes !== undefined && (
-                      <span className="flex items-center gap-1 text-xs text-[var(--ag-cyan)] flex-shrink-0">
-                        <ThumbsUp className="w-3 h-3" /> {cluster.total_votes}
-                      </span>
+                    <button
+                      onClick={() => {
+                        setDetailSuggestion(s);
+                        setDetailEvents([]);
+                        setLoadingEvents(true);
+                        suggestionService.events(s.id)
+                          .then(res => setDetailEvents(res.data.events))
+                          .catch(() => {})
+                          .finally(() => setLoadingEvents(false));
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] text-xs font-medium transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                      aria-label="View details"
+                    >
+                      <Eye className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => void handleVote(s.id)}
+                      disabled={vs?.voting}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#EC4899]/10 hover:bg-[#EC4899]/20 text-[#EC4899] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                      aria-label="Upvote this suggestion"
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>{upvotes}</span>
+                    </button>
+                    {/* Edit button for 'new' status suggestions */}
+                    {s.status === 'new' && (
+                      <button
+                        onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[rgba(139,92,246,0.1)] text-[#9CA3AF] hover:text-[#8B5CF6] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                        aria-label="Edit suggestion"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                    {s.status === 'new' && (
+                      <button
+                        onClick={() => setDeleteDialogId(s.id)}
+                        disabled={deletingId === s.id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#FF2D78]/10 text-[#9CA3AF] hover:text-[#FF2D78] text-xs transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                        aria-label="Delete suggestion"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full border flex-shrink-0"
+                      style={{ color: getStatusColor(s.status), borderColor: `${getStatusColor(s.status)}40`, backgroundColor: `${getStatusColor(s.status)}15` }}
+                    >
+                      {getStatusLabel(s.status)}
+                    </span>
+                  </div>
+                );
+              })}
+              {/* Show all / Show less toggle */}
+              {mySuggestions.length > 5 && (
+                <button
+                  onClick={() => setShowAllSuggestions(prev => !prev)}
+                  className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 text-[#8B5CF6] text-xs font-medium transition-colors min-h-[44px]"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
+                  {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Popular Ideas (top clusters) */}
+        {topClusters.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#8B5CF6]" />
+              Popular Ideas
+            </h4>
+            <div className="space-y-2">
+              {topClusters.map(cluster => (
+                <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#F4F6FF] truncate">
+                      {cluster.name || cluster.canonical_summary}
+                    </p>
+                    {cluster.name && cluster.name !== cluster.canonical_summary && (
+                      <p className="text-xs text-[#9CA3AF] truncate">{cluster.canonical_summary}</p>
                     )}
                   </div>
-                ))}
-              </div>
+                  {cluster.total_votes !== undefined && (
+                    <span className="flex items-center gap-1 text-xs text-[#EC4899] flex-shrink-0">
+                      <ThumbsUp className="w-3 h-3" /> {cluster.total_votes}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Earned Credits */}
-          {myRewards.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-[#F59E0B]" />
-                Earned Credits
-                <span className="text-[#F59E0B] font-bold ml-auto">
-                  +{myRewards.reduce((sum, r) => sum + r.credits, 0)} credits
-                </span>
-              </h4>
-              <div className="space-y-2">
-                {myRewards.slice(0, 5).map(r => (
-                  <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/20">
-                    <Gift className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[var(--ag-text-primary)]">{getRewardLabel(r.eventType)}</p>
-                      <p className="text-xs text-[var(--ag-text-muted)]">{new Date(r.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <span className="text-sm font-bold text-[#F59E0B] flex-shrink-0">+{r.credits}</span>
+        {/* Earned Credits */}
+        {myRewards.length > 0 && (
+          <div>
+            <h4 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+              <Gift className="w-4 h-4 text-[#F59E0B]" />
+              Earned Credits
+              <span className="text-[#F59E0B] font-bold ml-auto">
+                +{myRewards.reduce((sum, r) => sum + r.credits, 0)} credits
+              </span>
+            </h4>
+            <div className="space-y-2">
+              {myRewards.slice(0, 5).map(r => (
+                <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/20">
+                  <Gift className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-[#F4F6FF]">{getRewardLabel(r.eventType)}</p>
+                    <p className="text-xs text-[#9CA3AF]">{new Date(r.createdAt).toLocaleDateString()}</p>
                   </div>
-                ))}
-              </div>
+                  <span className="text-sm font-bold text-[#F59E0B] flex-shrink-0">+{r.credits}</span>
+                </div>
+              ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </SectionCard>
 
-      {/* Original CTA (kept for backwards compat, hidden via the new section above) */}
-      <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/5 border-[#00F0FF]/20">
-        <CardContent className="p-6 text-center">
-          <Sparkles className="w-8 h-8 text-[var(--ag-cyan)] mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-2">
-            Have a feature request?
-          </h3>
-          <p className="text-sm text-[var(--ag-text-muted)] mb-4">
-            We're building Agentin for you. Let us know what you'd like to see next.
-          </p>
-          <button
-            onClick={() => setSuggestionOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00F0FF] hover:bg-[#00F0FF]/90 hover:shadow-[0_0_24px_rgba(0,240,255,0.35)] text-white font-medium transition-all duration-200"
-          >
-            Share Feedback
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </CardContent>
-      </Card>
+      {/* CTA */}
+      <SectionCard padding="lg" className="text-center">
+        <Sparkles className="w-8 h-8 text-[#EC4899] mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-[#F4F6FF] mb-2">
+          Have a feature request?
+        </h3>
+        <p className="text-sm text-[#9CA3AF] mb-4">
+          We're building Agentin for you. Let us know what you'd like to see next.
+        </p>
+        <button
+          onClick={() => setSuggestionOpen(true)}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium transition-all duration-200 min-h-[44px]"
+        >
+          Share Feedback
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </SectionCard>
 
-      {/* Task 69.12: Recent Improvements section */}
+      {/* Recent Improvements */}
       {(() => {
         const RECENT_IMPROVEMENTS = [
           { phase: 72, title: 'Status notifications, timeline UI, loading skeletons, error handling' },
@@ -991,73 +944,67 @@ export function RoadmapPage() {
           { phase: 70, title: 'Release Train R3 — v3.1.0 production deploy, clusters, trending' },
         ];
         return (
-          <Card className="bg-[#0B0B10] border-[#BF5FFF]/20">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-4 flex items-center gap-2">
-                <History className="w-5 h-5 text-[#BF5FFF]" />
-                Recent Improvements
-              </h3>
-              <div className="space-y-3">
-                {RECENT_IMPROVEMENTS.map((item, idx) => (
-                  <div key={item.phase} className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 w-px self-stretch bg-[#BF5FFF]/20 ml-5 ${idx === 0 ? 'mt-6' : ''}`} aria-hidden="true" />
-                    <div className="flex items-start gap-3 flex-1 pb-3 border-b border-[#BF5FFF]/10 last:border-0">
-                      <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#BF5FFF]/20 text-[#BF5FFF] text-xs font-bold border border-[#BF5FFF]/30">
-                        v{item.phase}
-                      </span>
-                      <p className="text-sm text-[#A7ACB8] leading-relaxed">{item.title}</p>
-                    </div>
+          <SectionCard title="Recent Improvements" padding="lg">
+            <div className="space-y-3">
+              {RECENT_IMPROVEMENTS.map((item, idx) => (
+                <div key={item.phase} className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 w-px self-stretch bg-[#EC4899]/20 ml-5 ${idx === 0 ? 'mt-6' : ''}`} aria-hidden="true" />
+                  <div className="flex items-start gap-3 flex-1 pb-3 border-b border-[rgba(139,92,246,0.08)] last:border-0">
+                    <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#EC4899]/15 text-[#EC4899] text-xs font-bold border border-[#EC4899]/30">
+                      v{item.phase}
+                    </span>
+                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{item.title}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
         );
       })()}
 
-      {/* Phase 71: Edit Suggestion Modal */}
+      {/* Edit Suggestion Modal */}
       {editingSuggestion && (
         <Dialog open={!!editingSuggestion} onOpenChange={(open) => { if (!open) setEditingSuggestion(null); }}>
-          <DialogContent className="bg-[#06060B] border-[#00F0FF]/20">
+          <DialogContent className="bg-[#06061a] border-[rgba(139,92,246,0.15)]">
             <DialogHeader>
-              <DialogTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Pencil className="w-5 h-5 text-[var(--ag-cyan)]" />
+              <DialogTitle className="text-[#F4F6FF] flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-[#EC4899]" />
                 Edit Suggestion
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label className="text-[var(--ag-text-primary)] text-sm">Title</Label>
+                <Label className="text-[#F4F6FF] text-sm">Title</Label>
                 <Input
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
                   maxLength={100}
-                  className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)]"
+                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[var(--ag-text-primary)] text-sm">Description <span className="text-[var(--ag-text-muted)] font-normal">(min 20 chars)</span></Label>
+                <Label className="text-[#F4F6FF] text-sm">Description <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
                 <Textarea
                   value={editBody}
                   onChange={e => setEditBody(e.target.value)}
                   rows={4}
-                  className="bg-[#05050A] border-[#00F0FF]/20 text-[var(--ag-text-primary)] resize-none"
+                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF] resize-none"
                 />
-                <p className="text-right text-xs text-[var(--ag-text-muted)]">{editBody.length}/2000</p>
+                <p className="text-right text-xs text-[#9CA3AF]">{editBody.length}/2000</p>
               </div>
               {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
               <div className="flex gap-2">
                 <Button
                   onClick={() => setEditingSuggestion(null)}
                   variant="outline"
-                  className="flex-1 border-[#00F0FF]/20 text-[var(--ag-text-muted)]"
+                  className="flex-1 border-[rgba(139,92,246,0.15)] text-[#9CA3AF] min-h-[44px]"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={() => void handleEdit()}
                   disabled={editSaving || !editTitle.trim() || editBody.trim().length < 20}
-                  className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold"
+                  className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
                 >
                   {editSaving ? 'Saving\u2026' : 'Save Changes'}
                 </Button>
@@ -1067,12 +1014,12 @@ export function RoadmapPage() {
         </Dialog>
       )}
 
-      {/* Task 69.10: Suggestion Detail Modal */}
+      {/* Suggestion Detail Modal */}
       {detailSuggestion && (
         <Dialog open={!!detailSuggestion} onOpenChange={(open) => { if (!open) setDetailSuggestion(null); }}>
-          <DialogContent className="bg-[#0B0B10] border-[#BF5FFF]/20">
+          <DialogContent className="bg-[#06061a] border-[rgba(139,92,246,0.15)]">
             <DialogHeader>
-              <DialogTitle className="text-lg text-[var(--ag-text-primary)] pr-8">{detailSuggestion.title}</DialogTitle>
+              <DialogTitle className="text-lg text-[#F4F6FF] pr-8">{detailSuggestion.title}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Status badge */}
@@ -1087,18 +1034,18 @@ export function RoadmapPage() {
                 >
                   {getStatusLabel(detailSuggestion.status)}
                 </span>
-                <span className="text-xs text-[var(--ag-text-muted)]">
+                <span className="text-xs text-[#9CA3AF]">
                   Submitted {new Date(detailSuggestion.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
               </div>
               {/* Body */}
-              <div className="rounded-lg bg-[#05050A] border border-[#BF5FFF]/10 p-4">
-                <p className="text-sm text-[#C4C8D4] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
+              <div className="rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] p-4">
+                <p className="text-sm text-[#9CA3AF] leading-relaxed whitespace-pre-wrap">{detailSuggestion.body}</p>
               </div>
-              {/* Vote counts — always show, using voteState with suggestion fallback */}
-              <div className="flex items-center gap-4 text-xs text-[var(--ag-text-muted)]">
+              {/* Vote counts */}
+              <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                 <span className="flex items-center gap-1">
-                  <ThumbsUp className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+                  <ThumbsUp className="w-3.5 h-3.5 text-[#EC4899]" />
                   {(voteState[detailSuggestion.id]?.upvotes ?? detailSuggestion.upvotes ?? 0)} upvotes
                 </span>
                 <span className="flex items-center gap-1">
@@ -1106,22 +1053,22 @@ export function RoadmapPage() {
                   {(voteState[detailSuggestion.id]?.downvotes ?? detailSuggestion.downvotes ?? 0)} downvotes
                 </span>
               </div>
-              {/* Phase 72.4: Status Timeline */}
-              {loadingEvents && <p className="text-xs text-[var(--ag-text-muted)]">Loading history…</p>}
+              {/* Status Timeline */}
+              {loadingEvents && <p className="text-xs text-[#9CA3AF]">Loading history...</p>}
               {detailEvents.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-[var(--ag-text-muted)]">Status History</p>
+                  <p className="text-xs font-semibold text-[#9CA3AF]">Status History</p>
                   <div className="space-y-1.5">
                     {detailEvents.map(ev => (
                       <div key={ev.id} className="flex items-center gap-2 text-xs">
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.oldStatus), borderColor: `${getStatusColor(ev.oldStatus)}40`, backgroundColor: `${getStatusColor(ev.oldStatus)}10` }}>
                           {getStatusLabel(ev.oldStatus)}
                         </span>
-                        <ArrowRight className="w-3 h-3 text-[var(--ag-text-muted)]" />
+                        <ArrowRight className="w-3 h-3 text-[#9CA3AF]" />
                         <span className="px-1.5 py-0.5 rounded border" style={{ color: getStatusColor(ev.newStatus), borderColor: `${getStatusColor(ev.newStatus)}40`, backgroundColor: `${getStatusColor(ev.newStatus)}10` }}>
                           {getStatusLabel(ev.newStatus)}
                         </span>
-                        <span className="text-[var(--ag-text-muted)] ml-auto">
+                        <span className="text-[#9CA3AF] ml-auto">
                           {new Date(ev.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
@@ -1129,20 +1076,35 @@ export function RoadmapPage() {
                   </div>
                 </div>
               )}
-              {/* Close button */}
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setDetailSuggestion(null)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06060B] border border-[#BF5FFF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] text-xs transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Close
-                </button>
-              </div>
             </div>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteDialogId} onOpenChange={(open) => { if (!open) setDeleteDialogId(null); }}>
+        <DialogContent className="bg-[#06061a] border-[rgba(139,92,246,0.15)]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#F4F6FF]">
+              <Trash2 className="w-5 h-5 text-[#FF2D78]" />
+              Delete this suggestion?
+            </DialogTitle>
+            <DialogDescription className="text-[#9CA3AF]">
+              This suggestion will be permanently removed and cannot be recovered.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteDialogId(null)} className="min-h-[44px] text-[#9CA3AF]">Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => { if (deleteDialogId) void handleDelete(deleteDialogId); }}
+              className="min-h-[44px]"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </PageShell>
   );

@@ -81,9 +81,9 @@ export function StatusPage() {
   const allOk = entries.every(([, v]) => componentStatus(v) === 'operational');
 
   return (
-    <div className="min-h-screen bg-[#06060B] text-[#E8E8F0]">
+    <div className="min-h-screen bg-[#06061a] text-[#F4F6FF]">
       <div className="max-w-3xl mx-auto px-6 py-12 pb-24 md:pb-12">
-        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="text-[#9CA3AF] hover:text-[#E8E8F0] mb-8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
+        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] mb-8 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
 
@@ -93,15 +93,15 @@ export function StatusPage() {
               System Status
             </h1>
             <p className="text-[#9CA3AF]">
-              {lastChecked ? `Last checked: ${lastChecked.toLocaleTimeString()}` : 'Checking…'}
-              {health && ` · v${health.version} · uptime ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m`}
+              {lastChecked ? `Last checked: ${lastChecked.toLocaleTimeString()}` : 'Checking\u2026'}
+              {health && ` \u00b7 v${health.version} \u00b7 uptime ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m`}
             </p>
           </div>
           <Button
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]"
+            className="min-h-[44px] border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh
@@ -109,7 +109,7 @@ export function StatusPage() {
         </div>
 
         {error && (
-          <Card className="mb-8 border bg-[#FF6161]/5 border-[#FF6161]/30">
+          <Card className="mb-8 border bg-[#FF6161]/5 border-[#FF6161]/30" style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}>
             <CardContent className="p-6 text-center">
               <XCircle className="w-10 h-10 text-[#FF6161] mx-auto mb-3" />
               <h2 className="text-xl font-bold text-[#FF6161]">Unable to Reach Server</h2>
@@ -120,7 +120,10 @@ export function StatusPage() {
 
         {health && (
           <>
-            <Card className={`mb-8 border ${allOk ? 'bg-[#ADFF2F]/5 border-[#ADFF2F]/30' : 'bg-[#FFD700]/5 border-[#FFD700]/30'}`}>
+            <Card
+              className={`mb-8 border ${allOk ? 'border-[#ADFF2F]/30' : 'border-[#FFD700]/30'}`}
+              style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
+            >
               <CardContent className="p-6 text-center">
                 {allOk ? (
                   <>
@@ -142,12 +145,16 @@ export function StatusPage() {
               {entries.map(([key, value]) => {
                 const status = componentStatus(value);
                 return (
-                  <Card key={key} className="glass-card-v2 border-[#00F0FF]/20">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
+                  <Card
+                    key={key}
+                    className="border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-colors"
+                    style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
+                  >
+                    <CardContent className="p-4 min-h-[44px] flex items-center">
+                      <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           {getStatusIcon(status)}
-                          <span className="font-medium text-[#E8E8F0]">{COMPONENT_LABELS[key]}</span>
+                          <span className="font-medium text-[#F4F6FF]">{COMPONENT_LABELS[key]}</span>
                         </div>
                         <span className={`text-sm capitalize ${getStatusColor(status)}`}>
                           {status}
@@ -162,13 +169,16 @@ export function StatusPage() {
         )}
 
         {!health && !error && checking && (
-          <div className="text-center text-[#9CA3AF] py-12">Checking system status…</div>
+          <div className="text-center text-[#9CA3AF] py-12">Checking system status&hellip;</div>
         )}
 
-        <div className="mt-12 p-6 rounded-xl glass-card-v2 border border-[#00F0FF]/20">
+        <div
+          className="mt-12 p-6 rounded-xl border border-[rgba(139,92,246,0.08)]"
+          style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
+        >
           <p className="text-sm text-[#9CA3AF]">
             Experiencing issues? Contact us at{' '}
-            <span className="text-[#00F0FF]">support@agentin.chat</span>
+            <a href="mailto:support@agentin.chat" className="text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors">support@agentin.chat</a>
           </p>
         </div>
       </div>

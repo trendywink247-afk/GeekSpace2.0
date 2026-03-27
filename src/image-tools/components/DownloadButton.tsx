@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 
 interface DownloadButtonProps {
+  /** Accepts both data URLs (data:...) and blob URLs (blob:...) */
   dataUrl: string;
   filename: string;
   label?: string;
@@ -13,19 +14,32 @@ function formatSize(bytes: number): string {
 }
 
 export function DownloadButton({ dataUrl, filename, label = 'Download' }: DownloadButtonProps) {
-  /* estimate file size from base64 data URL */
+  const isBlobUrl = dataUrl?.startsWith('blob:');
+
+  /* estimate file size from base64 data URL (not possible for blob URLs) */
   const fileSize = useMemo(() => {
-    if (!dataUrl) return 0;
+    if (!dataUrl || isBlobUrl) return 0;
     const base64Idx = dataUrl.indexOf(',');
     if (base64Idx === -1) return 0;
     const base64 = dataUrl.slice(base64Idx + 1);
     /* base64 encodes 3 bytes per 4 chars, account for padding */
     const padding = (base64.match(/=+$/) || [''])[0].length;
     return Math.floor((base64.length * 3) / 4) - padding;
-  }, [dataUrl]);
+  }, [dataUrl, isBlobUrl]);
 
   const handleDownload = useCallback(() => {
     if (!dataUrl) return;
+
+    /* blob URLs can be used directly as href */
+    if (isBlobUrl) {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
 
     /* convert data URL to blob for reliable download */
     const base64Idx = dataUrl.indexOf(',');
@@ -49,13 +63,13 @@ export function DownloadButton({ dataUrl, filename, label = 'Download' }: Downlo
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [dataUrl, filename]);
+  }, [dataUrl, filename, isBlobUrl]);
 
   return (
     <button
       onClick={handleDownload}
       disabled={!dataUrl}
-      className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30"
+      className="inline-flex items-center gap-2.5 px-5 min-h-[44px] rounded-xl text-sm font-medium text-[var(--ag-text-primary)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-violet)] to-[#7C3AED] hover:brightness-110 shadow-lg shadow-[var(--ag-violet)]/20 hover:shadow-[var(--ag-violet)]/30"
     >
       {/* download icon */}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +81,7 @@ export function DownloadButton({ dataUrl, filename, label = 'Download' }: Downlo
       <span>{label}</span>
 
       {fileSize > 0 && (
-        <span className="text-white/50 text-xs ml-0.5">
+        <span className="text-[var(--ag-text-secondary)] text-xs ml-0.5">
           ({formatSize(fileSize)})
         </span>
       )}

@@ -14,7 +14,7 @@ export function ToolShell({ title, description, onBack, children }: ToolShellPro
       <div className="flex items-start gap-4">
         <button
           onClick={onBack}
-          className="mt-0.5 flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/[0.15] transition-colors cursor-pointer"
+          className="mt-0.5 flex-shrink-0 flex items-center justify-center w-11 min-h-[44px] rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors cursor-pointer"
           aria-label="Back to tools"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -23,13 +23,13 @@ export function ToolShell({ title, description, onBack, children }: ToolShellPro
         </button>
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{title}</h2>
-          <p className="text-sm text-white/40 mt-1 leading-relaxed">{description}</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] tracking-tight">{title}</h2>
+          <p className="text-sm text-[var(--ag-text-secondary)] mt-1 leading-relaxed">{description}</p>
         </div>
       </div>
 
       {/* tool content */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5 sm:p-6">
         {children}
       </div>
     </div>

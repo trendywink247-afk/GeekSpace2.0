@@ -17,7 +17,7 @@ interface Props {
 
 function agentColor(name: string): string {
   const lower = name.toLowerCase() as AgentId;
-  return AGENT_COLORS[lower] ?? '#8892A4';
+  return AGENT_COLORS[lower] ?? '#9CA3AF';
 }
 
 function agentDisplayName(name: string): string {
@@ -62,9 +62,9 @@ export function MiniChatLog({ messages }: Props) {
           )}
         </span>
         {collapsed ? (
-          <ChevronDown className="w-3.5 h-3.5 text-[#8892A4]" />
+          <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF]" />
         ) : (
-          <ChevronUp className="w-3.5 h-3.5 text-[#8892A4]" />
+          <ChevronUp className="w-3.5 h-3.5 text-[#9CA3AF]" />
         )}
       </button>
 
@@ -84,7 +84,7 @@ export function MiniChatLog({ messages }: Props) {
                 <span style={{ color: agentColor(msg.toAgent) }}>
                   {agentDisplayName(msg.toAgent)}
                 </span>
-                <span className="text-[#8892A4]">: {msg.text}</span>
+                <span className="text-[#9CA3AF]">: {msg.text}</span>
               </div>
             ))
           )}

@@ -92,12 +92,22 @@ videosRouter.get('/models/status', requireAuth, async (_req: AuthRequest, res) =
     pollinationsStatus = r.ok ? 'ok' : 'down';
   } catch { pollinationsStatus = 'down'; }
 
+  // Honest status: seedance-lite requires FAL_KEY, openrouter-video requires API key
+  const seedanceStatus: 'ok' | 'down' | 'unknown' = config.falEnabled ? 'ok' : 'down';
+  const openrouterStatus: 'ok' | 'down' | 'unknown' = config.openrouterApiKey ? 'ok' : 'down';
+  // Premium also requires openrouter for Kimi prompt enhancement + a working video provider
+  const premiumStatus: 'ok' | 'down' | 'unknown' =
+    config.openrouterApiKey && (pollinationsStatus === 'ok' || seedanceStatus === 'ok')
+      ? 'ok' : 'down';
+  // Auto is ok if at least one backend is available
+  const anyProviderUp = pollinationsStatus === 'ok' || seedanceStatus === 'ok' || openrouterStatus === 'ok';
+
   const statuses: Record<string, 'ok' | 'down' | 'unknown'> = {
-    auto: 'ok',
+    auto: anyProviderUp ? 'ok' : 'down',
     'pollinations-video': pollinationsStatus,
-    'seedance-lite': 'ok',
-    'openrouter-video': 'ok',
-    premium: 'ok',
+    'seedance-lite': seedanceStatus,
+    'openrouter-video': openrouterStatus,
+    premium: premiumStatus,
   };
   videoStatusCache = { data: statuses, ts: Date.now() };
   res.json({ statuses });

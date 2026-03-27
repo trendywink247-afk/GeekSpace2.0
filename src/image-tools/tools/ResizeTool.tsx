@@ -60,7 +60,7 @@ function resizeToDataUrl(
   return canvas.toDataURL('image/png');
 }
 
-export function ResizeTool() {
+export function ResizeTool(_props: { onBack: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [imageEl, setImageEl] = useState<HTMLImageElement | null>(null);
   const [originalDims, setOriginalDims] = useState<ImageDims | null>(null);
@@ -183,8 +183,8 @@ export function ResizeTool() {
     <div className="space-y-5 p-4 pb-24 md:pb-4 max-w-3xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-white">Resize Image</h2>
-        <p className="text-xs text-white/50 mt-0.5">
+        <h2 className="text-lg font-semibold text-[var(--ag-text-primary)]">Resize Image</h2>
+        <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
           Scale to exact dimensions or popular social media sizes
         </p>
       </div>
@@ -195,20 +195,20 @@ export function ResizeTool() {
       {originalDims && (
         <>
           {/* Original info */}
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
+          <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-violet-500/10">
-                <ImageIcon className="w-5 h-5 text-violet-400" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--ag-forge)]/10">
+                <ImageIcon className="w-5 h-5 text-[var(--ag-forge)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{file?.name}</p>
-                <p className="text-xs text-white/50">
+                <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{file?.name}</p>
+                <p className="text-xs text-[var(--ag-text-secondary)]">
                   {originalDims.width} x {originalDims.height} px
                 </p>
               </div>
               <button
                 onClick={handleReset}
-                className="text-xs text-white/50 hover:text-red-400 transition-colors"
+                className="text-xs min-h-[44px] text-[var(--ag-text-secondary)] hover:text-red-400 transition-colors"
               >
                 Remove
               </button>
@@ -216,11 +216,11 @@ export function ResizeTool() {
           </div>
 
           {/* Controls */}
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 space-y-4">
+          <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-4 space-y-4">
             {/* Dimension inputs + lock */}
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-1.5 block">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-1.5 block">
                   Width
                 </label>
                 <input
@@ -228,19 +228,19 @@ export function ResizeTool() {
                   min={1}
                   value={width}
                   onChange={(e) => handleWidthChange(e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2
-                    text-sm text-white placeholder:text-white/20
-                    focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full min-h-[44px] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2
+                    text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]
+                    focus:outline-none focus:border-[var(--ag-violet)]/50 transition-colors"
                 />
               </div>
 
               {/* Lock toggle */}
               <button
                 onClick={() => setLockAspect((v) => !v)}
-                className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all mb-0.5 ${
+                className={`flex items-center justify-center w-11 min-h-[44px] rounded-lg border transition-all mb-0.5 ${
                   lockAspect
-                    ? 'bg-violet-500/15 border-violet-500/40 text-violet-400'
-                    : 'bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white'
+                    ? 'bg-[var(--ag-violet)]/15 border-[var(--ag-violet)]/40 text-[var(--ag-violet)]'
+                    : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                 }`}
                 title={lockAspect ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
               >
@@ -248,7 +248,7 @@ export function ResizeTool() {
               </button>
 
               <div className="flex-1">
-                <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-1.5 block">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-1.5 block">
                   Height
                 </label>
                 <input
@@ -256,16 +256,16 @@ export function ResizeTool() {
                   min={1}
                   value={height}
                   onChange={(e) => handleHeightChange(e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2
-                    text-sm text-white placeholder:text-white/20
-                    focus:outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full min-h-[44px] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2
+                    text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]
+                    focus:outline-none focus:border-[var(--ag-violet)]/50 transition-colors"
                 />
               </div>
             </div>
 
             {/* Scale presets */}
             <div>
-              <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-2 block">
                 Scale
               </label>
               <div className="flex flex-wrap gap-2">
@@ -273,10 +273,10 @@ export function ResizeTool() {
                   <button
                     key={p.label}
                     onClick={() => applyScalePreset(p.factor, p.label)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                       activePreset === p.label
-                        ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                        : 'bg-white/[0.04] text-white/50 border border-white/[0.08] hover:text-white hover:border-white/[0.12]'
+                        ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                     }`}
                   >
                     {p.label}
@@ -284,10 +284,10 @@ export function ResizeTool() {
                 ))}
                 <button
                   onClick={() => setActivePreset('Custom')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                     activePreset === 'Custom'
-                      ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                      : 'bg-white/[0.04] text-white/50 border border-white/[0.08] hover:text-white hover:border-white/[0.12]'
+                      ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                   }`}
                 >
                   Custom
@@ -297,7 +297,7 @@ export function ResizeTool() {
 
             {/* Social media presets */}
             <div>
-              <label className="text-xs text-white/50 font-medium uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-2 block">
                 Social Media
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -305,10 +305,10 @@ export function ResizeTool() {
                   <button
                     key={p.label}
                     onClick={() => applySocialPreset(p)}
-                    className={`flex flex-col items-center gap-1 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                    className={`flex flex-col items-center gap-1 px-3 min-h-[44px] rounded-lg text-sm transition-all ${
                       activePreset === p.label
-                        ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                        : 'bg-white/[0.04] text-white/50 border border-white/[0.08] hover:text-white hover:border-white/[0.12]'
+                        ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                     }`}
                   >
                     <span className="font-medium">{p.label}</span>
@@ -320,17 +320,17 @@ export function ResizeTool() {
 
             {/* Output dimensions summary */}
             {width && height && originalDims && (
-              <div className="flex items-center gap-2 text-xs text-white/50 bg-white/[0.02] rounded-lg px-3 py-2 border border-white/[0.04]">
+              <div className="flex items-center gap-2 text-xs text-[var(--ag-text-secondary)] bg-[var(--ag-bg-surface)] rounded-lg px-3 py-2 border border-[var(--ag-border-subtle)]">
                 <Maximize2 className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>
                   {originalDims.width}x{originalDims.height}
                 </span>
                 <span>&rarr;</span>
-                <span className="text-white font-medium">
+                <span className="text-[var(--ag-text-primary)] font-medium">
                   {width}x{height}
                 </span>
                 {originalDims.width !== 0 && (
-                  <span className="ml-auto text-violet-400">
+                  <span className="ml-auto text-[var(--ag-violet)]">
                     {Math.round((Number(width) / originalDims.width) * 100)}% scale
                   </span>
                 )}
@@ -341,10 +341,10 @@ export function ResizeTool() {
           {/* Live preview */}
           {previewUrl && (
             <div className="space-y-3">
-              <label className="text-xs text-white/50 font-medium uppercase tracking-wide block">
+              <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide block">
                 Preview
               </label>
-              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 flex items-center justify-center overflow-hidden">
+              <div className="rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] p-3 flex items-center justify-center overflow-hidden">
                 <img
                   src={previewUrl}
                   alt="Resized preview"

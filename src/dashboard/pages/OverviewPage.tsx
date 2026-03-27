@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
+  LayoutDashboard,
   MessageSquare,
   Bell,
   Target,
@@ -32,8 +33,9 @@ import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -202,7 +204,7 @@ function ActivitySparkline({
 
   if (data.length < 2) {
     return (
-      <div className="flex items-center justify-center h-12 text-xs text-[#8892A4]">
+      <div className="flex items-center justify-center h-12 text-xs text-[var(--ag-text-secondary)]">
         Not enough data yet
       </div>
     );
@@ -293,12 +295,12 @@ function ActivitySparkline({
       {/* Tooltip */}
       {hoveredIdx !== null && points[hoveredIdx] && (
         <div
-          className="absolute -top-9 pointer-events-none z-10 rounded-md px-2 py-1 text-xs font-mono whitespace-nowrap border border-[#00F0FF]/20"
+          className="absolute -top-9 pointer-events-none z-10 rounded-md px-2 py-1 text-xs font-mono whitespace-nowrap border border-[var(--ag-border-glow)]"
           style={{
             left: `${(points[hoveredIdx].x / w) * 100}%`,
             transform: 'translateX(-50%)',
-            background: '#12121F',
-            color: '#F4F6FF',
+            background: 'var(--ag-bg-elevated)',
+            color: 'var(--ag-text-primary)',
           }}
         >
           {labels?.[hoveredIdx] ? `${labels[hoveredIdx]}: ` : ''}
@@ -313,7 +315,7 @@ function ActivitySparkline({
 /** Skeleton placeholder for a glance card */
 function GlanceCardSkeleton() {
   return (
-    <div className="min-w-[160px] flex-shrink-0 snap-start rounded-2xl border border-[#00F0FF]/10 bg-[#0C0C18] p-4">
+    <div className="min-w-[160px] flex-shrink-0 snap-start rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4">
       <Skeleton className="w-10 h-10 rounded-xl mb-3" />
       <Skeleton className="h-7 w-12 mb-1" />
       <Skeleton className="h-4 w-20 mb-1" />
@@ -353,21 +355,21 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
     <div
       role="banner"
       aria-label="iOS install guide"
-      className="flex items-center gap-3 rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 px-4 py-3 text-sm"
+      className="flex items-center gap-3 rounded-xl border border-[var(--ag-border-glow)] bg-[var(--ag-cyan)]/5 px-4 py-3 text-sm"
     >
       <span className="text-base leading-none select-none" aria-hidden>📱</span>
-      <span className="flex-1 text-[#8892A4]">
-        <span className="font-medium text-[#F4F6FF]">Install Agentin:</span>{' '}
+      <span className="flex-1 text-[var(--ag-text-secondary)]">
+        <span className="font-medium text-[var(--ag-text-primary)]">Install Agentin:</span>{' '}
         Tap the{' '}
-        <span className="inline-flex items-center gap-0.5 font-medium text-[#00F0FF]">
+        <span className="inline-flex items-center gap-0.5 font-medium text-[var(--ag-cyan)]">
           Share <span aria-label="share icon">⬆</span>
         </span>{' '}
-        button → <span className="font-medium text-[#F4F6FF]">"Add to Home Screen"</span>
+        button → <span className="font-medium text-[var(--ag-text-primary)]">"Add to Home Screen"</span>
       </span>
       <button
         onClick={onDismiss}
         aria-label="Dismiss iOS install guide"
-        className="p-1 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8892A4] hover:text-[#F4F6FF]"
+        className="p-1 rounded-lg hover:bg-[var(--ag-cyan)]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
       >
         <X className="w-4 h-4" />
       </button>
@@ -385,6 +387,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   const { stats, reminders } = useDashboardStore();
   const loadErrors = useDashboardStore((s) => s.loadErrors);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'weebo', page: 'overview' });
 
   // Data states
   const [loading, setLoading] = useState(true);
@@ -450,6 +453,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // GAP-1: Complete a reminder via the overview card
   const handleCompleteReminder = useCallback(async (id: string) => {
     setCompletingReminder(id);
+    void notifyStart('complete-reminder');
     try {
       await reminderService.update(id, { completed: true });
       // Optimistically remove from overview
@@ -464,12 +468,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           },
         };
       });
+      void notifyDone('Reminder completed');
     } catch {
-      // Silently fail — user can retry
+      void notifyFail('Failed to complete reminder');
     } finally {
       setCompletingReminder(null);
     }
-  }, []);
+  }, [notifyStart, notifyDone, notifyFail]);
 
   // Load data
   const fetchOverviewData = useCallback(async () => {
@@ -584,7 +589,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
   const quickActions = [
     { label: 'New Reminder', icon: Bell, color: '#00F0FF', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
-    { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => onOpenChat?.() },
+    { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => { void notifyStart('open-chat'); onOpenChat?.(); } },
     { label: 'Start Focus', icon: Timer, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
     { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
     { label: 'New Note', icon: FileText, color: '#FFB800', bgColor: 'rgba(255,184,0,0.1)', page: 'docs' },
@@ -644,76 +649,46 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         )}
 
         {/* ─── Personalized Greeting Header ─── */}
-        <div
-          className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div>
-              <h1
-                className="text-3xl md:text-4xl font-bold tracking-tight"
-                style={{ fontFamily: 'Syne, sans-serif', color: '#F4F6FF' }}
-              >
-                {t(greeting)},{' '}
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: 'linear-gradient(135deg, #00F0FF, #ADFF2F)' }}
-                >
-                  {firstName}
-                </span>
-              </h1>
-              {/* Festival / holiday greeting pill */}
+        <PageHeader
+          icon={LayoutDashboard}
+          title={`${t(greeting)}, ${firstName}`}
+          subtitle={
+            pendingReminders.length > 0
+              ? `${pendingReminders.length} reminder${pendingReminders.length !== 1 ? 's' : ''} today`
+              : messagesToday > 0
+                ? `${messagesToday} messages sent today`
+                : 'All clear — ready to start your day'
+          }
+          badge={
+            <span className="relative flex h-3 w-3" title="Owned by Weebo">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-weebo)] opacity-50" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--ag-weebo)]" />
+            </span>
+          }
+          actions={
+            <>
               {festivalGreeting && (
                 <span
-                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-medium border border-[#FFB800]/20 animate-pulse"
-                  style={{ background: 'rgba(255,184,0,0.1)', color: '#FFB800' }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-[var(--ag-amber)]/20 animate-pulse"
+                  style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--ag-amber)' }}
                 >
                   <Sparkles className="w-3 h-3" />
                   {festivalGreeting}
                 </span>
               )}
-              <p className="text-[#8892A4] mt-1.5 text-sm sm:text-base">
-                {pendingReminders.length > 0 && (
-                  <>
-                    You have{' '}
-                    <span className="text-[#00F0FF] font-medium">
-                      {pendingReminders.length} reminder{pendingReminders.length !== 1 ? 's' : ''}
-                    </span>{' '}
-                    today
-                    {reminders.length > 0 && (
-                      <>
-                        ,{' '}
-                        <span className="text-[#ADFF2F] font-medium">
-                          {reminders.filter((r) => r.completed).length} task{reminders.filter((r) => r.completed).length !== 1 ? 's' : ''} done
-                        </span>
-                      </>
-                    )}
-                  </>
-                )}
-                {pendingReminders.length === 0 && (
-                  <>
-                    {messagesToday > 0 ? (
-                      <>
-                        <span className="text-[#00F0FF] font-medium">{messagesToday} messages</span> sent today
-                      </>
-                    ) : (
-                      <>All clear — ready to start your day</>
-                    )}
-                  </>
-                )}
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="border-[#00F0FF]/20 text-[#8892A4] hover:text-[#F4F6FF] hover:border-[#00F0FF]/40 self-start sm:self-auto min-h-[44px]"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-glow)] min-h-[44px]"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </>
+          }
+        />
 
         {/* ─── Agent Status Strip ─── */}
         <AgentStatusStrip
@@ -741,21 +716,21 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
         {/* ─── Load error banner ─── */}
         {loadErrors > 0 && !loadErrDismissed && (
-          <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3 text-sm text-[#F59E0B]">
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-amber)]/30 bg-[var(--ag-amber)]/10 px-4 py-3 text-sm text-[var(--ag-amber)]">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span className="flex-1">
               {loadErrors} section{loadErrors > 1 ? 's' : ''} failed to load.
             </span>
             <button
               onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }}
-              className="text-xs underline hover:no-underline"
+              className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               Retry
             </button>
             <button
               onClick={() => setLoadErrDismissed(true)}
               aria-label="Dismiss"
-              className="p-1 rounded hover:bg-[#F59E0B]/20 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1 rounded hover:bg-[var(--ag-amber)]/20 min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -764,12 +739,12 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
         {/* ─── Error state ─── */}
         {error && (
-          <div className="flex items-center gap-3 rounded-xl border border-[#FF2D78]/30 bg-[#FF2D78]/10 px-4 py-3 text-sm text-[#FF2D78]">
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-pink)]/30 bg-[var(--ag-pink)]/10 px-4 py-3 text-sm text-[var(--ag-pink)]">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span className="flex-1">{error}</span>
             <button
               onClick={handleRefresh}
-              className="text-xs underline hover:no-underline"
+              className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               Retry
             </button>
@@ -779,8 +754,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {/* ─── Today At A Glance ─── */}
         <section>
           <h2
-            className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
           >
             Today at a glance
           </h2>
@@ -845,8 +819,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {/* ─── Quick Actions Strip ─── */}
         <section>
           <h2
-            className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
           >
             Quick actions
           </h2>
@@ -858,7 +831,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   if (action.action) action.action();
                   else if (action.page) onNavigate?.(action.page);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium text-[#F4F6FF] whitespace-nowrap snap-start transition-all hover:scale-[1.03] active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium text-[var(--ag-text-primary)] whitespace-nowrap snap-start transition-all hover:scale-[1.03] active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50"
                 style={{
                   background: action.bgColor,
                   borderColor: `${action.color}20`,
@@ -882,14 +855,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <section className="lg:col-span-3">
             <div className="flex items-center justify-between mb-3">
               <h2
-                className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
-                style={{ fontFamily: 'Syne, sans-serif' }}
+                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
               >
                 Recent conversations
               </h2>
               <button
                 onClick={() => onNavigate?.('chat')}
-                className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
               >
                 View all
                 <ArrowRight className="w-3 h-3" />
@@ -901,7 +873,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             >
               <CardContent className="p-0">
                 {loading ? (
-                  <div className="divide-y divide-[#00F0FF]/5">
+                  <div className="divide-y divide-[var(--ag-border-subtle)]">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="p-4 flex items-start gap-3">
                         <Skeleton className="w-9 h-9 rounded-lg flex-shrink-0" />
@@ -913,7 +885,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     ))}
                   </div>
                 ) : conversations.length > 0 ? (
-                  <div className="divide-y divide-[#00F0FF]/5">
+                  <div className="divide-y divide-[var(--ag-border-subtle)]">
                     {conversations.map((convo) => {
                       // Pick agent color by content hash for visual variety
                       const agentColors = ['#00F0FF', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
@@ -923,7 +895,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                         <button
                           key={convo.id}
                           onClick={() => onOpenChat?.()}
-                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#00F0FF]/[0.03] transition-colors group"
+                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[var(--ag-cyan)]/[0.03] transition-colors group"
                         >
                           {/* Agent avatar — colored circle with initial */}
                           <div
@@ -937,7 +909,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                             W
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#00F0FF] transition-colors leading-snug">
+                            <p className="text-sm text-[var(--ag-text-primary)] truncate group-hover:text-[var(--ag-cyan)] transition-colors leading-snug">
                               {convo.content.length > 80
                                 ? convo.content.slice(0, 77) + '...'
                                 : convo.content}
@@ -946,25 +918,25 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                               <span className="text-xs font-medium" style={{ color: agentColor }}>
                                 Weebo
                               </span>
-                              <span className="text-[#8892A4]/40">|</span>
-                              <span className="text-xs text-[#8892A4]">
+                              <span className="text-[var(--ag-text-secondary)]/40">|</span>
+                              <span className="text-xs text-[var(--ag-text-secondary)]">
                                 {relativeTime(convo.createdAt)}
                               </span>
                             </div>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-[#8892A4]/40 group-hover:text-[#00F0FF] transition-colors flex-shrink-0 mt-1" />
+                          <ArrowRight className="w-4 h-4 text-[var(--ag-text-secondary)]/40 group-hover:text-[var(--ag-cyan)] transition-colors flex-shrink-0 mt-1" />
                         </button>
                       );
                     })}
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <MessageSquare className="w-8 h-8 text-[#8892A4]/30 mx-auto mb-2" />
-                    <p className="text-sm text-[#8892A4]">No conversations yet</p>
+                    <MessageSquare className="w-8 h-8 text-[var(--ag-text-secondary)]/30 mx-auto mb-2" />
+                    <p className="text-sm text-[var(--ag-text-secondary)]">No conversations yet</p>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2 text-[#00F0FF] min-h-[44px]"
+                      className="mt-2 text-[var(--ag-cyan)] min-h-[44px]"
                       onClick={() => onOpenChat?.()}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
@@ -980,14 +952,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <section className="lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
               <h2
-                className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
-                style={{ fontFamily: 'Syne, sans-serif' }}
+                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
               >
                 7-day activity
               </h2>
               <button
                 onClick={() => onNavigate?.('activity')}
-                className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
               >
                 Details
                 <ArrowRight className="w-3 h-3" />
@@ -1014,23 +985,23 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     {dayLabels.length > 0 && (
                       <div className="flex justify-between mt-2 px-1">
                         {dayLabels.map((label, i) => (
-                          <span key={i} className="text-[10px] text-[#8892A4] font-mono">
+                          <span key={i} className="text-xs text-[var(--ag-text-secondary)] font-mono">
                             {label}
                           </span>
                         ))}
                       </div>
                     )}
                     {/* Summary stats */}
-                    <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[#00F0FF]/5">
+                    <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[var(--ag-border-subtle)]">
                       <div>
-                        <div className="text-xs text-[#8892A4]">Total this week</div>
-                        <div className="text-lg font-bold text-[#00F0FF] font-mono">
+                        <div className="text-xs text-[var(--ag-text-secondary)]">Total this week</div>
+                        <div className="text-lg font-bold text-[var(--ag-cyan)] font-mono">
                           {activityData.reduce((a, b) => a + b, 0)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-[#8892A4]">Today</div>
-                        <div className="text-lg font-bold text-[#ADFF2F] font-mono">
+                        <div className="text-xs text-[var(--ag-text-secondary)]">Today</div>
+                        <div className="text-lg font-bold text-[var(--ag-jarvis)] font-mono">
                           {activityData.length > 0 ? activityData[activityData.length - 1] : 0}
                         </div>
                       </div>
@@ -1043,16 +1014,16 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             {/* Completion badge */}
             {!loading && reminders.length > 0 && (
               <div
-                className="mt-3 rounded-2xl border border-[#ADFF2F]/10 bg-[#0C0C18] p-4 flex items-center gap-3"
+                className="mt-3 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4 flex items-center gap-3"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-[#ADFF2F]" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[#F4F6FF]">
+                  <div className="text-sm font-medium text-[var(--ag-text-primary)]">
                     {reminders.filter((r) => r.completed).length} of {reminders.length} tasks done
                   </div>
-                  <div className="text-xs text-[#8892A4] mt-0.5">
+                  <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
                     {reminders.filter((r) => r.completed).length === reminders.length
                       ? 'All caught up!'
                       : `${reminders.length - reminders.filter((r) => r.completed).length} remaining`}
@@ -1075,26 +1046,21 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2
-              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
             >
               Today&apos;s Reminders
             </h2>
             <button
               onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
             >
               All reminders
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          <Card
-            className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
-            style={{ background: '#0C0C18' }}
-          >
-            <CardContent className="p-0">
+          <SectionCard padding="sm" className="overflow-hidden">
               {overviewLoading ? (
-                <div className="divide-y divide-[#00F0FF]/5">
+                <div className="divide-y divide-[var(--ag-border-subtle)]">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="p-4 flex items-center gap-3">
                       <Skeleton className="w-8 h-8 rounded-lg flex-shrink-0" />
@@ -1107,11 +1073,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   ))}
                 </div>
               ) : overviewData && overviewData.remindersDueToday.length > 0 ? (
-                <div className="divide-y divide-[#00F0FF]/5">
+                <div className="divide-y divide-[var(--ag-border-subtle)]">
                   {overviewData.remindersDueToday.map((rem) => (
                     <div
                       key={rem.id}
-                      className={`p-4 flex items-center gap-3 ${rem.overdue ? 'bg-[#FF2D78]/[0.04]' : ''}`}
+                      className={`p-4 flex items-center gap-3 ${rem.overdue ? 'bg-[var(--ag-pink)]/[0.04]' : ''}`}
                     >
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -1119,11 +1085,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                           background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(0,240,255,0.08)',
                         }}
                       >
-                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? '#FF2D78' : '#00F0FF' }} />
+                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? 'var(--ag-pink)' : 'var(--ag-cyan)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#F4F6FF] truncate">{rem.text}</p>
-                        <span className={`text-xs ${rem.overdue ? 'text-[#FF2D78]' : 'text-[#8892A4]'}`}>
+                        <p className="text-sm text-[var(--ag-text-primary)] truncate">{rem.text}</p>
+                        <span className={`text-xs ${rem.overdue ? 'text-[var(--ag-pink)]' : 'text-[var(--ag-text-secondary)]'}`}>
                           {rem.overdue ? 'Overdue - ' : ''}
                           {new Date(rem.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                         </span>
@@ -1133,7 +1099,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                         size="sm"
                         disabled={completingReminder === rem.id}
                         onClick={() => handleCompleteReminder(rem.id)}
-                        className="text-[#ADFF2F] hover:bg-[#ADFF2F]/10 text-xs px-2 h-7 rounded-md"
+                        className="text-[var(--ag-jarvis)] hover:bg-[var(--ag-jarvis)]/10 text-xs px-3 min-h-[44px] rounded-md"
                       >
                         {completingReminder === rem.id ? (
                           <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1149,36 +1115,30 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               ) : (
                 <div className="p-6 text-center">
-                  <CheckCircle2 className="w-6 h-6 text-[#ADFF2F]/40 mx-auto mb-1.5" />
-                  <p className="text-sm text-[#ADFF2F]">No reminders for today</p>
+                  <CheckCircle2 className="w-6 h-6 text-[var(--ag-jarvis)]/40 mx-auto mb-1.5" />
+                  <p className="text-sm text-[var(--ag-jarvis)]">No reminders for today</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </SectionCard>
         </section>
 
         {/* ─── GAP-1: Habits Today Card ─── */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2
-              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
             >
               Habits Today
             </h2>
             <button
               onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
             >
               Manage
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          <Card
-            className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
-            style={{ background: '#0C0C18' }}
-          >
-            <CardContent className="p-0">
+          <SectionCard padding="sm" className="overflow-hidden">
               {overviewLoading ? (
                 <div className="p-4 space-y-3">
                   <Skeleton className="h-3 w-24 mb-2" />
@@ -1197,23 +1157,23 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   {/* Progress bar */}
                   <div className="px-4 pt-4 pb-2">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-[#8892A4]">
+                      <span className="text-xs text-[var(--ag-text-secondary)]">
                         {overviewData.habitsToday.filter((h) => h.loggedToday).length}/{overviewData.habitsToday.length} habits done
                       </span>
-                      <span className="text-xs font-mono text-[#ADFF2F]">
+                      <span className="text-xs font-mono text-[var(--ag-jarvis)]">
                         {Math.round((overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100)}%
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-[#1A1A2E] overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-[var(--ag-bg-elevated)] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#ADFF2F] to-[#00F0FF] transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--ag-jarvis)] to-[var(--ag-cyan)] transition-all duration-500"
                         style={{
                           width: `${(overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100}%`,
                         }}
                       />
                     </div>
                   </div>
-                  <div className="divide-y divide-[#00F0FF]/5">
+                  <div className="divide-y divide-[var(--ag-border-subtle)]">
                     {overviewData.habitsToday.map((habit) => (
                       <div
                         key={habit.id}
@@ -1223,26 +1183,26 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
                           style={{ background: habit.loggedToday ? 'rgba(173,255,47,0.1)' : 'rgba(139,92,246,0.08)' }}
                         >
-                          {habit.icon === 'star' ? <Target className="w-4 h-4 text-[#8B5CF6]" /> : habit.icon}
+                          {habit.icon === 'star' ? <Target className="w-4 h-4 text-[var(--ag-violet)]" /> : habit.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${habit.loggedToday ? 'text-[#ADFF2F]' : 'text-[#F4F6FF]'}`}>
+                          <p className={`text-sm ${habit.loggedToday ? 'text-[var(--ag-jarvis)]' : 'text-[var(--ag-text-primary)]'}`}>
                             {habit.name}
                           </p>
-                          <span className="text-xs text-[#8892A4]">
+                          <span className="text-xs text-[var(--ag-text-secondary)]">
                             {habit.streak > 0 ? `${habit.streak} day streak` : 'No streak yet'}
                           </span>
                         </div>
                         {habit.loggedToday ? (
-                          <div className="w-7 h-7 rounded-full bg-[#ADFF2F]/15 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-4 h-4 text-[#ADFF2F]" />
+                          <div className="w-7 h-7 rounded-full bg-[var(--ag-jarvis)]/15 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-4 h-4 text-[var(--ag-jarvis)]" />
                           </div>
                         ) : (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onNavigate?.('reminders')}
-                            className="text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs px-2 h-7 rounded-md"
+                            className="text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 text-xs px-3 min-h-[44px] rounded-md"
                           >
                             Log
                           </Button>
@@ -1253,12 +1213,12 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </>
               ) : (
                 <div className="p-6 text-center">
-                  <Target className="w-6 h-6 text-[#8892A4]/30 mx-auto mb-1.5" />
-                  <p className="text-sm text-[#8892A4]">No habits set up yet</p>
+                  <Target className="w-6 h-6 text-[var(--ag-text-secondary)]/30 mx-auto mb-1.5" />
+                  <p className="text-sm text-[var(--ag-text-secondary)]">No habits set up yet</p>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1.5 text-[#00F0FF] min-h-[44px]"
+                    className="mt-1.5 text-[var(--ag-cyan)] min-h-[44px]"
                     onClick={() => onNavigate?.('reminders')}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1266,8 +1226,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </SectionCard>
         </section>
 
         {/* ─── GAP-1: Calendar Today Card ─── */}
@@ -1275,25 +1234,20 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2
-                className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
-                style={{ fontFamily: 'Syne, sans-serif' }}
+                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
               >
                 Calendar Today
               </h2>
               <button
                 onClick={() => onNavigate?.('calendar')}
-                className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
               >
                 Full calendar
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <Card
-              className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
-              style={{ background: '#0C0C18' }}
-            >
-              <CardContent className="p-0">
-                <div className="divide-y divide-[#00F0FF]/5">
+            <SectionCard padding="sm" className="overflow-hidden">
+                <div className="divide-y divide-[var(--ag-border-subtle)]">
                   {overviewData.calendarEventsToday.slice(0, 4).map((evt) => {
                     const startDate = new Date(evt.start_time);
                     const endDate = evt.end_time ? new Date(evt.end_time) : null;
@@ -1302,23 +1256,23 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     return (
                       <div
                         key={evt.id}
-                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[#00F0FF]/[0.04] border-l-2 border-l-[#00F0FF]' : ''}`}
+                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[var(--ag-cyan)]/[0.04] border-l-2 border-l-[var(--ag-cyan)]' : ''}`}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: isCurrent ? 'rgba(0,240,255,0.12)' : 'rgba(139,92,246,0.08)' }}
                         >
-                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? '#00F0FF' : '#8B5CF6' }} />
+                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? 'var(--ag-cyan)' : 'var(--ag-violet)' }} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#F4F6FF] truncate">{evt.title}</p>
-                          <span className="text-xs text-[#8892A4]">
+                          <p className="text-sm text-[var(--ag-text-primary)] truncate">{evt.title}</p>
+                          <span className="text-xs text-[var(--ag-text-secondary)]">
                             {startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                             {endDate ? ` - ${endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
                           </span>
                         </div>
                         {isCurrent && (
-                          <span className="text-[10px] font-medium text-[#00F0FF] bg-[#00F0FF]/10 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-medium text-[var(--ag-cyan)] bg-[var(--ag-cyan)]/10 px-2 py-0.5 rounded-full">
                             NOW
                           </span>
                         )}
@@ -1326,8 +1280,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+            </SectionCard>
           </section>
         )}
 
@@ -1335,39 +1288,32 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {overviewData && (
           <section>
             <h2
-              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
             >
               This Week
             </h2>
             <div className="grid grid-cols-3 gap-3">
-              <Card className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
-                <CardContent className="p-4 text-center">
-                  <MessageSquare className="w-5 h-5 text-[#00F0FF] mx-auto mb-1.5" />
-                  <div className="text-xl font-bold text-[#00F0FF] font-mono">
-                    {overviewData.weeklyStats.messagesThisWeek}
-                  </div>
-                  <div className="text-[10px] text-[#8892A4] mt-0.5">Messages</div>
-                </CardContent>
-              </Card>
-              <Card className="border-[#ADFF2F]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
-                <CardContent className="p-4 text-center">
-                  <CheckCircle2 className="w-5 h-5 text-[#ADFF2F] mx-auto mb-1.5" />
-                  <div className="text-xl font-bold text-[#ADFF2F] font-mono">
-                    {overviewData.weeklyStats.remindersCompleted}
-                  </div>
-                  <div className="text-[10px] text-[#8892A4] mt-0.5">Reminders Done</div>
-                </CardContent>
-              </Card>
-              <Card className="border-[#8B5CF6]/10 bg-[#0C0C18] rounded-2xl" style={{ background: '#0C0C18' }}>
-                <CardContent className="p-4 text-center">
-                  <Target className="w-5 h-5 text-[#8B5CF6] mx-auto mb-1.5" />
-                  <div className="text-xl font-bold text-[#8B5CF6] font-mono">
-                    {overviewData.weeklyStats.habitsLogged}
-                  </div>
-                  <div className="text-[10px] text-[#8892A4] mt-0.5">Habits Logged</div>
-                </CardContent>
-              </Card>
+              <SectionCard className="text-center" padding="sm">
+                <MessageSquare className="w-5 h-5 text-[var(--ag-cyan)] mx-auto mb-1.5" />
+                <div className="text-xl font-bold text-[var(--ag-cyan)] font-mono">
+                  {overviewData.weeklyStats.messagesThisWeek}
+                </div>
+                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Messages</div>
+              </SectionCard>
+              <SectionCard className="text-center" padding="sm">
+                <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)] mx-auto mb-1.5" />
+                <div className="text-xl font-bold text-[var(--ag-jarvis)] font-mono">
+                  {overviewData.weeklyStats.remindersCompleted}
+                </div>
+                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Reminders Done</div>
+              </SectionCard>
+              <SectionCard className="text-center" padding="sm">
+                <Target className="w-5 h-5 text-[var(--ag-violet)] mx-auto mb-1.5" />
+                <div className="text-xl font-bold text-[var(--ag-violet)] font-mono">
+                  {overviewData.weeklyStats.habitsLogged}
+                </div>
+                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Habits Logged</div>
+              </SectionCard>
             </div>
           </section>
         )}
@@ -1378,14 +1324,12 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             className={`transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
             <h2
-              className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
             >
               Get started
             </h2>
             <Card
-              className="border-[#00F0FF]/15 bg-[#0C0C18] rounded-2xl overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #0C0C18 0%, #12121F 100%)' }}
+              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
             >
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-4">
@@ -1393,16 +1337,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
                   >
-                    <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+                    <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
                   </div>
                   <div>
                     <h3
-                      className="text-base font-bold text-[#F4F6FF]"
-                      style={{ fontFamily: 'Syne, sans-serif' }}
+                      className="text-base font-bold text-[var(--ag-text-primary)] font-heading"
                     >
                       Welcome to Agentin!
                     </h3>
-                    <p className="text-xs text-[#8892A4] mt-0.5">
+                    <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
                       Complete these steps to unlock your full AI experience.
                     </p>
                   </div>
@@ -1447,8 +1390,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       onClick={step.action}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01] active:scale-[0.99] min-h-[44px] ${
                         step.done
-                          ? 'border-[#ADFF2F]/20 bg-[#ADFF2F]/5'
-                          : 'border-[#00F0FF]/10 hover:border-[#00F0FF]/25'
+                          ? 'border-[var(--ag-jarvis)]/20 bg-[var(--ag-jarvis)]/5'
+                          : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
                       }`}
                     >
                       <div
@@ -1456,19 +1399,19 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                         style={{ background: `${step.color}15` }}
                       >
                         {step.done ? (
-                          <CheckSquare className="w-4 h-4 text-[#ADFF2F]" />
+                          <CheckSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
                         ) : (
                           <step.icon className="w-4 h-4" style={{ color: step.color }} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium ${step.done ? 'text-[#ADFF2F] line-through' : 'text-[#F4F6FF]'}`}>
+                        <div className={`text-sm font-medium ${step.done ? 'text-[var(--ag-jarvis)] line-through' : 'text-[var(--ag-text-primary)]'}`}>
                           {step.label}
                         </div>
-                        <div className="text-xs text-[#8892A4]">{step.desc}</div>
+                        <div className="text-xs text-[var(--ag-text-secondary)]">{step.desc}</div>
                       </div>
                       {!step.done && (
-                        <ArrowRight className="w-4 h-4 text-[#8892A4]/40 flex-shrink-0" />
+                        <ArrowRight className="w-4 h-4 text-[var(--ag-text-secondary)]/40 flex-shrink-0" />
                       )}
                     </button>
                   ))}
@@ -1484,8 +1427,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             className={`transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
             <Card
-              className="border-[#00F0FF]/15 bg-[#0C0C18] rounded-2xl overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #0C0C18 0%, #12121F 100%)' }}
+              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
             >
               <CardContent className="p-6 sm:p-8">
                 <div className="flex items-start gap-4 mb-5">
@@ -1493,16 +1435,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                     style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
                   >
-                    <Sparkles className="w-6 h-6 text-[#00F0FF]" />
+                    <Sparkles className="w-6 h-6 text-[var(--ag-cyan)]" />
                   </div>
                   <div>
                     <h3
-                      className="text-lg font-bold text-[#F4F6FF]"
-                      style={{ fontFamily: 'Syne, sans-serif' }}
+                      className="text-lg font-bold text-[var(--ag-text-primary)] font-heading"
                     >
                       Welcome to Agentin!
                     </h3>
-                    <p className="text-sm text-[#8892A4] mt-1 leading-relaxed">
+                    <p className="text-sm text-[var(--ag-text-secondary)] mt-1 leading-relaxed">
                       Start by chatting with Weebo, setting a reminder, or connecting Telegram.
                       Your dashboard will light up as you go.
                     </p>
@@ -1511,41 +1452,41 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     onClick={() => onOpenChat?.()}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[#ADFF2F]/15 transition-all hover:border-[#ADFF2F]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-jarvis)]/15 transition-all hover:border-[var(--ag-jarvis)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
                     style={{ background: 'rgba(173,255,47,0.06)' }}
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0">
-                      <Send className="w-4 h-4 text-[#ADFF2F]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
+                      <Send className="w-4 h-4 text-[var(--ag-jarvis)]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[#F4F6FF]">Chat with Weebo</div>
-                      <div className="text-xs text-[#8892A4]">Ask anything</div>
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Chat with Weebo</div>
+                      <div className="text-xs text-[var(--ag-text-secondary)]">Ask anything</div>
                     </div>
                   </button>
                   <button
                     onClick={() => onNavigate?.('reminders?openAdd=true')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[#00F0FF]/15 transition-all hover:border-[#00F0FF]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-border-default)] transition-all hover:border-[var(--ag-border-glow)] hover:scale-[1.02] active:scale-95 min-h-[44px]"
                     style={{ background: 'rgba(0,240,255,0.06)' }}
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#00F0FF]/10 flex-shrink-0">
-                      <Bell className="w-4 h-4 text-[#00F0FF]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-cyan)]/10 flex-shrink-0">
+                      <Bell className="w-4 h-4 text-[var(--ag-cyan)]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[#F4F6FF]">Set a Reminder</div>
-                      <div className="text-xs text-[#8892A4]">Stay on track</div>
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Set a Reminder</div>
+                      <div className="text-xs text-[var(--ag-text-secondary)]">Stay on track</div>
                     </div>
                   </button>
                   <button
                     onClick={() => onNavigate?.('connections')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[#8B5CF6]/15 transition-all hover:border-[#8B5CF6]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-violet)]/15 transition-all hover:border-[var(--ag-violet)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
                     style={{ background: 'rgba(139,92,246,0.06)' }}
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#8B5CF6]/10 flex-shrink-0">
-                      <Link2 className="w-4 h-4 text-[#8B5CF6]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-violet)]/10 flex-shrink-0">
+                      <Link2 className="w-4 h-4 text-[var(--ag-violet)]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[#F4F6FF]">Connect Telegram</div>
-                      <div className="text-xs text-[#8892A4]">Chat on the go</div>
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Telegram</div>
+                      <div className="text-xs text-[var(--ag-text-secondary)]">Chat on the go</div>
                     </div>
                   </button>
                 </div>
@@ -1569,8 +1510,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             className="relative"
           >
             <div className="flex items-center gap-2 rounded-2xl border p-2 transition-all backdrop-blur-xl focus-within:shadow-[var(--ag-glow-sm)]" style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#ADFF2F]/10 flex-shrink-0 ml-1">
-                <MessageSquare className="w-4 h-4 text-[#ADFF2F]" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0 ml-1">
+                <MessageSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
               </div>
               <input
                 ref={quickChatRef}
@@ -1578,13 +1519,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 value={quickChatInput}
                 onChange={(e) => setQuickChatInput(e.target.value)}
                 placeholder="Ask Weebo anything..."
-                className="flex-1 bg-transparent text-sm text-[#F4F6FF] placeholder:text-[#8892A4]/60 outline-none min-h-[36px] px-1"
+                className="flex-1 bg-transparent text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none min-h-[44px] px-1"
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={!quickChatInput.trim()}
-                className="rounded-xl bg-[#00F0FF]/15 text-[#00F0FF] hover:bg-[#00F0FF]/25 border-0 disabled:opacity-30 min-h-[36px] px-3"
+                className="rounded-xl bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/25 border-0 disabled:opacity-30 min-h-[44px] min-w-[44px] px-3"
               >
                 <Send className="w-4 h-4" />
               </Button>

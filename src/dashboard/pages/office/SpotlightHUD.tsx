@@ -57,9 +57,9 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
   };
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[calc(100%-2rem)] max-w-xl">
       <div
-        className="flex items-center gap-3 rounded-xl px-4 py-2 bg-black/60 backdrop-blur-xl"
+        className="flex flex-wrap sm:flex-nowrap items-center gap-3 rounded-xl px-4 py-2 bg-black/60 backdrop-blur-xl"
         style={{ borderWidth: 1, borderStyle: 'solid', borderColor: `${color}33` }}
       >
         {/* Agent info */}
@@ -74,7 +74,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
                 className="inline-block w-1.5 h-1.5 rounded-full"
                 style={{ backgroundColor: color }}
               />
-              <span className="text-[10px] text-[#8892A4]">{stateLabel}</span>
+              <span className="text-[10px] text-[#9CA3AF]">{stateLabel}</span>
             </div>
             <span className="text-[10px] text-[#4B5563]">
               {taskCount} task{taskCount !== 1 ? 's' : ''} today
@@ -109,7 +109,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
           ) : (
             <button
               onClick={() => { setShowChatInput(true); setShowTaskInput(false); }}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors"
+              className="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors min-h-[44px] min-w-[44px]"
               style={{ borderColor: `${color}40`, color }}
             >
               Chat
@@ -138,7 +138,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
           ) : (
             <button
               onClick={() => { setShowTaskInput(true); setShowChatInput(false); }}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors"
+              className="px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors min-h-[44px] min-w-[44px]"
               style={{ borderColor: `${color}40`, color }}
             >
               Assign Task
@@ -147,7 +147,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
 
           <button
             onClick={onDismiss}
-            className="px-1.5 py-1 rounded-lg text-[11px] text-[#4B5563] hover:text-[#8892A4] transition-colors"
+            className="px-1.5 py-1 rounded-lg text-[11px] text-[#4B5563] hover:text-[#9CA3AF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             ✕
           </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Mail, RefreshCw, Link, Unlink, Send, X, ChevronDown, ChevronUp,
   Star, Paperclip, Search, Plus, Sparkles, Reply, Forward,
@@ -131,6 +132,8 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   const detailRef = useRef<HTMLDivElement>(null);
 
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'aria', page: 'gmail' });
+
   /* ---------- Data fetching ---------- */
 
   const fetchStatus = useCallback(async () => {
@@ -245,12 +248,15 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   const handleSync = async () => {
     setSyncing(true);
+    void notifyStart('sync-gmail');
     try {
       await api.post('/gmail/sync', {});
       await fetchMessages();
       await fetchStatus();
+      void notifyDone('Gmail synced');
     } catch {
       setError('Sync failed');
+      void notifyFail('Gmail sync failed');
     } finally {
       setSyncing(false);
     }
@@ -279,14 +285,17 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
     if (!selected?.id || !selected.inbox_id || !replyText.trim()) return;
     setSending(true);
     setError('');
+    void notifyStart('reply-email');
     try {
       await api.post(`/gmail/reply/${selected.id}`, { body: replyText });
       setReplyText('');
       setSelected(null);
       setShowReply(false);
       await fetchMessages();
+      void notifyDone('Reply sent');
     } catch {
       setError('Reply failed. Please try again.');
+      void notifyFail('Reply failed');
     } finally {
       setSending(false);
     }
@@ -296,6 +305,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
     if (!selected?.id || !forwardTo.trim()) return;
     setSending(true);
     setError('');
+    void notifyStart('forward-email');
     try {
       const body = `---------- Forwarded message ----------\nFrom: ${selected.sender}\nSubject: ${selected.subject}\n\n${selected.snippet || ''}${replyText ? '\n\n' + replyText : ''}`;
       await api.post(`/gmail/reply/${selected.id}`, { body });
@@ -303,8 +313,10 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
       setForwardTo('');
       setShowForward(false);
       await fetchMessages();
+      void notifyDone('Email forwarded');
     } catch {
       setError('Forward failed. Please try again.');
+      void notifyFail('Forward failed');
     } finally {
       setSending(false);
     }
@@ -419,13 +431,19 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
     if (!composeTo.trim() || !composeBody.trim()) return;
     setComposeSending(true);
     setError('');
+    void notifyStart('compose-email');
     try {
-      // Use the first message's ID as a channel to send, or show info
-      setError('Compose requires a connected Gmail with send permissions. Use the reply feature on synced emails.');
+      await api.post('/gmail/send', {
+        to: composeTo.trim(),
+        subject: composeSubject.trim() || '(no subject)',
+        body: composeBody.trim(),
+      });
       setComposeOpen(false);
       resetCompose();
+      void notifyDone('Email sent');
     } catch {
-      setError('Send failed.');
+      setError('Send failed. Make sure Gmail is connected with send permissions.');
+      void notifyFail('Compose send failed');
     } finally {
       setComposeSending(false);
     }
@@ -441,12 +459,14 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
-          <span className="text-[var(--ag-text-primary)]/40 text-sm">Loading Gmail...</span>
+      <PageShell maxWidth="6xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-[#FF6B9D]/30 border-t-[#FF6B9D] rounded-full animate-spin" />
+            <span className="text-[var(--ag-text-secondary)] text-sm">Loading Gmail...</span>
+          </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -454,49 +474,76 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   if (!status?.available) {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <Card className="bg-[#0D0D1A] border-white/10">
-          <CardContent className="py-12 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mx-auto">
-              <Mail className="w-8 h-8 text-[var(--ag-cyan)]" />
+      <PageShell maxWidth="5xl">
+        <PageHeader
+          icon={Mail}
+          title="Gmail"
+          subtitle="Integration unavailable"
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#FF6B9D]/10 border border-[#FF6B9D]/30 text-[#FF6B9D]">
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B9D]/50" />
+              </span>
+              Aria
+            </span>
+          }
+        />
+        <SectionCard>
+          <div className="py-12 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#FF6B9D]/10 flex items-center justify-center mx-auto">
+              <Mail className="w-8 h-8 text-[#FF6B9D]" />
             </div>
             <h2 className="text-[#F4F6FF] text-lg font-semibold">Gmail Integration</h2>
-            <p className="text-[var(--ag-text-primary)]/50 text-sm max-w-md mx-auto">
+            <p className="text-[#9CA3AF] text-sm max-w-md mx-auto">
               Gmail integration requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be configured by your administrator.
             </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </SectionCard>
+      </PageShell>
     );
   }
 
   if (!status?.connected) {
     return (
-      <div className="max-w-2xl mx-auto p-4">
-        <Card className="bg-gradient-to-br from-[#0D0D1A] to-[#0D1A2A] border-[#00F0FF]/20 overflow-hidden">
-          <CardContent className="py-12 text-center space-y-6 relative">
+      <PageShell maxWidth="5xl">
+        <PageHeader
+          icon={Mail}
+          title="Gmail"
+          subtitle="Connect your inbox"
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#FF6B9D]/10 border border-[#FF6B9D]/30 text-[#FF6B9D]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF6B9D] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B9D]" />
+              </span>
+              Aria
+            </span>
+          }
+        />
+        <SectionCard>
+          <div className="py-12 text-center space-y-6 relative">
             {/* Background decoration */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#00F0FF]/5 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#FF6B9D]/5 via-transparent to-transparent pointer-events-none rounded-xl" />
 
             <div className="relative space-y-6">
-              <div className="w-20 h-20 rounded-2xl bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto">
-                <Mail className="w-10 h-10 text-[var(--ag-cyan)]" />
+              <div className="w-20 h-20 rounded-2xl bg-[#FF6B9D]/10 border border-[#FF6B9D]/20 flex items-center justify-center mx-auto">
+                <Mail className="w-10 h-10 text-[#FF6B9D]" />
               </div>
 
               <div className="space-y-2">
                 <h2 className="text-[#F4F6FF] text-xl font-semibold">Connect Gmail</h2>
-                <p className="text-[var(--ag-text-primary)]/50 text-sm max-w-sm mx-auto">
+                <p className="text-[#9CA3AF] text-sm max-w-sm mx-auto">
                   Sync your Gmail inbox with AI-powered summaries, smart replies, and priority sorting.
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3 text-xs text-[var(--ag-text-primary)]/40">
+              <div className="flex flex-wrap justify-center gap-3 text-xs text-[#9CA3AF]">
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
                   <Sparkles className="w-3 h-3 text-[#BF5FFF]" />
                   AI Summaries
                 </span>
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
-                  <Reply className="w-3 h-3 text-[var(--ag-cyan)]" />
+                  <Reply className="w-3 h-3 text-[#FF6B9D]" />
                   Smart Replies
                 </span>
                 <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full">
@@ -506,14 +553,14 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
               </div>
 
               <Button onClick={handleConnect}
-                className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 transition-all px-6 py-2.5 text-sm font-medium min-h-[44px]">
+                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all px-6 py-2.5 text-sm font-medium min-h-[44px]">
                 <Link className="w-4 h-4 mr-2" />
                 Connect Gmail Account
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </SectionCard>
+      </PageShell>
     );
   }
 
@@ -526,128 +573,133 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
     <Wrapper {...wrapperProps}>
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Stats header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center shrink-0">
-            <Mail className="w-5 h-5 text-[var(--ag-cyan)]" />
-          </div>
-          <div>
-            <h1 className="text-[#F4F6FF] text-lg font-semibold">Gmail <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📧 Managed by Jarvis</span></h1>
-            <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-primary)]/40">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-              <span className="truncate max-w-[180px]">{status.email}</span>
+      <PageHeader
+        icon={Mail}
+        title="Gmail"
+        subtitle={status.email ? `Connected as ${status.email}` : `${stats.total} messages`}
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#FF6B9D]/10 border border-[#FF6B9D]/30 text-[#FF6B9D]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF6B9D] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B9D]" />
+            </span>
+            Aria
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Stats pills */}
+            <div className="flex items-center gap-2 text-xs">
+              {stats.unread > 0 && (
+                <span className="bg-[#FF6B9D]/10 text-[#FF6B9D] border border-[#FF6B9D]/20 px-2.5 py-1 rounded-full font-medium">
+                  {stats.unread} unread
+                </span>
+              )}
+              {stats.starred > 0 && (
+                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full font-medium">
+                  {stats.starred} starred
+                </span>
+              )}
+              <span className="text-[#9CA3AF]">
+                {stats.total} total
+              </span>
+            </div>
+
+            {/* Last sync + actions */}
+            <div className="flex items-center gap-2">
+              {status.lastSync && (
+                <span className="text-[#9CA3AF] text-xs hidden md:block">
+                  Synced {timeSince(new Date(status.lastSync).getTime())}
+                </span>
+              )}
+              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}
+                className="border-[rgba(139,92,246,0.15)] text-[#F4F6FF] hover:bg-white/5 text-xs h-9 min-h-[44px] px-3">
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing...' : 'Sync'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDisconnect}
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-9 min-h-[44px] px-3">
+                <Unlink className="w-3.5 h-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Disconnect</span>
+              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Stats pills */}
-          <div className="flex items-center gap-2 text-xs">
-            {stats.unread > 0 && (
-              <span className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20 px-2.5 py-1 rounded-full font-medium">
-                {stats.unread} unread
-              </span>
-            )}
-            {stats.starred > 0 && (
-              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full font-medium">
-                {stats.starred} starred
-              </span>
-            )}
-            <span className="text-[var(--ag-text-primary)]/30">
-              {stats.total} total
-            </span>
-          </div>
-
-          {/* Last sync + actions */}
-          <div className="flex items-center gap-2">
-            {status.lastSync && (
-              <span className="text-[var(--ag-text-primary)]/30 text-xs hidden md:block">
-                Synced {timeSince(new Date(status.lastSync).getTime())}
-              </span>
-            )}
-            <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}
-              className="border-white/10 text-[var(--ag-text-primary)] hover:bg-white/5 text-xs h-9 min-h-[44px] px-3">
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleDisconnect}
-              className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs h-9 min-h-[44px] px-3">
-              <Unlink className="w-3.5 h-3.5 mr-1.5" />
-              <span className="hidden sm:inline">Disconnect</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-          <X className="w-4 h-4 shrink-0" />
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError('')}
-            className="ml-auto min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Dismiss error">
-            <X className="w-3 h-3" />
-          </button>
-        </div>
+        <SectionCard padding="sm">
+          <div className="flex items-center gap-2 text-red-400 text-sm">
+            <X className="w-4 h-4 shrink-0" />
+            <span className="flex-1">{error}</span>
+            <button onClick={() => setError('')}
+              className="ml-auto min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Dismiss error">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </SectionCard>
       )}
 
       {/* Search bar + filters */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-primary)]/30 pointer-events-none" />
-          <Input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search by subject, sender, or content..."
-            className="bg-[#0D0D1A] border-white/10 text-[#F4F6FF] text-sm pl-10 h-11 focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-primary)]/30 hover:text-[var(--ag-text-primary)]/60 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-3"
-              aria-label="Clear search"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+      <SectionCard padding="sm">
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by subject, sender, or content..."
+              className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm pl-10 h-11 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#F4F6FF] min-w-[44px] min-h-[44px] flex items-center justify-center -mr-3"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Filter pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {FILTER_OPTIONS.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setActiveFilter(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
-                activeFilter === key
-                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
-                  : 'bg-white/5 text-[var(--ag-text-primary)]/50 hover:text-[var(--ag-text-primary)]/80 hover:bg-white/10 border border-transparent'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-              {key === 'unread' && stats.unread > 0 && (
-                <span className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                  {stats.unread}
-                </span>
-              )}
-            </button>
-          ))}
+          {/* Filter pills */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {FILTER_OPTIONS.map(({ key, label, icon: FilterIcon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveFilter(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+                  activeFilter === key
+                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
+                    : 'bg-white/5 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/10 border border-transparent'
+                }`}
+              >
+                <FilterIcon className="w-3.5 h-3.5" />
+                {label}
+                {key === 'unread' && stats.unread > 0 && (
+                  <span className="bg-[#FF6B9D]/20 text-[#FF6B9D] text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                    {stats.unread}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Email list + detail view */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Email thread list */}
         <div className="lg:col-span-2 space-y-1">
           {filteredMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center border border-[var(--ag-border-subtle)] rounded-xl bg-[#0D0D1A]">
+            <div className="flex flex-col items-center justify-center py-16 text-center border border-[rgba(139,92,246,0.08)] rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                <Mail className="w-6 h-6 text-[var(--ag-text-primary)]/20" />
+                <Mail className="w-6 h-6 text-[#9CA3AF]/40" />
               </div>
-              <p className="text-[var(--ag-text-primary)]/40 text-sm">
+              <p className="text-[#9CA3AF] text-sm">
                 {searchQuery
                   ? 'No emails match your search'
                   : activeFilter !== 'all'
@@ -657,7 +709,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
               {!searchQuery && activeFilter === 'all' && (
                 <button
                   onClick={handleSync}
-                  className="mt-3 text-[var(--ag-cyan)] text-xs hover:underline min-h-[44px] flex items-center"
+                  className="mt-3 text-[#8B5CF6] text-xs hover:underline min-h-[44px] flex items-center"
                 >
                   Sync now to fetch emails
                 </button>
@@ -677,18 +729,18 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     onClick={() => handleSelectMessage(msg)}
                     className={`w-full text-left p-3 rounded-xl border transition-all group ${
                       isSelected
-                        ? 'border-[#00F0FF]/30 bg-[#00F0FF]/5'
+                        ? 'border-[#FF6B9D]/30 bg-[#FF6B9D]/5'
                         : isUnread
-                          ? 'border-white/10 bg-[#0D0D1A] hover:border-[#00F0FF]/20 hover:bg-[#0D0D1A]/80'
-                          : 'border-[var(--ag-border-subtle)] bg-[#0D0D1A]/60 hover:border-white/10 hover:bg-[#0D0D1A]/80'
+                          ? 'border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.6)] hover:border-[#FF6B9D]/20 hover:bg-[rgba(12,12,30,0.8)]'
+                          : 'border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.4)] hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.6)]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       {/* Avatar */}
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${
                         isUnread
-                          ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)]'
-                          : 'bg-white/10 text-[var(--ag-text-primary)]/50'
+                          ? 'bg-[#FF6B9D]/15 text-[#FF6B9D]'
+                          : 'bg-white/10 text-[#9CA3AF]'
                       }`}>
                         {senderInitial(msg.sender)}
                       </div>
@@ -697,11 +749,11 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                         {/* Sender + timestamp row */}
                         <div className="flex items-center justify-between gap-2 mb-0.5">
                           <span className={`text-xs truncate ${
-                            isUnread ? 'text-[#F4F6FF] font-semibold' : 'text-[var(--ag-text-primary)]/70'
+                            isUnread ? 'text-[#F4F6FF] font-semibold' : 'text-[#9CA3AF]'
                           }`}>
                             {senderName(msg.sender)}
                           </span>
-                          <span className="text-[10px] text-[var(--ag-text-primary)]/30 shrink-0">
+                          <span className="text-[10px] text-[#9CA3AF]/60 shrink-0">
                             {timeSince(msg.synced_at)}
                           </span>
                         </div>
@@ -709,7 +761,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                         {/* Subject */}
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className={`text-xs truncate ${
-                            isUnread ? 'text-[#F4F6FF] font-medium' : 'text-[var(--ag-text-primary)]/60'
+                            isUnread ? 'text-[#F4F6FF] font-medium' : 'text-[#9CA3AF]/80'
                           }`}>
                             {msg.subject || '(no subject)'}
                           </span>
@@ -717,7 +769,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
                         {/* Snippet */}
                         {msg.snippet && (
-                          <p className="text-[11px] text-[var(--ag-text-primary)]/30 truncate">
+                          <p className="text-[11px] text-[#9CA3AF]/60 truncate">
                             {msg.snippet}
                           </p>
                         )}
@@ -730,23 +782,23 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                             </span>
                           )}
                           {isUnread && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B9D] shrink-0" />
                           )}
                           {hasAttachment && (
-                            <Paperclip className="w-3 h-3 text-[var(--ag-text-primary)]/25" />
+                            <Paperclip className="w-3 h-3 text-[#9CA3AF]/40" />
                           )}
                           <div className="flex-1" />
                           {/* Star toggle */}
                           <button
                             onClick={(e) => handleToggleStar(msg.id, e)}
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 data-[starred=true]:opacity-100 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 data-[starred=true]:opacity-100 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                             data-starred={isStarred}
                             aria-label={isStarred ? 'Unstar' : 'Star'}
                           >
                             <Star className={`w-3.5 h-3.5 ${
                               isStarred
                                 ? 'text-amber-400 fill-amber-400'
-                                : 'text-[var(--ag-text-primary)]/20'
+                                : 'text-[#9CA3AF]/30'
                             }`} />
                           </button>
                         </div>
@@ -762,9 +814,9 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
         {/* Detail view */}
         <div className="lg:col-span-3" ref={detailRef}>
           {selected ? (
-            <Card className="bg-[#0D0D1A] border-white/10 overflow-hidden">
+            <Card className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border-[rgba(139,92,246,0.08)] overflow-hidden">
               {/* Detail header */}
-              <CardHeader className="pb-3 border-b border-[var(--ag-border-subtle)]">
+              <CardHeader className="pb-3 border-b border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-[#F4F6FF] text-base font-semibold leading-snug mb-1">
@@ -772,12 +824,12 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     </CardTitle>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-[#00F0FF]/15 flex items-center justify-center text-[10px] font-bold text-[var(--ag-cyan)]">
+                        <div className="w-6 h-6 rounded-full bg-[#FF6B9D]/15 flex items-center justify-center text-[10px] font-bold text-[#FF6B9D]">
                           {senderInitial(selected.sender)}
                         </div>
-                        <span className="text-[var(--ag-text-primary)]/60 text-xs">{selected.sender}</span>
+                        <span className="text-[#9CA3AF] text-xs">{selected.sender}</span>
                       </div>
-                      <span className="text-[var(--ag-text-primary)]/20 text-xs">
+                      <span className="text-[#9CA3AF]/50 text-xs">
                         {timeSince(selected.synced_at)}
                       </span>
                       {selected.priority && selected.priority !== 'normal' && (
@@ -788,7 +840,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     </div>
                   </div>
                   <button onClick={() => { setSelected(null); setShowReply(false); setShowForward(false); setSmartReplies([]); setThreadSummary(''); setSummaryExpanded(false); }}
-                    className="text-[var(--ag-text-primary)]/30 hover:text-[var(--ag-text-primary)]/60 shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                    className="text-[#9CA3AF] hover:text-[#F4F6FF] shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                     aria-label="Close detail view">
                     <X className="w-4 h-4" />
                   </button>
@@ -803,7 +855,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                       <Sparkles className="w-3.5 h-3.5 text-[#BF5FFF]" />
                       <span className="text-[#BF5FFF] text-xs font-medium">AI Summary</span>
                     </div>
-                    <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed">{selected.summary}</p>
+                    <p className="text-[#9CA3AF] text-sm leading-relaxed">{selected.summary}</p>
                   </div>
                 )}
 
@@ -825,9 +877,9 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     {summaryExpanded && (
                       <div className="px-3 pb-3">
                         {summarizing ? (
-                          <p className="text-[var(--ag-text-primary)]/40 text-xs italic">Summarizing email...</p>
+                          <p className="text-[#9CA3AF] text-xs italic">Summarizing email...</p>
                         ) : (
-                          <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed whitespace-pre-wrap">{threadSummary}</p>
+                          <p className="text-[#9CA3AF] text-sm leading-relaxed whitespace-pre-wrap">{threadSummary}</p>
                         )}
                       </div>
                     )}
@@ -839,7 +891,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                   <div className="space-y-1">
                     <button
                       onClick={() => setExpandedThread(expandedThread === selected.thread_id ? null : selected.thread_id)}
-                      className="flex items-center gap-1.5 text-xs text-[var(--ag-text-primary)]/40 hover:text-[var(--ag-text-primary)]/60 transition-colors min-h-[44px]"
+                      className="flex items-center gap-1.5 text-xs text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors min-h-[44px]"
                     >
                       {expandedThread === selected.thread_id ? (
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -850,17 +902,17 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     </button>
 
                     {expandedThread === selected.thread_id && (
-                      <div className="space-y-2 pl-2 border-l-2 border-[var(--ag-border-subtle)]">
+                      <div className="space-y-2 pl-2 border-l-2 border-[rgba(139,92,246,0.08)]">
                         {threadMessages.filter(m => m.id !== selected.id).map(msg => (
                           <div key={msg.id} className="bg-white/5 rounded-lg p-3">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold text-[var(--ag-text-primary)]/50">
+                              <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold text-[#9CA3AF]">
                                 {senderInitial(msg.sender)}
                               </div>
-                              <span className="text-[var(--ag-text-primary)]/50 text-xs truncate">{senderName(msg.sender)}</span>
-                              <span className="text-[var(--ag-text-primary)]/20 text-[10px] ml-auto shrink-0">{timeSince(msg.synced_at)}</span>
+                              <span className="text-[#9CA3AF] text-xs truncate">{senderName(msg.sender)}</span>
+                              <span className="text-[#9CA3AF]/40 text-[10px] ml-auto shrink-0">{timeSince(msg.synced_at)}</span>
                             </div>
-                            <p className="text-[var(--ag-text-primary)]/40 text-xs">{msg.snippet || msg.subject}</p>
+                            <p className="text-[#9CA3AF]/70 text-xs">{msg.snippet || msg.subject}</p>
                           </div>
                         ))}
                       </div>
@@ -870,7 +922,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
                 {/* Email content */}
                 <div className="bg-white/5 rounded-xl p-4">
-                  <p className="text-[var(--ag-text-primary)]/70 text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="text-[#F4F6FF]/80 text-sm leading-relaxed whitespace-pre-wrap">
                     {selected.snippet || selected.summary || '(no content preview available)'}
                   </p>
                 </div>
@@ -878,11 +930,11 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                 {/* Smart Reply Chips */}
                 {(smartReplies.length > 0 || loadingReplies) && (
                   <div className="space-y-2">
-                    <span className="text-[var(--ag-text-primary)]/30 text-[11px] font-medium uppercase tracking-wider">Smart Replies</span>
+                    <span className="text-[#9CA3AF]/60 text-[11px] font-medium uppercase tracking-wider">Smart Replies</span>
                     {loadingReplies ? (
                       <div className="flex items-center gap-2">
-                        <Loader2 className="w-3.5 h-3.5 text-[var(--ag-cyan)]/50 animate-spin" />
-                        <span className="text-[var(--ag-text-primary)]/30 text-xs">Generating suggestions...</span>
+                        <Loader2 className="w-3.5 h-3.5 text-[#FF6B9D]/50 animate-spin" />
+                        <span className="text-[#9CA3AF] text-xs">Generating suggestions...</span>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -892,8 +944,8 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                             onClick={() => { setReplyText(reply.text); setShowReply(true); setShowForward(false); }}
                             className={`px-3 py-1.5 rounded-full text-xs border transition-all hover:bg-white/5 min-h-[36px] ${
                               reply.tone === 'positive' ? 'border-[#00FF88]/30 text-[#00FF88] hover:border-[#00FF88]/50' :
-                              reply.tone === 'action' ? 'border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:border-[#00F0FF]/50' :
-                              'border-[#9CA3AF]/30 text-[var(--ag-text-muted)] hover:border-[#9CA3AF]/50'
+                              reply.tone === 'action' ? 'border-[#8B5CF6]/30 text-[#8B5CF6] hover:border-[#8B5CF6]/50' :
+                              'border-[#9CA3AF]/30 text-[#9CA3AF] hover:border-[#9CA3AF]/50'
                             }`}
                           >
                             {reply.text}
@@ -907,7 +959,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 pt-1 flex-wrap">
                   {selected.inbox_id == null ? (
-                    <span className="flex items-center gap-1.5 text-[var(--ag-text-primary)]/30 text-xs px-3 py-2 rounded-lg border border-[var(--ag-border-subtle)] bg-white/5 min-h-[44px]">
+                    <span className="flex items-center gap-1.5 text-[#9CA3AF] text-xs px-3 py-2 rounded-lg border border-[rgba(139,92,246,0.08)] bg-white/5 min-h-[44px]">
                       <Reply className="w-3.5 h-3.5 shrink-0" />
                       Connect Gmail first to reply
                     </span>
@@ -915,7 +967,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowReply(true); setShowForward(false); }}
-                    className="border-white/10 text-[var(--ag-text-primary)]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
+                    className="border-[rgba(139,92,246,0.15)] text-[#F4F6FF] hover:bg-white/5 text-xs h-9 min-h-[44px]"
                   >
                     <Reply className="w-3.5 h-3.5 mr-1.5" />
                     Reply
@@ -924,7 +976,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                   <Button
                     variant="outline" size="sm"
                     onClick={() => { setShowForward(true); setShowReply(false); }}
-                    className="border-white/10 text-[var(--ag-text-primary)]/70 hover:bg-white/5 text-xs h-9 min-h-[44px]"
+                    className="border-[rgba(139,92,246,0.15)] text-[#F4F6FF] hover:bg-white/5 text-xs h-9 min-h-[44px]"
                   >
                     <Forward className="w-3.5 h-3.5 mr-1.5" />
                     Forward
@@ -955,10 +1007,10 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
                 {/* Reply section */}
                 {showReply && (
-                  <div className="space-y-3 border-t border-[var(--ag-border-subtle)] pt-4">
+                  <div className="space-y-3 border-t border-[rgba(139,92,246,0.08)] pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Reply className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
-                      <span className="text-[var(--ag-text-primary)]/60 text-xs">
+                      <Reply className="w-3.5 h-3.5 text-[#FF6B9D]" />
+                      <span className="text-[#9CA3AF] text-xs">
                         Replying to {senderName(selected.sender)}
                       </span>
                     </div>
@@ -966,16 +1018,16 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder="Write your reply..."
-                      className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm resize-none min-h-[120px] focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[120px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowReply(false)}
-                        className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+                        className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:bg-white/5 text-xs h-9 min-h-[44px]">
                         Cancel
                       </Button>
                       <Button size="sm" onClick={handleReply}
                         disabled={sending || !replyText.trim()}
-                        className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+                        className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs h-9 min-h-[44px]">
                         <Send className="w-3.5 h-3.5 mr-1.5" />
                         {sending ? 'Sending...' : 'Send Reply'}
                       </Button>
@@ -985,32 +1037,32 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
                 {/* Forward section */}
                 {showForward && (
-                  <div className="space-y-3 border-t border-[var(--ag-border-subtle)] pt-4">
+                  <div className="space-y-3 border-t border-[rgba(139,92,246,0.08)] pt-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Forward className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
-                      <span className="text-[var(--ag-text-primary)]/60 text-xs">Forward this email</span>
+                      <Forward className="w-3.5 h-3.5 text-[#FF6B9D]" />
+                      <span className="text-[#9CA3AF] text-xs">Forward this email</span>
                     </div>
                     <Input
                       type="email"
                       value={forwardTo}
                       onChange={e => setForwardTo(e.target.value)}
                       placeholder="Recipient email address"
-                      className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm h-10 focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
                     />
                     <Textarea
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder="Add a message (optional)..."
-                      className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm resize-none min-h-[80px] focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[80px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowForward(false)}
-                        className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+                        className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:bg-white/5 text-xs h-9 min-h-[44px]">
                         Cancel
                       </Button>
                       <Button size="sm" onClick={handleForward}
                         disabled={sending || !forwardTo.trim()}
-                        className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+                        className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs h-9 min-h-[44px]">
                         <Forward className="w-3.5 h-3.5 mr-1.5" />
                         {sending ? 'Sending...' : 'Forward'}
                       </Button>
@@ -1020,12 +1072,12 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
               </CardContent>
             </Card>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-[var(--ag-border-subtle)] rounded-xl bg-[#0D0D1A]">
+            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-[rgba(139,92,246,0.08)] rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                <MailOpen className="w-6 h-6 text-[var(--ag-text-primary)]/15" />
+                <MailOpen className="w-6 h-6 text-[#9CA3AF]/30" />
               </div>
-              <p className="text-[var(--ag-text-primary)]/30 text-sm">Select an email to read</p>
-              <p className="text-[var(--ag-text-primary)]/15 text-xs mt-1">Choose from the list on the left</p>
+              <p className="text-[#9CA3AF] text-sm">Select an email to read</p>
+              <p className="text-[#9CA3AF]/50 text-xs mt-1">Choose from the list on the left</p>
             </div>
           )}
         </div>
@@ -1034,7 +1086,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
       {/* Floating Compose button */}
       <button
         onClick={() => setComposeOpen(true)}
-        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-[#00F0FF] hover:bg-[#00D4E0] text-[#05050A] rounded-full shadow-lg shadow-[#00F0FF]/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#05050A]"
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-full shadow-lg shadow-[#8B5CF6]/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06061a]"
         aria-label="Compose new email"
       >
         <Plus className="w-6 h-6" />
@@ -1042,42 +1094,42 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
       {/* Compose dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="bg-[#0D0D1A] border-white/10 sm:max-w-lg">
+        <DialogContent className="bg-[rgba(12,12,30,0.95)] backdrop-blur-xl border-[rgba(139,92,246,0.15)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-[#F4F6FF] text-base flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[var(--ag-cyan)]" />
+              <Mail className="w-4 h-4 text-[#FF6B9D]" />
               Compose Email
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
-              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">To</label>
+              <label className="text-[#9CA3AF] text-xs mb-1 block">To</label>
               <Input
                 type="email"
                 value={composeTo}
                 onChange={e => setComposeTo(e.target.value)}
                 placeholder="recipient@example.com"
-                className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm h-10 focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
               />
             </div>
             <div>
-              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">Subject</label>
+              <label className="text-[#9CA3AF] text-xs mb-1 block">Subject</label>
               <Input
                 type="text"
                 value={composeSubject}
                 onChange={e => setComposeSubject(e.target.value)}
                 placeholder="Email subject"
-                className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm h-10 focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
               />
             </div>
             <div>
-              <label className="text-[var(--ag-text-primary)]/50 text-xs mb-1 block">Body</label>
+              <label className="text-[#9CA3AF] text-xs mb-1 block">Body</label>
               <Textarea
                 value={composeBody}
                 onChange={e => setComposeBody(e.target.value)}
                 placeholder="Write your email or describe what you want to say..."
-                className="bg-[#06060B] border-white/10 text-[#F4F6FF] text-sm resize-none min-h-[160px] focus-visible:border-[#00F0FF]/40 focus-visible:ring-[#00F0FF]/20"
+                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[160px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
               />
             </div>
           </div>
@@ -1094,12 +1146,12 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
             </Button>
             <div className="flex-1" />
             <Button variant="outline" size="sm" onClick={() => { setComposeOpen(false); resetCompose(); }}
-              className="border-white/10 text-[var(--ag-text-primary)]/50 hover:bg-white/5 text-xs h-9 min-h-[44px]">
+              className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:bg-white/5 text-xs h-9 min-h-[44px]">
               Cancel
             </Button>
             <Button size="sm" onClick={handleComposeSend}
               disabled={composeSending || !composeTo.trim() || !composeBody.trim()}
-              className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 text-xs h-9 min-h-[44px]">
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs h-9 min-h-[44px]">
               <Send className="w-3.5 h-3.5 mr-1.5" />
               {composeSending ? 'Sending...' : 'Send'}
             </Button>

@@ -23,7 +23,7 @@ describe('88.2 Notification dropdown horizontal overflow', () => {
 describe('88.3 Touch targets min 44x44px', () => {
   it('RemindersPage preset date buttons have min-h-[44px]', () => {
     const content = readSrc('dashboard/pages/RemindersPage.tsx');
-    expect(content).toContain('py-2.5 rounded text-xs');
+    expect(content).toContain('py-2.5 rounded-xl text-xs');
     expect(content).toContain('min-h-[44px]');
   });
 

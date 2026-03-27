@@ -88,7 +88,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
     } catch {
       setError('Could not read image.');
     }
-  }, []);
+  }, [drawOriginal]);
 
   const drawOriginal = useCallback((img: HTMLImageElement) => {
     const canvas = canvasRef.current;
@@ -190,7 +190,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
       <div className="flex items-start gap-3">
         <button
           onClick={onBack}
-          className="mt-0.5 flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/[0.15] transition-colors cursor-pointer"
+          className="mt-0.5 flex-shrink-0 flex items-center justify-center w-11 min-h-[44px] rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors cursor-pointer"
           aria-label="Back to tools"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -198,8 +198,8 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
           </svg>
         </button>
         <div>
-          <h2 className="text-lg font-semibold text-[#E8E8F0]">Remove Background</h2>
-          <p className="text-xs text-[#6B7280] mt-0.5">
+          <h2 className="text-lg font-semibold text-[var(--ag-text-primary)]">Remove Background</h2>
+          <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
             Click a color to make it transparent, or use one-click presets
           </p>
         </div>
@@ -217,8 +217,8 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
                 <Eraser className="w-5 h-5 text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#E8E8F0] truncate">{file.name}</p>
-                <p className="text-xs text-[#6B7280]">
+                <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{file.name}</p>
+                <p className="text-xs text-[var(--ag-text-secondary)]">
                   {file.size < 1024 * 1024
                     ? `${(file.size / 1024).toFixed(1)} KB`
                     : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
@@ -226,7 +226,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
               </div>
               <button
                 onClick={handleReset}
-                className="text-xs text-[#6B7280] hover:text-[#FF6B6B] transition-colors"
+                className="text-xs min-h-[44px] text-[var(--ag-text-secondary)] hover:text-red-400 transition-colors"
               >
                 Remove
               </button>
@@ -237,16 +237,16 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 space-y-4">
             {/* Quick remove buttons */}
             <div>
-              <label className="text-xs text-[#6B7280] font-medium uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide mb-2 block">
                 Quick Remove
               </label>
               <div className="flex gap-2">
                 <button
                   onClick={removeWhiteBg}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                     pickedColor && pickedColor[0] === 255 && pickedColor[1] === 255 && pickedColor[2] === 255
-                      ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                      : 'bg-white/[0.04] text-[#6B7280] border border-white/[0.08] hover:text-[#E8E8F0] hover:border-white/[0.12]'
+                      ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                   }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full bg-white border border-white/20 flex-shrink-0" />
@@ -254,10 +254,10 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
                 </button>
                 <button
                   onClick={removeBlackBg}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                     pickedColor && pickedColor[0] === 0 && pickedColor[1] === 0 && pickedColor[2] === 0
-                      ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
-                      : 'bg-white/[0.04] text-[#6B7280] border border-white/[0.08] hover:text-[#E8E8F0] hover:border-white/[0.12]'
+                      ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40'
+                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                   }`}
                 >
                   <span className="w-3.5 h-3.5 rounded-full bg-black border border-white/20 flex-shrink-0" />
@@ -269,10 +269,10 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
             {/* Tolerance slider */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs text-[#6B7280] font-medium uppercase tracking-wide">
+                <label className="text-xs text-[var(--ag-text-secondary)] font-medium uppercase tracking-wide">
                   Tolerance
                 </label>
-                <span className="text-xs font-mono text-[#E8E8F0]">{tolerance}%</span>
+                <span className="text-xs font-mono text-[var(--ag-text-primary)]">{tolerance}%</span>
               </div>
               <input
                 type="range"
@@ -289,7 +289,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
                   [&::-webkit-slider-thumb]:bg-violet-500
                   [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(139,92,246,0.5)]"
               />
-              <div className="flex justify-between text-[10px] text-[#6B7280] mt-1">
+              <div className="flex justify-between text-[10px] text-[var(--ag-text-secondary)] mt-1">
                 <span>Exact match</span>
                 <span>Aggressive</span>
               </div>
@@ -302,7 +302,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
                   className="w-6 h-6 rounded-md border border-white/20 flex-shrink-0"
                   style={{ backgroundColor: `rgb(${pickedColor[0]},${pickedColor[1]},${pickedColor[2]})` }}
                 />
-                <span className="text-xs text-[#6B7280]">
+                <span className="text-xs text-[var(--ag-text-secondary)]">
                   Target: rgb({pickedColor[0]}, {pickedColor[1]}, {pickedColor[2]})
                 </span>
               </div>
@@ -313,7 +313,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <MousePointer2 className="w-3.5 h-3.5 text-violet-400" />
-              <p className="text-xs text-[#6B7280]">
+              <p className="text-xs text-[var(--ag-text-secondary)]">
                 Click on any color in the image to remove it
               </p>
             </div>
@@ -332,7 +332,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 bg-[#FF6B6B]/10 border border-[#FF6B6B]/30 rounded-lg p-3 text-sm text-[#FF6B6B]">
+            <div className="flex items-center gap-2 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-3 text-sm text-[#EF4444]">
               <Info className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
@@ -351,7 +351,7 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleReset}
-                  className="px-5 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/20 transition-colors"
+                  className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
                 >
                   New Image
                 </button>

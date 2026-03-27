@@ -64,7 +64,7 @@ function describeState(angleDeg: number, flipH: boolean, flipV: boolean): string
 }
 
 /* ---------- component ---------- */
-export function RotateTool() {
+export function RotateTool(_props: { onBack: () => void }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [angle, setAngle] = useState(0);
   const [flipH, setFlipH] = useState(false);
@@ -170,7 +170,7 @@ export function RotateTool() {
   if (result) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-md p-4 flex items-center justify-center">
+        <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-md p-4 flex items-center justify-center">
           <img
             src={result}
             alt="Transformed result"
@@ -181,13 +181,13 @@ export function RotateTool() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleReset}
-            className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+            className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
           >
             New Image
           </button>
           <button
             onClick={() => setResult(null)}
-            className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+            className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
           >
             Edit Again
           </button>
@@ -203,39 +203,39 @@ export function RotateTool() {
   return (
     <div className="space-y-5">
       {/* live preview */}
-      <div className="rounded-2xl border border-white/[0.06] bg-black/40 overflow-hidden flex items-center justify-center min-h-[400px] p-4">
+      <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-black/40 overflow-hidden flex items-center justify-center min-h-[400px] p-4">
         <canvas ref={canvasRef} className="rounded-lg" />
       </div>
 
       {/* controls panel */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-md p-5 space-y-5">
+      <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-md p-5 space-y-5">
         {/* state indicator */}
-        <div className="flex items-center gap-2 text-xs text-white/40">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
+        <div className="flex items-center gap-2 text-xs text-[var(--ag-text-muted)]">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--ag-violet)]" />
           {stateDescription}
         </div>
 
         {/* quick rotation buttons */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+          <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
             Rotate
           </label>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setAngle((a) => a - 90)}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12] transition-all"
+              className="px-3.5 min-h-[44px] rounded-lg text-sm font-medium border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-all"
             >
               -90deg
             </button>
             <button
               onClick={() => setAngle((a) => a + 90)}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12] transition-all"
+              className="px-3.5 min-h-[44px] rounded-lg text-sm font-medium border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-all"
             >
               +90deg
             </button>
             <button
               onClick={() => setAngle((a) => a + 180)}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12] transition-all"
+              className="px-3.5 min-h-[44px] rounded-lg text-sm font-medium border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-all"
             >
               180deg
             </button>
@@ -245,10 +245,10 @@ export function RotateTool() {
         {/* custom angle slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+            <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
               Custom Angle
             </label>
-            <span className="text-xs text-white/40 tabular-nums">{angle}deg</span>
+            <span className="text-xs text-[var(--ag-text-muted)] tabular-nums">{angle}deg</span>
           </div>
           <input
             type="range"
@@ -263,26 +263,26 @@ export function RotateTool() {
 
         {/* flip buttons */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+          <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
             Flip
           </label>
           <div className="flex gap-2">
             <button
               onClick={() => setFlipH((f) => !f)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                 flipH
-                  ? 'bg-[#8B5CF6] text-white shadow-lg shadow-[#8B5CF6]/25'
-                  : 'border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12]'
+                  ? 'bg-[var(--ag-violet)] text-[var(--ag-text-primary)] shadow-lg shadow-[var(--ag-violet)]/25'
+                  : 'border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
               }`}
             >
               Horizontal
             </button>
             <button
               onClick={() => setFlipV((f) => !f)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                 flipV
-                  ? 'bg-[#8B5CF6] text-white shadow-lg shadow-[#8B5CF6]/25'
-                  : 'border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12]'
+                  ? 'bg-[var(--ag-violet)] text-[var(--ag-text-primary)] shadow-lg shadow-[var(--ag-violet)]/25'
+                  : 'border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
               }`}
             >
               Vertical
@@ -295,14 +295,14 @@ export function RotateTool() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleReset}
-          className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+          className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleApply}
           disabled={processing}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-sm font-semibold text-white shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[#7C3AED] text-sm font-semibold text-[var(--ag-text-primary)] shadow-lg shadow-[var(--ag-violet)]/25 hover:shadow-[var(--ag-violet)]/40 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {processing ? 'Applying...' : 'Apply'}
         </button>

@@ -281,7 +281,7 @@ export function OfficePage() {
   return (
     <div
       className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
-      style={{ background: 'var(--ag-bg-deep, #05050A)' }}
+      style={{ background: 'var(--ag-bg-base, #06061a)' }}
     >
       {/* First-visit cinematic overlay */}
       {showFirstVisit && (
@@ -336,7 +336,7 @@ export function OfficePage() {
         <div
           className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5"
           style={{
-            background: 'linear-gradient(to bottom, rgba(5,5,10,0.85) 0%, transparent 100%)',
+            background: 'linear-gradient(to bottom, rgba(6,6,26,0.85) 0%, transparent 100%)',
           }}
         >
           <div className="flex items-center gap-3">
@@ -366,7 +366,7 @@ export function OfficePage() {
           </div>
           <div className="flex items-center gap-2">
           {/* Day/Night/Auto toggle */}
-          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: '#12121F', border: '1px solid rgba(0,240,255,0.1)' }}>
+          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--ag-bg-elevated, rgba(30,30,50,0.7))', border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))' }}>
             {(['day', 'night', 'auto'] as const).map(mode => (
               <button
                 key={mode}
@@ -374,7 +374,7 @@ export function OfficePage() {
                 className="px-2 py-1 rounded-md text-xs transition-all"
                 style={{
                   background: officeTheme === mode ? 'rgba(0,240,255,0.15)' : 'transparent',
-                  color: officeTheme === mode ? '#00F0FF' : '#8892A4',
+                  color: officeTheme === mode ? '#00F0FF' : '#9CA3AF',
                 }}
               >
                 {mode === 'day' ? '\u2600\uFE0F' : mode === 'night' ? '\uD83C\uDF19' : '\u26A1'}
@@ -467,8 +467,8 @@ export function OfficePage() {
           style={{
             height: sidebarExpanded ? '60vh' : '44px',
             transition: 'height 0.3s ease',
-            background: '#0A0A14',
-            borderTop: '1px solid rgba(0,240,255,0.15)',
+            background: 'var(--ag-bg-surface, #0A0A14)',
+            borderTop: '1px solid var(--ag-border-default, rgba(139,92,246,0.15))',
             borderRadius: '16px 16px 0 0',
           }}
           onTouchStart={handleTouchStart}
@@ -493,7 +493,7 @@ export function OfficePage() {
       ) : (
         <div
           className="flex-1 md:w-[40%] border-t md:border-t-0 md:border-l min-h-0 pb-0"
-          style={{ borderColor: 'rgba(0,240,255,0.15)' }}
+          style={{ borderColor: 'var(--ag-border-default, rgba(139,92,246,0.15))' }}
         >
           <SmartSidebar
             officeData={officeData}
@@ -524,7 +524,7 @@ export function OfficePage() {
             <button
               key={agentId}
               onClick={() => setSelectedAgentId(agentId)}
-              className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-2 py-1 transition-all min-h-[32px]"
+              className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-2 py-1 transition-all min-h-[44px]"
               style={{
                 background: selectedAgentId === agentId ? `${agentColor}15` : 'transparent',
                 border: selectedAgentId === agentId ? `1px solid ${agentColor}30` : '1px solid transparent',

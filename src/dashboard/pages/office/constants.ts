@@ -160,7 +160,7 @@ export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }
 
 // Design tokens
 export const C = {
-  bg: '#05050A',
+  bg: '#06061a',
   card: '#0C0C18',
   elevated: '#12121F',
   cyan: '#00F0FF',
@@ -168,9 +168,9 @@ export const C = {
   pink: '#FF2D78',
   purple: '#8B5CF6',
   text: '#F4F6FF',
-  muted: '#8892A4',
+  muted: '#9CA3AF',
   dim: '#4B5563',
-  border: 'rgba(0,240,255,0.1)',
+  border: 'rgba(139,92,246,0.08)',
 };
 
 export const STATE_IDLE_TIMEOUT_MS = 30_000;

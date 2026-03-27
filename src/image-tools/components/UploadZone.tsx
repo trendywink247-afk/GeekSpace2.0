@@ -107,7 +107,7 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
     if (preview?.url) URL.revokeObjectURL(preview.url);
     setPreview(null);
     setError(null);
-  }, [preview?.url]);
+  }, [preview]);
 
   /* accepted formats display text */
   const acceptText = accept === 'image/*'
@@ -118,11 +118,11 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
     <div className="space-y-3">
       {preview ? (
         /* file selected state */
-        <div className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+        <div className="flex items-center gap-4 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-4">
           <img
             src={preview.url}
             alt="Preview"
-            className="w-16 h-16 rounded-lg object-cover border border-white/[0.06] flex-shrink-0"
+            className="w-16 h-16 rounded-lg object-cover border border-[var(--ag-border-subtle)] flex-shrink-0"
             style={{
               backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.03) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.03) 75%)`,
               backgroundSize: '8px 8px',
@@ -130,12 +130,12 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-white truncate">{preview.name}</p>
-            <p className="text-xs text-white/40 mt-0.5">{formatSize(preview.size)}</p>
+            <p className="text-sm text-[var(--ag-text-primary)] truncate">{preview.name}</p>
+            <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">{formatSize(preview.size)}</p>
           </div>
           <button
             onClick={reset}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs text-white/50 hover:text-white/80 border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] transition-colors cursor-pointer"
+            className="flex-shrink-0 px-3 min-h-[44px] rounded-lg text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] transition-colors cursor-pointer"
           >
             Change
           </button>
@@ -152,14 +152,14 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
           className={`
             relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200
             ${dragOver
-              ? 'border-violet-500/60 bg-violet-500/[0.06] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
-              : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.03]'
+              ? 'border-[var(--ag-violet)]/60 bg-[var(--ag-violet)]/[0.06] shadow-[0_0_30px_rgba(139,92,246,0.15)]'
+              : 'border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-violet)]/30 hover:bg-[var(--ag-bg-surface-hover)]'
             }
           `}
           style={{ minHeight: 200 }}
         >
           {/* upload icon */}
-          <div className={`transition-colors ${dragOver ? 'text-violet-400' : 'text-white/30'}`}>
+          <div className={`transition-colors ${dragOver ? 'text-[var(--ag-violet)]' : 'text-[var(--ag-text-muted)]'}`}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
@@ -168,13 +168,13 @@ export function UploadZone({ onFile, accept = 'image/*', multiple = false, maxSi
           </div>
 
           <div className="text-center">
-            <p className={`text-sm font-medium ${dragOver ? 'text-violet-300' : 'text-white/60'}`}>
+            <p className={`text-sm font-medium ${dragOver ? 'text-[var(--ag-violet)]' : 'text-[var(--ag-text-secondary)]'}`}>
               {dragOver ? 'Drop your image here' : 'Drag & drop an image, or click to browse'}
             </p>
-            <p className="text-xs text-white/30 mt-1">
+            <p className="text-xs text-[var(--ag-text-muted)] mt-1">
               {acceptText} &middot; up to {maxSizeMB} MB
             </p>
-            <p className="text-[10px] text-white/20 mt-2">
+            <p className="text-[10px] text-[var(--ag-text-muted)] mt-2">
               You can also paste from clipboard (Ctrl+V)
             </p>
           </div>

@@ -8,7 +8,7 @@ import type { Response, NextFunction } from 'express';
 import jwtPkg from 'jsonwebtoken';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { config } from '../config.js';
-import { addStateClient, removeStateClient, getAllAgentStates, isRedisPubSubEnabled, getConnectedClientCount } from '../services/agent-state-bus.js';
+import { type AgentStateType, addStateClient, removeStateClient, broadcastAgentState, getAllAgentStates, isRedisPubSubEnabled, getConnectedClientCount } from '../services/agent-state-bus.js';
 import { getAgentAutocompleteList, getRouterInfo, getUserDefaultAgent, parseMentions } from '../services/unified-agent-router.js';
 
 const { verify } = jwtPkg;
@@ -77,6 +77,24 @@ agentStateRouter.get('/info', requireAuth, (_req, res) => {
     connectedClients: getConnectedClientCount(),
     redisPubSub: isRedisPubSubEnabled(),
   });
+});
+
+// POST /api/agent-state/emit — allow any authenticated page to trigger canvas animations
+agentStateRouter.post('/emit', requireAuth, (req: AuthRequest, res) => {
+  const { agentId, state, content, tool } = req.body as { agentId: string; state: string; content?: string; tool?: string };
+  const validStates = ['task_started', 'task_completed', 'task_failed', 'thinking', 'idle'];
+  if (!agentId || !state || !validStates.includes(state)) {
+    res.status(400).json({ error: 'Invalid agentId or state' });
+    return;
+  }
+  broadcastAgentState(req.userId!, {
+    agentId,
+    agentName: agentId,
+    state: state as AgentStateType,
+    content: content || '',
+    tool: tool || '',
+  });
+  res.json({ ok: true });
 });
 
 agentStateRouter.get('/stream', requireAuthSSE, (req: AuthRequest, res) => {

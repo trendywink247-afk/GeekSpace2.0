@@ -1,6 +1,12 @@
-// AnalyticsPage.tsx -- "Agentin Wrapped" -- Personal Analytics Dashboard
+// ============================================================
+// AnalyticsPage -- "Agentin Wrapped" -- Personal Analytics Dashboard
+// Owner agent: pulse (#10B981)
+// Revamped: design tokens, PageHeader, SectionCard, useAgentCanvas,
+//   recharts migration, heatmap mobile tap, API path fix, mobile 44px
+// ============================================================
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   TrendingUp,
   TrendingDown,
@@ -21,32 +27,19 @@ import {
 import api from '@/services/api';
 import { activityService } from '@/services/api';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-);
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -145,12 +138,12 @@ function computeTrend(data: number[]): 'up' | 'down' | 'flat' {
 
 function SkeletonCard() {
   return (
-    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
+    <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl p-5 animate-pulse">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-[#1a1a2e]" />
+        <div className="w-11 h-11 rounded-xl bg-[rgba(139,92,246,0.04)]" />
         <div className="flex-1 space-y-2">
-          <div className="h-7 w-16 bg-[#1a1a2e] rounded" />
-          <div className="h-3 w-24 bg-[#1a1a2e] rounded" />
+          <div className="h-7 w-16 bg-[rgba(139,92,246,0.06)] rounded" />
+          <div className="h-3 w-24 bg-[rgba(139,92,246,0.04)] rounded" />
         </div>
       </div>
     </div>
@@ -159,13 +152,13 @@ function SkeletonCard() {
 
 function SkeletonHeatmap() {
   return (
-    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 animate-pulse">
-      <div className="h-4 w-48 bg-[#1a1a2e] rounded mb-4" />
+    <div className="animate-pulse">
+      <div className="h-4 w-48 bg-[rgba(139,92,246,0.06)] rounded mb-4" />
       <div className="flex gap-1">
         {Array.from({ length: 14 }).map((_, i) => (
           <div key={i} className="flex flex-col gap-1">
             {Array.from({ length: 7 }).map((_, j) => (
-              <div key={j} className="w-[10px] h-[10px] rounded-sm bg-[#1a1a2e]" />
+              <div key={j} className="w-[10px] h-[10px] rounded-sm bg-[rgba(139,92,246,0.04)]" />
             ))}
           </div>
         ))}
@@ -179,9 +172,9 @@ function SkeletonBar() {
     <div className="space-y-4 animate-pulse">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="h-3 w-20 bg-[#1a1a2e] rounded" />
-          <div className="flex-1 h-6 bg-[#1a1a2e] rounded-full" />
-          <div className="h-3 w-10 bg-[#1a1a2e] rounded" />
+          <div className="h-3 w-20 bg-[rgba(139,92,246,0.06)] rounded" />
+          <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full" />
+          <div className="h-3 w-10 bg-[rgba(139,92,246,0.06)] rounded" />
         </div>
       ))}
     </div>
@@ -197,7 +190,7 @@ function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
   if (trend === 'down') {
     return <TrendingDown className="w-4 h-4 text-[#FF2D78]" />;
   }
-  return <ArrowUpRight className="w-4 h-4 text-[#8892A4] opacity-40" />;
+  return <ArrowUpRight className="w-4 h-4 text-[#9CA3AF] opacity-40" />;
 }
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
@@ -252,7 +245,7 @@ function OverviewCard({
   color?: string;
 }) {
   return (
-    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 flex flex-col gap-3 min-w-0">
+    <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl hover:border-[rgba(139,92,246,0.15)] transition-all duration-300 p-5 flex flex-col gap-3 min-w-0">
       <div className="flex items-start justify-between">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -264,7 +257,7 @@ function OverviewCard({
       </div>
       <div>
         <div className="text-2xl font-bold text-[#F4F6FF] tracking-tight">{value}</div>
-        <div className="text-xs text-[#8892A4] mt-0.5">{label}</div>
+        <div className="text-xs text-[#9CA3AF] mt-0.5">{label}</div>
       </div>
       {sparkData.length >= 2 && (
         <div className="mt-auto">
@@ -380,11 +373,28 @@ function ActivityHeatmap({
     });
   };
 
+  // Mobile tap handler -- toggles tooltip on touch devices
+  const handleTap = (
+    e: React.MouseEvent | React.TouchEvent,
+    date: string,
+    count: number,
+  ) => {
+    e.preventDefault();
+    const rect = (e.target as SVGElement).getBoundingClientRect();
+    const text = `${formatDate(date)}: ${count} message${count !== 1 ? 's' : ''}`;
+    // Toggle: if same tooltip shown, dismiss; else show new one
+    setTooltip((prev) =>
+      prev?.text === text
+        ? null
+        : { text, x: rect.left + rect.width / 2, y: rect.top - 8 },
+    );
+  };
+
   return (
     <div className="relative">
       {tooltip && (
         <div
-          className="fixed z-50 bg-[#12121F] border border-[#00F0FF]/30 rounded-lg px-3 py-1.5 text-xs text-[#F4F6FF] pointer-events-none whitespace-nowrap"
+          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[#F4F6FF] pointer-events-none whitespace-nowrap"
           style={{
             top: tooltip.y - 28,
             left: tooltip.x,
@@ -410,14 +420,14 @@ function ActivityHeatmap({
               y={i * step + cellSize - 1}
               textAnchor="middle"
               className="text-[8px]"
-              fill="#8892A4"
+              fill="#9CA3AF"
               fontFamily="system-ui, sans-serif"
               fontSize="8"
             >
               {i % 2 === 0 ? label : ''}
             </text>
           ))}
-          {/* Grid cells */}
+          {/* Grid cells -- hover for desktop, tap for mobile */}
           {gridData.map((cell) => (
             <rect
               key={cell.date}
@@ -431,12 +441,14 @@ function ActivityHeatmap({
               className="cursor-pointer transition-opacity hover:opacity-80"
               onMouseEnter={(e) => handleMouseEnter(e, cell.date, cell.count)}
               onMouseLeave={() => setTooltip(null)}
+              onClick={(e) => handleTap(e, cell.date, cell.count)}
+              onTouchEnd={(e) => handleTap(e, cell.date, cell.count)}
             />
           ))}
         </svg>
       </div>
       {/* Legend */}
-      <div className="flex items-center gap-2 mt-2 text-xs text-[#8892A4]">
+      <div className="flex items-center gap-2 mt-2 text-xs text-[#9CA3AF]">
         <span>Less</span>
         {HEATMAP_COLORS.map((color, i) => (
           <div
@@ -492,11 +504,11 @@ function AIInsightCard({ insight }: { insight: AIInsight }) {
 
 function SkeletonInsightCard() {
   return (
-    <div className="border-l-2 border-[var(--ag-border-subtle)] pl-4 py-3 animate-pulse">
+    <div className="border-l-2 border-[rgba(139,92,246,0.08)] pl-4 py-3 animate-pulse">
       <div className="flex items-start gap-2.5">
-        <div className="w-5 h-5 rounded bg-[#1a1a2e] flex-shrink-0" />
+        <div className="w-5 h-5 rounded bg-[rgba(139,92,246,0.04)] flex-shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-48 bg-[#1a1a2e] rounded" />
+          <div className="h-4 w-48 bg-[rgba(139,92,246,0.06)] rounded" />
         </div>
       </div>
     </div>
@@ -520,10 +532,10 @@ function UsageBarChart({
         const barWidth = (item.value / maxVal) * 100;
         return (
           <div key={item.label} className="flex items-center gap-3">
-            <span className="text-xs text-[#8892A4] w-20 text-right flex-shrink-0">
+            <span className="text-xs text-[#9CA3AF] w-20 text-right flex-shrink-0">
               {item.label}
             </span>
-            <div className="flex-1 h-6 bg-[var(--ag-bg-surface)] rounded-full overflow-hidden relative">
+            <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden relative">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
@@ -559,15 +571,15 @@ function PeriodTabs({
   ];
 
   return (
-    <div className="flex gap-1 bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-1">
+    <div className="flex gap-1 bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl p-1 backdrop-blur-xl">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
             value === tab.key
-              ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/30'
-              : 'text-[#8892A4] hover:text-[#F4F6FF] border border-transparent'
+              ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
+              : 'text-[#9CA3AF] hover:text-[#F4F6FF] border border-transparent'
           }`}
         >
           {tab.label}
@@ -580,6 +592,8 @@ function PeriodTabs({
 // ── Main Component ──────────────────────────────────────────────
 
 export function AnalyticsPage() {
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'pulse', page: 'analytics' });
+
   const [data, setData] = useState<AnalyticsData>({
     snapshots: [],
     weekly: null,
@@ -599,32 +613,36 @@ export function AnalyticsPage() {
   const loadAiInsights = useCallback(async (refresh = false) => {
     setAiInsightsLoading(true);
     setAiInsightsError(false);
+    if (refresh) void notifyStart('refresh-insights');
     try {
       const res = await api.get<{ insights: AIInsight[]; generatedAt: string }>(
-        'analytics/insights',
+        '/analytics/insights',
         { params: refresh ? { refresh: 'true' } : {} }
       );
       setAiInsights(res.data.insights ?? []);
+      if (refresh) void notifyDone('insights refreshed');
     } catch {
       setAiInsightsError(true);
+      if (refresh) void notifyFail('insights refresh failed');
     } finally {
       setAiInsightsLoading(false);
     }
-  }, []);
+  }, [notifyStart, notifyDone, notifyFail]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    void notifyStart('load-analytics');
     try {
       // Fire all requests in parallel; catch individual failures gracefully
       const results = await Promise.allSettled([
-        api.get<{ snapshots: DailySnapshot[] }>('analytics/snapshot', {
+        api.get<{ snapshots: DailySnapshot[] }>('/analytics/snapshot', {
           params: { days: 365 },
         }),
-        api.get<{ summary: WeeklySummary }>('analytics/weekly'),
-        api.get<{ heatmap: HeatmapPoint[] }>('analytics/heatmap'),
-        api.get<{ agents: AgentUsage[] }>('analytics/agents'),
-        api.get<{ activity: ActivityEntry[] }>('activity', {
+        api.get<{ summary: WeeklySummary }>('/analytics/weekly'),
+        api.get<{ heatmap: HeatmapPoint[] }>('/analytics/heatmap'),
+        api.get<{ agents: AgentUsage[] }>('/analytics/agents'),
+        api.get<{ activity: ActivityEntry[] }>('/activity', {
           params: { limit: 100 },
         }),
       ]);
@@ -653,15 +671,19 @@ export function AnalyticsPage() {
       // If ALL requests failed, show error
       if (results.every((r) => r.status === 'rejected')) {
         setError('Failed to load analytics data. Please try again.');
+        void notifyFail('all analytics requests failed');
+      } else {
+        void notifyDone('analytics loaded');
       }
 
       setData({ snapshots, weekly, heatmap, agents, activityEntries });
     } catch {
       setError('Failed to load analytics data. Please try again.');
+      void notifyFail('analytics load error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notifyStart, notifyDone, notifyFail]);
 
   useEffect(() => {
     void load();
@@ -885,230 +907,117 @@ export function AnalyticsPage() {
     ];
   }, [filteredSnapshots]);
 
-  // ── Chart.js Data & Options ──────────────────────────────────
+  // ── Recharts Data ──────────────────────────────────────────────
 
-  const chartGridColor = 'rgba(136,146,164,0.15)';
-  const chartTickColor = '#8892A4';
-  const chartTooltipBg = '#12121F';
-  const chartTooltipBorder = 'rgba(0,240,255,0.3)';
-  const chartTooltipTitle = '#F4F6FF';
-  const chartTooltipBody = '#8892A4';
-  const chartFont = { family: 'system-ui, -apple-system, sans-serif' };
+  const RECHARTS_TOOLTIP_STYLE = {
+    contentStyle: {
+      backgroundColor: 'rgba(12,12,30,0.95)',
+      border: '1px solid rgba(139,92,246,0.15)',
+      borderRadius: '8px',
+      fontSize: '12px',
+    },
+    itemStyle: { color: '#F4F6FF' },
+    labelStyle: { color: '#9CA3AF' },
+  };
 
-  const last7DayLabels = useMemo(() => {
-    const labels: string[] = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    }
-    return labels;
-  }, []);
-
-  const latencyLineData = useMemo(() => {
+  const latencyChartData = useMemo(() => {
     const recentSnaps = filteredSnapshots.slice(-7);
-    const latencies = recentSnaps.length >= 7
-      ? recentSnaps.map((s) => 120 + (s.agentCalls * 15) + Math.round(s.messagesReceived * 2.3))
-      : [185, 210, 165, 240, 195, 175, 220];
-    return {
-      labels: last7DayLabels,
-      datasets: [{
-        label: 'Avg Latency (ms)',
-        data: latencies,
-        borderColor: '#00F0FF',
-        backgroundColor: 'rgba(0,240,255,0.08)',
-        pointBackgroundColor: '#00F0FF',
-        pointBorderColor: '#0C0C18',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: 0.35,
-        fill: true,
-      }],
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const snap = recentSnaps[i];
+      const ms = snap
+        ? 120 + snap.agentCalls * 15 + Math.round(snap.messagesReceived * 2.3)
+        : [185, 210, 165, 240, 195, 175, 220][i];
+      return { name: label, latency: ms };
+    });
+  }, [filteredSnapshots]);
+
+  const PROVIDER_COLORS_MAP: Record<string, string> = {
+    OpenRouter: '#00F0FF',
+    PicoClaw: '#ADFF2F',
+    Groq: '#8B5CF6',
+    Together: '#FF2D78',
+    Ollama: '#F59E0B',
+  };
+
+  const providerPieData = useMemo(
+    () => [
+      { name: 'OpenRouter', value: 38 },
+      { name: 'PicoClaw', value: 25 },
+      { name: 'Groq', value: 18 },
+      { name: 'Together', value: 12 },
+      { name: 'Ollama', value: 7 },
+    ],
+    [],
+  );
+
+  const delegationChartData = useMemo(() => {
+    const AGENT_COLORS: Record<string, string> = {
+      Weebo: '#ADFF2F',
+      Cal: '#00F0FF',
+      Echo: '#8B5CF6',
+      Forge: '#FF2D78',
+      Aria: '#F59E0B',
+      Pulse: '#10B981',
+      Nova: '#EC4899',
     };
-  }, [filteredSnapshots, last7DayLabels]);
-
-  const latencyLineOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: chartTooltipBg,
-        borderColor: chartTooltipBorder,
-        borderWidth: 1,
-        titleColor: chartTooltipTitle,
-        bodyColor: chartTooltipBody,
-        titleFont: { ...chartFont, size: 12, weight: 600 as const },
-        bodyFont: { ...chartFont, size: 11 },
-        padding: 10,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx: { parsed: { y: number | null } }) => `${ctx.parsed.y ?? 0}ms`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { color: chartGridColor },
-        ticks: { color: chartTickColor, font: { ...chartFont, size: 10 } },
-      },
-      y: {
-        grid: { color: chartGridColor },
-        ticks: {
-          color: chartTickColor,
-          font: { ...chartFont, size: 10 },
-          callback: (val: string | number) => `${val}ms`,
-        },
-        beginAtZero: false,
-      },
-    },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), []);
-
-  const providerDoughnutData = useMemo(() => ({
-    labels: ['OpenRouter', 'PicoClaw', 'Groq', 'Together', 'Ollama'],
-    datasets: [{
-      data: [38, 25, 18, 12, 7],
-      backgroundColor: ['#00F0FF', '#ADFF2F', '#8B5CF6', '#FF2D78', '#F59E0B'],
-      borderColor: '#0C0C18',
-      borderWidth: 2,
-      hoverBorderColor: '#12121F',
-      hoverBorderWidth: 3,
-    }],
-  }), []);
-
-  const providerDoughnutOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          color: chartTickColor,
-          font: { ...chartFont, size: 11 },
-          padding: 12,
-          usePointStyle: true,
-          pointStyleWidth: 8,
-        },
-      },
-      tooltip: {
-        backgroundColor: chartTooltipBg,
-        borderColor: chartTooltipBorder,
-        borderWidth: 1,
-        titleColor: chartTooltipTitle,
-        bodyColor: chartTooltipBody,
-        titleFont: { ...chartFont, size: 12, weight: 600 as const },
-        bodyFont: { ...chartFont, size: 11 },
-        padding: 10,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx: { label: string; parsed: number }) => `${ctx.label}: ${ctx.parsed}%`,
-        },
-      },
-    },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), []);
-
-  const delegationBarData = useMemo(() => {
     const agents = ['Weebo', 'Cal', 'Echo', 'Forge', 'Aria', 'Pulse', 'Nova'];
     const agentMap = new Map(data.agents.map((a) => [a.agent.toLowerCase(), a.count]));
-    const counts = agents.map((name) => {
+    return agents.map((name) => {
       const real = agentMap.get(name.toLowerCase());
-      if (real != null) return real;
-      const hash = name.charCodeAt(0) + name.charCodeAt(name.length - 1);
-      return 5 + (hash % 20);
+      const count = real ?? 5 + ((name.charCodeAt(0) + name.charCodeAt(name.length - 1)) % 20);
+      return { name, count, fill: AGENT_COLORS[name] ?? '#6B7280' };
     });
-    return {
-      labels: agents,
-      datasets: [{
-        label: 'Delegations',
-        data: counts,
-        backgroundColor: ['#ADFF2F', '#00F0FF', '#8B5CF6', '#FF2D78', '#F59E0B', '#06B6D4', '#EC4899'],
-        borderColor: '#0C0C18',
-        borderWidth: 1,
-        borderRadius: 6,
-        hoverBackgroundColor: [
-          'rgba(173,255,47,0.8)', 'rgba(0,240,255,0.8)', 'rgba(139,92,246,0.8)',
-          'rgba(255,45,120,0.8)', 'rgba(245,158,11,0.8)', 'rgba(6,182,212,0.8)', 'rgba(236,72,153,0.8)',
-        ],
-      }],
-    };
   }, [data.agents]);
-
-  const delegationBarOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: chartTooltipBg,
-        borderColor: chartTooltipBorder,
-        borderWidth: 1,
-        titleColor: chartTooltipTitle,
-        bodyColor: chartTooltipBody,
-        titleFont: { ...chartFont, size: 12, weight: 600 as const },
-        bodyFont: { ...chartFont, size: 11 },
-        padding: 10,
-        cornerRadius: 8,
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: chartTickColor, font: { ...chartFont, size: 10 } },
-      },
-      y: {
-        grid: { color: chartGridColor },
-        ticks: { color: chartTickColor, font: { ...chartFont, size: 10 } },
-        beginAtZero: true,
-      },
-    },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), []);
 
   // ── Render ────────────────────────────────────────────────────
 
   return (
     <PageShell maxWidth="5xl">
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#F4F6FF] flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-[var(--ag-cyan)]" />
-            Agentin Wrapped <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📊 Analyzed by Pulse</span>
-          </h1>
-          <p className="text-sm text-[#8892A4] mt-1">
-            Your personal AI usage and productivity insights
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <PeriodTabs value={period} onChange={setPeriod} />
-          <button
-            onClick={handleExportCSV}
-            disabled={exporting || loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#ADFF2F]/10 text-[#8892A4] hover:text-[#ADFF2F] hover:border-[#ADFF2F]/30 transition-all text-sm min-h-[44px] disabled:opacity-40"
-            aria-label="Export analytics as CSV"
-            title="Export as CSV"
-          >
-            <Download className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/30 transition-all text-sm min-h-[44px]"
-            aria-label="Refresh analytics"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-            />
-          </button>
-        </div>
-      </div>
+      {/* Header with Pulse ownership dot (#10B981) */}
+      <PageHeader
+        icon={BarChart3}
+        title="Agentin Wrapped"
+        subtitle="Your personal AI usage and productivity insights"
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
+            </span>
+            Pulse
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-3 flex-wrap">
+            <PeriodTabs value={period} onChange={setPeriod} />
+            <button
+              onClick={handleExportCSV}
+              disabled={exporting || loading}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
+              aria-label="Export analytics as CSV"
+              title="Export as CSV"
+            >
+              <Download className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <button
+              onClick={load}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
+              aria-label="Refresh analytics"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+              />
+            </button>
+          </div>
+        }
+      />
 
       {/* Error State */}
       {error && (
@@ -1116,7 +1025,7 @@ export function AnalyticsPage() {
           <span className="text-red-400 text-sm">{error}</span>
           <button
             onClick={load}
-            className="text-sm text-red-400 hover:text-red-300 underline underline-offset-2 ml-4 flex-shrink-0"
+            className="text-sm text-red-400 hover:text-red-300 underline underline-offset-2 ml-4 flex-shrink-0 min-h-[44px] px-2"
           >
             Retry
           </button>
@@ -1184,14 +1093,7 @@ export function AnalyticsPage() {
       </section>
 
       {/* 2. Activity Heatmap */}
-      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-        <h2 className="text-sm font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[var(--ag-cyan)]" />
-          Activity Heatmap
-          <span className="text-xs text-[#8892A4] font-normal ml-1">
-            Last 16 weeks
-          </span>
-        </h2>
+      <SectionCard title="Activity Heatmap" subtitle="Last 16 weeks">
         {loading ? (
           <SkeletonHeatmap />
         ) : (
@@ -1200,19 +1102,19 @@ export function AnalyticsPage() {
             activityEntries={data.activityEntries}
           />
         )}
-      </section>
+      </SectionCard>
 
       {/* 3. AI-Generated Insights Panel */}
-      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-[#F4F6FF] flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#ADFF2F]" />
-            AI Insights
-          </h2>
+      <SectionCard title="AI Insights">
+        <div className="flex items-center justify-between mb-4 -mt-1">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#10B981]" />
+            <span className="text-xs text-[#9CA3AF]">Powered by Pulse</span>
+          </div>
           <button
             onClick={() => void loadAiInsights(true)}
             disabled={aiInsightsLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#12121F] border border-[#00F0FF]/10 text-[#8892A4] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/30 transition-all text-xs min-h-[36px]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
             title="Regenerate insights"
           >
             <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
@@ -1244,73 +1146,106 @@ export function AnalyticsPage() {
             ))}
           </div>
         )}
-      </section>
+      </SectionCard>
 
-      {/* 4. Agent Metrics Charts (Chart.js) */}
+      {/* 4. Agent Metrics Charts (recharts) */}
       {!loading && (
         <section>
           <h2 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[var(--ag-cyan)]" />
+            <Activity className="w-4 h-4 text-[#10B981]" />
             Agent Metrics
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Line: Response Latency */}
-            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-              <h3 className="text-xs font-medium text-[#8892A4] mb-3">
-                Response Latency
-                <span className="text-[#4B5563] ml-1.5">Last 7 days</span>
-              </h3>
+            {/* Area: Response Latency */}
+            <SectionCard title="Response Latency" subtitle="Last 7 days">
               <div className="h-[220px]">
-                <Line data={latencyLineData} options={latencyLineOptions} />
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={latencyChartData}>
+                    <defs>
+                      <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" />
+                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
+                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number) => [`${value}ms`, 'Latency']} />
+                    <Area type="monotone" dataKey="latency" stroke="#10B981" fill="url(#latencyGrad)" strokeWidth={2} dot={{ r: 3, fill: '#10B981', strokeWidth: 2, stroke: '#06061a' }} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+            </SectionCard>
 
-            {/* Doughnut: LLM Provider Distribution */}
-            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-              <h3 className="text-xs font-medium text-[#8892A4] mb-3">
-                LLM Provider Distribution
-              </h3>
+            {/* Pie: LLM Provider Distribution */}
+            <SectionCard title="LLM Provider Distribution">
               <div className="h-[220px]">
-                <Doughnut data={providerDoughnutData} options={providerDoughnutOptions} />
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={providerPieData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="#06061a"
+                      strokeWidth={2}
+                    >
+                      {providerPieData.map((entry) => (
+                        <Cell key={entry.name} fill={PROVIDER_COLORS_MAP[entry.name] ?? '#6B7280'} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number, name: string) => [`${value}%`, name]} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+              {/* Legend */}
+              <div className="flex flex-wrap justify-center gap-3 mt-2">
+                {providerPieData.map((entry) => (
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROVIDER_COLORS_MAP[entry.name] }} />
+                    {entry.name}
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
 
             {/* Bar: Delegation Counts (full width) */}
-            <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5 lg:col-span-2">
-              <h3 className="text-xs font-medium text-[#8892A4] mb-3">
-                Daily Delegation Counts by Agent
-              </h3>
+            <SectionCard title="Daily Delegation Counts by Agent" className="lg:col-span-2">
               <div className="h-[220px]">
-                <Bar data={delegationBarData} options={delegationBarOptions} />
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={delegationChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {delegationChartData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+            </SectionCard>
           </div>
         </section>
       )}
 
       {/* 5. Usage by Feature (horizontal bar chart) */}
-      <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-        <h2 className="text-sm font-semibold text-[#F4F6FF] mb-5 flex items-center gap-2">
-          <Target className="w-4 h-4 text-[var(--ag-cyan)]" />
-          Usage by Feature
-        </h2>
+      <SectionCard title="Usage by Feature">
         {loading ? (
           <SkeletonBar />
         ) : (
           <UsageBarChart items={featureUsage} />
         )}
-      </section>
+      </SectionCard>
 
-      {/* 6. Agent Breakdown (bonus section, retained from original) */}
+      {/* 6. Agent Breakdown */}
       {!loading && data.agents.length > 0 && (
-        <section className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-2xl p-5">
-          <h2 className="text-sm font-semibold text-[#F4F6FF] mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[var(--ag-violet)]" />
-            Agent Usage
-            <span className="text-xs text-[#8892A4] font-normal ml-1">
-              Last 30 days
-            </span>
-          </h2>
+        <SectionCard title="Agent Usage" subtitle="Last 30 days">
           <div className="space-y-3">
             {data.agents.map((a) => {
               const maxCount = Math.max(
@@ -1321,6 +1256,7 @@ export function AnalyticsPage() {
                 weebo: '#ADFF2F',
                 jarvis: '#8B5CF6',
                 edith: '#00F0FF',
+                pulse: '#10B981',
                 builtin: '#F59E0B',
               };
               return (
@@ -1328,7 +1264,7 @@ export function AnalyticsPage() {
                   <span className="text-xs text-[#F4F6FF] w-16 capitalize flex-shrink-0">
                     {a.agent}
                   </span>
-                  <div className="flex-1 h-2 bg-[#12121F] rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
@@ -1338,18 +1274,18 @@ export function AnalyticsPage() {
                       }}
                     />
                   </div>
-                  <span className="text-xs text-[#8892A4] w-8 text-right flex-shrink-0">
+                  <span className="text-xs text-[#9CA3AF] w-8 text-right flex-shrink-0">
                     {a.count}
                   </span>
                 </div>
               );
             })}
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Footer */}
-      <p className="text-xs text-[#8892A4] text-center pb-4">
+      <p className="text-xs text-[#9CA3AF] text-center pb-4">
         Insights update in real time as you use Agentin
       </p>
     </div>

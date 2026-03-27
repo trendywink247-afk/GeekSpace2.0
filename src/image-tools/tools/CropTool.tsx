@@ -51,7 +51,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<string>
 }
 
 /* ---------- component ---------- */
-export function CropTool() {
+export function CropTool(_props: { onBack: () => void }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -114,7 +114,7 @@ export function CropTool() {
     return (
       <div className="space-y-6">
         {/* preview */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-md p-4 flex items-center justify-center">
+        <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-md p-4 flex items-center justify-center">
           <img
             src={result}
             alt="Cropped result"
@@ -126,13 +126,13 @@ export function CropTool() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleReset}
-            className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+            className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
           >
             New Image
           </button>
           <button
             onClick={() => setResult(null)}
-            className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+            className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
           >
             Re-Crop
           </button>
@@ -147,7 +147,7 @@ export function CropTool() {
     <div className="space-y-5">
       {/* cropper viewport */}
       <div
-        className="relative rounded-2xl border border-white/[0.06] bg-black/40 overflow-hidden"
+        className="relative rounded-2xl border border-[var(--ag-border-subtle)] bg-black/40 overflow-hidden"
         style={{ height: 400 }}
       >
         <Cropper
@@ -164,10 +164,10 @@ export function CropTool() {
       </div>
 
       {/* controls panel */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-md p-5 space-y-5">
+      <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-md p-5 space-y-5">
         {/* aspect ratio presets */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+          <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
             Aspect Ratio
           </label>
           <div className="flex flex-wrap gap-2">
@@ -177,10 +177,10 @@ export function CropTool() {
                 <button
                   key={preset.label}
                   onClick={() => setAspect(preset.value)}
-                  className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3.5 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? 'bg-[#8B5CF6] text-white shadow-lg shadow-[#8B5CF6]/25'
-                      : 'border border-white/[0.06] bg-white/[0.04] text-white/60 hover:text-white hover:border-white/[0.12]'
+                      ? 'bg-[var(--ag-violet)] text-[var(--ag-text-primary)] shadow-lg shadow-[var(--ag-violet)]/25'
+                      : 'border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
                   }`}
                 >
                   {preset.label}
@@ -193,10 +193,10 @@ export function CropTool() {
         {/* zoom slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+            <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
               Zoom
             </label>
-            <span className="text-xs text-white/40 tabular-nums">{zoom.toFixed(2)}x</span>
+            <span className="text-xs text-[var(--ag-text-muted)] tabular-nums">{zoom.toFixed(2)}x</span>
           </div>
           <input
             type="range"
@@ -212,10 +212,10 @@ export function CropTool() {
         {/* rotation slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-white/50 uppercase tracking-wider">
+            <label className="text-xs font-medium text-[var(--ag-text-secondary)] uppercase tracking-wider">
               Rotation
             </label>
-            <span className="text-xs text-white/40 tabular-nums">{rotation}deg</span>
+            <span className="text-xs text-[var(--ag-text-muted)] tabular-nums">{rotation}deg</span>
           </div>
           <input
             type="range"
@@ -233,14 +233,14 @@ export function CropTool() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleReset}
-          className="px-5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.04] text-sm text-white/70 hover:text-white hover:border-white/[0.12] transition-colors"
+          className="px-5 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleApply}
           disabled={processing}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-sm font-semibold text-white shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[#7C3AED] text-sm font-semibold text-[var(--ag-text-primary)] shadow-lg shadow-[var(--ag-violet)]/25 hover:shadow-[var(--ag-violet)]/40 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {processing ? 'Cropping...' : 'Apply Crop'}
         </button>

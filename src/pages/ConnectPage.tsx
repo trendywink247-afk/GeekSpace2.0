@@ -1,6 +1,7 @@
 // ============================================================
 // ConnectPage — public connection invite accept flow (Phase 29.1)
 // Route: /connect/:token
+// Design tokens: weebo (#00F0FF)
 // ============================================================
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,6 @@ import axios from 'axios';
 import { CheckCircle2, XCircle, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
@@ -64,9 +64,9 @@ export function ConnectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] flex items-center justify-center p-4 pb-24 md:pb-4" data-testid="connect-page">
+    <div className="min-h-screen bg-[#06061a] text-[#F4F6FF] flex items-center justify-center p-4 pb-24 md:pb-4" data-testid="connect-page">
       <div className="w-full max-w-md">
-        {/* Logo */}
+        {/* Logo — PNG per branding standard (978512c) */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
             <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
@@ -74,8 +74,10 @@ export function ConnectPage() {
           </div>
         </div>
 
-        <Card className="bg-[#0C0C18] border-[#00F0FF]/20">
-          <CardContent className="p-6">
+        <div
+          className="rounded-2xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-colors backdrop-blur-xl p-6"
+          style={{ background: 'rgba(12,12,30,0.6)' }}
+        >
             {stage === 'loading' && (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-[#00F0FF] animate-spin mx-auto mb-4" />
@@ -89,7 +91,7 @@ export function ConnectPage() {
                 <h2 className="text-xl font-bold mb-2">Invalid Invite</h2>
                 <p className="text-[#9CA3AF] mb-6">{errorMsg}</p>
                 <Link to="/">
-                  <Button variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
+                  <Button variant="outline" className="min-h-[44px] border-[rgba(139,92,246,0.15)] text-[#00F0FF] hover:border-[rgba(139,92,246,0.25)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                     Go to Homepage
                   </Button>
                 </Link>
@@ -107,7 +109,7 @@ export function ConnectPage() {
                   They'll be able to collaborate with you through Agentin Chat.
                 </p>
                 <Link to="/login?signup=1">
-                  <Button className="bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]">
+                  <Button className="min-h-[44px] bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
                     Sign up to Agentin Chat
                   </Button>
                 </Link>
@@ -122,7 +124,7 @@ export function ConnectPage() {
                     <img
                       src={invite.ownerAvatar}
                       alt={invite.ownerName}
-                      className="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-[#00F0FF]/30"
+                      className="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-[rgba(139,92,246,0.15)]"
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-full mx-auto mb-3 bg-[#00F0FF]/20 flex items-center justify-center text-2xl font-bold text-[#00F0FF]">
@@ -133,7 +135,7 @@ export function ConnectPage() {
                     {invite.ownerName}
                   </h2>
                   <p className="text-sm text-[#9CA3AF]">@{invite.ownerUsername}</p>
-                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20">
+                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[rgba(139,92,246,0.08)]">
                     <UserPlus className="w-4 h-4 text-[#00F0FF]" />
                     <span className="text-sm text-[#00F0FF]">Invited you to connect</span>
                   </div>
@@ -147,7 +149,7 @@ export function ConnectPage() {
                       placeholder="e.g. Alex Smith"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-[#06060B] border-[#00F0FF]/20"
+                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)]"
                     />
                   </div>
                   <div>
@@ -157,13 +159,13 @@ export function ConnectPage() {
                       placeholder="e.g. you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-[#06060B] border-[#00F0FF]/20"
+                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)]"
                     />
                   </div>
                   <Button
                     onClick={handleAccept}
                     disabled={stage === 'submitting'}
-                    className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 min-h-[44px]"
+                    className="w-full min-h-[44px] bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                   >
                     {stage === 'submitting' ? (
                       <>
@@ -183,8 +185,7 @@ export function ConnectPage() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

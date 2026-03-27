@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useAuthStore } from '@/stores/authStore';
 
 interface VisualConcept {
   name: string;
@@ -70,6 +71,7 @@ export function ChatRefine({
   onSelectConcept,
   onClose,
 }: ChatRefineProps) {
+  const token = useAuthStore((s) => s.token);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function ChatRefine({
       try {
         const res = await fetch('/api/logo/ai-refine', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             instruction: trimmed,
             currentPrompt,
@@ -146,7 +148,7 @@ export function ChatRefine({
         setLoading(false);
       }
     },
-    [loading, currentPrompt, companyName, style],
+    [loading, currentPrompt, companyName, style, token],
   );
 
   const handleSubmit = useCallback(() => {
@@ -204,12 +206,12 @@ export function ChatRefine({
         .chat-msg-enter { animation: chatFadeIn 0.25s ease-out; }
       `}</style>
 
-      <div className="flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden
+      <div className="flex flex-col rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] overflow-hidden
         w-full md:w-[380px] md:max-h-[calc(100vh-100px)]
         max-h-[70vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ag-border-subtle)] shrink-0">
           <div className="flex items-center gap-2.5">
             <JarvisAvatar size={28} />
             <div className="flex flex-col">
@@ -223,18 +225,20 @@ export function ChatRefine({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/[0.04] flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors cursor-pointer"
             aria-label="Close refinement panel"
           >
-            {SvgClose}
+            <span className="w-7 h-7 rounded-full bg-[var(--ag-bg-surface)] flex items-center justify-center hover:bg-[var(--ag-bg-surface-hover)]">
+              {SvgClose}
+            </span>
           </button>
         </div>
 
         {/* Current concept preview */}
         {currentConcept && (
-          <div className="px-4 pt-3 pb-2 border-b border-white/[0.04] shrink-0">
+          <div className="px-4 pt-3 pb-2 border-b border-[var(--ag-border-subtle)] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#06061a] shrink-0">
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-[var(--ag-bg-base)] shrink-0">
                 <img
                   src={currentConcept.url}
                   alt={currentConcept.name}
@@ -277,7 +281,7 @@ export function ChatRefine({
                 ) : msg.text ? (
                   <div className="flex items-start gap-2 justify-start">
                     <div className="shrink-0 mt-0.5"><JarvisAvatar size={20} /></div>
-                    <div className="max-w-[80%] px-3 py-2 rounded-2xl rounded-bl-md bg-white/[0.03] border border-white/[0.06] text-sm text-white/70">
+                    <div className="max-w-[80%] px-3 py-2 rounded-2xl rounded-bl-md bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)]">
                       {msg.text}
                     </div>
                   </div>
@@ -290,7 +294,7 @@ export function ChatRefine({
                           <button
                             key={j}
                             onClick={() => handleConceptSelect(c)}
-                            className="relative aspect-square rounded-lg overflow-hidden bg-[#06061a] border border-white/[0.06] hover:border-violet-500/50 transition-colors cursor-pointer group"
+                            className="relative min-h-[44px] aspect-square rounded-lg overflow-hidden bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] hover:border-violet-500/50 transition-colors cursor-pointer group"
                             aria-label={`Select ${c.name}`}
                           >
                             <img
@@ -339,8 +343,8 @@ export function ChatRefine({
                 key={chip}
                 onClick={() => handleChipClick(chip)}
                 disabled={loading}
-                className="px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap shrink-0 transition-colors cursor-pointer
-                  bg-white/[0.04] border border-white/[0.08] text-white/40
+                className="min-h-[44px] px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap shrink-0 transition-colors cursor-pointer
+                  bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)]
                   hover:bg-violet-600/80 hover:text-white hover:border-violet-500/40
                   disabled:opacity-30 disabled:cursor-not-allowed"
               >
@@ -366,7 +370,7 @@ export function ChatRefine({
             <button
               onClick={handleSubmit}
               disabled={loading || !input.trim()}
-              className="w-9 h-9 rounded-lg bg-violet-600/80 hover:bg-violet-600 flex items-center justify-center text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+              className="min-w-[44px] min-h-[44px] rounded-lg bg-violet-600/80 hover:bg-violet-600 flex items-center justify-center text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
               aria-label="Send message"
             >
               {SvgSend}

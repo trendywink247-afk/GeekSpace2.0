@@ -49,6 +49,141 @@ const personalityMeta: Record<PersonalityKey, {
   },
 };
 
+/* ---- Shared chat sub-components (eliminates desktop/mobile duplication) ---- */
+
+function ChatHeader({ avatar, displayName, firstName, pMeta, agentStatus, isStatusLoading, onClose, safeArea }: {
+  avatar?: string; displayName: string; firstName: string;
+  pMeta: { emoji: string }; agentStatus: AgentStatus | null;
+  isStatusLoading: boolean; onClose: () => void; safeArea?: boolean;
+}) {
+  return (
+    <div className={`flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)] bg-[#06061a]${safeArea ? ' safe-area-pt' : ''}`}>
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          {avatar && avatar.startsWith('http') ? (
+            <img src={avatar} alt={displayName} className="w-10 h-10 rounded-full" style={{ background: 'rgba(12,12,30,0.6)' }} />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center font-bold text-sm">{avatar || displayName?.[0] || '?'}</div>
+          )}
+          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#06061a] ${agentStatus?.status === 'active' ? 'bg-[#00FF88]' : 'bg-[#6B7280]'}`} />
+        </div>
+        <div>
+          <div className="font-semibold text-sm text-[#F4F6FF]">{pMeta.emoji} {firstName}&apos;s Agent</div>
+          <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
+            {isStatusLoading ? (
+              <div className="text-xs text-[#9CA3AF]">Checking...</div>
+            ) : agentStatus?.status === 'active' ? (
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
+                <div className="text-xs text-[#00FF88]">Active</div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
+                <div className="text-xs text-[#9CA3AF]">Inactive</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <button onClick={onClose} className="p-2 rounded-lg hover:bg-[rgba(139,92,246,0.1)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50" aria-label="Close chat">
+        <X className="w-5 h-5 text-[#9CA3AF]" />
+      </button>
+    </div>
+  );
+}
+
+function ChatMessages({ chatHistory, isTyping, agentStatus, pMeta, handleSendMessage, chatEndRef }: {
+  chatHistory: { role: 'user' | 'agent'; message: string }[];
+  isTyping: boolean; agentStatus: AgentStatus | null;
+  pMeta: { questions: string[] }; handleSendMessage: (text?: string) => void;
+  chatEndRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {chatHistory.map((msg, i) => (
+        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          {msg.role === 'agent' && (
+            <div className="w-6 h-6 rounded-full bg-[#8B5CF6]/15 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
+              <Bot className="w-3 h-3 text-[#8B5CF6]" />
+            </div>
+          )}
+          <div className={`max-w-[80%] px-3 py-2.5 rounded-2xl text-sm ${
+            msg.role === 'user'
+              ? 'bg-[#8B5CF6] text-white rounded-br-md'
+              : 'bg-[#06061a] text-[#F4F6FF] border border-[rgba(139,92,246,0.08)] rounded-bl-md'
+          }`}>
+            {msg.message}
+          </div>
+        </div>
+      ))}
+      {isTyping && (
+        <div className="flex justify-start">
+          <div className="w-6 h-6 rounded-full bg-[#8B5CF6]/15 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
+            <Bot className="w-3 h-3 text-[#8B5CF6]" />
+          </div>
+          <div className="bg-[#06061a] border border-[rgba(139,92,246,0.08)] px-4 py-3 rounded-2xl rounded-bl-md">
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="w-2 h-2 rounded-full bg-[#8B5CF6]/60" style={{ animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suggested questions - disabled when agent is inactive */}
+      {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
+        <div className="space-y-1.5 pt-1">
+          <p className="text-xs text-[#9CA3AF] uppercase tracking-wider">Try asking</p>
+          {pMeta.questions.map((q) => (
+            <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)] text-sm text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.15)] transition-colors">
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Inactive state message */}
+      {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
+        <div className="p-3 rounded-lg border border-[rgba(139,92,246,0.08)] text-center" style={{ background: 'rgba(12,12,30,0.6)' }}>
+          <p className="text-sm text-[#9CA3AF]">Agent is currently inactive</p>
+          <p className="text-xs text-[#9CA3AF]/70 mt-1">Chat functionality is disabled</p>
+        </div>
+      )}
+      <div ref={chatEndRef} />
+    </div>
+  );
+}
+
+function ChatInput({ chatMessage, setChatMessage, handleSendMessage, isTyping, agentStatus, safeArea }: {
+  chatMessage: string; setChatMessage: (v: string) => void;
+  handleSendMessage: () => void; isTyping: boolean;
+  agentStatus: AgentStatus | null; safeArea?: boolean;
+}) {
+  return (
+    <div className={`p-3 border-t border-[rgba(139,92,246,0.08)] bg-[#06061a] flex gap-2${safeArea ? ' safe-area-pb' : ''}`}>
+      <Input
+        value={chatMessage}
+        onChange={(e) => setChatMessage(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+        placeholder={agentStatus?.status === 'inactive' ? 'Agent is inactive' : 'Ask anything...'}
+        disabled={agentStatus?.status === 'inactive'}
+        className="flex-1 border-[rgba(139,92,246,0.15)] text-[#F4F6FF] disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ background: 'rgba(12,12,30,0.6)' }}
+      />
+      <Button
+        onClick={handleSendMessage}
+        disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
+        className="bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+        title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
+        aria-label="Send message"
+      >
+        <Send className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
 export function PortfolioView() {
   const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
@@ -246,17 +381,17 @@ export function PortfolioView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#06060B] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#00F0FF] animate-spin" />
+      <div className="min-h-screen bg-[#06061a] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#8B5CF6] animate-spin" />
       </div>
     );
   }
 
   if (!portfolio) {
     return (
-      <div className="min-h-screen bg-[#06060B] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[#06061a] flex flex-col items-center justify-center gap-4">
         <p className="text-[#9CA3AF] text-lg">Portfolio not found</p>
-        <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+        <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white">
           {isAuthenticated ? 'Back to Dashboard' : 'Browse Directory'}
         </Button>
       </div>
@@ -264,32 +399,32 @@ export function PortfolioView() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060B]">
+    <div className="min-h-screen bg-[#06061a]">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06060B]/80 backdrop-blur-xl border-b border-[#00F0FF]/20">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06061a]/80 backdrop-blur-xl border-b border-[rgba(139,92,246,0.08)]">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Go back">
+            <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[rgba(139,92,246,0.1)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50" aria-label="Go back">
               <ArrowLeft className="w-5 h-5 text-[#9CA3AF]" />
             </button>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-[#00F0FF]" />
-              <span className="font-bold" style={{ fontFamily: 'Syne, sans-serif' }}><span className="text-white">Agent</span><span className="text-[#00F0FF]">in</span></span>
+              <Sparkles className="w-6 h-6 text-[#8B5CF6]" />
+              <span className="font-bold" style={{ fontFamily: 'Syne, sans-serif' }}><span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span></span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {portfolio.agentEnabled && !chatOpen && (
-              <Button onClick={() => setChatOpen(true)} variant="outline" className="hidden lg:inline-flex border-[#00F0FF]/30 hover:bg-[#00F0FF]/10">
-                <MessageSquare className="w-4 h-4 mr-2 text-[#00F0FF]" />
+              <Button onClick={() => setChatOpen(true)} variant="outline" className="hidden lg:inline-flex border-[rgba(139,92,246,0.15)] hover:bg-[rgba(139,92,246,0.1)] text-[#F4F6FF]">
+                <MessageSquare className="w-4 h-4 mr-2 text-[#8B5CF6]" />
                 Chat with Agent
               </Button>
             )}
             {isAuthenticated ? (
-              <Button onClick={() => navigate('/dashboard')} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+              <Button onClick={() => navigate('/dashboard')} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white">
                 Dashboard
               </Button>
             ) : (
-              <Button onClick={() => navigate('/login')} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+              <Button onClick={() => navigate('/login')} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white">
                 Get Your Own
               </Button>
             )}
@@ -305,16 +440,16 @@ export function PortfolioView() {
             {/* Profile Hero */}
             <div className="relative text-center mb-12 pb-8">
               {/* Background glow */}
-              <div className="absolute inset-0 top-0 h-48 bg-gradient-to-b from-[#00F0FF]/5 to-transparent rounded-3xl pointer-events-none" />
+              <div className="absolute inset-0 top-0 h-48 bg-gradient-to-b from-[#8B5CF6]/5 to-transparent rounded-3xl pointer-events-none" />
               {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
-                <img src={portfolio.avatar} alt={displayName} className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full ring-4 ring-[#00F0FF]/30 ring-offset-4 ring-offset-[#05050A] object-cover shadow-[0_0_40px_rgba(0,240,255,0.15)]" />
+                <img src={portfolio.avatar} alt={displayName} className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full ring-4 ring-[#8B5CF6]/30 ring-offset-4 ring-offset-[#06061a] object-cover shadow-[0_0_40px_rgba(139,92,246,0.15)]" />
               ) : (
-                <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl md:text-5xl font-bold ring-4 ring-[#00F0FF]/30 ring-offset-4 ring-offset-[#05050A] shadow-[0_0_40px_rgba(0,240,255,0.15)]">
+                <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-5 md:mb-7 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#EC4899] flex items-center justify-center text-3xl md:text-5xl font-bold ring-4 ring-[#8B5CF6]/30 ring-offset-4 ring-offset-[#06061a] shadow-[0_0_40px_rgba(139,92,246,0.15)]">
                   {portfolio.avatar || displayName?.[0] || '?'}
                 </div>
               )}
               <h1 className="text-3xl md:text-5xl font-bold mb-3 break-words" style={{ fontFamily: 'Syne, sans-serif', textWrap: 'balance' }}>{displayName}</h1>
-              <p className="text-base md:text-2xl text-[#00F0FF] mb-5 px-2 font-medium break-words">{portfolio.headline}</p>
+              <p className="text-base md:text-2xl text-[#8B5CF6] mb-5 px-2 font-medium break-words">{portfolio.headline}</p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm text-[#9CA3AF]">
                 {portfolio.role && portfolio.company && (
                   <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 shrink-0" />{portfolio.role} @ {portfolio.company}</span>
@@ -337,24 +472,24 @@ export function PortfolioView() {
               {/* Social Links */}
               <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
                 {portfolio.social?.github && (
-                  <a href={normalizeUrl(portfolio.social.github)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#E8E8F0]/10 hover:border-[#E8E8F0]/40 hover:bg-[#E8E8F0]/5 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="GitHub"><Github className="w-5 h-5 text-[#E8E8F0]/70 hover:text-[#E8E8F0]" /></a>
+                  <a href={normalizeUrl(portfolio.social.github)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0c0c1e] border border-[#F4F6FF]/10 hover:border-[#F4F6FF]/40 hover:bg-[#F4F6FF]/5 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="GitHub"><Github className="w-5 h-5 text-[#F4F6FF]/70 hover:text-[#F4F6FF]" /></a>
                 )}
                 {portfolio.social?.twitter && (
-                  <a href={normalizeUrl(portfolio.social.twitter)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#1DA1F2]/20 hover:border-[#1DA1F2]/50 hover:bg-[#1DA1F2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Twitter"><Twitter className="w-5 h-5 text-[#1DA1F2]/70 hover:text-[#1DA1F2]" /></a>
+                  <a href={normalizeUrl(portfolio.social.twitter)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0c0c1e] border border-[#1DA1F2]/20 hover:border-[#1DA1F2]/50 hover:bg-[#1DA1F2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Twitter"><Twitter className="w-5 h-5 text-[#1DA1F2]/70 hover:text-[#1DA1F2]" /></a>
                 )}
                 {portfolio.social?.linkedin && (
-                  <a href={normalizeUrl(portfolio.social.linkedin)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#0A66C2]/20 hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="LinkedIn"><Linkedin className="w-5 h-5 text-[#0A66C2]/70 hover:text-[#0A66C2]" /></a>
+                  <a href={normalizeUrl(portfolio.social.linkedin)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0c0c1e] border border-[#0A66C2]/20 hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="LinkedIn"><Linkedin className="w-5 h-5 text-[#0A66C2]/70 hover:text-[#0A66C2]" /></a>
                 )}
                 {portfolio.social?.website && (
-                  <a href={normalizeUrl(portfolio.social.website)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:bg-[#00F0FF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Website"><Globe className="w-5 h-5 text-[#00F0FF]/70 hover:text-[#00F0FF]" /></a>
+                  <a href={normalizeUrl(portfolio.social.website)} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-[#0c0c1e] border border-[#8B5CF6]/20 hover:border-[#8B5CF6]/50 hover:bg-[#8B5CF6]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Website"><Globe className="w-5 h-5 text-[#8B5CF6]/70 hover:text-[#8B5CF6]" /></a>
                 )}
                 {portfolio.social?.email && (
-                  <a href={`mailto:${portfolio.social.email}`} className="p-2.5 rounded-xl bg-[#0C0C18] border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/50 hover:bg-[#BF5FFF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Email"><Mail className="w-5 h-5 text-[#BF5FFF]/70 hover:text-[#BF5FFF]" /></a>
+                  <a href={`mailto:${portfolio.social.email}`} className="p-2.5 rounded-xl bg-[#0c0c1e] border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/50 hover:bg-[#BF5FFF]/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center press-scale" aria-label="Email"><Mail className="w-5 h-5 text-[#BF5FFF]/70 hover:text-[#BF5FFF]" /></a>
                 )}
                 {/* 37.1: Contact button */}
                 <button
                   onClick={() => { setContactOpen(true); setContactSent(false); setContactError(''); }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 transition-all text-[#00F0FF] text-sm font-medium press-scale min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/20 transition-all text-[#8B5CF6] text-sm font-medium press-scale min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                   aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
@@ -364,7 +499,7 @@ export function PortfolioView() {
             </div>
 
             {/* Bio */}
-            <div className="p-6 rounded-2xl glass-card-v2 border border-[#00F0FF]/20 mb-8">
+            <div className="p-6 rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.08)] mb-8" style={{ background: 'rgba(12,12,30,0.6)' }}>
               <h2 className="text-lg font-semibold mb-3">About</h2>
               <p className="text-[#9CA3AF] leading-relaxed break-words">{portfolio.about}</p>
             </div>
@@ -376,7 +511,7 @@ export function PortfolioView() {
                 <div className="flex flex-wrap gap-2">
                   {portfolio.skills.map((skill, i) => {
                     const palette = [
-                      { bg: 'bg-[#00F0FF]/10', border: 'border-[#00F0FF]/30', text: 'text-[#00F0FF]' },
+                      { bg: 'bg-[#8B5CF6]/10', border: 'border-[#8B5CF6]/30', text: 'text-[#8B5CF6]' },
                       { bg: 'bg-[#BF5FFF]/10', border: 'border-[#BF5FFF]/30', text: 'text-[#BF5FFF]' },
                       { bg: 'bg-[#00FF88]/10', border: 'border-[#00FF88]/30', text: 'text-[#00FF88]' },
                       { bg: 'bg-[#F59E0B]/10', border: 'border-[#F59E0B]/30', text: 'text-[#F59E0B]' },
@@ -402,14 +537,14 @@ export function PortfolioView() {
                     const Wrapper = hasUrl ? 'a' : 'div';
                     const wrapperProps = hasUrl ? { href: project.url, target: '_blank', rel: 'noopener noreferrer' } : {};
                     return (
-                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-2xl glass-card-v2 border border-[#00F0FF]/15 hover:border-[#00F0FF]/40 hover:shadow-[0_0_20px_rgba(0,240,255,0.08)] transition-all duration-300 group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`}>
+                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] hover:shadow-[0_0_20px_rgba(139,92,246,0.06)] transition-all duration-300 group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`} style={{ background: 'rgba(12,12,30,0.6)' }}>
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-semibold text-[#E8E8F0] group-hover:text-[#00F0FF] transition-colors text-base">{project.name}</h3>
+                          <h3 className="font-semibold text-[#F4F6FF] group-hover:text-[#8B5CF6] transition-colors text-base">{project.name}</h3>
                           <div className="flex items-center gap-1 shrink-0">
                             {project.aiGenerated && (
-                              <Badge variant="outline" className="border-[#00F0FF]/30 text-[#00F0FF] text-xs">AI</Badge>
+                              <Badge variant="outline" className="border-[#8B5CF6]/30 text-[#8B5CF6] text-xs">AI</Badge>
                             )}
-                            {hasUrl && <Globe className="w-3.5 h-3.5 text-[#9CA3AF] group-hover:text-[#00F0FF] transition-colors" />}
+                            {hasUrl && <Globe className="w-3.5 h-3.5 text-[#9CA3AF] group-hover:text-[#8B5CF6] transition-colors" />}
                           </div>
                         </div>
                         <p className="text-sm text-[#9CA3AF] leading-relaxed break-words">{project.description}</p>
@@ -431,18 +566,18 @@ export function PortfolioView() {
             {portfolio.milestones?.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-[#00F0FF]" />Milestones
+                  <Award className="w-5 h-5 text-[#8B5CF6]" />Milestones
                 </h2>
                 <div className="space-y-4">
                   {portfolio.milestones.map((milestone, i) => (
                     <div key={i} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-[#00F0FF]" />
-                        {i < portfolio.milestones.length - 1 && <div className="w-0.5 h-full bg-[#00F0FF]/20" />}
+                        <div className="w-3 h-3 rounded-full bg-[#8B5CF6]" />
+                        {i < portfolio.milestones.length - 1 && <div className="w-0.5 h-full bg-[#8B5CF6]/20" />}
                       </div>
                       <div className="pb-4">
-                        <div className="text-xs text-[#00F0FF] font-mono mb-1">{milestone.date}</div>
-                        <div className="font-medium text-[#E8E8F0]">{milestone.title}</div>
+                        <div className="text-xs text-[#8B5CF6] font-mono mb-1">{milestone.date}</div>
+                        <div className="font-medium text-[#F4F6FF]">{milestone.title}</div>
                         <div className="text-sm text-[#9CA3AF]">{milestone.description}</div>
                       </div>
                     </div>
@@ -453,17 +588,17 @@ export function PortfolioView() {
 
             {/* Inline CTA to open chat (when chat panel is closed) */}
             {portfolio.agentEnabled && !chatOpen && (
-              <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-br from-[#00F0FF]/20 to-[#0C0C18] border border-[#00F0FF]/30">
+              <div className="p-4 md:p-6 rounded-2xl border border-[rgba(139,92,246,0.15)]" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(12,12,30,0.6))' }}>
                 <div className="flex items-center gap-3 md:gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-[#00F0FF]/20 flex items-center justify-center shrink-0">
-                    <Bot className="w-6 h-6 text-[#00F0FF]" />
+                  <div className="w-12 h-12 rounded-full bg-[#8B5CF6]/15 flex items-center justify-center shrink-0">
+                    <Bot className="w-6 h-6 text-[#8B5CF6]" />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-base md:text-lg font-semibold">Chat with {firstName}'s Agent</h2>
                     <p className="text-sm text-[#9CA3AF]">Ask questions, explore projects, or just say hello</p>
                   </div>
                 </div>
-                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] min-h-[48px] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
+                <Button onClick={() => setChatOpen(true)} className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[48px] press-scale focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
                   <MessageSquare className="w-4 h-4 mr-2" />Start Conversation
                 </Button>
               </div>
@@ -472,116 +607,10 @@ export function PortfolioView() {
 
           {/* Embedded agent chat panel (side-by-side on desktop) */}
           {chatOpen && portfolio.agentEnabled && (
-            <div className="hidden lg:flex w-[380px] flex-shrink-0 flex-col sticky top-24 h-[calc(100vh-120px)] rounded-2xl bg-[#0C0C18] border border-[#00F0FF]/30 overflow-hidden">
-              {/* Chat header */}
-              <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[#06060B]">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
-                      <img src={portfolio.avatar} alt={displayName} className="w-10 h-10 rounded-full bg-[#0C0C18]" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
-                    )}
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#06060B] ${agentStatus?.status === 'active' ? 'bg-[#00FF88]' : 'bg-[#6B7280]'}`} />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                    <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
-                      {isStatusLoading ? (
-                        <div className="text-xs text-[#9CA3AF]">Checking...</div>
-                      ) : agentStatus?.status === 'active' ? (
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
-                          <div className="text-xs text-[#00FF88]">Active</div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
-                          <div className="text-xs text-[#9CA3AF]">Inactive</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close chat">
-                  <X className="w-4 h-4 text-[#9CA3AF]" />
-                </button>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {msg.role === 'agent' && (
-                      <div className="w-6 h-6 rounded-full bg-[#00F0FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-                        <Bot className="w-3 h-3 text-[#00F0FF]" />
-                      </div>
-                    )}
-                    <div className={`max-w-[80%] px-3 py-2.5 rounded-2xl text-sm ${
-                      msg.role === 'user'
-                        ? 'bg-[#00F0FF] text-white rounded-br-md'
-                        : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
-                    }`}>
-                      {msg.message}
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="w-6 h-6 rounded-full bg-[#00F0FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-                      <Bot className="w-3 h-3 text-[#00F0FF]" />
-                    </div>
-                    <div className="bg-[#06060B] border border-[#00F0FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
-                      <div className="flex gap-1.5">
-                        {[0, 1, 2].map((i) => (
-                          <div key={i} className="w-2 h-2 rounded-full bg-[#00F0FF]/60" style={{ animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggested questions - disabled when agent is inactive */}
-                {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
-                  <div className="space-y-1.5 pt-1">
-                    <p className="text-xs text-[#9CA3AF] uppercase tracking-wider">Try asking</p>
-                    {pMeta.questions.map((q) => (
-                      <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-xs text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {/* Inactive state message */}
-                {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
-                  <div className="p-3 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-center">
-                    <p className="text-xs text-[#9CA3AF]">Agent is currently inactive</p>
-                    <p className="text-xs text-[#9CA3AF]/70 mt-1">Chat functionality is disabled</p>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="p-3 border-t border-[#00F0FF]/20 bg-[#06060B] flex gap-2">
-                <Input
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={agentStatus?.status === 'inactive' ? 'Agent is inactive' : 'Ask anything...'}
-                  disabled={agentStatus?.status === 'inactive'}
-                  className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <Button
-                  onClick={() => handleSendMessage()}
-                  disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
-                  className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                  title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
-                  aria-label="Send message"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+            <div className="hidden lg:flex w-[380px] flex-shrink-0 flex-col sticky top-24 h-[calc(100vh-120px)] rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.08)] overflow-hidden" style={{ background: 'rgba(12,12,30,0.6)' }}>
+              <ChatHeader avatar={portfolio.avatar} displayName={displayName} firstName={firstName} pMeta={pMeta} agentStatus={agentStatus} isStatusLoading={isStatusLoading} onClose={() => setChatOpen(false)} />
+              <ChatMessages chatHistory={chatHistory} isTyping={isTyping} agentStatus={agentStatus} pMeta={pMeta} handleSendMessage={handleSendMessage} chatEndRef={chatEndRef} />
+              <ChatInput chatMessage={chatMessage} setChatMessage={setChatMessage} handleSendMessage={() => handleSendMessage()} isTyping={isTyping} agentStatus={agentStatus} />
             </div>
           )}
         </div>
@@ -591,7 +620,7 @@ export function PortfolioView() {
       {portfolio.agentEnabled && !chatOpen && (
         <button
           onClick={() => setChatOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#00F0FF] hover:bg-[#00D4B0] shadow-lg shadow-[#00F0FF]/30 flex items-center justify-center transition-transform active:scale-95"
+          className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-lg shadow-[#8B5CF6]/30 flex items-center justify-center transition-transform active:scale-95"
           aria-label="Chat with agent"
         >
           <MessageSquare className="w-6 h-6 text-white" />
@@ -600,124 +629,18 @@ export function PortfolioView() {
 
       {/* Mobile Chat Overlay */}
       {chatOpen && portfolio.agentEnabled && (
-        <div className="lg:hidden fixed inset-0 z-[60] bg-[#0C0C18] flex flex-col">
-          {/* Chat header */}
-          <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[#06060B] safe-area-pt">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                {portfolio.avatar && portfolio.avatar.startsWith('http') ? (
-                      <img src={portfolio.avatar} alt={displayName} className="w-10 h-10 rounded-full bg-[#0C0C18]" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center font-bold text-sm">{portfolio.avatar || displayName?.[0] || '?'}</div>
-                    )}
-                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#06060B] ${agentStatus?.status === 'active' ? 'bg-[#00FF88]' : 'bg-[#6B7280]'}`} />
-              </div>
-              <div>
-                <div className="font-semibold text-sm">{pMeta.emoji} {firstName}'s Agent</div>
-                <div className="flex items-center gap-2" data-testid="portfolio-agent-status">
-                    {isStatusLoading ? (
-                      <div className="text-xs text-[#9CA3AF]">Checking...</div>
-                    ) : agentStatus?.status === 'active' ? (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
-                        <div className="text-xs text-[#00FF88]">Active</div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
-                        <div className="text-xs text-[#9CA3AF]">Inactive</div>
-                      </div>
-                    )}
-                  </div>
-              </div>
-            </div>
-            <button onClick={() => setChatOpen(false)} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-              <X className="w-5 h-5 text-[#9CA3AF]" />
-            </button>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {chatHistory.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role === 'agent' && (
-                  <div className="w-6 h-6 rounded-full bg-[#00F0FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-                    <Bot className="w-3 h-3 text-[#00F0FF]" />
-                  </div>
-                )}
-                <div className={`max-w-[80%] px-3 py-2.5 rounded-2xl text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-[#00F0FF] text-white rounded-br-md'
-                    : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
-                }`}>
-                  {msg.message}
-                </div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="w-6 h-6 rounded-full bg-[#00F0FF]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-                  <Bot className="w-3 h-3 text-[#00F0FF]" />
-                </div>
-                <div className="bg-[#06060B] border border-[#00F0FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
-                  <div className="flex gap-1.5">
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} className="w-2 h-2 rounded-full bg-[#00F0FF]/60" style={{ animation: `typing-dot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Suggested questions - disabled when agent is inactive */}
-            {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'active' && (
-              <div className="space-y-1.5 pt-1">
-                <p className="text-xs text-[#9CA3AF] uppercase tracking-wider">Try asking</p>
-                {pMeta.questions.map((q) => (
-                  <button key={q} onClick={() => handleSendMessage(q)} className="block w-full text-left px-3 py-2.5 min-h-[44px] rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors">
-                    {q}
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Inactive state message */}
-            {chatHistory.length <= 1 && !isTyping && agentStatus?.status === 'inactive' && (
-              <div className="p-3 rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-center">
-                <p className="text-sm text-[#9CA3AF]">Agent is currently inactive</p>
-                <p className="text-xs text-[#9CA3AF]/70 mt-1">Chat functionality is disabled</p>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="p-3 border-t border-[#00F0FF]/20 bg-[#06060B] flex gap-2 safe-area-pb">
-            <Input
-              value={chatMessage}
-              onChange={(e) => setChatMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder={agentStatus?.status === 'inactive' ? 'Agent is inactive' : 'Ask anything...'}
-              disabled={agentStatus?.status === 'inactive'}
-              className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <Button
-              onClick={() => handleSendMessage()}
-              disabled={!chatMessage.trim() || isTyping || agentStatus?.status === 'inactive'}
-              className="bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-              title={agentStatus?.status === 'inactive' ? 'Agent is currently inactive' : ''}
-              aria-label="Send message"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+        <div className="lg:hidden fixed inset-0 z-[60] bg-[#06061a] flex flex-col">
+          <ChatHeader avatar={portfolio.avatar} displayName={displayName} firstName={firstName} pMeta={pMeta} agentStatus={agentStatus} isStatusLoading={isStatusLoading} onClose={() => setChatOpen(false)} safeArea />
+          <ChatMessages chatHistory={chatHistory} isTyping={isTyping} agentStatus={agentStatus} pMeta={pMeta} handleSendMessage={handleSendMessage} chatEndRef={chatEndRef} />
+          <ChatInput chatMessage={chatMessage} setChatMessage={setChatMessage} handleSendMessage={() => handleSendMessage()} isTyping={isTyping} agentStatus={agentStatus} safeArea />
         </div>
       )}
 
       {/* Footer */}
-      <footer className="py-8 border-t border-[#00F0FF]/10">
+      <footer className="py-8 border-t border-[rgba(139,92,246,0.08)]">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-sm text-[#9CA3AF]">
-            Powered by <span className="text-[#00F0FF]">Agentin</span> — Your AI, Your Domain
+            Powered by <span className="text-[#8B5CF6]">Agentin</span> — Your AI, Your Domain
           </p>
         </div>
       </footer>
@@ -725,10 +648,10 @@ export function PortfolioView() {
       {/* 37.1: Contact modal */}
       {contactOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
-          <div className="w-full max-w-md rounded-2xl border border-[#00F0FF]/20 p-6" style={{ background: '#06060B' }}>
+          <div className="w-full max-w-md rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.15)] p-6" style={{ background: 'rgba(12,12,30,0.95)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[#E8E8F0]">Message {displayName}</h2>
-              <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-semibold text-[#F4F6FF]">Message {displayName}</h2>
+              <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50" aria-label="Close"><X className="w-5 h-5" /></button>
             </div>
 
             {contactSent ? (
@@ -738,7 +661,7 @@ export function PortfolioView() {
                 </div>
                 <p className="text-[#00FF88] font-semibold mb-1">Message sent!</p>
                 <p className="text-sm text-[#9CA3AF]">{displayName} will be notified.</p>
-                <button onClick={() => setContactOpen(false)} className="mt-4 text-sm text-[#00F0FF] hover:underline">Close</button>
+                <button onClick={() => setContactOpen(false)} className="mt-4 text-sm text-[#8B5CF6] hover:underline">Close</button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -748,7 +671,7 @@ export function PortfolioView() {
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Jane Smith"
-                    className="bg-[#0C0C18] border-[#00F0FF]/20"
+                    className="bg-[#0c0c1e] border-[rgba(139,92,246,0.08)]"
                   />
                 </div>
                 <div>
@@ -758,7 +681,7 @@ export function PortfolioView() {
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="jane@example.com"
                     type="email"
-                    className={`bg-[#0C0C18] ${emailInvalid ? 'border-red-500/50' : 'border-[#00F0FF]/20'}`}
+                    className={`bg-[#0c0c1e] ${emailInvalid ? 'border-red-500/50' : 'border-[rgba(139,92,246,0.08)]'}`}
                   />
                   {/* 46.6: Inline email validation error */}
                   {emailInvalid && (
@@ -772,14 +695,14 @@ export function PortfolioView() {
                     onChange={(e) => setContactMessage(e.target.value.slice(0, 1000))}
                     placeholder="Hi, I'd love to connect about..."
                     rows={4}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0C0C18] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#4B5563] focus:outline-none focus:border-[#00F0FF]/40 text-sm resize-none"
+                    className="w-full px-3 py-2 rounded-xl bg-[#0c0c1e] border border-[rgba(139,92,246,0.08)] text-[#F4F6FF] placeholder-[#4B5563] focus:outline-none focus:border-[rgba(139,92,246,0.15)] text-sm resize-none"
                   />
                 </div>
                 {contactError && <p className="text-xs text-[#FF6161]">{contactError}</p>}
                 <button
                   onClick={handleSendContact}
                   disabled={contactSending || !contactName.trim() || !contactMessage.trim() || emailInvalid}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00F0FF] hover:bg-[#00D4B0] text-[#05050A] font-semibold text-sm transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold text-sm transition-colors disabled:opacity-50"
                 >
                   {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {contactSending ? 'Sending…' : 'Send Message'}

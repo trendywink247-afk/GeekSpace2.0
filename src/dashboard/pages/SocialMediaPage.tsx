@@ -1,5 +1,9 @@
+// SocialMediaPage.tsx — Aria-owned social media handler
+// Revamped: design tokens, SectionCard, PageHeader, aria ownership, useAgentCanvas
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { PageShell } from '@/components/agentin/PageShell';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   Share2, Plus, Trash2, CheckCircle, XCircle, Clock, Loader2,
   Instagram, Facebook, Webhook, Key, Send, Calendar,
@@ -8,7 +12,6 @@ import {
   Heart, MessageCircle, ChevronLeft, ChevronRight, CalendarDays,
   Target, Wand2, Globe, Copy, Megaphone, Scissors, Check,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,13 +22,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { socialMediaService, agentService } from '@/services/api';
 import type { SocialAccount, ContentPlan, ContentPlanItem } from '@/services/api';
 
+// ---- Aria accent color ----
+const ARIA = '#FF6B9D';
+
 // ---- Status helpers ----
 
 const statusColors: Record<string, string> = {
   active: '#00FF88',
   paused: '#FFB800',
   draft: '#6B7280',
-  scheduled: '#00F0FF',
+  scheduled: ARIA,
   posting: '#FFB800',
   posted: '#00FF88',
   failed: '#FF6161',
@@ -99,8 +105,8 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
           onClick={() => onChange(t.value)}
           className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === t.value
-              ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)] border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
-              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
+              ? 'bg-[#FF6B9D]/20 text-[#FF6B9D] border border-[#FF6B9D]/40 shadow-[0_0_8px_rgba(255,107,157,0.15)]'
+              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
           }`}
         >
           {t.label}
@@ -122,7 +128,7 @@ function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: 
           className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === p.value
               ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
-              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 hover:text-[var(--ag-text-primary)]'
+              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
           }`}
           style={selected === p.value ? { background: `${p.color}20`, color: p.color, borderColor: `${p.color}60` } : undefined}
         >
@@ -140,7 +146,7 @@ function CharacterCounter({ count, platform }: { count: number; platform: Platfo
   const info = PLATFORMS.find((p) => p.value === platform)!;
   const pct = Math.min((count / info.limit) * 100, 100);
   const isOver = count > info.limit;
-  const barColor = isOver ? '#FF6161' : pct > 90 ? '#FFB800' : '#00F0FF';
+  const barColor = isOver ? '#FF6161' : pct > 90 ? '#FFB800' : ARIA;
 
   return (
     <div className="flex items-center gap-2 mt-1">
@@ -172,12 +178,12 @@ function HashtagSuggestions({ text }: { text: string }) {
   return (
     <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center gap-1.5 mb-2">
-        <Hash className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+        <Hash className="w-3.5 h-3.5 text-[#FF6B9D]" />
         <span className="text-xs font-medium text-[var(--ag-text-muted)]">Suggested Hashtags</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {hashtags.map((tag) => (
-          <span key={tag} className="px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs">
+          <span key={tag} className="px-2 py-0.5 rounded-full bg-[#FF6B9D]/10 text-[#FF6B9D] text-xs">
             {tag}
           </span>
         ))}
@@ -290,7 +296,7 @@ function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: stri
     <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <Scissors className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+          <Scissors className="w-3.5 h-3.5 text-[#FF6B9D]" />
           <span className="text-xs font-medium text-[var(--ag-text-muted)]">Thread Preview ({tweets.length} tweets)</span>
         </div>
         <CopyButton
@@ -370,10 +376,10 @@ function CopyButton({
     <Button
       size="sm"
       disabled={!text.trim()}
-      className={`transition-all duration-200 ${
+      className={`transition-all duration-200 min-h-[44px] ${
         copied
           ? 'bg-[#00FF88]/20 text-[#00FF88] border border-[#00FF88]/40'
-          : 'bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+          : 'bg-gradient-to-r from-[#FF6B9D]/20 to-[#8B5CF6]/20 border border-[#FF6B9D]/20 hover:border-[#FF6B9D]/40'
       } ${className}`}
       onClick={handleCopy}
     >
@@ -416,71 +422,67 @@ function MiniCalendar({ items }: { items: ContentPlanItem[] }) {
   const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
-    <Card className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[var(--ag-cyan)]" />
-            Content Calendar
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0" onClick={() => setMonthOffset((o) => o - 1)}>
-              <ChevronLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />
-            </Button>
-            <span className="text-xs text-[var(--ag-text-muted)] min-w-[120px] text-center">{monthLabel}</span>
-            <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0" onClick={() => setMonthOffset((o) => o + 1)}>
-              <ChevronRight className="w-4 h-4 text-[var(--ag-text-muted)]" />
-            </Button>
-          </div>
+    <SectionCard>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ag-text-primary)]">
+          <CalendarDays className="w-4 h-4 text-[#FF6B9D]" />
+          Content Calendar
         </div>
-      </CardHeader>
-      <CardContent className="pb-3">
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {weekdays.map((d) => (
-            <div key={d} className="text-center text-[10px] text-[var(--ag-text-muted)] font-medium py-1">{d}</div>
-          ))}
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[44px] min-w-[44px]" onClick={() => setMonthOffset((o) => o - 1)} aria-label="Previous month">
+            <ChevronLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />
+          </Button>
+          <span className="text-xs text-[var(--ag-text-muted)] min-w-[120px] text-center">{monthLabel}</span>
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[44px] min-w-[44px]" onClick={() => setMonthOffset((o) => o + 1)} aria-label="Next month">
+            <ChevronRight className="w-4 h-4 text-[var(--ag-text-muted)]" />
+          </Button>
         </div>
-        {/* Day cells */}
-        <div className="grid grid-cols-7 gap-1">
-          {/* Empty leading cells */}
-          {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-square" />
-          ))}
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const count = dayCountMap.get(day) || 0;
-            const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-            return (
-              <div
-                key={day}
-                className={`aspect-square rounded-md flex flex-col items-center justify-center text-[11px] relative transition-colors ${
-                  isToday
-                    ? 'bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[var(--ag-cyan)] font-bold'
-                    : count > 0
-                      ? 'bg-[#00FF88]/5 text-[var(--ag-text-primary)]'
-                      : 'text-[var(--ag-text-muted)]'
-                }`}
-              >
-                {day}
-                {count > 0 && (
-                  <span className="absolute bottom-0.5 text-[8px] font-bold text-[#00FF88]">{count}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {/* Legend */}
-        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[var(--ag-border-subtle)]">
-          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
-            <span className="w-2 h-2 rounded-sm bg-[#00F0FF]/40" /> Today
-          </span>
-          <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
-            <span className="w-2 h-2 rounded-sm bg-[#00FF88]/40" /> Scheduled
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {weekdays.map((d) => (
+          <div key={d} className="text-center text-[10px] text-[var(--ag-text-muted)] font-medium py-1">{d}</div>
+        ))}
+      </div>
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* Empty leading cells */}
+        {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const count = dayCountMap.get(day) || 0;
+          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          return (
+            <div
+              key={day}
+              className={`aspect-square rounded-md flex flex-col items-center justify-center text-[11px] relative transition-colors ${
+                isToday
+                  ? 'bg-[#FF6B9D]/10 border border-[#FF6B9D]/30 text-[#FF6B9D] font-bold'
+                  : count > 0
+                    ? 'bg-[#00FF88]/5 text-[var(--ag-text-primary)]'
+                    : 'text-[var(--ag-text-muted)]'
+              }`}
+            >
+              {day}
+              {count > 0 && (
+                <span className="absolute bottom-0.5 text-[8px] font-bold text-[#00FF88]">{count}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[var(--ag-border-subtle)]">
+        <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
+          <span className="w-2 h-2 rounded-sm bg-[#FF6B9D]/40" /> Today
+        </span>
+        <span className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)]">
+          <span className="w-2 h-2 rounded-sm bg-[#00FF88]/40" /> Scheduled
+        </span>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -496,36 +498,38 @@ function StatsSummary({ accounts, items }: { accounts: SocialAccount[]; items: C
 
   const stats = [
     { label: 'Active Accounts', value: activeAccounts, icon: Users, color: '#00FF88' },
-    { label: 'Total Posts', value: totalPosts, icon: Megaphone, color: '#00F0FF' },
+    { label: 'Total Posts', value: totalPosts, icon: Megaphone, color: ARIA },
     { label: 'This Week', value: postsThisWeek, icon: TrendingUp, color: '#FFB800' },
     { label: 'Scheduled', value: scheduledCount, icon: Clock, color: '#8B5CF6' },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {stats.map((s) => (
-        <Card key={s.label} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
-          <CardContent className="p-3 flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: `${s.color}15` }}
-            >
-              <s.icon className="w-4 h-4" style={{ color: s.color }} />
+    <BlurFade delay={0.1}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stats.map((s) => (
+          <SectionCard key={s.label} padding="sm">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${s.color}15` }}
+              >
+                <s.icon className="w-4 h-4" style={{ color: s.color }} />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-[var(--ag-text-primary)] leading-none">{s.value}</p>
+                <p className="text-[10px] text-[var(--ag-text-muted)] mt-0.5">{s.label}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-bold text-[var(--ag-text-primary)] leading-none">{s.value}</p>
-              <p className="text-[10px] text-[var(--ag-text-muted)] mt-0.5">{s.label}</p>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+          </SectionCard>
+        ))}
+      </div>
+    </BlurFade>
   );
 }
 
 // ---- Accounts Tab ----
 
-function AccountsTab() {
+function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -542,7 +546,7 @@ function AccountsTab() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     try {
       const res = await socialMediaService.getAccounts();
       setAccounts(res.data);
@@ -551,9 +555,9 @@ function AccountsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { loadAccounts(); }, []);
+  useEffect(() => { loadAccounts(); }, [loadAccounts]);
 
   const handleCreate = async () => {
     setSaving(true);
@@ -573,6 +577,7 @@ function AccountsTab() {
       setPageId('');
       setAccessToken('');
       loadAccounts();
+      onAccountCreated?.();
     } catch {
       setSaveError('Failed to save account. Please check your details and try again.');
     } finally {
@@ -616,7 +621,7 @@ function AccountsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#FF6B9D]" />
       </div>
     );
   }
@@ -625,15 +630,15 @@ function AccountsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[var(--ag-text-muted)]">Connect your social media accounts for automated posting.</p>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20">
+        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-[#FF6B9D]/10 text-[#FF6B9D] hover:bg-[#FF6B9D]/20 border border-[#FF6B9D]/20 min-h-[44px]">
           <Plus className="w-4 h-4 mr-1" /> Add Account
         </Button>
       </div>
 
       {/* Add Account Form */}
       {showForm && (
-        <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
-          <CardContent className="p-4 space-y-3">
+        <SectionCard className="border-[#FF6B9D]/20">
+          <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Platform</label>
@@ -687,20 +692,20 @@ function AccountsTab() {
             )}
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => { setShowForm(false); setSaveError(''); }}>Cancel</Button>
-              <Button size="sm" className="min-h-[44px]" onClick={handleCreate} disabled={saving || !accountName}>
+              <Button size="sm" onClick={handleCreate} disabled={saving || !accountName} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
                 Create
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       )}
 
       {/* Account Cards */}
       {accounts.length === 0 && !showForm && (
         <div className="text-center py-12 px-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF2D78]/10 to-[#00F0FF]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
-            <Globe className="w-8 h-8 text-[#FF2D78] opacity-40" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF6B9D]/10 to-[#8B5CF6]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-8 h-8 text-[#FF6B9D] opacity-40" />
           </div>
           <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">No social accounts connected</p>
           <p className="text-xs text-[var(--ag-text-muted)] max-w-xs mx-auto mb-4">
@@ -709,7 +714,7 @@ function AccountsTab() {
           <Button
             size="sm"
             onClick={() => setShowForm(true)}
-            className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+            className="bg-[#FF6B9D]/10 text-[#FF6B9D] hover:bg-[#FF6B9D]/20 border border-[#FF6B9D]/20 min-h-[44px]"
           >
             <Plus className="w-4 h-4 mr-1" /> Connect Account
           </Button>
@@ -718,64 +723,62 @@ function AccountsTab() {
 
       <div className="grid gap-3">
         {accounts.map((account) => (
-          <Card key={account.id} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                {/* Platform icon */}
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: account.platform === 'instagram'
-                      ? 'linear-gradient(135deg, #833AB4, #FD1D1D, #FCAF45)'
-                      : '#1877F2',
-                  }}
-                >
-                  {account.platform === 'instagram' ? (
-                    <Instagram className="w-5 h-5 text-white" />
-                  ) : (
-                    <Facebook className="w-5 h-5 text-white" />
+          <SectionCard key={account.id} className="hover:border-[#FF6B9D]/20">
+            <div className="flex items-center gap-3">
+              {/* Platform icon */}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: account.platform === 'instagram'
+                    ? 'linear-gradient(135deg, #833AB4, #FD1D1D, #FCAF45)'
+                    : '#1877F2',
+                }}
+              >
+                {account.platform === 'instagram' ? (
+                  <Instagram className="w-5 h-5 text-white" />
+                ) : (
+                  <Facebook className="w-5 h-5 text-white" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{account.account_name}</span>
+                  <StatusBadge status={account.status} />
+                  <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
+                    {account.posting_method === 'webhook' ? <Webhook className="w-3 h-3 mr-1" /> : <Key className="w-3 h-3 mr-1" />}
+                    {account.posting_method}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
+                  <span>{account.posts_count} posts</span>
+                  {account.last_post_at && (
+                    <span>Last: {new Date(account.last_post_at).toLocaleDateString()}</span>
                   )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{account.account_name}</span>
-                    <StatusBadge status={account.status} />
-                    <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
-                      {account.posting_method === 'webhook' ? <Webhook className="w-3 h-3 mr-1" /> : <Key className="w-3 h-3 mr-1" />}
-                      {account.posting_method}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
-                    <span>{account.posts_count} posts</span>
-                    {account.last_post_at && (
-                      <span>Last: {new Date(account.last_post_at).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleToggleStatus(account)} aria-label={account.status === 'active' ? 'Pause ' + account.account_name : 'Activate ' + account.account_name}>
-                    {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleTest(account.id)} disabled={testing === account.id} aria-label={'Test ' + account.account_name}>
-                    {testing === account.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[var(--ag-cyan)]" />}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleDelete(account.id)} aria-label={'Delete ' + account.account_name}>
-                    <Trash2 className="w-4 h-4 text-[#FF6161]" />
-                  </Button>
                 </div>
               </div>
 
-              {/* Test result */}
-              {testResult && testResult.id === account.id && (
-                <div className={`mt-2 p-2 rounded-lg text-xs ${testResult.success ? 'bg-[#00FF88]/10 text-[#00FF88]' : 'bg-[#FF6161]/10 text-[#FF6161]'}`}>
-                  {testResult.success ? <CheckCircle className="w-3 h-3 inline mr-1" /> : <XCircle className="w-3 h-3 inline mr-1" />}
-                  {testResult.message}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => handleToggleStatus(account)} aria-label={account.status === 'active' ? 'Pause ' + account.account_name : 'Activate ' + account.account_name}>
+                  {account.status === 'active' ? <ToggleRight className="w-4 h-4 text-[#00FF88]" /> : <ToggleLeft className="w-4 h-4 text-[var(--ag-text-muted)]" />}
+                </Button>
+                <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => handleTest(account.id)} disabled={testing === account.id} aria-label={'Test ' + account.account_name}>
+                  {testing === account.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#FF6B9D]" />}
+                </Button>
+                <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => handleDelete(account.id)} aria-label={'Delete ' + account.account_name}>
+                  <Trash2 className="w-4 h-4 text-[#FF6161]" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Test result */}
+            {testResult && testResult.id === account.id && (
+              <div className={`mt-2 p-2 rounded-lg text-xs ${testResult.success ? 'bg-[#00FF88]/10 text-[#00FF88]' : 'bg-[#FF6161]/10 text-[#FF6161]'}`}>
+                {testResult.success ? <CheckCircle className="w-3 h-3 inline mr-1" /> : <XCircle className="w-3 h-3 inline mr-1" />}
+                {testResult.message}
+              </div>
+            )}
+          </SectionCard>
         ))}
       </div>
     </div>
@@ -784,7 +787,7 @@ function AccountsTab() {
 
 // ---- Content Plan Tab ----
 
-function ContentPlanTab() {
+function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
   const [plans, setPlans] = useState<ContentPlan[]>([]);
   const [activePlan, setActivePlan] = useState<ContentPlan | null>(null);
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
@@ -818,7 +821,7 @@ function ContentPlanTab() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [plansRes, accountsRes] = await Promise.all([
         socialMediaService.getPlans(),
@@ -837,7 +840,7 @@ function ContentPlanTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -889,6 +892,7 @@ function ContentPlanTab() {
       });
       setActivePlan(res.data);
       setShowActivate(false);
+      onPostScheduled?.();
       loadData();
     } catch (err) {
       console.error('Failed to activate plan:', err);
@@ -943,6 +947,7 @@ function ContentPlanTab() {
     setPostingItem(item.id);
     try {
       await socialMediaService.postItem(item.plan_id, item.id);
+      onPostScheduled?.();
       if (activePlan) {
         const res = await socialMediaService.getPlan(activePlan.id);
         setActivePlan(res.data);
@@ -1016,20 +1021,20 @@ function ContentPlanTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#FF6B9D]" />
       </div>
     );
   }
 
-  // No plan view — show generator + post composer
+  // No plan view -- show generator + post composer
   if (!activePlan) {
     return (
       <div className="space-y-4">
         {/* Enhanced empty state when no plans and composer hidden */}
         {plans.length === 0 && !showComposer && (
           <div className="text-center py-10 px-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#FF2D78]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-[var(--ag-cyan)]" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF6B9D]/10 to-[#8B5CF6]/10 border border-[#FF6B9D]/20 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-[#FF6B9D]" />
             </div>
             <h3 className="text-base font-semibold text-[var(--ag-text-primary)] mb-1">Create your first social media post</h3>
             <p className="text-sm text-[var(--ag-text-muted)] max-w-md mx-auto mb-4">
@@ -1039,7 +1044,7 @@ function ContentPlanTab() {
               <Button
                 size="sm"
                 onClick={() => setShowComposer(true)}
-                className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20"
+                className="bg-[#FF6B9D]/10 text-[#FF6B9D] hover:bg-[#FF6B9D]/20 border border-[#FF6B9D]/20 min-h-[44px]"
               >
                 <Wand2 className="w-4 h-4 mr-1" /> Quick Post
               </Button>
@@ -1047,7 +1052,7 @@ function ContentPlanTab() {
                 size="sm"
                 variant="ghost"
                 onClick={() => {}}
-                className="text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]"
+                className="text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] min-h-[44px]"
               >
                 <CalendarDays className="w-4 h-4 mr-1" /> Generate Plan
               </Button>
@@ -1057,14 +1062,12 @@ function ContentPlanTab() {
 
         {/* Post Composer */}
         {(showComposer || plans.length > 0) && (
-          <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-[var(--ag-cyan)]" />
-                Quick Post Composer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <SectionCard className="border-[#FF6B9D]/20">
+            <div className="flex items-center gap-2 mb-3">
+              <Wand2 className="w-4 h-4 text-[#FF6B9D]" />
+              <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">Quick Post Composer</h2>
+            </div>
+            <div className="space-y-3">
               {/* Tone selector */}
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1.5 block">Tone</label>
@@ -1080,7 +1083,7 @@ function ContentPlanTab() {
               {/* AI Generate section */}
               <div className="p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-2">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF6B9D]" />
                   <span className="text-xs font-medium text-[var(--ag-text-muted)]">AI Generate</span>
                 </div>
                 <div className="flex gap-2">
@@ -1096,7 +1099,7 @@ function ContentPlanTab() {
                     size="sm"
                     onClick={handleAiGenerate}
                     disabled={aiGenerating || !composerTopic.trim()}
-                    className="bg-gradient-to-r from-[#00F0FF]/20 to-[#8B5CF6]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 whitespace-nowrap min-h-[44px]"
+                    className="bg-[#8B5CF6] hover:bg-[#7C3AED] whitespace-nowrap min-h-[44px]"
                   >
                     {aiGenerating ? (
                       <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Generating...</>
@@ -1118,7 +1121,7 @@ function ContentPlanTab() {
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
                   placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}, or use AI Generate above...`}
-                  className="bg-[#06060B] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#00F0FF]/30"
+                  className="bg-[#06060B] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#FF6B9D]/30"
                   disabled={aiGenerating}
                 />
                 <CharacterCounter count={composerText.length} platform={composerPlatform} />
@@ -1136,7 +1139,7 @@ function ContentPlanTab() {
                   </Badge>
                 )}
                 {showComposer && plans.length === 0 && (
-                  <Button size="sm" variant="ghost" onClick={() => { setShowComposer(false); setComposerText(''); setComposerTopic(''); setAiError(''); }}>
+                  <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => { setShowComposer(false); setComposerText(''); setComposerTopic(''); setAiError(''); }}>
                     Cancel
                   </Button>
                 )}
@@ -1152,19 +1155,17 @@ function ContentPlanTab() {
 
               {/* Hashtag suggestions */}
               <HashtagSuggestions text={composerText} />
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         )}
 
         {/* Content plan generator */}
-        <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
-          <CardHeader>
-            <CardTitle className="text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
-              <Target className="w-4 h-4 text-[#FF2D78]" />
-              Generate 10-Day Content Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <SectionCard className="border-[#FF6B9D]/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-4 h-4 text-[#FF6B9D]" />
+            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]">Generate 10-Day Content Plan</h2>
+          </div>
+          <div className="space-y-3">
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Topic</label>
               <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
@@ -1173,15 +1174,15 @@ function ContentPlanTab() {
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Niche</label>
               <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
             </div>
-            <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-gradient-to-r from-[#00F0FF]/20 to-[#FF2D78]/20 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40">
+            <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
               {generating ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating...</>
               ) : (
                 <><Sparkles className="w-4 h-4 mr-2" /> Generate Plan</>
               )}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
 
         {/* Existing plans */}
         {plans.length > 0 && (
@@ -1189,7 +1190,7 @@ function ContentPlanTab() {
             <h3 className="text-sm font-medium text-[var(--ag-text-primary)] mb-2">Existing Plans</h3>
             <div className="grid gap-2">
               {plans.map((plan) => (
-                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[#00F0FF]/20 transition-colors">
+                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 transition-colors">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[var(--ag-text-primary)]">{plan.title}</span>
                     <StatusBadge status={plan.status} />
@@ -1216,73 +1217,69 @@ function ContentPlanTab() {
   return (
     <div className="space-y-4">
       {/* Plan header */}
-      <Card className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/20">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h3 className="text-sm font-medium text-[var(--ag-text-primary)]">{activePlan.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <StatusBadge status={activePlan.status} />
-                <span className="text-xs text-[var(--ag-text-muted)]">{items.length} items</span>
-                {activePlan.start_date && (
-                  <span className="text-xs text-[var(--ag-text-muted)]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {activePlan.status === 'draft' && (
-                <Button size="sm" onClick={() => setShowActivate(!showActivate)} className="min-h-[44px] bg-[#00FF88]/10 text-[#00FF88] hover:bg-[#00FF88]/20 border border-[#00FF88]/20">
-                  <Calendar className="w-4 h-4 mr-1" /> Activate
-                </Button>
+      <SectionCard className="border-[#FF6B9D]/20">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="text-sm font-medium text-[var(--ag-text-primary)]">{activePlan.title}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <StatusBadge status={activePlan.status} />
+              <span className="text-xs text-[var(--ag-text-muted)]">{items.length} items</span>
+              {activePlan.start_date && (
+                <span className="text-xs text-[var(--ag-text-muted)]">Starts: {new Date(activePlan.start_date).toLocaleDateString()}</span>
               )}
-              <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => { setActivePlan(null); loadData(); }}>
-                Back
-              </Button>
-              <Button size="sm" variant="ghost" onClick={handleDeletePlan} className="text-[#FF6161] min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Delete plan">
-                <Trash2 className="w-4 h-4" />
-              </Button>
             </div>
           </div>
-
-          {/* Activate form */}
-          {showActivate && (
-            <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Start Date</label>
-                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]" />
-                </div>
-                <div>
-                  <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Social Account</label>
-                  <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                    <SelectTrigger className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]"><SelectValue placeholder="Select account" /></SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.account_name} ({a.platform})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button size="sm" onClick={handleActivate} disabled={activating || !startDate || !selectedAccountId}>
-                {activating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
-                Activate Schedule
+          <div className="flex gap-2">
+            {activePlan.status === 'draft' && (
+              <Button size="sm" onClick={() => setShowActivate(!showActivate)} className="bg-[#00FF88]/10 text-[#00FF88] hover:bg-[#00FF88]/20 border border-[#00FF88]/20 min-h-[44px]">
+                <Calendar className="w-4 h-4 mr-1" /> Activate
               </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+            <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => { setActivePlan(null); loadData(); }}>
+              Back
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleDeletePlan} className="text-[#FF6161] min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" aria-label="Delete plan">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
 
-      {/* Mini Calendar — shows scheduled posts by day */}
+        {/* Activate form */}
+        {showActivate && (
+          <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Start Date</label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]" />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Social Account</label>
+                <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                  <SelectTrigger className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]"><SelectValue placeholder="Select account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.account_name} ({a.platform})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button size="sm" onClick={handleActivate} disabled={activating || !startDate || !selectedAccountId} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+              {activating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+              Activate Schedule
+            </Button>
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Mini Calendar -- shows scheduled posts by day */}
       {items.some((i) => i.scheduled_at) && <MiniCalendar items={items} />}
 
       {/* Day cards */}
       {Array.from(dayGroups.entries()).sort(([a], [b]) => a - b).map(([dayNum, dayItems]) => (
-        <Card key={dayNum} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-[var(--ag-cyan)]">Day {dayNum}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <SectionCard key={dayNum}>
+          <h3 className="text-sm font-semibold text-[#FF6B9D] mb-3">Day {dayNum}</h3>
+          <div className="space-y-3">
             {dayItems.map((item) => (
               <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[#06060B] border-[var(--ag-border-subtle)]' : 'bg-[#06060B]/50 border-[var(--ag-border-subtle)]/50 opacity-60'}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -1294,17 +1291,17 @@ function ContentPlanTab() {
                   <div className="flex items-center gap-1">
                     <Switch checked={!!item.enabled} onCheckedChange={() => handleToggleItem(item)} />
                     {editingItem === item.id ? (
-                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handleSaveItem(item)} aria-label="Save changes">
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => handleSaveItem(item)} aria-label="Save changes">
                         <CheckCircle className="w-4 h-4 text-[#00FF88]" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => { setEditingItem(item.id); setEditCaption(item.caption); setEditMediaId(item.media_id); }} aria-label="Edit item">
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => { setEditingItem(item.id); setEditCaption(item.caption); setEditMediaId(item.media_id); }} aria-label="Edit item">
                         <Edit3 className="w-4 h-4 text-[var(--ag-text-muted)]" />
                       </Button>
                     )}
                     {item.enabled && activePlan.status === 'active' && item.status !== 'posted' && (
-                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" onClick={() => handlePostNow(item)} disabled={postingItem === item.id} aria-label="Post now">
-                        {postingItem === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[var(--ag-cyan)]" />}
+                      <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px] p-0 focus-visible:ring-2 focus-visible:ring-[#FF6B9D]/50" onClick={() => handlePostNow(item)} disabled={postingItem === item.id} aria-label="Post now">
+                        {postingItem === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#FF6B9D]" />}
                       </Button>
                     )}
                   </div>
@@ -1325,10 +1322,10 @@ function ContentPlanTab() {
                 {/* Media preview */}
                 {item.media_id && editingItem !== item.id && (
                   <div className="mt-2 flex items-center gap-2">
-                    {item.media_type === 'image' ? <Image className="w-4 h-4 text-[var(--ag-cyan)]" /> : item.media_type === 'video' ? <Film className="w-4 h-4 text-[#FFB800]" /> : null}
+                    {item.media_type === 'image' ? <Image className="w-4 h-4 text-[#FF6B9D]" /> : item.media_type === 'video' ? <Film className="w-4 h-4 text-[#FFB800]" /> : null}
                     <span className="text-xs text-[var(--ag-text-muted)] font-mono">{item.media_id}</span>
                     {item.media_url && (
-                      <a href={item.media_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--ag-cyan)] hover:underline">
+                      <a href={item.media_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#FF6B9D] hover:underline">
                         <Eye className="w-3 h-3 inline mr-1" />preview
                       </a>
                     )}
@@ -1351,8 +1348,8 @@ function ContentPlanTab() {
                 )}
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       ))}
     </div>
   );
@@ -1370,7 +1367,7 @@ function PostsTab() {
       try {
         const res = await socialMediaService.getPlans();
 
-        // Load all plan items in parallel
+        // Load all plan items in parallel (batch)
         const planResponses = await Promise.all(res.data.map(plan => socialMediaService.getPlan(plan.id)));
         const items: ContentPlanItem[] = planResponses.flatMap(planRes => planRes.data.items?.filter(i => i.status !== 'draft') ?? []);
         setAllItems(items.sort((a, b) => {
@@ -1390,7 +1387,7 @@ function PostsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--ag-cyan)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#FF6B9D]" />
       </div>
     );
   }
@@ -1402,7 +1399,7 @@ function PostsTab() {
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {['all', 'scheduled', 'posted', 'failed'].map((f) => (
-          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={filter === f ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}>
+          <Button key={f} size="sm" variant={filter === f ? 'default' : 'ghost'} onClick={() => setFilter(f)} className={`min-h-[44px] ${filter === f ? 'bg-[#FF6B9D]/20 text-[#FF6B9D]' : 'text-[var(--ag-text-muted)]'}`}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {f !== 'all' && (
               <span className="ml-1 text-xs opacity-60">({allItems.filter(i => f === 'all' || i.status === f).length})</span>
@@ -1413,8 +1410,8 @@ function PostsTab() {
 
       {filtered.length === 0 && (
         <div className="text-center py-12 px-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00F0FF]/10 to-[#8B5CF6]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
-            <Megaphone className="w-7 h-7 text-[var(--ag-cyan)] opacity-40" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF6B9D]/10 to-[#8B5CF6]/10 border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
+            <Megaphone className="w-7 h-7 text-[#FF6B9D] opacity-40" />
           </div>
           <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">No posts to show</p>
           <p className="text-xs text-[var(--ag-text-muted)] max-w-xs mx-auto">
@@ -1427,33 +1424,31 @@ function PostsTab() {
 
       <div className="grid gap-2">
         {filtered.map((item) => (
-          <Card key={item.id} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]">
-            <CardContent className="p-3">
-              <div className="flex items-start gap-3">
-                <StatusIcon status={item.status} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono text-[var(--ag-text-muted)]">Day {item.day_number}</span>
-                    <StatusBadge status={item.status} />
-                    {item.media_type && (
-                      <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
-                        {item.media_type === 'image' ? <Image className="w-3 h-3 mr-1" /> : <Film className="w-3 h-3 mr-1" />}
-                        {item.media_type}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-[var(--ag-text-primary)] mt-1 line-clamp-2">{item.caption}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
-                    {item.scheduled_at && <span><Clock className="w-3 h-3 inline mr-1" />{new Date(item.scheduled_at).toLocaleString()}</span>}
-                    {item.posted_at && <span><CheckCircle className="w-3 h-3 inline mr-1" />Posted {new Date(item.posted_at).toLocaleString()}</span>}
-                  </div>
-                  {item.error_message && (
-                    <p className="text-xs text-[#FF6161] mt-1"><XCircle className="w-3 h-3 inline mr-1" />{item.error_message}</p>
+          <SectionCard key={item.id} padding="sm">
+            <div className="flex items-start gap-3">
+              <StatusIcon status={item.status} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono text-[var(--ag-text-muted)]">Day {item.day_number}</span>
+                  <StatusBadge status={item.status} />
+                  {item.media_type && (
+                    <Badge variant="outline" className="text-xs text-[var(--ag-text-muted)] border-[var(--ag-border-subtle)]">
+                      {item.media_type === 'image' ? <Image className="w-3 h-3 mr-1" /> : <Film className="w-3 h-3 mr-1" />}
+                      {item.media_type}
+                    </Badge>
                   )}
                 </div>
+                <p className="text-sm text-[var(--ag-text-primary)] mt-1 line-clamp-2">{item.caption}</p>
+                <div className="flex items-center gap-3 mt-1 text-xs text-[var(--ag-text-muted)]">
+                  {item.scheduled_at && <span><Clock className="w-3 h-3 inline mr-1" />{new Date(item.scheduled_at).toLocaleString()}</span>}
+                  {item.posted_at && <span><CheckCircle className="w-3 h-3 inline mr-1" />Posted {new Date(item.posted_at).toLocaleString()}</span>}
+                </div>
+                {item.error_message && (
+                  <p className="text-xs text-[#FF6161] mt-1"><XCircle className="w-3 h-3 inline mr-1" />{item.error_message}</p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         ))}
       </div>
     </div>
@@ -1463,73 +1458,92 @@ function PostsTab() {
 // ---- Main Page ----
 
 export function SocialMediaPage() {
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'aria', page: 'social-media' });
   const [statsAccounts, setStatsAccounts] = useState<SocialAccount[]>([]);
   const [statsItems, setStatsItems] = useState<ContentPlanItem[]>([]);
   const [statsLoaded, setStatsLoaded] = useState(false);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const [accountsRes, plansRes] = await Promise.all([
-          socialMediaService.getAccounts(),
-          socialMediaService.getPlans(),
-        ]);
-        setStatsAccounts(accountsRes.data);
+  const loadStats = useCallback(async () => {
+    try {
+      const [accountsRes, plansRes] = await Promise.all([
+        socialMediaService.getAccounts(),
+        socialMediaService.getPlans(),
+      ]);
+      setStatsAccounts(accountsRes.data);
 
-        if (plansRes.data.length > 0) {
-          const planResponses = await Promise.all(
-            plansRes.data.map((plan) => socialMediaService.getPlan(plan.id))
-          );
-          const allItems = planResponses.flatMap((r) => r.data.items ?? []);
-          setStatsItems(allItems);
-        }
-      } catch {
-        // Stats are best-effort, don't block the page
-      } finally {
-        setStatsLoaded(true);
+      if (plansRes.data.length > 0) {
+        // Batch-load all plan details in parallel
+        const planResponses = await Promise.all(
+          plansRes.data.map((plan) => socialMediaService.getPlan(plan.id))
+        );
+        const allItems = planResponses.flatMap((r) => r.data.items ?? []);
+        setStatsItems(allItems);
       }
-    };
-    loadStats();
+    } catch {
+      // Stats are best-effort, don't block the page
+    } finally {
+      setStatsLoaded(true);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const handlePostScheduled = useCallback(async () => {
+    await notifyDone('Post scheduled via social media handler');
+    loadStats();
+  }, [notifyDone, loadStats]);
+
+  const handleAccountCreated = useCallback(async () => {
+    await notifyDone('Social account connected');
+    loadStats();
+  }, [notifyDone, loadStats]);
+
+  // Suppress unused var lint -- notifyStart/notifyFail available for future use
+  void notifyStart;
+  void notifyFail;
 
   return (
     <PageShell maxWidth="4xl">
-    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF2D78]/20 to-[#00F0FF]/20 border border-[#FF2D78]/20 flex items-center justify-center">
-          <Share2 className="w-5 h-5 text-[#FF2D78]" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[var(--ag-text-primary)]">Social Media Handler <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📱 Powered by Weebo</span></h1>
-          <p className="text-sm text-[var(--ag-text-muted)]">Connect accounts, generate content plans, and auto-post on schedule.</p>
-        </div>
+      <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
+        <PageHeader
+          icon={Share2}
+          title="Social Media Handler"
+          subtitle="Connect accounts, generate content plans, and auto-post on schedule."
+          badge={
+            <span className="inline-flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B9D]" />
+              Aria
+            </span>
+          }
+        />
+
+        {/* Stats summary bar */}
+        {statsLoaded && (statsAccounts.length > 0 || statsItems.length > 0) && (
+          <StatsSummary accounts={statsAccounts} items={statsItems} />
+        )}
+
+        <Tabs defaultValue="accounts" className="w-full">
+          <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
+            <TabsTrigger value="accounts" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Accounts</TabsTrigger>
+            <TabsTrigger value="plan" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Content Plan</TabsTrigger>
+            <TabsTrigger value="posts" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Posts</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="accounts" className="mt-4">
+            <AccountsTab onAccountCreated={handleAccountCreated} />
+          </TabsContent>
+
+          <TabsContent value="plan" className="mt-4">
+            <ContentPlanTab onPostScheduled={handlePostScheduled} />
+          </TabsContent>
+
+          <TabsContent value="posts" className="mt-4">
+            <PostsTab />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Stats summary bar */}
-      {statsLoaded && (statsAccounts.length > 0 || statsItems.length > 0) && (
-        <StatsSummary accounts={statsAccounts} items={statsItems} />
-      )}
-
-      <Tabs defaultValue="accounts" className="w-full">
-        <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
-          <TabsTrigger value="accounts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Accounts</TabsTrigger>
-          <TabsTrigger value="plan" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Content Plan</TabsTrigger>
-          <TabsTrigger value="posts" className="data-[state=active]:bg-[#00F0FF]/10 data-[state=active]:text-[var(--ag-cyan)]">Posts</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="accounts" className="mt-4">
-          <AccountsTab />
-        </TabsContent>
-
-        <TabsContent value="plan" className="mt-4">
-          <ContentPlanTab />
-        </TabsContent>
-
-        <TabsContent value="posts" className="mt-4">
-          <PostsTab />
-        </TabsContent>
-      </Tabs>
-    </div>
     </PageShell>
   );
 }

@@ -1,6 +1,8 @@
 // InboxPage.tsx -- Overhauled AI Inbox with triage, priority cards, keyboard nav
+// Owner: Aria (#FF6B9D) -- design tokens: #06061a bg, rgba(12,12,30,0.6) surface
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Send, Archive, Trash2, AlertCircle,
   RefreshCw, Check, Inbox, ChevronDown, ChevronUp,
@@ -92,28 +94,28 @@ function TriageSummary({ messages }: TriageSummaryProps) {
   if (total === 0) return null;
 
   return (
-    <div className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-4 space-y-2">
+    <SectionCard className="bg-gradient-to-r from-[#FF6B9D]/[0.04] to-[#8B5CF6]/[0.04]" padding="sm">
       <div className="flex items-center gap-3 flex-wrap text-sm">
-        <Sparkles className="w-4 h-4 text-[#00F0FF] shrink-0" />
-        <span className="text-[#F4F6FF] font-medium">AI Triage:</span>
+        <Sparkles className="w-4 h-4 text-[#FF6B9D] shrink-0" />
+        <span className="text-[var(--ag-text-primary,#F4F6FF)] font-medium">AI Triage:</span>
         {urgent > 0 && (
-          <span className="text-[#FF2D78] font-semibold">{urgent} urgent</span>
+          <span className="text-red-400 font-semibold">{urgent} urgent</span>
         )}
         {urgent > 0 && unread > 0 && (
-          <span className="text-[#8892A4]">&middot;</span>
+          <span className="text-[var(--ag-text-muted,#6B7280)]">&middot;</span>
         )}
         {unread > 0 && (
-          <span className="text-[#00F0FF] font-semibold">{unread} unread</span>
+          <span className="text-[#FF6B9D] font-semibold">{unread} unread</span>
         )}
-        <span className="text-[#8892A4]">&middot;</span>
-        <span className="text-[#8892A4]">{total} total</span>
+        <span className="text-[var(--ag-text-muted,#6B7280)]">&middot;</span>
+        <span className="text-[var(--ag-text-secondary,#9CA3AF)]">{total} total</span>
       </div>
       {suggestReply > 0 && (
-        <p className="text-xs text-[#8892A4] pl-7">
+        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] pl-7 mt-2">
           AI suggests: Reply to {suggestReply} message{suggestReply > 1 ? 's' : ''}
         </p>
       )}
-    </div>
+    </SectionCard>
   );
 }
 
@@ -156,10 +158,11 @@ function MessageCard({
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
       className={[
         'rounded-xl border transition-all duration-200 outline-none group',
-        'bg-[var(--ag-bg-surface)] border-[#00F0FF]/10',
+        'bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]',
+        'hover:border-[rgba(139,92,246,0.15)]',
         priorityBorder,
-        isFocused ? 'ring-1 ring-[#00F0FF]/40' : '',
-        isUnread ? 'shadow-[0_0_12px_rgba(0,240,255,0.04)]' : 'opacity-80',
+        isFocused ? 'ring-1 ring-[#FF6B9D]/40' : '',
+        isUnread ? 'shadow-[0_0_12px_rgba(255,107,157,0.06)]' : 'opacity-80',
       ].filter(Boolean).join(' ')}
     >
       {/* Header row */}
@@ -168,7 +171,7 @@ function MessageCard({
           {/* Sender name */}
           <span className={[
             'text-sm truncate max-w-[180px] sm:max-w-none',
-            isUnread ? 'font-semibold text-[#F4F6FF]' : 'font-medium text-[#8892A4]',
+            isUnread ? 'font-semibold text-[var(--ag-text-primary,#F4F6FF)]' : 'font-medium text-[var(--ag-text-secondary,#9CA3AF)]',
           ].join(' ')}>
             {msg.sender ?? msg.source}
           </span>
@@ -187,11 +190,11 @@ function MessageCard({
 
           {/* Unread dot */}
           {isUnread && (
-            <span className="w-2 h-2 rounded-full bg-[#00F0FF] shrink-0 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#FF6B9D] shrink-0 animate-pulse" />
           )}
 
           {/* Timestamp */}
-          <span className="text-xs text-[#8892A4] ml-auto shrink-0">
+          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] ml-auto shrink-0">
             {formatTime(msg.received_at)}
           </span>
         </div>
@@ -199,7 +202,7 @@ function MessageCard({
         {/* Message preview */}
         <p className={[
           'text-sm line-clamp-2 leading-relaxed',
-          isUnread ? 'text-[#F4F6FF]/80' : 'text-[#8892A4]',
+          isUnread ? 'text-[var(--ag-text-primary,#F4F6FF)]/80' : 'text-[var(--ag-text-secondary,#9CA3AF)]',
         ].join(' ')}>
           {msg.summary ?? msg.content}
         </p>
@@ -208,14 +211,14 @@ function MessageCard({
       {/* Expanded content */}
       {isExpanded && (
         <div
-          className="px-4 pb-3 space-y-3 border-t border-[#00F0FF]/5 pt-3 animate-in fade-in-0 slide-in-from-top-1 duration-200"
+          className="px-4 pb-3 space-y-3 border-t border-[rgba(139,92,246,0.08)] pt-3 animate-in fade-in-0 slide-in-from-top-1 duration-200"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
           role="region"
           aria-label="Message details"
         >
           {/* Full content */}
-          <p className="text-sm text-[#F4F6FF]/90 whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+          <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/90 whitespace-pre-wrap leading-relaxed">{msg.content}</p>
 
           {/* AI Suggested Reply */}
           {msg.suggested_reply && (
@@ -224,7 +227,7 @@ function MessageCard({
                 <Sparkles className="w-3 h-3 text-[#8B5CF6]" />
                 <p className="text-xs text-[#8B5CF6] font-medium">AI Suggested Reply</p>
               </div>
-              <p className="text-sm text-[#F4F6FF]/70">{msg.suggested_reply}</p>
+              <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70">{msg.suggested_reply}</p>
               <button
                 onClick={onUseSuggestion}
                 className="mt-2 text-xs text-[#8B5CF6] hover:text-[#a78bfa] transition-colors font-medium min-h-[44px] flex items-center"
@@ -242,16 +245,16 @@ function MessageCard({
                 onChange={e => onReplyChange(e.target.value)}
                 placeholder="Type a reply..."
                 rows={3}
-                className="w-full min-h-[44px] bg-white/5 border border-[#00F0FF]/10 rounded-lg px-3 py-2.5 text-sm text-[#F4F6FF] placeholder-[#8892A4]/60 focus:outline-none focus:border-[#00F0FF]/30 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/20 resize-none transition-colors"
+                className="w-full min-h-[44px] bg-white/5 border border-[rgba(139,92,246,0.08)] rounded-lg px-3 py-2.5 text-sm text-[var(--ag-text-primary,#F4F6FF)] placeholder-[var(--ag-text-muted,#6B7280)]/60 focus:outline-none focus:border-[rgba(139,92,246,0.15)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/20 resize-none transition-colors"
               />
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-[#8892A4]">
+                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">
                   {msg.suggested_reply ? 'Edit the suggestion above or write your own' : 'Write your reply'}
                 </span>
                 <button
                   onClick={onSendReply}
                   disabled={isSending || !replyText.trim()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] bg-[#00F0FF]/15 hover:bg-[#00F0FF]/25 text-[#00F0FF] rounded-lg text-sm font-medium disabled:opacity-40 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg text-sm font-medium disabled:opacity-40 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                 >
                   <Send className="w-3.5 h-3.5" />
                   {isSending ? 'Sending...' : 'Send Reply'}
@@ -273,7 +276,7 @@ function MessageCard({
         {/* Expand/collapse */}
         <button
           onClick={onToggleExpand}
-          className="inline-flex items-center gap-1 px-2 min-h-[44px] text-xs text-[#8892A4] hover:text-[#F4F6FF] transition-colors rounded-md hover:bg-white/5"
+          className="inline-flex items-center gap-1 px-2 min-h-[44px] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-colors rounded-md hover:bg-white/5"
         >
           {isExpanded ? (
             <><ChevronUp className="w-3 h-3" /> Less</>
@@ -290,7 +293,7 @@ function MessageCard({
             <TooltipTrigger asChild>
               <button
                 onClick={onMarkRead}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[#8892A4] hover:text-[#ADFF2F] transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[#ADFF2F] transition-colors"
                 aria-label="Mark as read"
               >
                 <Eye className="w-3.5 h-3.5" />
@@ -303,7 +306,7 @@ function MessageCard({
             <TooltipTrigger asChild>
               <button
                 onClick={onMarkRead}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[#FF6B9D] transition-colors"
                 aria-label="Already read"
               >
                 <EyeOff className="w-3.5 h-3.5" />
@@ -318,7 +321,7 @@ function MessageCard({
           <TooltipTrigger asChild>
             <button
               onClick={onArchive}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[#8892A4] hover:text-amber-400 transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-amber-400 transition-colors"
               aria-label="Archive"
             >
               <Archive className="w-3.5 h-3.5" />
@@ -331,8 +334,8 @@ function MessageCard({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => {/* snooze handler — future */}}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[#8892A4] hover:text-[#8B5CF6] transition-colors"
+              onClick={() => {/* snooze handler -- future */}}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[#8B5CF6] transition-colors"
               aria-label="Snooze"
             >
               <Clock className="w-3.5 h-3.5" />
@@ -346,7 +349,7 @@ function MessageCard({
           <TooltipTrigger asChild>
             <button
               onClick={onDelete}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[#8892A4] hover:text-[#FF2D78] transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-red-400 transition-colors"
               aria-label="Delete"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -365,17 +368,19 @@ function MessageCard({
 
 function EmptyInbox() {
   return (
-    <div className="text-center py-16 space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto">
-        <Inbox className="w-8 h-8 text-[#00F0FF]/40" />
+    <SectionCard padding="lg">
+      <div className="text-center py-12 space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-[#FF6B9D]/5 border border-[#FF6B9D]/10 flex items-center justify-center mx-auto">
+          <Inbox className="w-8 h-8 text-[#FF6B9D]/40" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-[var(--ag-text-primary,#F4F6FF)] font-semibold text-lg">Your inbox is empty</p>
+          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm max-w-xs mx-auto leading-relaxed">
+            Messages from your AI agents and integrations will appear here
+          </p>
+        </div>
       </div>
-      <div className="space-y-2">
-        <p className="text-[#F4F6FF] font-semibold text-lg">Your inbox is empty</p>
-        <p className="text-[#8892A4] text-sm max-w-xs mx-auto leading-relaxed">
-          Messages from your AI agents and integrations will appear here
-        </p>
-      </div>
-    </div>
+    </SectionCard>
   );
 }
 
@@ -385,22 +390,22 @@ function EmptyInbox() {
 
 function KeyboardHints() {
   return (
-    <div className="flex items-center justify-center gap-4 py-3 text-[10px] text-[#8892A4]/60 select-none">
+    <div className="flex items-center justify-center gap-4 py-3 text-[10px] text-[var(--ag-text-muted,#6B7280)]/60 select-none">
       <span className="inline-flex items-center gap-1">
-        <Kbd className="bg-white/5 text-[#8892A4]/60 border-0 h-4 min-w-4 text-[10px]">J</Kbd>
-        <Kbd className="bg-white/5 text-[#8892A4]/60 border-0 h-4 min-w-4 text-[10px]">K</Kbd>
+        <Kbd className="bg-white/5 text-[var(--ag-text-muted,#6B7280)]/60 border-0 h-4 min-w-4 text-[10px]">J</Kbd>
+        <Kbd className="bg-white/5 text-[var(--ag-text-muted,#6B7280)]/60 border-0 h-4 min-w-4 text-[10px]">K</Kbd>
         navigate
       </span>
       <span className="inline-flex items-center gap-1">
-        <Kbd className="bg-white/5 text-[#8892A4]/60 border-0 h-4 min-w-4 text-[10px]">E</Kbd>
+        <Kbd className="bg-white/5 text-[var(--ag-text-muted,#6B7280)]/60 border-0 h-4 min-w-4 text-[10px]">E</Kbd>
         archive
       </span>
       <span className="inline-flex items-center gap-1">
-        <Kbd className="bg-white/5 text-[#8892A4]/60 border-0 h-4 min-w-4 text-[10px]">R</Kbd>
+        <Kbd className="bg-white/5 text-[var(--ag-text-muted,#6B7280)]/60 border-0 h-4 min-w-4 text-[10px]">R</Kbd>
         reply
       </span>
       <span className="inline-flex items-center gap-1">
-        <Kbd className="bg-white/5 text-[#8892A4]/60 border-0 h-4 min-w-4 text-[10px]">Enter</Kbd>
+        <Kbd className="bg-white/5 text-[var(--ag-text-muted,#6B7280)]/60 border-0 h-4 min-w-4 text-[10px]">Enter</Kbd>
         expand
       </span>
     </div>
@@ -423,6 +428,9 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   const [showKbHints, setShowKbHints] = useState(false);
 
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // ---- Agent canvas (aria owns this page) ----
+  const { notifyDone, notifyFail } = useAgentCanvas({ agent: 'aria', page: 'inbox' });
 
   // ---- Data fetching ----
 
@@ -468,18 +476,33 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   // ---- Actions ----
 
   const handleMarkRead = async (id: number) => {
-    await api.patch('/inbox/' + id + '/read');
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: 1 } : m));
+    try {
+      await api.patch('/inbox/' + id + '/read');
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, read: 1 } : m));
+      void notifyDone('message marked as read');
+    } catch {
+      void notifyFail('failed to mark message read');
+    }
   };
 
-  const handleArchive = async (id: number) => {
-    await api.patch('/inbox/' + id + '/archive');
-    setMessages(prev => prev.filter(m => m.id !== id));
-  };
+  const handleArchive = useCallback(async (id: number) => {
+    try {
+      await api.patch('/inbox/' + id + '/archive');
+      setMessages(prev => prev.filter(m => m.id !== id));
+      void notifyDone('message archived');
+    } catch {
+      void notifyFail('failed to archive message');
+    }
+  }, [notifyDone, notifyFail]);
 
   const handleDelete = async (id: number) => {
-    await api.delete('/inbox/' + id);
-    setMessages(prev => prev.filter(m => m.id !== id));
+    try {
+      await api.delete('/inbox/' + id);
+      setMessages(prev => prev.filter(m => m.id !== id));
+      void notifyDone('message deleted');
+    } catch {
+      void notifyFail('failed to delete message');
+    }
   };
 
   const handleReply = async (msg: InboxMessage) => {
@@ -492,8 +515,10 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
       delete updMap[msg.id];
       setReplyMap(updMap);
       handleMarkRead(msg.id);
+      void notifyDone(`reply sent to ${msg.sender ?? msg.source}`);
     } catch {
       setErr('Failed to send reply');
+      void notifyFail('failed to send reply');
     } finally {
       setSending(null);
     }
@@ -570,7 +595,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusIdx, sortedMessages, expanded]);
+  }, [focusIdx, sortedMessages, expanded, handleArchive]);
 
   // ---- Triage stats ----
 
@@ -584,51 +609,59 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   return (
     <Wrapper {...wrapperProps}>
     <div className="space-y-6 pb-24 md:pb-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-            <Inbox className="w-4 h-4 text-[#00F0FF]" />
+      {/* Page header -- Aria ownership dot */}
+      <PageHeader
+        icon={Inbox}
+        title="AI Inbox"
+        subtitle="Triaged by Aria"
+        badge={
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#FF6B9D]/10 border border-[#FF6B9D]/30 text-[#FF6B9D]">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF6B9D] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF6B9D]" />
+            </span>
+            Aria
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Badge className="bg-[#FF6B9D]/15 text-[#FF6B9D] border-[#FF6B9D]/25 text-xs font-bold animate-pulse">
+                {unreadCount}
+              </Badge>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShowKbHints(h => !h)}
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                  aria-label="Keyboard shortcuts"
+                >
+                  <Keyboard className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Keyboard shortcuts (?)</TooltipContent>
+            </Tooltip>
+            <button
+              onClick={fetchMessages}
+              className={[
+                'p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
+                loading ? 'animate-spin' : '',
+              ].join(' ')}
+              aria-label="Refresh inbox"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
-          <h1 className="text-xl font-semibold text-[#F4F6FF]">AI Inbox <span className="text-[10px] text-[#4B5563] font-medium ml-1.5">📥 Triaged by Edith</span></h1>
-          {unreadCount > 0 && (
-            <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border-[#00F0FF]/25 text-xs font-bold animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setShowKbHints(h => !h)}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[#8892A4] hover:text-[#F4F6FF] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
-                aria-label="Keyboard shortcuts"
-              >
-                <Keyboard className="w-4 h-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Keyboard shortcuts (?)</TooltipContent>
-          </Tooltip>
-          <button
-            onClick={fetchMessages}
-            className={[
-              'p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-[#8892A4] hover:text-[#F4F6FF] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50',
-              loading ? 'animate-spin' : '',
-            ].join(' ')}
-            aria-label="Refresh inbox"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Error banner */}
       {err && (
-        <div className="flex items-center gap-2 text-[#FF2D78] bg-[#FF2D78]/10 border border-[#FF2D78]/20 rounded-xl p-3 text-sm">
+        <div className="flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span className="flex-1">{err}</span>
-          <button onClick={() => setErr(null)} className="text-[#FF2D78]/60 hover:text-[#FF2D78] transition-colors">
+          <button onClick={() => setErr(null)} className="text-red-400/60 hover:text-red-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
             <Check className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -644,15 +677,15 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
             key={f}
             onClick={() => { setFilter(f); setFocusIdx(-1); }}
             className={[
-              'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50',
+              'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
               filter === f
-                ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/25'
-                : 'bg-white/5 text-[#8892A4] hover:text-[#F4F6FF] hover:bg-white/10',
+                ? 'bg-[#FF6B9D]/15 text-[#FF6B9D] border border-[#FF6B9D]/25'
+                : 'bg-white/5 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] hover:bg-white/10',
             ].join(' ')}
           >
             {f === 'urgent' ? 'Urgent' : f.charAt(0).toUpperCase() + f.slice(1)}
             {f === 'urgent' && messages.filter(m => m.priority === 'urgent').length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-[#FF2D78]/20 text-[#FF2D78] px-1 py-0.5 rounded">
+              <span className="ml-1.5 text-[10px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded">
                 {messages.filter(m => m.priority === 'urgent').length}
               </span>
             )}
@@ -664,7 +697,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/10 rounded-xl p-4 space-y-3 animate-pulse">
+            <div key={i} className="bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] rounded-xl p-4 space-y-3 animate-pulse">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-24 bg-white/5 rounded" />
                 <div className="h-4 w-10 bg-white/5 rounded" />
@@ -715,8 +748,8 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
 
       {/* Subtle always-visible shortcut hint */}
       {!showKbHints && sortedMessages.length > 0 && (
-        <p className="text-center text-[10px] text-[#8892A4]/40 select-none">
-          Press <span className="text-[#8892A4]/60">?</span> for keyboard shortcuts
+        <p className="text-center text-[10px] text-[var(--ag-text-muted,#6B7280)]/40 select-none">
+          Press <span className="text-[var(--ag-text-muted,#6B7280)]/60">?</span> for keyboard shortcuts
         </p>
       )}
     </div>

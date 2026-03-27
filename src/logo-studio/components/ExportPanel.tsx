@@ -38,13 +38,13 @@ export function ExportPanel({ onExportSVG, onCopyCode, svgString }: ExportPanelP
     </svg>
   );
 
-  const secondary = 'rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all border border-white/[0.06] bg-white/[0.03] text-white/70 hover:bg-white/[0.06]';
+  const secondary = 'min-h-[44px] rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-bg-surface-hover)] cursor-pointer';
 
   return (
-    <div className="flex gap-3 items-center pt-4 border-t border-white/[0.06]">
+    <div className="flex gap-3 items-center pt-4 border-t border-[var(--ag-border-subtle)]">
       <button
         onClick={onExportSVG}
-        className="rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white font-medium hover:opacity-90"
+        className="min-h-[44px] rounded-lg px-4 py-2.5 text-sm flex items-center gap-2 transition-all bg-gradient-to-r from-[var(--ag-edith,#8B5CF6)] to-[var(--ag-amber,#F59E0B)] text-white font-medium hover:opacity-90 cursor-pointer"
       >
         <svg {...iconProps}>
           <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17h16" {...strokeProps} />

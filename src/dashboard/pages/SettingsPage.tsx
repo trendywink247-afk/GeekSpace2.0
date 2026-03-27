@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { PageShell } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   User,
   Bell,
@@ -31,6 +32,7 @@ import {
   MapPin,
   FileDown,
   Laptop,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +42,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
-import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, portfolioService, type UserSession } from '@/services/api';
+import { userService, apiKeyService, memoryService, agentService, versionService, modelService, authService, type UserSession } from '@/services/api';
 import type { ApiProvider, MemoryEntry, FreeModel } from '@/types';
 
 export function SettingsPage() {
@@ -94,6 +96,7 @@ export function SettingsPage() {
   // 60.4: keyboard shortcut cheat sheet
   const [showShortcuts, setShowShortcuts] = useState(false);
   const user = useAuthStore((s) => s.user);
+  const { notifyDone, notifyFail } = useAgentCanvas({ agent: 'weebo', page: 'settings' });
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,7 +125,7 @@ export function SettingsPage() {
 
 
   const [profile, setProfile] = useState({
-    name: user?.name || '',
+    name: user?.name ?? user?.email?.split('@')[0] ?? '',
     username: user?.username || '',
     email: user?.email || '',
     bio: user?.bio || '',
@@ -154,11 +157,10 @@ export function SettingsPage() {
   const [snoozePresets, setSnoozePresets] = useState<string[]>(['1h', 'tomorrow', 'next-week']);
 
   const [privacy, setPrivacy] = useState({
-    showInDirectory: true,
-    showAvatar: true,
-    showLocation: true,
-    showProjects: true,
-    showActivity: true,
+    showProfile: user?.privacy?.showProfile ?? true,
+    showActivity: user?.privacy?.showActivity ?? true,
+    allowAgentChat: user?.privacy?.allowAgentChat ?? true,
+    showLocation: user?.privacy?.showLocation ?? true,
   });
 
   const [apiKeys, setApiKeys] = useState<{ id: string; provider: ApiProvider; label: string; maskedKey: string }[]>([]);
@@ -457,8 +459,10 @@ export function SettingsPage() {
         setUser({ ...user, ...updatedUser });
       }
       setHasUnsavedChanges(false);
+      void notifyDone('Profile saved');
     } catch (err) {
       void err; // silently fail — form stays open with current values
+      void notifyFail('Profile save failed');
     } finally {
       setIsSaving(false);
     }
@@ -467,10 +471,11 @@ export function SettingsPage() {
   const handlePrivacySave = async () => {
     setSavingPrivacy(true);
     try {
-      await portfolioService.update({ visibility: privacy });
+      await userService.updateProfile({ privacy } as Parameters<typeof userService.updateProfile>[0]);
       showSavedToast();
+      void notifyDone('Privacy settings saved');
     } catch {
-      // silently fail — privacy state unchanged
+      void notifyFail('Privacy save failed');
     } finally {
       setSavingPrivacy(false);
     }
@@ -614,44 +619,48 @@ export function SettingsPage() {
           </div>
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-1" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Settings
-          </h1>
-          <p className="text-[var(--ag-text-muted)]">Manage your account preferences</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          {/* 46.4: Unsaved changes warning banner */}
-          {hasUnsavedChanges && !isSaving && (
-            <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
-              You have unsaved changes
-            </div>
-          )}
+      <PageHeader
+        icon={Settings}
+        title="Settings"
+        subtitle="Manage your account preferences"
+        badge={
+          <>
+            <span className="relative flex h-2.5 w-2.5" title="Weebo active">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+            </span>
+            {hasUnsavedChanges && !isSaving && (
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
+                Unsaved
+              </span>
+            )}
+          </>
+        }
+        actions={
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowShortcuts(true)}
-              className="border-[#00F0FF]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] hover:border-[#00F0FF]/40 text-xs"
+              className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs min-h-[44px]"
               title="Keyboard shortcuts (?)"
               data-testid="shortcuts-btn"
             >
               <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
             </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50">
-            {isSaving ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
-            ) : (
-              <><Save className="w-4 h-4 mr-2" />Save Changes</>
-            )}
-          </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
+              {isSaving ? (
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" />Save Changes</>
+              )}
+            </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Section quick-nav — smooth-scrolls to each settings section */}
-      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2 whitespace-nowrap">
+      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2 whitespace-nowrap -webkit-overflow-scrolling-touch">
         {[
           { id: 'profile', label: 'Profile', icon: User },
           { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -670,10 +679,10 @@ export function SettingsPage() {
               // Scroll to the tabs area smoothly
               document.getElementById('settings-tabs-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               activeTab === id
-                ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[#00F0FF]/40'
-                : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent hover:border-[#00F0FF]/20'
+                ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40'
+                : 'text-[#9CA3AF] hover:text-[#F4F6FF] border border-transparent hover:border-[rgba(139,92,246,0.15)]'
             }`}
           >
             <NavIcon className="w-3 h-3" />
@@ -694,7 +703,7 @@ export function SettingsPage() {
                     <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[var(--ag-bg-surface)] object-cover" />
                   ) : (
                     <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
-                      {profile.name.split(' ').map(n => n[0]).join('')}
+                      {(profile.name || user?.email?.split('@')[0] || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
                   )}
                   <button
@@ -741,7 +750,7 @@ export function SettingsPage() {
                   {avatarError && <p className="text-xs text-[#FF3366] mt-1">{avatarError}</p>}
                   {!avatarError && <p className="text-xs text-[var(--ag-text-muted)] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
-                <h3 className="font-semibold text-[var(--ag-text-primary)]">{profile.name || user?.email?.split('@')[0] || 'Your Name'}</h3>
+                <h3 className="font-semibold text-[#F4F6FF]">{profile.name || user?.name || user?.email?.split('@')[0] || 'User'}</h3>
                 <p className="text-sm text-[var(--ag-text-muted)]">@{profile.username}</p>
                 {/* 77.6: Dynamic plan badge */}
                 {(() => {
@@ -1277,7 +1286,7 @@ export function SettingsPage() {
                     setPwSaving(false);
                   }
                 }}
-                className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale"
+                className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
               >
                 {pwSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
@@ -1400,7 +1409,7 @@ export function SettingsPage() {
                   <CardTitle>API Keys</CardTitle>
                   <CardDescription className="text-[var(--ag-text-muted)]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
                 </div>
-                <Button onClick={() => setShowAddKey(true)} className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+                <Button onClick={() => setShowAddKey(true)} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
                   <Plus className="w-4 h-4 mr-2" />Add Key
                 </Button>
               </div>
@@ -1494,7 +1503,7 @@ export function SettingsPage() {
                     <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[#00F0FF]/30">
                       Cancel
                     </Button>
-                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">
+                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">
                       Save Key
                     </Button>
                   </div>
@@ -1735,47 +1744,43 @@ export function SettingsPage() {
 
         {/* Privacy Tab */}
         <TabsContent value="privacy" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Privacy Controls</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Control what is visible on your public portfolio</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <SectionCard title="Privacy Controls" subtitle="Control what is visible on your public portfolio">
+            <div className="space-y-6">
               {[
-                { key: 'showInDirectory', title: 'Show in Public Directory', desc: 'Allow others to discover you via Explore' },
-                { key: 'showAvatar', title: 'Show Avatar', desc: 'Display your profile picture publicly' },
-                { key: 'showLocation', title: 'Show Location', desc: 'Display city/timezone on profile' },
-                { key: 'showProjects', title: 'Show Projects', desc: 'Display portfolio projects publicly' },
-                { key: 'showActivity', title: 'Show Recent Activity', desc: 'Show milestones and activity on portfolio' },
+                { key: 'showProfile' as const, icon: Eye, title: 'Show in Public Directory', desc: 'Allow others to discover you via Explore' },
+                { key: 'showActivity' as const, icon: Clock, title: 'Show Recent Activity', desc: 'Show milestones and activity on portfolio' },
+                { key: 'allowAgentChat' as const, icon: Brain, title: 'Allow Agent Chat', desc: 'Let your agent chat with other agents on your behalf' },
+                { key: 'showLocation' as const, icon: MapPin, title: 'Show Location', desc: 'Display city/timezone on profile' },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-[var(--ag-text-primary)]">{item.title}</div>
-                    <div className="text-sm text-[var(--ag-text-muted)]">{item.desc}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-[#00F0FF]" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-[#F4F6FF]">{item.title}</div>
+                      <div className="text-sm text-[#9CA3AF]">{item.desc}</div>
+                    </div>
                   </div>
                   <Switch
-                    checked={privacy[item.key as keyof typeof privacy]}
+                    checked={privacy[item.key]}
                     onCheckedChange={async (checked) => {
+                      const prev = { ...privacy };
                       const newPrivacy = { ...privacy, [item.key]: checked };
                       setPrivacy(newPrivacy);
                       try {
-                        const token = localStorage.getItem('gs_token');
-                        await fetch('/api/user/profile', {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                          body: JSON.stringify({ privacy: { [item.key]: checked } }),
-                        });
+                        await userService.updateProfile({ privacy: { [item.key]: checked } } as Parameters<typeof userService.updateProfile>[0]);
                         showSavedToast();
                       } catch {
                         // revert on failure
-                        setPrivacy(privacy);
+                        setPrivacy(prev);
                       }
                     }}
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
           <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -1793,7 +1798,7 @@ export function SettingsPage() {
             <Button
               onClick={() => void handlePrivacySave()}
               disabled={savingPrivacy}
-              className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
             >
               {savingPrivacy ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
@@ -1935,7 +1940,7 @@ export function SettingsPage() {
                     onChange={(e) => setBgVibe(e.target.value)}
                     className="flex-1 px-3 py-2 rounded-lg border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[#00F0FF]/60"
                   />
-                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#00F0FF] hover:bg-[#00D4B0]">
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
                     {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </div>
@@ -1947,7 +1952,7 @@ export function SettingsPage() {
                     />
                     <p className="text-xs text-[var(--ag-text-muted)]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
-                      <Button onClick={handleApplyBg} size="sm" className="bg-[#00F0FF] hover:bg-[#00D4B0] press-scale">Apply</Button>
+                      <Button onClick={handleApplyBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">Apply</Button>
                       <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#00F0FF]/30">Try another</Button>
                     </div>
                   </div>
