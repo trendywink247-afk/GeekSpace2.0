@@ -30,6 +30,7 @@ import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
 import { SmartSuggestions } from '@/components/SmartSuggestions';
+import { useTranslation } from '@/i18n/useTranslation';
 // LogoutConfirmDialog replaced by SweetAlert2 via useLogoutBlocker
 
 const personalityEmojis: Record<AgentPersonality, string> = {
@@ -204,6 +205,7 @@ export function DashboardApp() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
+  const { t, isHindi, toggleLang } = useTranslation();
   const [currentPage, setCurrentPage] = useState<PageType>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse state
@@ -974,6 +976,14 @@ export function DashboardApp() {
             >
               <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
+            {/* Language toggle */}
+            <button
+              onClick={toggleLang}
+              className="px-2.5 py-1 text-xs font-medium rounded-md bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              title={isHindi ? 'Switch to English' : 'हिंदी में देखें'}
+            >
+              {isHindi ? 'EN' : 'हि'}
+            </button>
             {/* Inbox Bell */}
             <div className="relative">
               <button
@@ -1101,7 +1111,7 @@ export function DashboardApp() {
               key={tab.id}
               role="tab"
               aria-selected={isActive}
-              aria-label={tab.label}
+              aria-label={t(tab.label)}
               onClick={() => {
                 navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
               }}

@@ -33,6 +33,7 @@ import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
 import { PageShell } from '@/components/agentin';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import {
@@ -379,6 +380,7 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
 // ---------------------------------------------------------------------------
 
 export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { stats, reminders } = useDashboardStore();
   const loadErrors = useDashboardStore((s) => s.loadErrors);
@@ -651,7 +653,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 className="text-3xl md:text-4xl font-bold tracking-tight"
                 style={{ fontFamily: 'Syne, sans-serif', color: '#F4F6FF' }}
               >
-                {greeting},{' '}
+                {t(greeting)},{' '}
                 <span
                   className="bg-clip-text text-transparent"
                   style={{ backgroundImage: 'linear-gradient(135deg, #00F0FF, #ADFF2F)' }}
