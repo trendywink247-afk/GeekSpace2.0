@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,

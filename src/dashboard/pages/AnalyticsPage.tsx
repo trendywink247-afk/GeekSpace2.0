@@ -19,8 +19,6 @@ import {
   Flame,
   CheckCircle2,
   BarChart3,
-  Calendar,
-  Target,
   ArrowUpRight,
   Download,
 } from 'lucide-react';

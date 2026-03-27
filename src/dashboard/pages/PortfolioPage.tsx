@@ -104,8 +104,6 @@ export function PortfolioPage() {
 
   // Portfolio visit stats
   const [portfolioStats, setPortfolioStats] = useState<{ totalViews: number; recentViews: number; dailyBreakdown: { date: string; count: number }[] } | null>(null);
-  // 42.2: Portfolio view_count from the portfolio record itself
-  const [portfolioViewCount, setPortfolioViewCount] = useState<number>(0);
   // 49.4: Last viewed timestamp (UTC from server) shown in visitor's local timezone
   const [lastViewedAt, setLastViewedAt] = useState<string | null>(null);
 
@@ -148,7 +146,7 @@ export function PortfolioPage() {
         setMilestones(data.milestones || []);
         setSocial(data.social || {});
         // 42.2: Capture view_count from portfolio record
-        if (typeof data.view_count === 'number') setPortfolioViewCount(data.view_count);
+        // view_count available in data.view_count if needed
         // Snapshot for dirty tracking
         initialSnapshot.current = JSON.stringify({
           headline: data.headline || '', about: data.about || '', metaDescription: data.meta_description || '',

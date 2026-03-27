@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import {
   CreditCard, Check, ArrowUpRight, Calendar, Zap,
-  TrendingUp, Sparkles, CheckCircle2, Lock, Star,
+  TrendingUp, CheckCircle2, Lock, Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -384,6 +384,22 @@ export function BillingPage() {
               <Check className="w-4 h-4" />
               Active plan
             </div>
+          ) : currency === 'INR' && !isFree ? (
+            <div>
+              <Button
+                onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
+                disabled={razorpayLoading === plan.id}
+                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
+              >
+                {razorpayLoading === plan.id ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                ) : (
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                )}
+                Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
+              </Button>
+              <p className="text-xs text-[#9CA3AF] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
+            </div>
           ) : (
             <Button
               onClick={() => handleUpgrade(plan.id)}
@@ -634,282 +650,15 @@ export function BillingPage() {
         </h2>
         {isMobile ? (
           <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
-            {plans.map((plan) => {
-              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
-              const isFree = plan.priceUsd === 0;
-              const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
-              const isHighlighted = display.highlighted && !isCurrent;
-              return (
-                <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
-                  <Card
-                    className={`bg-[var(--ag-bg-surface)] transition-all h-full relative overflow-hidden ${
-                      isCurrent
-                        ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
-                        : isHighlighted
-                          ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/20 shadow-[0_0_20px_rgba(0,240,255,0.15)]'
-                          : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
-                    } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
-                  >
-                    {/* Badge */}
-                    {display.badge && !isCurrent && (
-                      <div
-                        className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
-                        style={{
-                          backgroundColor: `${display.badgeColor}20`,
-                          color: display.badgeColor,
-                          borderBottom: `1px solid ${display.badgeColor}40`,
-                          borderLeft: `1px solid ${display.badgeColor}40`,
-                        }}
-                      >
-                        {display.badge}
-                      </div>
-                    )}
-                    {isCurrent && (
-                      <div
-                        className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
-                        style={{
-                          backgroundColor: 'rgba(0,240,255,0.15)',
-                          color: '#00F0FF',
-                          borderBottom: '1px solid rgba(0,240,255,0.3)',
-                        }}
-                      >
-                        Your Current Plan
-                      </div>
-                    )}
-                    <CardHeader className="pb-3 pt-6">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="capitalize text-[var(--ag-text-primary)]">{plan.id}</CardTitle>
-                        {isCurrent && (
-                          <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] border-[#00F0FF]/30">
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Price with slashed old price */}
-                      <div className="flex items-baseline flex-wrap gap-2">
-                        <span className="text-4xl font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
-                        {display.oldPrice > 0 && (
-                          <span className="text-lg text-[var(--ag-text-muted)] line-through">{oldPrice(plan)}</span>
-                        )}
-                        {plan.priceUsd > 0 && (
-                          <span className="text-sm text-[var(--ag-text-muted)]">/ {plan.intervalLabel}</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-[var(--ag-text-muted)]">{plan.description}</div>
-
-                      {/* Features */}
-                      <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-[var(--ag-text-muted)]">Agent Slots</span>
-                          <span className="text-[var(--ag-text-primary)] font-medium">{display.agentSlots}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-[var(--ag-text-muted)]">Token Budget</span>
-                          <span className="text-[var(--ag-text-primary)] font-medium">{display.tokenBudget}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-[var(--ag-text-muted)]">Kimi Access</span>
-                          {display.hasKimi ? (
-                            <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
-                          ) : (
-                            <span className="text-[var(--ag-text-muted)]">--</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-[var(--ag-text-primary)]">
-                        <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
-                        {formatCredits(plan.credits)} credits
-                      </div>
-                      {isCurrent ? (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[var(--ag-cyan)]">
-                          <Check className="w-4 h-4" />
-                          Active plan
-                        </div>
-                      ) : currency === 'INR' && !isFree ? (
-                        <div>
-                          <Button
-                            onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
-                            disabled={razorpayLoading === plan.id}
-                            className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
-                          >
-                            {razorpayLoading === plan.id ? (
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                            ) : (
-                              <ArrowUpRight className="w-4 h-4 mr-2" />
-                            )}
-                            Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
-                          </Button>
-                          <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={() => handleUpgrade(plan.id)}
-                          disabled={upgrading === plan.id || isFree}
-                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
-                        >
-                          {upgrading === plan.id ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                          ) : (
-                            <ArrowUpRight className="w-4 h-4 mr-2" />
-                          )}
-                          {isFree ? 'Free tier' : 'Upgrade'}
-                        </Button>
-                      )}
-                      {subscription?.plan === 'free' && plan.id === 'free' && (
-                        <button
-                          onClick={handleDayPass}
-                          className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00F0FF]/30 text-[var(--ag-cyan)] text-xs hover:bg-[#00F0FF]/10 transition-colors min-h-[44px]"
-                        >
-                          Try Weebo for $1/day →
-                        </button>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              );
-            })}
+            {plans.map((plan) => (
+              <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
+                {renderPlanCard(plan, 'h-full')}
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {plans.map((plan) => {
-              const isCurrent = subscription?.plan?.toLowerCase() === plan.id?.toLowerCase();
-              const isFree = plan.priceUsd === 0;
-              const display = PLAN_DISPLAY[plan.id] || { oldPrice: 0, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false };
-              const isHighlighted = display.highlighted && !isCurrent;
-              return (
-                <Card
-                  key={plan.id}
-                  className={`bg-[var(--ag-bg-surface)] transition-all relative overflow-hidden ${
-                    isCurrent
-                      ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/30'
-                      : isHighlighted
-                        ? 'border-[#00F0FF] ring-1 ring-[#00F0FF]/20 shadow-[0_0_20px_rgba(0,240,255,0.15)] hover:shadow-[0_0_30px_rgba(0,240,255,0.25)]'
-                        : 'border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
-                  } ${isFree && !isCurrent ? 'opacity-60' : ''}`}
-                >
-                  {/* Badge */}
-                  {display.badge && !isCurrent && (
-                    <div
-                      className="absolute top-0 right-0 px-3 py-1 text-xs font-bold rounded-bl-lg"
-                      style={{
-                        backgroundColor: `${display.badgeColor}20`,
-                        color: display.badgeColor,
-                        borderBottom: `1px solid ${display.badgeColor}40`,
-                        borderLeft: `1px solid ${display.badgeColor}40`,
-                      }}
-                    >
-                      {display.badge}
-                    </div>
-                  )}
-                  {isCurrent && (
-                    <div
-                      className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
-                      style={{
-                        backgroundColor: 'rgba(0,240,255,0.15)',
-                        color: '#00F0FF',
-                        borderBottom: '1px solid rgba(0,240,255,0.3)',
-                      }}
-                    >
-                      Your Current Plan
-                    </div>
-                  )}
-                  <CardHeader className="pb-3 pt-6">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="capitalize text-[var(--ag-text-primary)]">{plan.id}</CardTitle>
-                      {isCurrent && (
-                        <Badge className="bg-[#00F0FF]/20 text-[var(--ag-cyan)] border-[#00F0FF]/30">
-                          Current
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Price with slashed old price */}
-                    <div className="flex items-baseline flex-wrap gap-2">
-                      <span className="text-3xl font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
-                      {display.oldPrice > 0 && (
-                        <span className="text-sm text-[var(--ag-text-muted)] line-through">{oldPrice(plan)}</span>
-                      )}
-                      {plan.priceUsd > 0 && (
-                        <span className="text-sm text-[var(--ag-text-muted)]">/ {plan.intervalLabel}</span>
-                      )}
-                    </div>
-                    <div className="text-sm text-[var(--ag-text-muted)]">{plan.description}</div>
-
-                    {/* Features */}
-                    <div className="space-y-2 py-2 border-t border-[#00F0FF]/10">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[var(--ag-text-muted)]">Agent Slots</span>
-                        <span className="text-[var(--ag-text-primary)] font-medium">{display.agentSlots}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[var(--ag-text-muted)]">Token Budget</span>
-                        <span className="text-[var(--ag-text-primary)] font-medium">{display.tokenBudget}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[var(--ag-text-muted)]">Kimi Access</span>
-                        {display.hasKimi ? (
-                          <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
-                        ) : (
-                          <span className="text-[var(--ag-text-muted)]">--</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-[var(--ag-text-primary)]">
-                      <Zap className="w-4 h-4 text-[var(--ag-cyan)]" />
-                      {formatCredits(plan.credits)} credits
-                    </div>
-                    {isCurrent ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00F0FF]/10 text-sm text-[var(--ag-cyan)]">
-                        <Check className="w-4 h-4" />
-                        Active plan
-                      </div>
-                    ) : currency === 'INR' && !isFree ? (
-                      <div>
-                        <Button
-                          onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
-                          disabled={razorpayLoading === plan.id}
-                          className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
-                        >
-                          {razorpayLoading === plan.id ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                          ) : (
-                            <ArrowUpRight className="w-4 h-4 mr-2" />
-                          )}
-                          Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
-                        </Button>
-                        <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={() => handleUpgrade(plan.id)}
-                        disabled={upgrading === plan.id || isFree}
-                        className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(0,240,255,0.4)]"
-                      >
-                        {upgrading === plan.id ? (
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        ) : (
-                          <ArrowUpRight className="w-4 h-4 mr-2" />
-                        )}
-                        {isFree ? 'Free tier' : 'Upgrade'}
-                      </Button>
-                    )}
-                    {subscription?.plan === 'free' && plan.id === 'free' && (
-                      <button
-                        onClick={handleDayPass}
-                        className="w-full mt-2 py-2 px-3 rounded-lg border border-[#00F0FF]/30 text-[var(--ag-cyan)] text-xs hover:bg-[#00F0FF]/10 transition-colors min-h-[44px]"
-                      >
-                        Try Weebo for $1/day →
-                      </button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {plans.map((plan) => renderPlanCard(plan))}
           </div>
         )}
       </div>

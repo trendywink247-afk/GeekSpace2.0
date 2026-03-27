@@ -63,6 +63,17 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const prevUrlRef = useRef('');
 
+  const drawOriginal = useCallback((img: HTMLImageElement) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  }, []);
+
   /* ---- file handling ---- */
   const handleFile = useCallback(async (f: File) => {
     if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
@@ -89,17 +100,6 @@ export function RemoveBgTool({ onBack }: { onBack: () => void }) {
       setError('Could not read image.');
     }
   }, [drawOriginal]);
-
-  const drawOriginal = useCallback((img: HTMLImageElement) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-  }, []);
 
   /* Redraw original when canvas mounts (after file is set) */
   useEffect(() => {
