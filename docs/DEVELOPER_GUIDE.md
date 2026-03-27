@@ -879,10 +879,10 @@ These files are the largest and most critical in the codebase. Changes here requ
 | Document | Path | Description |
 |----------|------|-------------|
 | Solution Architecture | [`docs/SOLUTION_ARCHITECTURE.md`](./SOLUTION_ARCHITECTURE.md) | System design, component interactions, data flow diagrams |
-| API Reference | [`docs/API.md`](./API.md) | REST API endpoints, request/response schemas |
+| API Reference | [`docs/API_REFERENCE.md`](./API_REFERENCE.md) | REST API endpoints, request/response schemas |
 | DevOps & Infrastructure | [`docs/DEVOPS.md`](./DEVOPS.md) | Docker, Caddy, CI/CD, deployment procedures |
 | Environment Variables | [`docs/ENV_VARS.md`](./ENV_VARS.md) | Complete list of all env vars with descriptions |
 | Troubleshooting | [`docs/TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) | Common issues and fixes |
-| Runbook | [`docs/RUNBOOK.md`](./RUNBOOK.md) | Operational procedures for incidents |
+| DevOps | [`docs/DEVOPS.md`](./DEVOPS.md) | Operational procedures, CI/CD, monitoring |
 | Architecture Decisions | [`docs/adr/`](./adr/) | Architecture Decision Records |
 | Documentation Map | [`docs/DOC_MAP.md`](./DOC_MAP.md) | Index of all project documentation |

@@ -854,7 +854,7 @@ Use **URL path versioning** for simplicity:
 
 - [Bounded Context Map](./ddd/domains.md) -- Detailed bounded context definitions and cross-boundary rules
 - [Solution Architecture](./SOLUTION_ARCHITECTURE.md) -- System-level architecture overview
-- [Architecture Overview](./ARCHITECTURE.md) -- Technical architecture documentation
+- [API Reference](./API_REFERENCE.md) -- REST API endpoints and webhook integration
 - [ADR-001: LLM Waterfall](./adr/ADR-001-llm-waterfall-phase111.md) -- LLM routing tier decision
 - [Developer Guide](./DEVELOPER_GUIDE.md) -- Getting started and development practices
 - [DevOps](./DEVOPS.md) -- Deployment and infrastructure documentation

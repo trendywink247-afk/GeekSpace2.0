@@ -662,7 +662,7 @@ docker compose restart browser
 docker compose restart geekspace
 ```
 
-> For more troubleshooting scenarios, see [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md) and [`docs/RUNBOOK.md`](RUNBOOK.md).
+> For more troubleshooting scenarios, see [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
 
 ---
 
@@ -670,7 +670,6 @@ docker compose restart geekspace
 
 - [`README.md`](../README.md) -- Project overview and quick start
 - [`docs/DEPLOYMENT.md`](DEPLOYMENT.md) -- Detailed deployment procedures
-- [`docs/RUNBOOK.md`](RUNBOOK.md) -- Operations runbook
 - [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md) -- Common issues and solutions
 - [`docs/ENV_VARS.md`](ENV_VARS.md) -- Environment variable reference
 - [`docs/SOLUTION_ARCHITECTURE.md`](SOLUTION_ARCHITECTURE.md) -- System architecture

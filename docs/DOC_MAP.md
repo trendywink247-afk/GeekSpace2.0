@@ -11,25 +11,22 @@ These are the primary documents for understanding, operating, and contributing t
 | Document | Path | Audience | Status |
 |----------|------|----------|--------|
 | **Project README** | [`README.md`](../README.md) | Everyone | Active |
-| **Solution Architecture** | [`docs/SOLUTION_ARCHITECTURE.md`](SOLUTION_ARCHITECTURE.md) | Engineers, Architects | Planned |
-| **Developer Guide** | [`docs/DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) | Engineers | Planned |
-| **API Reference** | [`docs/API_REFERENCE.md`](API_REFERENCE.md) | Engineers, Integrators | Planned |
-| **OpenAPI Specification** | [`openapi/openapi.yaml`](../openapi/openapi.yaml) | Engineers, Integrators | Planned |
-| **Business Features** | [`docs/BUSINESS_FEATURES.md`](BUSINESS_FEATURES.md) | PMs, BAs, QA | Planned |
-| **Testing Guide** | [`docs/TESTING.md`](TESTING.md) | Engineers, QA | Planned |
-| **DevOps Guide** | [`docs/DEVOPS.md`](DEVOPS.md) | DevOps, SREs | Planned |
-| **Microservices Roadmap** | [`docs/MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) | Architects, Leads | Planned |
-| **Infrastructure** | [`infra/README.md`](../infra/README.md) | DevOps, SREs | Planned |
+| **Solution Architecture** | [`docs/SOLUTION_ARCHITECTURE.md`](SOLUTION_ARCHITECTURE.md) | Engineers, Architects | Active |
+| **Developer Guide** | [`docs/DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) | Engineers | Active |
+| **API Reference** | [`docs/API_REFERENCE.md`](API_REFERENCE.md) | Engineers, Integrators | Active |
+| **OpenAPI Specification** | [`openapi/openapi.yaml`](../openapi/openapi.yaml) | Engineers, Integrators | Active |
+| **Business Features** | [`docs/BUSINESS_FEATURES.md`](BUSINESS_FEATURES.md) | PMs, BAs, QA | Active |
+| **Testing Guide** | [`docs/TESTING.md`](TESTING.md) | Engineers, QA | Active |
+| **DevOps Guide** | [`docs/DEVOPS.md`](DEVOPS.md) | DevOps, SREs | Active |
+| **Microservices Roadmap** | [`docs/MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) | Architects, Leads | Active |
+| **Infrastructure** | [`infra/README.md`](../infra/README.md) | DevOps, SREs | Active |
 
 ## Operational Documentation
 
 | Document | Path | Purpose |
 |----------|------|---------|
-| Architecture (legacy) | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | LLM routing, request lifecycle, intent classification |
-| API (legacy) | [`docs/API.md`](API.md) | Endpoint reference (auth, agent, billing, portfolio) |
 | Environment Variables | [`docs/ENV_VARS.md`](ENV_VARS.md) | Complete env var reference with defaults |
 | Deployment Guide | [`docs/DEPLOYMENT.md`](DEPLOYMENT.md) | Production deployment procedures |
-| Operations Runbook | [`docs/RUNBOOK.md`](RUNBOOK.md) | First deploy, updates, backup/restore, monitoring |
 | Troubleshooting | [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | Common issues and solutions |
 
 ## Architecture Decision Records
@@ -42,7 +39,7 @@ These are the primary documents for understanding, operating, and contributing t
 
 | Document | Path | Purpose |
 |----------|------|---------|
-| Bounded Context Map | [`docs/ddd/domains.md`](ddd/domains.md) | 5 bounded contexts (Auth, LLM, Agent, Billing, Messaging) |
+| Bounded Context Map | [`docs/ddd/domains.md`](ddd/domains.md) | 13 bounded contexts with extraction guidance |
 
 ## Internal / Historical
 
@@ -50,12 +47,10 @@ These are development-time documents preserved for context. Not authoritative fo
 
 | Category | Path | Contents |
 |----------|------|----------|
-| Design Plans | `docs/internal/plans/` | 20 session design/implementation plans (Feb 2026) |
-| Design Plans | `docs/plans/` | 12 phase plans (Feb-Mar 2026) |
-| Superpowers Plans | `docs/superpowers/plans/` | 5 sprint/feature plans (Mar 2026) |
+| Active Plans | `docs/plans/` | Current phase plans (react-loop, full-site-audit, revamp-p0) |
+| Superpowers Plans | `docs/superpowers/plans/` | Agent office redesign (Mar 2026) |
 | Superpowers Specs | `docs/superpowers/specs/` | 3 design specs (agent office, activity stream) |
-| Audit Reports | `docs/internal/audit/` | Security audits, integrity baselines, mobile UI fixes |
-| Archive | `docs/internal/archive/` | Legacy release notes, handoffs, cleanup reports |
+| Audit Reports | `docs/internal/audit/` | Integrity baselines, final reports |
 
 ## Operations (ops/)
 
@@ -77,28 +72,11 @@ These are development-time documents preserved for context. Not authoritative fo
 
 ---
 
-## Gap Analysis
-
-| Deliverable | Current Coverage | Gap |
-|-------------|-----------------|-----|
-| Root README | Exists (promotional, 500+ lines) | Needs enterprise rewrite: quick-start, arch diagram, doc map |
-| Solution Architecture | `ARCHITECTURE.md` covers LLM routing well | Missing: C4 diagrams, full request lifecycle, domain boundaries, ER diagram, security architecture |
-| Developer Guide | None | Fully missing: local setup, recipes, conventions, debugging |
-| API Reference | `API.md` covers ~15 endpoints | Missing: 50+ endpoints, error schemas, webhook payloads, rate limits |
-| OpenAPI Spec | None | Fully missing |
-| Business Features | Scattered across README, Feature Matrix | Missing: unified feature doc with credit economy, personalities, tiers |
-| Testing Guide | None (test reports exist) | Fully missing: inventory, coverage, patterns, CI integration |
-| DevOps Guide | `DEPLOYMENT.md` + `RUNBOOK.md` | Missing: Docker service inventory, network topology, CI/CD pipeline, monitoring setup |
-| Infrastructure | No `infra/` directory | Fully missing: Caddy, PicoClaw, SearXNG, GeekOS docs |
-| Microservices Roadmap | `ddd/domains.md` defines 5 contexts | Missing: 8 more domains, extraction waves, dependency graph, anti-patterns |
-| Code Comments | Minimal TSDoc/JSDoc | Missing across 98 services and 66 route files |
-| Domain Boundaries | 5 bounded contexts | Need expansion to 13 domains with extraction guidance |
-
 ## Cross-Linking Conventions
 
 All documents in this project follow these conventions:
 
-1. **Paths** — Use repo-root-relative paths (e.g., `docs/ARCHITECTURE.md`)
+1. **Paths** — Use repo-root-relative paths (e.g., `docs/SOLUTION_ARCHITECTURE.md`)
 2. **Section links** — Use Markdown heading anchors (e.g., `docs/DEVOPS.md#docker-services`)
 3. **Related docs** — Every document ends with a "Related Documents" section
 4. **Bidirectional** — If doc A links to doc B, doc B links back to doc A
@@ -106,6 +84,7 @@ All documents in this project follow these conventions:
 ## Related Documents
 
 - [README.md](../README.md) — Project overview and quick start
-- [docs/ARCHITECTURE.md](ARCHITECTURE.md) — Current architecture reference
+- [docs/SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md) — System architecture
+- [docs/API_REFERENCE.md](API_REFERENCE.md) — API endpoint documentation
 - [docs/ENV_VARS.md](ENV_VARS.md) — Environment variable reference
 - [docs/DEPLOYMENT.md](DEPLOYMENT.md) — Deployment procedures

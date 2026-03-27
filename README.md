@@ -460,7 +460,7 @@ Copy `.env.example` → `.env`. See [`docs/ENV_VARS.md`](docs/ENV_VARS.md) for t
 
 ## API
 
-> Full reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | OpenAPI spec: [`openapi/openapi.yaml`](openapi/openapi.yaml) | Legacy: [`docs/API.md`](docs/API.md)
+> Full reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | OpenAPI spec: [`openapi/openapi.yaml`](openapi/openapi.yaml)
 
 <details>
 <summary><strong>Key endpoints (65+ total)</strong></summary>
@@ -561,7 +561,6 @@ Plus 13 additional medium/low findings addressed.
 | [`docs/MICROSERVICES_ROADMAP.md`](docs/MICROSERVICES_ROADMAP.md) | Architects, Leads | 13 domain boundaries, extraction waves, migration strategy |
 | [`docs/ENV_VARS.md`](docs/ENV_VARS.md) | Engineers, DevOps | 100+ environment variables with defaults and notes |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | DevOps | Production deployment procedures |
-| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | DevOps, SREs | Operational runbook, backup/restore, troubleshooting |
 | [`docs/DOC_MAP.md`](docs/DOC_MAP.md) | Everyone | Master index of all project documentation |
 
 ---

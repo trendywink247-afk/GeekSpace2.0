@@ -2,7 +2,7 @@
 
 > See also: `openapi/openapi.yaml` for the machine-readable spec (when available).
 >
-> This document supersedes `docs/API.md`. The older file is kept for historical reference but is no longer maintained.
+> This is the authoritative API reference for the Agentin platform.
 
 ---
 
@@ -1549,7 +1549,7 @@ npx @redocly/cli build-docs openapi/openapi.yaml  # Generate static HTML docs
 
 | Document | Description |
 |----------|-------------|
-| [Architecture](ARCHITECTURE.md) | System architecture and component overview |
+| [Solution Architecture](SOLUTION_ARCHITECTURE.md) | System architecture and component overview |
 | [Developer Guide](DEVELOPER_GUIDE.md) | Setup, local development, and contribution workflow |
 | [Solution Architecture](SOLUTION_ARCHITECTURE.md) | Detailed technical design and data flows |
 | [Environment Variables](ENV_VARS.md) | All configuration variables including JWT secrets, API keys, and webhook secrets |

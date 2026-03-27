@@ -750,10 +750,10 @@ E2E tests use API endpoints for data setup:
 | Document | Path | Description |
 |----------|------|-------------|
 | AI Handoff | `ops/AI_HANDOFF.md` | Session logs with test status, known issues |
-| API Reference | `docs/API.md` | Endpoint documentation for all tested routes |
+| API Reference | `docs/API_REFERENCE.md` | Endpoint documentation for all tested routes |
 | Solution Architecture | `docs/SOLUTION_ARCHITECTURE.md` | System design context for test strategy |
 | DevOps Guide | `docs/DEVOPS.md` | CI/CD pipeline details |
 | Deployment Guide | `docs/DEPLOYMENT.md` | Production deployment procedures |
 | Environment Variables | `docs/ENV_VARS.md` | Required env vars including `TEST_MODE` |
 | Troubleshooting | `docs/TROUBLESHOOTING.md` | Common issues and debugging tips |
-| Runbook | `docs/RUNBOOK.md` | Operational procedures |
+| DevOps | `docs/DEVOPS.md` | CI/CD, operations, monitoring |

@@ -708,7 +708,7 @@ See [`docs/MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) for the detailed
 ## Related Documents
 
 - [`README.md`](../README.md) -- Project overview and quick start
-- [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) -- Legacy architecture doc (LLM routing focus)
+- [`docs/API_REFERENCE.md`](API_REFERENCE.md) -- API endpoint documentation
 - [`docs/DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) -- Development setup and conventions
 - [`docs/API_REFERENCE.md`](API_REFERENCE.md) -- API endpoint documentation
 - [`docs/DEVOPS.md`](DEVOPS.md) -- Infrastructure and operations

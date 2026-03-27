@@ -279,6 +279,6 @@ The following concerns are shared across all contexts and are not owned by any s
 
 - [Microservices Readiness Roadmap](../MICROSERVICES_ROADMAP.md) -- Extraction waves, database decomposition, event-driven migration plan
 - [Solution Architecture](../SOLUTION_ARCHITECTURE.md) -- System-level architecture overview
-- [Architecture Overview](../ARCHITECTURE.md) -- Technical architecture documentation
+- [API Reference](../API_REFERENCE.md) -- REST API endpoints and webhook integration
 - [ADR-001: LLM Waterfall](../adr/ADR-001-llm-waterfall-phase111.md) -- LLM routing tier decision
 - [Developer Guide](../DEVELOPER_GUIDE.md) -- Getting started and development practices
