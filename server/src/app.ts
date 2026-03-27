@@ -28,10 +28,12 @@ import { authModule } from './modules/auth/index.js';
 import { billingModule } from './modules/billing/index.js';
 import { integrationsModule } from './modules/integrations/index.js';
 import { contentModule } from './modules/content/index.js';
+// Wave 3 modules
+import { memoryModule } from './modules/memory/index.js';
+import { agentModule } from './modules/agent/index.js';
 // Remaining direct imports (not yet modularized)
 import { routingDebugRouter } from './routes/debug-routing.js';
 import { usersRouter } from './routes/users.js';
-import { agentRouter } from './routes/agent/index.js';
 import { usageRouter } from './routes/usage.js';
 import { automationsRouter } from './routes/automations.js';
 import { dashboardRouter } from './routes/dashboard.js';
@@ -46,7 +48,7 @@ import { briefingsRouter } from './routes/briefings.js';
 import { recipesRouter } from './routes/recipes.js';
 import { geekosBridgeRouter } from './routes/geekos-bridge.js';
 import { geekosLlmProxyRouter } from './routes/geekos-llm-proxy.js';
-import { agentStateRouter } from './routes/agent-state.js';
+// agentStateRouter moved to agentModule
 // H-3: getServiceHealth no longer needed here (detailed info moved to admin-only /api/health/detailed)
 // artifactsRouter, templatesRouter moved to contentModule
 // imagesRouter, videosRouter moved to mediaModule
@@ -63,11 +65,11 @@ import { inboxRouter } from './routes/inbox.js';
 // gmailRouter moved to integrationsModule
 import { analyticsRouter } from './routes/analytics.js';
 import { focusRouter, habitsRouter } from './routes/focus.js';
-import { memoryRouter } from './routes/memory.js';
+// memoryRouter moved to memoryModule
 // calendarRouter moved to integrationsModule
 import { workflowsRouter } from './routes/workflows.js';
 import { plannerRouter } from './routes/planner.js';
-import searchRouter from './routes/search.js';
+// searchRouter moved to memoryModule
 import { docsRouter } from './routes/docs.js';
 import { filesRouter } from './routes/files.js';
 import { gateRouter } from './routes/gate.js';
@@ -75,8 +77,7 @@ import { officeRouter } from './routes/office.js';
 // healthRouter moved to healthModule
 import { adminRouter, serveAdminDashboard } from './routes/admin.js';
 import { devRouter } from './routes/dev.js';
-import { agentTasksRouter } from './routes/agent-tasks.js';
-import { agentCommsRouter } from './routes/agent-comms.js';
+// agentTasksRouter, agentCommsRouter moved to agentModule
 import { recommendationsRouter } from './routes/recommendations.js';
 import { sandboxRouter } from './routes/sandbox.js';
 import { skillsRouter } from './routes/skills.js';
@@ -460,11 +461,12 @@ export function createApp(): express.Application {
   billingModule.registerRoutes(app);
   integrationsModule.registerRoutes(app);
   contentModule.registerRoutes(app);
+  memoryModule.registerRoutes(app);
+  agentModule.registerRoutes(app);
 
   // ---- Mount remaining routes (not yet modularized) ----
   app.use('/api/debug', routingDebugRouter);
   app.use('/api/users', usersRouter);
-  app.use('/api/agent', agentRouter);
   app.use('/api/usage', usageRouter);
   app.use('/api/automations', automationsRouter);
   app.use('/api/dashboard', dashboardRouter);
@@ -479,7 +481,7 @@ export function createApp(): express.Application {
   app.use('/api/recipes', recipesRouter);
   app.use('/api/geekos', geekosBridgeRouter);
   app.use('/api/geekos-llm', geekosLlmProxyRouter);
-  app.use('/api/agent-state', agentStateRouter);
+  // agentStateRouter mounted by agentModule
   app.use('/api/admin', adminRouter);
   app.use('/api/dev', devRouter);
   // artifactsRouter, templatesRouter mounted by contentModule
@@ -498,17 +500,16 @@ export function createApp(): express.Application {
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/focus', focusRouter);
   app.use('/api/habits', habitsRouter);
-  app.use('/api/memory', memoryRouter);
+  // memoryRouter mounted by memoryModule
   // calendarRouter mounted by integrationsModule
   app.use('/api/workflows', workflowsRouter);
   app.use('/api/planner', plannerRouter);
-  app.use('/api/search', searchRouter);
+  // searchRouter mounted by memoryModule
   app.use('/api/docs', docsRouter);
   app.use('/api/files', filesRouter);
   app.use('/api/gate/v1', gateRouter);
   app.use('/api/office', officeRouter);
-  app.use('/api/agent-tasks', agentTasksRouter);
-  app.use('/api/agent-comms', agentCommsRouter);
+  // agentTasksRouter, agentCommsRouter mounted by agentModule
   app.use('/api/recommendations', recommendationsRouter);
   app.use('/api/sandbox', sandboxRouter);
   app.use('/api/skills', skillsRouter);
