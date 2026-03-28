@@ -17,9 +17,11 @@ const POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
 // HuggingFace FLUX endpoint (fallback) — new router.huggingface.co (api-inference.huggingface.co deprecated 2026)
 const HF_FLUX_URL = 'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell';
 
-// Image cache dir — go up 4 levels from compiled output (dist/modules/media/services/) to /app/data/
+// Image cache dir — use DB_PATH env var to find data dir, fallback to relative path for dev
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '../../../../data');
+const DATA_DIR = process.env.DB_PATH
+  ? path.dirname(process.env.DB_PATH)
+  : path.join(__dirname, '../../../../data');
 const IMG_CACHE_DIR = path.join(DATA_DIR, 'img-cache');
 
 // Ensure cache dir exists at startup

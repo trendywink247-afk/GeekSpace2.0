@@ -48,11 +48,14 @@ RUN cd server && npm ci --omit=dev
 COPY --from=builder /app/server/dist ./server/dist
 COPY server/ecosystem.config.cjs ./server/ecosystem.config.cjs
 
+# Copy root package.json (needed by PM2/import resolution)
+COPY package.json ./package.json
+
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown -R node:node /app/data
+# Create data directories for SQLite + image cache
+RUN mkdir -p /app/data /app/server/data && chown -R node:node /app/data /app/server/data
 
 # Allow git operations on the mounted /repo volume (owned by root, run as node)
 RUN git config --system safe.directory /repo
