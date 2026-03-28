@@ -19,29 +19,29 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
   // ── 80.2: STT transcribe endpoint ───────────────────────────────
   describe('80.2: POST /api/voice/transcribe', () => {
     it('voiceRouter exports POST /transcribe endpoint', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("voiceRouter.post('/transcribe'");
     });
 
     it('raw audio body is parsed (Content-Type: audio/*)', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('rawBody');
       expect(src).toContain('audio/');
     });
 
     it('enqueues voice:transcribe job', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("'voice:transcribe'");
       expect(src).toContain('enqueueJob');
     });
 
     it('returns 202 with jobId', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('res.status(202).json({ jobId');
     });
 
     it('returns 400 when no audio data received', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('No audio data received');
       expect(src).toContain('res.status(400)');
     });
@@ -50,22 +50,22 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
   // ── 80.3: TTS speak endpoint ─────────────────────────────────────
   describe('80.3: POST /api/voice/speak', () => {
     it('voiceRouter exports POST /speak endpoint', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("voiceRouter.post('/speak'");
     });
 
     it('validates that text is required', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('text is required');
     });
 
     it('enqueues voice:synthesize job', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("'voice:synthesize'");
     });
 
     it('returns 202 with jobId for TTS', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       // Both endpoints return 202
       const count = (src.match(/res\.status\(202\)/g) || []).length;
       expect(count).toBeGreaterThanOrEqual(2);
@@ -75,13 +75,13 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
   // ── 80.4: Daily voice cap enforcement ───────────────────────────
   describe('80.4: Daily voice cap enforcement', () => {
     it('getVoiceCap checks usage_events table', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('usage_events');
       expect(src).toContain("tool LIKE 'voice:%'");
     });
 
     it('returns 429 with error, used, limit when cap exceeded', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('res.status(429)');
       expect(src).toContain('Voice limit reached');
       expect(src).toContain('used: cap.used');
@@ -89,12 +89,12 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
     });
 
     it('free tier cap is 5', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('free: 5');
     });
 
     it('logs voice usage to usage_events with voice.stt and voice.tts tools', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("'voice.stt'");
       expect(src).toContain("'voice.tts'");
     });
@@ -103,24 +103,24 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
   // ── 80.8: Job handlers registered ───────────────────────────────
   describe('80.8: Job queue wiring', () => {
     it('voice:transcribe handler is registered', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("registerJobHandler");
       expect(src).toContain("'voice:transcribe'");
     });
 
     it('voice:synthesize handler is registered', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain("'voice:synthesize'");
     });
 
     it('handlers call transcribeVoice and textToSpeech from voice service', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('transcribeVoice');
       expect(src).toContain('textToSpeech');
     });
 
     it('handlers include TODO stub for local Whisper/piper-tts', () => {
-      const src = readFile('server/src/routes/voice.ts');
+      const src = readFile('server/src/modules/media/routes/voice.ts');
       expect(src).toContain('TODO');
     });
   });

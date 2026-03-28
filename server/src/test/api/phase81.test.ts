@@ -19,24 +19,24 @@ describe('Phase 81 — Image Generation Pipeline', () => {
   // ── 81.2: POST /api/image/generate endpoint ──────────────────
   describe('81.2: POST /api/image/generate', () => {
     it('imageAsyncRouter exports POST /generate endpoint', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain("imageAsyncRouter.post('/generate'");
     });
 
     it('validates prompt is required', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('prompt is required');
       expect(src).toContain('res.status(400)');
     });
 
     it('enqueues image:generate job', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain("'image:generate'");
       expect(src).toContain('enqueueJob');
     });
 
     it('returns 202 with jobId', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('res.status(202).json({ jobId');
     });
   });
@@ -44,13 +44,13 @@ describe('Phase 81 — Image Generation Pipeline', () => {
   // ── 81.3: Daily image cap enforcement ────────────────────────
   describe('81.3: Daily image cap enforcement', () => {
     it('getImageCap checks usage_events table', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('usage_events');
       expect(src).toContain("tool = 'image.generate'");
     });
 
     it('returns 429 with error, used, limit when cap exceeded', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('res.status(429)');
       expect(src).toContain('Image limit reached');
       expect(src).toContain('used: cap.used');
@@ -58,17 +58,17 @@ describe('Phase 81 — Image Generation Pipeline', () => {
     });
 
     it('free tier cap is 3', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('free: 3');
     });
 
     it('yearly tier cap is 100', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('yearly: 100');
     });
 
     it('logImageUsage inserts into usage_events with image.generate tool', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain("'image.generate'");
       expect(src).toContain('logImageUsage');
     });
@@ -77,30 +77,30 @@ describe('Phase 81 — Image Generation Pipeline', () => {
   // ── 81.4: Image delivery endpoints ───────────────────────────
   describe('81.4: Image delivery', () => {
     it('imageAsyncRouter exports GET /gallery', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain("imageAsyncRouter.get('/gallery'");
     });
 
     it('gallery queries user_images table ordered by created_at DESC LIMIT 30', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('user_images');
       expect(src).toContain('LIMIT 30');
       expect(src).toContain('created_at DESC');
     });
 
     it('imageAsyncRouter exports GET /file/:id', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain("imageAsyncRouter.get('/file/:id'");
     });
 
     it('file endpoint returns 404 for unknown image', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       const count = (src.match(/res\.status\(404\)/g) || []).length;
       expect(count).toBeGreaterThanOrEqual(1);
     });
 
     it('file endpoint redirects to image URL', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('res.redirect(302');
     });
   });
@@ -108,28 +108,28 @@ describe('Phase 81 — Image Generation Pipeline', () => {
   // ── 81.8: Job queue wiring ────────────────────────────────────
   describe('81.8: Job queue wiring', () => {
     it('image:generate handler is registered', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('registerJobHandler');
       expect(src).toContain("'image:generate'");
     });
 
     it('handler calls generateImage from media-generation service', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('generateImage');
     });
 
     it('handler saves result to user_images table', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('INSERT INTO user_images');
     });
 
     it('handler includes TODO stub for local Stable Diffusion / Ollama', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('TODO');
     });
 
     it('handler returns imageUrl and imageId in result', () => {
-      const src = readFile('server/src/routes/image.ts');
+      const src = readFile('server/src/modules/media/routes/image.ts');
       expect(src).toContain('imageUrl');
       expect(src).toContain('imageId');
     });

@@ -77,7 +77,7 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
     });
 
     it('buildMemoryContext is called in agent.ts for web chat', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain('buildMemoryContext(userId, userMessage)');
     });
   });
@@ -98,18 +98,18 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
 
   describe('79.5: GET /api/agent/memory endpoint', () => {
     it('GET /memory endpoint exists in agent router', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain("agentRouter.get('/memory'");
     });
 
     it('supports category filter', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       const memSection = src.slice(src.indexOf("agentRouter.get('/memory'"));
       expect(memSection).toContain('category');
     });
 
     it('supports search filter via getRelevantMemories', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       const memSection = src.slice(src.indexOf("agentRouter.get('/memory'"));
       expect(memSection).toContain('getRelevantMemories');
     });
@@ -117,18 +117,18 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
 
   describe('79.6: DELETE /api/agent/memory/:id endpoint', () => {
     it('DELETE /memory/:id endpoint exists in agent router', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain("agentRouter.delete('/memory/:id'");
     });
 
     it('returns 404 for missing memory', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       const deleteSection = src.slice(src.indexOf("agentRouter.delete('/memory/:id'"));
       expect(deleteSection).toContain('404');
     });
 
     it('bulk clear endpoint exists', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain("agentRouter.delete('/memory/bulk'");
     });
   });
