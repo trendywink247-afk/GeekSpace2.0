@@ -18,7 +18,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DB_PATH=/app/data/geekspace.db
-      - REDIS_URL=redis://:${STAGING_REDIS_PASSWORD:-aaab8cb828f3d9818efc0957a83e4619}@staging-redis:6379
+      - REDIS_URL=redis://:${STAGING_REDIS_PASSWORD}@staging-redis:6379
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
@@ -63,13 +63,13 @@ services:
     image: redis:7-alpine
     container_name: geekspace-staging-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru --requirepass ${STAGING_REDIS_PASSWORD:-aaab8cb828f3d9818efc0957a83e4619}
+    command: redis-server --appendonly yes --maxmemory 64mb --maxmemory-policy allkeys-lru --requirepass ${STAGING_REDIS_PASSWORD}
     volumes:
       - staging-redis-data:/data
     networks:
       - geekspace-net
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${STAGING_REDIS_PASSWORD:-aaab8cb828f3d9818efc0957a83e4619}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${STAGING_REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5

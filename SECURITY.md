@@ -46,3 +46,7 @@ GeekSpace implements defense-in-depth:
 - **CORS:** Restricted to configured origins only
 - **Infrastructure:** Non-root Docker user, WAL-mode SQLite, Redis for ephemeral cache only
 - **Integrations:** Telegram webhook secret verification, OAuth state parameter validation
+
+For full infrastructure security details, see [`docs/DEVOPS.md`](docs/DEVOPS.md).
+
+You can also report vulnerabilities via [GitHub Security Advisories](https://github.com/trendywink247-afk/GeekSpace2.0/security/advisories).

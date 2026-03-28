@@ -96,6 +96,23 @@ test: add billing endpoint tests
 - Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram
 - E2E tests seed a test user via `/api/test/seed` endpoint
 
+## Formatting
+
+This project uses [Prettier](https://prettier.io/) for consistent code formatting:
+
+```bash
+npx prettier --check .          # Check formatting
+npx prettier --write .          # Auto-fix formatting
+```
+
+Configuration lives in `.prettierrc` at the repo root.
+
+## Deeper Reading
+
+- [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) — Annotated repo walkthrough and architecture deep dive
+- [`docs/TESTING.md`](docs/TESTING.md) — Full testing guide with patterns and CI integration
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — Version history and release notes
+
 ## Questions?
 
 Open an issue or reach out to [@trendywink247-afk](https://github.com/trendywink247-afk).

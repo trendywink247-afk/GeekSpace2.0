@@ -16,6 +16,8 @@
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white)](https://playwright.dev)
+[![Node 20](https://img.shields.io/badge/Node_20-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](#)
 [![Ollama](https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white)](https://ollama.ai)
 
@@ -235,7 +237,29 @@ graph TB
     style Staging fill:#1A1A2E,stroke:#FFD761,color:#F4F6FF
 ```
 
-### Services
+#### Agentic Core (v3.3)
+
+```mermaid
+graph LR
+    Chat[User Message] --> Router[Message Router]
+    Router --> Classify{Complexity?}
+    Classify -->|Simple| ReAct[ReAct Loop<br/>5 iterations, 23 tools]
+    Classify -->|Complex| Deep[Deep Reasoning<br/>10 iterations + self-reflection]
+    Router --> Delegate{Intent?}
+    Delegate --> Specialists[Cal / Echo / Forge<br/>Aria / Pulse / Nova / Jarvis]
+    Specialists -->|handoff| Delegation[Delegation Pipeline<br/>+ audit trail]
+    ReAct --> Goals[Goal System]
+    Deep --> Goals
+    Goals --> Proactive[Proactive Engine<br/>30-min cycles]
+    Proactive --> Notify[Notifications<br/>SSE + Telegram + Bell]
+
+    style Router fill:#7B61FF,stroke:#7B61FF,color:#fff
+    style Deep fill:#FF61DC,stroke:#FF61DC,color:#fff
+    style Goals fill:#61FF7B,stroke:#61FF7B,color:#000
+```
+
+<details>
+<summary><strong>Services (15+)</strong></summary>
 
 | Service | Port | Purpose |
 |---------|------|---------|
@@ -270,7 +294,10 @@ graph TB
 
 Local-pref users bypass the waterfall and route directly to Ollama.
 
-### Auto-Delegation
+</details>
+
+<details>
+<summary><strong>Auto-Delegation</strong></summary>
 
 Weebo detects user intent and auto-routes to the right specialist:
 
@@ -295,9 +322,12 @@ Chat → classifyIntent() → routeChat() → [provider waterfall] → parseActi
    (Cal/Echo/Forge/Aria/...)                        (portfolio, reminders, code gen, email)
 ```
 
+</details>
+
 ---
 
-## OOM Protection
+<details>
+<summary><strong>OOM Protection</strong></summary>
 
 Three-layer memory protection for the 32GB VPS:
 
@@ -306,6 +336,9 @@ Three-layer memory protection for the 32GB VPS:
 | **1. earlyoom** | systemd service | Triggers at 8% free RAM / 5% free swap. Prefers killing ollama/crawl4ai/chrome, avoids node/sshd |
 | **2. Kernel** | sysctl tuning | `vm.overcommit_memory=0` (heuristic), `vm.swappiness=5`, `vm.oom_kill_allocating_task=1` |
 | **3. Docker** | Container caps | crawl4ai=512MB, ollama=6GB, browser=1.5GB, app=1GB. All containers CPU-limited |
+
+
+</details>
 
 ---
 
@@ -572,6 +605,7 @@ Plus 13 additional medium/low findings addressed.
 | [`docs/MICROSERVICES_ROADMAP.md`](docs/MICROSERVICES_ROADMAP.md) | Architects, Leads | 13 domain boundaries, extraction waves, migration strategy |
 | [`docs/ENV_VARS.md`](docs/ENV_VARS.md) | Engineers, DevOps | 100+ environment variables with defaults and notes |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | DevOps | Production deployment procedures |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Everyone | Version history and release notes |
 | [`docs/DOC_MAP.md`](docs/DOC_MAP.md) | Everyone | Master index of all project documentation |
 
 ---

@@ -1,0 +1,8 @@
+# Default owner for everything
+* @trendywink247-afk
+
+# Critical modules — explicit ownership
+server/src/modules/agent/ @trendywink247-afk
+server/src/modules/billing/ @trendywink247-afk
+server/src/modules/auth/ @trendywink247-afk
+.github/ @trendywink247-afk

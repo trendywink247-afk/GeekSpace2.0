@@ -108,3 +108,9 @@ reports/
 
 # Test run artifacts
 *.jsonl
+
+# Analysis artifacts in source tree (one-time audits, not code)
+src/**/*.GAPS.md
+src/**/COVERAGE_ANALYSIS.md
+src/**/TEST_IMPLEMENTATION_GUIDE.md
+src/**/TEST_COVERAGE_GAPS.md

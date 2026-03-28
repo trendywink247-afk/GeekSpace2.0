@@ -72,3 +72,6 @@ test-results/
 # Runtime / pid files
 *.pid
 .superpowers/
+
+# Internal audit docs (not useful for coding context)
+docs/internal/

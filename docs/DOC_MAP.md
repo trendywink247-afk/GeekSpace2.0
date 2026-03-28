@@ -1,6 +1,36 @@
 # Agentin — Documentation Map
 
-> Master index of all project documentation. Updated 2026-03-27.
+> Master index of all project documentation. Updated 2026-03-28.
+
+---
+
+## Start Here
+
+```mermaid
+graph LR
+    README[README.md] --> DOC_MAP[DOC_MAP.md]
+    DOC_MAP --> DEV[DEVELOPER_GUIDE]
+    DOC_MAP --> ARCH[SOLUTION_ARCHITECTURE]
+    DOC_MAP --> API[API_REFERENCE]
+    DOC_MAP --> OPS[DEVOPS]
+    DOC_MAP --> TEST[TESTING]
+    DOC_MAP --> BIZ[BUSINESS_FEATURES]
+    DOC_MAP --> CHANGE[CHANGELOG]
+    DEV --> CONTRIB[CONTRIBUTING]
+    ARCH --> ADR[ADR-001]
+    ARCH --> DDD[domains.md]
+
+    style README fill:#7B61FF,stroke:#7B61FF,color:#fff
+    style DOC_MAP fill:#FF61DC,stroke:#FF61DC,color:#fff
+```
+
+| You are a... | Start with |
+|--------------|-----------|
+| **New developer** | [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) then [CONTRIBUTING](../CONTRIBUTING.md) |
+| **Product / QA** | [BUSINESS_FEATURES](BUSINESS_FEATURES.md) |
+| **DevOps / SRE** | [DEVOPS](DEVOPS.md) then [DEPLOYMENT](DEPLOYMENT.md) |
+| **Architect** | [SOLUTION_ARCHITECTURE](SOLUTION_ARCHITECTURE.md) then [MICROSERVICES_ROADMAP](MICROSERVICES_ROADMAP.md) |
+| **API integrator** | [API_REFERENCE](API_REFERENCE.md) + [openapi.yaml](../openapi/openapi.yaml) |
 
 ---
 
@@ -20,6 +50,7 @@ These are the primary documents for understanding, operating, and contributing t
 | **DevOps Guide** | [`docs/DEVOPS.md`](DEVOPS.md) | DevOps, SREs | Active |
 | **Microservices Roadmap** | [`docs/MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) | Architects, Leads | Active |
 | **Infrastructure** | [`infra/README.md`](../infra/README.md) | DevOps, SREs | Active |
+| **Changelog** | [`docs/CHANGELOG.md`](CHANGELOG.md) | Everyone | Active |
 
 ## Operational Documentation
 
@@ -51,6 +82,7 @@ These are development-time documents preserved for context. Not authoritative fo
 | Superpowers Plans | `docs/superpowers/plans/` | Agent office redesign (Mar 2026) |
 | Superpowers Specs | `docs/superpowers/specs/` | 3 design specs (agent office, activity stream) |
 | Audit Reports | `docs/internal/audit/` | Integrity baselines, final reports |
+| Internal Audits | `docs/internal/` | Routing audit, sandbox security/integration, benchmark findings |
 
 ## Operations (ops/)
 

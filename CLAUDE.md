@@ -85,3 +85,28 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 - Limit params: always clamp with `Math.max(1, Math.min(value, MAX))`
 - Goal ownership: always verify `goal.user_id === userId` before mutations
 - Notifications: route through `sendAgentNotification()` to honor preferences + quiet hours
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Frontend dev | `npm run dev` |
+| Backend dev | `cd server && npm run dev` |
+| Typecheck (frontend) | `npx tsc --noEmit` |
+| Typecheck (server) | `cd server && npx tsc --noEmit` |
+| Lint | `npm run lint` |
+| Format check | `npx prettier --check .` |
+| Unit tests | `cd server && npm test` |
+| E2E tests | `npx playwright test` |
+| Docker build | `docker compose build` |
+| Docker run | `docker compose up -d` |
+
+## Common Pitfalls
+
+- **Import extensions**: Server uses ES modules — imports need `.js` extensions (e.g., `'../db/index.js'`)
+- **Unused imports**: Frontend enforces `noUnusedLocals` — unused imports break Docker builds
+- **req.user.id vs req.userId!**: Always use `req.userId!` (set by requireAuth middleware)
+- **Production npm install**: `NODE_ENV=production` skips devDependencies including @types
+- **Test mode**: Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram
+- **Database**: SQLite is synchronous (better-sqlite3) — no async/await needed for DB calls
+- **Staging Redis**: `STAGING_REDIS_PASSWORD` must be set in `.env.staging` (no default fallback)
