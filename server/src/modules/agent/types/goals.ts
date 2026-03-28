@@ -130,4 +130,3 @@ export interface GoalPlan {
   estimated_agents: AnyAgentId[];
   estimated_effort: string;
 }
-# CI trigger
