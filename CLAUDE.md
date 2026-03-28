@@ -12,7 +12,37 @@ Modular monolith with 18 domain modules in `server/src/modules/`. Each module ha
 
 Shared infrastructure lives in `server/src/shared/` (module.ts, swagger.ts).
 
-Old `routes/`, `services/`, `repositories/` files are thin re-export shims pointing to their module locations.
+Some old `routes/`, `services/` files remain as thin re-export shims. Safe shims have been removed; remaining ones are still imported by module barrel exports.
+
+## Agentic Experience (v3.3)
+
+The agent module (`server/src/modules/agent/`) is the core. Key subsystems:
+
+### Goal System
+- `services/goal-service.ts` — CRUD + AI planning + autonomous step execution
+- `routes/goals.ts` — REST API at `/api/agent/goals` + `/api/agent/workspace`
+- `types/goals.ts` — Goal, GoalStep, GoalEvent, WorkspaceArtifact types
+- DB tables: `goals`, `goal_steps`, `goal_events`, `workspace_artifacts`, `delegation_log`
+
+### Delegation Pipeline
+- `services/delegation-pipeline.ts` — Inter-agent handoff with chain delegation
+- Agents detect when a task needs a specialist and delegate autonomously
+- Full audit trail in `delegation_log` table
+
+### Deep Reasoning Engine
+- `services/deep-reasoning.ts` — Enhanced ReAct with plan-then-execute + self-reflection
+- 10 iterations (vs 5 in standard ReAct), mid-loop delegation detection
+- Auto-routes for complex queries via `classifyMessageComplexity()`
+
+### Proactive Goal Engine
+- `services/proactive-goals.ts` — Background scheduler (30min cycles)
+- Auto-executes pending goal steps, nudges stale goals, sends daily summaries
+- Respects user autonomy level: manual | suggest | semi_auto | full_auto
+
+### Notifications
+- `services/agent-notifications.ts` — SSE + Telegram + in-app bell
+- `routes/notifications.ts` — REST API at `/api/agent/notifications`
+- Honors `notif_agents` preference + quiet hours (timezone-aware)
 
 ## Module Focus Workflow
 
@@ -32,6 +62,12 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 - `server/src/index.ts` — Server startup, scheduler init, graceful shutdown
 - `server/src/config.ts` — Environment config
 - `server/src/db/index.ts` — SQLite schema (centralized, not split per module)
+- `server/src/modules/agent/services/llm.ts` — 7-tier LLM router
+- `server/src/modules/agent/services/react-loop.ts` — Standard ReAct loop (5 iterations)
+- `server/src/modules/agent/services/deep-reasoning.ts` — Deep reasoning (10 iterations)
+- `server/src/modules/agent/services/goal-service.ts` — Goal system core
+- `server/src/modules/agent/services/delegation-pipeline.ts` — Agent-to-agent delegation
+- `server/src/modules/agent/services/message-router.ts` — Unified channel message handling
 
 ## TypeScript
 
@@ -41,8 +77,11 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 
 ## Conventions
 
-- Shim-first migration: old import paths preserved via re-exports, nothing breaks
 - Swagger UI at `/api/docs`
 - All routes mount under `/api/` prefix
 - SQLite via better-sqlite3 (synchronous)
 - JWT auth via `middleware/auth.ts` (requireAuth, optionalAuth, requireAdminToken)
+- User ID accessed as `req.userId!` (set by requireAuth middleware), NOT `req.user.id`
+- Limit params: always clamp with `Math.max(1, Math.min(value, MAX))`
+- Goal ownership: always verify `goal.user_id === userId` before mutations
+- Notifications: route through `sendAgentNotification()` to honor preferences + quiet hours

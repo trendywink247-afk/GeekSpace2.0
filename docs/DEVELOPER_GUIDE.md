@@ -874,7 +874,65 @@ These files are the largest and most critical in the codebase. Changes here requ
 
 ---
 
-## 14. Related Documents
+## 14. Agentic Experience — Developer Guide
+
+The agentic experience (v3.3) adds goal-driven autonomy. Here's what you need to know when working on these services.
+
+### 14.1 Key Files
+
+| File | LOC | Purpose |
+|------|-----|---------|
+| `modules/agent/services/goal-service.ts` | 500 | Goal CRUD, AI planning, step execution |
+| `modules/agent/services/delegation-pipeline.ts` | 325 | Inter-agent handoff |
+| `modules/agent/services/deep-reasoning.ts` | 350 | Enhanced ReAct with reflection |
+| `modules/agent/services/proactive-goals.ts` | 200 | Background goal pursuit |
+| `modules/agent/services/agent-notifications.ts` | 175 | Push notifications |
+| `modules/agent/routes/goals.ts` | 275 | Goals + workspace REST API |
+| `modules/agent/routes/notifications.ts` | 55 | Notification bell API |
+| `modules/agent/types/goals.ts` | 115 | All agentic types |
+
+### 14.2 Security Patterns
+
+1. **Goal ownership**: Always verify `goal.user_id === userId` before any mutation. The `getGoalWithSteps()` function accepts an optional `userId` param for this.
+2. **Atomic step claims**: `executeNextStep()` uses a conditional UPDATE (`WHERE status = 'pending'`) to prevent concurrent execution.
+3. **Transaction wrapping**: `planGoal()` wraps step deletion + insertion in a SQLite transaction for atomic re-planning.
+4. **Limit clamping**: All `limit` query params use `Math.max(1, Math.min(value, MAX))`.
+5. **Notification preferences**: Always route Telegram sends through `sendAgentNotification()` which checks `notif_agents` and quiet hours.
+
+### 14.3 Adding a New Goal Tool
+
+1. Add the tool case in `action-executor.ts` (in the goal tools section)
+2. Add the tool description in `message-router.ts` TOOL_INSTRUCTIONS
+3. Add an ACTION example in `chat.ts` toolsBlock
+4. Implement the service function in `goal-service.ts`
+5. Always verify goal ownership before mutations
+
+### 14.4 Request Flow: Goal Creation
+
+```
+User: "I want to launch my SaaS by April"
+  → LLM detects goal intent → emits create_goal ACTION
+  → action-executor: createGoal() → Cal assigned
+  → action-executor: planGoal() auto-fires → Cal decomposes into 5-8 steps
+  → Steps assigned to specialists (Forge, Aria, Pulse, etc.)
+  → Response includes goal ID + full step plan
+  → Proactive engine (30min cycles) auto-executes pending steps
+  → Notifications fire at 25/50/75/100% milestones
+```
+
+### 14.5 Deep Reasoning vs Standard ReAct
+
+| Feature | Standard ReAct | Deep Reasoning |
+|---------|---------------|----------------|
+| Max iterations | 5 | 10 |
+| Planning phase | No | Yes (for complex queries) |
+| Self-reflection | No | Every 3 iterations |
+| Mid-loop delegation | No | Yes |
+| Triggered by | Default | `multi_step` or `multi_agent` complexity |
+
+---
+
+## 15. Related Documents
 
 | Document | Path | Description |
 |----------|------|-------------|

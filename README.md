@@ -21,7 +21,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.2.0 · Beast Mode Sessions 1-10 complete · 2552 tests passing · Security-hardened · 15+ Docker services · PR-based CI/CD · main = live-production
+> v3.3.0 · Agentic Experience · Goals + Delegation + Deep Reasoning · 2552 tests · Security-hardened · 15+ Docker services · PR-based CI/CD
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -42,6 +42,10 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - **9 AI personalities** — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova — switch mid-message.
 - **Auto-delegation** — Weebo detects intent and routes to the right specialist agent automatically.
 - **Multi-agent council** — Fan-out to parallel specialists for complex queries.
+- **Goal-driven autonomy** — Set goals, agents decompose into steps, pursue them autonomously, report progress.
+- **Inter-agent delegation** — Agents hand off work to specialists mid-conversation with full audit trail.
+- **Deep reasoning** — Complex queries get 10-iteration reasoning with self-reflection and plan-then-execute.
+- **Proactive goal engine** — Agents auto-execute steps, nudge stale goals, send daily progress summaries.
 - **Telegram-native** — Full AI on Telegram: voice notes, inline keyboards, receipt OCR, proactive nudges.
 - **Hinglish-first** — Built for Indian users. "swiggy pe 350 rupay" just works.
 - **Background agents** — Weebo Engine + proactive briefings, habit nudges, expense digests.
@@ -63,7 +67,11 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - PicoClaw circuit breaker (1 failure → 5min cooldown)
 - Auto-delegation: Weebo routes to Cal/Echo/Forge/Aria/Pulse/Nova/Jarvis by intent
 - Multi-Agent Council — "launch mode" fan-out to 3 parallel specialists
-- ReAct loop with 17 tools (notes, habits, reminders, expenses, focus, briefings, etc.)
+- ReAct loop with 23 tools (notes, habits, reminders, expenses, focus, briefings, goals, artifacts, etc.)
+- Deep Reasoning Engine — 10 iterations, self-reflection, plan-then-execute for complex queries
+- Goal System — create goals, AI decomposes into steps, agents pursue autonomously
+- Inter-Agent Delegation — agents hand off work to specialists with audit trail
+- Workspace Artifacts — shared scratchpad for inter-agent collaboration
 - Hinglish routing — Indian language patterns + merchant auto-categories
 - Long-term memory — per-user fact store, auto-injected into prompts
 - Conversation context preserved across long replies (16K char window)
@@ -86,8 +94,11 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 <tr>
 <td>
 
-**Automations & Background**
+**Automations & Agentic Engine**
 - Weebo Engine — up to 3 background agents per user
+- Proactive Goal Engine — auto-executes goal steps, nudges stale goals, daily summaries
+- Agent-Initiated Notifications — milestone alerts at 25/50/75/100% via SSE + Telegram
+- Autonomy Levels — manual, suggest, semi_auto, full_auto (user controls how proactive agents are)
 - Proactive Engine V3 — 30-min reminder previews, habit idle nudges at 11:00 IST
 - Daily briefings with habit insights + active streaks + at-risk habits
 - Telegram integration — inline keyboards (Done/Snooze/Delete), photo vision, file/doc handling

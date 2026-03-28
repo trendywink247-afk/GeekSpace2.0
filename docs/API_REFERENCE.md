@@ -16,6 +16,8 @@
    - [Auth](#51-auth)
    - [Users](#52-users)
    - [Agent / Chat](#53-agent--chat)
+   - [Goals & Workspace](#531-goals--workspace-agentic-experience)
+   - [Notifications](#532-notifications)
    - [Billing](#54-billing)
    - [Reminders](#55-reminders)
    - [Automations](#56-automations)
@@ -757,6 +759,197 @@ Store a new memory entry.
 Delete a specific memory entry.
 
 - **Auth:** Bearer JWT
+
+---
+
+### 5.3.1 Goals & Workspace (Agentic Experience)
+
+#### `GET /api/agent/goals`
+
+List user's goals.
+
+- **Auth:** Bearer JWT
+- **Query:** `status` (active|paused|completed|failed|archived), `limit` (1-100, default 50)
+
+**Response (200):** `{ "goals": [Goal] }`
+
+---
+
+#### `POST /api/agent/goals`
+
+Create a new goal. Auto-triggers AI planning (Cal decomposes into steps).
+
+- **Auth:** Bearer JWT
+
+**Body:**
+```json
+{
+  "title": "Launch my SaaS by April",
+  "description": "Build and ship the MVP",
+  "category": "technical",
+  "target_date": "2026-04-30",
+  "priority": 8
+}
+```
+
+**Response (201):** `{ "goal": Goal }`
+
+Categories: `general`, `career`, `health`, `finance`, `learning`, `creative`, `technical`, `personal`
+
+---
+
+#### `GET /api/agent/goals/:id`
+
+Get goal with steps and event count.
+
+- **Auth:** Bearer JWT (ownership enforced)
+
+**Response (200):** `{ "goal": GoalWithSteps }`
+
+---
+
+#### `PATCH /api/agent/goals/:id`
+
+Update goal fields (title, description, status, priority, category, target_date, assigned_agent).
+
+- **Auth:** Bearer JWT (ownership enforced)
+
+---
+
+#### `DELETE /api/agent/goals/:id`
+
+Delete a goal and all associated steps/events.
+
+- **Auth:** Bearer JWT (ownership enforced)
+
+---
+
+#### `POST /api/agent/goals/:id/plan`
+
+AI-decompose a goal into actionable steps assigned to specialist agents. Cal analyzes the goal and creates 3-8 steps. Re-planning replaces existing pending steps atomically.
+
+- **Auth:** Bearer JWT
+
+**Response (200):** `{ "plan": { "goal": Goal, "steps": [GoalStep], "estimated_agents": [...], "estimated_effort": "..." } }`
+
+---
+
+#### `POST /api/agent/goals/:id/execute`
+
+Execute the next available step on a goal. The assigned specialist agent works on it autonomously. Step claim is atomic (prevents concurrent execution).
+
+- **Auth:** Bearer JWT
+
+**Response (200):** `{ "step": GoalStep }`
+
+---
+
+#### `GET /api/agent/goals/:id/steps`
+
+List steps for a goal ordered by step_order.
+
+---
+
+#### `POST /api/agent/goals/:id/steps`
+
+Manually add a step to a goal.
+
+**Body:** `{ "title": "...", "description": "...", "assigned_agent": "forge", "effort": "medium", "depends_on": ["step-uuid"] }`
+
+---
+
+#### `PATCH /api/agent/goals/:goalId/steps/:stepId`
+
+Update step status. Validates step belongs to the goal.
+
+**Body:** `{ "status": "completed", "result": "..." }`
+
+Status values: `pending`, `in_progress`, `completed`, `failed`, `skipped`, `blocked`
+
+---
+
+#### `GET /api/agent/goals/:id/events`
+
+Goal event timeline (agent check-ins, step completions, progress updates).
+
+---
+
+#### `GET /api/agent/goals/stats`
+
+Goal statistics: total, active, completed, paused, avgProgress, topAgent.
+
+---
+
+#### `GET /api/agent/goals/actionable`
+
+Goals with executable next steps (all dependencies met).
+
+---
+
+#### `GET /api/agent/workspace`
+
+List workspace artifacts. Query: `goal_id` (filter by goal), `limit`.
+
+---
+
+#### `POST /api/agent/workspace`
+
+Create an artifact. Validates goal ownership if `goal_id` provided.
+
+**Body:** `{ "title": "...", "content": "...", "artifact_type": "note|draft|research|code|plan|analysis", "goal_id": "optional" }`
+
+---
+
+#### `PATCH /api/agent/workspace/:id`
+
+Update artifact content. Increments version.
+
+---
+
+#### `DELETE /api/agent/workspace/:id`
+
+Delete an artifact.
+
+---
+
+### 5.3.2 Notifications
+
+#### `GET /api/agent/notifications`
+
+List agent-initiated notifications.
+
+- **Auth:** Bearer JWT
+- **Query:** `unread=true` (filter unread only), `limit` (1-200, default 50, clamped to positive values)
+
+**Response (200):** `{ "notifications": [AgentNotification], "unreadCount": number }`
+
+---
+
+#### `GET /api/agent/notifications/count`
+
+Get unread notification count.
+
+**Response (200):** `{ "count": number }`
+
+---
+
+#### `PATCH /api/agent/notifications/:id/read`
+
+Mark a notification as read.
+
+---
+
+#### `POST /api/agent/notifications/read-all`
+
+Mark all notifications as read.
+
+**Response (200):** `{ "markedRead": number }`
+
+---
+
+#### `DELETE /api/agent/notifications/:id`
+
+Delete a notification.
 
 ---
 
