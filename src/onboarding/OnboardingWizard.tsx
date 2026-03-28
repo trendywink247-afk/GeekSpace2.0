@@ -165,7 +165,7 @@ export function OnboardingWizard() {
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
+          <img src="/logo-agentin.webp" alt="Agentin" className="w-8 h-8 object-contain" />
           <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
             <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>
           </span>

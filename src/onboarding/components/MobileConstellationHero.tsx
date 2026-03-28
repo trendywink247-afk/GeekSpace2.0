@@ -116,7 +116,7 @@ export function MobileConstellationHero({ onLogoClick }: MobileConstellationHero
           tabIndex={onLogoClick ? 0 : -1}
         >
           <img
-            src="/logo-agentin.png"
+            src="/logo-agentin.webp"
             alt="Agentin"
             style={{ width: 40, height: 40, objectFit: 'contain' }}
           />

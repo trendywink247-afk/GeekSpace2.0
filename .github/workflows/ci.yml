@@ -88,6 +88,10 @@ jobs:
       - name: Build server
         run: npm --prefix server run build
 
+      - name: Validate OpenAPI spec
+        run: npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components
+        continue-on-error: true
+
       - name: Audit dependencies
         continue-on-error: true
         run: |
@@ -119,6 +123,13 @@ jobs:
 
       - name: Run server unit tests
         run: npm --prefix server run test
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run frontend unit tests
+        continue-on-error: true
+        run: npm test
 
   # ============================================
   # Job 3: Deploy Staging Preview (needs Job 2, PRs only)

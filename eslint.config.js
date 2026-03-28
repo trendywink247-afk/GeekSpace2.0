@@ -24,14 +24,16 @@ export default defineConfig([
         allowShortCircuit: true,
         allowTernary: true
       }],
-      // Temporarily disabled to fix CI parity - these are pre-existing codebase issues
+      // Re-enabled rules (Sprint 1-2, March 2026)
+      '@typescript-eslint/no-namespace': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
+
+      // Temporarily disabled — pre-existing codebase issues, re-enable sprint-by-sprint
       'react-hooks/purity': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'no-empty': 'off',
       'react-refresh/only-export-components': 'off',
     },
   },

@@ -552,7 +552,7 @@ export function DashboardApp() {
           className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
           aria-label="Go to dashboard home"
         >
-          <img src="/logo-agentin.png" alt="Agentin" className="w-8 h-8 object-contain" />
+          <img src="/logo-agentin.webp" alt="Agentin" className="w-8 h-8 object-contain" />
           {!sidebarCollapsed && (
             <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
               <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>

@@ -69,7 +69,7 @@ export function ConnectPage() {
         {/* Logo — PNG per branding standard (978512c) */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
-            <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
+            <img src="/logo-agentin.webp" alt="Agentin" className="w-7 h-7 object-contain" />
             <span className="text-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>Agentin Chat</span>
           </div>
         </div>

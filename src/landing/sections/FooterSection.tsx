@@ -94,7 +94,7 @@ export function FooterSection() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
+              <img src="/logo-agentin.webp" alt="Agentin" className="w-7 h-7 object-contain" />
               <span
                 className="text-lg font-bold"
                 style={{ fontFamily: 'Syne, sans-serif' }}

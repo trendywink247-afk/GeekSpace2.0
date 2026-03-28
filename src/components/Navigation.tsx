@@ -140,7 +140,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                 href="#"
                 className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
               >
-                <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
+                <img src="/logo-agentin.webp" alt="Agentin" className="w-7 h-7 object-contain" />
                 <span
                   className="hidden sm:inline text-lg font-bold"
                   style={{ fontFamily: 'Syne, sans-serif' }}
@@ -261,7 +261,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   className="flex items-center gap-2.5"
                   onClick={closeMobileMenu}
                 >
-                  <img src="/logo-agentin.png" alt="Agentin" className="w-7 h-7 object-contain" />
+                  <img src="/logo-agentin.webp" alt="Agentin" className="w-7 h-7 object-contain" />
                   <span
                     className="text-lg font-bold"
                     style={{ fontFamily: 'Syne, sans-serif' }}
