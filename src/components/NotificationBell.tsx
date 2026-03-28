@@ -25,6 +25,7 @@ export function NotificationBell() {
     } catch { /* ignore */ }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchCount();
     const interval = setInterval(fetchCount, POLL_INTERVAL);
