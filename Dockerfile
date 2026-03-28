@@ -44,6 +44,9 @@ WORKDIR /app
 COPY server/package.json server/package-lock.json ./server/
 RUN cd server && npm ci --omit=dev
 
+# Install ruflo (AgentFlo bridge) — optional, not in lockfile to avoid dep pollution
+RUN cd server && npm install --no-save ruflo 2>/dev/null || true
+
 # Copy compiled server + PM2 ecosystem config
 COPY --from=builder /app/server/dist ./server/dist
 COPY server/ecosystem.config.cjs ./server/ecosystem.config.cjs
