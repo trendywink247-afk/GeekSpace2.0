@@ -62,54 +62,54 @@ describe('95.1 DB schema: calendar_events and google_calendar_token', () => {
 
 describe('95.2 calendar-sync.ts service file', () => {
   it('exports getOAuth2Client', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export function getOAuth2Client/);
   });
 
   it('exports syncUserCalendar', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export async function syncUserCalendar/);
   });
 
   it('exports getTodayEvents', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export function getTodayEvents/);
   });
 
   it('exports getUpcomingEvents', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export function getUpcomingEvents/);
   });
 
   it('exports startCalendarSyncScheduler', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export function startCalendarSyncScheduler/);
   });
 
   it('exports _resetCalendarSyncTimer for testing', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/export function _resetCalendarSyncTimer/);
   });
 
   it('uses googleapis and google.calendar', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/from ['"]googleapis['"]/);
     expect(src).toMatch(/google.calendar/);
   });
 
   it('syncs +/-14 days of events', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/14 \* 24/);
   });
 
   it('creates reminders for new events (INSERT INTO reminders)', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/INSERT INTO reminders/);
     expect(src).toMatch(/category/);
   });
 
   it('scheduler runs every 30 minutes', () => {
-    const src = readSrc('services', 'calendar-sync.ts');
+    const src = readSrc('modules', 'integrations', 'services', 'calendar-sync.ts');
     expect(src).toMatch(/30 \* 60 \* 1000/);
   });
 });

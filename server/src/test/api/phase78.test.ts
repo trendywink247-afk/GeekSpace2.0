@@ -134,7 +134,7 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
     });
 
     it('scheduler logs to dead_letters on Telegram send failure', () => {
-      const src = readFile('server/src/services/reminder-scheduler.ts');
+      const src = readFile('server/src/modules/reminders/services.ts');
       expect(src).toContain('reminder_dead_letters');
       expect(src).toContain('send_failed_after_retries');
     });

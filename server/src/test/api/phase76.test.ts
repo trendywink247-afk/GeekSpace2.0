@@ -73,7 +73,7 @@ describe('Phase 76 — AI Gateway + Smart Routing', () => {
   describe('76.5 Redis LLM cache', () => {
     it('llm.ts imports cacheGet and cacheSet from cache.ts', () => {
       const content = readFileSync(resolve(SERVER_ROOT, 'src/modules/agent/services/llm.ts'), 'utf-8');
-      expect(content).toContain("import { cacheGet, cacheSet } from './cache.js'");
+      expect(content).toContain("import { cacheGet, cacheSet } from '../../../services/cache.js'");
     });
 
     it('Redis cache key uses correct prefix', () => {

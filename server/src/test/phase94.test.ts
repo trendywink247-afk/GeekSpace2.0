@@ -328,27 +328,27 @@ describe('94.5 static: memory routes and service files exist', () => {
   });
 
   it('services/memory.ts exports getUserMemories', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function getUserMemories/);
   });
 
   it('services/memory.ts exports upsertUserMemory', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function upsertUserMemory/);
   });
 
   it('services/memory.ts exports deleteUserMemory', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function deleteUserMemory/);
   });
 
   it('services/memory.ts exports formatMemoryContext', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function formatMemoryContext/);
   });
 
   it('services/memory.ts exports extractMemoriesFromConversation', () => {
-    const src = readSrc('services', 'memory.ts');
+    const src = readSrc('modules', 'memory', 'services', 'memory.ts');
     expect(src).toMatch(/export function extractMemoriesFromConversation/);
   });
 });

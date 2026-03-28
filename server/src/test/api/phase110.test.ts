@@ -129,7 +129,7 @@ describe('110.1 Timezone column and endpoint', () => {
   });
 
   it('action-executor.ts looks up users.timezone before calling parseReminderTime', () => {
-    const src = readSrc('services', 'action-executor.ts');
+    const src = readSrc('modules', 'agent', 'services', 'action-executor.ts');
     expect(src).toContain('SELECT timezone FROM users WHERE id = ?');
     // parseReminderTime is called with userTimezone; bare params.datetime routes through it too
     expect(src).toContain('parseReminderTime(');
@@ -137,7 +137,7 @@ describe('110.1 Timezone column and endpoint', () => {
   });
 
   it('pico-fleet.ts parseReminderTime accepts second userTimezone parameter', () => {
-    const src = readSrc('services', 'pico-fleet.ts');
+    const src = readSrc('modules', 'agent', 'services', 'pico-fleet.ts');
     expect(src).toContain('parseReminderTime(text: string, userTimezone');
   });
 });
@@ -146,7 +146,7 @@ describe('110.1 Timezone column and endpoint', () => {
 
 describe('110.2 parseReminderTime timezone correctness', () => {
   it('uses luxon DateTime internally', () => {
-    const src = readSrc('services', 'pico-fleet.ts');
+    const src = readSrc('modules', 'agent', 'services', 'pico-fleet.ts');
     expect(src).toContain("from 'luxon'");
     expect(src).toContain('DateTime');
   });
@@ -250,7 +250,7 @@ describe('110.2 parseReminderTime timezone correctness', () => {
 
   it('[hotfix] action-executor does NOT use params.datetime raw when it is a bare time', () => {
     // Ensures the bypass path is gone: bare times must go through parseReminderTime
-    const src = readSrc('services', 'action-executor.ts');
+    const src = readSrc('modules', 'agent', 'services', 'action-executor.ts');
     // The old single-line bypass: "params.datetime as string || parseReminderTime(text"
     expect(src).not.toContain("params.datetime as string || parseReminderTime(text");
     // The new path guards for full ISO before trusting params.datetime
@@ -259,7 +259,7 @@ describe('110.2 parseReminderTime timezone correctness', () => {
 
   it('[hotfix] pico-fleet does NOT use taskConfig.datetime raw when it is a bare time', () => {
     // The fleet worker create_reminder case must apply the same ISO-guard as action-executor.ts
-    const src = readSrc('services', 'pico-fleet.ts');
+    const src = readSrc('modules', 'agent', 'services', 'pico-fleet.ts');
     // Old bypass: "taskConfig.datetime as string || parseReminderTime"
     expect(src).not.toContain("taskConfig.datetime as string || parseReminderTime");
     // New guard present in fleet worker create_reminder path
@@ -271,30 +271,30 @@ describe('110.2 parseReminderTime timezone correctness', () => {
 
 describe('110.3 Reminder notification — no memory leak (Bug 2 regression guard)', () => {
   it('reminder-scheduler.ts does NOT import getRelevantMemories', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     expect(src).not.toContain('getRelevantMemories');
   });
 
   it('reminder-scheduler.ts does NOT call getRelevantMemories', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     // No call site either
     expect(src).not.toMatch(/getRelevantMemories\s*\(/);
   });
 
   it('reminder notification text does NOT contain "Context" memory header', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     expect(src).not.toContain('Context');
   });
 
   it('reminder notification uses static Reminder string pattern', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     // The message is built from a simple template with emoji + reminder text
     expect(src).toContain('Reminder');
     expect(src).toContain('reminder.text');
   });
 
   it('reminder-scheduler.ts only imports DB, telegram, email, logger — no memory service', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     expect(src).not.toContain("from './memory'");
     expect(src).not.toContain("from './memory.js'");
   });
@@ -304,43 +304,43 @@ describe('110.3 Reminder notification — no memory leak (Bug 2 regression guard
 
 describe('110.4 Image/video URL not sent as raw text', () => {
   it('message-router.ts buildActionChannelSuffix skips generate_image with imageUrl', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     // The guard that prevents raw URL text emission
     expect(src).toContain("ar.tool === 'generate_image' && ar.imageUrl");
     expect(src).toContain('continue');
   });
 
   it('message-router.ts buildActionChannelSuffix skips generate_video with videoUrl', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain("ar.tool === 'generate_video' && ar.videoUrl");
   });
 
   it('message-router.ts does NOT append imageUrl as raw text suffix', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     // No pattern like "\n🖼️ " + imageUrl or similar raw text appending
     expect(src).not.toMatch(/\\n.*imageUrl/);
     expect(src).not.toMatch(/Image.*:\s*\$\{.*imageUrl/);
   });
 
   it('message-router.ts does NOT append videoUrl as raw text suffix', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).not.toMatch(/\\n.*videoUrl/);
     expect(src).not.toMatch(/Video.*:\s*\$\{.*videoUrl/);
   });
 
   it('message-router.ts calls sendTelegramPhoto for image action results', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('sendTelegramPhoto');
   });
 
   it('message-router.ts resolves relative imageUrl using config.apiUrl', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('config.apiUrl');
     expect(src).toContain('startsWith(\'http\')');
   });
 
   it('message-router.ts imports sendTelegramPhoto from telegram service', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('sendTelegramPhoto');
     expect(src).toMatch(/import.*sendTelegramPhoto.*from/);
   });
@@ -350,7 +350,7 @@ describe('110.4 Image/video URL not sent as raw text', () => {
 
 describe('110.5 Two-user reminder isolation', () => {
   it('reminder-scheduler query selects all due reminders (no user filter — delivery is per user via channel_links)', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     // The scheduler fetches all due reminders, then looks up each user's channel individually
     // This is the correct design — delivery is gated on per-user channel_links lookup
     expect(src).toContain("SELECT external_id FROM channel_links WHERE user_id = ?");
@@ -415,7 +415,7 @@ describe('110.5 Two-user reminder isolation', () => {
   });
 
   it('deliverReminder looks up channel_links scoped by user_id', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     // Confirm the delivery step scopes its Telegram lookup to the individual reminder's user_id
     expect(src).toContain('WHERE user_id = ? AND channel = \'telegram\'');
   });
@@ -455,18 +455,18 @@ describe('110.6 Voice note handling', () => {
 
 describe('110.7 IST hardcode removed from message-router', () => {
   it('message-router.ts does NOT contain 5.5 * 60 * 60 * 1000 (hardcoded IST offset)', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).not.toContain('5.5 * 60 * 60 * 1000');
   });
 
   it('message-router.ts does NOT contain .replace(\'GMT\', \'IST\')', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).not.toContain(".replace('GMT', 'IST')");
     expect(src).not.toContain('.replace("GMT", "IST")');
   });
 
   it('message-router.ts imports DateTime from luxon (timezone-aware time handling)', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain("from 'luxon'");
     expect(src).toContain('DateTime');
   });
@@ -484,7 +484,7 @@ describe('110.7 IST hardcode removed from message-router', () => {
   });
 
   it('reminder-scheduler.ts uses luxon DateTime for local time display in notifications', () => {
-    const src = readSrc('services', 'reminder-scheduler.ts');
+    const src = readSrc('modules', 'reminders', 'services.ts');
     expect(src).toContain("from 'luxon'");
     expect(src).toContain('DateTime');
   });
@@ -497,14 +497,14 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   // ---- message-router routing ----
 
   it('message-router.ts detects non-Latin script via Unicode property escapes', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('Script=Devanagari'); // Hindi
     expect(src).toContain('Script=Telugu');
     expect(src).toContain('Script=Tamil');
   });
 
   it('message-router.ts has Hinglish word list with at least 20 words', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('HINGLISH_WORDS');
     expect(src).toContain("'aap'");
     expect(src).toContain("'kya'");
@@ -514,13 +514,13 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   });
 
   it('message-router.ts routes non-Latin to Groq with forceProvider', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('needsGroq');
     expect(src).toContain("forceProvider: 'groq'");
   });
 
   it('message-router.ts uses runReactLoop for multilingual path (actions execute correctly)', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toMatch(/import.*runReactLoop.*from.*react-loop/);
     // Groq multilingual path should use ReAct loop (not raw routeChat) so actions are executed
     expect(src).toMatch(/needsGroq[\s\S]*?runReactLoop/);
@@ -529,35 +529,35 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   // ---- TTS voice auto-selection ----
 
   it('voice.ts has detectVoice function with Hindi voice', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     expect(src).toContain('detectVoice');
     expect(src).toContain('hi-IN-SwaraNeural');
   });
 
   it('voice.ts has Telugu TTS voice', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     expect(src).toContain('te-IN-ShrutiNeural');
   });
 
   it('voice.ts has Tamil TTS voice', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     expect(src).toContain('ta-IN-PallaviNeural');
   });
 
   it('voice.ts detects Devanagari script for Hindi voice selection', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     expect(src).toContain('0900-');
     expect(src).toContain('hi-IN-SwaraNeural');
   });
 
   it('voice.ts strips action blocks from TTS input', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     expect(src).toContain('<<<ACTION');
     expect(src).toContain('ACTION>>>');
   });
 
   it('voice.ts strips slash characters to prevent "slash" being read aloud', () => {
-    const src = readSrc('services', 'voice.ts');
+    const src = readSrc('modules', 'media', 'services', 'voice.ts');
     // slash stripping regexes present (e.g. /\/(\w)/g and /\//g)
     expect(src).toContain("replace(/\\/(\\w)/g");
     expect(src).toContain("replace(/\\//g");
@@ -586,13 +586,13 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   // ---- system prompt language rule ----
 
   it('message-router.ts buildChannelSystemPrompt has LANGUAGE RULE at top', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     expect(src).toContain('LANGUAGE RULE');
     expect(src).toContain('YOUR IDENTITY');
   });
 
   it('message-router.ts system prompt names the agent explicitly at top', () => {
-    const src = readSrc('services', 'message-router.ts');
+    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
     // Agent name is declared at top of prompt, not just in USER SESSION
     expect(src).toContain('YOUR IDENTITY: Your name is');
   });

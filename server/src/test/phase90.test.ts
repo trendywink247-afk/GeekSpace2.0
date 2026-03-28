@@ -153,13 +153,13 @@ describe('90.4 Route GET /api/proactive/log', () => {
 // ---- 90.5: proactiveRouter registered in app.ts -------------------------
 
 describe('90.5 proactiveRouter registered in app.ts', () => {
-  it('app.ts imports proactiveRouter', () => {
-    const src = readFile('server/src/app.ts');
+  it('automationModule registers proactiveRouter', () => {
+    const src = readFile('server/src/modules/automation/index.ts');
     expect(src).toContain('proactiveRouter');
   });
 
-  it('app.ts mounts proactiveRouter at /api/proactive', () => {
-    const src = readFile('server/src/app.ts');
+  it('automationModule mounts proactiveRouter at /api/proactive', () => {
+    const src = readFile('server/src/modules/automation/index.ts');
     expect(src).toContain("app.use('/api/proactive', proactiveRouter)");
   });
 });

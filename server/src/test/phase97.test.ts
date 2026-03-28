@@ -92,14 +92,14 @@ describe("97.2 Service and route files exist", () => {
     expect(fileExists("server/src/routes/inbox.ts")).toBe(true);
   });
 
-  it("app.ts imports inboxRouter", () => {
-    const src = readSrc("app.ts");
+  it("dashboardModule registers inboxRouter", () => {
+    const src = readSrc("modules", "dashboard", "index.ts");
     expect(src).toContain("inboxRouter");
     expect(src).toContain("/api/inbox");
   });
 
   it("message-router.ts imports addInboxMessage", () => {
-    const src = readSrc("services", "message-router.ts");
+    const src = readSrc("modules", "agent", "services", "message-router.ts");
     expect(src).toContain("addInboxMessage");
   });
 });

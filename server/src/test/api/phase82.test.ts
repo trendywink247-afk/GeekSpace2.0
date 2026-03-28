@@ -71,8 +71,8 @@ describe('Phase 82 — Store Safety + Polish', () => {
       expect(src).toContain('reporter_id');
     });
 
-    it('reportRouter is wired in app.ts', () => {
-      const src = readFile('server/src/app.ts');
+    it('reportRouter is wired via dashboardModule', () => {
+      const src = readFile('server/src/modules/dashboard/index.ts');
       expect(src).toContain("reportRouter");
       expect(src).toContain("'/api/report'");
     });
@@ -139,7 +139,7 @@ describe('Phase 82 — Store Safety + Polish', () => {
     it('is injected into agent.ts /chat handler', () => {
       const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain('checkContent');
-      expect(src).toContain("from '../services/content-filter.js'");
+      expect(src).toContain("from '../../../services/content-filter.js'");
     });
   });
 
