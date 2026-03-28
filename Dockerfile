@@ -16,7 +16,7 @@ RUN npm ci
 
 # Install server deps
 COPY server/package.json server/package-lock.json ./server/
-RUN cd server && npm ci
+RUN cd server && (npm ci || npm install)
 
 # Copy source
 COPY . .
@@ -42,7 +42,7 @@ WORKDIR /app
 
 # Copy server production deps
 COPY server/package.json server/package-lock.json ./server/
-RUN cd server && npm ci --omit=dev
+RUN cd server && (npm ci --omit=dev || npm install --omit=dev)
 
 # Install ruflo (AgentFlo bridge) — optional, not in lockfile to avoid dep pollution
 RUN cd server && npm install --no-save ruflo 2>/dev/null || true
