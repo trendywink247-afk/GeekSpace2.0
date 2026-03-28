@@ -26,6 +26,7 @@ import { startCalendarSyncScheduler } from './services/calendar-sync.js';
 import { startOllamaKeepalive } from './services/llm.js';
 import { startGmailSyncScheduler } from './services/gmail-sync.js';
 import { initProactiveGoalEngine } from './modules/agent/services/proactive-goals.js';
+import { initAgentFloBridge, shutdownAgentFloBridge } from './modules/agent/services/agentflo-bridge.js';
 
 // Create the Express app using the factory
 const app = createApp();
@@ -44,6 +45,7 @@ function shutdown(signal: string, httpServer: import('http').Server) {
   httpServer.close(() => {
     logger.info('HTTP server closed — no more in-flight requests');
     try { db.close(); } catch { /* ignore if already closed */ }
+    shutdownAgentFloBridge().catch(() => { /* ignore */ });
     shutdownTracing()
       .catch(() => { /* ignore tracing shutdown errors */ })
       .finally(() => {
@@ -125,6 +127,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
     safeStart('proactive-engine', initProactiveEngine);
     safeStart('proactive-goals', initProactiveGoalEngine);
+    safeStart('agentflo-bridge', initAgentFloBridge);
     safeStart('gmail-sync', startGmailSyncScheduler);
     safeStart('calendar-sync', startCalendarSyncScheduler);
 

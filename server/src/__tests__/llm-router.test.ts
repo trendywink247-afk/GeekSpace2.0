@@ -7,14 +7,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock logger before importing services
-vi.mock('../../src/logger', () => ({
-  logger: {
+vi.mock('../../src/logger', () => {
+  const log = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
     debug: vi.fn(),
-  },
-}));
+    child: vi.fn(),
+  };
+  log.child.mockReturnValue(log);
+  return { logger: log };
+});
 
 // Mock the config
 vi.mock('../../src/config', () => ({
