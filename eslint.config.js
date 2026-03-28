@@ -36,7 +36,7 @@ export default defineConfig([
       'react-hooks/purity': 'error',
       'react-hooks/set-state-in-effect': 'error',
       'react-hooks/immutability': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', {
+      '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'

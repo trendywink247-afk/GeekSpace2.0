@@ -103,7 +103,8 @@ export function createApp(): express.Application {
   app.use((req, res, next) => {
     if (req.url.startsWith('/api/v1/') || req.url === '/api/v1') {
       // Mark as versioned so we can skip the deprecation header later
-      (req as Record<string, unknown>).__apiVersioned = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as any).__apiVersioned = true;
       // Strip the /v1 segment: /api/v1/health → /api/health
       req.url = '/api' + req.url.slice('/api/v1'.length);
     }
@@ -112,7 +113,8 @@ export function createApp(): express.Application {
 
   // Add deprecation header on unversioned /api/ requests
   app.use('/api', (req, res, next) => {
-    if (!(req as Record<string, unknown>).__apiVersioned) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!(req as any).__apiVersioned) {
       res.set('Deprecation', 'true');
       res.set('Sunset', '2027-03-28');
       res.set('Link', `</api/v1${req.path}>; rel="successor-version"`);

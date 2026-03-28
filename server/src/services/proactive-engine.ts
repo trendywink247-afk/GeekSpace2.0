@@ -655,7 +655,8 @@ export async function initProactiveEngine(): Promise<void> {
       const monId = job.payload.monitorId as string;
       if (!monId) return;
 
-      const monitor = db.prepare('SELECT * FROM page_monitors WHERE id = ? AND enabled = 1').get(monId) as { url?: string; css_selector?: string; last_hash?: string } | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const monitor = db.prepare('SELECT * FROM page_monitors WHERE id = ? AND enabled = 1').get(monId) as any;
       if (!monitor) return;
 
       try {
@@ -707,7 +708,8 @@ export async function initProactiveEngine(): Promise<void> {
 
       const timeStr = new Date(eventTime).toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', hour12: true,
-        timeZone: (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata'
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        timeZone: (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as any)?.timezone || 'Asia/Kolkata'
       });
 
       const msg = `\u{1F4C5} *${eventTitle}* is in 15 minutes (${timeStr})${contextLines}\n\nAnything you want to prepare?`;

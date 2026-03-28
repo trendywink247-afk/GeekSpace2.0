@@ -176,5 +176,5 @@ export function getUserEntities(userId: string, limit = 20): MemoryEntity[] {
   return db.prepare(`
     SELECT * FROM memory_entities WHERE user_id = ?
     ORDER BY importance_score DESC, mention_count DESC LIMIT ?
-  `).all(userId, limit);
+  `).all(userId, limit) as MemoryEntity[];
 }

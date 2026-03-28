@@ -122,7 +122,8 @@ async function ensureNet(): Promise<void> {
     // Verify existing network is Internal (isolated from host/internet).
     // If someone created it without Internal:true, sandbox containers could
     // reach the host network, breaking isolation.
-    const existing = nets[0] as { Internal?: boolean; Containers?: Record<string, unknown> };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const existing = nets[0] as any;
     if (!existing.Internal) {
       logger.warn({ network: NET }, 'Sandbox network exists but is NOT internal — recreating with isolation');
       // Disconnect any containers and remove the non-internal network

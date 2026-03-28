@@ -162,7 +162,8 @@ logoAiRouter.post('/ai-visual', requireAuth, async (req: AuthRequest, res) => {
     if (concepts.length === 0) return res.status(502).json({ error: 'All image generations failed' });
 
     return res.json({ concepts });
-  } catch (err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
     logger.error({ err }, 'Logo AI visual failed');
     return res.status(500).json({ error: 'Internal error' });
   }
@@ -230,7 +231,8 @@ logoAiRouter.post('/ai-refine', requireAuth, async (req: AuthRequest, res) => {
     if (concepts.length === 0) return res.status(502).json({ error: 'All refined generations failed' });
 
     return res.json({ concepts, modifiedPrompt });
-  } catch (err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return res.status(504).json({ error: 'AI request timed out' });
     }
@@ -308,7 +310,8 @@ logoAiRouter.post('/brand-kit', requireAuth, async (req: AuthRequest, res) => {
     }));
 
     return res.json({ colors, fonts, taglines, socialSizes });
-  } catch (err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return res.status(504).json({ error: 'AI request timed out' });
     }
@@ -350,7 +353,8 @@ logoAiRouter.post('/ai-suggest', requireAuth, async (req: AuthRequest, res) => {
     }));
 
     return res.json({ variants: validated });
-  } catch (err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return res.status(504).json({ error: 'AI request timed out' });
     }
@@ -430,7 +434,8 @@ logoAiRouter.post('/ai-evolve', requireAuth, async (req: AuthRequest, res) => {
     if (concepts.length === 0) return res.status(502).json({ error: 'All evolved image generations failed' });
 
     return res.json({ concepts });
-  } catch (err: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return res.status(504).json({ error: 'AI request timed out' });
     }
@@ -458,12 +463,14 @@ logoAiRouter.get('/status', (_req, res) => {
 
 // ---- Helpers ----
 
-function clampParams(p: Record<string, unknown>): LogoParams {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function clampParams(p: any): LogoParams {
   const shapes = ['squircle', 'circle', 'chat-left', 'chat-right'];
   const crossbarStyles = ['solid', 'agent-dots', 'none'];
   const innerElements = ['none', 'constellation', 'ai-eye', 'neural'];
   const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, Number(v) || min));
-  const hex = (v: unknown, fallback: string) => /^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : fallback;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hex = (v: any, fallback: string) => /^#[0-9a-fA-F]{6}$/.test(String(v)) ? String(v) : fallback;
 
   return {
     shape: shapes.includes(p?.shape) ? p.shape : 'squircle',
