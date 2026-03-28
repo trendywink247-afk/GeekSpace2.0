@@ -33,6 +33,7 @@ import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
+import { GoalsSummaryCard } from '@/components/dashboard/GoalsSummaryCard';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
@@ -697,6 +698,9 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
         {/* ─── Live Agent Feed ─── */}
         <LiveAgentFeed onNavigate={onNavigate} />
+
+        {/* ─── Goals Summary ─── */}
+        <GoalsSummaryCard onNavigate={onNavigate} />
 
         {/* ─── Sprint 4: Quick Actions Grid ─── */}
         <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
