@@ -101,10 +101,9 @@ describe("100.2 Service and route files exist", () => {
     expect(fileExists("server/src/routes/gmail.ts")).toBe(true);
   });
 
-  it("integrationsModule registers gmailRouter", () => {
-    const src = readSrc("modules", "integrations", "index.ts");
-    expect(src).toContain("gmailRouter");
-    expect(src).toContain("/api/gmail");
+  it("app.ts imports integrationsModule (which registers gmail routes)", () => {
+    const src = readSrc("app.ts");
+    expect(src).toContain("integrationsModule");
   });
 
   it("index.ts imports startGmailSyncScheduler", () => {

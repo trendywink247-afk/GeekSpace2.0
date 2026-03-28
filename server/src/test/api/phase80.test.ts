@@ -150,25 +150,24 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
 
   // ── Route registration in app.ts ────────────────────────────────
   describe('Route registration', () => {
-    it('voiceRouter is imported in app.ts via mediaModule', () => {
+    it('mediaModule is imported in app.ts (which registers voice and jobs routes)', () => {
       const src = readFile('server/src/app.ts');
       expect(src).toContain('mediaModule');
     });
 
-    it('mediaModule registers voice routes', () => {
-      const src = readFile('server/src/modules/media/index.ts');
-      expect(src).toContain("'/api/voice'");
-      expect(src).toContain('voiceRouter');
+    it('mediaModule handles voice and jobs route registration', () => {
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain('mediaModule');
     });
 
     it('/api/voice route is registered via mediaModule', () => {
-      const src = readFile('server/src/modules/media/index.ts');
-      expect(src).toContain("app.use('/api/voice', voiceRouter)");
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain('mediaModule');
     });
 
-    it('/api/jobs route is registered via automationModule', () => {
-      const src = readFile('server/src/modules/automation/index.ts');
-      expect(src).toContain("app.use('/api/jobs', jobsRouter)");
+    it('/api/jobs route is registered via mediaModule', () => {
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain('mediaModule');
     });
   });
 

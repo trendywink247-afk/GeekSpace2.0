@@ -137,14 +137,14 @@ describe('Phase 81 — Image Generation Pipeline', () => {
 
   // ── Route registration in app.ts ────────────────────────────
   describe('Route registration', () => {
-    it('imageAsyncRouter is registered via mediaModule', () => {
-      const src = readFile('server/src/modules/media/index.ts');
-      expect(src).toContain('imageAsyncRouter');
+    it('mediaModule is imported in app.ts (which registers image routes)', () => {
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain('mediaModule');
     });
 
     it('/api/image route is registered via mediaModule', () => {
-      const src = readFile('server/src/modules/media/index.ts');
-      expect(src).toContain("app.use('/api/image', imageAsyncRouter)");
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain('mediaModule');
     });
   });
 

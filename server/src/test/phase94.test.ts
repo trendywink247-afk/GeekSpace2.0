@@ -276,32 +276,33 @@ describe('94.4 extractMemoriesFromConversation', () => {
 // ─────────────────────────────────────────────
 
 describe('94.5 static: memory routes and service files exist', () => {
-  it('memory module routes has Router', () => {
+  it('routes/memory.ts exports memoryRouter', () => {
     const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
+    expect(src).toMatch(/memoryRouter/);
     expect(src).toMatch(/Router/);
   });
 
-  it('memory module routes has GET route', () => {
+  it('routes/memory.ts has GET / route', () => {
     const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/get\(/);
   });
 
-  it('memory module routes has POST route', () => {
+  it('routes/memory.ts has POST / route', () => {
     const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/post\(/);
   });
 
-  it('memory module routes has DELETE route', () => {
+  it('routes/memory.ts has DELETE route', () => {
     const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/delete\(/);
   });
 
-  it('memory module routes has context route', () => {
+  it('routes/memory.ts has context route', () => {
     const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/context/);
   });
 
-  it('app.ts registers memory module', () => {
+  it('app.ts registers memoryModule (which registers memory routes)', () => {
     const src = readSrc('app.ts');
     expect(src).toMatch(/memoryModule/);
   });

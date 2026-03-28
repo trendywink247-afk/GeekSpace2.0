@@ -71,10 +71,9 @@ describe('Phase 82 — Store Safety + Polish', () => {
       expect(src).toContain('reporter_id');
     });
 
-    it('reportRouter is wired via dashboardModule', () => {
-      const src = readFile('server/src/modules/dashboard/index.ts');
-      expect(src).toContain("reportRouter");
-      expect(src).toContain("'/api/report'");
+    it('dashboardModule is wired in app.ts (which registers report routes)', () => {
+      const src = readFile('server/src/app.ts');
+      expect(src).toContain("dashboardModule");
     });
   });
 

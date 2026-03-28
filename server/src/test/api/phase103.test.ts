@@ -135,7 +135,7 @@ describe('Phase 103: Plan cap fixes', () => {
       expect(content).toContain('quality_score');
     });
     it('memory.ts exports logTrainingExample', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'services/memory.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/memory/services/memory.ts'), 'utf-8');
       expect(content).toContain('logTrainingExample');
     });
     it('agent chat.ts calls logTrainingExample', () => {

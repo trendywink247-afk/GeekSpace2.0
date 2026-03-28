@@ -34,22 +34,22 @@ describe('89.1 stripe.ts service', () => {
 
   it('exports createCheckoutSession', () => {
     const content = readServer('modules/billing/services/stripe.ts');
-    expect(content).toContain('createCheckoutSession');
+    expect(content).toContain('export async function createCheckoutSession');
   });
 
   it('exports handleWebhook', () => {
     const content = readServer('modules/billing/services/stripe.ts');
-    expect(content).toContain('handleWebhook');
+    expect(content).toContain('export async function handleWebhook');
   });
 
   it('exports getStatus', () => {
     const content = readServer('modules/billing/services/stripe.ts');
-    expect(content).toContain('getStatus');
+    expect(content).toContain('export function getStatus');
   });
 
   it('exports isPaidPlan', () => {
     const content = readServer('modules/billing/services/stripe.ts');
-    expect(content).toContain('isPaidPlan');
+    expect(content).toContain('export function isPaidPlan');
   });
 });
 

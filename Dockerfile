@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ============================================================
 # GeekSpace 2.0 — Multi-stage production build
 # Stage 1: Build frontend (Vite) + compile server (TypeScript)

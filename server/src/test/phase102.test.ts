@@ -61,7 +61,7 @@ describe("102.1 File structure", () => {
     expect(fileExists("src/dashboard/pages/AnalyticsPage.tsx")).toBe(true);
   });
 
-  it("app.ts registers dashboardModule", () => {
+  it("app.ts registers dashboardModule (which registers analytics routes)", () => {
     const src = readSrc("app.ts");
     expect(src).toContain("dashboardModule");
   });
