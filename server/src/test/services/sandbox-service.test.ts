@@ -53,9 +53,11 @@ vi.mock('../../db/index.js', () => ({
   },
 }));
 
-vi.mock('../../logger.js', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-}));
+vi.mock('../../logger.js', () => {
+  const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), child: vi.fn() };
+  log.child.mockReturnValue(log);
+  return { logger: log };
+});
 
 vi.mock('dockerode', () => ({
   default: vi.fn().mockImplementation(() => ({
