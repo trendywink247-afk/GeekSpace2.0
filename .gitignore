@@ -55,6 +55,9 @@ playwright/.auth
 .claude/
 .claude-flow/
 .swarm/
+.agentflo/
+agentdb.rvf
+agentdb.rvf.lock
 .mcp.json
 
 # SQLite databases (local dev and test)
