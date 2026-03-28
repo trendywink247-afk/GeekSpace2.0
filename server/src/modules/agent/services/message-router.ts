@@ -33,6 +33,8 @@ import { logger } from '../../../logger.js';
 import { config } from '../../../config.js';
 import { deductSubscriptionCredits, type ChatMessage } from './llm.js';
 import { runReactLoop } from './react-loop.js';
+import { runDeepReasoning } from './deep-reasoning.js';
+import { classifyMessageComplexity } from './unified-agent-router.js';
 import { bridgeChat, type BridgeRequest } from '../../../services/pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext, upsertMemory } from '../../../services/memory.js';
 import { logActivity } from '../../../services/activity-log.js';
@@ -259,8 +261,22 @@ Available tools:
 - create_calendar_event: Create a calendar event. Params: {"title": "<event title>", "start_time": "<ISO datetime or natural language>", "duration_minutes": 60, "attendees": ["email@example.com"], "location": "<location>"}. Use when user says "schedule a meeting", "create an event", "block time for", "add to calendar".
 - find_free_slot: Find available time slots in the calendar. Params: {"duration_minutes": 60, "days_ahead": 7, "preference": "morning|afternoon|evening"}. Use when user says "find free time", "when am I free", "find a slot", "available time", "free slots".
 - list_inbox: List recent email inbox messages. Params: {"limit": 5}. Use when user says "check my emails", "any new emails", "show inbox", "what emails do I have", "unread messages".
+- create_goal: Create a goal for autonomous pursuit. Params: {"title": "<goal>", "description": "<details>", "category": "general|career|health|finance|learning|creative|technical|personal", "target_date": "<YYYY-MM-DD>"}. Use when user says "I want to...", "my goal is...", "help me achieve...", "set a goal for...", "I need to accomplish...".
+- list_goals: List user's goals. Params: {"status": "active|completed|paused"}. Use when user says "show my goals", "what are my goals", "goal progress", "what am I working on".
+- plan_goal: AI-decompose a goal into actionable steps. Params: {"goal_id": "<id>"}. Use after creating a goal to break it into steps.
+- execute_goal_step: Execute the next available step on a goal. Params: {"goal_id": "<id>"}. Use when user says "work on my goal", "do the next step", "make progress on...".
+- goal_status: Get detailed status of a goal with steps. Params: {"goal_id": "<id>"}. Use when user asks "how's my goal going", "goal progress", "status of...".
+- save_artifact: Save a workspace artifact (research, draft, analysis). Params: {"title": "<title>", "content": "<content>", "type": "note|draft|research|code|plan|analysis", "goal_id": "<optional>"}. Use when an agent produces substantial output worth saving.
 
 Only call tools when the user explicitly requests an action. Do not chain more than 3 tool calls in one response.`;
+
+// ---- Deep Reasoning Detection ----
+// Returns true for complex, multi-step queries that benefit from
+// the deep reasoning engine (10 iterations + self-reflection + delegation)
+function shouldUseDeepReasoning(message: string): boolean {
+  const complexity = classifyMessageComplexity(message);
+  return complexity === 'multi_step' || complexity === 'multi_agent';
+}
 
 // ---- Tool Trigger Detection ----
 // Detects phrases that should bypass the bridge and use the ReAct loop directly,
@@ -1814,7 +1830,9 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const reason = hasNonLatinScript ? 'non-latin-script' : 'hinglish';
     logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq via ReAct loop');
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const reactResult = await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
+    const reactResult = shouldUseDeepReasoning(msg.text)
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: 'groq', enableDelegation: true })
+      : await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
     replyText = reactResult.text;
     provider = reactResult.provider;
     model = reactResult.model;
@@ -1852,15 +1870,17 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       }, 'Channel message routed via bridge');
     } catch (err) {
       logger.warn({ err: (err as Error).message }, 'Bridge failed for channel message, falling back to ReAct loop');
-      // Fallback to ReAct loop
+      // Fallback to ReAct loop (or deep reasoning for complex queries)
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-      const reactResult = await runReactLoop(messages, {
-        systemPrompt,
-        agentName: (agentConfig?.name as string) || 'Geek',
-        agentId: effectivePersonalityId,
-        userCredits,
-        userId,
-      });
+      const reactResult = shouldUseDeepReasoning(msg.text)
+        ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, enableDelegation: true })
+        : await runReactLoop(messages, {
+            systemPrompt,
+            agentName: (agentConfig?.name as string) || 'Geek',
+            agentId: effectivePersonalityId,
+            userCredits,
+            userId,
+          });
       replyText = reactResult.text;
       provider = reactResult.provider;
       model = reactResult.model;
@@ -1870,18 +1890,20 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       reactDeferredActions = reactResult.deferredActions;
     }
   } else {
-    // Bridge not enabled or tool trigger detected — use ReAct loop
+    // Bridge not enabled or tool trigger detected — use ReAct loop (or deep reasoning for complex queries)
     // Force Groq for tool-triggered messages (free models don't emit <<<ACTION>>> reliably)
     const forceGroqForTools = hasToolTrigger(msg.text) ? 'groq' as const : undefined;
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
-    const reactResult = await runReactLoop(messages, {
-      systemPrompt,
-      agentName: (agentConfig?.name as string) || 'Geek',
-      agentId: effectivePersonalityId,
-      userCredits,
-      userId,
-      forceProvider: forceGroqForTools,
-    });
+    const reactResult = shouldUseDeepReasoning(msg.text)
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: forceGroqForTools, enableDelegation: true })
+      : await runReactLoop(messages, {
+          systemPrompt,
+          agentName: (agentConfig?.name as string) || 'Geek',
+          agentId: effectivePersonalityId,
+          userCredits,
+          userId,
+          forceProvider: forceGroqForTools,
+        });
     replyText = reactResult.text;
     provider = reactResult.provider;
     model = reactResult.model;

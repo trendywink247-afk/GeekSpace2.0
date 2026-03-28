@@ -1904,6 +1904,89 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: true, message: `📬 Inbox (${messages.length} messages):\n${lines.join('\n')}` };
       }
 
+      // ── Goal System Tools ────────────────────────────────────
+      case 'create_goal': {
+        const { createGoal, planGoal } = await import('./goal-service.js');
+        const title = params.title || params.goal || params.name;
+        if (!title) return { tool, success: false, message: 'Goal title is required' };
+        const goal = createGoal(userId, {
+          title: String(title),
+          description: params.description ? String(params.description) : undefined,
+          category: params.category as any,
+          target_date: params.target_date ? String(params.target_date) : undefined,
+        });
+
+        // Auto-plan: immediately decompose goal into steps so the user gets a full plan
+        let planMessage = '';
+        let autoPlanned = false;
+        try {
+          const plan = await planGoal(goal.id, userId);
+          if (plan && plan.steps.length > 0) {
+            autoPlanned = true;
+            const stepLines = plan.steps.map((s, i) => `  ${i + 1}. ${s.title} (${s.assigned_agent}, ${s.effort})`);
+            planMessage = `\n\n🗺️ Auto-planned ${plan.steps.length} steps:\n${stepLines.join('\n')}\n\nEstimated: ${plan.estimated_effort}`;
+          } else {
+            planMessage = '\n\n⚠️ Auto-planning did not produce steps. Use plan_goal with this goal id to finish setup.';
+          }
+        } catch {
+          planMessage = '\n\n⚠️ Auto-planning failed. Use plan_goal with this goal id to retry.';
+        }
+
+        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (id: ${goal.id}, ${goal.category}, assigned to ${goal.assigned_agent})${planMessage}`, data: { goalId: goal.id, status: goal.status, assignedAgent: goal.assigned_agent, autoPlanned } };
+      }
+
+      case 'list_goals': {
+        const { getUserGoals } = await import('./goal-service.js');
+        const goals = getUserGoals(userId, params.status as any, 10);
+        if (goals.length === 0) return { tool, success: true, message: 'No goals found. Set one with "create_goal".' };
+        const lines = goals.map((g, i) => `${i + 1}. ${g.title} (id: ${g.id}) [${g.status}] ${g.progress}% — ${g.assigned_agent}`);
+        return { tool, success: true, message: `📋 Your goals:\n${lines.join('\n')}`, data: { goals: goals.map(g => ({ id: g.id, title: g.title, status: g.status, progress: g.progress })) } };
+      }
+
+      case 'plan_goal': {
+        const { planGoal } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const plan = await planGoal(String(goalId), userId);
+        if (!plan) return { tool, success: false, message: 'Goal not found or planning failed' };
+        const stepLines = plan.steps.map((s, i) => `${i + 1}. ${s.title} (${s.assigned_agent}, ${s.effort})`);
+        return { tool, success: true, message: `🗺️ Plan for "${plan.goal.title}":\n${stepLines.join('\n')}\n\nEstimated: ${plan.estimated_effort}` };
+      }
+
+      case 'execute_goal_step': {
+        const { executeNextStep } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const step = await executeNextStep(String(goalId), userId);
+        if (!step) return { tool, success: false, message: 'No actionable step found for this goal' };
+        return { tool, success: true, message: `⚡ Executed step: "${step.title}" — Status: ${step.status}${step.result ? '\n\nResult: ' + step.result.slice(0, 500) : ''}` };
+      }
+
+      case 'goal_status': {
+        const { getGoalWithSteps } = await import('./goal-service.js');
+        const goalId = params.goal_id || params.id;
+        if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
+        const goal = getGoalWithSteps(String(goalId), userId);
+        if (!goal) return { tool, success: false, message: 'Goal not found' };
+        const stepLines = goal.steps.map(s => `  ${s.status === 'completed' ? '✅' : s.status === 'in_progress' ? '🔄' : '⬜'} ${s.title} (${s.assigned_agent})`);
+        return { tool, success: true, message: `📊 "${goal.title}" — ${goal.progress}% complete\nStatus: ${goal.status}\nSteps:\n${stepLines.join('\n')}` };
+      }
+
+      case 'save_artifact': {
+        const { createWorkspaceArtifact, getGoal: getGoalForArtifact } = await import('./goal-service.js');
+        const title = params.title || 'Untitled';
+        const content = params.content || '';
+        if (!content) return { tool, success: false, message: 'Artifact content is required' };
+        // Verify goal ownership if goal_id provided
+        const artifactGoalId = params.goal_id ? String(params.goal_id) : null;
+        if (artifactGoalId) {
+          const ownerGoal = getGoalForArtifact(artifactGoalId);
+          if (!ownerGoal || ownerGoal.user_id !== userId) return { tool, success: false, message: 'Goal not found' };
+        }
+        const artifact = createWorkspaceArtifact(userId, artifactGoalId, String(title), String(content), (params.type as any) || 'note', params.agent ? String(params.agent) : undefined);
+        return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
+      }
+
       // ── Unknown tool — try GeekOS plugin bridge as fallback
       default: {
         try {

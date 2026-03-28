@@ -18,6 +18,26 @@ export { getUserAgents, createAgent, startPicoWorker, initPicoFleetTables, ensur
 export { runReactLoop } from './services/react-loop.js';
 export { executeAction } from './services/action-executor.js';
 
+// Goal system exports
+export {
+  createGoal, getGoal, getGoalWithSteps, getUserGoals, updateGoal, deleteGoal,
+  addStep, getGoalSteps, updateStepStatus, planGoal, executeNextStep,
+  getGoalStats, getActionableGoals, proactiveGoalCheckIn,
+  createWorkspaceArtifact, getWorkspaceArtifacts,
+} from './services/goal-service.js';
+
+// Delegation pipeline
+export { executeDelegation, chainDelegation, detectDelegationNeed, processAgentDelegations } from './services/delegation-pipeline.js';
+
+// Deep reasoning
+export { runDeepReasoning } from './services/deep-reasoning.js';
+
+// Proactive goals
+export { initProactiveGoalEngine, stopProactiveGoalEngine } from './services/proactive-goals.js';
+
+// Notifications
+export { sendAgentNotification, getNotifications, getUnreadCount } from './services/agent-notifications.js';
+
 // Types
 export type {
   AgentConfig,
@@ -30,6 +50,12 @@ export type {
   AgentComm,
   WorkflowStatus,
 } from './types.js';
+
+export type {
+  Goal, GoalStep, GoalEvent, GoalWithSteps, GoalPlan,
+  GoalStatus, StepStatus, GoalCategory,
+  WorkspaceArtifact, DelegationLogEntry,
+} from './types/goals.js';
 
 // Import for module registration
 import agentRouter from './routes/index.js';

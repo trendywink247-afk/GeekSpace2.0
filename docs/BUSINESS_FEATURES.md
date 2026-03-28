@@ -673,6 +673,14 @@ For Indian users paying in INR:
 | Analytics Dashboard | Yes | Yes | Yes | Yes |
 | Gate API (external access) | -- | -- | -- | Yes |
 | Telegram Bot | Yes | Yes | Yes | Yes |
+| Goal System | Yes | Yes | Yes | Yes |
+| Goal AI Planning | Yes | Yes | Yes | Yes |
+| Goal Auto-Execution | -- | -- | Yes | Yes |
+| Inter-Agent Delegation | 10/day | 50/day | 50/day | 200/day |
+| Deep Reasoning | -- | Yes | Yes | Yes |
+| Workspace Artifacts | Yes | Yes | Yes | Yes |
+| Agent Notifications | Yes | Yes | Yes | Yes |
+| Autonomy Levels | suggest | suggest | semi_auto | full_auto |
 | Indian Festival Calendar | Yes | Yes | Yes | Yes |
 | Razorpay (INR payments) | -- | Yes | Yes | Yes |
 | Stripe (USD payments) | -- | Yes | Yes | Yes |
@@ -685,6 +693,91 @@ For Indian users paying in INR:
 - **Automations** require a paid plan for creation; existing free-tier automations continue to execute
 - **Gate API** provides external developer access with Bearer token authentication (`agtn_` prefix) and 60 req/min rate limiting
 - **Credit-based soft gating**: Even when a feature is technically available, credit exhaustion degrades the experience to free-tier providers only
+
+---
+
+## 12. Agentic Experience (v3.3)
+
+The agentic experience transforms Agentin from a reactive chat assistant into an autonomous AI system that pursues goals, delegates work between specialists, and proactively reports progress.
+
+### 12.1 Goal System
+
+Users set goals ("Launch my SaaS by April"), and Cal decomposes them into 3-8 actionable steps assigned to specialist agents:
+- **Forge** handles technical/coding steps
+- **Aria** handles creative/design steps
+- **Pulse** handles data/analytics steps
+- **Nova** handles research steps
+- **Echo** handles coaching/habit steps
+
+Goals have: title, description, category, priority, target date, progress %, status (active/paused/completed/failed/archived).
+
+Steps have: title, description, assigned agent, effort (low/medium/high), dependencies, status.
+
+### 12.2 Inter-Agent Delegation
+
+Agents autonomously detect when a task requires a different specialist and delegate:
+- Delegation detection based on keyword expertise mapping
+- Chain delegation for multi-hop workflows (Nova researches → Forge builds → Aria writes docs)
+- Full audit trail in `delegation_log` table
+- SSE events show delegation in real-time on the Office page
+
+### 12.3 Deep Reasoning Engine
+
+Complex queries ("research X and then build Y based on that") route through the deep reasoning engine:
+- Plan-then-execute: creates a plan before acting
+- Up to 10 iterations (vs 5 in standard ReAct)
+- Self-reflection every 3 iterations: agent evaluates its own approach
+- Mid-loop delegation detection: hands off subtasks to specialists
+- Triggered automatically for `multi_step` and `multi_agent` complexity queries
+
+### 12.4 Autonomy Levels
+
+Users control how proactive their agents are via `PATCH /api/agent/config`:
+
+| Level | Behavior |
+|-------|----------|
+| `manual` | Agents only respond when asked. No proactive actions. |
+| `suggest` | Agents suggest actions but don't execute autonomously. (Default) |
+| `semi_auto` | Agents auto-execute low/medium effort goal steps. |
+| `full_auto` | Agents pursue goals fully autonomously. |
+
+### 12.5 Proactive Goal Engine
+
+Background scheduler (30-min cycles) that:
+- Auto-executes pending goal steps (semi_auto/full_auto only)
+- Nudges users when goals stall for 3+ days
+- Sends daily goal progress summaries
+- Respects quiet hours (timezone-aware)
+
+### 12.6 Agent-Initiated Notifications
+
+Agents proactively push notifications via SSE + Telegram + in-app bell:
+- Goal milestone alerts at 25%, 50%, 75%, 100%
+- Step completion notifications
+- Delegation result notifications
+- Celebration notifications on goal completion
+- Honors `notif_agents` preference and quiet hours
+
+### 12.7 Workspace Artifacts
+
+Shared scratchpad for inter-agent collaboration:
+- Types: note, draft, research, code, plan, analysis
+- Created automatically when agents produce substantial output
+- Linked to goals for context
+- Versioned with update tracking
+
+### 12.8 ReAct Tool Integration
+
+6 new tools available in chat:
+
+| Tool | Purpose |
+|------|---------|
+| `create_goal` | Create a goal (auto-plans immediately) |
+| `list_goals` | List goals with IDs for follow-up |
+| `plan_goal` | Re-plan a goal into steps |
+| `execute_goal_step` | Execute the next available step |
+| `goal_status` | Detailed goal + steps view |
+| `save_artifact` | Save workspace artifact |
 
 ---
 

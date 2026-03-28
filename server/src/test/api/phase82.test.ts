@@ -136,9 +136,9 @@ describe('Phase 82 — Store Safety + Polish', () => {
     });
 
     it('is injected into agent.ts /chat handler', () => {
-      const src = readFile('server/src/routes/agent.ts');
+      const src = readFile('server/src/modules/agent/routes/chat.ts');
       expect(src).toContain('checkContent');
-      expect(src).toContain("from '../services/content-filter.js'");
+      expect(src).toContain("from '../../../services/content-filter.js'");
     });
   });
 

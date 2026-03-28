@@ -20,6 +20,8 @@ import { getAgentRoles, type AgentRole } from '../services/agent-registry.js';
 import { parseActions } from '../../../services/action-parser.js';
 import { executeAction, type ActionResult } from '../services/action-executor.js';
 import { runReactLoop } from '../services/react-loop.js';
+import { runDeepReasoning } from '../services/deep-reasoning.js';
+import { classifyMessageComplexity } from '../services/unified-agent-router.js';
 import { formatReceiptCompact, type ReceiptItem } from '../../../services/receipts.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 import { fetchAndExtract } from '../../../services/web-research.js';
@@ -89,7 +91,7 @@ function detectAndHandleTaskIntent(message: string): boolean {
 
 // ---- Helper: Build system prompt with user context ----
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
   user: Record<string, unknown> | undefined,
   userId: string,
@@ -158,7 +160,42 @@ Use search_memory when the user asks "what did I say about X", "find my note abo
 tool: portfolio_update_skills
 skills: ["Skill 1", "Skill 2", "Skill 3"]
 <<<END>>>
-Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.`;
+Use portfolio_update_skills when the user says "update my skills", "add skills to my portfolio", "my skills are X, Y, Z", or similar. Pass skills as a JSON array of strings.
+<<<ACTION>>>
+tool: create_goal
+title: Launch my SaaS by April
+description: Build and launch the MVP
+category: technical
+target_date: 2026-04-30
+<<<END>>>
+Use create_goal when user says "I want to...", "my goal is...", "help me achieve...". Planning is triggered automatically after creation. Use plan_goal only to re-plan an existing goal.
+<<<ACTION>>>
+tool: list_goals
+status: active
+<<<END>>>
+Use list_goals to show user's goals with IDs for follow-up actions.
+<<<ACTION>>>
+tool: goal_status
+goal_id: <id>
+<<<END>>>
+Use goal_status to fetch a single goal with its steps, progress, and current status.
+<<<ACTION>>>
+tool: plan_goal
+goal_id: <id>
+<<<END>>>
+Use plan_goal only to re-plan an existing goal when automatic planning failed or needs revision.
+<<<ACTION>>>
+tool: execute_goal_step
+goal_id: <id>
+<<<END>>>
+Use execute_goal_step to autonomously work on the next step of a goal.
+<<<ACTION>>>
+tool: save_artifact
+title: Sprint plan
+content: ...
+type: plan
+<<<END>>>
+Use save_artifact to persist notes, research, drafts, code, or plans to the shared workspace.`;
 
   // Build personality instructions from slider values (uses shared function from message-router)
   const personalityInstructions = buildPersonalityInstructions(agentConfig as { creativity?: number; formality?: number; verbosity?: number; humor?: number; empathy?: number } | undefined);
@@ -954,13 +991,28 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
     const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
 
-    const result = await runReactLoop(messages, {
-      systemPrompt: effectiveSystemPrompt,
-      agentName: (effectiveAgentConfig?.name as string) || 'Geek',
-      userCredits,
-      forceProvider: resolvedProvider,
-      userId,
-    });
+    // Route complex queries through deep reasoning engine (10 iterations + self-reflection + delegation)
+    const complexity = classifyMessageComplexity(message);
+    const useDeepReasoning = complexity === 'multi_step' || complexity === 'multi_agent';
+
+    const result = useDeepReasoning
+      ? await runDeepReasoning(messages, {
+          systemPrompt: effectiveSystemPrompt,
+          agentName: (effectiveAgentConfig?.name as string) || 'Geek',
+          agentId: (effectiveAgentConfig?.personality as any) || undefined,
+          userCredits,
+          forceProvider: resolvedProvider,
+          userId,
+          enableDelegation: true,
+          enableReflection: true,
+        })
+      : await runReactLoop(messages, {
+          systemPrompt: effectiveSystemPrompt,
+          agentName: (effectiveAgentConfig?.name as string) || 'Geek',
+          userCredits,
+          forceProvider: resolvedProvider,
+          userId,
+        });
 
     // Guard: if the 120s HTTP timeout already sent a 503, don't try to send another response
     if (res.headersSent) {

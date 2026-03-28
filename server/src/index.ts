@@ -25,6 +25,7 @@ import { initProactiveEngine } from './services/proactive-engine.js';
 import { startCalendarSyncScheduler } from './services/calendar-sync.js';
 import { startOllamaKeepalive } from './services/llm.js';
 import { startGmailSyncScheduler } from './services/gmail-sync.js';
+import { initProactiveGoalEngine } from './modules/agent/services/proactive-goals.js';
 
 // Create the Express app using the factory
 const app = createApp();
@@ -119,6 +120,7 @@ const httpServer = app.listen(config.port, () => {
     safeStart('db-cleanup-cron', initCleanupCron);
     safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
     safeStart('proactive-engine', initProactiveEngine);
+    safeStart('proactive-goals', initProactiveGoalEngine);
     safeStart('gmail-sync', startGmailSyncScheduler);
     safeStart('calendar-sync', startCalendarSyncScheduler);
 

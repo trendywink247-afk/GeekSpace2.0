@@ -30,7 +30,7 @@ import { logActivity } from '../../../services/activity-log.js';
 import { emitThinking, emitDone } from '../services/agent-state-bus.js';
 import { routeDelegation } from '../../../services/delegation.js';
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
-import { buildSystemPrompt } from '../../../routes/agent.js';
+import { buildSystemPrompt } from './chat.js';
 
 const router = Router();
 

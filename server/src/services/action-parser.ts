@@ -317,6 +317,24 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
     preference: z.enum(['morning', 'afternoon', 'evening']).default('morning'),
   }),
   list_inbox: z.object({ limit: z.coerce.number().min(1).max(20).default(5) }),
+  // Goal system tools (agentic experience)
+  create_goal: z.object({
+    title: z.string().min(1).max(200),
+    description: z.string().max(2000).optional(),
+    category: z.string().optional(),
+    target_date: z.string().optional(),
+  }),
+  list_goals: z.object({ status: z.string().optional() }),
+  plan_goal: z.object({ goal_id: z.string().optional(), id: z.string().optional() }),
+  execute_goal_step: z.object({ goal_id: z.string().optional(), id: z.string().optional() }),
+  goal_status: z.object({ goal_id: z.string().optional(), id: z.string().optional() }),
+  save_artifact: z.object({
+    title: z.string().min(1).max(200),
+    content: z.string().min(1),
+    type: z.string().optional(),
+    goal_id: z.string().optional(),
+    agent: z.string().optional(),
+  }),
 };
 
 // ── Types ───────────────────────────────────────────────────

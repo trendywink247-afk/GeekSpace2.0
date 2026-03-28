@@ -91,12 +91,12 @@ describe('Phase 104 — ReAct Tool Loop', () => {
 
   describe('104.4 System prompt documents tools', () => {
     it('agent.ts buildSystemPrompt mentions web_search tool', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/routes/chat.ts'), 'utf-8');
       expect(content).toContain('web_search');
     });
 
     it('agent.ts buildSystemPrompt mentions <<<ACTION>>> format', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/routes/chat.ts'), 'utf-8');
       expect(content).toContain('<<<ACTION');
     });
 
@@ -120,12 +120,12 @@ describe('Phase 104 — ReAct Tool Loop', () => {
 
   describe('104.6 agent.ts wired to ReAct loop', () => {
     it('agent.ts imports runReactLoop', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/routes/chat.ts'), 'utf-8');
       expect(content).toContain('runReactLoop');
     });
 
     it('agent.ts default chat path calls runReactLoop', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/routes/agent.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/routes/chat.ts'), 'utf-8');
       expect(content).toContain('runReactLoop');
     });
   });

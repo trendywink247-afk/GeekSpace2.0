@@ -83,7 +83,7 @@ describe('Phase 103: Plan cap fixes', () => {
     });
   });
 
-  describe('billing.ts checkout validation', () => {
+  describe('billing checkout validation', () => {
     it('accepts real plan names not basic/pro', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'modules/billing/routes.ts'), 'utf-8');
       expect(content).not.toContain("plan !== 'basic'");
@@ -138,8 +138,8 @@ describe('Phase 103: Plan cap fixes', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'modules/memory/services/memory.ts'), 'utf-8');
       expect(content).toContain('logTrainingExample');
     });
-    it('agent.ts calls logTrainingExample', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'routes/agent.ts'), 'utf-8');
+    it('agent chat.ts calls logTrainingExample', () => {
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/agent/routes/chat.ts'), 'utf-8');
       expect(content).toContain('logTrainingExample');
     });
     it('message-router.ts calls logTrainingExample', () => {
