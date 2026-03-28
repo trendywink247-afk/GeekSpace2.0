@@ -13,6 +13,8 @@ import { ActionResultCard } from './ActionResultCard';
 import { MessageReactions } from './MessageReactions';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
 declare global {
@@ -63,24 +65,106 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   );
 }
 
-// 42.3: Parse message content and render code blocks with Copy buttons
+// 42.3: Render message content with full markdown support
 function renderMessageContent(content: string): React.ReactNode {
-  const parts: React.ReactNode[] = [];
-  const fenceRegex = /```(\w*)?\n?([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let keyIdx = 0;
-  while ((match = fenceRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</span>);
-    }
-    parts.push(<CodeBlock key={keyIdx++} lang={match[1] || ''} code={match[2] || ''} />);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < content.length) {
-    parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</span>);
-  }
-  return parts.length > 0 ? <>{parts}</> : content;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        // Code blocks with copy button
+        code({ className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className || '');
+          const codeStr = String(children).replace(/\n$/, '');
+          // Inline code
+          if (!match && !codeStr.includes('\n')) {
+            return (
+              <code className="px-1.5 py-0.5 rounded bg-[#1A1A2E] text-[#00F0FF] text-xs font-mono" {...props}>
+                {children}
+              </code>
+            );
+          }
+          // Fenced code block
+          return <CodeBlock lang={match?.[1] || ''} code={codeStr} />;
+        },
+        // Paragraphs
+        p({ children }) {
+          return <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>;
+        },
+        // Bold
+        strong({ children }) {
+          return <strong className="font-semibold text-[#F4F6FF]">{children}</strong>;
+        },
+        // Links
+        a({ href, children }) {
+          return (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] hover:underline">
+              {children}
+            </a>
+          );
+        },
+        // Lists
+        ul({ children }) {
+          return <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>;
+        },
+        ol({ children }) {
+          return <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>;
+        },
+        li({ children }) {
+          return <li className="text-sm">{children}</li>;
+        },
+        // Headings
+        h1({ children }) {
+          return <h1 className="text-lg font-bold text-[#F4F6FF] mb-2 mt-3">{children}</h1>;
+        },
+        h2({ children }) {
+          return <h2 className="text-base font-bold text-[#F4F6FF] mb-1.5 mt-2">{children}</h2>;
+        },
+        h3({ children }) {
+          return <h3 className="text-sm font-semibold text-[#F4F6FF] mb-1 mt-2">{children}</h3>;
+        },
+        // Blockquote
+        blockquote({ children }) {
+          return (
+            <blockquote className="border-l-2 border-[#00F0FF]/30 pl-3 my-2 text-[#9CA3AF] italic">
+              {children}
+            </blockquote>
+          );
+        },
+        // Table
+        table({ children }) {
+          return (
+            <div className="overflow-x-auto my-2">
+              <table className="min-w-full text-xs border-collapse">{children}</table>
+            </div>
+          );
+        },
+        th({ children }) {
+          return <th className="px-3 py-1.5 text-left font-semibold text-[#E8E8F0] bg-[#1A1A2E] border border-white/10">{children}</th>;
+        },
+        td({ children }) {
+          return <td className="px-3 py-1.5 text-[#C0C0D0] border border-white/10">{children}</td>;
+        },
+        // Horizontal rule
+        hr() {
+          return <hr className="border-white/10 my-3" />;
+        },
+        // Task list items
+        input({ checked, ...props }) {
+          return (
+            <input
+              type="checkbox"
+              checked={checked}
+              readOnly
+              className="mr-1.5 rounded border-gray-600 text-[#00F0FF]"
+              {...props}
+            />
+          );
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
