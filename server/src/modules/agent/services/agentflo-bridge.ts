@@ -23,7 +23,8 @@ import type {
 } from '../types/agentflo.js';
 
 // ── Ruflo function references (set at init time) ───────────
-type CfFn = ((...args: unknown[]) => unknown) | null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- claude-flow has no type declarations; all calls are wrapped in try/catch
+type CfFn = ((...args: any[]) => any) | null;
 
 let _initializeIntelligence: CfFn = null;
 let _getReasoningBank: CfFn = null;
@@ -165,10 +166,12 @@ export async function storePattern(
 
     // Record each step
     for (const step of trajectory) {
-      _recordStep(trajectoryId, {
-        action: step,
-        observation: 'completed',
-      });
+      if (_recordStep) {
+        _recordStep(trajectoryId, {
+          action: step,
+          observation: 'completed',
+        });
+      }
     }
 
     // End with verdict
@@ -213,12 +216,16 @@ export async function retrievePatterns(query: string, topK = 3): Promise<Pattern
     const patterns: PatternEntry[] = raw
       .filter(Boolean)
       .slice(0, topK)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped external API response
-      .map((r: Record<string, any>) => ({
-        key: r.key || r.query || r.id || query,
-        trajectory: r.steps?.map((s: Record<string, unknown>) => (s.action as string) || String(s)) || r.trajectory || [],
-        confidence: r.confidence || r.score || r.similarity || 0,
-        timestamp: r.timestamp || r.createdAt || Date.now(),
+      .map((r: Record<string, unknown>) => ({
+        key: String(r.key || r.query || r.id || query),
+        trajectory: Array.isArray(r.steps)
+          ? r.steps.map((s: unknown) => {
+              const step = s as Record<string, unknown>;
+              return String(step.action || step);
+            })
+          : (r.trajectory as string[]) || [],
+        confidence: Number(r.confidence || r.score || r.similarity || 0),
+        timestamp: Number(r.timestamp || r.createdAt || Date.now()),
       }));
 
     return {
@@ -269,11 +276,11 @@ export async function getRoutingSuggestion(
 
   try {
     const suggestion = _getSuggestion({ context: { intent } });
-    if (suggestion && suggestion.action) {
-      const provider = suggestion.action.replace('route:', '');
+    if (suggestion && typeof suggestion === 'object' && 'action' in suggestion) {
+      const s = suggestion as { action: string; confidence?: number; score?: number };
       return {
-        provider,
-        confidence: suggestion.confidence || suggestion.score || 0,
+        provider: s.action.replace('route:', ''),
+        confidence: s.confidence || s.score || 0,
       };
     }
     return null;
