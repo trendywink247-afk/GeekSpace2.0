@@ -10,9 +10,8 @@ interface AgentChatButtonProps {
 
 function VoiceWave({ isActive }: { isActive: boolean }) {
   // Pre-calculate heights to avoid Math.random() during render
-  // eslint-disable-next-line react-hooks/purity
   const heights = useMemo(() =>
-    [0, 1, 2, 3, 4].map(() => 8 + Math.random() * 12),
+    [0, 1, 2, 3, 4].map(() => 8 + Math.random() * 12), // eslint-disable-line react-hooks/purity
     []
   );
 

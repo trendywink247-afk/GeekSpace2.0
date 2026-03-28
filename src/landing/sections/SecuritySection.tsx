@@ -62,10 +62,9 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   const [shakeResult, setShakeResult] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
+    setReducedMotion(mq.matches); // eslint-disable-line react-hooks/set-state-in-effect
     const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
@@ -89,14 +88,13 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   }, []);
 
   // Terminal line-by-line reveal with result flash
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isVisible) return;
     if (visibleLines >= scanLines.length) return;
 
     // Reduced motion: show all scan lines at once
     if (reducedMotion) {
-      setVisibleLines(scanLines.length);
+      setVisibleLines(scanLines.length); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
 

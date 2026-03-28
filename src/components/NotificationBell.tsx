@@ -25,9 +25,8 @@ export function NotificationBell() {
     } catch { /* ignore */ }
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    fetchCount();
+    fetchCount(); // eslint-disable-line react-hooks/set-state-in-effect
     const interval = setInterval(fetchCount, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchCount]);

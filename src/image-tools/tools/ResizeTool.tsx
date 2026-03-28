@@ -102,10 +102,9 @@ export function ResizeTool(_props: { onBack: () => void }) {
   }, []);
 
   // Debounced live preview
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!imageEl || !width || !height) {
-      setPreviewUrl('');
+      setPreviewUrl(''); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
 

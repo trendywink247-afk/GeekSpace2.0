@@ -44,10 +44,9 @@ export function LoginPage() {
   const [oauthLoading, setOauthLoading] = useState<'github' | 'google' | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (searchParams.get('demo') === 'true') {
-      setEmail('alex@example.com');
+      setEmail('alex@example.com'); // eslint-disable-line react-hooks/set-state-in-effect
       setPassword('pass');
       setUsername('alex');
     }

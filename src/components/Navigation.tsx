@@ -70,10 +70,9 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
     setActiveSection(null);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     window.addEventListener('scroll', updateActiveSection, { passive: true });
-    updateActiveSection();
+    updateActiveSection(); // eslint-disable-line react-hooks/set-state-in-effect
     return () => window.removeEventListener('scroll', updateActiveSection);
   }, [updateActiveSection]);
 

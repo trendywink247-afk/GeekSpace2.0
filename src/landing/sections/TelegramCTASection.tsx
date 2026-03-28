@@ -49,10 +49,9 @@ export function TelegramCTASection() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [visibleMessages, setVisibleMessages] = useState(0);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
+    setReducedMotion(mq.matches); // eslint-disable-line react-hooks/set-state-in-effect
     const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
@@ -70,10 +69,9 @@ export function TelegramCTASection() {
   }, []);
 
   // Animate chat messages one by one
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isVisible || reducedMotion) {
-      if (reducedMotion && isVisible) setVisibleMessages(chatDemo.length);
+      if (reducedMotion && isVisible) setVisibleMessages(chatDemo.length); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     if (visibleMessages >= chatDemo.length) return;

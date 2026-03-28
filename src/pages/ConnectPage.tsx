@@ -32,9 +32,8 @@ export function ConnectPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    if (!token) { setStage('error'); setErrorMsg('Invalid invite link'); return; }
+    if (!token) { setStage('error'); setErrorMsg('Invalid invite link'); return; } // eslint-disable-line react-hooks/set-state-in-effect
     axios.get<InviteInfo>(`${API_URL}/integrations/invite/${token}/info`)
       .then(({ data }) => {
         setInvite(data);

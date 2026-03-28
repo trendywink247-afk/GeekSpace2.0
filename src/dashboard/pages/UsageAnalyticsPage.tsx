@@ -140,14 +140,12 @@ export function UsageAnalyticsPage() {
   const [partialFailures, setPartialFailures] = useState<string[]>([]);
 
   // Recharts SSR guard
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setMounted(true); }, []); // eslint-disable-line react-hooks/set-state-in-effect
 
   // Initial load — fetch all 7 endpoints
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
     setError(null);
     setPartialFailures([]);
     notifyStart('loading-usage-analytics');

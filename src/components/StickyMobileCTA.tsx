@@ -14,13 +14,12 @@ interface StickyMobileCTAProps {
 export function StickyMobileCTA({ onGetStarted }: StickyMobileCTAProps) {
   const [show, setShow] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const heroEl = document.getElementById('hero');
 
     // If hero section is not found, show the bar immediately
     if (!heroEl) {
-      setShow(true);
+      setShow(true); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
 

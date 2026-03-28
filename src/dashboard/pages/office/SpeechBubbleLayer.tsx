@@ -32,10 +32,9 @@ export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }
   // Track mounted IDs for fade-in
   const [mounted, setMounted] = useState<Set<string>>(new Set());
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const ids = new Set(bubbles.map((b) => b.id));
-    setMounted(ids);
+    setMounted(ids); // eslint-disable-line react-hooks/set-state-in-effect
   }, [bubbles]);
 
   if (bubbles.length === 0) return null;

@@ -97,17 +97,15 @@ export function InfraSection({ onReviewSecurity }: InfraSectionProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   // Reduced-motion preference
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
+    setReducedMotion(mq.matches); // eslint-disable-line react-hooks/set-state-in-effect
     const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
   // IntersectionObserver — start animation when section enters view
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -120,13 +118,12 @@ export function InfraSection({ onReviewSecurity }: InfraSectionProps) {
   }, []);
 
   // Line-by-line typewriter reveal for security audit
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isVisible) return;
     if (visibleLines >= scanLines.length) return;
 
     if (reducedMotion) {
-      setVisibleLines(scanLines.length);
+      setVisibleLines(scanLines.length); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
 

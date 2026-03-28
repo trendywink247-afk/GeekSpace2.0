@@ -26,11 +26,10 @@ export function useLogoStudio() {
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
 
   // Load variants from localStorage on mount
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setVariants(JSON.parse(raw));
+      if (raw) setVariants(JSON.parse(raw)); // eslint-disable-line react-hooks/set-state-in-effect
     } catch { /* ignore corrupt data */ }
   }, []);
 

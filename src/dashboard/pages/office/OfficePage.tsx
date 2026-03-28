@@ -232,10 +232,9 @@ export function OfficePage() {
   }, [officeData?.timeline, dismissedInsights]);
 
   // Fetch task count when an agent is selected for spotlight
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!selectedAgentId) {
-      setTaskCount(0);
+      setTaskCount(0); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
     let cancelled = false;

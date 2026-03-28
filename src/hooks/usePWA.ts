@@ -57,7 +57,6 @@ export function usePWA() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Register service worker
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -75,7 +74,7 @@ export function usePWA() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 
-    setState((prev) => ({ ...prev, isStandalone }));
+    setState((prev) => ({ ...prev, isStandalone })); // eslint-disable-line react-hooks/set-state-in-effect
 
     // Listen for beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
