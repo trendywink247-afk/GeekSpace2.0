@@ -351,7 +351,7 @@ describe('CanvasEffects — Zoom Phase State Machine', () => {
       startTierEffect(state, 3, { x: 5, y: 10 }, 'weebo');
       tickEffects(state, 100);
 
-      const progress1 = state.zoomProgress;
+      const _progress1 = state.zoomProgress;
 
       startTierEffect(state, 3, { x: 7, y: 15 }, 'edith');
 

@@ -1831,7 +1831,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     logger.info({ userId, reason }, 'Multilingual input detected — routing to Groq via ReAct loop');
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     const reactResult = shouldUseDeepReasoning(msg.text)
-      ? await runDeepReasoning(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: 'groq', enableDelegation: true })
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: 'groq', enableDelegation: true }) // eslint-disable-line @typescript-eslint/no-explicit-any
       : await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
     replyText = reactResult.text;
     provider = reactResult.provider;
@@ -1873,7 +1873,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
       // Fallback to ReAct loop (or deep reasoning for complex queries)
       const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
       const reactResult = shouldUseDeepReasoning(msg.text)
-        ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, enableDelegation: true })
+        ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, enableDelegation: true }) // eslint-disable-line @typescript-eslint/no-explicit-any
         : await runReactLoop(messages, {
             systemPrompt,
             agentName: (agentConfig?.name as string) || 'Geek',
@@ -1895,7 +1895,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const forceGroqForTools = hasToolTrigger(msg.text) ? 'groq' as const : undefined;
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     const reactResult = shouldUseDeepReasoning(msg.text)
-      ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: forceGroqForTools, enableDelegation: true })
+      ? await runDeepReasoning(messages, { systemPrompt, agentName: (agentConfig?.name as string) || 'Geek', agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: forceGroqForTools, enableDelegation: true }) // eslint-disable-line @typescript-eslint/no-explicit-any
       : await runReactLoop(messages, {
           systemPrompt,
           agentName: (agentConfig?.name as string) || 'Geek',

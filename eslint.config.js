@@ -24,15 +24,10 @@ export default defineConfig([
         allowShortCircuit: true,
         allowTernary: true
       }],
-      // Re-enabled rules (Sprint 1-2, March 2026)
       '@typescript-eslint/no-namespace': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
-
-      // Re-enabled (Sprint 3, March 2026)
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'warn',
-
-      // Re-enabled (Sprint 4, March 2026)
       'react-hooks/purity': 'error',
       'react-hooks/set-state-in-effect': 'error',
       'react-hooks/immutability': 'error',
@@ -41,6 +36,15 @@ export default defineConfig([
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
+    },
+  },
+  // Relax rules in test files — test code legitimately uses any for mocks
+  // Must come AFTER the general config so it overrides the warn-level rules
+  {
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}', 'e2e/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 ])

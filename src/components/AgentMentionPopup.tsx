@@ -121,7 +121,7 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
   return (
     <FloatingPortal>
       <div
-        ref={refs.setFloating}
+        ref={refs.setFloating} // eslint-disable-line react-hooks/refs
         style={floatingStyles}
         {...getFloatingProps()}
         className="w-64 max-h-56 overflow-y-auto rounded-lg bg-[#0C0C18] border border-[#00F0FF]/10 shadow-xl shadow-black/40 z-50 scrollbar-hide"

@@ -5,7 +5,7 @@
  * Tests decision tree: firstVisit > isMultiAgent/toolCount > thinkingTime > default
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   selectAnimationTier,
   trackToolCall,

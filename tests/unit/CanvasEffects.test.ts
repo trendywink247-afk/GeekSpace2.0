@@ -3,7 +3,7 @@
  * Tests animation state management, phase transitions, easing, and particle physics.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach} from 'vitest';
 import {
   createEffectState,
   startTierEffect,

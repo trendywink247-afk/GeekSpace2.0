@@ -1913,6 +1913,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const goal = createGoal(userId, {
           title: String(title),
           description: params.description ? String(params.description) : undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           category: params.category as any,
           target_date: params.target_date ? String(params.target_date) : undefined,
         });
@@ -1938,6 +1939,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
       case 'list_goals': {
         const { getUserGoals } = await import('./goal-service.js');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const goals = getUserGoals(userId, params.status as any, 10);
         if (goals.length === 0) return { tool, success: true, message: 'No goals found. Set one with "create_goal".' };
         const lines = goals.map((g, i) => `${i + 1}. ${g.title} (id: ${g.id}) [${g.status}] ${g.progress}% — ${g.assigned_agent}`);
@@ -1984,6 +1986,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           const ownerGoal = getGoalForArtifact(artifactGoalId);
           if (!ownerGoal || ownerGoal.user_id !== userId) return { tool, success: false, message: 'Goal not found' };
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const artifact = createWorkspaceArtifact(userId, artifactGoalId, String(title), String(content), (params.type as any) || 'note', params.agent ? String(params.agent) : undefined);
         return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
       }

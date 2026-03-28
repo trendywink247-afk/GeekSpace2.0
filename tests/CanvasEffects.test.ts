@@ -355,7 +355,7 @@ describe('tickEffects()', () => {
 
     it('handles negative dt gracefully (treats as 0)', () => {
       state.zoomPhase = 'zoom_in';
-      const initialProgress = state.zoomProgress;
+      const _initialProgress = state.zoomProgress;
       tickEffects(state, -100);
       // Negative dt causes negative progress increment; implementation does not guard against this
       // Just verify it doesn't crash and progress is a number

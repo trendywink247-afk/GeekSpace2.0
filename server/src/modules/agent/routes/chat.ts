@@ -999,6 +999,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       ? await runDeepReasoning(messages, {
           systemPrompt: effectiveSystemPrompt,
           agentName: (effectiveAgentConfig?.name as string) || 'Geek',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           agentId: (effectiveAgentConfig?.personality as any) || undefined,
           userCredits,
           forceProvider: resolvedProvider,

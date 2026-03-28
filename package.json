@@ -3,11 +3,6 @@
   "private": true,
   "version": "3.1.0",
   "type": "module",
-  "workspaces": [
-    "server",
-    "picoclaw",
-    "browser-agent"
-  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

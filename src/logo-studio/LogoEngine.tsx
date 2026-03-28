@@ -86,6 +86,7 @@ export function LogoSVG({
   const { cbY, leftX, rightX } = crossbarGeometry(params);
 
   // --- Render shape elements as JSX ---
+  /* eslint-disable @typescript-eslint/no-explicit-any -- SVG spread attrs need any cast */
   const renderShapes = (fill: string) =>
     shapes.map((s, i) => {
       const key = `${s.tag}-${i}`;
@@ -93,6 +94,7 @@ export function LogoSVG({
       if (s.tag === 'polygon') return <polygon key={key} {...(s.attrs as any)} fill={fill} />;
       return <rect key={key} {...(s.attrs as any)} fill={fill} />;
     });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
     <svg
@@ -183,12 +185,14 @@ export function LogoSVG({
       {/* Glow ring */}
       {params.showGlowRing && (
         <g fill="none" stroke={params.gradientFrom} strokeWidth={0.5} strokeOpacity={params.glowOpacity}>
+          {/* eslint-disable @typescript-eslint/no-explicit-any -- SVG spread */}
           {shapes.map((s, i) => {
             const key = `glow-${i}`;
             if (s.tag === 'circle') return <circle key={key} {...(s.attrs as any)} />;
             if (s.tag === 'polygon') return <polygon key={key} {...(s.attrs as any)} />;
             return <rect key={key} {...(s.attrs as any)} />;
           })}
+          {/* eslint-enable @typescript-eslint/no-explicit-any */}
         </g>
       )}
     </svg>
