@@ -13,7 +13,7 @@ import {
   resetTestState,
   isTestMode,
   recordAgentStatus,
-} from '../test/test-mode.js';
+} from '../services/test-mode.js';
 import { signToken } from '../middleware/auth.js';
 
 const router = Router();
