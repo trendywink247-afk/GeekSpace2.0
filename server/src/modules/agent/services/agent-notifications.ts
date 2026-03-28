@@ -93,17 +93,39 @@ export async function sendAgentNotification(
     content: `${personality.emoji} ${title}: ${message}`,
   });
 
-  // Send via Telegram if requested
+  // Send via Telegram if requested — honor user notification preferences
   if (options?.sendTelegram !== false) {
     try {
-      const link = db.prepare(
-        "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
-      ).get(userId) as { external_id: string } | undefined;
+      // Check if user has agent notifications enabled
+      const config = db.prepare('SELECT notif_agents, quiet_start, quiet_end FROM agent_configs WHERE user_id = ?')
+        .get(userId) as { notif_agents: number | null; quiet_start: string | null; quiet_end: string | null } | undefined;
+      const agentNotifsEnabled = config?.notif_agents !== 0; // default true if null
 
-      if (link) {
-        const { sendTelegramMessage } = await import('../../../services/telegram.js');
-        const telegramMsg = `${personality.emoji} *${personality.name}*\n${title}\n\n${message}`;
-        await sendTelegramMessage(link.external_id, telegramMsg);
+      // Check quiet hours
+      let inQuietHours = false;
+      if (config?.quiet_start && config?.quiet_end) {
+        const nowH = new Date().getHours();
+        const nowM = new Date().getMinutes();
+        const nowMin = nowH * 60 + nowM;
+        const [sH, sM] = config.quiet_start.split(':').map(Number);
+        const [eH, eM] = config.quiet_end.split(':').map(Number);
+        const startMin = sH * 60 + sM;
+        const endMin = eH * 60 + eM;
+        inQuietHours = startMin <= endMin
+          ? (nowMin >= startMin && nowMin < endMin)
+          : (nowMin >= startMin || nowMin < endMin);
+      }
+
+      if (agentNotifsEnabled && !inQuietHours) {
+        const link = db.prepare(
+          "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
+        ).get(userId) as { external_id: string } | undefined;
+
+        if (link) {
+          const { sendTelegramMessage } = await import('../../../services/telegram.js');
+          const telegramMsg = `${personality.emoji} *${personality.name}*\n${title}\n\n${message}`;
+          await sendTelegramMessage(link.external_id, telegramMsg);
+        }
       }
     } catch {
       // Telegram send is non-critical

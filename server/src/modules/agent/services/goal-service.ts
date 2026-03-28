@@ -58,9 +58,10 @@ export function getGoal(goalId: string): Goal | null {
   return (db.prepare('SELECT * FROM goals WHERE id = ?').get(goalId) as Goal) || null;
 }
 
-export function getGoalWithSteps(goalId: string): GoalWithSteps | null {
+export function getGoalWithSteps(goalId: string, userId?: string): GoalWithSteps | null {
   const goal = getGoal(goalId);
   if (!goal) return null;
+  if (userId && goal.user_id !== userId) return null;
 
   const steps = db.prepare('SELECT * FROM goal_steps WHERE goal_id = ? ORDER BY step_order ASC').all(goalId) as GoalStep[];
   const eventCount = (db.prepare('SELECT COUNT(*) as c FROM goal_events WHERE goal_id = ?').get(goalId) as { c: number }).c;
@@ -292,14 +293,19 @@ export async function planGoal(goalId: string, userId: string): Promise<GoalPlan
       key_risks: string[];
     };
 
-    // Create steps in DB
+    // Create steps in DB (two-pass: generate all IDs first so forward deps resolve)
     const createdSteps: GoalStep[] = [];
     const stepIdMap: Record<number, string> = {};
 
+    // First pass: generate all step IDs
+    for (let i = 0; i < plan.steps.length; i++) {
+      stepIdMap[i] = uuid();
+    }
+
+    // Second pass: insert steps with resolved dependencies
     for (let i = 0; i < plan.steps.length; i++) {
       const s = plan.steps[i];
-      const stepId = uuid();
-      stepIdMap[i] = stepId;
+      const stepId = stepIdMap[i];
       const dependsOn = (s.depends_on || []).map(idx => stepIdMap[idx]).filter(Boolean);
       const now = new Date().toISOString();
 
@@ -319,8 +325,8 @@ export async function planGoal(goalId: string, userId: string): Promise<GoalPlan
     }
 
     recordGoalEvent(goalId, userId, 'updated', 'cal', null,
-      `Cal planned ${createdSteps.length} steps. Estimated: ${plan.estimated_duration}. Risks: ${plan.key_risks.join(', ') || 'none identified'}`,
-      { estimated_duration: plan.estimated_duration, key_risks: plan.key_risks });
+      `Cal planned ${createdSteps.length} steps. Estimated: ${plan.estimated_duration || 'unknown'}. Risks: ${(plan.key_risks || []).join(', ') || 'none identified'}`,
+      { estimated_duration: plan.estimated_duration || 'unknown', key_risks: plan.key_risks || [] });
 
     recalculateProgress(goalId);
     emitDone(userId, 'cal');
@@ -346,6 +352,7 @@ export async function executeNextStep(goalId: string, userId: string): Promise<G
   const steps = getGoalSteps(goalId);
   const goal = getGoal(goalId);
   if (!goal || goal.status !== 'active') return null;
+  if (goal.user_id !== userId) return null;
 
   // Find the next actionable step (pending + all dependencies met)
   const completedIds = new Set(steps.filter(s => s.status === 'completed' || s.status === 'skipped').map(s => s.id));
@@ -372,8 +379,8 @@ export async function executeNextStep(goalId: string, userId: string): Promise<G
   `).run(delegationId, userId, goalId, nextStep.id, 'cal', agent, nextStep.title, new Date().toISOString());
 
   // Send inter-agent communication
-  sendAgentComm(userId, 'jarvis' as 'weebo' | 'edith' | 'jarvis', agent as 'weebo' | 'edith' | 'jarvis',
-    `Goal "${goal.title}" — executing step: ${nextStep.title}`, 'delegation');
+  sendAgentComm(userId, 'jarvis' as 'weebo' | 'edith' | 'jarvis', (agent === 'weebo' || agent === 'edith' || agent === 'jarvis' ? agent : 'jarvis') as 'weebo' | 'edith' | 'jarvis',
+    `Cal delegated: "${goal.title}" — step: ${nextStep.title}`, 'delegation');
 
   try {
     const personalityPrompt = getPersonalityPrompt(agent);

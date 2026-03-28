@@ -168,22 +168,34 @@ description: Build and launch the MVP
 category: technical
 target_date: 2026-04-30
 <<<END>>>
-Use create_goal when user says "I want to...", "my goal is...", "help me achieve...". After creating, use plan_goal to decompose into steps.
+Use create_goal when user says "I want to...", "my goal is...", "help me achieve...". Planning is triggered automatically after creation. Use plan_goal only to re-plan an existing goal.
 <<<ACTION>>>
 tool: list_goals
 status: active
 <<<END>>>
-Use list_goals to show user's goals. Use goal_status with goal_id for detailed view with steps.
+Use list_goals to show user's goals with IDs for follow-up actions.
+<<<ACTION>>>
+tool: goal_status
+goal_id: <id>
+<<<END>>>
+Use goal_status to fetch a single goal with its steps, progress, and current status.
 <<<ACTION>>>
 tool: plan_goal
 goal_id: <id>
 <<<END>>>
-Use plan_goal to AI-decompose a goal into actionable steps assigned to specialist agents.
+Use plan_goal to re-plan or initially decompose a goal into actionable steps assigned to specialist agents.
 <<<ACTION>>>
 tool: execute_goal_step
 goal_id: <id>
 <<<END>>>
-Use execute_goal_step to autonomously work on the next step of a goal.`;
+Use execute_goal_step to autonomously work on the next step of a goal.
+<<<ACTION>>>
+tool: save_artifact
+title: Sprint plan
+content: ...
+type: plan
+<<<END>>>
+Use save_artifact to persist notes, research, drafts, code, or plans to the shared workspace.`;
 
   // Build personality instructions from slider values (uses shared function from message-router)
   const personalityInstructions = buildPersonalityInstructions(agentConfig as { creativity?: number; formality?: number; verbosity?: number; humor?: number; empathy?: number } | undefined);

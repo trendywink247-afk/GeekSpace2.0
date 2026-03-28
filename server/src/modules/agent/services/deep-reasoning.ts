@@ -138,8 +138,18 @@ export async function runDeepReasoning(
     // Check if plan has actions
     const { text: planText, actions: planActions } = parseActions(planResult.reply);
     if (planActions.length > 0) {
-      // Plan included immediate actions — execute them
+      // Plan included immediate actions — execute them now
       workingMessages.push({ role: 'assistant', content: planResult.reply });
+      const planObservations: string[] = [];
+      for (const action of planActions) {
+        if (action.tool === 'generate_code') { allDeferredActions.push(action); continue; }
+        const actionResult = await executeAction(opts.userId, action);
+        allActionResults.push(actionResult);
+        planObservations.push(formatObservation(action, actionResult));
+      }
+      if (planObservations.length > 0) {
+        workingMessages.push({ role: 'user', content: planObservations.join('\n\n---\n\n') + '\n\nBased on the above results, continue.' });
+      }
     } else {
       // Pure planning step — add as context and continue
       workingMessages.push({ role: 'assistant', content: planResult.reply });
@@ -292,7 +302,19 @@ export async function runDeepReasoning(
           iteration: i,
           agent: delegationNeed.targetAgent,
         });
-        // Don't block — delegation happens in parallel with next iteration
+
+        try {
+          const delegResult = await executeDelegation({
+            userId: opts.userId,
+            fromAgent: opts.agentId,
+            toAgent: delegationNeed.targetAgent,
+            task: lastUserMsg?.content || '',
+          });
+          if (delegResult.success) {
+            delegationResults.push({ agent: delegationNeed.targetAgent, task: delegResult.task, result: delegResult.result });
+            workingMessages.push({ role: 'user', content: `[DELEGATION RESULT from ${delegationNeed.targetAgent}]\n${delegResult.result.slice(0, 1000)}` });
+          }
+        } catch { /* delegation is best-effort */ }
       }
     }
 

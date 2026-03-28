@@ -40,20 +40,29 @@ function getUserAutonomyLevel(userId: string): AutonomyLevel {
 
 // ── Main Proactive Cycle ────────────────────────────────────
 
-export async function runGoalProactiveCycle(): Promise<void> {
-  let users: Array<{ id: string }> = [];
-  try {
-    users = db.prepare("SELECT id FROM users WHERE proactive_enabled != 0").all() as Array<{ id: string }>;
-  } catch {
-    users = db.prepare("SELECT id FROM users").all() as Array<{ id: string }>;
-  }
+let isCycleRunning = false;
 
-  for (const user of users) {
+export async function runGoalProactiveCycle(): Promise<void> {
+  if (isCycleRunning) return; // Prevent overlapping cycles
+  isCycleRunning = true;
+
+  try {
+    let users: Array<{ id: string }> = [];
     try {
-      await processUserGoals(user.id);
-    } catch (err) {
-      logger.warn({ err, userId: user.id }, 'proactive-goals:cycle failed for user');
+      users = db.prepare("SELECT id FROM users WHERE proactive_enabled != 0").all() as Array<{ id: string }>;
+    } catch {
+      users = db.prepare("SELECT id FROM users").all() as Array<{ id: string }>;
     }
+
+    for (const user of users) {
+      try {
+        await processUserGoals(user.id);
+      } catch (err) {
+        logger.warn({ err, userId: user.id }, 'proactive-goals:cycle failed for user');
+      }
+    }
+  } finally {
+    isCycleRunning = false;
   }
 }
 

@@ -23,7 +23,7 @@ const router = Router();
 router.get('/goals', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const status = req.query.status as GoalStatus | undefined;
-  const limit = Math.min(Number(req.query.limit) || 50, 100);
+  const limit = Math.max(1, Math.min(Number(req.query.limit) || 50, 100));
   const goals = getUserGoals(authReq.userId!, status, limit);
   res.json({ goals });
 });
@@ -207,7 +207,7 @@ router.get('/goals/:id/events', requireAuth, (req, res) => {
     res.status(404).json({ error: 'Goal not found' });
     return;
   }
-  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const limit = Math.max(1, Math.min(Number(req.query.limit) || 50, 200));
   const events = getGoalEvents(req.params.id, limit);
   res.json({ events });
 });
@@ -218,7 +218,7 @@ router.get('/goals/:id/events', requireAuth, (req, res) => {
 router.get('/workspace', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const goalId = req.query.goal_id as string | undefined;
-  const limit = Math.min(Number(req.query.limit) || 30, 100);
+  const limit = Math.max(1, Math.min(Number(req.query.limit) || 30, 100));
   const artifacts = getWorkspaceArtifacts(authReq.userId!, goalId, limit);
   res.json({ artifacts });
 });
@@ -233,6 +233,15 @@ router.post('/workspace', requireAuth, (req, res) => {
   if (!title || !content) {
     res.status(400).json({ error: 'Title and content are required' });
     return;
+  }
+
+  // Verify goal ownership if goal_id provided
+  if (goal_id) {
+    const goal = getGoal(goal_id);
+    if (!goal || goal.user_id !== authReq.userId!) {
+      res.status(404).json({ error: 'Goal not found' });
+      return;
+    }
   }
 
   const artifact = createWorkspaceArtifact(

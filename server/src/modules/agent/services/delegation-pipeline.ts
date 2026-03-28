@@ -13,7 +13,8 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
-import { routeChat, type ChatMessage } from './llm.js';
+import { type ChatMessage } from './llm.js';
+import { runReactLoop } from './react-loop.js';
 import { getPersonalityPrompt, getPersonality } from '../../../prompts/personalities.js';
 import { sendAgentComm, type AgentId } from './agent-comms.js';
 import { emitThinking, emitResponding, emitDone, emitDelegation, emitCommSent } from './agent-state-bus.js';
@@ -134,10 +135,11 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
       content: `${fromName} has delegated this task to you:\n\n${req.task}${contextBlock}\n\nProvide your specialist response. Be thorough but concise.`,
     }];
 
-    const result = await routeChat(messages, {
+    const result = await runReactLoop(messages, {
       systemPrompt: personalityPrompt,
       userId: req.userId,
       agentName: req.toAgent,
+      agentId: req.toAgent,
     });
 
     emitResponding(req.userId, req.toAgent, `${toName} completed task`);
@@ -145,10 +147,10 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
     // Update delegation_log
     const durationMs = Date.now() - startTime;
     db.prepare("UPDATE delegation_log SET status = 'completed', result = ?, completed_at = datetime('now') WHERE id = ?")
-      .run(result.reply.slice(0, 2000), delegationId);
+      .run(result.text.slice(0, 2000), delegationId);
 
     // Send response comm
-    sendAgentComm(req.userId, coreTo, coreFrom, `Result: ${result.reply.slice(0, 200)}`, 'response');
+    sendAgentComm(req.userId, coreTo, coreFrom, `Result: ${result.text.slice(0, 200)}`, 'response');
     emitDone(req.userId, req.toAgent);
 
     logger.info({ delegationId, durationMs, success: true }, 'delegation:complete');
@@ -158,7 +160,7 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
       fromAgent: req.fromAgent,
       toAgent: req.toAgent,
       task: req.task,
-      result: result.reply,
+      result: result.text,
       success: true,
       durationMs,
     };

@@ -14,7 +14,8 @@ const router = Router();
 router.get('/notifications', requireAuth, (req, res) => {
   const authReq = req as AuthRequest;
   const unreadOnly = req.query.unread === 'true';
-  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const rawLimit = Number(req.query.limit);
+  const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(Math.trunc(rawLimit), 200)) : 50;
   const notifications = getNotifications(authReq.userId!, unreadOnly, limit);
   const unreadCount = getUnreadCount(authReq.userId!);
   res.json({ notifications, unreadCount });

@@ -1926,15 +1926,15 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           }
         } catch { /* planning is best-effort */ }
 
-        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (${goal.category}, assigned to ${goal.assigned_agent})${planMessage}` };
+        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (id: ${goal.id}, ${goal.category}, assigned to ${goal.assigned_agent})${planMessage}`, data: { goalId: goal.id, status: goal.status, assignedAgent: goal.assigned_agent } };
       }
 
       case 'list_goals': {
         const { getUserGoals } = await import('./goal-service.js');
         const goals = getUserGoals(userId, params.status as any, 10);
         if (goals.length === 0) return { tool, success: true, message: 'No goals found. Set one with "create_goal".' };
-        const lines = goals.map((g, i) => `${i + 1}. ${g.title} [${g.status}] ${g.progress}% — ${g.assigned_agent}`);
-        return { tool, success: true, message: `📋 Your goals:\n${lines.join('\n')}` };
+        const lines = goals.map((g, i) => `${i + 1}. ${g.title} (id: ${g.id}) [${g.status}] ${g.progress}% — ${g.assigned_agent}`);
+        return { tool, success: true, message: `📋 Your goals:\n${lines.join('\n')}`, data: { goals: goals.map(g => ({ id: g.id, title: g.title, status: g.status, progress: g.progress })) } };
       }
 
       case 'plan_goal': {
@@ -1960,18 +1960,24 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         const { getGoalWithSteps } = await import('./goal-service.js');
         const goalId = params.goal_id || params.id;
         if (!goalId) return { tool, success: false, message: 'Goal ID is required' };
-        const goal = getGoalWithSteps(String(goalId));
+        const goal = getGoalWithSteps(String(goalId), userId);
         if (!goal) return { tool, success: false, message: 'Goal not found' };
         const stepLines = goal.steps.map(s => `  ${s.status === 'completed' ? '✅' : s.status === 'in_progress' ? '🔄' : '⬜'} ${s.title} (${s.assigned_agent})`);
         return { tool, success: true, message: `📊 "${goal.title}" — ${goal.progress}% complete\nStatus: ${goal.status}\nSteps:\n${stepLines.join('\n')}` };
       }
 
       case 'save_artifact': {
-        const { createWorkspaceArtifact } = await import('./goal-service.js');
+        const { createWorkspaceArtifact, getGoal: getGoalForArtifact } = await import('./goal-service.js');
         const title = params.title || 'Untitled';
         const content = params.content || '';
         if (!content) return { tool, success: false, message: 'Artifact content is required' };
-        const artifact = createWorkspaceArtifact(userId, params.goal_id ? String(params.goal_id) : null, String(title), String(content), (params.type as any) || 'note', params.agent ? String(params.agent) : undefined);
+        // Verify goal ownership if goal_id provided
+        const artifactGoalId = params.goal_id ? String(params.goal_id) : null;
+        if (artifactGoalId) {
+          const ownerGoal = getGoalForArtifact(artifactGoalId);
+          if (!ownerGoal || ownerGoal.user_id !== userId) return { tool, success: false, message: 'Goal not found' };
+        }
+        const artifact = createWorkspaceArtifact(userId, artifactGoalId, String(title), String(content), (params.type as any) || 'note', params.agent ? String(params.agent) : undefined);
         return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
       }
 
