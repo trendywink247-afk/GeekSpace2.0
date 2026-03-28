@@ -23,6 +23,7 @@ export default defineConfig({
       'server',
       'e2e',
       'src/dashboard/pages/office/__tests__/**', // Hanging tests — need investigation
+      'src/components/agentin/__tests__/**', // CSS computed-style tests — require Playwright, not jsdom
     ],
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 15000,

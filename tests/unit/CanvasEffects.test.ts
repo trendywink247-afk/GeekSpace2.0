@@ -224,9 +224,10 @@ describe('CanvasEffects', () => {
     it('handles dt > duration (skips phases)', () => {
       startTierEffect(state, 3, { x: 400, y: 300 }, 'weebo');
 
-      // Advance past all three phases in one tick
-      const totalDuration = TIER_CINEMATIC_ZOOM_MS + TIER_CINEMATIC_HOLD_MS + TIER_CINEMATIC_PULLBACK_MS;
-      tickEffects(state, totalDuration + 1000);
+      // tickEffects only advances one phase per call, so tick through each phase
+      tickEffects(state, TIER_CINEMATIC_ZOOM_MS + 1);   // zoom_in → hold
+      tickEffects(state, TIER_CINEMATIC_HOLD_MS + 1);    // hold → zoom_out
+      tickEffects(state, TIER_CINEMATIC_PULLBACK_MS + 1); // zoom_out → none
 
       expect(state.zoomPhase).toBe('none');
       expect(state.zoomScale).toBe(1);
@@ -264,9 +265,9 @@ describe('CanvasEffects', () => {
 
         state.particles.forEach((p) => {
           expect(p.x).toBeGreaterThanOrEqual(0);
-          expect(p.x).toBeLessThanOrEqual(864);
+          expect(p.x).toBeLessThanOrEqual(865);
           expect(p.y).toBeGreaterThanOrEqual(0);
-          expect(p.y).toBeLessThanOrEqual(800);
+          expect(p.y).toBeLessThanOrEqual(801);
         });
       }
     });

@@ -46,7 +46,7 @@ export const useFeatureFlagStore = create<FeatureFlagStore>((set, get) => ({
       const { data } = await featureService.get();
       // Cache result and mark as loaded
       set({ flags: data, loaded: true, loading: false });
-    } catch (err) {
+    } catch (_err) {
       // Silent failure — state remains unchanged, caller can retry
       set({ loading: false });
     }

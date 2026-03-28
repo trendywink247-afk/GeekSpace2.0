@@ -4,8 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { validateBody, memoryCreateSchema, memoryUpdateSchema } from '../../../middleware/validate.js';
 import { db } from '../../../db/index.js';
-import { logger } from '../../../logger.js';
-import { getMemories, getRelevantMemories, deleteMemory, upsertMemory, extractMemoriesWithAI } from '../../../services/memory.js';
+import { getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../../../services/memory.js';
 
 const router = Router();
 

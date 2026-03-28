@@ -8,7 +8,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { createReceipt, RECEIPT_TEMPLATES } from './receipts.js';
+import { RECEIPT_TEMPLATES } from './receipts.js';
 import type { ReceiptItem } from './receipts.js';
 
 // ── Types ───────────────────────────────────────────────────

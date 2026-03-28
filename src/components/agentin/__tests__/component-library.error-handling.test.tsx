@@ -185,7 +185,7 @@ describe('Component Library — Error Handling & Invalid Props', () => {
       );
       // Should truncate with line-clamp-1, not cause horizontal scroll
       expect(container.firstChild).toBeTruthy();
-      const title = container.querySelector('[class*="line-clamp"]');
+      const title = container.querySelector('[class*="truncate"]');
       expect(title).toBeTruthy();
     });
 

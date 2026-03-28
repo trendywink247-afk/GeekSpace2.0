@@ -114,28 +114,25 @@ describe('PageShell — Edge Cases & Stress Tests', () => {
       expect(orbs.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('orbs have blur filter (blur-2xl or blur-3xl) for glow', () => {
+    it('orbs have blur filter for glow', () => {
       const { container } = render(
         <PageShell>
           <div>Content</div>
         </PageShell>
       );
-      const orbs = container.querySelectorAll('[class*="blur-2xl"], [class*="blur-3xl"]');
+      const orbs = container.querySelectorAll('[class*="blur-"]');
       expect(orbs.length).toBeGreaterThan(0);
     });
 
-    it('content wrapper has z-10 to appear above gradient', () => {
+    it('content wrapper uses z-index layering above gradient', () => {
       const { container } = render(
         <PageShell>
           <div>Content</div>
         </PageShell>
       );
-      const contentWrapper = container.querySelector('[class*="relative"]');
-      // Check if z-10 is applied to ensure layering
-      expect(contentWrapper).toBeTruthy();
-      if (contentWrapper) {
-        expect((contentWrapper as HTMLElement).className).toMatch(/z-10/);
-      }
+      // Gradient orbs container uses -z-10 so content appears above
+      const gradientContainer = container.querySelector('[class*="-z-10"]');
+      expect(gradientContainer).toBeTruthy();
     });
   });
 

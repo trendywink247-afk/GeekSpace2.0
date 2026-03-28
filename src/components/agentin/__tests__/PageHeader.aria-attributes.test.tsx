@@ -28,7 +28,7 @@ describe('PageHeader — ARIA Attributes & Semantic HTML', () => {
       );
 
       const svg = container.querySelector('svg');
-      const title = container.querySelector('[class*="font-semibold"]');
+      const title = container.querySelector('[class*="font-bold"]');
 
       // Icon should be hidden, title should be readable
       expect(title).toBeTruthy();
@@ -193,7 +193,7 @@ describe('PageHeader — ARIA Attributes & Semantic HTML', () => {
         <PageHeader title="Test Title" />
       );
 
-      const title = container.querySelector('[class*="font-semibold"]');
+      const title = container.querySelector('[class*="font-bold"]');
       expect(title).toBeTruthy();
 
       // Agentin colors: text #F4F6FF on bg #05050A should be >4.5:1

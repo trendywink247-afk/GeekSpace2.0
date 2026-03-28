@@ -22,7 +22,7 @@ geekosLlmProxyRouter.post('/v1/chat/completions', async (req, res) => {
     return;
   }
 
-  const { messages, max_tokens } = req.body;
+  const { messages } = req.body;
   if (!Array.isArray(messages) || messages.length === 0) {
     res.status(400).json({ error: { message: 'messages array is required', type: 'invalid_request_error' } });
     return;

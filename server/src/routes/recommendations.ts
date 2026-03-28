@@ -14,7 +14,7 @@ recommendationsRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
     const limit = parseInt(req.query.limit as string) || 5;
     const recs = await getRecommendations(req.userId!, limit);
     res.json(recs);
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });

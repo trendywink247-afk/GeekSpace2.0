@@ -255,7 +255,7 @@ async function testRequestIdPropagation(): Promise<TestResult[]> {
   const userId = await setupTestUser();
   const requestId = uuid();
   const beforeTimestamp = new Date().toISOString();
-  const ctx: TestContext = { userId, requestId, beforeTimestamp };
+  const _ctx: TestContext = { userId, requestId, beforeTimestamp };
 
   const results: TestResult[] = [];
 

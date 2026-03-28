@@ -45,9 +45,9 @@ describe('Component Library — Full Integration', () => {
       expect(screen.getByText('Activity')).toBeTruthy();
       expect(screen.getByText('Settings')).toBeTruthy();
 
-      // Verify structure
-      const shell = container.querySelector('[class*="max-w-"]');
-      expect(shell).toBeTruthy();
+      // Verify structure - max-w-6xl is on first child
+      const shell = container.firstChild as HTMLElement;
+      expect(shell.className).toMatch(/max-w-6xl/);
 
       const cards = container.querySelectorAll('[class*="backdrop-blur"]');
       expect(cards.length).toBe(3);
@@ -184,7 +184,7 @@ describe('Component Library — Full Integration', () => {
       expect(header).toBeTruthy();
 
       // Title should have truncation
-      const title = container.querySelector('[class*="line-clamp-1"]');
+      const title = container.querySelector('[class*="truncate"]');
       expect(title).toBeTruthy();
     });
 
@@ -268,8 +268,8 @@ describe('Component Library — Full Integration', () => {
 
       const content = screen.getByTestId('content');
       expect(content).toBeTruthy();
-      // Parent should have z-10 for layering
-      expect(content.parentElement?.className).toMatch(/z-10/);
+      // Gradient orbs use -z-10, content is in a relative container above
+      expect(content.parentElement?.className).toMatch(/relative/);
     });
   });
 
@@ -283,7 +283,7 @@ describe('Component Library — Full Integration', () => {
       );
 
       const shell = container.firstChild as HTMLElement;
-      expect(shell.className).toMatch(/animate-in|fade-in/);
+      expect(shell.className).toMatch(/animate-page-enter/);
     });
 
     it('PageHeader elements have staggered animation delays', () => {

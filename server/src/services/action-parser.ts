@@ -55,7 +55,7 @@ const portfolioRemoveProjectSchema = z.object({
   projectTitle: z.string().min(1),
 });
 
-const portfolioUpdateThemeSchema = z.object({
+const _portfolioUpdateThemeSchema = z.object({
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
@@ -365,7 +365,7 @@ function fixUnescapedNewlines(jsonStr: string): string {
 
   for (let i = 0; i < jsonStr.length; i++) {
     const char = jsonStr[i];
-    const prevChar = i > 0 ? jsonStr[i - 1] : '';
+    const _prevChar = i > 0 ? jsonStr[i - 1] : '';
 
     if (!inString) {
       // Not in a string - just copy and track if we enter a string

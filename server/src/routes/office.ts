@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { db } from '../db/index.js';
-import { getAgentTasks, getTaskBoard, getAgentTaskStats } from '../services/agent-task-queue.js';
+import { getTaskBoard, getAgentTaskStats } from '../services/agent-task-queue.js';
 import { getRecentComms, getCommStats } from '../services/agent-comms.js';
 import { getAllAgentStates, getRecentEvents } from '../services/agent-state-bus.js';
 import { canDelegate } from '../services/delegation.js';

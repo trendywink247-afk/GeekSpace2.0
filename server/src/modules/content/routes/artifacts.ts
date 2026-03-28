@@ -471,7 +471,7 @@ artifactsRouter.get('/:id/deployments', requireAuth, (req: AuthRequest, res) => 
 
 // ---- Helper: Build complete HTML file ----
 
-function buildHtmlFile(title: string, html: string, css: string, js: string): string {
+function buildHtmlFile(title: string, html: string, _css: string, _js: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -10,7 +10,6 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
-import { config } from '../../../config.js';
 
 export const templatesRouter = Router();
 

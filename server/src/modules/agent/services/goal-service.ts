@@ -21,7 +21,7 @@ import type {
   Goal, GoalStep, GoalEvent, GoalWithSteps, GoalPlan,
   GoalStatus, StepStatus, GoalCategory, GoalEventType,
   AnyAgentId, CreateGoalRequest, UpdateGoalRequest, CreateStepRequest,
-  WorkspaceArtifact, DelegationLogEntry,
+  WorkspaceArtifact,
 } from '../types/goals.js';
 
 // ── Agent-to-domain mapping for auto-assignment ─────────────

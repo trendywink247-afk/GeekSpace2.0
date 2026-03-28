@@ -58,7 +58,7 @@ async function incrementRateLimitTracker(userId: number): Promise<void> {
  * @param userId - Numeric user ID.
  * @returns Object with `remaining` requests left, `limit` (60), and `windowMinutes` (15).
  */
-async function getRateLimitStatus(userId: number): Promise<{ remaining: number; limit: number; windowMinutes: number }> {
+async function _getRateLimitStatus(userId: number): Promise<{ remaining: number; limit: number; windowMinutes: number }> {
   const key = `chat:rl:${userId}`;
   try {
     const raw = await cacheGet(key);
@@ -379,7 +379,7 @@ router.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequ
       const guestMessage = (req.body as { message: string }).message || '';
       const result = await routeChat([{ role: 'user', content: guestMessage }], { systemPrompt: sysPrompt, forceProvider: 'groq' });
       res.json({ reply: result.reply, agentName, ownerName });
-    } catch (guestErr) {
+    } catch (_guestErr) {
       res.json({ reply: `Hi! I'm the AI assistant for ${portfolioUsername}'s portfolio. How can I help you?`, agentName: 'Jarvis', ownerName: portfolioUsername });
     }
     return;

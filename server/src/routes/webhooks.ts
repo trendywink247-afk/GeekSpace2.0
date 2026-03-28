@@ -16,7 +16,6 @@ import {
   sendTelegramNotification,
   sendTelegramButtons,
   editTelegramMessage,
-  getBotUsername,
   answerCallbackQuery,
   getTelegramFileUrl,
   downloadTelegramFile,
@@ -45,7 +44,7 @@ import { db } from '../db/index.js';
 import { cacheGet, cacheSet } from '../services/cache.js';
 import { handleEscalationReply } from '../services/escalation.js';
 import { getPersonaResponse } from '../services/persona-engine.js';
-import { buildSnoozeMenuCard, buildCompletedText, buildReminderCard, buildFocusCard, buildNoteCard } from '../services/telegram-cards.js';
+import { buildSnoozeMenuCard, buildCompletedText, buildFocusCard, buildNoteCard } from '../services/telegram-cards.js';
 
 // Extend Express Request to include requestId for pipeline tracing
 interface RequestWithId {

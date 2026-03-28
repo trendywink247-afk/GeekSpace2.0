@@ -14,7 +14,7 @@ briefingsRouter.post('/trigger', requireAuth, async (req: AuthRequest, res) => {
   try {
     const content = await createBriefing(req.userId!);
     res.json({ content });
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ error: 'Failed to generate briefing' });
   }
 });

@@ -10,10 +10,8 @@
 // ============================================================
 
 import { db } from '../../../db/index.js';
-import { logger } from '../../../logger.js';
-import { getPersonalityPrompt, getPersonality, type Personality } from '../../../prompts/personalities.js';
-import { getMemories } from '../../../services/memory.js';
-import { emitThinking, emitDone, emitToolCall, emitResponding } from './agent-state-bus.js';
+import { getPersonality } from '../../../prompts/personalities.js';
+
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -168,7 +166,7 @@ export function selectAgent(
  * Build memory context filtered by agent namespace.
  * Falls back to shared memories if agent has no namespace-specific memories.
  */
-export function buildAgentMemoryContext(userId: string, agentId: AnyAgentId, query?: string): string {
+export function buildAgentMemoryContext(userId: string, agentId: AnyAgentId, _query?: string): string {
   // Try agent-specific memories first
   const agentMemories = getAgentNamespacedMemories(userId, agentId, 10);
   const sharedMemories = getAgentNamespacedMemories(userId, 'shared', 10);

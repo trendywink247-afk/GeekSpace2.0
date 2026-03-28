@@ -21,6 +21,7 @@ describe('useFeatureFlag', () => {
       loaded: false,
       loading: false,
     });
+    vi.mocked(featureService.get).mockReset();
   });
 
   // ─── Store lazy loading ─────────────────────────────────────────────────
@@ -67,7 +68,7 @@ describe('useFeatureFlag', () => {
       await state.fetchFlags();
 
       // Reset mock and try again
-      vi.mocked(featureService.get).mockClear();
+      vi.mocked(featureService.get).mockReset();
       await state.fetchFlags();
 
       // Should not call API again
@@ -92,7 +93,7 @@ describe('useFeatureFlag', () => {
     it('allows retry after error', async () => {
       // First call fails
       vi.mocked(featureService.get).mockRejectedValueOnce(new Error('Network error'));
-      const state = useFeatureFlagStore.getState();
+      let state = useFeatureFlagStore.getState();
       await state.fetchFlags();
 
       expect(useFeatureFlagStore.getState().loaded).toBe(false);
@@ -152,7 +153,7 @@ describe('useFeatureFlag hook', () => {
       loaded: false,
       loading: false,
     });
-    vi.mocked(featureService.get).mockClear();
+    vi.mocked(featureService.get).mockReset();
   });
 
   // ─── Single flag reading ────────────────────────────────────────────────
@@ -212,7 +213,7 @@ describe('useFeatureFlags hook', () => {
       loaded: false,
       loading: false,
     });
-    vi.mocked(featureService.get).mockClear();
+    vi.mocked(featureService.get).mockReset();
   });
 
   // ─── All flags reading ──────────────────────────────────────────────────
@@ -264,7 +265,7 @@ describe('useFeatureFlag — integration', () => {
       loaded: false,
       loading: false,
     });
-    vi.mocked(featureService.get).mockClear();
+    vi.mocked(featureService.get).mockReset();
   });
 
   it('single and all flags use same cached data', async () => {

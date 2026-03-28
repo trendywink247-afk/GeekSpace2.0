@@ -138,9 +138,9 @@ describe('SectionCard', () => {
       const { container } = render(
         <SectionCard title="Title" subtitle="Sub">Content</SectionCard>
       );
-      const subtitle = container.querySelector('[class*="text-"]');
-      // Should have opacity or muted color class
-      expect(subtitle?.className).toMatch(/opacity|text-gray|text-slate|text-muted/i);
+      const subtitle = container.querySelector('p[class*="text-"]');
+      // Uses CSS custom property for secondary color
+      expect(subtitle?.className).toMatch(/text-\[var\(--ag-text-secondary/);
     });
 
     it('renders children content below title/subtitle', () => {

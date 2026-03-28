@@ -177,7 +177,7 @@ picoRouter.post('/tasks/plan-premium', requireAuth, validateBody(picoTaskPlanSch
       task_ids: taskIds,
       credits_remaining: updatedSub?.credits_remaining ?? 0,
     });
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ error: 'Task planning failed' });
   }
 });

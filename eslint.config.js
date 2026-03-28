@@ -33,10 +33,14 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'warn',
 
       // Temporarily disabled — pre-existing codebase issues, re-enable sprint-by-sprint
-      'react-hooks/purity': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/immutability': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      'react-hooks/purity': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
     },
   },
 ])

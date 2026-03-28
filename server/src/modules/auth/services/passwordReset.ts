@@ -10,7 +10,7 @@ import { logger } from '../../../logger.js';
 import { config } from '../../../config.js';
 import { revokeAllRefreshTokens } from './refresh-token.js';
 
-const OTP_LENGTH = 6;
+const _OTP_LENGTH = 6;
 const OTP_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS = 3;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour

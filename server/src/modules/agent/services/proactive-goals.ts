@@ -9,11 +9,10 @@
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import {
-  getActionableGoals, executeNextStep, proactiveGoalCheckIn,
+  getActionableGoals, executeNextStep,
   getUserGoals, getGoalSteps, recordGoalEvent,
 } from './goal-service.js';
 import { sendAgentNotification } from './agent-notifications.js';
-import { executeDelegation, detectDelegationNeed } from './delegation-pipeline.js';
 import { emitThinking, emitDone } from './agent-state-bus.js';
 import type { AnyAgentId } from '../types/goals.js';
 

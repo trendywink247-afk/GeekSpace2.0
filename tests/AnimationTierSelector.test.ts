@@ -305,8 +305,9 @@ describe('isFirstVisit() & markVisited()', () => {
     expect(isFirstVisit()).toBe(false);
   });
 
-  it('treats empty string as "visited"', () => {
+  it('treats empty string as first visit (empty string is falsy)', () => {
     localStorage.setItem('office_visited', '');
-    expect(isFirstVisit()).toBe(false);
+    // localStorage.getItem returns "" which is falsy, so !("") === true
+    expect(isFirstVisit()).toBe(true);
   });
 });

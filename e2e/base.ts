@@ -2,7 +2,7 @@
 // ^ Playwright's `use` in test.extend() is NOT a React Hook
 // This file uses Playwright's fixture API, not React
 
-import { test as base, expect, type Page, devices } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 
 /**
  * Extended test fixture with console error capture and test mode helpers

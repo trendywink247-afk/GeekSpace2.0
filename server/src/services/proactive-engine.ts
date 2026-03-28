@@ -298,7 +298,7 @@ function getUserHour(timezone: string): number {
   );
 }
 
-function getUserMinute(timezone: string): number {
+function _getUserMinute(timezone: string): number {
   return parseInt(
     new Date().toLocaleString('en-US', { timeZone: timezone, minute: 'numeric' }),
     10
@@ -646,7 +646,7 @@ export async function initProactiveEngine(): Promise<void> {
       await weeklyReport(job.userId);
       await weeklyExpenseDigest(job.userId);
       // Reschedule for next Sunday 7pm
-      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      const _tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
       const nextSunday = Date.now() + 7 * 86_400_000;
       scheduleJob(job.userId, 'weekly_report', nextSunday, {}, { dedupeKey: `weekly_report:${job.userId}:${new Date(nextSunday).toISOString().slice(0, 10)}` });
     });

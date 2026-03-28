@@ -12,7 +12,7 @@ import { config } from '../../../config.js';
 
 // Pollinations.AI endpoints (completely free, no API key needed)
 const POLLINATIONS_IMAGE_URL = 'https://image.pollinations.ai/prompt';
-const POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
+const _POLLINATIONS_VIDEO_URL = 'https://video.pollinations.ai/prompt';
 
 // HuggingFace FLUX endpoint (fallback) — new router.huggingface.co (api-inference.huggingface.co deprecated 2026)
 const HF_FLUX_URL = 'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell';
@@ -170,7 +170,7 @@ export async function generateImage(
  */
 export async function generateVideo(
   prompt: string,
-  options: VideoGenerationOptions = {}
+  _options: VideoGenerationOptions = {}
 ): Promise<{ success: boolean; url: string; estimatedTime?: number; error?: string }> {
   // Video generation providers (Pollinations, Seedance, Veo2, etc.) are blocked from this VPS
   // Return early to prevent credit deduction and API calls

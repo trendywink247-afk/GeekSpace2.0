@@ -80,7 +80,7 @@ usageRouter.get('/billing', requireAuth, (req: AuthRequest, res) => {
 usageRouter.get('/chart', requireAuth, (req: AuthRequest, res) => {
   const userId = req.userId!;
   const range = (req.query.range as string) || '7d';
-  const group = (req.query.group as string) || 'day';
+  const _group = (req.query.group as string) || 'day';
 
   const days = range === '30d' ? 30 : range === '14d' ? 14 : 7;
 

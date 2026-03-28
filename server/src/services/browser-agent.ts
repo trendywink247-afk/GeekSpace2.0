@@ -3,7 +3,6 @@
 // Gives the AI agent "hands" to navigate, fill forms, take screenshots
 // ============================================================
 
-import { config } from '../config.js';
 import { logger } from '../logger.js';
 
 const BROWSER_URL = process.env.BROWSER_URL || 'http://geekspace-browser:3010';

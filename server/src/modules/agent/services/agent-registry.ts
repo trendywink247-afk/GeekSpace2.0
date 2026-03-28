@@ -224,7 +224,7 @@ export function scoreAgentMatch(role: AgentRole, message: string): number {
   const agent = AGENT_DEFINITIONS[role];
   const lower = message.toLowerCase();
   const words = lower.split(/\s+/);
-  const wordCount = words.length;
+  const _wordCount = words.length;
 
   let score = 0;
   let matches = 0;

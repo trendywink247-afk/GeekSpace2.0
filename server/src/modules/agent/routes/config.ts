@@ -4,16 +4,14 @@ import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { validateBody, agentConfigUpdateSchema } from '../../../middleware/validate.js';
 import { db } from '../../../db/index.js';
-import { logger } from '../../../logger.js';
-import { config } from '../../../config.js';
-import { getPersonality, PERSONALITIES } from '../../../prompts/personalities.js';
+import { PERSONALITIES } from '../../../prompts/personalities.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 
 const router = Router();
 
 // ---- Rate Limit Status tracker (GeekOS upgrade) ----
 // Redis-backed — survives Docker restarts
-const RL_WINDOW_S = 15 * 60;
+const _RL_WINDOW_S = 15 * 60;
 const RL_LIMIT = 60;
 
 /**

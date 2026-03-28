@@ -44,7 +44,7 @@ function getThemeColors(theme = 'dark') {
 function renderPortfolio(p: WebsiteParams): { html: string; css: string; js: string } {
   const c = getThemeColors(p.theme);
   const name = p.name || 'Developer';
-  const title = p.title || `${name} — Portfolio`;
+  const _title = p.title || `${name} — Portfolio`;
   const profession = p.profession || 'Software Developer';
   const location = p.location || '';
   const bio = p.bio || `Passionate ${profession.toLowerCase()} building impactful products.`;

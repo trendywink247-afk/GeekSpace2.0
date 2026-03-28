@@ -26,7 +26,7 @@
 import { createHash } from 'crypto';
 import { config } from '../../../config.js';
 import { logger } from '../../../logger.js';
-import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip, picoCircuitBreakerReset } from '../../../services/picoclaw.js';
+import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip } from '../../../services/picoclaw.js';
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from '../../../services/openrouter-models.js';
 import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from '../../../services/token-budget.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
@@ -1013,7 +1013,7 @@ function estimateCost(provider: Provider, tokensIn: number, tokensOut: number): 
   }
 }
 
-function getModelForProvider(provider: Provider, userId?: string): string {
+function getModelForProvider(provider: Provider, _userId?: string): string {
   switch (provider) {
     case 'ollama':          return config.ollamaModel;
     case 'groq':            return config.groqModel;
@@ -1151,7 +1151,7 @@ export async function routeChat(
   const overBudget = opts?.userId ? shouldDegradeRouting(opts.userId) : false;
   const overDailyBudget = opts?.userId ? isOverDailyBudget(opts.userId) : false;
   const isPremium = isPremiumPlan(opts?.userPlan);
-  const hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
+  const _hasCredits = opts?.userCredits === undefined || opts.userCredits > 0;
 
   if (overDailyBudget && opts?.userId) {
     logger.info({ userId: opts.userId }, 'Daily token budget exceeded — restricting to free-tier providers');
@@ -1407,9 +1407,9 @@ export async function routeChat(
 
 // ---- Ollama Keepalive ----
 
-const keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+const _keepaliveInterval: ReturnType<typeof setInterval> | null = null;
 
-async function pingOllama(): Promise<void> {
+async function _pingOllama(): Promise<void> {
   try {
     const res = await fetch(`${config.ollamaBaseUrl}/api/generate`, {
       method: 'POST',

@@ -160,7 +160,7 @@ function analyzeProjectSignals(
 
 // ── Project Extraction ──────────────────────────────────────
 
-function extractProjectName(userContent: string, assistantContent: string): string {
+function extractProjectName(userContent: string, _assistantContent: string): string {
   // Try to find an explicit project name
   const patterns = [
     /(?:project|app|website)\s+(?:called|named)\s+["']?([^"'.\n]{2,30})["']?/i,

@@ -18,7 +18,7 @@ import { runReactLoop } from './react-loop.js';
 import { getPersonalityPrompt, getPersonality } from '../../../prompts/personalities.js';
 import { sendAgentComm, type AgentId } from './agent-comms.js';
 import { emitThinking, emitResponding, emitDone, emitDelegation, emitCommSent } from './agent-state-bus.js';
-import { parseDelegates, getAgentDefinition, tierToProvider, type AgentRole } from './agent-registry.js';
+import { parseDelegates, type AgentRole } from './agent-registry.js';
 import type { AnyAgentId } from '../types/goals.js';
 
 // ── Types ───────────────────────────────────────────────────

@@ -42,7 +42,7 @@ if (otelEnabled) {
   });
 
   sdk.start();
-  // eslint-disable-next-line no-console
+   
   console.log('[otel] OpenTelemetry tracing initialized — exporting to', endpoint);
 }
 

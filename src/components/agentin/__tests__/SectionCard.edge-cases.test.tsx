@@ -147,8 +147,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
           Content
         </SectionCard>
       );
-      const subtitle = container.querySelector('[class*="text-"]');
-      expect(subtitle?.className).toMatch(/(text-gray|text-slate|opacity-)/);
+      const subtitle = container.querySelector('p[class*="text-"]');
+      expect(subtitle?.className).toMatch(/text-\[var\(--ag-text-secondary/);
     });
 
     it('title and subtitle are vertically stacked', () => {
@@ -157,8 +157,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
           Content
         </SectionCard>
       );
-      // Should have flex-col or similar layout
-      const header = container.querySelector('[class*="flex"]');
+      // Title and subtitle are in a mb-4 container
+      const header = container.querySelector('[class*="mb-4"]');
       expect(header).toBeTruthy();
     });
 

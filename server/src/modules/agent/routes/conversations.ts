@@ -18,7 +18,7 @@ import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
-import { getRecentConversations, getConversationContext } from '../../../services/memory.js';
+import { getRecentConversations } from '../../../services/memory.js';
 
 const router = Router();
 

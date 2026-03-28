@@ -20,7 +20,6 @@ import { edithChat } from '../../../services/edith.js';
 import { logger } from '../../../logger.js';
 import { config } from '../../../config.js';
 import { generateCodename, buildPremiumPrompt, getDeployMessage } from '../services/premium-agent.js';
-import { logActivity } from '../../../services/activity-log.js';
 
 const router = Router();
 

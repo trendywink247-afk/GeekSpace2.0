@@ -26,7 +26,7 @@ export function generatePortfolioSuggestions(userId: string): PortfolioSuggestio
   } | undefined;
 
   for (const memory of memories) {
-    const memoryText = `${memory.key} ${memory.value}`.toLowerCase();
+    const _memoryText = `${memory.key} ${memory.value}`.toLowerCase();
     const portfolioText = `${portfolio?.headline || ''} ${portfolio?.about || ''} ${portfolio?.skills || ''}`.toLowerCase();
 
     if (!portfolioText.includes(memory.key.toLowerCase())) {

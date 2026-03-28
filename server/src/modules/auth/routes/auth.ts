@@ -12,7 +12,7 @@ import { encrypt } from '../../../utils/encryption.js';
 import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
 import { logger } from '../../../logger.js';
 import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
-import { issueRefreshToken, rotateRefreshToken, revokeAllRefreshTokens } from '../services/refresh-token.js';
+import { issueRefreshToken, rotateRefreshToken } from '../services/refresh-token.js';
 
 export const authRouter = Router();
 
@@ -312,7 +312,7 @@ authRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
 });
 
 authRouter.post('/onboarding', requireAuth, validateBody(onboardingSchema), (req: AuthRequest, res) => {
-  const { profile, agentMode, integrations: integrationsToConnect } = req.body;
+  const { profile, agentMode } = req.body;
 
   // Update user profile from onboarding
   if (profile) {

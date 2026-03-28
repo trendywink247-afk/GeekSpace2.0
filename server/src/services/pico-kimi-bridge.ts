@@ -24,7 +24,6 @@ import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
-import { edithChat } from './edith.js';
 import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip, picoCircuitBreakerReset } from './picoclaw.js';
 import {
   type AgentRole,
@@ -36,7 +35,6 @@ import {
 import {
   createWorkflow,
   addWorkflowStep,
-  executeWorkflow,
   getWorkflowStatus,
   type WorkflowStatus,
 } from './workflow-engine.js';

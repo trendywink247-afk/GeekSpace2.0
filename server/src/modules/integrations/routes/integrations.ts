@@ -7,7 +7,7 @@ import { db } from '../../../db/index.js';
 import { getBotUsername, sendTelegramMessage } from '../services/telegram.js';
 import { config } from '../../../config.js';
 import { logger } from '../../../logger.js';
-import { generateWhatsAppLinkToken, generateWhatsAppQRSession, checkWhatsAppSession } from '../services/whatsapp.js';
+import { generateWhatsAppQRSession, checkWhatsAppSession } from '../services/whatsapp.js';
 
 export const integrationsRouter = Router();
 

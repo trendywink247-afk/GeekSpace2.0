@@ -103,7 +103,7 @@ export async function indexNote(userId: string, noteId: string, title: string, c
   });
 }
 
-export async function indexMemory(userId: string, key: string, value: string, memId?: number): Promise<void> {
+export async function indexMemory(userId: string, key: string, value: string, _memId?: number): Promise<void> {
   await indexDocument({
     id: `mem-${userId.replace(/[^a-zA-Z0-9_-]/g, '_')}-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
     user_id: userId,

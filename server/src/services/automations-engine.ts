@@ -105,7 +105,7 @@ interface ExecutionResult {
 // ---- Scheduled timers ----
 
 const cronTimers = new Map<string, ReturnType<typeof setInterval>>();
-const healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+const _healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 // ---- Action Executors ----
 

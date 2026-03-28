@@ -16,11 +16,11 @@ describe('PageHeader — Edge Cases & Integration', () => {
       const { container } = render(
         <PageHeader title={longTitle} />
       );
-      const title = container.querySelector('[class*="line-clamp-1"]');
+      const title = container.querySelector('[class*="truncate"]');
       expect(title).toBeTruthy();
     });
 
-    it('subtitle with 300+ characters uses line-clamp-2', () => {
+    it('subtitle with 300+ characters uses truncate', () => {
       const longSubtitle = 'Lorem ipsum dolor sit amet. '.repeat(15);
       const { container } = render(
         <PageHeader
@@ -28,11 +28,11 @@ describe('PageHeader — Edge Cases & Integration', () => {
           subtitle={longSubtitle}
         />
       );
-      const subtitle = container.querySelector('[class*="line-clamp-"]');
+      const subtitle = container.querySelector('[class*="truncate"]');
       expect(subtitle).toBeTruthy();
     });
 
-    it('title + subtitle + badge + actions layout does not overflow on mobile', () => {
+    it('title + subtitle + badge + actions layout uses min-w-0 for overflow', () => {
       const { container } = render(
         <PageHeader
           title="Very Long Title For Mobile Testing"
@@ -41,8 +41,8 @@ describe('PageHeader — Edge Cases & Integration', () => {
           actions={<button>Action</button>}
         />
       );
-      // Should render without horizontal overflow
-      expect(container.querySelector('[class*="overflow-hidden"]')).toBeTruthy();
+      // Uses min-w-0 and truncate for overflow control
+      expect(container.querySelector('[class*="min-w-0"]')).toBeTruthy();
     });
   });
 
@@ -102,12 +102,12 @@ describe('PageHeader — Edge Cases & Integration', () => {
       expect(header.className).toMatch(/flex-col|flex/);
     });
 
-    it('displays horizontally on desktop (md:flex-row)', () => {
+    it('displays horizontally on desktop (sm:flex-row)', () => {
       const { container } = render(
         <PageHeader title="Test" actions={<button>Action</button>} />
       );
       const header = container.firstChild as HTMLElement;
-      expect(header.className).toMatch(/md:flex-row/);
+      expect(header.className).toMatch(/sm:flex-row/);
     });
 
     it('actions align to right on desktop (md:ml-auto or md:justify-between)', () => {
@@ -211,11 +211,11 @@ describe('PageHeader — Edge Cases & Integration', () => {
 
   // ─── Font and color styling ────────────────────────────────────────────
   describe('Typography and color', () => {
-    it('title has font-semibold weight', () => {
+    it('title has font-bold weight', () => {
       const { container } = render(
         <PageHeader title="Title" />
       );
-      const title = container.querySelector('[class*="font-semibold"]');
+      const title = container.querySelector('[class*="font-bold"]');
       expect(title).toBeTruthy();
     });
 
@@ -223,9 +223,9 @@ describe('PageHeader — Edge Cases & Integration', () => {
       const { container } = render(
         <PageHeader title="Title" subtitle="Sub" />
       );
-      const subtitle = container.querySelector('[class*="text-"]');
-      // Should match muted or secondary color pattern
-      expect(subtitle?.className).toMatch(/(text-gray|text-slate|opacity-|text-muted)/);
+      const subtitle = container.querySelector('p[class*="text-"]');
+      // Uses CSS custom property for secondary color
+      expect(subtitle?.className).toMatch(/text-\[var\(--ag-text-secondary/);
     });
 
     it('icon has visible contrast against cyan background', () => {

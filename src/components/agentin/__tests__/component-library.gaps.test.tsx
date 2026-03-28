@@ -161,7 +161,7 @@ describe('Component Library — CRITICAL GAPS', () => {
         <PageHeader title={longTitle} />
       );
 
-      const title = container.querySelector('[class*="line-clamp"]');
+      const title = container.querySelector('[class*="truncate"]');
 
       // Should truncate with ellipsis
       expect(title).toBeTruthy();
@@ -270,7 +270,8 @@ describe('Component Library — CRITICAL GAPS', () => {
         </SectionCard>
       );
 
-      expect(screen.getByText(longSubtitle)).toBeTruthy();
+      // Subtitle is rendered inside a <p> with trimmed whitespace; use a function matcher
+      expect(screen.getByText((content) => content.includes('Subtitle text.'))).toBeTruthy();
     });
 
     it('TODO: SectionCard padding variants (sm, md, lg)', () => {

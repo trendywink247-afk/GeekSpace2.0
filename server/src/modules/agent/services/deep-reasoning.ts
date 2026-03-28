@@ -137,7 +137,7 @@ export async function runDeepReasoning(
     lastModel = planResult.model;
 
     // Check if plan has actions
-    const { text: planText, actions: planActions } = parseActions(planResult.reply);
+    const { actions: planActions } = parseActions(planResult.reply);
     if (planActions.length > 0) {
       // Plan included immediate actions — execute them now
       workingMessages.push({ role: 'assistant', content: planResult.reply });

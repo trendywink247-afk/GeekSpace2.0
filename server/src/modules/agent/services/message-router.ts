@@ -55,7 +55,7 @@ import { checkContentSafety } from '../../../services/content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from '../../../services/research-job.js';
 import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived, emitTaskStarted, emitTaskCompleted } from './agent-state-bus.js';
-import { detectDelegationTarget, routeDelegation } from '../../../services/delegation.js';
+import { routeDelegation } from '../../../services/delegation.js';
 import { cacheDel } from '../../../services/cache.js';
 import { getTodayFestival } from '../../../services/festival-calendar.js';
 

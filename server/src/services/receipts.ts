@@ -5,7 +5,6 @@
 // Tool receipts, progress indicators, action chips
 // ============================================================
 
-import { logger } from '../logger.js';
 
 export interface ReceiptItem {
   icon: string;

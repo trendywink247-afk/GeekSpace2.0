@@ -17,7 +17,6 @@
  * @module services/persona-engine
  */
 
-import { logger } from '../logger.js';
 
 // ── Types ────────────────────────────────────────────────────
 

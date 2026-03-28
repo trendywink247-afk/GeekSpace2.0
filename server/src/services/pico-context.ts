@@ -96,7 +96,7 @@ export function loadPicoContext(userId: string): PicoContext {
       failedTasks = failed.length > 0
         ? failed.map(t => `• [${t.agent_name}] ${t.description} — ${t.result?.slice(0, 100) || 'Failed'}`).join('\n')
         : 'No recent failures.';
-    } catch (e) {
+    } catch (_e) {
       errors.push('failed_tasks');
       // Don't log — non-critical
     }
@@ -141,7 +141,7 @@ export function loadPicoContext(userId: string): PicoContext {
       ).get(userId) as { personality: string; model_preference: string } | undefined;
       personality = agentConfig?.personality || 'jarvis';
       modelPreference = agentConfig?.model_preference || 'auto';
-    } catch (e) {
+    } catch (_e) {
       errors.push('agent_config');
       // Use defaults
     }

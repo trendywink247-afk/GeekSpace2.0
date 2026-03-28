@@ -5,7 +5,7 @@
 // ============================================================
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { getRoutingTraces, clearRoutingTraces, type RoutingTrace } from '../services/llm.js';
+import { getRoutingTraces, clearRoutingTraces } from '../services/llm.js';
 import { config } from '../config.js';
 
 const router = Router();

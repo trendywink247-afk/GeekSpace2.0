@@ -8,7 +8,7 @@ import {
   getAgentUsage,
   getTopics,
 } from '../services/analytics.js';
-import { cacheGet, cacheSet, cacheDel } from '../services/cache.js';
+import { cacheGet, cacheSet } from '../services/cache.js';
 import { routeChat } from '../services/llm.js';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';

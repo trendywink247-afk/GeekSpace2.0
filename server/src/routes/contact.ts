@@ -7,13 +7,11 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { config } from '../config.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
   notifyUserOfContactRequest,
   handleAcceptRequest,
   handleDeclineRequest,
-  getUserChannelStatus,
   getAvailabilityResponse,
   isInQuietHours,
   type ContactRequest,

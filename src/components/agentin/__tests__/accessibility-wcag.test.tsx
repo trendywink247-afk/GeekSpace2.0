@@ -272,21 +272,20 @@ describe('Agentin Components — WCAG 2.1 AA Accessibility', () => {
 
   // ─── Text truncation and overflow ─────────────────────────────────────
   describe('Text truncation accessibility', () => {
-    it('truncated title has aria-label with full text', () => {
+    it('truncated title has truncate class', () => {
       const longTitle = 'A'.repeat(100);
-      const { container, rerender } = render(
+      const { container } = render(
         <PageHeader
           title={longTitle}
-          // TODO: Add aria-label prop to show full text when truncated
         />
       );
 
-      const title = container.querySelector('h1, h2, h3');
-      // Should have line-clamp applied
-      expect(title?.className).toMatch(/line-clamp-1/);
+      const title = container.querySelector('h1');
+      // Uses truncate class for text overflow
+      expect(title?.className).toMatch(/truncate/);
     });
 
-    it('truncated subtitle provides full content via aria-label', () => {
+    it('truncated subtitle has truncate class', () => {
       const longSubtitle = 'Lorem ipsum dolor sit amet. '.repeat(15);
       const { container } = render(
         <PageHeader
@@ -295,7 +294,7 @@ describe('Agentin Components — WCAG 2.1 AA Accessibility', () => {
         />
       );
 
-      const subtitle = container.querySelector('[class*="line-clamp-"]');
+      const subtitle = container.querySelector('p[class*="truncate"]');
       expect(subtitle).toBeTruthy();
     });
 

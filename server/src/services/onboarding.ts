@@ -6,7 +6,6 @@
 // ============================================================
 
 import { db } from '../db/index.js';
-import { logger } from '../logger.js';
 import { v4 as uuid } from 'uuid';
 import { sendTelegramMessage, sendTelegramButtons } from './telegram.js';
 
@@ -135,7 +134,7 @@ What are you using me for today?`;
 }
 
 export async function quickSetupStyle(chatId: string, data: OnboardingData): Promise<void> {
-  const goalText = data.goal === 'surprise' ? 'surprise' : `for ${data.goal}`;
+  const _goalText = data.goal === 'surprise' ? 'surprise' : `for ${data.goal}`;
 
   const text = `⚡ Quick Setup — Step 2/4
 
@@ -490,7 +489,7 @@ export async function sendActionChips(chatId: string, context?: string): Promise
 export async function handleOnboardingCallback(
   chatId: string,
   data: string,
-  messageText?: string
+  _messageText?: string
 ): Promise<boolean> {
   const session = getOrCreateOnboarding(chatId);
 
@@ -633,7 +632,7 @@ export async function startOnboarding(chatId: string, userId?: string): Promise<
   deleteOnboarding(chatId);
 
   // Create new session
-  const session = getOrCreateOnboarding(chatId);
+  const _session = getOrCreateOnboarding(chatId);
   if (userId) {
     linkOnboardingToUser(chatId, userId);
   }
