@@ -163,7 +163,6 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 8m
-          script_stop: true
           script: |
             set -e
             cd ~/GeekSpace2.0
@@ -256,7 +255,6 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 8m
-          script_stop: true
           script: |
             set -e
             cd ~/GeekSpace2.0
