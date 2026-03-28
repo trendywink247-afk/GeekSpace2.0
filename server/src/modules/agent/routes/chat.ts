@@ -91,7 +91,7 @@ function detectAndHandleTaskIntent(message: string): boolean {
 
 // ---- Helper: Build system prompt with user context ----
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   agentConfig: Record<string, unknown> | undefined,
   user: Record<string, unknown> | undefined,
   userId: string,
