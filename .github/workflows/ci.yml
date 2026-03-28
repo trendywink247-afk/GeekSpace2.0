@@ -156,6 +156,9 @@ jobs:
             set -e
             cd ~/GeekSpace2.0
 
+            echo "=== Cleaning local changes ==="
+            git stash --include-untracked || true
+
             BRANCH="${{ github.head_ref || 'main' }}"
             echo "=== Fetching branch: $BRANCH ==="
             git fetch origin "$BRANCH"
@@ -245,6 +248,9 @@ jobs:
           script: |
             set -e
             cd ~/GeekSpace2.0
+
+            echo "=== Cleaning local changes ==="
+            git stash --include-untracked || true
 
             echo "=== Pulling latest main ==="
             git pull origin main
