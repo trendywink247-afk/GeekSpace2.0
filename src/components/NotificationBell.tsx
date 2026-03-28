@@ -106,7 +106,7 @@ export function NotificationBell() {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 max-h-[420px] overflow-hidden rounded-xl shadow-2xl z-50"
+          className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-[420px] overflow-hidden rounded-xl shadow-2xl z-50"
           style={{
             background: '#0C0C18',
             border: '1px solid rgba(255,255,255,0.1)',

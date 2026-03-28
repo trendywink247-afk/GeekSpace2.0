@@ -14,8 +14,8 @@ function readSrc(rel: string): string {
 }
 
 describe('88.2 Notification dropdown horizontal overflow', () => {
-  it('DashboardApp dropdown has max-w to prevent overflow on small screens', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+  it('NotificationBell dropdown has max-w to prevent overflow on small screens', () => {
+    const content = readSrc('components/NotificationBell.tsx');
     expect(content).toContain('max-w-[calc(100vw-1rem)]');
   });
 });
