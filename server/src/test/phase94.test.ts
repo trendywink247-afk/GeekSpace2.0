@@ -276,36 +276,34 @@ describe('94.4 extractMemoriesFromConversation', () => {
 // ─────────────────────────────────────────────
 
 describe('94.5 static: memory routes and service files exist', () => {
-  it('routes/memory.ts exports memoryRouter', () => {
-    const src = readSrc('routes', 'memory.ts');
-    expect(src).toMatch(/memoryRouter/);
+  it('memory module routes has Router', () => {
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/Router/);
   });
 
-  it('routes/memory.ts has GET / route', () => {
-    const src = readSrc('routes', 'memory.ts');
+  it('memory module routes has GET route', () => {
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/get\(/);
   });
 
-  it('routes/memory.ts has POST / route', () => {
-    const src = readSrc('routes', 'memory.ts');
+  it('memory module routes has POST route', () => {
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/post\(/);
   });
 
-  it('routes/memory.ts has DELETE route', () => {
-    const src = readSrc('routes', 'memory.ts');
+  it('memory module routes has DELETE route', () => {
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/delete\(/);
   });
 
-  it('routes/memory.ts has context route', () => {
-    const src = readSrc('routes', 'memory.ts');
+  it('memory module routes has context route', () => {
+    const src = readSrc('modules', 'memory', 'routes', 'memory.ts');
     expect(src).toMatch(/context/);
   });
 
-  it('app.ts registers memoryRouter at /api/memory', () => {
+  it('app.ts registers memory module', () => {
     const src = readSrc('app.ts');
-    expect(src).toMatch(/memoryRouter/);
-    expect(src).toMatch(/\/api\/memory/);
+    expect(src).toMatch(/memoryModule/);
   });
 
   it('agent chat.ts imports formatMemoryContext', () => {

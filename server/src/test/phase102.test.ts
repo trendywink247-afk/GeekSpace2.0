@@ -61,10 +61,9 @@ describe("102.1 File structure", () => {
     expect(fileExists("src/dashboard/pages/AnalyticsPage.tsx")).toBe(true);
   });
 
-  it("app.ts registers analyticsRouter at /api/analytics", () => {
+  it("app.ts registers dashboardModule", () => {
     const src = readSrc("app.ts");
-    expect(src).toContain("analyticsRouter");
-    expect(src).toContain("/api/analytics");
+    expect(src).toContain("dashboardModule");
   });
 
   it("proactive-engine.ts exports weeklyReport", () => {

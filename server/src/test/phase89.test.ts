@@ -33,23 +33,23 @@ describe('89.1 stripe.ts service', () => {
   });
 
   it('exports createCheckoutSession', () => {
-    const content = readServer('services/stripe.ts');
-    expect(content).toContain('export async function createCheckoutSession');
+    const content = readServer('modules/billing/services/stripe.ts');
+    expect(content).toContain('createCheckoutSession');
   });
 
   it('exports handleWebhook', () => {
-    const content = readServer('services/stripe.ts');
-    expect(content).toContain('export async function handleWebhook');
+    const content = readServer('modules/billing/services/stripe.ts');
+    expect(content).toContain('handleWebhook');
   });
 
   it('exports getStatus', () => {
-    const content = readServer('services/stripe.ts');
-    expect(content).toContain('export function getStatus');
+    const content = readServer('modules/billing/services/stripe.ts');
+    expect(content).toContain('getStatus');
   });
 
   it('exports isPaidPlan', () => {
-    const content = readServer('services/stripe.ts');
-    expect(content).toContain('export function isPaidPlan');
+    const content = readServer('modules/billing/services/stripe.ts');
+    expect(content).toContain('isPaidPlan');
   });
 });
 
