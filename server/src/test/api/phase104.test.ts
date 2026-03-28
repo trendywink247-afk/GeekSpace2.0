@@ -45,13 +45,13 @@ describe('Phase 104 — ReAct Tool Loop', () => {
 
   describe('104.2 Executors', () => {
     it('action-executor.ts handles web_search', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/action-executor.ts'), 'utf-8');
       expect(content).toContain("case 'web_search':");
       expect(content).toContain('tavilySearch');
     });
 
     it('action-executor.ts handles send_telegram', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/action-executor.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/action-executor.ts'), 'utf-8');
       expect(content).toContain("case 'send_telegram':");
       expect(content).toContain('sendTelegramNotification');
     });
@@ -59,32 +59,32 @@ describe('Phase 104 — ReAct Tool Loop', () => {
 
   describe('104.3 ReAct loop service', () => {
     it('react-loop.ts file exists', () => {
-      expect(existsSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'))).toBe(true);
+      expect(existsSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'))).toBe(true);
     });
 
     it('exports runReactLoop function', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'), 'utf-8');
       expect(content).toContain('export async function runReactLoop');
     });
 
     it('defines MAX_REACT_ITERATIONS = 5', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'), 'utf-8');
       expect(content).toContain('MAX_REACT_ITERATIONS = 5');
     });
 
     it('injects tool results back into messages', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'), 'utf-8');
       expect(content).toContain('[TOOL RESULT');
     });
 
     it('returns accumulated observations on max iterations', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'), 'utf-8');
       expect(content).toContain('MAX_REACT_ITERATIONS');
       expect(content).toContain('observations');
     });
 
     it('calls executeAction for each tool', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/react-loop.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/react-loop.ts'), 'utf-8');
       expect(content).toContain('executeAction');
     });
   });
@@ -101,19 +101,19 @@ describe('Phase 104 — ReAct Tool Loop', () => {
     });
 
     it('message-router.ts buildChannelSystemPrompt mentions web_search tool', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/message-router.ts'), 'utf-8');
       expect(content).toContain('web_search');
     });
   });
 
   describe('104.5 message-router wired to ReAct loop', () => {
     it('message-router.ts imports runReactLoop', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/message-router.ts'), 'utf-8');
       expect(content).toContain('runReactLoop');
     });
 
     it('message-router.ts calls sendChannelResponse', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/services/message-router.ts'), 'utf-8');
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/message-router.ts'), 'utf-8');
       expect(content).toContain('sendChannelResponse');
     });
   });

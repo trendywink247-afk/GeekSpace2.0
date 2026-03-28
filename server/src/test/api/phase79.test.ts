@@ -52,7 +52,7 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
     });
 
     it('is imported and called in message-router.ts after AI reply', () => {
-      const src = readFile('server/src/services/message-router.ts');
+      const src = readFile('server/src/modules/agent/services/message-router.ts');
       expect(src).toContain('extractMemoriesWithOllama');
       // Must be fire-and-forget (non-blocking)
       expect(src).toContain('extractMemoriesWithOllama(userId, msg.text, finalReply).catch');
@@ -67,12 +67,12 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
   // ── 79.3: Memory context injected into system prompt ────────────
   describe('79.3: Memory read — inject into system prompt', () => {
     it('buildMemoryContext is called in message-router.ts with user message', () => {
-      const src = readFile('server/src/services/message-router.ts');
+      const src = readFile('server/src/modules/agent/services/message-router.ts');
       expect(src).toContain('buildMemoryContext(userId, userMessage)');
     });
 
     it('memory block is included in channel system prompt', () => {
-      const src = readFile('server/src/services/message-router.ts');
+      const src = readFile('server/src/modules/agent/services/message-router.ts');
       expect(src).toContain('memoryBlock');
     });
 

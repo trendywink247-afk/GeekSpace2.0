@@ -167,7 +167,7 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.x: message-router updates last_sync on message ────────────
   describe('78.6 (backend): message-router updates integrations.last_sync', () => {
     it('updates integrations last_sync when message is received', () => {
-      const src = readFile('server/src/services/message-router.ts');
+      const src = readFile('server/src/modules/agent/services/message-router.ts');
       expect(src).toContain('UPDATE integrations SET last_sync');
     });
   });
