@@ -188,6 +188,12 @@ router.patch('/goals/:goalId/steps/:stepId', requireAuth, (req, res) => {
     return;
   }
 
+  const allowedStatuses: StepStatus[] = ['pending', 'in_progress', 'completed', 'failed', 'skipped', 'blocked'];
+  if (!allowedStatuses.includes(status)) {
+    res.status(400).json({ error: 'Invalid status' });
+    return;
+  }
+
   // Validate step belongs to the specified goal
   const existingStep = getGoalSteps(req.params.goalId).find(s => s.id === req.params.stepId);
   if (!existingStep) {

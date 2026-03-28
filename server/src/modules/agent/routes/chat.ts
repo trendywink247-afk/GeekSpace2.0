@@ -183,7 +183,7 @@ Use goal_status to fetch a single goal with its steps, progress, and current sta
 tool: plan_goal
 goal_id: <id>
 <<<END>>>
-Use plan_goal to re-plan or initially decompose a goal into actionable steps assigned to specialist agents.
+Use plan_goal only to re-plan an existing goal when automatic planning failed or needs revision.
 <<<ACTION>>>
 tool: execute_goal_step
 goal_id: <id>

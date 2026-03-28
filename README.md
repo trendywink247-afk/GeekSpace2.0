@@ -6,7 +6,7 @@
 <br />
 
 [![Live](https://img.shields.io/badge/LIVE-ai.agentin.chat-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.agentin.chat)
-[![Version](https://img.shields.io/badge/v3.2-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
+[![Version](https://img.shields.io/badge/v3.3.0-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/trendywink247-afk/GeekSpace2.0/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/trendywink247-afk/GeekSpace2.0/actions)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
 

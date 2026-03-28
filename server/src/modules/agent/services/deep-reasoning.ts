@@ -102,6 +102,7 @@ export async function runDeepReasoning(
   let totalCreditCost = 0;
   let lastProvider = '';
   let lastModel = '';
+  let loopIterations = 0;
 
   // Phase 1: Planning (inject planning prompt for complex tasks)
   const lastUserMsg = workingMessages.filter(m => m.role === 'user').pop();
@@ -159,6 +160,7 @@ export async function runDeepReasoning(
 
   // Phase 2: Iterative execution
   for (let i = 0; i < maxIter; i++) {
+    loopIterations++;
     opts.onStep?.({
       type: 'thinking',
       content: i === 0 ? 'Analyzing your request...' : 'Reasoning about results...',
@@ -324,7 +326,7 @@ export async function runDeepReasoning(
     if (i === maxIter - 1) {
       opts.onStep?.({ type: 'drafting', content: 'Writing final response...', iteration: i });
       if (opts.agentId) emitResponding(opts.userId, opts.agentId, 'Writing response...');
-      finalText = cleanText || result.reply;
+      finalText = cleanText;
     }
   }
 
@@ -340,7 +342,7 @@ export async function runDeepReasoning(
     tokensIn: totalTokensIn,
     tokensOut: totalTokensOut,
     creditCost: totalCreditCost,
-    iterations: allActionResults.length,
+    iterations: loopIterations,
     reflections,
   };
 }

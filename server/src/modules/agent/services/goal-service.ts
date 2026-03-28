@@ -10,6 +10,7 @@ import { v4 as uuid } from 'uuid';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { routeChat, type ChatMessage } from './llm.js';
+import { runReactLoop } from './react-loop.js';
 import { getPersonalityPrompt } from '../../../prompts/personalities.js';
 import { emitThinking, emitResponding, emitDone, emitDelegation } from './agent-state-bus.js';
 import { sendAgentComm } from './agent-comms.js';
@@ -293,6 +294,13 @@ export async function planGoal(goalId: string, userId: string): Promise<GoalPlan
       key_risks: string[];
     };
 
+    // Validate plan before wiping old steps
+    if (!Array.isArray(plan.steps) || plan.steps.length === 0) {
+      logger.warn({ goalId }, 'goal:plan returned no actionable steps');
+      emitDone(userId, 'cal');
+      return null;
+    }
+
     // Atomic re-plan: clear old pending steps + insert new ones in a transaction
     const createdSteps: GoalStep[] = [];
     const stepIdMap: Record<number, string> = {};
@@ -392,9 +400,11 @@ export async function executeNextStep(goalId: string, userId: string): Promise<G
     VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', ?, datetime('now'))
   `).run(delegationId, userId, goalId, nextStep.id, 'cal', agent, nextStep.title, new Date().toISOString());
 
-  // Send inter-agent communication
-  sendAgentComm(userId, 'jarvis' as 'weebo' | 'edith' | 'jarvis', (agent === 'weebo' || agent === 'edith' || agent === 'jarvis' ? agent : 'jarvis') as 'weebo' | 'edith' | 'jarvis',
-    `Cal delegated: "${goal.title}" — step: ${nextStep.title}`, 'delegation');
+  // Send inter-agent communication (best-effort — don't strand step on comm failure)
+  try {
+    sendAgentComm(userId, 'jarvis' as 'weebo' | 'edith' | 'jarvis', (agent === 'weebo' || agent === 'edith' || agent === 'jarvis' ? agent : 'jarvis') as 'weebo' | 'edith' | 'jarvis',
+      `Cal delegated: "${goal.title}" — step: ${nextStep.title}`, 'delegation');
+  } catch { /* non-critical */ }
 
   try {
     const personalityPrompt = getPersonalityPrompt(agent);
@@ -403,23 +413,24 @@ export async function executeNextStep(goalId: string, userId: string): Promise<G
       content: `You are working on a goal step autonomously.\n\nGoal: ${goal.title}\nStep: ${nextStep.title}\nDescription: ${nextStep.description}\n\nProvide a concise result of completing this step. Be specific and actionable. If this step produces an artifact (code, plan, analysis), include it.`,
     }];
 
-    const result = await routeChat(messages, {
+    const result = await runReactLoop(messages, {
       systemPrompt: personalityPrompt,
       userId,
       agentName: agent,
+      agentId: agent,
     });
 
     emitResponding(userId, agent, `Completed: "${nextStep.title}"`);
-    updateStepStatus(nextStep.id, userId, 'completed', result.reply.slice(0, 2000));
+    updateStepStatus(nextStep.id, userId, 'completed', result.text.slice(0, 2000));
 
     // Save result as workspace artifact if substantial
-    if (result.reply.length > 200) {
-      createWorkspaceArtifact(userId, goalId, `Step result: ${nextStep.title}`, result.reply, 'note', agent);
+    if (result.text.length > 200) {
+      createWorkspaceArtifact(userId, goalId, `Step result: ${nextStep.title}`, result.text, 'note', agent);
     }
 
     // Update delegation log
     db.prepare("UPDATE delegation_log SET status = 'completed', result = ?, completed_at = ? WHERE id = ?")
-      .run(result.reply.slice(0, 1000), new Date().toISOString(), delegationId);
+      .run(result.text.slice(0, 1000), new Date().toISOString(), delegationId);
 
     emitDone(userId, agent);
     logger.info({ goalId, stepId: nextStep.id, agent }, 'goal:step-executed');

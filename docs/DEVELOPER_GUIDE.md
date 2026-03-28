@@ -19,7 +19,8 @@
 11. [Code Conventions](#11-code-conventions)
 12. [Common Patterns](#12-common-patterns)
 13. [High-Risk Areas](#13-high-risk-areas)
-14. [Related Documents](#14-related-documents)
+14. [Agentic Experience — Developer Guide](#14-agentic-experience--developer-guide)
+15. [Related Documents](#15-related-documents)
 
 ---
 
