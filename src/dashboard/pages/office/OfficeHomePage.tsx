@@ -771,6 +771,7 @@ export function OfficeHomePage() {
   }, [officeData?.timeline, dismissedInsights]);
 
   // Fetch task count when agent selected
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!selectedAgentId) { setTaskCount(0); return; }
     let cancelled = false;

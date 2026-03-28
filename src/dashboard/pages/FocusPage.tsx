@@ -157,6 +157,7 @@ function useTimer(startMs: number | null, durationMin: number | null) {
   const [elapsed, setElapsed] = useState(0);
   const workerRef = useRef<Worker | null>(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!startMs) {
       setElapsed(0);

@@ -43,7 +43,8 @@ describe('Component Library — Full Integration', () => {
       expect(screen.getByText('Welcome back')).toBeTruthy();
       expect(screen.getByText('Overview')).toBeTruthy();
       expect(screen.getByText('Activity')).toBeTruthy();
-      expect(screen.getByText('Settings')).toBeTruthy();
+      // "Settings" appears both as a button and a SectionCard title
+      expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
 
       // Verify structure - max-w-6xl is on first child
       const shell = container.firstChild as HTMLElement;

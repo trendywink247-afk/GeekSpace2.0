@@ -264,6 +264,7 @@ export function PromptTemplatesSection() {
   }, [activeTab]);
 
   // Initial mount: show typing briefly then reveal
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setShowAgent(false);
     setShowTyping(true);

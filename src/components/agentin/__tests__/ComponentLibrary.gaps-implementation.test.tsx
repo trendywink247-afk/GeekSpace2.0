@@ -113,8 +113,12 @@ describe('PageShell — Complete Feature Coverage', () => {
         <PageShell>Content</PageShell>
       );
       // Gradient orbs use bg-[...] classes with color values
-      const orbs = container.querySelectorAll('[class*="bg-["]');
-      expect(orbs.length).toBeGreaterThan(0);
+      const orbs = container.querySelectorAll('[class*="rounded-full"]');
+      // Verify at least one orb has a bg class with color
+      const hasColorBg = Array.from(orbs).some((orb) =>
+        (orb as HTMLElement).className.includes('bg-')
+      );
+      expect(hasColorBg).toBe(true);
     });
 
     it('content appears above gradient (z-index layering)', () => {

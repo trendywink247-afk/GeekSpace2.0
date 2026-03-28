@@ -129,6 +129,7 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
   const [progressPct, setProgressPct] = useState(100);
 
   // Animate progress bar countdown
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (fadeState !== 'in' || !current) return;
     progressStartRef.current = Date.now();

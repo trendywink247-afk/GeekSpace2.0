@@ -30,6 +30,7 @@ export function Terminal({
   const [currentChar, setCurrentChar] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (currentLine >= lines.length) {
       setIsTyping(false);

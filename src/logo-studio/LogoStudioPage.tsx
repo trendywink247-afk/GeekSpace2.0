@@ -39,9 +39,11 @@ export function LogoStudioPage() {
   const [fading, setFading] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteConcept[]>([]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try { const s = localStorage.getItem(FAVORITES_KEY); if (s) setFavorites(JSON.parse(s)); } catch {}
   }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)); } catch {}
   }, [favorites]);

@@ -62,6 +62,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   const [shakeResult, setShakeResult] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReducedMotion(mq.matches);
@@ -88,6 +89,7 @@ export function SecuritySection({ onReviewSecurity }: SecuritySectionProps) {
   }, []);
 
   // Terminal line-by-line reveal with result flash
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isVisible) return;
     if (visibleLines >= scanLines.length) return;

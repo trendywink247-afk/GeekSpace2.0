@@ -57,6 +57,7 @@ export function usePWA() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Register service worker
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker

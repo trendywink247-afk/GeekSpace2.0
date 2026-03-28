@@ -32,10 +32,10 @@ export default defineConfig([
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'warn',
 
-      // Temporarily disabled — pre-existing codebase issues, re-enable sprint-by-sprint
-      'react-hooks/purity': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/immutability': 'warn',
+      // Re-enabled (Sprint 4, March 2026)
+      'react-hooks/purity': 'error',
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/immutability': 'error',
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',

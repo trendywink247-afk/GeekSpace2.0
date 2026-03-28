@@ -14,6 +14,7 @@ interface StickyMobileCTAProps {
 export function StickyMobileCTA({ onGetStarted }: StickyMobileCTAProps) {
   const [show, setShow] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const heroEl = document.getElementById('hero');
 

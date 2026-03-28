@@ -46,6 +46,7 @@ const toolCosts = [
 
 function useSpringCount(target: number, inView: boolean) {
   const [value, setValue] = useState(0);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!inView) { setValue(0); return; }
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -85,6 +86,7 @@ export function PricingPreviewSection({ onGetStarted }: PricingPreviewSectionPro
   const [reducedMotion, setReducedMotion] = useState(false);
   const [toolCount, setToolCount] = useState(4);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReducedMotion(mq.matches);

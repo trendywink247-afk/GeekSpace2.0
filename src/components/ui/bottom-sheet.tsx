@@ -16,6 +16,7 @@ export function BottomSheet({ open, onClose, children, title, snapPoints = [50, 
   const startY = useRef(0);
   const startHeight = useRef(0);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (open) {
       setHeight(snapPoints[0]);

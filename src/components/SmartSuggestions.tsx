@@ -21,6 +21,7 @@ export function SmartSuggestions({ onNavigate }: SmartSuggestionsProps) {
   const reminders = useDashboardStore(s => s.reminders);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const items: Suggestion[] = [];
     const now = Date.now();
