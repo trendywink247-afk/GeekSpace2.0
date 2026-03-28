@@ -139,10 +139,10 @@ export function ChatRefine({
         } else {
           setMessages((prev) => [...prev, { role: 'ai', concepts }]);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setMessages((prev) => [
           ...prev,
-          { role: 'ai', error: err.message || 'Something went wrong. Please try again.' },
+          { role: 'ai', error: err instanceof Error ? err.message : 'Something went wrong. Please try again.' },
         ]);
       } finally {
         setLoading(false);

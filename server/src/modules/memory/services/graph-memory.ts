@@ -46,7 +46,7 @@ export function addRelation(
 
   if (existing) {
     db.prepare('UPDATE memory_relations SET strength = MIN(1.0, strength + 0.1), last_reinforced_at = ? WHERE id = ?')
-      .run(Date.now(), (existing as any).id);
+      .run(Date.now(), (existing as { id: string }).id);
   } else {
     db.prepare(`
       INSERT INTO memory_relations (id, user_id, from_entity_id, to_entity_id, relation_type, last_reinforced_at)
@@ -57,14 +57,17 @@ export function addRelation(
 
 // ── Entity Recall ────────────────────────────────────────────
 
+interface MemoryEntity { id: string; name: string; type: string; mention_count: number; properties: string; [key: string]: unknown; }
+interface MemoryRelation { id: string; related_name?: string; related_type?: string; [key: string]: unknown; }
+
 export function recallEntity(userId: string, name: string): {
-  entity: any;
-  relations: any[];
+  entity: { properties: Record<string, unknown>; [key: string]: unknown };
+  relations: MemoryRelation[];
   mentions: number;
 } | null {
   const entity = db.prepare(
     'SELECT * FROM memory_entities WHERE user_id = ? AND lower(name) = lower(?)'
-  ).get(userId, name) as any;
+  ).get(userId, name) as MemoryEntity | undefined;
   if (!entity) return null;
 
   const relations = db.prepare(`
@@ -72,7 +75,7 @@ export function recallEntity(userId: string, name: string): {
     FROM memory_relations r
     JOIN memory_entities e ON (e.id = r.to_entity_id OR e.id = r.from_entity_id) AND e.id != ?
     WHERE (r.from_entity_id = ? OR r.to_entity_id = ?) AND r.user_id = ?
-  `).all(entity.id, entity.id, entity.id, userId) as any[];
+  `).all(entity.id, entity.id, entity.id, userId) as MemoryRelation[];
 
   return {
     entity: { ...entity, properties: JSON.parse(entity.properties || '{}') },
@@ -169,7 +172,7 @@ export function processMessageEntities(userId: string, message: string): void {
 
 // ── Get all entities for user ────────────────────────────────
 
-export function getUserEntities(userId: string, limit = 20): any[] {
+export function getUserEntities(userId: string, limit = 20): MemoryEntity[] {
   return db.prepare(`
     SELECT * FROM memory_entities WHERE user_id = ?
     ORDER BY importance_score DESC, mention_count DESC LIMIT ?

@@ -1664,7 +1664,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           const events = getUpcomingEvents(userId, days);
           if (!events || events.length === 0) return { tool, success: true, message: 'No upcoming events found.' };
 
-          const lines = events.map((e: any) => {
+          const lines = events.map((e: { start_time: string; title?: string; description?: string }) => {
             const date = new Date(e.start_time).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
             const time = new Date(e.start_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
             return `\u2022 ${e.title} \u2014 ${date} at ${time}`;
@@ -1763,7 +1763,7 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
           const messages = getGmailMessages(userId, limit);
           if (!messages || messages.length === 0) return { tool, success: true, message: 'No new emails.' };
 
-          const lines = messages.map((m: any, i: number) => {
+          const lines = messages.map((m: { sender?: string; subject?: string }, i: number) => {
             const sender = m.sender?.split('<')[0]?.trim() || 'Unknown';
             return `${i + 1}. ${sender}: ${m.subject || '(no subject)'}`;
           });

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // ============================================================
 // Quick Actions Widget - One-click common tasks
 // ============================================================

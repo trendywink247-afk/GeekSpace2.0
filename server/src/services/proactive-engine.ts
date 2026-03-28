@@ -655,7 +655,7 @@ export async function initProactiveEngine(): Promise<void> {
       const monId = job.payload.monitorId as string;
       if (!monId) return;
 
-      const monitor = db.prepare('SELECT * FROM page_monitors WHERE id = ? AND enabled = 1').get(monId) as any;
+      const monitor = db.prepare('SELECT * FROM page_monitors WHERE id = ? AND enabled = 1').get(monId) as { url?: string; css_selector?: string; last_hash?: string } | undefined;
       if (!monitor) return;
 
       try {
@@ -699,7 +699,7 @@ export async function initProactiveEngine(): Promise<void> {
           if (entity) {
             contextLines += `\n\u{1F4CC} About ${entity.entity.name}: mentioned ${entity.mentions} times`;
             if (entity.relations.length > 0) {
-              contextLines += ` (connected to ${entity.relations.map((r: any) => r.related_name).join(', ')})`;
+              contextLines += ` (connected to ${entity.relations.map((r: { related_name?: string }) => r.related_name).join(', ')})`;
             }
           }
         }
@@ -707,7 +707,7 @@ export async function initProactiveEngine(): Promise<void> {
 
       const timeStr = new Date(eventTime).toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', hour12: true,
-        timeZone: (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as any)?.timezone || 'Asia/Kolkata'
+        timeZone: (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string } | undefined)?.timezone || 'Asia/Kolkata'
       });
 
       const msg = `\u{1F4C5} *${eventTitle}* is in 15 minutes (${timeStr})${contextLines}\n\nAnything you want to prepare?`;

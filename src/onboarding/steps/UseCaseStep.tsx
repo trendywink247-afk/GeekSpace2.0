@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Briefcase, Code, Image, Inbox, Timer, Terminal } from 'lucide-react';
 
 /** All valid use-case identifiers a user can select during onboarding. */

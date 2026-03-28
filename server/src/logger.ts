@@ -3,6 +3,7 @@
 // ============================================================
 
 import pino from 'pino';
+import { context, trace } from '@opentelemetry/api';
 import { config } from './config.js';
 import type { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
@@ -16,12 +17,23 @@ import { randomUUID } from 'crypto';
  * Log level is controlled by `config.logLevel` (env `LOG_LEVEL`), defaulting
  * to `"info"` in production and `"debug"` in development.
  *
+ * When OpenTelemetry tracing is active, every log entry is enriched with
+ * `traceId` and `spanId` fields from the current OTel context.
+ *
  * @example
  * logger.info({ userId, action: 'login' }, 'User logged in');
  * logger.error({ err }, 'Database query failed');
  */
 export const logger = pino({
   level: config.logLevel,
+  mixin() {
+    const span = trace.getSpan(context.active());
+    if (span) {
+      const ctx = span.spanContext();
+      return { traceId: ctx.traceId, spanId: ctx.spanId };
+    }
+    return {};
+  },
   ...(config.isProduction
     ? {}
     : { transport: { target: 'pino-pretty', options: { colorize: true } } }),

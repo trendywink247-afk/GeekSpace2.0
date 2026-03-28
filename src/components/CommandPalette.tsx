@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // ============================================================
 // Command Palette - Unified Ctrl+K command + data search interface
 // Raycast-inspired: commands + live data search in one modal

@@ -204,6 +204,42 @@ All DNS records point to the same VPS. Caddy handles routing based on domain nam
 
 ---
 
+## Centralized Logging (Loki + Grafana + Promtail)
+
+A separate Docker Compose stack for centralized log aggregation and visualization. Promtail tails container logs from all services on the host, parses Pino JSON output, and ships them to Loki. Grafana provides a dashboard UI for querying and exploring logs.
+
+| Component | Image | Purpose |
+|-----------|-------|---------|
+| **Loki** | `grafana/loki:3.0.0` | Log storage and query engine |
+| **Grafana** | `grafana/grafana:11.0.0` | Visualization and dashboards |
+| **Promtail** | `grafana/promtail:3.0.0` | Log collector (tails Docker container logs) |
+
+**Config files:**
+- `infra/loki-config.yaml` -- Loki storage, retention (7 days), and compactor settings
+- `infra/promtail.yml` -- Scrape config for Docker container logs with Pino JSON parsing
+
+### Usage
+
+```bash
+# Start the logging stack (uses the shared geekspace-net network)
+docker compose -f docker-compose.logging.yml up -d
+
+# Open Grafana at http://localhost:3200
+# Default credentials: admin / (GRAFANA_PASSWORD env var, defaults to "admin")
+
+# Add Loki as a data source in Grafana:
+#   URL: http://loki:3100
+```
+
+### Notes
+
+- Port 3100 is already mapped to Uptime Kuma on the host, so Loki is only accessible within the `geekspace-net` Docker network. Grafana connects to it internally as `http://loki:3100`.
+- Promtail requires read access to `/var/lib/docker/containers` and `/var/run/docker.sock` on the host.
+- Log retention is set to 7 days. Adjust `retention_period` in `infra/loki-config.yaml` to change.
+- Set `GRAFANA_PASSWORD` in your environment or `.env` file before starting the stack.
+
+---
+
 ## Related Documents
 
 - [`docs/DEVOPS.md`](../docs/DEVOPS.md) -- Deployment, CI/CD, monitoring, backups

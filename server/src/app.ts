@@ -95,6 +95,31 @@ export function createApp(): express.Application {
     });
   }
 
+  // ---- API Versioning (v1) ----
+  // Rewrite /api/v1/* → /api/* so all existing route handlers match.
+  // This makes /api/v1/ the canonical versioned prefix while keeping /api/ working.
+  // Must be mounted before any /api middleware so the rewritten URL flows through
+  // the entire middleware chain.
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/api/v1/') || req.url === '/api/v1') {
+      // Mark as versioned so we can skip the deprecation header later
+      (req as Record<string, unknown>).__apiVersioned = true;
+      // Strip the /v1 segment: /api/v1/health → /api/health
+      req.url = '/api' + req.url.slice('/api/v1'.length);
+    }
+    next();
+  });
+
+  // Add deprecation header on unversioned /api/ requests
+  app.use('/api', (req, res, next) => {
+    if (!(req as Record<string, unknown>).__apiVersioned) {
+      res.set('Deprecation', 'true');
+      res.set('Sunset', '2027-03-28');
+      res.set('Link', `</api/v1${req.path}>; rel="successor-version"`);
+    }
+    next();
+  });
+
   // 49.1: Prevent search engines from indexing API endpoints
   app.use('/api', (_req, res, next) => {
     res.set('X-Robots-Tag', 'noindex, nofollow');

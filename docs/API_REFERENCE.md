@@ -37,10 +37,15 @@
 
 ### Base URLs
 
-| Environment | Base URL |
-|-------------|----------|
-| Development | `http://localhost:3001/api` |
-| Production  | `https://api.agentin.chat/api` |
+| Environment | Base URL (canonical) | Base URL (deprecated, backward-compatible) |
+|-------------|----------------------|--------------------------------------------|
+| Development | `http://localhost:3001/api/v1` | `http://localhost:3001/api` |
+| Production  | `https://api.agentin.chat/api/v1` | `https://api.agentin.chat/api` |
+
+> **API Versioning (v1):** All endpoints are available under both `/api/v1/` (canonical)
+> and `/api/` (deprecated, backward-compatible). The unversioned `/api/` prefix returns
+> a `Deprecation: true` header and a `Sunset: 2027-03-28` header. Migrate to `/api/v1/`
+> before the sunset date.
 
 ### Content Type
 

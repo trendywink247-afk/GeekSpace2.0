@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useId } from 'react';
 import type { LogoParams } from './types';
 

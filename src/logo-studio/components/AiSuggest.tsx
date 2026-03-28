@@ -165,7 +165,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       const data = (await res.json()).variants || [];
       setVariants(data);
       notifyDone?.(`Generated ${data.length} parametric variants`);
-    } catch (err: any) { setError(err.message || 'Failed to get suggestions'); notifyFail?.(err.message || 'Parametric suggest failed'); }
+    } catch (err: unknown) { const msg = err instanceof Error ? err.message : String(err); setError(msg || 'Failed to get suggestions'); notifyFail?.(msg || 'Parametric suggest failed'); }
     finally { setLoading(false); }
   };
 
@@ -190,7 +190,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       setSelectedConcepts(new Set());
       trackLogoGen();
       notifyDone?.(`Generated ${all.length} visual concepts`);
-    } catch (err: any) { setError(err.message || 'Failed to generate'); notifyFail?.(err.message || 'Visual generation failed'); }
+    } catch (err: unknown) { const msg = err instanceof Error ? err.message : String(err); setError(msg || 'Failed to generate'); notifyFail?.(msg || 'Visual generation failed'); }
     finally { setVisualLoading(false); }
   };
 
@@ -220,7 +220,7 @@ export function AiSuggest({ currentParams, onApply, wizardResult, onSelectForRef
       setConcepts((prev) => [...prev, ...nc]);
       setSelectedConcepts(new Set());
       notifyDone?.(`Evolved ${nc.length} concepts`);
-    } catch (err: any) { setError(err.message || 'Failed to evolve'); notifyFail?.(err.message || 'Evolve failed'); }
+    } catch (err: unknown) { const msg = err instanceof Error ? err.message : String(err); setError(msg || 'Failed to evolve'); notifyFail?.(msg || 'Evolve failed'); }
     finally { setEvolveLoading(false); }
   };
 

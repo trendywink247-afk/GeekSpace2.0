@@ -4,14 +4,14 @@
 // TEST_MODE only for security
 // ============================================================
 
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { getRoutingTraces, clearRoutingTraces, type RoutingTrace } from '../services/llm.js';
 import { config } from '../config.js';
 
 const router = Router();
 
 // Middleware to ensure TEST_MODE only
-const requireTestMode = (req: any, res: any, next: any) => {
+const requireTestMode = (req: Request, res: Response, next: NextFunction) => {
   if (!config.isTestMode) {
     return res.status(403).json({
       error: 'Routing debug endpoints are only available in TEST_MODE',

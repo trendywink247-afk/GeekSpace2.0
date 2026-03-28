@@ -107,9 +107,9 @@ function initDocker(): void {
     docker.ping().then(() => {
       dockerOk = true;
       logger.info('SandboxService: Docker connected');
-      ensureNet().catch((e: any) => logger.warn({ err: e.message }, 'SandboxService: net init failed'));
-    }).catch((e: any) => { dockerOk = false; logger.warn({ err: e.message }, 'SandboxService: Docker unavailable'); });
-  } catch (e: any) { dockerOk = false; logger.warn({ err: e.message }, 'SandboxService: Docker init failed'); }
+      ensureNet().catch((e: unknown) => logger.warn({ err: e instanceof Error ? e.message : String(e) }, 'SandboxService: net init failed'));
+    }).catch((e: unknown) => { dockerOk = false; logger.warn({ err: e instanceof Error ? e.message : String(e) }, 'SandboxService: Docker unavailable'); });
+  } catch (e: unknown) { dockerOk = false; logger.warn({ err: e instanceof Error ? e.message : String(e) }, 'SandboxService: Docker init failed'); }
 }
 function assertDocker(): Docker {
   if (!docker || !dockerOk) throw new ResourceError('Docker daemon not available. Sandboxes disabled.');
@@ -122,7 +122,7 @@ async function ensureNet(): Promise<void> {
     // Verify existing network is Internal (isolated from host/internet).
     // If someone created it without Internal:true, sandbox containers could
     // reach the host network, breaking isolation.
-    const existing = nets[0] as any;
+    const existing = nets[0] as { Internal?: boolean; Containers?: Record<string, unknown> };
     if (!existing.Internal) {
       logger.warn({ network: NET }, 'Sandbox network exists but is NOT internal — recreating with isolation');
       // Disconnect any containers and remove the non-internal network
@@ -134,9 +134,10 @@ async function ensureNet(): Promise<void> {
           await netObj.disconnect({ Container: cid, Force: true }).catch(() => {});
         }
         await netObj.remove();
-      } catch (e: any) {
-        logger.error({ err: e.message }, 'Failed to remove non-internal sandbox network');
-        throw new ResourceError(`Cannot fix sandbox network isolation: ${e.message}`);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.error({ err: msg }, 'Failed to remove non-internal sandbox network');
+        throw new ResourceError(`Cannot fix sandbox network isolation: ${msg}`);
       }
       await d.createNetwork({ Name: NET, Driver: 'bridge', Internal: true });
       logger.info({ network: NET }, 'Sandbox network recreated with Internal:true');
@@ -209,7 +210,7 @@ initDocker();
 reaper = setInterval(() => {
   const now = Date.now();
   const stale = [...sandboxes.entries()].filter(([, i]) => now - i.lastActivity > i.idleTimeoutMs).map(([id]) => id);
-  for (const id of stale) { destroyInternal(id).catch((e: any) => logger.warn({ id, err: e.message }, 'Reap failed')); }
+  for (const id of stale) { destroyInternal(id).catch((e: unknown) => logger.warn({ id, err: e instanceof Error ? e.message : String(e) }, 'Reap failed')); }
 }, REAPER_MS);
 if (reaper.unref) reaper.unref();
 
@@ -292,7 +293,7 @@ export class SandboxService {
     const out = new PassThrough();
     d.modem.demuxStream(stream, out, out);
     out.on('data', (chunk: Buffer) => onData(chunk.toString('utf-8')));
-    return () => { (stream as any).destroy?.(); out.destroy(); };
+    return () => { (stream as unknown as { destroy?: () => void }).destroy?.(); out.destroy(); };
   }
 
   static async writeFile(userId: string, sandboxId: string, filePath: string, content: string): Promise<void> {

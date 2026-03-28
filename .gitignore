@@ -115,3 +115,6 @@ src/**/COVERAGE_ANALYSIS.md
 src/**/TEST_IMPLEMENTATION_GUIDE.md
 src/**/TEST_COVERAGE_GAPS.md
 bridge/
+
+# Turborepo
+.turbo

@@ -1,4 +1,4 @@
-import 'apminsight';
+import { shutdownTracing } from './tracing.js';
 // ============================================================
 // Agentin Core API — Production Entry Point
 // Express + SQLite + JWT, production-hardened
@@ -44,8 +44,12 @@ function shutdown(signal: string, httpServer: import('http').Server) {
   httpServer.close(() => {
     logger.info('HTTP server closed — no more in-flight requests');
     try { db.close(); } catch { /* ignore if already closed */ }
-    logger.info('Graceful shutdown complete');
-    process.exit(0);
+    shutdownTracing()
+      .catch(() => { /* ignore tracing shutdown errors */ })
+      .finally(() => {
+        logger.info('Graceful shutdown complete');
+        process.exit(0);
+      });
   });
 }
 

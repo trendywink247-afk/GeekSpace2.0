@@ -28,13 +28,15 @@ export default defineConfig([
       '@typescript-eslint/no-namespace': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
 
+      // Re-enabled (Sprint 3, March 2026)
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+
       // Temporarily disabled — pre-existing codebase issues, re-enable sprint-by-sprint
       'react-hooks/purity': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
-      'react-refresh/only-export-components': 'off',
     },
   },
 ])

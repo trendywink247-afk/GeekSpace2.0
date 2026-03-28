@@ -17,7 +17,8 @@ const options: swaggerJsdoc.Options = {
       description: 'GeekSpace 2.0 modular API — auto-generated from module swagger annotations',
     },
     servers: [
-      { url: '/api', description: 'API base path' },
+      { url: '/api/v1', description: 'Versioned API base path (canonical)' },
+      { url: '/api', description: 'Unversioned API base path (deprecated, backward-compatible)' },
     ],
     components: {
       securitySchemes: {
