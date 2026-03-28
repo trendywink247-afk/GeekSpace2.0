@@ -308,18 +308,18 @@ describe('94.5 static: memory routes and service files exist', () => {
     expect(src).toMatch(/\/api\/memory/);
   });
 
-  it('agent.ts imports formatMemoryContext', () => {
-    const src = readSrc('routes', 'agent.ts');
+  it('agent chat.ts imports formatMemoryContext', () => {
+    const src = readSrc('modules', 'agent', 'routes', 'chat.ts');
     expect(src).toMatch(/formatMemoryContext/);
   });
 
-  it('agent.ts calls formatMemoryContext in system prompt logic', () => {
-    const src = readSrc('routes', 'agent.ts');
+  it('agent chat.ts calls formatMemoryContext in system prompt logic', () => {
+    const src = readSrc('modules', 'agent', 'routes', 'chat.ts');
     expect(src).toMatch(/formatMemoryContext\s*\(/);
   });
 
-  it('agent.ts imports extractMemoriesFromConversation', () => {
-    const src = readSrc('routes', 'agent.ts');
+  it('agent chat.ts imports extractMemoriesFromConversation', () => {
+    const src = readSrc('modules', 'agent', 'routes', 'chat.ts');
     expect(src).toMatch(/extractMemoriesFromConversation/);
   });
 

@@ -85,13 +85,13 @@ describe('Phase 103: Plan cap fixes', () => {
 
   describe('billing checkout validation', () => {
     it('accepts real plan names not basic/pro', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'modules/billing/routes/billing.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/billing/routes.ts'), 'utf-8');
       expect(content).not.toContain("plan !== 'basic'");
       expect(content).not.toContain("plan !== 'pro'");
       expect(content).toContain('pilot');
     });
     it('error message does not mention basic/pro', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'modules/billing/routes/billing.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/billing/routes.ts'), 'utf-8');
       expect(content).not.toContain('"basic" or "pro"');
     });
   });
