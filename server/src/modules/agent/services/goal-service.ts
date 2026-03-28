@@ -293,35 +293,45 @@ export async function planGoal(goalId: string, userId: string): Promise<GoalPlan
       key_risks: string[];
     };
 
-    // Create steps in DB (two-pass: generate all IDs first so forward deps resolve)
+    // Atomic re-plan: clear old pending steps + insert new ones in a transaction
     const createdSteps: GoalStep[] = [];
     const stepIdMap: Record<number, string> = {};
-
-    // First pass: generate all step IDs
-    for (let i = 0; i < plan.steps.length; i++) {
-      stepIdMap[i] = uuid();
-    }
-
-    // Second pass: insert steps with resolved dependencies
-    for (let i = 0; i < plan.steps.length; i++) {
-      const s = plan.steps[i];
-      const stepId = stepIdMap[i];
-      const dependsOn = (s.depends_on || []).map(idx => stepIdMap[idx]).filter(Boolean);
-      const now = new Date().toISOString();
-
-      db.prepare(`
-        INSERT INTO goal_steps (id, goal_id, user_id, title, description, assigned_agent, step_order, depends_on, effort, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(stepId, goalId, userId, s.title, s.description || '', s.agent || 'cal', i, JSON.stringify(dependsOn), s.effort || 'medium', now, now);
-
-      createdSteps.push(getStep(stepId)!);
-    }
-
-    // Update goal with assigned agent (primary agent from first step)
     const agents = [...new Set(plan.steps.map(s => s.agent))];
-    if (agents.length > 0) {
-      db.prepare('UPDATE goals SET assigned_agent = ?, updated_at = ? WHERE id = ?')
-        .run(agents[0], new Date().toISOString(), goalId);
+
+    const runPlanTransaction = db.transaction(() => {
+      // Remove old pending/planned steps (preserve completed/in_progress)
+      db.prepare("DELETE FROM goal_steps WHERE goal_id = ? AND status = 'pending'").run(goalId);
+
+      // First pass: generate all step IDs
+      for (let i = 0; i < plan.steps.length; i++) {
+        stepIdMap[i] = uuid();
+      }
+
+      // Second pass: insert steps with resolved dependencies
+      for (let i = 0; i < plan.steps.length; i++) {
+        const s = plan.steps[i];
+        const stepId = stepIdMap[i];
+        const dependsOn = (s.depends_on || []).map(idx => stepIdMap[idx]).filter(Boolean);
+        const now = new Date().toISOString();
+
+        db.prepare(`
+          INSERT INTO goal_steps (id, goal_id, user_id, title, description, assigned_agent, step_order, depends_on, effort, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(stepId, goalId, userId, s.title, s.description || '', s.agent || 'cal', i, JSON.stringify(dependsOn), s.effort || 'medium', now, now);
+      }
+
+      // Update goal with assigned agent
+      if (agents.length > 0) {
+        db.prepare('UPDATE goals SET assigned_agent = ?, updated_at = ? WHERE id = ?')
+          .run(agents[0], new Date().toISOString(), goalId);
+      }
+    });
+
+    runPlanTransaction();
+
+    // Fetch created steps outside transaction
+    for (let i = 0; i < plan.steps.length; i++) {
+      createdSteps.push(getStep(stepIdMap[i])!);
     }
 
     recordGoalEvent(goalId, userId, 'updated', 'cal', null,
@@ -364,8 +374,12 @@ export async function executeNextStep(goalId: string, userId: string): Promise<G
 
   if (!nextStep) return null;
 
-  // Mark as in progress
-  updateStepStatus(nextStep.id, userId, 'in_progress');
+  // Atomic claim: only one caller can claim this step (prevents race conditions)
+  const now = new Date().toISOString();
+  const claimed = db.prepare(
+    "UPDATE goal_steps SET status = 'in_progress', started_at = ?, updated_at = ? WHERE id = ? AND status = 'pending'"
+  ).run(now, now, nextStep.id);
+  if (claimed.changes === 0) return null; // Another caller already claimed it
   const agent = nextStep.assigned_agent as AnyAgentId;
 
   emitThinking(userId, agent, `Working on: "${nextStep.title}"`);

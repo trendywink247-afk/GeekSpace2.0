@@ -248,6 +248,8 @@ export async function processAgentDelegations(
   for (const settled of delegationResults) {
     if (settled.status === 'fulfilled') {
       results.push(settled.value);
+    } else {
+      logger.warn({ reason: settled.reason }, 'delegation:rejected');
     }
   }
 
@@ -257,9 +259,10 @@ export async function processAgentDelegations(
 // ── Get Delegation History ──────────────────────────────────
 
 export function getDelegationHistory(userId: string, limit = 30): DelegationLogEntry[] {
+  const clampedLimit = Math.max(1, Math.min(limit, 100));
   return db.prepare(
     'SELECT * FROM delegation_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
-  ).all(userId, limit) as DelegationLogEntry[];
+  ).all(userId, clampedLimit) as DelegationLogEntry[];
 }
 
 export function getDelegationStats(userId: string): {
@@ -282,11 +285,15 @@ export function getDelegationStats(userId: string): {
     'SELECT to_agent, COUNT(*) as c FROM delegation_log WHERE user_id = ? GROUP BY to_agent ORDER BY c DESC LIMIT 1'
   ).get(userId) as { to_agent: string; c: number } | undefined;
 
+  const avgDuration = db.prepare(
+    "SELECT AVG((julianday(completed_at) - julianday(started_at)) * 86400000) as avg_ms FROM delegation_log WHERE user_id = ? AND completed_at IS NOT NULL AND started_at IS NOT NULL"
+  ).get(userId) as { avg_ms: number | null } | undefined;
+
   return {
     total,
     completed,
     failed,
-    avgDurationMs: 0, // Could compute from timestamps if needed
+    avgDurationMs: Math.round(avgDuration?.avg_ms ?? 0),
     topDelegator: topFrom?.from_agent || 'cal',
     topReceiver: topTo?.to_agent || 'forge',
   };

@@ -1918,15 +1918,21 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
 
         // Auto-plan: immediately decompose goal into steps so the user gets a full plan
         let planMessage = '';
+        let autoPlanned = false;
         try {
           const plan = await planGoal(goal.id, userId);
           if (plan && plan.steps.length > 0) {
+            autoPlanned = true;
             const stepLines = plan.steps.map((s, i) => `  ${i + 1}. ${s.title} (${s.assigned_agent}, ${s.effort})`);
             planMessage = `\n\n🗺️ Auto-planned ${plan.steps.length} steps:\n${stepLines.join('\n')}\n\nEstimated: ${plan.estimated_effort}`;
+          } else {
+            planMessage = '\n\n⚠️ Auto-planning did not produce steps. Use plan_goal with this goal id to finish setup.';
           }
-        } catch { /* planning is best-effort */ }
+        } catch {
+          planMessage = '\n\n⚠️ Auto-planning failed. Use plan_goal with this goal id to retry.';
+        }
 
-        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (id: ${goal.id}, ${goal.category}, assigned to ${goal.assigned_agent})${planMessage}`, data: { goalId: goal.id, status: goal.status, assignedAgent: goal.assigned_agent } };
+        return { tool, success: true, message: `✅ Goal created: "${goal.title}" (id: ${goal.id}, ${goal.category}, assigned to ${goal.assigned_agent})${planMessage}`, data: { goalId: goal.id, status: goal.status, assignedAgent: goal.assigned_agent, autoPlanned } };
       }
 
       case 'list_goals': {

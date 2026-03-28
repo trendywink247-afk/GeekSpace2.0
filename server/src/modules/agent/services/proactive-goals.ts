@@ -12,6 +12,7 @@ import {
   getActionableGoals, executeNextStep, proactiveGoalCheckIn,
   getUserGoals, getGoalSteps, recordGoalEvent,
 } from './goal-service.js';
+import { sendAgentNotification } from './agent-notifications.js';
 import { executeDelegation, detectDelegationNeed } from './delegation-pipeline.js';
 import { emitThinking, emitDone } from './agent-state-bus.js';
 import type { AnyAgentId } from '../types/goals.js';
@@ -28,11 +29,15 @@ let proactiveGoalTimer: ReturnType<typeof setInterval> | null = null;
 
 type AutonomyLevel = 'manual' | 'suggest' | 'semi_auto' | 'full_auto';
 
+const VALID_AUTONOMY_LEVELS: Set<string> = new Set(['manual', 'suggest', 'semi_auto', 'full_auto']);
+
 function getUserAutonomyLevel(userId: string): AutonomyLevel {
   try {
     const config = db.prepare('SELECT autonomy_level FROM agent_configs WHERE user_id = ?')
       .get(userId) as { autonomy_level: string | null } | undefined;
-    return (config?.autonomy_level as AutonomyLevel) || 'suggest';
+    const level = config?.autonomy_level;
+    if (level && VALID_AUTONOMY_LEVELS.has(level)) return level as AutonomyLevel;
+    return 'suggest';
   } catch {
     return 'suggest';
   }
@@ -112,16 +117,9 @@ async function sendStaleGoalNudges(userId: string): Promise<void> {
 
     recordGoalEvent(goal.id, userId, 'agent_checkin', agent, null, nudgeMessage);
 
-    // Send via Telegram if connected
-    try {
-      const link = db.prepare(
-        "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
-      ).get(userId) as { external_id: string } | undefined;
-      if (link) {
-        const { sendTelegramMessage } = await import('../../../services/telegram.js');
-        await sendTelegramMessage(link.external_id, `🎯 ${nudgeMessage}`);
-      }
-    } catch { /* telegram not connected */ }
+    // Send via notification service (respects notif_agents + quiet hours)
+    await sendAgentNotification(userId, agent, 'checkin', 'Goal check-in', nudgeMessage, { actionUrl: `/goals/${goal.id}` })
+      .catch(() => { /* non-critical */ });
 
     emitDone(userId, agent);
     logger.info({ userId, goalId: goal.id }, 'proactive-goals:stale-nudge sent');
@@ -178,15 +176,9 @@ async function sendDailyGoalSummary(userId: string): Promise<void> {
   recordGoalEvent(activeGoals[0].id, userId, 'agent_insight', 'cal', null,
     `daily_summary:${todayKey}\n${summary}`);
 
-  // Send via Telegram
+  // Send via notification service (respects notif_agents + quiet hours)
   try {
-    const link = db.prepare(
-      "SELECT external_id FROM channel_links WHERE user_id = ? AND channel = 'telegram' AND is_verified = 1 LIMIT 1"
-    ).get(userId) as { external_id: string } | undefined;
-    if (link) {
-      const { sendTelegramMessage } = await import('../../../services/telegram.js');
-      await sendTelegramMessage(link.external_id, summary);
-    }
+    await sendAgentNotification(userId, 'cal', 'agent_insight', 'Daily Goal Summary', summary);
   } catch { /* non-critical */ }
 }
 

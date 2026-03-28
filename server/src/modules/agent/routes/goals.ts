@@ -188,6 +188,13 @@ router.patch('/goals/:goalId/steps/:stepId', requireAuth, (req, res) => {
     return;
   }
 
+  // Validate step belongs to the specified goal
+  const existingStep = getGoalSteps(req.params.goalId).find(s => s.id === req.params.stepId);
+  if (!existingStep) {
+    res.status(404).json({ error: 'Step not found for this goal' });
+    return;
+  }
+
   const step = updateStepStatus(req.params.stepId, authReq.userId!, status, result);
   if (!step) {
     res.status(404).json({ error: 'Step not found' });

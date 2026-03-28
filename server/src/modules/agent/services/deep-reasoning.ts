@@ -218,7 +218,7 @@ export async function runDeepReasoning(
     }
 
     if (observations.length === 0) {
-      finalText = cleanText || result.reply;
+      finalText = cleanText;
       break;
     }
 
@@ -242,6 +242,8 @@ export async function runDeepReasoning(
           systemPrompt: opts.systemPrompt,
           userId: opts.userId,
           agentName: opts.agentName,
+          userCredits: opts.userCredits,
+          forceProvider: opts.forceProvider,
         });
 
         totalTokensIn += reflectResult.tokensIn;

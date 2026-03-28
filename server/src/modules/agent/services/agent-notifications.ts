@@ -101,11 +101,21 @@ export async function sendAgentNotification(
         .get(userId) as { notif_agents: number | null; quiet_start: string | null; quiet_end: string | null } | undefined;
       const agentNotifsEnabled = config?.notif_agents !== 0; // default true if null
 
-      // Check quiet hours
+      // Check quiet hours (using user's timezone)
       let inQuietHours = false;
       if (config?.quiet_start && config?.quiet_end) {
-        const nowH = new Date().getHours();
-        const nowM = new Date().getMinutes();
+        const userRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone: string | null } | undefined;
+        const tz = userRow?.timezone || 'UTC';
+        let nowH: number, nowM: number;
+        try {
+          const nowStr = new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false });
+          const parts = nowStr.split(':');
+          nowH = parseInt(parts[0], 10);
+          nowM = parseInt(parts[1], 10);
+        } catch {
+          nowH = new Date().getUTCHours();
+          nowM = new Date().getUTCMinutes();
+        }
         const nowMin = nowH * 60 + nowM;
         const [sH, sM] = config.quiet_start.split(':').map(Number);
         const [eH, eM] = config.quiet_end.split(':').map(Number);
