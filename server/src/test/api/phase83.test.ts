@@ -134,28 +134,28 @@ describe('Phase 83 — Launch Hardening (Invite Beta Readiness)', () => {
   // ── 83.5: Invite-gated registration ──────────────────────────
   describe('83.5: Invite-gated registration in auth.ts', () => {
     it('auth.ts checks config.inviteRequired', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('config.inviteRequired');
     });
 
     it('auth.ts returns 403 if invite_code missing when required', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('invite code is required');
       expect(src).toContain('res.status(403)');
     });
 
     it('auth.ts returns 403 for invalid invite code', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('Invalid invite code');
     });
 
     it('auth.ts returns 409 if invite code already used', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('already been used');
     });
 
     it('auth.ts marks invite as used after successful signup', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('UPDATE invite_codes SET used_at');
     });
 

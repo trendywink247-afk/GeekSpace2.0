@@ -19,19 +19,19 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.2: Telegram status endpoint enhancements ──────────────────
   describe('78.2: Telegram status endpoint', () => {
     it('returns connected alias in status response', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       // Must expose connected: true/false alias
       expect(src).toContain('connected: true');
       expect(src).toContain('connected: false');
     });
 
     it('exposes lastPing field in status response', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       expect(src).toContain('lastPing: link.last_message_at');
     });
 
     it('exposes botConfigured flag in status response', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       expect(src).toContain('botConfigured');
       expect(src).toContain('!!config.telegramBotToken');
     });
@@ -40,13 +40,13 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.3: Telegram disconnect atomicity ──────────────────────────
   describe('78.3: Telegram disconnect atomicity', () => {
     it('wraps disconnect in db.transaction()', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       // Must use db.transaction for the unlink operation
       expect(src).toContain('db.transaction(');
     });
 
     it('transaction contains all three required ops', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       // Must have all three ops inside the transaction
       expect(src).toContain("DELETE FROM channel_links WHERE id = ?");
       expect(src).toContain("UPDATE integrations SET status = 'disconnected'");
@@ -54,7 +54,7 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
     });
 
     it('disconnect calls doUnlink() to execute transaction', () => {
-      const src = readFile('server/src/modules/integrations/routes.ts');
+      const src = readFile('server/src/modules/integrations/routes/integrations.ts');
       expect(src).toContain('doUnlink()');
     });
   });

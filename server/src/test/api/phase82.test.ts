@@ -195,24 +195,24 @@ describe('Phase 82 — Store Safety + Polish', () => {
   // ── 82.8: Delete account endpoint ───────────────────────────
   describe('82.8: POST /api/auth/delete-account', () => {
     it('delete-account route exists in auth.ts', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain("'/delete-account'");
     });
 
     it('verifies password before deletion', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('bcrypt.compare');
       expect(src).toContain('password_hash');
     });
 
     it('deletes user in a transaction', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('db.transaction');
       expect(src).toContain('DELETE FROM users WHERE id');
     });
 
     it('returns success message', () => {
-      const src = readFile('server/src/modules/auth/routes.ts');
+      const src = readFile('server/src/modules/auth/routes/auth.ts');
       expect(src).toContain('success: true');
       expect(src).toContain('permanently deleted');
     });
