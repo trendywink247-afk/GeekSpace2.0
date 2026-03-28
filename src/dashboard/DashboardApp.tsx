@@ -20,12 +20,13 @@ import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPromp
 import { DashboardTour } from '@/components/DashboardTour';
 import { AgentSetupWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { NotificationBell } from '@/components/NotificationBell';
 import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
-import { agentService, userService, type ActivityEntry } from '@/services/api';
+import { agentService, userService } from '@/services/api';
 import { notify } from '@/services/notifications';
 import type { AgentPersonality } from '@/types';
 import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
@@ -84,8 +85,9 @@ const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => 
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
 const ConnectInboxPage = lazyRetry(() => import('./pages/ConnectInboxPage').then(m => ({ default: m.ConnectInboxPage })));
+const GoalsPage = lazyRetry(() => import('./pages/GoalsPage').then(m => ({ default: m.GoalsPage })));
 
-type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio' | 'connect-inbox';
+type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio' | 'connect-inbox' | 'goals';
 
 
 interface MenuItem {
@@ -130,6 +132,7 @@ const menuGroups: MenuGroup[] = [
     icon: Bot,
     items: [
       { id: 'office', label: 'Agent Office', icon: Monitor },
+      { id: 'goals', label: 'Goals', icon: Target },
       { id: 'agent', label: 'Agent Settings', icon: Bot },
       { id: 'memory', label: 'Memory', icon: Brain },
       { id: 'recipes', label: 'Recipes', icon: BookOpen },
@@ -199,9 +202,7 @@ const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard
 export function DashboardApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
-  const [activityLoading, setActivityLoading] = useState(false);
+  // notifOpen state removed — now handled by NotificationBell component
   const [unreadCount, setUnreadCount] = useState(0);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
@@ -490,6 +491,8 @@ export function DashboardApp() {
         return <ProactivePage />;
       case 'connect-inbox':
         return <ConnectInboxPage />;
+      case 'goals':
+        return <GoalsPage />;
       case 'inbox':
         return <InboxPage />;
       case 'gmail':
@@ -999,65 +1002,8 @@ export function DashboardApp() {
                 </span>
               )}
             </div>
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  const opening = !notifOpen;
-                  setNotifOpen((o) => !o);
-                  if (opening) {
-                    // Mark all as seen and reset badge
-                    localStorage.setItem('activity_last_seen', Date.now().toString());
-                    setUnreadCount(0);
-                    setActivityLoading(true);
-                    userService.getActivity(20)
-                      .then(({ data }) => setActivity(data.activity))
-                      .catch(() => {})
-                      .finally(() => setActivityLoading(false));
-                  }
-                }}
-                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
-                aria-label="View notifications"
-              >
-                <Bell className="w-5 h-5 text-[#6B7280]" />
-              </button>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${unreadCount} unread notifications`}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-              {notifOpen && (
-                <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-1rem)] bg-[#0C0C18] border border-[#00F0FF]/20 rounded-xl shadow-2xl z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/10">
-                    <span className="text-sm font-semibold text-[#E8E8F0]">Recent Activity</span>
-                    <button onClick={() => setNotifOpen(false)} className="text-[#6B7280] hover:text-[#E8E8F0]" aria-label="Close notifications">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {activityLoading ? (
-                      <div className="flex items-center justify-center py-8 text-[#6B7280]">
-                        <div className="w-4 h-4 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin mr-2" />
-                        Loading...
-                      </div>
-                    ) : activity.length === 0 ? (
-                      <div className="py-8 text-center text-sm text-[#6B7280]">No recent activity</div>
-                    ) : (
-                      activity.map((entry) => (
-                        <div key={entry.id} className="flex items-start gap-3 px-4 py-3 border-b border-[#00F0FF]/05 hover:bg-[#00F0FF]/05 transition-colors">
-                          <Activity className="w-4 h-4 text-[#00F0FF] flex-shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <div className="text-sm text-[#E8E8F0] font-medium">{entry.action}</div>
-                            {entry.details && <div className="text-xs text-[#6B7280] truncate">{entry.details}</div>}
-                            <div className="text-xs text-[#6B7280]/70 mt-0.5">{new Date(entry.created_at).toLocaleString()}</div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Agent Notification Bell */}
+            <NotificationBell />
 
             {/* User avatar with hover glow */}
             <button

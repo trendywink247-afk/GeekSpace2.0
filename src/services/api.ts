@@ -1524,3 +1524,124 @@ export const officeService = {
     timeline: Array<{ action: string; details: string; icon: string; created_at: string }>;
   }>('/office/state'),
 };
+
+// ---- Goals (Agentic Experience) ----
+
+export interface GoalData {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  status: 'active' | 'paused' | 'completed' | 'failed' | 'archived';
+  priority: number;
+  category: string;
+  assigned_agent: string;
+  target_date: string | null;
+  progress: number;
+  outcome: string | null;
+  parent_goal_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GoalStepData {
+  id: string;
+  goal_id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'skipped' | 'blocked';
+  assigned_agent: string;
+  step_order: number;
+  depends_on: string;
+  effort: 'low' | 'medium' | 'high';
+  result: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GoalEventData {
+  id: string;
+  goal_id: string;
+  event_type: string;
+  agent_id: string | null;
+  step_id: string | null;
+  message: string;
+  metadata: string;
+  created_at: string;
+}
+
+export interface WorkspaceArtifactData {
+  id: string;
+  user_id: string;
+  goal_id: string | null;
+  title: string;
+  content: string;
+  artifact_type: string;
+  created_by_agent: string | null;
+  tags: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentNotificationData {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  goal_id: string | null;
+  agent_id: string | null;
+  read: number;
+  created_at: string;
+}
+
+export const goalsService = {
+  list: (status?: string) =>
+    api.get<{ goals: GoalData[] }>('/agent/goals', { params: status ? { status } : undefined }),
+  get: (id: string) =>
+    api.get<{ goal: GoalData; steps: GoalStepData[] }>(`/agent/goals/${id}`),
+  create: (data: { title: string; description?: string; category?: string; target_date?: string }) =>
+    api.post<{ goal: GoalData }>('/agent/goals', data),
+  update: (id: string, data: Partial<{ title: string; description: string; status: string; priority: number; category: string; target_date: string }>) =>
+    api.patch<{ goal: GoalData }>(`/agent/goals/${id}`, data),
+  delete: (id: string) =>
+    api.delete<{ success: boolean }>(`/agent/goals/${id}`),
+  plan: (id: string) =>
+    api.post<{ steps: GoalStepData[] }>(`/agent/goals/${id}/plan`),
+  executeNext: (id: string) =>
+    api.post<{ step: GoalStepData; result: string }>(`/agent/goals/${id}/execute`),
+  getSteps: (id: string) =>
+    api.get<{ steps: GoalStepData[] }>(`/agent/goals/${id}/steps`),
+  updateStep: (goalId: string, stepId: string, data: { status?: string; result?: string }) =>
+    api.patch<{ step: GoalStepData }>(`/agent/goals/${goalId}/steps/${stepId}`, data),
+  getEvents: (id: string, limit?: number) =>
+    api.get<{ events: GoalEventData[] }>(`/agent/goals/${id}/events`, { params: limit ? { limit } : undefined }),
+  stats: () =>
+    api.get<{ total: number; active: number; completed: number; paused: number; failed: number; completionRate: number }>('/agent/goals/stats'),
+};
+
+export const workspaceService = {
+  list: (goalId?: string) =>
+    api.get<{ artifacts: WorkspaceArtifactData[] }>('/agent/workspace', { params: goalId ? { goal_id: goalId } : undefined }),
+  create: (data: { title: string; content: string; artifact_type?: string; goal_id?: string; tags?: string[] }) =>
+    api.post<{ artifact: WorkspaceArtifactData }>('/agent/workspace', data),
+  update: (id: string, data: Partial<{ title: string; content: string; tags: string[] }>) =>
+    api.patch<{ artifact: WorkspaceArtifactData }>(`/agent/workspace/${id}`, data),
+  delete: (id: string) =>
+    api.delete<{ success: boolean }>(`/agent/workspace/${id}`),
+};
+
+export const agentNotificationsService = {
+  list: (limit?: number) =>
+    api.get<{ notifications: AgentNotificationData[] }>('/agent/notifications', { params: limit ? { limit } : undefined }),
+  count: () =>
+    api.get<{ unread: number }>('/agent/notifications/count'),
+  markRead: (id: string) =>
+    api.patch<{ success: boolean }>(`/agent/notifications/${id}/read`),
+  markAllRead: () =>
+    api.post<{ success: boolean }>('/agent/notifications/read-all'),
+};
