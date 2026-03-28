@@ -11,6 +11,8 @@ import { routeChat, type ChatMessage } from './llm.js';
 import { getPersonalityPrompt } from '../../../prompts/personalities.js';
 import { emitThinking, emitResponding, emitDone, emitCommSent } from './agent-state-bus.js';
 import { sendAgentComm } from './agent-comms.js';
+import { isAgentFloAvailable, executeSwarm } from './agentflo-bridge.js';
+import type { SwarmConfig, SwarmResult } from '../types/agentflo.js';
 
 export interface AgentTask {
   agent: string;        // personality ID
@@ -142,6 +144,77 @@ export async function runMultiAgentOrchestration(
   logger.info({ userId, agentCount: tasks.length, agents: tasks.map(t => t.agent) }, 'multi-agent:starting');
 
   const startTime = Date.now();
+
+  // ── AgentFlo swarm path — topology + consensus orchestration ──
+  if (isAgentFloAvailable()) {
+    const swarmConfig: SwarmConfig = {
+      topology: 'hierarchical',
+      maxAgents: tasks.length,
+      consensus: 'raft',
+      objective: userMessage,
+      agents: tasks.map(t => ({
+        id: t.agent,
+        role: t.role,
+        prompt: t.prompt,
+      })),
+    };
+
+    logger.info({ userId, topology: 'hierarchical', consensus: 'raft', agents: tasks.length }, 'multi-agent:agentflo-swarm');
+
+    for (const task of tasks) {
+      emitThinking(userId, task.agent, `${task.role} joining swarm...`);
+    }
+
+    const swarmResult = await executeSwarm(swarmConfig);
+
+    if (swarmResult && swarmResult.successCount > 0) {
+      const duration = Date.now() - startTime;
+
+      for (const task of tasks) {
+        emitDone(userId, task.agent);
+      }
+
+      // Build agent comms trail
+      try {
+        const successfulAgents = swarmResult.responses.filter(r => r.success);
+        for (let i = 0; i < successfulAgents.length - 1; i++) {
+          const from = successfulAgents[i];
+          const to = successfulAgents[i + 1];
+          sendAgentComm(userId, from.agentId as 'weebo' | 'edith' | 'jarvis', to.agentId as 'weebo' | 'edith' | 'jarvis',
+            `My ${from.role} analysis: ${from.text.slice(0, 150)}`, 'info');
+          emitCommSent(userId, from.agentId, to.agentId, `Sharing ${from.role} insights`);
+        }
+      } catch { /* non-fatal */ }
+
+      const sections = swarmResult.responses.map(r =>
+        `**${r.role}** (${r.agentId.charAt(0).toUpperCase() + r.agentId.slice(1)}):\n${r.text}`
+      );
+
+      const mergedText = [
+        `🤖 AgentFlo Swarm Response (${swarmResult.successCount}/${swarmResult.totalAgents} agents)`,
+        `🔗 Topology: ${swarmResult.topology} | Consensus: ${swarmResult.consensus}`,
+        '',
+        swarmResult.consensusText ? `**Consensus Summary:**\n${swarmResult.consensusText}\n\n---\n` : '',
+        sections.join('\n\n---\n\n'),
+        '',
+        `⚡ Swarm execution: ${(duration / 1000).toFixed(1)}s`,
+      ].filter(Boolean).join('\n');
+
+      logger.info({ userId, duration, topology: 'hierarchical', successCount: swarmResult.successCount }, 'multi-agent:agentflo-complete');
+
+      return {
+        success: true,
+        text: mergedText,
+        agentResults: swarmResult.responses.map(r => ({ agent: r.agentId, role: r.role, text: r.text })),
+        totalAgents: swarmResult.totalAgents,
+      };
+    }
+
+    // Swarm failed — fall through to standard Promise.all() path
+    logger.warn({ userId }, 'multi-agent:agentflo-swarm-failed, falling back to standard orchestration');
+  }
+
+  // ── Standard orchestration path (existing logic) ──
 
   // Fan out all agents in parallel
   const agentPromises = tasks.map(async (task) => {

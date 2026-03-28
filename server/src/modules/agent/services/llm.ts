@@ -30,6 +30,7 @@ import { isPicoClawAvailable, queryPicoClaw, picoCircuitBreakerTrip } from '../.
 import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel } from '../../../services/openrouter-models.js';
 import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from '../../../services/token-budget.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
+import { isAgentFloAvailable, recordRoutingFeedback } from './agentflo-bridge.js';
 
 // ---- Types ----
 
@@ -1400,6 +1401,19 @@ export async function routeChat(
   if (isCacheable && cacheKey && reply && model !== 'error-fallback' && finalProvider !== 'builtin') {
     setMemCached(cacheKey, reply);
     setRedisCached(cacheKey, reply).catch(() => {});
+  }
+
+  // AgentFlo: feed routing outcome to learning system for future optimization
+  if (isAgentFloAvailable() && model !== 'error-fallback') {
+    recordRoutingFeedback({
+      intent,
+      provider: finalProvider,
+      model,
+      success: finalProvider !== 'builtin',
+      latencyMs,
+      tokenCost: creditCost,
+      userId: opts?.userId,
+    }).catch(() => { /* best-effort */ });
   }
 
   return { reply, provider: finalProvider, model, tokensIn, tokensOut, latencyMs, costEstimate, creditCost, intent };

@@ -19,6 +19,7 @@ import {
 } from './agent-state-bus.js';
 import type { AnyAgentId } from '../types/goals.js';
 import type { Provider } from './llm.js';
+import { isAgentFloAvailable, storePattern, retrievePatterns } from './agentflo-bridge.js';
 
 // ── Configuration ───────────────────────────────────────────
 
@@ -104,8 +105,23 @@ export async function runDeepReasoning(
   let lastModel = '';
   let loopIterations = 0;
 
-  // Phase 1: Planning (inject planning prompt for complex tasks)
+  // Phase 0: AgentFlo pattern retrieval — check for similar past reasoning
   const lastUserMsg = workingMessages.filter(m => m.role === 'user').pop();
+  if (isAgentFloAvailable() && lastUserMsg) {
+    try {
+      const cached = await retrievePatterns(lastUserMsg.content);
+      if (cached.bestMatch && cached.bestMatch.confidence > 0.85 && cached.bestMatch.trajectory.length > 0) {
+        const hint = cached.bestMatch.trajectory.slice(0, 3).join(' → ');
+        workingMessages.push({
+          role: 'system' as const,
+          content: `[AgentFlo context] Similar past reasoning found (confidence: ${cached.bestMatch.confidence.toFixed(2)}): ${hint}. Use this as a starting hint but reason independently.`,
+        });
+        logger.debug({ key: cached.bestMatch.key, confidence: cached.bestMatch.confidence }, 'deep-reasoning:agentflo-pattern-hit');
+      }
+    } catch { /* pattern retrieval is best-effort */ }
+  }
+
+  // Phase 1: Planning (inject planning prompt for complex tasks)
   const isComplex = lastUserMsg && lastUserMsg.content.length > 100;
 
   if (isComplex) {
@@ -331,6 +347,15 @@ export async function runDeepReasoning(
   }
 
   if (opts.agentId) emitDone(opts.userId, opts.agentId);
+
+  // AgentFlo: store successful reasoning trajectory for future retrieval
+  if (isAgentFloAvailable() && finalText && lastUserMsg) {
+    storePattern(
+      lastUserMsg.content.slice(0, 200),
+      reflections.length > 0 ? reflections : [`${loopIterations} iterations`, `provider: ${lastProvider}`],
+      Math.min(0.9, 0.5 + (loopIterations > 1 ? 0.1 : 0) + (delegationResults.length > 0 ? 0.1 : 0) + (reflections.length > 0 ? 0.1 : 0)),
+    ).catch(() => { /* best-effort */ });
+  }
 
   return {
     text: finalText,
