@@ -23,20 +23,21 @@ import type {
 } from '../types/agentflo.js';
 
 // ── Ruflo function references (set at init time) ───────────
+type CfFn = ((...args: unknown[]) => unknown) | null;
 
-let _initializeIntelligence: any = null;
-let _getReasoningBank: any = null;
-let _findSimilarPatterns: any = null;
-let _recordTrajectory: any = null;
-let _recordStep: any = null;
-let _endTrajectoryWithVerdict: any = null;
-let _getSONAOptimizer: any = null;
-let _processTrajectory: any = null;
-let _getSuggestion: any = null;
-let _initializeMemoryDatabase: any = null;
-let _storeEntry: any = null;
-let _searchEntries: any = null;
-let _recordPatternOutcome: any = null;
+let _initializeIntelligence: CfFn = null;
+let _getReasoningBank: CfFn = null;
+let _findSimilarPatterns: CfFn = null;
+let _recordTrajectory: CfFn = null;
+let _recordStep: CfFn = null;
+let _endTrajectoryWithVerdict: CfFn = null;
+let _getSONAOptimizer: CfFn = null;
+let _processTrajectory: CfFn = null;
+let _getSuggestion: CfFn = null;
+let _initializeMemoryDatabase: CfFn = null;
+let _storeEntry: CfFn = null;
+let _searchEntries: CfFn = null;
+let _recordPatternOutcome: CfFn = null;
 
 let _available = false;
 let _patternsReady = false;
@@ -49,7 +50,7 @@ const log = logger.child({ module: 'agentflo' });
 
 export async function initAgentFloBridge(): Promise<void> {
   try {
-    // @ts-ignore — optional dependency; dynamic import fails gracefully
+    // @ts-expect-error — optional dependency; dynamic import fails gracefully if not installed
     const cf = await import('@claude-flow/cli');
 
     _available = true;
@@ -212,9 +213,10 @@ export async function retrievePatterns(query: string, topK = 3): Promise<Pattern
     const patterns: PatternEntry[] = raw
       .filter(Boolean)
       .slice(0, topK)
-      .map((r: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped external API response
+      .map((r: Record<string, any>) => ({
         key: r.key || r.query || r.id || query,
-        trajectory: r.steps?.map((s: any) => s.action || String(s)) || r.trajectory || [],
+        trajectory: r.steps?.map((s: Record<string, unknown>) => (s.action as string) || String(s)) || r.trajectory || [],
         confidence: r.confidence || r.score || r.similarity || 0,
         timestamp: r.timestamp || r.createdAt || Date.now(),
       }));

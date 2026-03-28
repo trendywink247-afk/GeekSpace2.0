@@ -12,7 +12,7 @@ import { getPersonalityPrompt } from '../../../prompts/personalities.js';
 import { emitThinking, emitResponding, emitDone, emitCommSent } from './agent-state-bus.js';
 import { sendAgentComm } from './agent-comms.js';
 import { isAgentFloAvailable, executeSwarm } from './agentflo-bridge.js';
-import type { SwarmConfig, SwarmResult } from '../types/agentflo.js';
+import type { SwarmConfig } from '../types/agentflo.js';
 
 export interface AgentTask {
   agent: string;        // personality ID
