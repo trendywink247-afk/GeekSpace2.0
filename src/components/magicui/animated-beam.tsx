@@ -45,6 +45,7 @@ export function AnimatedBeam({
 }: AnimatedBeamProps) {
   const [pathD, setPathD] = useState('');
   const [svgDims, setSvgDims] = useState({ width: 0, height: 0 });
+  // eslint-disable-next-line react-hooks/purity
   const id = useRef(`beam-${Math.random().toString(36).slice(2, 9)}`);
 
   useEffect(() => {

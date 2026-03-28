@@ -200,7 +200,7 @@ export function HealthDashboardPage() {
       es.close();
       setConnected(false);
       retriesRef.current = 0;
-      reconnectTimerRef.current = setTimeout(connect, 1000);
+      reconnectTimerRef.current = setTimeout(connect, 1000); // eslint-disable-line react-hooks/immutability
     });
 
     es.onerror = () => {

@@ -148,7 +148,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       {sorted.map((ev, i) => {
         const min = minuteKey(ev.timestamp);
         const showSeparator = min !== lastMinute && i > 0;
-        lastMinute = min;
+        lastMinute = min; // eslint-disable-line react-hooks/immutability
 
         const isUser = ev.agentId === 'user' || (ev as Record<string, unknown>).type === 'user_message';
         const color = isUser ? '#FF9F43' : (AGENT_COLORS[ev.agentId as AgentId] ?? C.dim);

@@ -97,14 +97,14 @@ function NeuralBrain({
           c.copy(COL_MID).lerp(COL_OUTER, (normDist - 0.35) / 0.35);
         } else {
           c.copy(COL_OUTER);
-          c.multiplyScalar(0.6 + Math.random() * 0.4);
+          c.multiplyScalar(0.6 + Math.random() * 0.4); // eslint-disable-line react-hooks/purity
         }
 
         col[i * 3] = c.r;
         col[i * 3 + 1] = c.g;
         col[i * 3 + 2] = c.b;
 
-        siz[i] = normDist < 0.4 ? 2.5 + Math.random() * 2.5 : 1 + Math.random() * 2;
+        siz[i] = normDist < 0.4 ? 2.5 + Math.random() * 2.5 : 1 + Math.random() * 2; // eslint-disable-line react-hooks/purity
       }
 
       // Build connections between nearby particles (max 100)

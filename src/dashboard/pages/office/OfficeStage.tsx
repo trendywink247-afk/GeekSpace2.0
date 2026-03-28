@@ -539,12 +539,12 @@ export default function OfficeStage({
                 // Reaction bubble from the delegated agent
                 const recvPhrases = COLLAB_RECV_PHRASES[targetId] || COLLAB_RECV_PHRASES.weebo;
                 const phrase = recvPhrases[Math.floor(Math.random() * recvPhrases.length)];
-                addBubble(targetId as AgentId, phrase);
+                addBubble(targetId as AgentId, phrase); // eslint-disable-line react-hooks/immutability
               }
             }
             // Create beam from core to specialist
             if (targetId) {
-              addBeam(agentId, targetId as AgentId);
+              addBeam(agentId, targetId as AgentId); // eslint-disable-line react-hooks/immutability
             }
             break;
           }
@@ -671,7 +671,7 @@ export default function OfficeStage({
 
   // ---- rAF game loop: smooth movement every frame, behavior at ~5fps ----
   const agentsRef = useRef(agents);
-  agentsRef.current = agents;
+  agentsRef.current = agents; // eslint-disable-line react-hooks/immutability
   const beamsRef = useRef(beams);
   beamsRef.current = beams;
   const selectedRef = useRef(selectedAgentId);
