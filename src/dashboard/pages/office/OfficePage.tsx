@@ -1,8 +1,8 @@
 // src/dashboard/pages/office/OfficePage.tsx
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Moon, Sun, Zap, Wifi, WifiOff, Mail } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Monitor } from 'lucide-react';
+import { motion } from 'framer-motion';
 import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';

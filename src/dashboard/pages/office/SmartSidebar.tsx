@@ -6,7 +6,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import type { SSEEvent, TimelineEntry, SidebarTab, AgentId } from './types';
 import type { OfficeData } from './useOfficeData';
-import { C, AGENT_COLORS } from './constants';
+import { AGENT_COLORS } from './constants';
 import TimelineCard from './TimelineCard';
 import TasksTab from './TasksTab';
 import MetricsTab from './MetricsTab';
