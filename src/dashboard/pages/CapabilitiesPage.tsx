@@ -45,7 +45,7 @@ const capabilities: Capability[] = [
     id: 'multi-model-chat',
     category: 'chat',
     icon: Brain,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Multi-Model Intelligence',
     description: 'Your agent automatically routes to the right AI brain — free Llama for quick answers, Kimi K2 for deep technical work — based on complexity and your credit balance.',
@@ -57,7 +57,7 @@ const capabilities: Capability[] = [
     id: 'voice-notes',
     category: 'chat',
     icon: Mic,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Voice Notes',
     description: 'Send a voice message on Telegram and get a spoken audio reply back. Full Whisper transcription → agent reasoning → TTS pipeline.',
@@ -70,7 +70,7 @@ const capabilities: Capability[] = [
     id: 'web-crawler',
     category: 'chat',
     icon: Globe,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Live Web Research',
     description: 'Hand your agent any URL — job posting, article, competitor page — and get an instant structured summary with key insights extracted.',
@@ -82,7 +82,7 @@ const capabilities: Capability[] = [
     id: 'memory-chat',
     category: 'chat',
     icon: Layers,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Context-Aware Conversations',
     description: 'Your agent remembers conversation history across sessions, extracting facts automatically — your stack, preferences, schedule — and weaving them into every reply.',
@@ -94,7 +94,7 @@ const capabilities: Capability[] = [
     id: 'hinglish',
     category: 'chat',
     icon: Globe,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Hinglish & Indian Languages',
     description: 'Talk to your agent in Hinglish, Hindi, or Tanglish. It understands "kal subah 8 baje remind karo" as naturally as English. Built for Indian users first.',
@@ -106,7 +106,7 @@ const capabilities: Capability[] = [
     id: 'researcher',
     category: 'chat',
     icon: Telescope,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     glow: 'rgba(0,240,255,0.12)',
     title: 'Agent-as-Researcher',
     description: 'Ask for deep research and your agent launches an async investigation — searching the web, synthesizing findings, and delivering a structured report via Telegram when done.',
@@ -452,27 +452,27 @@ const capabilities: Capability[] = [
 // ── Pipeline data ──────────────────────────────────────────
 
 const pipelineSteps = [
-  { label: 'Your message', detail: '"build me a hello world page"', color: '#00F0FF', icon: MessageSquare },
+  { label: 'Your message', detail: '"build me a hello world page"', color: '#8B5CF6', icon: MessageSquare },
   { label: 'Intent classified', detail: 'coding → complex', color: '#BF5FFF', icon: Brain },
   { label: 'Model selected', detail: 'Kimi K2 (best for coding)', color: '#F59E0B', icon: Zap },
   { label: 'Action extracted', detail: 'generate_code { title, html, css, js }', color: '#00FF88', icon: Code },
   { label: 'Artifact saved', detail: 'auto-added to My Projects', color: '#EC4899', icon: CheckCircle2 },
-  { label: 'Preview delivered', detail: 'api.../preview/userId/abc', color: '#00F0FF', icon: ExternalLink },
+  { label: 'Preview delivered', detail: 'api.../preview/userId/abc', color: '#8B5CF6', icon: ExternalLink },
 ];
 
 // ── Hidden powers ──────────────────────────────────────────
 
 const hiddenPowers = [
-  { icon: Mic, color: '#00F0FF', title: 'Full voice loop on Telegram', description: 'Speak to your agent, get audio back. No typing ever needed — complete speech-to-speech pipeline on your phone.' },
+  { icon: Mic, color: '#8B5CF6', title: 'Full voice loop on Telegram', description: 'Speak to your agent, get audio back. No typing ever needed — complete speech-to-speech pipeline on your phone.' },
   { icon: Eye, color: '#BF5FFF', title: 'You have a 24/7 AI twin', description: 'Your portfolio agent knows your projects, skills, and availability. Recruiters get accurate, helpful answers at 3am while you sleep.' },
   { icon: ArrowRight, color: '#F59E0B', title: 'Swipe-to-reply escalation', description: 'Swipe-reply on a visitor escalation notification in Telegram and your agent knows exactly which question you\'re answering. Zero ambiguity.' },
   { icon: Lock, color: '#00FF88', title: 'Visitor contact capture', description: 'Your portfolio AI naturally collects visitor names and contact info during the conversation, building your professional network automatically.' },
   { icon: Cpu, color: '#EC4899', title: '3 agents running in parallel', description: 'Queue tasks across 3 background slots simultaneously — they work while you\'re offline, reporting back via Telegram when done.' },
   { icon: Code, color: '#BF5FFF', title: 'Code is yours forever', description: 'Every website, snippet, and artifact your agent generates is saved with a permanent preview link. It also appears in your portfolio Projects.' },
-  { icon: Shield, color: '#00F0FF', title: 'Multi-tier keyword routing', description: 'The escalation system uses 3-tier matching: native Telegram reply, keyword scoring, and smart fall-through — so chat requests never get eaten.' },
+  { icon: Shield, color: '#8B5CF6', title: 'Multi-tier keyword routing', description: 'The escalation system uses 3-tier matching: native Telegram reply, keyword scoring, and smart fall-through — so chat requests never get eaten.' },
   { icon: Star, color: '#F59E0B', title: 'Credits forecast your month', description: 'The sidebar shows your current spend and forecasts your full monthly bill — so you never get surprised at the end of the cycle.' },
   { icon: Camera, color: '#00FF88', title: 'Receipt OCR → auto expense', description: 'Send a photo of any receipt on Telegram — Groq vision reads it, extracts amount and merchant, and auto-logs the expense. No typing needed.' },
-  { icon: Eye, color: '#00F0FF', title: 'Screenshot fast-path', description: 'Say "take screenshot of [URL]" and your agent captures a full-page screenshot via crawl4ai and sends it as a Telegram photo in seconds.' },
+  { icon: Eye, color: '#8B5CF6', title: 'Screenshot fast-path', description: 'Say "take screenshot of [URL]" and your agent captures a full-page screenshot via crawl4ai and sends it as a Telegram photo in seconds.' },
   { icon: Link, color: '#BF5FFF', title: 'Links extraction', description: 'Say "get links from [URL]" and your agent crawls the page, extracts every link, and sends you a clean formatted list — perfect for research.' },
   { icon: Brain, color: '#EC4899', title: 'Context threading via FTS5', description: 'Your agent runs full-text search over your entire conversation history — it can recall what you discussed weeks ago and weave it into the current reply.' },
 ];
@@ -481,7 +481,7 @@ const hiddenPowers = [
 
 const categoryConfig: Record<Category, { label: string; color: string; emoji: string }> = {
   all: { label: 'All Powers', color: '#F4F6FF', emoji: '⚡' },
-  chat: { label: 'Chat & Answer', color: '#00F0FF', emoji: '🧠' },
+  chat: { label: 'Chat & Answer', color: '#8B5CF6', emoji: '🧠' },
   create: { label: 'Create & Build', color: '#BF5FFF', emoji: '⚗️' },
   automate: { label: 'Automate', color: '#00FF88', emoji: '🔄' },
   connect: { label: 'Connect', color: '#F59E0B', emoji: '🌐' },
@@ -510,7 +510,7 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20',
+    Core: 'bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20',
     Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
     New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
   };
@@ -648,9 +648,9 @@ function PipelineVisualizer() {
       {/* Pipeline */}
       <div>
         {/* Example message */}
-        <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
+        <div className="mb-6 p-3 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 text-center">
           <span className="text-xs text-[#9CA3AF]">You type: </span>
-          <span className="text-sm text-[#00F0FF] font-mono">"build me a hello world page"</span>
+          <span className="text-sm text-[#8B5CF6] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -810,8 +810,8 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         subtitle={`${capabilities.length} powers across chat, creation, automation, and intelligence`}
         badge={
           <span className="relative flex h-2.5 w-2.5" title="Weebo online">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-50" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-50" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#8B5CF6]" />
           </span>
         }
       />
@@ -847,23 +847,23 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div className="relative z-10">
           {/* Eyebrow */}
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-5 h-5 rounded-full bg-[#00F0FF]/15 border border-[#00F0FF]/25 flex items-center justify-center">
-              <Sparkles className="w-2.5 h-2.5 text-[var(--ag-cyan)]" />
+            <div className="w-5 h-5 rounded-full bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center">
+              <Sparkles className="w-2.5 h-2.5 text-[#8B5CF6]" />
             </div>
-            <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
+            <span className="text-xs font-mono text-[#8B5CF6] tracking-widest uppercase">Agent Command Center</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-black text-[var(--ag-text-primary,#F4F6FF)] mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-[#F4F6FF] mb-4 leading-tight">
             Your Agent Can Do{' '}
             <span
               className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #00F0FF, #BF5FFF, #00FF88, #F59E0B)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #8B5CF6, #A78BFA, #10B981, #F59E0B)' }}
             >
               Everything
             </span>
           </h1>
 
-          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
+          <p className="text-[#9CA3AF] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
             {capabilities.length} capabilities across chat, creation, automation, and intelligence.
             Powered by 5 AI models that route to the right brain for each task — automatically.
           </p>
@@ -871,7 +871,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { value: `${capabilities.length}+`, label: 'Capabilities', color: '#00F0FF' },
+              { value: `${capabilities.length}+`, label: 'Capabilities', color: '#8B5CF6' },
               { value: '5', label: 'AI Models', color: '#BF5FFF' },
               { value: '3', label: 'Channels', color: '#00FF88' },
               { value: '24/7', label: 'Always On', color: '#F59E0B' },
@@ -882,7 +882,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
                 style={{ background: `${stat.color}08` }}
               >
                 <div className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.value}</div>
-                <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5 font-medium">{stat.label}</div>
+                <div className="text-xs text-[#9CA3AF] mt-0.5 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>

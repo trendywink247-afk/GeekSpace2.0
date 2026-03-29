@@ -317,11 +317,11 @@ function ActivitySparkline({
 /** Skeleton placeholder for a glance card */
 function GlanceCardSkeleton() {
   return (
-    <div className="min-w-[160px] flex-shrink-0 snap-start rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4">
-      <Skeleton className="w-10 h-10 rounded-xl mb-3" />
-      <Skeleton className="h-7 w-12 mb-1" />
-      <Skeleton className="h-4 w-20 mb-1" />
-      <Skeleton className="h-3 w-24" />
+    <div className="min-w-[160px] flex-shrink-0 snap-start gs-card p-4">
+      <div className="w-10 h-10 rounded-xl mb-3 bg-white/[0.04] animate-pulse" />
+      <div className="h-7 w-12 mb-1 bg-white/[0.04] rounded-xl animate-pulse" />
+      <div className="h-4 w-20 mb-1 bg-white/[0.04] rounded-xl animate-pulse" />
+      <div className="h-3 w-24 bg-white/[0.04] rounded-xl animate-pulse" />
     </div>
   );
 }
@@ -678,16 +678,14 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   {festivalGreeting}
                 </span>
               )}
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-glow)] min-h-[44px]"
+                className="gs-btn-ghost min-h-[44px] text-sm"
               >
                 <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
-              </Button>
+              </button>
             </>
           }
         />
@@ -795,11 +793,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
         {/* ─── Today At A Glance ─── */}
         <section>
-          <h2
-            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-          >
-            Today at a glance
-          </h2>
+          <p className="gs-section-label mb-3">Today at a glance</p>
           <div
             ref={glanceScrollRef}
             className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-4 md:overflow-visible"
@@ -812,15 +806,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               : glanceCards.map((card, idx) => (
                   <div
                     key={card.key}
-                    className={`min-w-[160px] flex-shrink-0 snap-start rounded-2xl border p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer backdrop-blur-xl ${
+                    className={`min-w-[160px] flex-shrink-0 snap-start gs-card p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer ${
                       mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                     }`}
-                    style={{
-                      transitionDelay: `${idx * 80}ms`,
-                      background: 'var(--ag-glass-bg)',
-                      borderColor: 'var(--ag-glass-border)',
-                      boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 20px ${card.color}08`,
-                    }}
+                    style={{ transitionDelay: `${idx * 80}ms` }}
                     onClick={() => {
                       if (card.key === 'reminders') onNavigate?.('reminders');
                       else if (card.key === 'messages') onOpenChat?.();
@@ -840,8 +829,12 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     }}
                   >
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                      style={{ backgroundColor: card.bgColor }}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
+                        card.key === 'messages' ? 'gs-icon-pill-violet' :
+                        card.key === 'time-saved' ? 'gs-icon-pill-amber' :
+                        card.key === 'focus' ? 'gs-icon-pill-rose' :
+                        'gs-icon-pill-emerald'
+                      }`}
                     >
                       <card.icon className="w-5 h-5" style={{ color: card.color }} />
                     </div>
@@ -860,11 +853,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
 
         {/* ─── Quick Actions Strip ─── */}
         <section>
-          <h2
-            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-          >
-            Quick actions
-          </h2>
+          <p className="gs-section-label mb-3">Quick actions</p>
           <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-none">
             {quickActions.map((action) => (
               <button
@@ -873,11 +862,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   if (action.action) action.action();
                   else if (action.page) onNavigate?.(action.page);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium text-[var(--ag-text-primary)] whitespace-nowrap snap-start transition-all hover:scale-[1.03] active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50"
-                style={{
-                  background: action.bgColor,
-                  borderColor: `${action.color}20`,
-                }}
+                className="gs-btn-ghost whitespace-nowrap snap-start hover:scale-[1.03] active:scale-95 min-h-[44px]"
               >
                 <div
                   className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
@@ -896,32 +881,24 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           {/* Recent Conversations */}
           <section className="lg:col-span-3">
             <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                Recent conversations
-              </h2>
+              <p className="gs-section-label">Recent conversations</p>
               <button
                 onClick={() => onNavigate?.('chat')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
+                className="flex items-center gap-1 text-xs text-[#8B5CF6]/70 hover:text-[#A78BFA] transition-colors"
               >
                 View all
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <Card
-              className="rounded-2xl overflow-hidden backdrop-blur-xl"
-              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
-            >
-              <CardContent className="p-0">
+            <div className="gs-card overflow-hidden">
                 {loading ? (
-                  <div className="divide-y divide-[var(--ag-border-subtle)]">
+                  <div className="divide-y divide-white/[0.04]">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="p-4 flex items-start gap-3">
-                        <Skeleton className="w-9 h-9 rounded-lg flex-shrink-0" />
+                        <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-white/[0.04] animate-pulse" />
                         <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
+                          <div className="h-4 w-3/4 bg-white/[0.04] rounded-xl animate-pulse" />
+                          <div className="h-3 w-1/2 bg-white/[0.04] rounded-xl animate-pulse" />
                         </div>
                       </div>
                     ))}

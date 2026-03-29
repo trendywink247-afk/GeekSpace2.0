@@ -1,5 +1,5 @@
 // ProactivePage.tsx -- Jarvis-owned Proactive AI dashboard
-// Design tokens: #06061a bg, rgba(12,12,30,0.6) surface, #ADFF2F jarvis
+// Redesigned: gs-card, gs-btn-primary/ghost, gs-section-label, gs-pill, gs-input, gs-stat-card
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Bell,
@@ -26,7 +26,6 @@ import {
   Bot,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import api from "@/services/api";
 import { PageShell, PageHeader, SectionCard } from "@/components/agentin";
@@ -193,51 +192,40 @@ function MessageCard({
   const backendLabel = BACKEND_TYPE_LABEL[msg.type] ?? msg.type.replace(/_/g, " ");
 
   return (
-    <div
-      className={
-        "rounded-xl border p-4 space-y-3 transition-all duration-300 hover:bg-white/[0.02] backdrop-blur-xl " +
-        config.borderColor
-      }
-      style={{
-        background: "rgba(12,12,30,0.6)",
-      }}
-    >
+    <div className={`gs-card p-4 space-y-3 transition-all duration-300 ${config.borderColor}`}>
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className={"rounded-lg p-1.5 " + config.bgColor}>
-            <CategoryIcon className={"h-3.5 w-3.5 " + config.color} />
+          <div className={`rounded-lg p-1.5 ${config.bgColor}`}>
+            <CategoryIcon className={`h-3.5 w-3.5 ${config.color}`} />
           </div>
           <Badge
-            className={
-              config.bgColor + " " + config.color +
-              " border-0 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5"
-            }
+            className={`${config.bgColor} ${config.color} border-0 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5`}
           >
             {config.label}
           </Badge>
-          <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] hidden sm:inline">
+          <span className="text-[10px] text-[var(--ag-text-secondary)] hidden sm:inline">
             {backendLabel}
           </span>
         </div>
-        <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]" title={formatDate(msg.sent_at)}>
+        <span className="text-xs text-[var(--ag-text-secondary)]" title={formatDate(msg.sent_at)}>
           {formatRelativeTime(msg.sent_at)}
         </span>
       </div>
 
       {/* Message body */}
-      <p className="text-sm leading-relaxed text-[var(--ag-text-primary,#F4F6FF)]/90">{msg.message}</p>
+      <p className="text-sm leading-relaxed text-[var(--ag-text-primary)]/90">{msg.message}</p>
 
       {/* Feedback row */}
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => onFeedback(msg.id, true)}
           className={
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
             "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
             (feedback === true
               ? "bg-green-500/20 text-green-400 border border-green-500/30"
-              : "bg-white/[0.03] text-[var(--ag-text-secondary,#9CA3AF)] hover:bg-green-500/10 hover:text-green-400 border border-transparent")
+              : "gs-btn-ghost hover:bg-green-500/10 hover:text-green-400")
           }
           aria-label="Mark as helpful"
         >
@@ -247,11 +235,11 @@ function MessageCard({
         <button
           onClick={() => onFeedback(msg.id, false)}
           className={
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
             "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
             (feedback === false
               ? "bg-red-500/20 text-red-400 border border-red-500/30"
-              : "bg-white/[0.03] text-[var(--ag-text-secondary,#9CA3AF)] hover:bg-red-500/10 hover:text-red-400 border border-transparent")
+              : "gs-btn-ghost hover:bg-red-500/10 hover:text-red-400")
           }
           aria-label="Mark as not helpful"
         >
@@ -282,30 +270,30 @@ function FrequencyCard({
     <button
       onClick={() => onSelect(level)}
       className={
-        "w-full text-left rounded-xl border p-3 transition-all min-h-[44px] " +
+        "w-full text-left rounded-2xl border p-3 transition-all min-h-[44px] " +
         "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
         (selected
           ? "border-[#ADFF2F]/40 bg-[#ADFF2F]/5"
-          : "border-[rgba(139,92,246,0.08)] bg-white/[0.02] hover:border-[rgba(139,92,246,0.15)] hover:bg-white/[0.04]")
+          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.10] hover:bg-white/[0.04]")
       }
     >
       <div className="flex items-start gap-3">
         <div className={
-          "rounded-lg p-2 shrink-0 " +
-          (selected ? "bg-[#ADFF2F]/10 text-[#ADFF2F]" : "bg-white/[0.05] text-[var(--ag-text-secondary,#9CA3AF)]")
+          "rounded-xl p-2 shrink-0 " +
+          (selected ? "bg-[#ADFF2F]/10 text-[#ADFF2F]" : "bg-white/[0.05] text-[var(--ag-text-secondary)]")
         }>
           <Icon className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={"text-sm font-medium " + (selected ? "text-[#ADFF2F]" : "text-[var(--ag-text-primary,#F4F6FF)]")}>
+            <p className={"text-sm font-medium " + (selected ? "text-[#ADFF2F]" : "text-[var(--ag-text-primary)]")}>
               {label}
             </p>
             {selected && (
               <div className="h-2 w-2 rounded-full bg-[#ADFF2F] shrink-0" />
             )}
           </div>
-          <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5">{description}</p>
+          <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{description}</p>
         </div>
       </div>
     </button>
@@ -328,8 +316,8 @@ function TypeToggleRow({
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <div className="flex items-center gap-3">
-        <Icon className={"h-4 w-4 shrink-0 " + color} />
-        <span className="text-sm text-[var(--ag-text-primary,#F4F6FF)]">{label}</span>
+        <Icon className={`h-4 w-4 shrink-0 ${color}`} />
+        <span className="text-sm text-[var(--ag-text-primary)]">{label}</span>
       </div>
       <Switch
         checked={enabled}
@@ -345,13 +333,13 @@ function PlannedMessageRow({ planned }: { planned: PlannedMessage }) {
   const PlanIcon = config.icon;
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className={"rounded-lg p-1.5 shrink-0 " + config.bgColor}>
-        <PlanIcon className={"h-3.5 w-3.5 " + config.color} />
+      <div className={`rounded-xl p-1.5 shrink-0 ${config.bgColor}`}>
+        <PlanIcon className={`h-3.5 w-3.5 ${config.color}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate text-[var(--ag-text-primary,#F4F6FF)]">{planned.label}</p>
+        <p className="text-sm truncate text-[var(--ag-text-primary)]">{planned.label}</p>
       </div>
-      <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] font-mono shrink-0">{planned.time}</span>
+      <span className="text-xs text-[var(--ag-text-secondary)] font-mono shrink-0">{planned.time}</span>
     </div>
   );
 }
@@ -369,17 +357,17 @@ function HelpfulnessBar({ feedbackMap }: { feedbackMap: Map<number, boolean> }) 
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#ADFF2F]" />
-          <span className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Jarvis helpfulness</span>
+          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Jarvis helpfulness</span>
         </div>
-        <span className={"text-sm font-semibold " + textColor}>{pct}% positive</span>
+        <span className={`text-sm font-semibold ${textColor}`}>{pct}% positive</span>
       </div>
       <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
         <div
-          className={"h-full rounded-full transition-all duration-500 " + barColor}
+          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1.5">
+      <p className="text-xs text-[var(--ag-text-secondary)] mt-1.5">
         Based on {entries.length} {entries.length === 1 ? "rating" : "ratings"}
       </p>
     </SectionCard>
@@ -580,25 +568,21 @@ export function ProactivePage() {
         }
         actions={
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={() => setShowConfig(!showConfig)}
-              className="lg:hidden min-w-[44px] min-h-[44px]"
+              className="gs-btn-ghost lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-3"
               aria-label="Toggle settings"
             >
               <Settings2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </button>
+            <button
               onClick={() => void fetchData(true)}
               disabled={refreshing}
               aria-label="Refresh"
-              className="min-w-[44px] min-h-[44px]"
+              className="gs-btn-ghost min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-3"
             >
-              <RefreshCw className={"h-4 w-4 " + spinCls} />
-            </Button>
+              <RefreshCw className={`h-4 w-4 ${spinCls}`} />
+            </button>
           </div>
         }
       />
@@ -609,7 +593,7 @@ export function ProactivePage() {
 
           {/* Error banner */}
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 flex items-center justify-between">
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 flex items-center justify-between">
               <span>{error}</span>
               <button onClick={() => setError(null)} className="ml-2 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss error">
                 <X className="h-3.5 w-3.5" />
@@ -618,21 +602,18 @@ export function ProactivePage() {
           )}
 
           {/* Global toggle card */}
-          <SectionCard>
+          <div className="gs-card p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={
-                  "rounded-xl p-2.5 transition-colors " +
-                  (enabled ? "bg-[#ADFF2F]/10" : "bg-white/[0.05]")
-                }>
+                <div className={`gs-icon-pill ${enabled ? 'gs-icon-pill-emerald' : ''} transition-colors`}>
                   {enabled
                     ? <Bell className="h-5 w-5 text-[#ADFF2F]" />
-                    : <BellOff className="h-5 w-5 text-[var(--ag-text-secondary,#9CA3AF)]" />
+                    : <BellOff className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                   }
                 </div>
                 <div>
-                  <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">Proactive Messages</p>
-                  <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+                  <p className="font-medium text-[var(--ag-text-primary)]">Proactive Messages</p>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">
                     {enabled
                       ? "Jarvis will send scheduled messages via Telegram."
                       : "Proactive messages are paused."}
@@ -658,7 +639,7 @@ export function ProactivePage() {
                 />
               </button>
             </div>
-          </SectionCard>
+          </div>
 
           {/* Category stat badges */}
           {!loading && messages.length > 0 && (
@@ -671,10 +652,7 @@ export function ProactivePage() {
                 return (
                   <div
                     key={cat}
-                    className={
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium " +
-                      cfg.bgColor + " " + cfg.borderColor + " " + cfg.color
-                    }
+                    className={`gs-pill flex items-center gap-1.5 text-xs font-medium ${cfg.color}`}
                   >
                     <CatIcon className="h-3 w-3" />
                     <span>{count}</span>
@@ -702,17 +680,16 @@ export function ProactivePage() {
           {/* Message feed */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-4 w-4 text-[#ADFF2F]" />
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary,#F4F6FF)]">Message Feed</h2>
+              <p className="gs-section-label">Message Feed</p>
               {messages.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">{messages.length}</Badge>
+                <span className="gs-pill text-xs">{messages.length}</span>
               )}
             </div>
 
             {loading ? (
               <div className="space-y-4">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-28 rounded-xl bg-white/[0.03] animate-pulse" />
+                  <div key={i} className="h-28 rounded-2xl bg-white/[0.04] animate-pulse" />
                 ))}
               </div>
             ) : sortedMessages.length === 0 ? (
@@ -754,17 +731,17 @@ export function ProactivePage() {
 function EmptyState({ enabled }: { enabled: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="rounded-2xl bg-[#ADFF2F]/5 p-6 mb-6">
-        <Bot className="h-12 w-12 text-[#ADFF2F]/40" />
+      <div className="gs-icon-pill gs-icon-pill-emerald w-20 h-20 rounded-2xl mb-6">
+        <Bot className="h-10 w-10 text-[#ADFF2F]/60" />
       </div>
-      <h3 className="text-lg font-semibold text-[var(--ag-text-primary,#F4F6FF)] mb-2">No proactive messages yet</h3>
-      <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)] max-w-sm">
+      <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-2">No proactive messages yet</h3>
+      <p className="text-sm text-[var(--ag-text-secondary)] max-w-sm">
         {enabled
           ? "Jarvis will start reaching out as you use the app more. Expect morning briefings, overdue alerts, and streak celebrations."
           : "Enable proactive messages above to let Jarvis send you helpful updates throughout the day."}
       </p>
       {enabled && (
-        <div className="flex items-center gap-2 mt-4 text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+        <div className="flex items-center gap-2 mt-4 text-xs text-[var(--ag-text-secondary)]">
           <Clock className="h-3.5 w-3.5" />
           <span>First message usually arrives with your morning briefing</span>
         </div>
@@ -811,7 +788,7 @@ function ConfigPanel({
         className={
           // Mobile: slide-in from right
           "fixed top-0 right-0 bottom-0 z-50 w-[320px] max-w-[85vw] overflow-y-auto " +
-          "bg-[var(--ag-bg-surface)] border-l border-[var(--ag-border-subtle)] transition-transform duration-300 ease-in-out " +
+          "bg-[var(--ag-bg-surface)] border-l border-white/[0.06] transition-transform duration-300 ease-in-out " +
           "lg:static lg:z-auto lg:w-[340px] lg:shrink-0 lg:border-l-0 lg:border-0 lg:bg-transparent " +
           "lg:translate-x-0 lg:transition-none " +
           (show ? "translate-x-0" : "translate-x-full lg:translate-x-0")
@@ -820,17 +797,17 @@ function ConfigPanel({
         <div className="p-4 space-y-5 lg:space-y-6">
           {/* Mobile close header */}
           <div className="flex items-center justify-between lg:hidden">
-            <h2 className="text-base font-semibold flex items-center gap-2 text-[var(--ag-text-primary,#F4F6FF)]">
+            <h2 className="text-base font-semibold flex items-center gap-2 text-[var(--ag-text-primary)]">
               <Settings2 className="h-4 w-4 text-[#ADFF2F]" />
               Configuration
             </h2>
-            <Button variant="ghost" size="icon" onClick={onClose} className="min-w-[44px] min-h-[44px]">
+            <button onClick={onClose} className="gs-btn-ghost min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-3">
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
 
           {/* Desktop heading */}
-          <h2 className="text-base font-semibold items-center gap-2 hidden lg:flex text-[var(--ag-text-primary,#F4F6FF)]">
+          <h2 className="text-base font-semibold items-center gap-2 hidden lg:flex text-[var(--ag-text-primary)]">
             <Settings2 className="h-4 w-4 text-[#ADFF2F]" />
             Configuration
           </h2>
@@ -840,44 +817,30 @@ function ConfigPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Moon className="h-4 w-4 text-[#8B5CF6]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Quiet Hours</p>
+                <p className="gs-section-label">Quiet Hours</p>
               </div>
-              <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+              <p className="text-xs text-[var(--ag-text-secondary)]">
                 No messages during these hours
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary,#9CA3AF)] font-medium mb-1 block">
-                    Start
-                  </label>
+                  <label className="gs-section-label mb-1 block">Start</label>
                   <input
                     type="time"
                     value={quietHours.start}
                     onChange={e => onQuietHoursChange("start", e.target.value)}
                     disabled={!enabled}
-                    className={
-                      "w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary,#F4F6FF)] " +
-                      "focus:outline-none focus:ring-2 focus:ring-[#ADFF2F]/50 " +
-                      "disabled:opacity-40 min-h-[44px] " +
-                      "[color-scheme:dark]"
-                    }
+                    className="gs-input w-full px-3 py-2 text-sm min-h-[44px] [color-scheme:dark] disabled:opacity-40"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary,#9CA3AF)] font-medium mb-1 block">
-                    End
-                  </label>
+                  <label className="gs-section-label mb-1 block">End</label>
                   <input
                     type="time"
                     value={quietHours.end}
                     onChange={e => onQuietHoursChange("end", e.target.value)}
                     disabled={!enabled}
-                    className={
-                      "w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary,#F4F6FF)] " +
-                      "focus:outline-none focus:ring-2 focus:ring-[#ADFF2F]/50 " +
-                      "disabled:opacity-40 min-h-[44px] " +
-                      "[color-scheme:dark]"
-                    }
+                    className="gs-input w-full px-3 py-2 text-sm min-h-[44px] [color-scheme:dark] disabled:opacity-40"
                   />
                 </div>
               </div>
@@ -889,7 +852,7 @@ function ConfigPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Gauge className="h-4 w-4 text-[#ADFF2F]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Autonomy Level</p>
+                <p className="gs-section-label">Autonomy Level</p>
               </div>
               <div className="space-y-2">
                 <FrequencyCard
@@ -933,7 +896,7 @@ function ConfigPanel({
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-2">
                 <ChevronRight className="h-4 w-4 text-[#ADFF2F]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Message Types</p>
+                <p className="gs-section-label">Message Types</p>
               </div>
               <div className="divide-y divide-white/[0.06]">
                 <TypeToggleRow
@@ -973,32 +936,32 @@ function ConfigPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-[#8B5CF6]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
+                <p className="gs-section-label">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">
                   <Sunrise className="h-3.5 w-3.5 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">8:00 AM -- Daily Briefing</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Tasks, habits, and calendar</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">8:00 AM -- Daily Briefing</p>
+                    <p className="text-[var(--ag-text-secondary)]">Tasks, habits, and calendar</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-amber-400 shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">10:00 AM -- Overdue Alert</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Only if items need attention</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">10:00 AM -- Overdue Alert</p>
+                    <p className="text-[var(--ag-text-secondary)]">Only if items need attention</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Moon className="h-3.5 w-3.5 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">9:00 PM -- Habit Nudge</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Gentle reminder if habits are at risk</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">9:00 PM -- Habit Nudge</p>
+                    <p className="text-[var(--ag-text-secondary)]">Gentle reminder if habits are at risk</p>
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] pt-1 border-t border-[rgba(139,92,246,0.08)]">
+              <p className="text-[10px] text-[var(--ag-text-secondary)] pt-1 border-t border-white/[0.06]">
                 Messages delivered via Telegram. Connect in Connections to receive them.
               </p>
             </div>

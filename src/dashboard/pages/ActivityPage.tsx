@@ -189,7 +189,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
             {monthLabels.map((m, i) => (
               <span
                 key={`${m.label}-${i}`}
-                className="text-[10px] text-[var(--ag-text-muted)] absolute"
+                className="text-[10px] text-[#9CA3AF] absolute"
                 style={{ left: `${32 + m.col * 15}px` }}
               >
                 {m.label}
@@ -207,7 +207,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
                   className="h-[13px] flex items-center justify-end pr-1"
                 >
                   {DAY_LABELS_MAP[dayIdx] != null && (
-                    <span className="text-[9px] text-[var(--ag-text-muted)] leading-none">{DAY_LABELS_MAP[dayIdx]}</span>
+                    <span className="text-[9px] text-[#9CA3AF] leading-none">{DAY_LABELS_MAP[dayIdx]}</span>
                   )}
                 </div>
               ))}
@@ -238,7 +238,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
 
           {/* Color legend */}
           <div className="flex items-center gap-1.5 mt-2 justify-end">
-            <span className="text-[9px] text-[var(--ag-text-muted)]">Less</span>
+            <span className="text-[9px] text-[#9CA3AF]">Less</span>
             {[0, 1, 3, 6, 11].map((threshold) => (
               <div
                 key={threshold}
@@ -246,7 +246,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
                 style={{ backgroundColor: getHeatmapColor(threshold) }}
               />
             ))}
-            <span className="text-[9px] text-[var(--ag-text-muted)]">More</span>
+            <span className="text-[9px] text-[#9CA3AF]">More</span>
           </div>
 
           {/* Tooltip */}
@@ -680,7 +680,7 @@ export function ActivityPage() {
                   <button
                     onClick={() => { void handleDelete(entry.id); }}
                     onTouchEnd={(e) => { e.preventDefault(); void handleDelete(entry.id); }}
-                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[#9CA3AF] hover:text-[#FF6161] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                     aria-label="Delete this entry"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
