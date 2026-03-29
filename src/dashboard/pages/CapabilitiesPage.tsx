@@ -591,7 +591,7 @@ function CapabilityCard({
               onClick={() => handleCopy(ex)}
               className="w-full flex items-center justify-between gap-2 px-2.5 min-h-[44px] rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
             >
-              <span className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
+              <span className="text-[11px] text-[#9CA3AF] group-hover/prompt:text-[#F4F6FF] truncate transition-colors">
                 {ex}
               </span>
               {copied === ex ? (
@@ -618,7 +618,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-white/[0.06] text-[#9CA3AF] hover:border-white/[0.12] hover:text-[#F4F6FF] transition-all"
             >
               Open
             </button>
@@ -641,14 +641,17 @@ function PipelineVisualizer() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
   return (
-    <SectionCard title="How Every Message Works" subtitle="From your chat to the response — the full request lifecycle">
+    <div className="gs-card">
+      <p className="gs-section-label mb-1">Architecture</p>
+      <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">How Every Message Works</h3>
+      <p className="text-sm text-[#9CA3AF] mb-4">From your chat to the response — the full request lifecycle</p>
 
       {/* Pipeline */}
       <div>
         {/* Example message */}
         <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
-          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">You type: </span>
-          <span className="text-sm text-[var(--ag-cyan,#00F0FF)] font-mono">"build me a hello world page"</span>
+          <span className="text-xs text-[#9CA3AF]">You type: </span>
+          <span className="text-sm text-[#00F0FF] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -673,7 +676,7 @@ function PipelineVisualizer() {
                 >
                   <step.icon className="w-4 h-4" style={{ color: step.color }} />
                 </div>
-                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] font-medium text-center leading-tight">{step.label}</span>
+                <span className="text-[10px] text-[#9CA3AF] font-medium text-center leading-tight">{step.label}</span>
                 {activeStep === i && (
                   <span className="text-[9px] text-center leading-tight font-mono px-1" style={{ color: step.color }}>
                     {step.detail}
@@ -702,12 +705,12 @@ function PipelineVisualizer() {
                   <step.icon className="w-4 h-4" style={{ color: step.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-[var(--ag-text-primary)]">{step.label}</div>
+                  <div className="text-xs font-medium text-[#F4F6FF]">{step.label}</div>
                   {activeStep === i && (
                     <div className="text-[10px] font-mono mt-0.5" style={{ color: step.color }}>{step.detail}</div>
                   )}
                 </div>
-                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">{i + 1}/{pipelineSteps.length}</span>
+                <span className="text-[10px] text-[#9CA3AF]">{i + 1}/{pipelineSteps.length}</span>
               </button>
               {i < pipelineSteps.length - 1 && (
                 <div className="flex justify-center">
@@ -718,11 +721,11 @@ function PipelineVisualizer() {
           ))}
         </div>
 
-        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] text-center mt-4">
+        <p className="text-xs text-[#9CA3AF] text-center mt-4">
           Click any step to see the exact data flowing through it
         </p>
       </div>
-    </SectionCard>
+    </div>
   );
 }
 
