@@ -11,7 +11,6 @@ import {
   Workflow, Play, Copy, Check, Layers, Telescope, Activity,
   Camera, Link, Link2, Search
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -511,7 +510,7 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[#00F0FF]/20',
+    Core: 'bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20',
     Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
     New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
   };
