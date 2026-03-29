@@ -812,22 +812,21 @@ export function SettingsPage() {
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </TabsContent>
+        </div>}
 
         {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Choose how you want to be notified</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        {activeTab === 'notifications' && <div className="space-y-6">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Alerts</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Notification Preferences</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Choose how you want to be notified</p>
+            <div className="space-y-6">
               {[
                 { key: 'emailReminders', icon: Mail, title: 'Email Reminders', desc: 'Get reminders via email' },
                 { key: 'pushNotifications', icon: Smartphone, title: 'Push Notifications', desc: 'Browser push notifications' },
@@ -856,16 +855,15 @@ export function SettingsPage() {
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Telegram Notification Preferences Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Telegram Alerts</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Choose which alerts are sent to your Telegram</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Telegram</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Telegram Alerts</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Choose which alerts are sent to your Telegram</p>
+            <div className="space-y-4">
               {([
                 { key: 'notif_reminders' as const, title: 'Reminder alerts', desc: 'Get notified when a reminder fires' },
                 { key: 'notif_escalations' as const, title: 'Escalation alerts', desc: 'Receive replies to Telegram escalations' },
@@ -888,16 +886,15 @@ export function SettingsPage() {
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 41.6: Snooze Presets Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Snooze Presets</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Choose which snooze options appear when delaying a reminder</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Reminders</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Snooze Presets</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Choose which snooze options appear when delaying a reminder</p>
+            <div className="space-y-3">
               {(['1h', '3h', 'tomorrow', 'next-week'] as const).map((preset) => {
                 const labels: Record<string, string> = { '1h': '1 hour', '3h': '3 hours', 'tomorrow': 'Tomorrow 9am', 'next-week': 'Next week 9am' };
                 const enabled = snoozePresets.includes(preset);
@@ -919,40 +916,37 @@ export function SettingsPage() {
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 59.10: Reset Agent Config to Defaults */}
-          <Card className="border-[#FF6161]/20">
-            <CardHeader>
-              <CardTitle className="text-[var(--ag-text-primary)]">Reset Agent Configuration</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Restore all agent notification and snooze settings to their defaults</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="ghost"
-                onClick={() => void handleResetAgentConfig()}
-                disabled={isResettingAgent}
-                data-testid="reset-agent-config-btn"
-                className="flex items-center gap-2 text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 border border-[#FF6161]/30"
-              >
-                {isResettingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                Reset to Defaults
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <div className="gs-card !border-[#FF6161]/20">
+            <p className="gs-section-label mb-1">Danger</p>
+            <h3 className="text-base font-semibold text-[var(--ag-text-primary)] mb-1">Reset Agent Configuration</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Restore all agent notification and snooze settings to their defaults</p>
+            <Button
+              variant="ghost"
+              onClick={() => void handleResetAgentConfig()}
+              disabled={isResettingAgent}
+              data-testid="reset-agent-config-btn"
+              className="gs-btn-ghost flex items-center gap-2 text-[#FF6161] hover:text-[#FF6161] hover:bg-[#FF6161]/10 border border-[#FF6161]/30"
+            >
+              {isResettingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              Reset to Defaults
+            </Button>
+          </div>
+        </div>}
 
         {/* Sessions Tab */}
-        <TabsContent value="sessions" className="space-y-6">
+        {activeTab === 'sessions' && <div className="space-y-6">
           {/* Active Sessions Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Active Sessions</CardTitle>
-                  <CardDescription className="text-[var(--ag-text-muted)]">Devices where you are currently signed in</CardDescription>
-                </div>
+          <div className="gs-card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="gs-section-label mb-1">Security</p>
+                <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Active Sessions</h3>
+                <p className="text-sm text-[#9CA3AF]">Devices where you are currently signed in</p>
+              </div>
                 {sessions.length > 1 && (
                   <Button
                     variant="outline"
@@ -1025,20 +1019,17 @@ export function SettingsPage() {
               <p className="text-xs text-[var(--ag-text-muted)] pt-1">
                 Note: Revoking a session marks it inactive in the database but existing tokens remain valid until they expire.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Detected Timezone Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[var(--ag-cyan)]" />
-                Timezone
-              </CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Auto-detected from your browser</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between p-3 rounded-xl border border-[#00F0FF]/20">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Locale</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
+              <MapPin className="w-4 h-4 text-[var(--ag-cyan)]" />Timezone
+            </h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Auto-detected from your browser</p>
+            <div className="flex items-center justify-between p-3 rounded-xl border border-white/[0.06]">
                 <div className="flex items-center gap-3">
                   <Globe className="w-5 h-5 text-[var(--ag-cyan)]" />
                   <div>
@@ -1055,22 +1046,17 @@ export function SettingsPage() {
               <p className="text-xs text-[var(--ag-text-muted)] mt-2">
                 This timezone is used for reminders, daily briefings, and scheduling. It updates automatically based on your device settings.
               </p>
-            </CardContent>
-          </Card>
+          </div>
 
           {/* GDPR Data Export Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileDown className="w-4 h-4 text-[var(--ag-cyan)]" />
-                Data Export (GDPR)
-              </CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">
-                Download a copy of all your data stored in Agentin
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Privacy</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
+              <FileDown className="w-4 h-4 text-[var(--ag-cyan)]" />Data Export (GDPR)
+            </h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Download a copy of all your data stored in Agentin</p>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-white/[0.06]">
                 <Shield className="w-4 h-4 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[var(--ag-text-muted)]">
                   Your export includes your profile, conversation history, memories, active sessions, and preferences.
@@ -1081,7 +1067,7 @@ export function SettingsPage() {
                 variant="outline"
                 onClick={() => void handleGDPRExport()}
                 disabled={isExportingGDPR}
-                className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
+                className="gs-btn-ghost border-[#00F0FF]/30 text-[var(--ag-cyan)]"
                 data-testid="gdpr-export-btn"
               >
                 {isExportingGDPR ? (
@@ -1090,19 +1076,18 @@ export function SettingsPage() {
                   <><Download className="w-4 h-4 mr-2" />Download All My Data</>
                 )}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>}
 
         {/* Security Tab */}
-        <TabsContent value="security" className="space-y-6">
+        {activeTab === 'security' && <div className="space-y-6">
           {/* Preferred AI Engine Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Preferred AI Engine</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Choose which AI model powers your assistant</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">AI</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Preferred AI Engine</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Choose which AI model powers your assistant</p>
+            <div className="space-y-3">
               {[
                 { value: 'auto', label: 'Auto (Recommended)', desc: 'Agentin picks the best engine for each task' },
                 { value: 'local', label: 'Local Engine (Ollama)', desc: 'Fastest, no cloud — runs on-device' },
@@ -1128,18 +1113,15 @@ export function SettingsPage() {
                   <Loader2 className="w-3 h-3 animate-spin" />Saving...
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 39.4: Preferred Free Model Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Preferred Free Model</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">
-                Pick which OpenRouter free model to use when cloud mode is selected
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">AI</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Preferred Free Model</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Pick which OpenRouter free model to use when cloud mode is selected</p>
+            <div className="space-y-3">
               <select
                 value={preferredFreeModel}
                 onChange={async (e) => {
@@ -1153,7 +1135,7 @@ export function SettingsPage() {
                     setFreeModelSaving(false);
                   }
                 }}
-                className="w-full px-3 py-2 border border-[#00F0FF]/20 rounded-xl text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[#00F0FF]/40"
+                className="gs-input w-full"
               >
                 <option value="auto">Auto (Agentin selects best available)</option>
                 {freeModels.map((m) => (
@@ -1168,16 +1150,15 @@ export function SettingsPage() {
               <p className="text-xs text-[var(--ag-text-muted)]">
                 Only applies when your engine is set to Cloud or Auto. Free models have usage limits.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 52.4: Change Password Card */}
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Update your account password</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Security</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Change Password</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Update your account password</p>
+            <div className="space-y-4">
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Current Password</label>
                 <Input
@@ -1185,7 +1166,7 @@ export function SettingsPage() {
                   value={pwCurrent}
                   onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter current password"
-                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
+                  className="gs-input"
                 />
               </div>
               <div>
@@ -1195,7 +1176,7 @@ export function SettingsPage() {
                   value={pwNew}
                   onChange={(e) => { setPwNew(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter new password"
-                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
+                  className="gs-input"
                 />
                 {/* Password strength meter */}
                 {pwNew.length > 0 && (() => {
@@ -1239,7 +1220,7 @@ export function SettingsPage() {
                   value={pwConfirm}
                   onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Confirm new password"
-                  className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]"
+                  className="gs-input"
                 />
               </div>
               {pwError && (
@@ -1279,7 +1260,7 @@ export function SettingsPage() {
                     setPwSaving(false);
                   }
                 }}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
+                className="gs-btn-primary min-h-[44px] press-scale"
               >
                 {pwSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
@@ -1287,20 +1268,17 @@ export function SettingsPage() {
                   <><Key className="w-4 h-4 mr-2" />Update Password</>
                 )}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 82.8: Danger Zone — Delete Account */}
-          <Card className="border border-[#FF2D78]/30 bg-[#FF2D78]/[0.03]">
-            <CardHeader>
-              <CardTitle className="text-[#FF2D78] flex items-center gap-2">
-                <Trash2 className="w-4 h-4" /> Danger Zone
-              </CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">
-                Actions here are irreversible. Proceed with caution.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="gs-card !border-[#FF2D78]/30">
+            <p className="gs-section-label mb-1 !text-[#FF2D78]/70">Danger</p>
+            <h3 className="text-base font-semibold text-[#FF2D78] flex items-center gap-2 mb-1">
+              <Trash2 className="w-4 h-4" /> Danger Zone
+            </h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Actions here are irreversible. Proceed with caution.</p>
+            <div className="space-y-4">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#FF2D78]/5 border border-[#FF2D78]/20">
                 <Shield className="w-4 h-4 text-[#FF2D78] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[var(--ag-text-muted)]">
@@ -1329,10 +1307,10 @@ export function SettingsPage() {
                       placeholder="DELETE"
                       value={deleteConfirmText}
                       onChange={(e) => setDeleteConfirmText(e.target.value)}
-                      className={`bg-[var(--ag-bg-surface)] text-[var(--ag-text-primary)] font-mono tracking-wider ${
+                      className={`gs-input font-mono tracking-wider ${
                         deleteConfirmText === 'DELETE'
-                          ? 'border-[#FF2D78]/60'
-                          : 'border-[#FF2D78]/20'
+                          ? '!border-[#FF2D78]/60'
+                          : '!border-[#FF2D78]/20'
                       }`}
                       autoComplete="off"
                       spellCheck={false}
@@ -1345,7 +1323,7 @@ export function SettingsPage() {
                       placeholder="Enter password"
                       value={deletePassword}
                       onChange={(e) => setDeletePassword(e.target.value)}
-                      className="bg-[var(--ag-bg-surface)] border-[#FF2D78]/20 text-[var(--ag-text-primary)]"
+                      className="gs-input !border-[#FF2D78]/20"
                       data-testid="delete-account-password-input"
                     />
                   </div>
@@ -1389,25 +1367,24 @@ export function SettingsPage() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>}
 
         {/* API Keys Tab */}
-        <TabsContent value="apikeys" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>API Keys</CardTitle>
-                  <CardDescription className="text-[var(--ag-text-muted)]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
-                </div>
-                <Button onClick={() => setShowAddKey(true)} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
-                  <Plus className="w-4 h-4 mr-2" />Add Key
-                </Button>
+        {activeTab === 'apikeys' && <div className="space-y-6">
+          <div className="gs-card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="gs-section-label mb-1">Developer</p>
+                <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">API Keys</h3>
+                <p className="text-sm text-[#9CA3AF]">Manage provider keys for &quot;Bring Your Own&quot; mode</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              <Button onClick={() => setShowAddKey(true)} className="gs-btn-primary min-h-[44px]">
+                <Plus className="w-4 h-4 mr-2" />Add Key
+              </Button>
+            </div>
+            <div className="space-y-4">
               {apiKeys.length === 0 && !showAddKey && (
                 <div className="text-center py-8">
                   <Key className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
@@ -1450,7 +1427,7 @@ export function SettingsPage() {
                         placeholder="Paste new key value…"
                         value={rotateValue}
                         onChange={(e) => setRotateValue(e.target.value)}
-                        className="flex-1 text-sm bg-[#0A0A14] border-[#00F0FF]/20"
+                        className="gs-input flex-1 text-sm"
                       />
                       <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
                         onClick={() => handleRotateKey(key.id)}
@@ -1489,51 +1466,45 @@ export function SettingsPage() {
                       value={newKeyValue}
                       onChange={(e) => setNewKeyValue(e.target.value)}
                       placeholder="sk-..."
-                      className="bg-[var(--ag-bg-surface)] border-[#00F0FF]/30 text-[var(--ag-text-primary)] font-mono"
+                      className="gs-input font-mono"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[#00F0FF]/30">
+                    <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="gs-btn-ghost">
                       Cancel
                     </Button>
-                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">
+                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="gs-btn-primary min-h-[44px] press-scale">
                       Save Key
                     </Button>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
+            </div>
+          </div>
+        </div>}
 
         {/* Memory Tab */}
-        <TabsContent value="memory" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Agent Memory</CardTitle>
-                  <CardDescription className="text-[var(--ag-text-muted)]">What your AI assistant remembers about you</CardDescription>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {['all', 'fact', 'preference'].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setMemoryFilter(cat)}
-                      className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
-                        memoryFilter === cat
-                          ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[var(--ag-cyan)]'
-                          : 'bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)]'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+        {activeTab === 'memory' && <div className="space-y-6">
+          <div className="gs-card">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div>
+                <p className="gs-section-label mb-1">AI</p>
+                <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Agent Memory</h3>
+                <p className="text-sm text-[#9CA3AF]">What your AI assistant remembers about you</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                {['all', 'fact', 'preference'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setMemoryFilter(cat)}
+                    className={`min-h-[44px] text-xs capitalize ${memoryFilter === cat ? 'gs-pill-active' : 'gs-pill'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
               {memoriesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="w-6 h-6 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
@@ -1579,61 +1550,53 @@ export function SettingsPage() {
                   </div>
                 ))
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {reactionSummary.length > 0 && (
-            <Card className="border-[#00F0FF]/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <span className="text-base">✨</span> Top Reactions
-                </CardTitle>
-                <CardDescription className="text-[var(--ag-text-muted)] text-xs">
-                  Your most-used reactions on agent messages
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {reactionSummary.map(({ reaction, count }) => (
-                    <div
-                      key={reaction}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-colors"
-                    >
-                      <span className="text-base leading-none">{reaction}</span>
-                      <span className="text-xs font-bold text-[var(--ag-cyan)]">{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="gs-card">
+              <h3 className="text-sm font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
+                <span className="text-base">✨</span> Top Reactions
+              </h3>
+              <p className="text-xs text-[#9CA3AF] mb-3">Your most-used reactions on agent messages</p>
+              <div className="flex flex-wrap gap-2">
+                {reactionSummary.map(({ reaction, count }) => (
+                  <div
+                    key={reaction}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] transition-colors"
+                  >
+                    <span className="text-base leading-none">{reaction}</span>
+                    <span className="text-xs font-bold text-[var(--ag-cyan)]">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* 60.2: Starred Messages */}
-          <Card className="border-[#F59E0B]/20">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <span className="text-base">⭐</span> Starred Messages
-                  {starredMessages.length > 0 && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B]">{starredMessages.length}</span>
-                  )}
-                </CardTitle>
-                <button
-                  onClick={() => setShowStarred(s => !s)}
-                  className="text-xs text-[var(--ag-text-muted)] hover:text-[#F59E0B] transition-colors"
-                >
-                  {showStarred ? 'Hide' : 'Show'}
-                </button>
-              </div>
-              <CardDescription className="text-[var(--ag-text-muted)] text-xs">Messages you've starred from your conversation history</CardDescription>
-            </CardHeader>
+          <div className="gs-card !border-[#F59E0B]/20">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-[#F4F6FF] flex items-center gap-2">
+                <span className="text-base">⭐</span> Starred Messages
+                {starredMessages.length > 0 && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B]">{starredMessages.length}</span>
+                )}
+              </h3>
+              <button
+                onClick={() => setShowStarred(s => !s)}
+                className="text-xs text-[var(--ag-text-muted)] hover:text-[#F59E0B] transition-colors"
+              >
+                {showStarred ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-xs text-[#9CA3AF] mb-3">Messages you've starred from your conversation history</p>
             {showStarred && (
-              <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {starredMessages.length === 0 ? (
                   <p className="text-xs text-[#4B5563] py-2">No starred messages yet. Star messages from your conversation history.</p>
                 ) : (
                   starredMessages.map((msg) => (
-                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[#F59E0B]/20">
+                    <div key={msg.id} className="flex items-start gap-2 p-2 rounded-lg bg-white/[0.04] border border-[#F59E0B]/20">
                       <span className="text-xs mt-0.5">{msg.role === 'user' ? '👤' : '🤖'}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[var(--ag-text-primary)] line-clamp-2">{msg.content}</p>
@@ -1654,12 +1617,12 @@ export function SettingsPage() {
                     </div>
                   ))
                 )}
-              </CardContent>
+              </div>
             )}
-          </Card>
+          </div>
 
-          <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
-            <CardContent className="p-4">
+          <div className="gs-card">
+            <div className="p-0">
               <div className="flex items-start gap-3">
                 <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
                 <div>
@@ -1731,13 +1694,16 @@ export function SettingsPage() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>}
 
         {/* Privacy Tab */}
-        <TabsContent value="privacy" className="space-y-6">
-          <SectionCard title="Privacy Controls" subtitle="Control what is visible on your public portfolio">
+        {activeTab === 'privacy' && <div className="space-y-6">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Visibility</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Privacy Controls</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Control what is visible on your public portfolio</p>
             <div className="space-y-6">
               {[
                 { key: 'showProfile' as const, icon: Eye, title: 'Show in Public Directory', desc: 'Allow others to discover you via Explore' },

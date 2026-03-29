@@ -95,7 +95,7 @@ export function LogoStudioPage() {
                 <AiSuggest currentParams={studio.params} onApply={studio.setParams} wizardResult={wizardResult} onSelectForRefine={setSelectedConcept} notifyStart={notifyStart} notifyDone={notifyDone} notifyFail={notifyFail} />
                 {selectedConcept && !showChat && (
                   <button onClick={() => setShowChat(true)}
-                    className="mt-3 w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-medium bg-violet-600/80 hover:bg-violet-600 text-white transition-colors cursor-pointer flex items-center justify-center gap-2">
+                    className="gs-btn-primary mt-3 w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-sm flex items-center justify-center gap-2 cursor-pointer">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
@@ -145,7 +145,7 @@ export function LogoStudioPage() {
             {/* Advanced: Parametric SVG (collapsed by default) */}
             <section className="mt-8">
               <button onClick={() => setShowAdvanced(!showAdvanced)}
-                className="w-full min-h-[44px] flex items-center justify-between px-5 py-3 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors cursor-pointer">
+                className="gs-card w-full min-h-[44px] flex items-center justify-between px-5 py-3 text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors cursor-pointer">
                 <span>Advanced: Parametric SVG</span>
                 <ChevronSvg cls={`transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`} />
               </button>
@@ -153,17 +153,17 @@ export function LogoStudioPage() {
                 <div className="mt-4 space-y-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-1 md:w-3/5"><LogoPreview params={studio.params} /></div>
-                    <div className="md:w-2/5 md:max-h-[calc(100vh-120px)] md:overflow-y-auto md:sticky md:top-20 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]">
+                    <div className="md:w-2/5 md:max-h-[calc(100vh-120px)] md:overflow-y-auto md:sticky md:top-20 gs-card">
                       <LogoControls params={studio.params} onChange={studio.setParams} onRandomize={studio.randomize} />
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-xs uppercase tracking-[0.15em] text-[var(--ag-text-muted)] font-medium mb-3">Presets</h3>
+                    <p className="gs-section-label mb-3">Presets</p>
                     <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
                       {PRESETS.map((p, i) => (
                         <button key={i} onClick={() => studio.setParams(p.params)}
                           className={`flex-shrink-0 min-h-[44px] flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors cursor-pointer ${
-                            matchPreset(studio.params, p.params) ? 'border-violet-500/60 bg-violet-500/[0.06]' : 'border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-default)]'}`}>
+                            matchPreset(studio.params, p.params) ? 'border-violet-500/60 bg-violet-500/[0.06]' : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]'}`}>
                           <div className="w-12 h-12 rounded-lg bg-[var(--ag-bg-base)] flex items-center justify-center">
                             <LogoSVG params={p.params} size={32} />
                           </div>
@@ -191,15 +191,15 @@ function SummaryBar({ result, onEdit }: { result: WizardResult; onEdit: () => vo
   const [open, setOpen] = useState(true);
   const pills = [result.brandName, result.industry, ...result.styles].filter(Boolean);
   return (
-    <div className="rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] px-4 py-3">
+    <div className="gs-card px-4 py-3">
       <div className="flex items-center justify-between">
         <button onClick={() => setOpen(!open)}
           className="min-h-[44px] flex items-center gap-2 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors cursor-pointer">
           <ChevronSvg cls={`w-3.5 h-3.5 transition-transform ${open ? '' : '-rotate-90'}`} />
-          <span className="uppercase tracking-[0.12em] font-medium">Brand Brief</span>
+          <span className="gs-section-label">Brand Brief</span>
         </button>
         <button onClick={onEdit}
-          className="min-h-[44px] px-3 py-1 rounded-lg text-[11px] font-medium text-violet-400/70 hover:text-violet-400 border border-violet-500/20 hover:border-violet-500/40 transition-colors cursor-pointer">
+          className="gs-btn-ghost min-h-[44px] px-3 py-1 text-[11px] cursor-pointer">
           Edit
         </button>
       </div>
@@ -207,12 +207,12 @@ function SummaryBar({ result, onEdit }: { result: WizardResult; onEdit: () => vo
         <div className="flex flex-wrap gap-1.5 mt-2.5">
           {pills.map(t => <Pill key={t} text={t} />)}
           {result.colors.map(hex => (
-            <span key={hex} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] text-[var(--ag-text-secondary)] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
+            <span key={hex} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] text-[var(--ag-text-secondary)] bg-white/[0.02] border border-white/[0.06]">
               <span className="w-3 h-3 rounded-full" style={{ background: hex }} />{hex}
             </span>
           ))}
           {result.letAiChooseColors && (
-            <span className="px-2.5 py-1 rounded-full text-[11px] text-violet-400/60 bg-violet-500/[0.06] border border-violet-500/20">
+            <span className="gs-pill gs-pill-active text-[11px] px-2.5 py-1">
               AI-chosen colors
             </span>
           )}
@@ -223,7 +223,7 @@ function SummaryBar({ result, onEdit }: { result: WizardResult; onEdit: () => vo
 }
 
 const Pill = ({ text }: { text: string }) => (
-  <span className="px-2.5 py-1 rounded-full text-[11px] text-[var(--ag-text-secondary)] bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">{text}</span>
+  <span className="gs-pill text-[11px] px-2.5 py-1">{text}</span>
 );
 
 function matchPreset(current: LogoParams, preset: LogoParams): boolean {

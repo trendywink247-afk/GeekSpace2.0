@@ -382,16 +382,24 @@ export function PortfolioView() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#06061a] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#8B5CF6] animate-spin" />
+        <div className="space-y-4 w-full max-w-md px-6">
+          <div className="bg-white/[0.04] rounded-2xl animate-pulse h-40" />
+          <div className="bg-white/[0.04] rounded-xl animate-pulse h-24" />
+          <div className="bg-white/[0.04] rounded-xl animate-pulse h-16" />
+        </div>
       </div>
     );
   }
 
   if (!portfolio) {
     return (
-      <div className="min-h-screen bg-[#06061a] flex flex-col items-center justify-center gap-4">
-        <p className="text-[#9CA3AF] text-lg">Portfolio not found</p>
-        <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white">
+      <div className="min-h-screen bg-[#06061a] flex flex-col items-center justify-center gap-4 px-4">
+        <div className="gs-icon-pill gs-icon-pill-violet mb-2">
+          <Bot className="w-5 h-5" />
+        </div>
+        <p className="text-[#F4F6FF] font-semibold text-lg">Portfolio not found</p>
+        <p className="text-[#9CA3AF] text-sm">This portfolio doesn't exist or has been removed.</p>
+        <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/explore')} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white mt-2">
           {isAuthenticated ? 'Back to Dashboard' : 'Browse Directory'}
         </Button>
       </div>
@@ -401,7 +409,7 @@ export function PortfolioView() {
   return (
     <div className="min-h-screen bg-[#06061a]">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06061a]/80 backdrop-blur-xl border-b border-[rgba(139,92,246,0.08)]">
+      <nav className="fixed top-0 left-0 right-0 z-50 gs-tab-bar border-b border-[rgba(139,92,246,0.08)]">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/')} className="p-2 rounded-lg hover:bg-[rgba(139,92,246,0.1)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50" aria-label="Go back">
@@ -499,15 +507,15 @@ export function PortfolioView() {
             </div>
 
             {/* Bio */}
-            <div className="p-6 rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.08)] mb-8" style={{ background: 'rgba(12,12,30,0.6)' }}>
-              <h2 className="text-lg font-semibold mb-3">About</h2>
+            <div className="gs-card p-6 mb-8">
+              <p className="gs-section-label mb-2">About</p>
               <p className="text-[#9CA3AF] leading-relaxed break-words">{portfolio.about}</p>
             </div>
 
             {/* Skills */}
             {portfolio.skills?.length > 0 && (
               <div className="mb-8" data-testid="portfolio-skills">
-                <h2 className="text-lg font-semibold mb-4">Skills</h2>
+                <p className="gs-section-label mb-3">Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {portfolio.skills.map((skill, i) => {
                     const palette = [
@@ -530,14 +538,14 @@ export function PortfolioView() {
             {/* Projects */}
             {portfolio.projects?.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-semibold mb-4">Projects</h2>
+                <p className="gs-section-label mb-3">Projects</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {portfolio.projects.map((project, i) => {
                     const hasUrl = project.url && project.url !== '#';
                     const Wrapper = hasUrl ? 'a' : 'div';
                     const wrapperProps = hasUrl ? { href: project.url, target: '_blank', rel: 'noopener noreferrer' } : {};
                     return (
-                      <Wrapper key={i} {...wrapperProps} className={`p-5 rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] hover:shadow-[0_0_20px_rgba(139,92,246,0.06)] transition-all duration-300 group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`} style={{ background: 'rgba(12,12,30,0.6)' }}>
+                      <Wrapper key={i} {...wrapperProps} className={`gs-card p-5 transition-all duration-300 group press-scale block w-full${hasUrl ? ' cursor-pointer' : ''}`}>
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3 className="font-semibold text-[#F4F6FF] group-hover:text-[#8B5CF6] transition-colors text-base">{project.name}</h3>
                           <div className="flex items-center gap-1 shrink-0">
@@ -565,9 +573,10 @@ export function PortfolioView() {
             {/* Milestones */}
             {portfolio.milestones?.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-[#8B5CF6]" />Milestones
-                </h2>
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="w-4 h-4 text-[#8B5CF6]" />
+                  <p className="gs-section-label">Milestones</p>
+                </div>
                 <div className="space-y-4">
                   {portfolio.milestones.map((milestone, i) => (
                     <div key={i} className="flex gap-4">
@@ -588,7 +597,7 @@ export function PortfolioView() {
 
             {/* Inline CTA to open chat (when chat panel is closed) */}
             {portfolio.agentEnabled && !chatOpen && (
-              <div className="p-4 md:p-6 rounded-2xl border border-[rgba(139,92,246,0.15)]" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(12,12,30,0.6))' }}>
+              <div className="gs-card p-4 md:p-6 border-[rgba(139,92,246,0.20)]" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,6,26,0.8))' }}>
                 <div className="flex items-center gap-3 md:gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-[#8B5CF6]/15 flex items-center justify-center shrink-0">
                     <Bot className="w-6 h-6 text-[#8B5CF6]" />
@@ -648,7 +657,7 @@ export function PortfolioView() {
       {/* 37.1: Contact modal */}
       {contactOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
-          <div className="w-full max-w-md rounded-2xl backdrop-blur-xl border border-[rgba(139,92,246,0.15)] p-6" style={{ background: 'rgba(12,12,30,0.95)' }}>
+          <div className="gs-card w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-[#F4F6FF]">Message {displayName}</h2>
               <button onClick={() => setContactOpen(false)} className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50" aria-label="Close"><X className="w-5 h-5" /></button>
@@ -667,21 +676,21 @@ export function PortfolioView() {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-[#9CA3AF] mb-1 block">Your name *</label>
-                  <Input
+                  <input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Jane Smith"
-                    className="bg-[#0c0c1e] border-[rgba(139,92,246,0.08)]"
+                    className="gs-input w-full"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-[#9CA3AF] mb-1 block">Email (optional)</label>
-                  <Input
+                  <input
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="jane@example.com"
                     type="email"
-                    className={`bg-[#0c0c1e] ${emailInvalid ? 'border-red-500/50' : 'border-[rgba(139,92,246,0.08)]'}`}
+                    className={`gs-input w-full ${emailInvalid ? 'border-red-500/50' : ''}`}
                   />
                   {/* 46.6: Inline email validation error */}
                   {emailInvalid && (
@@ -695,14 +704,14 @@ export function PortfolioView() {
                     onChange={(e) => setContactMessage(e.target.value.slice(0, 1000))}
                     placeholder="Hi, I'd love to connect about..."
                     rows={4}
-                    className="w-full px-3 py-2 rounded-xl bg-[#0c0c1e] border border-[rgba(139,92,246,0.08)] text-[#F4F6FF] placeholder-[#4B5563] focus:outline-none focus:border-[rgba(139,92,246,0.15)] text-sm resize-none"
+                    className="gs-input w-full resize-none"
                   />
                 </div>
-                {contactError && <p className="text-xs text-[#FF6161]">{contactError}</p>}
+                {contactError && <p className="text-xs text-rose-400">{contactError}</p>}
                 <button
                   onClick={handleSendContact}
                   disabled={contactSending || !contactName.trim() || !contactMessage.trim() || emailInvalid}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold text-sm transition-colors disabled:opacity-50"
+                  className="gs-btn-primary w-full min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {contactSending ? 'Sending…' : 'Send Message'}

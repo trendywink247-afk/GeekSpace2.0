@@ -211,7 +211,8 @@ export function ImageToolsPage() {
             <>
               {/* hero text */}
               <div className="text-center mb-10">
-                <h2 className="text-3xl sm:text-4xl font-bold text-[var(--ag-text-primary)] tracking-tight">
+                <p className="gs-section-label mb-3">Image Processing</p>
+                <h2 className="text-3xl sm:text-4xl font-bold text-gradient tracking-tight">
                   Image Tools
                 </h2>
                 <p className="mt-3 text-sm sm:text-base text-[var(--ag-text-secondary)] max-w-lg mx-auto leading-relaxed">
@@ -225,7 +226,7 @@ export function ImageToolsPage() {
                   <button
                     key={tool.id}
                     onClick={() => handleSelectTool(tool.id)}
-                    className="group relative text-left rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5 min-h-[44px] transition-all duration-200 hover:border-[var(--ag-border-default)] hover:bg-[var(--ag-bg-surface-hover)] cursor-pointer overflow-hidden"
+                    className="gs-card group relative text-left p-5 min-h-[44px] transition-all duration-200 cursor-pointer overflow-hidden"
                     style={{ animation: `it-card-in 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
                   >
                     {/* icon */}
@@ -252,7 +253,7 @@ export function ImageToolsPage() {
 
               {/* privacy footer note */}
               <div className="mt-10 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-xs text-[var(--ag-text-muted)]">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--ag-border-subtle)] bg-white/[0.02] text-xs text-[var(--ag-text-muted)]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0110 0v4" />
@@ -263,9 +264,9 @@ export function ImageToolsPage() {
 
               {/* Soft registration suggestion */}
               <div className="mt-6 text-center">
-                <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]">
+                <div className="gs-card inline-flex flex-col items-center gap-2 px-6 py-4">
                   <p className="text-sm text-[var(--ag-text-secondary)]">Want to save your work and unlock more tools?</p>
-                  <Link to="/login?signup=1" className="text-sm font-medium min-h-[44px] flex items-center text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors">
+                  <Link to="/login?signup=1" className="gs-btn-primary text-sm font-medium min-h-[44px] flex items-center px-5 py-2">
                     Create a free account &rarr;
                   </Link>
                   <p className="text-[10px] text-[var(--ag-text-muted)]">No ads. No tracking. Ever.</p>

@@ -823,7 +823,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     handleNaturalAdd();
                   }
                 }}
-                className="w-full px-4 py-3 min-h-[44px] bg-white/[0.03] border border-white/[0.08] rounded-xl text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:outline-none focus:border-[#84CC16]/40"
+                className="gs-input w-full px-4 py-3 min-h-[44px] rounded-xl"
               />
               {parsedReminder && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -842,14 +842,14 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             >
               <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
             </button>
-            <Button
+            <button
               onClick={handleNaturalAdd}
               disabled={!parsedReminder}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white disabled:opacity-50 min-h-[44px]"
+              className="gs-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-50"
             >
-              <Wand2 className="w-4 h-4 mr-2" />
+              <Wand2 className="w-4 h-4" />
               Add
-            </Button>
+            </button>
           </div>
           
           {/* Parsed preview card — live preview of what will be created */}
@@ -921,27 +921,25 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               </div>
             )}
           </div>
-      </SectionCard>
+      </div>
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
-          <Input
+          <input
             placeholder="Search reminders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white/[0.03] border-white/[0.08] min-h-[44px]"
+            className="gs-input w-full pl-10 pr-4 py-2.5 rounded-xl min-h-[44px]"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-            <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <GsTabBar
+            tabs={[{ id: 'all', label: 'All' }, { id: 'active', label: 'Active' }, { id: 'completed', label: 'Completed' }]}
+            activeTab={filter}
+            onChange={(id) => setFilter(id as typeof filter)}
+          />
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
             {(['all', 'recurring', 'one-off'] as const).map((opt) => (
@@ -1249,20 +1247,18 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               {isBulkRestoringSnooze && (
                 <div className="w-4 h-4 border-2 border-[#FFB800]/30 border-t-[#FFB800] rounded-full animate-spin" />
               )}
-              <Button
-                size="sm"
-                variant="destructive"
+              <button
                 onClick={handleBulkDelete}
                 disabled={isBulkDeleting}
-                className="bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/20 disabled:opacity-50 transition-colors"
               >
                 {isBulkDeleting ? (
-                  <div className="w-4 h-4 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin mr-2" />
+                  <div className="w-3.5 h-3.5 border-2 border-[#FF6161]/30 border-t-[#FF6161] rounded-full animate-spin" />
                 ) : (
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
                 Delete ({selectedIds.size})
-              </Button>
+              </button>
             </div>
           )}
         </div>
@@ -1272,21 +1268,20 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
             <div className="text-center py-16 flex flex-col items-center">
-              <div className="relative mb-6">
-                <Bell className="w-14 h-14 text-[#84CC16]/30 animate-bounce" style={{ animationDuration: '2s' }} />
-                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#84CC16]/20 animate-ping" />
+              <div className="gs-icon-pill gs-icon-pill-emerald w-16 h-16 mb-5">
+                <Bell className="w-7 h-7" />
               </div>
               <p className="text-lg font-medium text-[var(--ag-text-primary)] mb-1">No reminders yet</p>
-              <p className="text-sm text-[var(--ag-text-muted)]/70 mt-1 max-w-xs">
+              <p className="text-sm text-[var(--ag-text-muted)] mt-1 max-w-xs">
                 Try typing: <span className="text-[#84CC16]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
               </p>
-              <Button
+              <button
                 onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
-                className="mt-5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-6 py-2.5 min-h-[44px]"
+                className="gs-btn-primary flex items-center gap-2 mt-5 px-6 py-2.5 rounded-xl text-sm font-semibold min-h-[44px]"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Create your first reminder
-              </Button>
+              </button>
             </div>
           ) : filter === 'active' ? (
             // Grouped view for active reminders (date or category)
@@ -1308,22 +1303,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     const isCompleting = completingIds.has(reminder.id);
                     const isJustCompleted = justCompletedIds.has(reminder.id);
                     return (
-                      <Card
+                      <div
                         key={reminder.id}
                         data-testid={`reminder-card-${reminder.id}`}
-                        className={`bg-[var(--ag-bg-surface)] border transition-all duration-300 ${
+                        className={`gs-card p-4 transition-all duration-300 ${
                           isCompleting
-                            ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
+                            ? '!border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
                             : isJustCompleted
                             ? 'bg-[#00FF88]/5'
                             : reminder.completed
-                            ? 'border-[var(--ag-border-subtle)] opacity-60'
+                            ? 'opacity-60'
                             : overdue
-                            ? 'border-[#FF6161]/30 border-l-2 border-l-[#FF2D78]'
-                            : 'border-[var(--ag-border-subtle)]'
+                            ? '!border-l-2 !border-l-[#FF2D78]'
+                            : ''
                         }`}
                       >
-                        <CardContent className="p-4">
                           <div className="flex items-start gap-4">
                             {/* Bulk select checkbox — active for snooze, completed for delete */}
                             {!reminder.completed && (
@@ -1573,8 +1567,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
                     );
                   })}
                 </div>
@@ -1590,21 +1583,20 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
               const isJustCompleted = justCompletedIds.has(reminder.id);
 
               return (
-                <Card
+                <div
                   key={reminder.id}
-                  className={`bg-[var(--ag-bg-surface)] border transition-all duration-300 ${
+                  className={`gs-card p-4 transition-all duration-300 ${
                     isCompleting
-                      ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
+                      ? '!border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
                       : isJustCompleted
                       ? 'bg-[#00FF88]/5'
                       : reminder.completed
-                      ? 'border-[var(--ag-border-subtle)] opacity-60'
+                      ? 'opacity-60'
                       : overdue
-                      ? 'border-[#FF6161]/30 border-l-2 border-l-[#FF2D78]'
-                      : 'border-[var(--ag-border-subtle)]'
+                      ? '!border-l-2 !border-l-[#FF2D78]'
+                      : ''
                   }`}
                 >
-                  <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       {/* Bulk select checkbox — active for snooze, completed for delete */}
                       {!reminder.completed && (
@@ -1843,22 +1835,19 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                </div>
               );
             })
           )}
         </div>
       ) : (
         // Calendar view
-        <Card className="border-[var(--ag-border-subtle)]">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#84CC16]" />
-              Calendar View
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="gs-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-5 h-5 text-[#84CC16]" />
+            <p className="text-base font-semibold text-[var(--ag-text-primary)]">Calendar View</p>
+          </div>
+          <div>
             <div className="grid grid-cols-7 gap-2 text-center">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                 <div key={day} className="text-xs text-[var(--ag-text-muted)] py-2">
@@ -1874,8 +1863,8 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Add / Edit Reminder Dialog */}
@@ -1900,22 +1889,22 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                     Type naturally (e.g., "tomorrow at 3pm call mom")
                   </label>
                   <div className="flex gap-2">
-                    <Input
+                    <input
                       ref={inputRef}
                       data-testid="reminder-text"
                       placeholder="Remind me..."
                       value={naturalInput}
                       onChange={(e) => setNaturalInput(e.target.value)}
-                      className="flex-1 border-white/[0.08] min-h-[44px]"
+                      className="gs-input flex-1 px-3 py-2.5 rounded-xl min-h-[44px]"
                       autoFocus
                     />
-                    <Button
+                    <button
                       onClick={handleNaturalAdd}
                       disabled={!parsedReminder}
-                      className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+                      className="gs-btn-primary flex items-center justify-center px-3 rounded-xl min-h-[44px] min-w-[44px] disabled:opacity-50"
                     >
                       <Wand2 className="w-4 h-4" />
-                    </Button>
+                    </button>
                   </div>
 
                   {parsedReminder && (
@@ -1965,21 +1954,21 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">What to remind?</label>
-                <Input
+                <input
                   placeholder="Enter reminder text..."
                   value={newReminder.text}
                   onChange={(e) => setNewReminder({ ...newReminder, text: e.target.value })}
-                  className="border-white/[0.08] min-h-[44px]"
+                  className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">When?</label>
-                  <Input
+                  <input
                     type="datetime-local"
                     value={newReminder.datetime}
                     onChange={(e) => setNewReminder({ ...newReminder, datetime: e.target.value })}
-                    className="border-white/[0.08] min-h-[44px]"
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                   {/* 69.3: Friendly due label in edit mode */}
                   {editingReminder && newReminder.datetime && (
@@ -2041,7 +2030,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                   <select
                     value={newReminder.category}
                     onChange={(e) => setNewReminder({ ...newReminder, category: e.target.value as ReminderCategory })}
-                    className="w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[var(--ag-text-primary)] text-sm min-h-[44px]"
+                    className="gs-input w-full px-3 py-2 rounded-xl text-sm min-h-[44px]"
                   >
                     <option value="personal">Personal</option>
                     <option value="work">Work</option>
@@ -2106,16 +2095,17 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <button onClick={() => setIsAddDialogOpen(false)} className="gs-btn-ghost px-4 py-2 rounded-xl text-sm min-h-[44px]">
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               data-testid="submit-reminder-btn"
               onClick={editingReminder ? handleEditSave : handleLegacyAdd}
               disabled={!newReminder.text || !newReminder.datetime}
+              className="gs-btn-primary flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-50"
             >
               {editingReminder ? 'Save Changes' : 'Add Reminder'}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -2123,7 +2113,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {/* 45.4: Mobile Quick-Add FAB — visible only on mobile, clears above bottom nav */}
       <button
         onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
-        className="md:hidden fixed bottom-[88px] right-4 w-14 h-14 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center justify-center shadow-lg z-40 text-xl font-bold min-h-[44px]"
+        className="md:hidden fixed bottom-[88px] right-4 w-14 h-14 rounded-full gs-btn-primary flex items-center justify-center shadow-lg z-40 text-xl font-bold min-h-[44px]"
         aria-label="Add reminder"
       >
         +

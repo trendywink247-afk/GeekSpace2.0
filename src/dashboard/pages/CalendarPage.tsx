@@ -1,7 +1,7 @@
 // CalendarPage.tsx -- Phase 95 + Enhanced Calendar Grid + AI Assistant Panel
 // Revamped: design tokens, SectionCard, PageHeader, cal ownership, useAgentCanvas
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -23,8 +23,6 @@ import {
 } from "lucide-react";
 import { DateTime } from 'luxon';
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -601,24 +599,21 @@ export function CalendarPage() {
         }
         actions={
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
+            <button
               onClick={() => setShowAddDialog(true)}
-              className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[var(--ag-cyan,#00F0FF)] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="gs-btn-primary flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Event</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            </button>
+            <button
               onClick={() => void fetchData(true)}
               disabled={refreshing}
               aria-label="Refresh"
-              className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="gs-btn-ghost flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
-            </Button>
+            </button>
           </div>
         }
       />
@@ -633,7 +628,7 @@ export function CalendarPage() {
 
       {/* Connection status card */}
       <BlurFade delay={0.1}>
-      <SectionCard>
+      <div className="gs-card p-4">
           {loading ? (
             <div className="h-12 rounded-lg bg-[#F4F6FF]/5 animate-pulse" />
           ) : status?.available === false ? (
@@ -717,7 +712,7 @@ export function CalendarPage() {
               </Button>
             </div>
           )}
-      </SectionCard>
+      </div>
       </BlurFade>
 
       {/* Main content: calendar grid + sidebar */}
