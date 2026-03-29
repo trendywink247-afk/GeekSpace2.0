@@ -55,6 +55,10 @@ def get_voice(name=None):
             else:
                 raise FileNotFoundError(f'No voice models found in {VOICE_DIR}')
 
+        # After fallback resolution, re-check cache
+        if voice_name in _voices:
+            return _voices[voice_name]
+
         logger.info(f'Loading Piper voice: {voice_name}')
         start = time.time()
         voice = PiperVoice.load(model_path)

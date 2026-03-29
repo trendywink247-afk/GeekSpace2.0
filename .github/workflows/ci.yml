@@ -137,7 +137,7 @@ jobs:
   # ============================================
   deploy-staging:
     name: "Deploy Staging Preview"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: unit-tests
     if: |
       github.event_name == 'pull_request' ||
@@ -153,54 +153,45 @@ jobs:
       name: staging
       url: https://staging.agentin.chat
     steps:
-      - uses: actions/checkout@v4
+      - name: Deploy staging locally
+        run: |
+          set -e
+          cd ~/GeekSpace2.0
 
-      - name: Deploy PR to staging via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          command_timeout: 8m
-          script_stop: true
-          script: |
-            set -e
-            cd ~/GeekSpace2.0
+          echo "=== Cleaning local changes ==="
+          git stash --include-untracked || true
 
-            echo "=== Cleaning local changes ==="
-            git stash --include-untracked || true
+          BRANCH="${{ github.head_ref || 'main' }}"
+          echo "=== Fetching branch: $BRANCH ==="
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git pull origin "$BRANCH"
 
-            BRANCH="${{ github.head_ref || 'main' }}"
-            echo "=== Fetching branch: $BRANCH ==="
-            git fetch origin "$BRANCH"
-            git checkout "$BRANCH"
-            git pull origin "$BRANCH"
+          echo "=== Building & deploying staging container ==="
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
+            docker compose up -d --build staging
 
-            echo "=== Building & deploying staging container ==="
-            DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-              docker compose up -d --build staging
-
-            echo "=== Health check (staging :3002) ==="
-            for i in $(seq 1 30); do
-              if curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
-                echo "Staging is healthy!"
-                break
-              fi
-              echo "Waiting... ($i/30)"
-              sleep 2
-            done
-
-            if ! curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
-              echo "ERROR: Staging health check failed"
-              docker compose logs --tail 20 staging
-              exit 1
+          echo "=== Health check (staging :3002) ==="
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
+              echo "Staging is healthy!"
+              break
             fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
 
-            echo "=== Switching back to main ==="
-            git checkout main
+          if ! curl -sf http://localhost:3002/api/health > /dev/null 2>&1; then
+            echo "ERROR: Staging health check failed"
+            docker compose logs --tail 20 staging
+            exit 1
+          fi
 
-            echo "=== Staging preview ready ==="
-            echo "Preview at: https://staging.agentin.chat"
+          echo "=== Switching back to main ==="
+          git checkout main
+
+          echo "=== Staging preview ready ==="
+          echo "Preview at: https://staging.agentin.chat"
 
       - name: Comment staging URL on PR
         if: github.event_name == 'pull_request'
@@ -237,7 +228,7 @@ jobs:
   # ============================================
   deploy-production:
     name: "Deploy Production"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: unit-tests
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production'
     timeout-minutes: 10
@@ -248,80 +239,73 @@ jobs:
       name: production
       url: https://ai.agentin.chat
     steps:
-      - name: Deploy to production via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: root
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          command_timeout: 8m
-          script_stop: true
-          script: |
-            set -e
-            cd ~/GeekSpace2.0
+      - name: Deploy production locally
+        run: |
+          set -e
+          cd ~/GeekSpace2.0
 
-            echo "=== Cleaning local changes ==="
-            git stash --include-untracked || true
+          echo "=== Cleaning local changes ==="
+          git stash --include-untracked || true
 
-            echo "=== Pulling latest main ==="
-            git pull origin main
-            GIT_SHA=$(git rev-parse --short HEAD)
-            echo "Deploying commit: $GIT_SHA"
+          echo "=== Pulling latest main ==="
+          git pull origin main
+          GIT_SHA=$(git rev-parse --short HEAD)
+          echo "Deploying commit: $GIT_SHA"
 
-            echo "=== Tagging previous image for rollback ==="
-            docker tag geekspace2.0-geekspace:latest geekspace2.0-geekspace:previous 2>/dev/null || true
+          echo "=== Tagging previous image for rollback ==="
+          docker tag geekspace2.0-geekspace:latest geekspace2.0-geekspace:previous 2>/dev/null || true
 
-            echo "=== Building production container (BuildKit cache) ==="
-            DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-              docker compose build --build-arg GIT_SHA=$GIT_SHA geekspace
+          echo "=== Building production container (BuildKit cache) ==="
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
+            docker compose build --build-arg GIT_SHA=$GIT_SHA geekspace
 
-            echo "=== Deploying production container ==="
+          echo "=== Deploying production container ==="
+          docker compose up -d geekspace
+
+          echo "=== Syncing static files to Caddy ==="
+          docker cp geekspace-app:/app/dist/assets/. /srv/assets/
+          docker cp geekspace-app:/app/dist/index.html /srv/index.html
+          docker cp geekspace-app:/app/dist/office /srv/office 2>/dev/null || true
+
+          echo "=== Health check (production :3001) ==="
+          HEALTHY=false
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+              echo "Production is healthy!"
+              HEALTHY=true
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+          if [ "$HEALTHY" != "true" ]; then
+            echo "ERROR: Health check failed — rolling back to previous image"
+            docker compose logs --tail 30 geekspace
+            docker tag geekspace2.0-geekspace:previous geekspace2.0-geekspace:latest 2>/dev/null || true
             docker compose up -d geekspace
-
-            echo "=== Syncing static files to Caddy ==="
-            docker cp geekspace-app:/app/dist/assets/. /srv/assets/
-            docker cp geekspace-app:/app/dist/index.html /srv/index.html
-            docker cp geekspace-app:/app/dist/office /srv/office 2>/dev/null || true
-
-            echo "=== Health check (production :3001) ==="
-            HEALTHY=false
-            for i in $(seq 1 30); do
-              if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
-                echo "Production is healthy!"
-                HEALTHY=true
-                break
-              fi
-              echo "Waiting... ($i/30)"
-              sleep 2
-            done
-
-            if [ "$HEALTHY" != "true" ]; then
-              echo "ERROR: Health check failed — rolling back to previous image"
-              docker compose logs --tail 30 geekspace
-              docker tag geekspace2.0-geekspace:previous geekspace2.0-geekspace:latest 2>/dev/null || true
-              docker compose up -d geekspace
-              sleep 5
-              if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
-                echo "Rollback successful — previous version restored"
-              else
-                echo "CRITICAL: Rollback also failed"
-              fi
-              exit 1
-            fi
-
-            echo "=== Also update staging to match production ==="
-            DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-              docker compose up -d --build staging
-
-            echo "=== Verifying public URL ==="
-            if curl -sf https://ai.agentin.chat/api/health > /dev/null 2>&1; then
-              echo "Production is live at https://ai.agentin.chat (commit: $GIT_SHA)"
+            sleep 5
+            if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
+              echo "Rollback successful — previous version restored"
             else
-              echo "WARNING: Public URL check failed (Caddy may still be propagating)"
+              echo "CRITICAL: Rollback also failed"
             fi
+            exit 1
+          fi
 
-            echo "=== Pruning old images ==="
-            docker image prune -f --filter "until=72h" 2>/dev/null || true
+          echo "=== Also update staging to match production ==="
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
+            docker compose up -d --build staging
+
+          echo "=== Verifying public URL ==="
+          if curl -sf https://ai.agentin.chat/api/health > /dev/null 2>&1; then
+            echo "Production is live at https://ai.agentin.chat (commit: $GIT_SHA)"
+          else
+            echo "WARNING: Public URL check failed (Caddy may still be propagating)"
+          fi
+
+          echo "=== Pruning old images ==="
+          docker image prune -f --filter "until=72h" 2>/dev/null || true
 
   # ============================================
   # Summary — required status check for branch protection
@@ -359,18 +343,15 @@ jobs:
   # ============================================
   promote-branches:
     name: "Promote Branches"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: deploy-production
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production'
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Promote main to tracking branches
         run: |
+          cd ~/GeekSpace2.0
           git push origin HEAD:staging --force
           git push origin HEAD:live-production --force
           echo "All branches synced to main."

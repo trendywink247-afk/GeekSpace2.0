@@ -56,7 +56,12 @@ def tts():
 
     text = data['text'].strip()[:4000]
     voice = data.get('voice', DEFAULT_VOICE)
-    speed = float(data.get('speed', 1.0))
+    try:
+        speed = float(data.get('speed', 1.0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'speed must be a positive number'}), 400
+    if speed <= 0:
+        return jsonify({'error': 'speed must be a positive number'}), 400
 
     if not text:
         return jsonify({'error': 'text is empty after trimming'}), 400

@@ -52,8 +52,10 @@ function pickEnglishVoice(lang?: string): SpeechSynthesisVoice | null {
   );
 }
 
-// Cache server availability across hook instances
+// Cache server availability across hook instances (with 60s negative TTL)
 let serverTtsAvailable: boolean | null = null;
+let serverTtsFailedAt = 0;
+const SERVER_TTS_RETRY_MS = 60_000;
 
 export function useTTS(): UseTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -185,8 +187,8 @@ export function useTTS(): UseTTSReturn {
 
     if (!text.trim()) return;
 
-    // If we already know server is unavailable, go straight to browser
-    if (serverTtsAvailable === false) {
+    // If server recently failed, skip it until the TTL expires
+    if (serverTtsAvailable === false && Date.now() - serverTtsFailedAt < SERVER_TTS_RETRY_MS) {
       if (browserSupported) {
         speakBrowser(text, options);
       } else {
@@ -203,8 +205,9 @@ export function useTTS(): UseTTSReturn {
       if (success) {
         serverTtsAvailable = true;
       } else if (!abortRef.current) {
-        // Server failed — fall back to browser
-        serverTtsAvailable = serverTtsAvailable === null ? false : serverTtsAvailable;
+        // Server failed — mark as unavailable with timestamp for TTL
+        serverTtsAvailable = false;
+        serverTtsFailedAt = Date.now();
         if (browserSupported) {
           speakBrowser(text, options);
         } else {
