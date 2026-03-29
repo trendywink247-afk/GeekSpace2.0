@@ -1214,17 +1214,18 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </>
               ) : (
                 <div className="p-6 text-center">
-                  <Target className="w-6 h-6 text-[var(--ag-text-secondary)]/30 mx-auto mb-1.5" />
-                  <p className="text-sm text-[var(--ag-text-secondary)]">No habits set up yet</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-1.5 text-[var(--ag-cyan)] min-h-[44px]"
+                  <div className="gs-icon-pill-violet w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-[#A78BFA]" />
+                  </div>
+                  <p className="gs-section-label mb-1">No habits set up yet</p>
+                  <p className="text-xs text-[#CBD5E1] mb-3">Track your daily goals and streaks</p>
+                  <button
+                    className="gs-btn-ghost min-h-[44px] text-sm"
                     onClick={() => onNavigate?.('reminders')}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     Create a habit
-                  </Button>
+                  </button>
                 </div>
               )}
           </SectionCard>
@@ -1234,14 +1235,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {overviewData && overviewData.calendarEventsToday.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                Calendar Today
-              </h2>
+              <p className="gs-section-label">Calendar Today</p>
               <button
                 onClick={() => onNavigate?.('calendar')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
+                className="flex items-center gap-1 text-xs text-[#8B5CF6]/70 hover:text-[#A78BFA] transition-colors"
               >
                 Full calendar
                 <ArrowRight className="w-3 h-3" />
@@ -1288,33 +1285,35 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {/* ─── GAP-1: Weekly Stats Card ─── */}
         {overviewData && (
           <section>
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-            >
-              This Week
-            </h2>
+            <p className="gs-section-label mb-3">This Week</p>
             <div className="grid grid-cols-3 gap-3">
-              <SectionCard className="text-center" padding="sm">
-                <MessageSquare className="w-5 h-5 text-[var(--ag-cyan)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-cyan)] font-mono">
+              <div className="gs-card p-4 text-center">
+                <div className="gs-icon-pill-violet w-10 h-10 mx-auto mb-2 flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-[#A78BFA]" />
+                </div>
+                <div className="text-xl font-bold text-[#A78BFA] font-mono">
                   {overviewData.weeklyStats.messagesThisWeek}
                 </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Messages</div>
-              </SectionCard>
-              <SectionCard className="text-center" padding="sm">
-                <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-jarvis)] font-mono">
+                <div className="text-xs text-[#CBD5E1] mt-0.5">Messages</div>
+              </div>
+              <div className="gs-card p-4 text-center">
+                <div className="gs-icon-pill-emerald w-10 h-10 mx-auto mb-2 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-[#34D399]" />
+                </div>
+                <div className="text-xl font-bold text-[#34D399] font-mono">
                   {overviewData.weeklyStats.remindersCompleted}
                 </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Reminders Done</div>
-              </SectionCard>
-              <SectionCard className="text-center" padding="sm">
-                <Target className="w-5 h-5 text-[var(--ag-violet)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-violet)] font-mono">
+                <div className="text-xs text-[#CBD5E1] mt-0.5">Reminders Done</div>
+              </div>
+              <div className="gs-card p-4 text-center">
+                <div className="gs-icon-pill-amber w-10 h-10 mx-auto mb-2 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-[#F59E0B]" />
+                </div>
+                <div className="text-xl font-bold text-[#F59E0B] font-mono">
                   {overviewData.weeklyStats.habitsLogged}
                 </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Habits Logged</div>
-              </SectionCard>
+                <div className="text-xs text-[#CBD5E1] mt-0.5">Habits Logged</div>
+              </div>
             </div>
           </section>
         )}
