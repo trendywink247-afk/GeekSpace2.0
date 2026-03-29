@@ -9,6 +9,7 @@ Endpoints:
 import io
 import logging
 import os
+import threading
 import time
 import wave
 from flask import Flask, request, jsonify, send_file
@@ -23,6 +24,7 @@ VOICE_DIR = '/app/voices'
 # Lazy-load voices on first request
 _voices = {}
 _default_voice = None
+_voice_lock = threading.Lock()
 
 VOICE_MAP = {
     'en_US-amy-medium': os.path.join(VOICE_DIR, 'en_US-amy-medium.onnx'),
@@ -38,27 +40,31 @@ def get_voice(name=None):
     if voice_name in _voices:
         return _voices[voice_name]
 
-    model_path = VOICE_MAP.get(voice_name)
-    if not model_path or not os.path.exists(model_path):
-        # Fallback to first available voice
-        for vn, vp in VOICE_MAP.items():
-            if os.path.exists(vp):
-                voice_name = vn
-                model_path = vp
-                break
-        else:
-            raise FileNotFoundError(f'No voice models found in {VOICE_DIR}')
+    with _voice_lock:
+        if voice_name in _voices:
+            return _voices[voice_name]
 
-    logger.info(f'Loading Piper voice: {voice_name}')
-    start = time.time()
-    voice = PiperVoice.load(model_path)
-    _voices[voice_name] = voice
-    logger.info(f'Piper voice loaded in {time.time() - start:.1f}s')
+        model_path = VOICE_MAP.get(voice_name)
+        if not model_path or not os.path.exists(model_path):
+            # Fallback to first available voice
+            for vn, vp in VOICE_MAP.items():
+                if os.path.exists(vp):
+                    voice_name = vn
+                    model_path = vp
+                    break
+            else:
+                raise FileNotFoundError(f'No voice models found in {VOICE_DIR}')
 
-    if _default_voice is None:
-        _default_voice = voice_name
+        logger.info(f'Loading Piper voice: {voice_name}')
+        start = time.time()
+        voice = PiperVoice.load(model_path)
+        _voices[voice_name] = voice
+        logger.info(f'Piper voice loaded in {time.time() - start:.1f}s')
 
-    return voice
+        if _default_voice is None:
+            _default_voice = voice_name
+
+        return voice
 
 
 def available_voices():

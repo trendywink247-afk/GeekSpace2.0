@@ -119,9 +119,9 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
       expect(src).toContain('textToSpeech');
     });
 
-    it('handlers include TODO stub for local Whisper/piper-tts', () => {
+    it('handlers return engine field for observability', () => {
       const src = readFile('server/src/modules/media/routes/voice.ts');
-      expect(src).toContain('TODO');
+      expect(src).toContain('engine');
     });
   });
 

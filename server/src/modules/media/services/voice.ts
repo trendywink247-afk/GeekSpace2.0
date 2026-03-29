@@ -166,7 +166,7 @@ async function callLocalWhisper(audioBuffer: Buffer, mimeType: string): Promise<
   const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'ogg';
 
   const form = new FormData();
-  form.append('file', new Blob([audioBuffer.buffer as ArrayBuffer], { type: mimeType }), `voice.${ext}`);
+  form.append('file', new Blob([audioBuffer], { type: mimeType }), `voice.${ext}`);
 
   const response = await fetch(`${config.whisperLocalUrl}/transcribe`, {
     method: 'POST',
@@ -192,7 +192,7 @@ async function callGroqWhisper(audioBuffer: Buffer, mimeType: string): Promise<s
   const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'ogg';
 
   const form = new FormData();
-  form.append('file', new Blob([audioBuffer.buffer as ArrayBuffer], { type: mimeType }), `voice.${ext}`);
+  form.append('file', new Blob([audioBuffer], { type: mimeType }), `voice.${ext}`);
   form.append('model', 'whisper-large-v3-turbo');
   form.append('response_format', 'text');
 

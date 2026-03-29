@@ -528,9 +528,9 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
 
   // ---- TTS voice auto-selection ----
 
-  it('voice.ts has detectVoice function with Hindi voice', () => {
+  it('voice.ts has detectEdgeTtsVoice function with Hindi voice', () => {
     const src = readSrc('modules', 'media', 'services', 'voice.ts');
-    expect(src).toContain('detectVoice');
+    expect(src).toContain('detectEdgeTtsVoice');
     expect(src).toContain('hi-IN-SwaraNeural');
   });
 

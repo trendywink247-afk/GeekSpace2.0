@@ -8,6 +8,7 @@ Endpoints:
 
 import io
 import logging
+import threading
 import time
 from flask import Flask, request, jsonify, send_file
 
@@ -18,6 +19,7 @@ app = Flask(__name__)
 
 # Lazy-load pipeline on first request to avoid startup timeout
 _pipelines: dict = {}
+_pipeline_lock = threading.Lock()
 _voices = {
     'af_heart': 'a',    # American female (default)
     'af_bella': 'a',    # American female
@@ -31,11 +33,13 @@ DEFAULT_VOICE = 'af_heart'
 def get_pipeline(lang_code='a'):
     global _pipelines
     if lang_code not in _pipelines:
-        logger.info(f'Loading Kokoro pipeline for lang_code={lang_code}...')
-        start = time.time()
-        from kokoro import KPipeline
-        _pipelines[lang_code] = KPipeline(lang_code=lang_code)
-        logger.info(f'Kokoro pipeline loaded in {time.time() - start:.1f}s')
+        with _pipeline_lock:
+            if lang_code not in _pipelines:
+                logger.info(f'Loading Kokoro pipeline for lang_code={lang_code}...')
+                start = time.time()
+                from kokoro import KPipeline
+                _pipelines[lang_code] = KPipeline(lang_code=lang_code)
+                logger.info(f'Kokoro pipeline loaded in {time.time() - start:.1f}s')
     return _pipelines[lang_code]
 
 
