@@ -7,6 +7,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { PassThrough } from 'stream';
 
 // ---------------------------------------------------------------------------
 // vi.hoisted() -- variables available inside vi.mock factories
@@ -53,9 +54,11 @@ vi.mock('../../db/index.js', () => ({
   },
 }));
 
-vi.mock('../../logger.js', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-}));
+vi.mock('../../logger.js', () => {
+  const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), child: vi.fn() };
+  log.child.mockReturnValue(log);
+  return { logger: log };
+});
 
 vi.mock('dockerode', () => ({
   default: vi.fn().mockImplementation(() => ({
@@ -89,7 +92,7 @@ function mockUserPlan(plan: string): void {
 }
 
 function mockExecResult(exitCode: number, stdout: string, stderr = ''): void {
-  const { PassThrough } = require('stream');
+  // PassThrough imported at top of file
   const stream = new PassThrough();
   const execObj = {
     start: vi.fn().mockResolvedValue(stream),
@@ -110,7 +113,7 @@ function mockExecResult(exitCode: number, stdout: string, stderr = ''): void {
 }
 
 function mockExecHang(): void {
-  const { PassThrough } = require('stream');
+  // PassThrough imported at top of file
   const stream = new PassThrough(); // never ends
   mocks.containerExec.mockResolvedValue({
     start: vi.fn().mockResolvedValue(stream),
@@ -120,7 +123,7 @@ function mockExecHang(): void {
 }
 
 function mockExecError(msg: string): void {
-  const { PassThrough } = require('stream');
+  // PassThrough imported at top of file
   const stream = new PassThrough();
   mocks.containerExec.mockResolvedValue({
     start: vi.fn().mockResolvedValue(stream),

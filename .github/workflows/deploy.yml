@@ -15,7 +15,7 @@ on:
         default: false
 
 concurrency:
-  group: deploy-production
+  group: deploy-server
   cancel-in-progress: false
 
 jobs:
@@ -32,6 +32,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 15m
           script: |
             set -e
             cd ~/GeekSpace2.0
