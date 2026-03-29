@@ -214,7 +214,7 @@ export function useTTS(): UseTTSReturn {
         }
       }
     });
-  }, [stop, speakBrowser, speakServer]);
+  }, [stop, speakBrowser, speakServer, browserSupported]);
 
   // Cleanup on unmount
   useEffect(() => {
