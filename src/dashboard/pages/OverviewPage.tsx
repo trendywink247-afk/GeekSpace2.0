@@ -904,17 +904,17 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     ))}
                   </div>
                 ) : conversations.length > 0 ? (
-                  <div className="divide-y divide-[var(--ag-border-subtle)]">
+                  <div className="divide-y divide-white/[0.04]">
                     {conversations.map((convo) => {
                       // Pick agent color by content hash for visual variety
-                      const agentColors = ['#00F0FF', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
+                      const agentColors = ['#A78BFA', '#34D399', '#8B5CF6', '#F59E0B', '#A78BFA'];
                       const colorIdx = convo.id.charCodeAt(0) % agentColors.length;
                       const agentColor = agentColors[colorIdx];
                       return (
                         <button
                           key={convo.id}
                           onClick={() => onOpenChat?.()}
-                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[var(--ag-cyan)]/[0.03] transition-colors group"
+                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#8B5CF6]/[0.04] transition-colors group"
                         >
                           {/* Agent avatar — colored circle with initial */}
                           <div
@@ -928,7 +928,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                             W
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[var(--ag-text-primary)] truncate group-hover:text-[var(--ag-cyan)] transition-colors leading-snug">
+                            <p className="text-sm text-[#E2E8F0] truncate group-hover:text-[#A78BFA] transition-colors leading-snug">
                               {convo.content.length > 80
                                 ? convo.content.slice(0, 77) + '...'
                                 : convo.content}
@@ -937,63 +937,55 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                               <span className="text-xs font-medium" style={{ color: agentColor }}>
                                 Weebo
                               </span>
-                              <span className="text-[var(--ag-text-secondary)]/40">|</span>
-                              <span className="text-xs text-[var(--ag-text-secondary)]">
+                              <span className="text-[#CBD5E1]/40">|</span>
+                              <span className="text-xs text-[#CBD5E1]">
                                 {relativeTime(convo.createdAt)}
                               </span>
                             </div>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-[var(--ag-text-secondary)]/40 group-hover:text-[var(--ag-cyan)] transition-colors flex-shrink-0 mt-1" />
+                          <ArrowRight className="w-4 h-4 text-[#CBD5E1]/40 group-hover:text-[#A78BFA] transition-colors flex-shrink-0 mt-1" />
                         </button>
                       );
                     })}
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <MessageSquare className="w-8 h-8 text-[var(--ag-text-secondary)]/30 mx-auto mb-2" />
-                    <p className="text-sm text-[var(--ag-text-secondary)]">No conversations yet</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 text-[var(--ag-cyan)] min-h-[44px]"
+                    <div className="gs-icon-pill-violet w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                      <MessageSquare className="w-6 h-6 text-[#A78BFA]" />
+                    </div>
+                    <p className="gs-section-label mb-1">No conversations yet</p>
+                    <p className="text-xs text-[#CBD5E1] mb-3">Start chatting to see your history here</p>
+                    <button
+                      className="gs-btn-ghost min-h-[44px] text-sm"
                       onClick={() => onOpenChat?.()}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
                       Start a chat
-                    </Button>
+                    </button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+            </div>
           </section>
 
           {/* Activity Sparkline */}
           <section className="lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                7-day activity
-              </h2>
+              <p className="gs-section-label">7-day activity</p>
               <button
                 onClick={() => onNavigate?.('activity')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
+                className="flex items-center gap-1 text-xs text-[#8B5CF6]/70 hover:text-[#A78BFA] transition-colors"
               >
                 Details
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <Card
-              className="rounded-2xl backdrop-blur-xl"
-              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
-            >
-              <CardContent className="p-4">
+            <div className="gs-card p-4">
                 {loading ? (
                   <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
+                    <div className="h-12 w-full bg-white/[0.04] rounded-xl animate-pulse" />
                     <div className="flex justify-between">
                       {Array.from({ length: 7 }).map((_, i) => (
-                        <Skeleton key={i} className="h-3 w-6" />
+                        <div key={i} className="h-3 w-6 bg-white/[0.04] rounded animate-pulse" />
                       ))}
                     </div>
                   </div>
@@ -1027,16 +1019,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     </div>
                   </>
                 )}
-              </CardContent>
-            </Card>
+            </div>
 
             {/* Completion badge */}
             {!loading && reminders.length > 0 && (
               <div
-                className="mt-3 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4 flex items-center gap-3"
+                className="mt-3 gs-card p-4 flex items-center gap-3"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)]" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center gs-icon-pill-emerald flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-[#34D399]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-[var(--ag-text-primary)]">
@@ -1064,14 +1055,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {/* ─── GAP-1: Today's Reminders Card ─── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-            >
-              Today&apos;s Reminders
-            </h2>
+            <p className="gs-section-label">Today&apos;s Reminders</p>
             <button
               onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
+              className="flex items-center gap-1 text-xs text-[#8B5CF6]/70 hover:text-[#A78BFA] transition-colors"
             >
               All reminders
               <ArrowRight className="w-3 h-3" />
@@ -1079,15 +1066,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           </div>
           <SectionCard padding="sm" className="overflow-hidden">
               {overviewLoading ? (
-                <div className="divide-y divide-[var(--ag-border-subtle)]">
+                <div className="divide-y divide-white/[0.04]">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="p-4 flex items-center gap-3">
-                      <Skeleton className="w-8 h-8 rounded-lg flex-shrink-0" />
+                      <div className="w-8 h-8 rounded-lg flex-shrink-0 bg-white/[0.04] animate-pulse" />
                       <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/3" />
+                        <div className="h-4 w-3/4 bg-white/[0.04] rounded-xl animate-pulse" />
+                        <div className="h-3 w-1/3 bg-white/[0.04] rounded-xl animate-pulse" />
                       </div>
-                      <Skeleton className="w-14 h-7 rounded-md" />
+                      <div className="w-14 h-7 rounded-md bg-white/[0.04] animate-pulse" />
                     </div>
                   ))}
                 </div>
@@ -1113,12 +1100,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                           {new Date(rem.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                         </span>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         disabled={completingReminder === rem.id}
                         onClick={() => handleCompleteReminder(rem.id)}
-                        className="text-[var(--ag-jarvis)] hover:bg-[var(--ag-jarvis)]/10 text-xs px-3 min-h-[44px] rounded-md"
+                        className="gs-btn-ghost text-xs px-3 min-h-[44px] rounded-md"
                       >
                         {completingReminder === rem.id ? (
                           <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1128,14 +1113,17 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                             Done
                           </>
                         )}
-                      </Button>
+                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="p-6 text-center">
-                  <CheckCircle2 className="w-6 h-6 text-[var(--ag-jarvis)]/40 mx-auto mb-1.5" />
-                  <p className="text-sm text-[var(--ag-jarvis)]">No reminders for today</p>
+                  <div className="gs-icon-pill-emerald w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-[#34D399]" />
+                  </div>
+                  <p className="gs-section-label mb-1">No reminders for today</p>
+                  <p className="text-xs text-[#CBD5E1]">You&apos;re all caught up!</p>
                 </div>
               )}
           </SectionCard>
@@ -1144,14 +1132,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         {/* ─── GAP-1: Habits Today Card ─── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-            >
-              Habits Today
-            </h2>
+            <p className="gs-section-label">Habits Today</p>
             <button
               onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
+              className="flex items-center gap-1 text-xs text-[#8B5CF6]/70 hover:text-[#A78BFA] transition-colors"
             >
               Manage
               <ArrowRight className="w-3 h-3" />
@@ -1160,13 +1144,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <SectionCard padding="sm" className="overflow-hidden">
               {overviewLoading ? (
                 <div className="p-4 space-y-3">
-                  <Skeleton className="h-3 w-24 mb-2" />
+                  <div className="h-3 w-24 mb-2 bg-white/[0.04] rounded animate-pulse" />
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="w-8 h-8 rounded-lg" />
+                      <div className="w-8 h-8 rounded-lg bg-white/[0.04] animate-pulse" />
                       <div className="flex-1 space-y-1">
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-3 w-1/4" />
+                        <div className="h-4 w-1/2 bg-white/[0.04] rounded-xl animate-pulse" />
+                        <div className="h-3 w-1/4 bg-white/[0.04] rounded-xl animate-pulse" />
                       </div>
                     </div>
                   ))}
@@ -1213,18 +1197,16 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                           </span>
                         </div>
                         {habit.loggedToday ? (
-                          <div className="w-7 h-7 rounded-full bg-[var(--ag-jarvis)]/15 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-4 h-4 text-[var(--ag-jarvis)]" />
+                          <div className="w-7 h-7 rounded-full gs-icon-pill-emerald flex items-center justify-center flex-shrink-0">
+                            <Check className="w-4 h-4 text-[#34D399]" />
                           </div>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
                             onClick={() => onNavigate?.('reminders')}
-                            className="text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 text-xs px-3 min-h-[44px] rounded-md"
+                            className="gs-btn-ghost text-xs px-3 min-h-[44px] rounded-md"
                           >
                             Log
-                          </Button>
+                          </button>
                         )}
                       </div>
                     ))}
