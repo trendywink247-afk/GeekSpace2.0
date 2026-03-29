@@ -670,10 +670,10 @@ export function RoadmapPage() {
           </div>
           <Dialog open={suggestionOpen} onOpenChange={setSuggestionOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold gap-2 shrink-0 transition-all duration-200 min-h-[44px]">
+              <button className="gs-btn-primary flex items-center gap-2 shrink-0 min-h-[44px] px-4 py-2 rounded-xl">
                 <Lightbulb className="w-4 h-4" />
                 Suggest a Feature
-              </Button>
+              </button>
             </DialogTrigger>
             <DialogContent className="bg-[#06061a] border-[rgba(139,92,246,0.15)]">
               <DialogHeader>
@@ -698,43 +698,43 @@ export function RoadmapPage() {
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <Label className="text-[#F4F6FF] text-sm">Title <span className="text-[#FF2D78]">*</span></Label>
-                      <Input
+                      <Label className="gs-section-label">Title <span className="text-[#FF2D78]">*</span></Label>
+                      <input
                         placeholder="e.g. Dark mode calendar view"
                         value={formTitle}
                         onChange={e => setFormTitle(e.target.value)}
                         maxLength={100}
-                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                        className="gs-input w-full"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#F4F6FF] text-sm">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
-                      <Textarea
+                      <Label className="gs-section-label">Description <span className="text-[#FF2D78]">*</span> <span className="text-[#9CA3AF] font-normal normal-case tracking-normal">(min 20 chars)</span></Label>
+                      <textarea
                         placeholder="Describe the feature and why it would be useful..."
                         value={formBody}
                         onChange={e => setFormBody(e.target.value)}
                         rows={4}
-                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF] resize-none"
+                        className="gs-input w-full resize-none"
                       />
                       <p className="text-right text-xs text-[#9CA3AF]">{formBody.length}/2000</p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[#F4F6FF] text-sm">Tags <span className="text-[#9CA3AF] font-normal">(comma-separated, max 5)</span></Label>
-                      <Input
+                      <Label className="gs-section-label">Tags <span className="text-[#9CA3AF] font-normal normal-case tracking-normal">(comma-separated, max 5)</span></Label>
+                      <input
                         placeholder="e.g. calendar, mobile, ai"
                         value={formTags}
                         onChange={e => setFormTags(e.target.value)}
-                        className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                        className="gs-input w-full"
                       />
                     </div>
                     {submitError && <p className="text-xs text-[#FF2D78]">{submitError}</p>}
-                    <Button
+                    <button
                       onClick={handleSubmit}
                       disabled={submitting || !formTitle.trim() || formBody.trim().length < 20}
-                      className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
+                      className="gs-btn-primary w-full min-h-[44px] rounded-xl disabled:opacity-50"
                     >
                       {submitting ? 'Submitting\u2026' : 'Submit Idea'}
-                    </Button>
+                    </button>
                   </div>
                 )}
             </DialogContent>
@@ -929,7 +929,7 @@ export function RoadmapPage() {
         </p>
         <button
           onClick={() => setSuggestionOpen(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium transition-all duration-200 min-h-[44px]"
+          className="gs-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl min-h-[44px]"
         >
           Share Feedback
           <ArrowRight className="w-4 h-4" />

@@ -13,19 +13,19 @@
     --card-foreground: 240 20% 93%;
     --popover: 235 30% 6%;
     --popover-foreground: 240 20% 93%;
-    --primary: 186 100% 50%;
-    --primary-foreground: 240 40% 2%;
+    --primary: 263 70% 65%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 25% 7%;
     --secondary-foreground: 240 20% 93%;
     --muted: 240 25% 10%;
     --muted-foreground: 220 10% 55%;
-    --accent: 186 100% 50%;
-    --accent-foreground: 240 40% 2%;
+    --accent: 263 70% 65%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 345 90% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 186 60% 18%;
+    --border: 263 30% 18%;
     --input: 240 25% 10%;
-    --ring: 186 100% 50%;
+    --ring: 263 70% 65%;
     --radius: 0.75rem;
 
     /* Agentin Brand Tokens */
@@ -223,7 +223,7 @@
 
   /* ─── Glow Effects ─── */
   .glow-accent {
-    box-shadow: 0 0 40px rgba(0, 240, 255, 0.15), 0 0 80px rgba(0, 240, 255, 0.05);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), 0 0 80px rgba(139, 92, 246, 0.05);
   }
 
   /* ─── Glassmorphism ─── */
@@ -501,7 +501,260 @@
     font-weight: 500;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(0, 240, 255, 0.7);
+    color: rgba(139, 92, 246, 0.7);
+  }
+
+  /* ─── GeekSpace Design System Utilities (.gs-*) ─── */
+  /* Matches the landing page aesthetic: violet/emerald/amber palette,
+     glass-morphism cards, gradient text, mono labels */
+
+  .gs-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    transition: border-color 300ms ease, background-color 300ms ease, box-shadow 300ms ease;
+  }
+  .gs-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.08), 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .gs-card-accent {
+    background: rgba(139, 92, 246, 0.04);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 1rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: border-color 300ms ease, box-shadow 300ms ease;
+  }
+  .gs-card-accent:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 24px rgba(139, 92, 246, 0.12);
+  }
+
+  .gs-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    color: #F4F6FF;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    outline: none;
+  }
+  .gs-input:focus,
+  .gs-input:focus-within {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+  }
+  .gs-input::placeholder {
+    color: rgba(156, 163, 175, 0.5);
+  }
+
+  .gs-btn-primary {
+    background: linear-gradient(135deg, #7C3AED 0%, #F59E0B 100%);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 10px 20px;
+    min-height: 44px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 200ms ease, box-shadow 200ms ease, transform 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .gs-btn-primary:hover:not(:disabled) {
+    opacity: 0.92;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  .gs-btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .gs-btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .gs-btn-ghost {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    color: #9CA3AF;
+    font-weight: 500;
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .gs-btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #F4F6FF;
+  }
+  .gs-btn-ghost:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .gs-btn-violet {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 0.75rem;
+    color: #A78BFA;
+    font-weight: 500;
+    padding: 10px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .gs-btn-violet:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
+  }
+
+  .gs-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9999px;
+    color: #9CA3AF;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    min-height: 34px;
+    cursor: pointer;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+  }
+  .gs-pill:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.10);
+    color: #F4F6FF;
+  }
+  .gs-pill-active,
+  .gs-pill[data-active="true"] {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #A78BFA;
+  }
+  .gs-pill-active:hover,
+  .gs-pill[data-active="true"]:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #C4B5FD;
+  }
+
+  .gs-tab-bar {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    padding: 4px;
+    display: flex;
+    gap: 2px;
+  }
+  .gs-tab {
+    background: transparent;
+    border: none;
+    border-radius: 0.625rem;
+    color: #6B7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    min-height: 40px;
+    cursor: pointer;
+    transition: background-color 200ms ease, color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .gs-tab:hover:not(.gs-tab-active) {
+    background: rgba(255, 255, 255, 0.04);
+    color: #9CA3AF;
+  }
+  .gs-tab-active,
+  .gs-tab[data-active="true"] {
+    background: rgba(139, 92, 246, 0.15);
+    color: #A78BFA;
+  }
+
+  .gs-section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(139, 92, 246, 0.7);
+    display: block;
+    margin-bottom: 0.375rem;
+  }
+
+  .gs-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    margin: 0;
+  }
+
+  .gs-stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color 300ms ease, box-shadow 300ms ease;
+  }
+  .gs-stat-card:hover {
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.06);
+  }
+
+  .gs-icon-pill {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gs-icon-pill-violet {
+    background: rgba(139, 92, 246, 0.15);
+    color: #A78BFA;
+  }
+  .gs-icon-pill-emerald {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+  }
+  .gs-icon-pill-amber {
+    background: rgba(245, 158, 11, 0.15);
+    color: #FCD34D;
+  }
+  .gs-icon-pill-rose {
+    background: rgba(244, 63, 94, 0.12);
+    color: #FB7185;
+  }
+  .gs-icon-pill-sky {
+    background: rgba(14, 165, 233, 0.12);
+    color: #38BDF8;
   }
 
   /* ─── Safe Areas ─── */
@@ -788,17 +1041,17 @@ html.light .light-only {
   background: var(--agentin-black);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(139, 92, 246, 0.25);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.5);
+  background: rgba(139, 92, 246, 0.45);
 }
 
 /* ─── Selection ─── */
 ::selection {
-  background: rgba(0, 240, 255, 0.25);
-  color: #E8E8F0;
+  background: rgba(139, 92, 246, 0.25);
+  color: #F4F6FF;
 }
 
 /* ─── Alex Orb Button ─── */
@@ -869,7 +1122,7 @@ html.light .light-only {
 
 /* ─── Neon Glow Hover Effect ─── */
 .glow-hover:hover {
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25), 0 0 40px rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.1);
 }
 
 /* ─── Corner Brackets Decoration ─── */

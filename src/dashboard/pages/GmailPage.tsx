@@ -6,7 +6,6 @@ import {
   Star, Paperclip, Search, Plus, Sparkles, Reply, Forward,
   Filter, MailOpen, Inbox, FileText, Loader2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Textarea } from '../../components/ui/textarea';
@@ -14,6 +13,7 @@ import { Input } from '../../components/ui/input';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '../../components/ui/dialog';
+import { GsTabBar } from '@/components/agentin';
 
 import api, { agentService } from '@/services/api';
 
@@ -652,7 +652,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search by subject, sender, or content..."
-              className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm pl-10 h-11 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+              className="gs-input pl-10 h-11"
             />
             {searchQuery && (
               <button
@@ -666,27 +666,11 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
           </div>
 
           {/* Filter pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            {FILTER_OPTIONS.map(({ key, label, icon: FilterIcon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveFilter(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
-                  activeFilter === key
-                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
-                    : 'bg-white/5 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/10 border border-transparent'
-                }`}
-              >
-                <FilterIcon className="w-3.5 h-3.5" />
-                {label}
-                {key === 'unread' && stats.unread > 0 && (
-                  <span className="bg-[#FF6B9D]/20 text-[#FF6B9D] text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                    {stats.unread}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <GsTabBar
+            tabs={FILTER_OPTIONS.map(({ key, label }) => ({ id: key, label }))}
+            activeTab={activeFilter}
+            onChange={(id) => setActiveFilter(id as FilterKey)}
+          />
         </div>
       </SectionCard>
 
@@ -695,7 +679,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
         {/* Email thread list */}
         <div className="lg:col-span-2 space-y-1">
           {filteredMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center border border-[rgba(139,92,246,0.08)] rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
+            <div className="gs-card flex flex-col items-center justify-center py-16 text-center">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
                 <Mail className="w-6 h-6 text-[#9CA3AF]/40" />
               </div>
@@ -814,14 +798,14 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
         {/* Detail view */}
         <div className="lg:col-span-3" ref={detailRef}>
           {selected ? (
-            <Card className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border-[rgba(139,92,246,0.08)] overflow-hidden">
+            <div className="gs-card overflow-hidden">
               {/* Detail header */}
-              <CardHeader className="pb-3 border-b border-[rgba(139,92,246,0.08)]">
+              <div className="p-4 pb-3 border-b border-white/[0.06]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-[#F4F6FF] text-base font-semibold leading-snug mb-1">
+                    <h3 className="text-[#F4F6FF] text-base font-semibold leading-snug mb-1">
                       {selected.subject || '(no subject)'}
-                    </CardTitle>
+                    </h3>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-[#FF6B9D]/15 flex items-center justify-center text-[10px] font-bold text-[#FF6B9D]">
@@ -845,9 +829,9 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="space-y-4 pt-4">
+              <div className="p-4 space-y-4">
                 {/* AI Summary (from sync) */}
                 {selected.summary && (
                   <div className="bg-[#BF5FFF]/5 border border-[#BF5FFF]/15 rounded-xl p-3">
@@ -1018,7 +1002,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder="Write your reply..."
-                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[120px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                      className="gs-input text-sm resize-none min-h-[120px]"
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowReply(false)}
@@ -1047,13 +1031,13 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                       value={forwardTo}
                       onChange={e => setForwardTo(e.target.value)}
                       placeholder="Recipient email address"
-                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                      className="gs-input text-sm h-10"
                     />
                     <Textarea
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder="Add a message (optional)..."
-                      className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[80px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                      className="gs-input text-sm resize-none min-h-[80px]"
                     />
                     <div className="flex items-center gap-2 justify-end">
                       <Button variant="outline" size="sm" onClick={() => setShowForward(false)}
@@ -1069,10 +1053,10 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center border border-[rgba(139,92,246,0.08)] rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
+            <div className="gs-card flex flex-col items-center justify-center h-64 lg:h-[calc(100dvh-320px)] text-center">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
                 <MailOpen className="w-6 h-6 text-[#9CA3AF]/30" />
               </div>
@@ -1110,7 +1094,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                 value={composeTo}
                 onChange={e => setComposeTo(e.target.value)}
                 placeholder="recipient@example.com"
-                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                className="gs-input text-sm h-10"
               />
             </div>
             <div>
@@ -1120,7 +1104,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                 value={composeSubject}
                 onChange={e => setComposeSubject(e.target.value)}
                 placeholder="Email subject"
-                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm h-10 focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                className="gs-input text-sm h-10"
               />
             </div>
             <div>
@@ -1129,7 +1113,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
                 value={composeBody}
                 onChange={e => setComposeBody(e.target.value)}
                 placeholder="Write your email or describe what you want to say..."
-                className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] text-sm resize-none min-h-[160px] focus-visible:border-[#8B5CF6]/40 focus-visible:ring-[#8B5CF6]/20"
+                className="gs-input text-sm resize-none min-h-[160px]"
               />
             </div>
           </div>
@@ -1139,19 +1123,19 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
               variant="outline" size="sm"
               onClick={handleAiWriteEmail}
               disabled={aiWriting || (!composeSubject.trim() && !composeBody.trim())}
-              className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10 text-xs h-9 min-h-[44px]"
+              className="gs-btn-ghost text-xs h-9 min-h-[44px]"
             >
               <Sparkles className={`w-3.5 h-3.5 mr-1.5 ${aiWriting ? 'animate-pulse' : ''}`} />
               {aiWriting ? 'Writing...' : 'AI Write'}
             </Button>
             <div className="flex-1" />
             <Button variant="outline" size="sm" onClick={() => { setComposeOpen(false); resetCompose(); }}
-              className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:bg-white/5 text-xs h-9 min-h-[44px]">
+              className="gs-btn-ghost text-xs h-9 min-h-[44px]">
               Cancel
             </Button>
             <Button size="sm" onClick={handleComposeSend}
               disabled={composeSending || !composeTo.trim() || !composeBody.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs h-9 min-h-[44px]">
+              className="gs-btn-primary text-xs h-9 min-h-[44px]">
               <Send className="w-3.5 h-3.5 mr-1.5" />
               {composeSending ? 'Sending...' : 'Send'}
             </Button>

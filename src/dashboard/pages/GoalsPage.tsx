@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { GsTabBar } from '@/components/agentin';
 import {
   Target, Plus, Brain, Play, CheckCircle2, Clock, Pause, AlertTriangle,
   ChevronDown, ChevronRight, Sparkles, Calendar, Trash2, RotateCcw,
@@ -12,10 +13,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { goalsService, type GoalData, type GoalStepData, type GoalEventData } from '@/services/api';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 
@@ -123,7 +122,6 @@ export function GoalsPage() {
     setExecutingGoalId(goalId);
     try {
       await goalsService.executeNext(goalId);
-      // Refresh details and goals
       const [stepsRes, eventsRes] = await Promise.all([
         goalsService.getSteps(goalId),
         goalsService.getEvents(goalId, 20),
@@ -154,99 +152,109 @@ export function GoalsPage() {
 
   const filteredGoals = goals;
 
+  const filterTabs = [
+    { id: 'all', label: 'All' },
+    { id: 'active', label: 'Active' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'paused', label: 'Paused' },
+  ];
+
   return (
     <PageShell>
       <PullToRefreshWrapper onRefresh={loadGoals}>
-        <PageHeader
-          title="Goals"
-          subtitle="Set goals and let your agents plan & execute them"
-          icon={Target}
-          actions={
-            <Button
-              onClick={() => setShowCreate(true)}
-              className="gap-2"
-              style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)', border: 'none' }}
-            >
-              <Plus className="w-4 h-4" /> New Goal
-            </Button>
-          }
-        />
-
-        {/* Stats Bar */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {[
-              { label: 'Active', value: stats.active, color: '#00F0FF', icon: Play },
-              { label: 'Completed', value: stats.completed, color: '#10B981', icon: CheckCircle2 },
-              { label: 'Total', value: stats.total, color: '#8B5CF6', icon: Target },
-              { label: 'Success Rate', value: `${Math.round(stats.completionRate || 0)}%`, color: '#F59E0B', icon: TrendingUp },
-            ].map(s => (
-              <div
-                key={s.label}
-                className="flex items-center gap-3 rounded-xl px-4 py-3"
-                style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}
-              >
-                <s.icon className="w-5 h-5" style={{ color: s.color }} />
-                <div>
-                  <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-xs text-gray-400">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Filter Tabs */}
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterTab)} className="mb-6">
-          <TabsList className="bg-[#10101E] border border-white/10">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="paused">Paused</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Goals List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-          </div>
-        ) : filteredGoals.length === 0 ? (
-          <SectionCard>
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Target className="w-16 h-16 text-gray-600 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">No goals yet</h3>
-              <p className="text-gray-500 mb-6 max-w-md">
-                Set a goal and let your AI agents break it down into actionable steps, then execute them autonomously.
-              </p>
-              <Button
+        <div className="space-y-6 pb-24 md:pb-6">
+          <PageHeader
+            title="Goals"
+            subtitle="Set goals and let your agents plan & execute them"
+            icon={Target}
+            actions={
+              <button
                 onClick={() => setShowCreate(true)}
-                className="gap-2"
-                style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)', border: 'none' }}
+                className="gs-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
               >
-                <Sparkles className="w-4 h-4" /> Create Your First Goal
-              </Button>
+                <Plus className="w-4 h-4" /> New Goal
+              </button>
+            }
+          />
+
+          {/* Stats Bar */}
+          {stats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Active', value: stats.active, color: '#00F0FF', icon: Play },
+                { label: 'Completed', value: stats.completed, color: '#10B981', icon: CheckCircle2 },
+                { label: 'Total', value: stats.total, color: '#8B5CF6', icon: Target },
+                { label: 'Success Rate', value: `${Math.round(stats.completionRate || 0)}%`, color: '#F59E0B', icon: TrendingUp },
+              ].map(s => (
+                <div
+                  key={s.label}
+                  className="gs-card flex items-center gap-3 px-4 py-3"
+                  style={{ borderColor: `${s.color}25` }}
+                >
+                  <div className="gs-icon-pill" style={{ backgroundColor: `${s.color}15` }}>
+                    <s.icon className="w-4 h-4" style={{ color: s.color }} />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
+                    <div className="text-xs text-[#9CA3AF]">{s.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </SectionCard>
-        ) : (
-          <div className="space-y-3">
-            {filteredGoals.map(goal => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                expanded={expandedGoal === goal.id}
-                details={goalDetails[goal.id]}
-                planning={planningGoalId === goal.id}
-                executing={executingGoalId === goal.id}
-                onToggle={() => toggleExpand(goal.id)}
-                onPlan={() => handlePlan(goal.id)}
-                onExecute={() => handleExecuteNext(goal.id)}
-                onDelete={() => handleDelete(goal.id)}
-                onStatusChange={(s) => handleStatusChange(goal.id, s)}
-              />
-            ))}
-          </div>
-        )}
+          )}
+
+          {/* Filter Tabs */}
+          <GsTabBar
+            tabs={filterTabs}
+            activeTab={filter}
+            onChange={(id) => setFilter(id as FilterTab)}
+          />
+
+          {/* Goals List */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-20 bg-white/[0.04] rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : filteredGoals.length === 0 ? (
+            <SectionCard>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="gs-icon-pill gs-icon-pill-violet w-16 h-16 mb-4">
+                  <Target className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-semibold text-[#F4F6FF] mb-2">No goals yet</h3>
+                <p className="text-[#9CA3AF] mb-6 max-w-md">
+                  Set a goal and let your AI agents break it down into actionable steps, then execute them autonomously.
+                </p>
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="gs-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold"
+                >
+                  <Sparkles className="w-4 h-4" /> Create Your First Goal
+                </button>
+              </div>
+            </SectionCard>
+          ) : (
+            <div className="space-y-3">
+              {filteredGoals.map(goal => (
+                <GoalCard
+                  key={goal.id}
+                  goal={goal}
+                  expanded={expandedGoal === goal.id}
+                  details={goalDetails[goal.id]}
+                  planning={planningGoalId === goal.id}
+                  executing={executingGoalId === goal.id}
+                  onToggle={() => toggleExpand(goal.id)}
+                  onPlan={() => handlePlan(goal.id)}
+                  onExecute={() => handleExecuteNext(goal.id)}
+                  onDelete={() => handleDelete(goal.id)}
+                  onStatusChange={(s) => handleStatusChange(goal.id, s)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </PullToRefreshWrapper>
 
       {/* Create Goal Dialog */}
@@ -288,12 +296,9 @@ function GoalCard({
   const pendingSteps = details?.steps.filter(s => s.status === 'pending' || s.status === 'in_progress') ?? [];
 
   return (
-    <Card
-      className="overflow-hidden transition-all duration-200 hover:border-white/20"
-      style={{
-        background: 'linear-gradient(135deg, #10101E 0%, #0C0C18 100%)',
-        borderColor: expanded ? `${status.color}40` : 'rgba(255,255,255,0.06)',
-      }}
+    <div
+      className="gs-card overflow-hidden transition-all duration-200"
+      style={{ borderColor: expanded ? `${status.color}40` : undefined }}
     >
       {/* Card Header — always visible */}
       <div
@@ -322,12 +327,12 @@ function GoalCard({
         {/* Title + Meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-base font-semibold text-gray-100 truncate">{goal.title}</h3>
+            <h3 className="text-base font-semibold text-[#F4F6FF] truncate">{goal.title}</h3>
             <Badge variant="outline" style={{ color: cat.color, borderColor: `${cat.color}40`, background: cat.bg, fontSize: '0.65rem' }}>
               {cat.emoji} {cat.label}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 text-xs text-gray-500">
+          <div className="flex items-center gap-3 text-xs text-[#6B7280]">
             <span className="flex items-center gap-1">
               <StatusIcon className="w-3 h-3" style={{ color: status.color }} />
               {status.label}
@@ -347,55 +352,83 @@ function GoalCard({
           </div>
         </div>
 
+        {/* Progress bar */}
+        <div className="hidden sm:block w-24">
+          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#10B981] transition-all duration-500"
+              style={{ width: `${goal.progress}%` }}
+            />
+          </div>
+        </div>
+
         {/* Expand Arrow */}
         {expanded ? (
-          <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+          <ChevronDown className="w-5 h-5 text-[#6B7280] flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-5 h-5 text-gray-500 flex-shrink-0" />
+          <ChevronRight className="w-5 h-5 text-[#6B7280] flex-shrink-0" />
         )}
       </div>
 
       {/* Expanded Detail */}
       {expanded && (
-        <div className="border-t border-white/5 px-4 pb-4">
+        <div className="border-t border-white/[0.06] px-4 pb-4">
           {/* Description */}
           {goal.description && (
-            <p className="text-sm text-gray-400 mt-3 mb-4">{goal.description}</p>
+            <p className="text-sm text-[#9CA3AF] mt-3 mb-4">{goal.description}</p>
           )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 mb-4">
             {!hasSteps && goal.status === 'active' && (
-              <Button size="sm" onClick={onPlan} disabled={planning} className="gap-1.5" variant="outline">
+              <button
+                onClick={onPlan}
+                disabled={planning}
+                className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm"
+              >
                 {planning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
                 {planning ? 'Planning...' : 'Plan with AI'}
-              </Button>
+              </button>
             )}
             {pendingSteps.length > 0 && goal.status === 'active' && (
-              <Button size="sm" onClick={onExecute} disabled={executing} className="gap-1.5" style={{ background: '#10B98130', color: '#10B981', border: '1px solid #10B98140' }}>
+              <button
+                onClick={onExecute}
+                disabled={executing}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{ background: '#10B98120', color: '#10B981', border: '1px solid #10B98140' }}
+              >
                 {executing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                 {executing ? 'Executing...' : 'Execute Next Step'}
-              </Button>
+              </button>
             )}
             {goal.status === 'active' && (
-              <Button size="sm" variant="outline" onClick={() => onStatusChange('paused')} className="gap-1.5 text-yellow-400 border-yellow-400/30">
+              <button
+                onClick={() => onStatusChange('paused')}
+                className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#F59E0B] border-[#F59E0B]/30"
+              >
                 <Pause className="w-3.5 h-3.5" /> Pause
-              </Button>
+              </button>
             )}
             {goal.status === 'paused' && (
-              <Button size="sm" variant="outline" onClick={() => onStatusChange('active')} className="gap-1.5 text-cyan-400 border-cyan-400/30">
+              <button
+                onClick={() => onStatusChange('active')}
+                className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#00F0FF] border-[#00F0FF]/30"
+              >
                 <RotateCcw className="w-3.5 h-3.5" /> Resume
-              </Button>
+              </button>
             )}
-            <Button size="sm" variant="outline" onClick={onDelete} className="gap-1.5 text-red-400 border-red-400/30 ml-auto">
+            <button
+              onClick={onDelete}
+              className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-400 border-red-400/30 ml-auto"
+            >
               <Trash2 className="w-3.5 h-3.5" /> Delete
-            </Button>
+            </button>
           </div>
 
           {/* Steps */}
           {details?.steps && details.steps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Steps</h4>
+              <p className="gs-section-label mb-2">Steps</p>
               {details.steps.sort((a, b) => a.step_order - b.step_order).map(step => (
                 <StepRow key={step.id} step={step} />
               ))}
@@ -405,13 +438,13 @@ function GoalCard({
           {/* Events Timeline */}
           {details?.events && details.events.length > 0 && (
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Activity</h4>
+              <p className="gs-section-label mb-2">Activity</p>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {details.events.slice(0, 10).map(event => (
-                  <div key={event.id} className="flex items-start gap-2 text-xs text-gray-500">
+                  <div key={event.id} className="flex items-start gap-2 text-xs text-[#6B7280]">
                     <Clock className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     <span className="flex-1">{event.message}</span>
-                    <span className="text-gray-600 flex-shrink-0">{timeAgo(event.created_at)}</span>
+                    <span className="text-[#4B5563] flex-shrink-0">{timeAgo(event.created_at)}</span>
                   </div>
                 ))}
               </div>
@@ -419,7 +452,7 @@ function GoalCard({
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -447,11 +480,11 @@ function StepRow({ step }: { step: GoalStepData }) {
         ) : isFailed ? (
           <AlertTriangle className="w-4 h-4 text-red-400" />
         ) : (
-          <div className="w-4 h-4 rounded-full border-2 border-gray-600" />
+          <div className="w-4 h-4 rounded-full border-2 border-[#4B5563]" />
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <span className={`text-sm ${isComplete ? 'text-gray-500 line-through' : 'text-gray-300'}`}>
+        <span className={`text-sm ${isComplete ? 'text-[#6B7280] line-through' : 'text-[#D1D5DB]'}`}>
           {step.title}
         </span>
       </div>
@@ -459,7 +492,7 @@ function StepRow({ step }: { step: GoalStepData }) {
         {effort.label}
       </Badge>
       {step.assigned_agent && (
-        <span className="text-xs text-gray-600">{agentEmojis[step.assigned_agent] || '🤖'}</span>
+        <span className="text-xs text-[#4B5563]">{agentEmojis[step.assigned_agent] || '🤖'}</span>
       )}
     </div>
   );
@@ -499,46 +532,44 @@ function CreateGoalDialog({ open, onClose, onCreated }: { open: boolean; onClose
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md" style={{ background: '#0C0C18', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <DialogContent className="max-w-md bg-[#0C0C18] border-white/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-gray-100">
-            <Target className="w-5 h-5 text-cyan-400" /> New Goal
+          <DialogTitle className="flex items-center gap-2 text-[#F4F6FF]">
+            <Target className="w-5 h-5 text-[#8B5CF6]" /> New Goal
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">What do you want to achieve?</label>
-            <Input
+            <label className="gs-section-label mb-1.5 block">What do you want to achieve?</label>
+            <input
               placeholder="e.g. Learn TypeScript in 30 days"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="bg-[#10101E] border-white/10"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm"
               autoFocus
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Description (optional)</label>
+            <label className="gs-section-label mb-1.5 block">Description (optional)</label>
             <textarea
               placeholder="Add more context for your AI agents..."
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full rounded-md bg-[#10101E] border border-white/10 px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 resize-none"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm resize-none"
               rows={3}
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-2 block">Category</label>
+            <label className="gs-section-label mb-2 block">Category</label>
             <div className="flex flex-wrap gap-2">
               {Object.entries(categoryConfig).map(([key, cfg]) => (
                 <button
                   key={key}
                   onClick={() => setCategory(key)}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: category === key ? cfg.bg : 'rgba(255,255,255,0.04)',
-                    color: category === key ? cfg.color : '#6B7280',
-                    border: `1px solid ${category === key ? `${cfg.color}40` : 'rgba(255,255,255,0.08)'}`,
-                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[36px] ${
+                    category === key ? 'gs-pill-active' : 'gs-pill'
+                  }`}
+                  style={category === key ? { color: cfg.color, backgroundColor: cfg.bg, borderColor: `${cfg.color}40` } : {}}
                 >
                   {cfg.emoji} {cfg.label}
                 </button>
@@ -546,12 +577,12 @@ function CreateGoalDialog({ open, onClose, onCreated }: { open: boolean; onClose
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Target Date (optional)</label>
-            <Input
+            <label className="gs-section-label mb-1.5 block">Target Date (optional)</label>
+            <input
               type="date"
               value={targetDate}
               onChange={e => setTargetDate(e.target.value)}
-              className="bg-[#10101E] border-white/10"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm"
             />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -559,16 +590,15 @@ function CreateGoalDialog({ open, onClose, onCreated }: { open: boolean; onClose
               type="checkbox"
               checked={autoPlan}
               onChange={e => setAutoPlan(e.target.checked)}
-              className="rounded border-gray-600"
+              className="rounded border-[#4B5563]"
             />
             <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-sm text-gray-300">Let AI plan this automatically</span>
+            <span className="text-sm text-[#D1D5DB]">Let AI plan this automatically</span>
           </label>
-          <Button
+          <button
             onClick={handleCreate}
             disabled={!title.trim() || creating}
-            className="w-full gap-2"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)', border: 'none' }}
+            className="gs-btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
           >
             {creating ? (
               <>
@@ -580,7 +610,7 @@ function CreateGoalDialog({ open, onClose, onCreated }: { open: boolean; onClose
                 <Plus className="w-4 h-4" /> Create Goal
               </>
             )}
-          </Button>
+          </button>
         </div>
       </DialogContent>
     </Dialog>
@@ -597,5 +627,7 @@ function timeAgo(dateStr: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

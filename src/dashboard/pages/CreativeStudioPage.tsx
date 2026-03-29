@@ -14,7 +14,7 @@ import { imageService, videoService, templateService } from '@/services/api';
 import type { UserImage, UserVideo } from '@/services/api';
 import type { Template, TemplateCategory } from '@/types';
 import { MediaGallery, type MediaItem } from '@/components/MediaGallery';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // ---- Style presets for image generation ----
@@ -342,11 +342,11 @@ export function CreativeStudioPage() {
   }, [activeTab, loadImages, loadVideos, loadTemplates, loadGallery]);
 
   // ─── Tab definitions ───────────────────────────────────────
-  const tabs: { id: TabId; label: string; icon: typeof ImageIcon }[] = [
-    { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'videos', label: 'Videos', icon: Film },
-    { id: 'templates', label: 'Templates', icon: LayoutTemplate },
-    { id: 'gallery', label: 'Gallery', icon: Sparkles },
+  const tabs = [
+    { id: 'images' as TabId, label: 'Images', icon: <ImageIcon className="w-4 h-4" /> },
+    { id: 'videos' as TabId, label: 'Videos', icon: <Film className="w-4 h-4" /> },
+    { id: 'templates' as TabId, label: 'Templates', icon: <LayoutTemplate className="w-4 h-4" /> },
+    { id: 'gallery' as TabId, label: 'Gallery', icon: <Sparkles className="w-4 h-4" />, badge: galleryItems.length > 0 ? galleryItems.length : undefined },
   ];
 
   return (
@@ -364,91 +364,73 @@ export function CreativeStudioPage() {
         }
       />
 
-      {/* Tab bar */}
-      <SectionCard padding="sm" className="!p-1">
-        <div className="flex items-center gap-1">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
-                  isActive
-                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] shadow-sm'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </SectionCard>
+      {/* Tab bar — GsTabBar */}
+      <GsTabBar<TabId>
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* ════════ Images Tab ════════ */}
       {activeTab === 'images' && (
         <div className="space-y-6">
           {/* Prompt card */}
-          <SectionCard>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+          <div className="gs-card p-6 space-y-5">
+            <div>
+              <span className="gs-section-label">Generate Image</span>
+              <div className="flex items-center gap-2 mt-2 text-sm font-medium text-[#F4F6FF]">
                 <Wand2 className="w-4 h-4 text-[#8B5CF6]" />
-                Generate Image
+                Describe what you want to create
               </div>
+            </div>
 
-              {/* Prompt input */}
-              <textarea
-                value={imgPrompt}
-                onChange={e => setImgPrompt(e.target.value)}
-                placeholder="Describe the image you want to create..."
-                rows={3}
-                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[#F4F6FF] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
-                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleImageGenerate(); }}
-              />
+            {/* Prompt input */}
+            <textarea
+              value={imgPrompt}
+              onChange={e => setImgPrompt(e.target.value)}
+              placeholder="Describe the image you want to create..."
+              rows={3}
+              className="gs-input w-full resize-none"
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleImageGenerate(); }}
+            />
 
-              {/* Style selector */}
+            {/* Style selector */}
+            <div>
+              <span className="gs-section-label mb-2 block">Style</span>
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-[#9CA3AF] flex items-center">Style:</span>
                 {STYLE_OPTIONS.map(style => (
                   <button
                     key={style}
                     onClick={() => setImgStyle(imgStyle === style ? '' : style)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all min-h-[32px] ${
-                      imgStyle === style
-                        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[rgba(139,92,246,0.15)]'
-                        : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-transparent hover:text-[#F4F6FF]'
-                    }`}
+                    className={imgStyle === style ? 'gs-pill gs-pill-active' : 'gs-pill'}
                   >
                     {style}
                   </button>
                 ))}
               </div>
-
-              {/* Generate button */}
-              <button
-                onClick={handleImageGenerate}
-                disabled={!imgPrompt.trim() || imgGenerating}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-              >
-                {imgGenerating ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                ) : (
-                  <><Send className="w-4 h-4" /> Generate</>
-                )}
-              </button>
             </div>
-          </SectionCard>
+
+            {/* Generate button */}
+            <button
+              onClick={handleImageGenerate}
+              disabled={!imgPrompt.trim() || imgGenerating}
+              className="gs-btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {imgGenerating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+              ) : (
+                <><Send className="w-4 h-4" /> Generate</>
+              )}
+            </button>
+          </div>
 
           {/* Recent images grid */}
-          <SectionCard>
+          <div className="gs-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F6FF]">Recent Images</h3>
+              <span className="gs-section-label">Recent Images</span>
               <button
                 onClick={loadImages}
-                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="gs-btn-ghost p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -459,7 +441,7 @@ export function CreativeStudioPage() {
                 <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
               </div>
             ) : images.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[rgba(139,92,246,0.15)]">
+              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-white/[0.10]">
                 <ImageIcon className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
                 <p className="text-sm text-[#9CA3AF]">No images yet. Generate your first one above!</p>
               </div>
@@ -468,7 +450,7 @@ export function CreativeStudioPage() {
                 {images.map(img => (
                   <div
                     key={img.id}
-                    className="group relative aspect-square rounded-xl overflow-hidden border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] cursor-pointer"
+                    className="group relative aspect-square rounded-xl overflow-hidden border border-white/[0.06] bg-white/[0.02] cursor-pointer hover:border-[#8B5CF6]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.15)] transition-all"
                     onClick={() => setPreviewImage(img)}
                   >
                     <img
@@ -477,7 +459,7 @@ export function CreativeStudioPage() {
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-0 left-0 right-0 p-3">
                         <p className="text-xs text-white/80 line-clamp-2">{img.prompt}</p>
                         <div className="flex items-center gap-2 mt-2">
@@ -503,7 +485,7 @@ export function CreativeStudioPage() {
                 ))}
               </div>
             )}
-          </SectionCard>
+          </div>
         </div>
       )}
 
@@ -511,69 +493,66 @@ export function CreativeStudioPage() {
       {activeTab === 'videos' && (
         <div className="space-y-6">
           {/* Prompt card */}
-          <SectionCard>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+          <div className="gs-card p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="gs-section-label">Generate Video</span>
+                <div className="flex items-center gap-2 mt-2 text-sm font-medium text-[#F4F6FF]">
                   <Film className="w-4 h-4 text-[#8B5CF6]" />
-                  Generate Video
+                  Describe your video concept
                 </div>
-                {/* Director mode toggle */}
-                <button
-                  onClick={() => setDirectorMode(!directorMode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
-                    directorMode
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[rgba(139,92,246,0.15)]'
-                      : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-transparent hover:text-[#F4F6FF]'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Director Mode
-                </button>
               </div>
-
-              {/* Prompt input */}
-              <textarea
-                value={vidPrompt}
-                onChange={e => setVidPrompt(e.target.value)}
-                placeholder={directorMode
-                  ? "Describe your video concept — AI will create a multi-shot storyboard..."
-                  : "Describe the video you want to create..."
-                }
-                rows={3}
-                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[#F4F6FF] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
-                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleVideoGenerate(); }}
-              />
-
-              {directorMode && (
-                <p className="text-xs text-[#8B5CF6]/70 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Director Mode generates a multi-shot storyboard and stitches clips together automatically.
-                </p>
-              )}
-
-              {/* Generate button */}
+              {/* Director mode toggle */}
               <button
-                onClick={handleVideoGenerate}
-                disabled={!vidPrompt.trim() || vidGenerating || directorRunning}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                onClick={() => setDirectorMode(!directorMode)}
+                className={directorMode ? 'gs-pill gs-pill-active flex items-center gap-1.5' : 'gs-pill flex items-center gap-1.5'}
               >
-                {vidGenerating || directorRunning ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> {directorRunning ? 'Directing...' : 'Generating...'}</>
-                ) : (
-                  <><Send className="w-4 h-4" /> {directorMode ? 'Start Director' : 'Generate'}</>
-                )}
+                <Sparkles className="w-3.5 h-3.5" />
+                Director Mode
               </button>
             </div>
-          </SectionCard>
+
+            {/* Prompt input */}
+            <textarea
+              value={vidPrompt}
+              onChange={e => setVidPrompt(e.target.value)}
+              placeholder={directorMode
+                ? "Describe your video concept — AI will create a multi-shot storyboard..."
+                : "Describe the video you want to create..."
+              }
+              rows={3}
+              className="gs-input w-full resize-none"
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleVideoGenerate(); }}
+            />
+
+            {directorMode && (
+              <p className="text-xs text-[#8B5CF6]/70 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Director Mode generates a multi-shot storyboard and stitches clips together automatically.
+              </p>
+            )}
+
+            {/* Generate button */}
+            <button
+              onClick={handleVideoGenerate}
+              disabled={!vidPrompt.trim() || vidGenerating || directorRunning}
+              className="gs-btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {vidGenerating || directorRunning ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {directorRunning ? 'Directing...' : 'Generating...'}</>
+              ) : (
+                <><Send className="w-4 h-4" /> {directorMode ? 'Start Director' : 'Generate'}</>
+              )}
+            </button>
+          </div>
 
           {/* Recent videos grid */}
-          <SectionCard>
+          <div className="gs-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F6FF]">Recent Videos</h3>
+              <span className="gs-section-label">Recent Videos</span>
               <button
                 onClick={loadVideos}
-                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="gs-btn-ghost p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -584,7 +563,7 @@ export function CreativeStudioPage() {
                 <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
               </div>
             ) : videos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[rgba(139,92,246,0.15)]">
+              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-white/[0.10]">
                 <Film className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
                 <p className="text-sm text-[#9CA3AF]">No videos yet. Generate your first one above!</p>
               </div>
@@ -593,11 +572,11 @@ export function CreativeStudioPage() {
                 {videos.map(vid => (
                   <div
                     key={vid.id}
-                    className="group relative rounded-xl overflow-hidden border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)]"
+                    className="group relative gs-card overflow-hidden !p-0"
                   >
                     <div className="aspect-video relative">
                       {vid.status === 'processing' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[rgba(12,12,30,0.6)]">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/[0.02]">
                           <Loader2 className="w-8 h-8 text-[#8B5CF6] animate-spin mb-2" />
                           <span className="text-xs text-[#9CA3AF]">Processing...</span>
                         </div>
@@ -650,7 +629,7 @@ export function CreativeStudioPage() {
                 ))}
               </div>
             )}
-          </SectionCard>
+          </div>
         </div>
       )}
 
@@ -666,17 +645,13 @@ export function CreativeStudioPage() {
                   value={tplSearch}
                   onChange={e => setTplSearch(e.target.value)}
                   placeholder="Search templates..."
-                  className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg pl-4 pr-4 py-2.5 text-sm text-[#F4F6FF] placeholder-[#6B7280] focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px]"
+                  className="gs-input w-full min-h-[44px]"
                 />
               </div>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                 <button
                   onClick={() => setTplCategory('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-h-[44px] ${
-                    tplCategory === 'all'
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                      : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
-                  }`}
+                  className={tplCategory === 'all' ? 'gs-pill gs-pill-active' : 'gs-pill'}
                 >
                   All
                 </button>
@@ -684,11 +659,7 @@ export function CreativeStudioPage() {
                   <button
                     key={cat.id}
                     onClick={() => setTplCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-h-[44px] ${
-                      tplCategory === cat.id
-                        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                        : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
-                    }`}
+                    className={tplCategory === cat.id ? 'gs-pill gs-pill-active' : 'gs-pill'}
                   >
                     {cat.name}
                   </button>
@@ -704,20 +675,18 @@ export function CreativeStudioPage() {
                 <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
               </div>
             ) : templates.length === 0 ? (
-              <SectionCard>
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <LayoutTemplate className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
-                  <p className="text-sm text-[#9CA3AF]">
-                    {tplSearch ? 'No templates match your search.' : 'No templates available yet.'}
-                  </p>
-                </div>
-              </SectionCard>
+              <div className="gs-card p-8 flex flex-col items-center justify-center text-center">
+                <LayoutTemplate className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
+                <p className="text-sm text-[#9CA3AF]">
+                  {tplSearch ? 'No templates match your search.' : 'No templates available yet.'}
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.map(tpl => (
-                  <SectionCard key={tpl.id} padding="sm" className="!p-0 overflow-hidden">
+                  <div key={tpl.id} className="gs-card overflow-hidden !p-0">
                     {/* Thumbnail */}
-                    <div className="aspect-video bg-[rgba(12,12,30,0.6)] relative overflow-hidden">
+                    <div className="aspect-video bg-white/[0.02] relative overflow-hidden">
                       {tpl.thumbnail ? (
                         <img
                           src={tpl.thumbnail}
@@ -743,14 +712,14 @@ export function CreativeStudioPage() {
                         <p className="text-xs text-[#9CA3AF] line-clamp-2 mt-1">{tpl.description}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-[#6B7280] uppercase tracking-wider">{tpl.category}</span>
+                        <span className="gs-section-label">{tpl.category}</span>
                         <button
                           onClick={() => handleTemplateClone(tpl)}
                           disabled={cloningId === tpl.id}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
                             clonedId === tpl.id
                               ? 'bg-[#10B981]/15 text-[#10B981]'
-                              : 'bg-[#8B5CF6]/15 text-[#8B5CF6] hover:bg-[#8B5CF6]/25'
+                              : 'gs-btn-primary text-xs !px-3 !py-1.5'
                           } disabled:opacity-50`}
                         >
                           {cloningId === tpl.id ? (
@@ -763,7 +732,7 @@ export function CreativeStudioPage() {
                         </button>
                       </div>
                     </div>
-                  </SectionCard>
+                  </div>
                 ))}
               </div>
             )}
@@ -776,16 +745,16 @@ export function CreativeStudioPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-              <span className="px-2 py-1 rounded bg-[#8B5CF6]/10 text-[#8B5CF6] text-xs">
+              <span className="gs-pill gs-pill-active text-[10px]">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded bg-[#00F0FF]/10 text-[#00F0FF] text-xs">
+              <span className="px-2 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] text-xs">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>
             <button
               onClick={loadGallery}
-              className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="gs-btn-ghost p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -796,23 +765,21 @@ export function CreativeStudioPage() {
               <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
             </div>
           ) : galleryItems.length === 0 ? (
-            <SectionCard>
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-[#8B5CF6]/40" />
-                </div>
-                <h3 className="text-base font-medium text-[#F4F6FF] mb-2">No media yet</h3>
-                <p className="text-[#9CA3AF] text-sm max-w-xs mb-6">
-                  Generate your first image or video using the tabs above.
-                </p>
-                <button
-                  onClick={() => setActiveTab('images')}
-                  className="px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 min-h-[44px]"
-                >
-                  Start Creating
-                </button>
+            <div className="gs-card p-12 flex flex-col items-center justify-center text-center">
+              <div className="gs-icon-pill gs-icon-pill-violet w-16 h-16 rounded-2xl mb-4">
+                <Sparkles className="w-8 h-8 text-[#8B5CF6]/40" />
               </div>
-            </SectionCard>
+              <h3 className="text-base font-medium text-[#F4F6FF] mb-2">No media yet</h3>
+              <p className="text-[#9CA3AF] text-sm max-w-xs mb-6">
+                Generate your first image or video using the tabs above.
+              </p>
+              <button
+                onClick={() => setActiveTab('images')}
+                className="gs-btn-primary"
+              >
+                Start Creating
+              </button>
+            </div>
           ) : (
             <MediaGallery
               items={galleryItems}
@@ -838,13 +805,13 @@ export function CreativeStudioPage() {
                   href={previewImage.image_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#8B5CF6] text-white font-medium text-sm hover:bg-[#8B5CF6]/90 transition-colors"
+                  className="gs-btn-primary flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" /> Download
                 </a>
                 <button
                   onClick={() => setPreviewImage(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors"
+                  className="gs-btn-ghost p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -853,7 +820,7 @@ export function CreativeStudioPage() {
             <img
               src={previewImage.image_url}
               alt={previewImage.prompt || 'Generated image'}
-              className="w-full rounded-2xl border border-[rgba(139,92,246,0.15)]"
+              className="w-full rounded-2xl border border-white/[0.10]"
               loading="lazy"
             />
             <div className="flex items-center gap-3 mt-3 text-xs text-[#9CA3AF]">
@@ -881,13 +848,13 @@ export function CreativeStudioPage() {
                   href={previewVideo.video_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#8B5CF6] text-white font-medium text-sm hover:bg-[#8B5CF6]/90 transition-colors"
+                  className="gs-btn-primary flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" /> Download
                 </a>
                 <button
                   onClick={() => setPreviewVideo(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors"
+                  className="gs-btn-ghost p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -897,7 +864,7 @@ export function CreativeStudioPage() {
               src={previewVideo.video_url}
               controls
               autoPlay
-              className="w-full rounded-2xl border border-[rgba(139,92,246,0.15)]"
+              className="w-full rounded-2xl border border-white/[0.10]"
             />
             <div className="flex items-center gap-3 mt-3 text-xs text-[#9CA3AF]">
               {previewVideo.width && previewVideo.height && (

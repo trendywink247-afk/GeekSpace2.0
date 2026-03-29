@@ -1,5 +1,5 @@
 // VoiceChatPage — owner: weebo (#00F0FF)
-// Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
+// Redesigned: gs-card, gs-btn-primary, gs-btn-ghost, gs-section-label, GsTabBar patterns
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
@@ -204,17 +204,18 @@ export function VoiceChatPage() {
         actions={
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-colors"
+            className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl px-3"
             aria-label="Voice settings"
           >
-            <Settings2 className="w-5 h-5 text-[var(--ag-text-muted)]" />
+            <Settings2 className="w-5 h-5" />
           </button>
         }
       />
 
       {/* -- Settings Panel (collapsible) -- */}
       {settingsOpen && (
-        <SectionCard padding="sm" className="mt-3 animate-page-enter">
+        <div className="gs-card mt-3 p-4 animate-page-enter">
+          <p className="gs-section-label mb-3">Voice Settings</p>
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Voice On/Off */}
             <label className="flex items-center gap-2 cursor-pointer select-none min-h-[44px]">
@@ -224,7 +225,7 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, ttsEnabled: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
+              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
                 <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
               <span className="text-[var(--ag-text-secondary)]">Voice replies</span>
@@ -238,7 +239,7 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, autoSend: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
+              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
                 <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
               <span className="text-[var(--ag-text-secondary)]">Auto-send</span>
@@ -251,7 +252,7 @@ export function VoiceChatPage() {
                 <select
                   value={settings.speed}
                   onChange={e => setSettings(s => ({ ...s, speed: Number(e.target.value) }))}
-                  className="appearance-none bg-[var(--ag-bg-elevated)] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[var(--ag-border-subtle)] focus:outline-none focus:ring-1 focus:ring-[var(--ag-cyan)]/40 min-h-[36px]"
+                  className="gs-input appearance-none text-sm rounded-lg px-3 py-1.5 pr-7 min-h-[36px]"
                 >
                   {SPEED_OPTIONS.map(s => (
                     <option key={s} value={s}>{s}x</option>
@@ -261,13 +262,13 @@ export function VoiceChatPage() {
               </div>
             </div>
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* -- Main Content -- */}
       <div className="flex-1 flex flex-col items-center justify-between min-h-0 py-6 gap-4">
         {/* Glass card: orb + status */}
-        <SectionCard className="flex flex-col items-center gap-4 pt-4 w-full max-w-sm">
+        <div className="gs-card flex flex-col items-center gap-4 pt-4 w-full max-w-sm p-6">
           {/* Central orb (80px) with animated states */}
           <div className="relative flex items-center justify-center">
             {/* Concentric rings for listening/recording */}
@@ -391,10 +392,10 @@ export function VoiceChatPage() {
               &ldquo;{interimText}&rdquo;
             </p>
           )}
-        </SectionCard>
+        </div>
 
         {/* -- Transcript History -- */}
-        <SectionCard className="flex-1 w-full max-w-lg overflow-y-auto min-h-0" padding="sm">
+        <div className="gs-card flex-1 w-full max-w-lg overflow-y-auto min-h-0 p-3">
           <div ref={scrollRef} className="space-y-2 overflow-y-auto max-h-full">
             {transcript.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-8">
@@ -407,10 +408,10 @@ export function VoiceChatPage() {
                 <div
                   key={turn.id}
                   className={[
-                    'flex flex-col gap-0.5 text-sm rounded-lg px-3 py-2',
+                    'flex flex-col gap-0.5 text-sm rounded-xl px-3 py-2',
                     turn.role === 'user'
                       ? 'bg-[var(--ag-cyan)]/5 ml-4'
-                      : 'bg-[var(--ag-bg-elevated)] mr-4',
+                      : 'bg-white/[0.04] mr-4',
                   ].join(' ')}
                 >
                   <div className="flex gap-2">
@@ -431,7 +432,7 @@ export function VoiceChatPage() {
               ))
             )}
           </div>
-        </SectionCard>
+        </div>
 
         {/* -- Mic Button (primary action) -- */}
         <div className="flex flex-col items-center gap-3 flex-shrink-0">
@@ -445,8 +446,8 @@ export function VoiceChatPage() {
             }
             className={[
               'relative min-h-[64px] min-w-[64px] w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200',
-              !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
-              voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
+              !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-white/[0.04]' :
+              voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-white/[0.04]' :
               voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-95' :
               voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-95' :
               'bg-[var(--ag-cyan)]/15 border-2 border-[var(--ag-cyan)]/30 hover:bg-[var(--ag-cyan)]/25 hover:border-[var(--ag-cyan)]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
@@ -472,7 +473,7 @@ export function VoiceChatPage() {
         <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Text Mode</span>
@@ -481,7 +482,7 @@ export function VoiceChatPage() {
           <button
             onClick={clearTranscript}
             disabled={transcript.length === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear</span>
@@ -489,7 +490,7 @@ export function VoiceChatPage() {
 
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
           >
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>

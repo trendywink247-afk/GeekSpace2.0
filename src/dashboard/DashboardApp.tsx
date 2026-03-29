@@ -565,7 +565,7 @@ export function DashboardApp() {
         {/* Close button — mobile only */}
         <button
           onClick={() => setSidebarOpen(false)}
-          className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10"
+          className="md:hidden p-2 rounded-lg hover:bg-[#8B5CF6]/10"
           aria-label="Close navigation menu"
         >
           <X className="w-5 h-5 text-[#6B7280]" />
@@ -576,7 +576,7 @@ export function DashboardApp() {
       {!sidebarCollapsed && <SmartSuggestions onNavigate={(page) => navigate(`/dashboard/${page}`)} />}
 
       {/* Navigation */}
-      <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#00F0FF]/20 hover:scrollbar-thumb-[#00F0FF]/40">
+      <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#8B5CF6]/20 hover:scrollbar-thumb-[#8B5CF6]/40">
         {menuGroups.map((group, groupIdx) => (
           <div key={group.label ?? 'ungrouped'}>
             {group.label && group.icon ? (
@@ -586,19 +586,18 @@ export function DashboardApp() {
                   onClick={() => toggleGroup(group.label!)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[40px] mt-2 relative ${
                     groupHasActivePage(group)
-                      ? 'text-[var(--ag-text-accent,#00F0FF)]'
-                      : 'text-[var(--ag-text-muted,#6B7280)] hover:text-[var(--ag-text-secondary,#9CA3AF)] active:bg-[#00F0FF]/10'
+                      ? 'text-[#A78BFA]'
+                      : 'text-[var(--ag-text-muted,#6B7280)] hover:text-[var(--ag-text-secondary,#9CA3AF)] active:bg-[#8B5CF6]/10'
                   }`}
-                  style={!groupHasActivePage(group) ? { '--hover-bg': 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))' } as React.CSSProperties : undefined}
-                  onMouseEnter={e => { if (!groupHasActivePage(group)) (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; }}
+                  onMouseEnter={e => { if (!groupHasActivePage(group)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.05)'; }}
                   onMouseLeave={e => { if (!groupHasActivePage(group)) (e.currentTarget as HTMLButtonElement).style.background = ''; }}
                 >
                   {groupHasActivePage(group) && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#00F0FF] to-[#ADFF2F]" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-gradient-to-b from-[#8B5CF6] to-[#10B981]" />
                   )}
                   <div className="relative flex-shrink-0">
                     <group.icon className="w-5 h-5" />
-                    {/* 53.8: Badge on Productivity group header when reminders are due */}
+                    {/* Badge on Productivity group header when reminders are due */}
                     {group.label === 'Productivity' && dueReminderCount > 0 && (
                       <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none px-0.5">
                         {dueReminderCount > 9 ? '9+' : dueReminderCount}
@@ -607,7 +606,7 @@ export function DashboardApp() {
                   </div>
                   {!sidebarCollapsed && (
                     <>
-                      <span className="text-[11px] font-semibold flex-1 text-left uppercase tracking-[0.08em]" style={{ color: groupHasActivePage(group) ? 'var(--ag-text-accent, #00F0FF)' : 'var(--ag-text-muted, #6B7280)' }}>{group.label}</span>
+                      <span className="text-[11px] font-semibold flex-1 text-left uppercase tracking-[0.08em]" style={{ color: groupHasActivePage(group) ? '#A78BFA' : 'var(--ag-text-muted, #6B7280)' }}>{group.label}</span>
                       {isGroupExpanded(group.label) ? (
                         <ChevronDown className="w-4 h-4 flex-shrink-0 opacity-50" />
                       ) : (
@@ -618,7 +617,7 @@ export function DashboardApp() {
                 </button>
                 {/* Expandable sub-items */}
                 {!sidebarCollapsed && isGroupExpanded(group.label) && (
-                  <div className="ml-4 pl-2 space-y-0.5" style={{ borderLeft: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
+                  <div className="ml-4 pl-2 space-y-0.5" style={{ borderLeft: '1px solid rgba(139,92,246,0.10)' }}>
                     {group.items.map((item) => (
                       <button
                         key={item.id}
@@ -630,18 +629,18 @@ export function DashboardApp() {
                             : 'border-l-2 border-transparent'
                         }`}
                         style={isPageActive(item.id) ? {
-                          color: 'var(--ag-text-accent, #00F0FF)',
-                          background: 'rgba(0, 240, 255, 0.08)',
-                          borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
-                          boxShadow: 'inset 2px 0 0 var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                          color: '#A78BFA',
+                          background: 'rgba(139,92,246,0.10)',
+                          borderLeftColor: 'rgba(139,92,246,0.35)',
+                          boxShadow: 'inset 2px 0 0 rgba(139,92,246,0.35)',
                         } : { color: 'var(--ag-text-muted, #6B7280)' }}
-                        onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+                        onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
                         onMouseLeave={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-muted, #6B7280)'; } }}
                       >
                         <item.icon className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm flex-1 text-left">{item.label}</span>
                         {item.shortcut && !isPageActive(item.id) && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ color: 'var(--ag-text-muted, #6B7280)', background: 'rgba(6,6,27,0.8)', border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))' }}>{item.shortcut}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded gs-input" style={{ color: 'var(--ag-text-muted, #6B7280)' }}>{item.shortcut}</span>
                         )}
                         {item.id === 'reminders' && dueReminderCount > 0 && (
                           <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
@@ -654,7 +653,7 @@ export function DashboardApp() {
                           </span>
                         )}
                         {item.id === 'inbox' && inboxUnreadCount > 0 && (
-                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold leading-none px-1">
+                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[#A78BFA] text-[10px] font-bold leading-none px-1">
                             {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                           </span>
                         )}
@@ -662,7 +661,6 @@ export function DashboardApp() {
                     ))}
                   </div>
                 )}
-                {/* Collapsed sidebar: show sub-items as icons on hover handled by tooltip later; for now just the group icon */}
               </>
             ) : (
               <>
@@ -674,12 +672,12 @@ export function DashboardApp() {
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
                     style={isPageActive(item.id) ? {
-                      color: 'var(--ag-text-accent, #00F0FF)',
-                      background: 'rgba(0, 240, 255, 0.08)',
-                      borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
-                      boxShadow: 'inset 2px 0 0 var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+                      color: '#A78BFA',
+                      background: 'rgba(139,92,246,0.10)',
+                      borderLeftColor: 'rgba(139,92,246,0.35)',
+                      boxShadow: 'inset 2px 0 0 rgba(139,92,246,0.35)',
                     } : { color: 'var(--ag-text-secondary, #9CA3AF)', borderLeftColor: 'transparent' }}
-                    onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+                    onMouseEnter={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
                     onMouseLeave={e => { if (!isPageActive(item.id)) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; } }}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -693,7 +691,7 @@ export function DashboardApp() {
                     onClick={() => navigate('/explore')}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all min-h-[44px]"
                     style={{ color: 'var(--ag-text-secondary, #9CA3AF)' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; }}
                   >
                     <Compass className="w-5 h-5 flex-shrink-0" />
@@ -713,11 +711,11 @@ export function DashboardApp() {
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
             style={isPageActive('roadmap') ? {
-              color: 'var(--ag-text-accent, #00F0FF)',
-              background: 'rgba(0, 240, 255, 0.08)',
-              borderLeftColor: 'var(--ag-border-glow, rgba(0, 240, 255, 0.2))',
+              color: '#A78BFA',
+              background: 'rgba(139,92,246,0.10)',
+              borderLeftColor: 'rgba(139,92,246,0.35)',
             } : { color: 'var(--ag-text-secondary, #9CA3AF)', borderLeftColor: 'transparent' }}
-            onMouseEnter={e => { if (!isPageActive('roadmap')) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
+            onMouseEnter={e => { if (!isPageActive('roadmap')) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; } }}
             onMouseLeave={e => { if (!isPageActive('roadmap')) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-secondary, #9CA3AF)'; } }}
           >
             <Rocket className="w-5 h-5 flex-shrink-0" />
@@ -731,13 +729,15 @@ export function DashboardApp() {
         <div className="mx-3 mt-2">
           <button
             onClick={() => setWizardOpen(true)}
-            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#00F0FF]/10 to-[#FF2D78]/10 border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group min-h-[44px]"
+            className="w-full p-3 rounded-xl gs-card-accent hover:border-[#8B5CF6]/40 transition-all group min-h-[44px] text-left"
           >
             <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-[#FF2D78] group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-medium text-[#E8E8F0]">Design Assistant</span>
+              <div className="gs-icon-pill gs-icon-pill-violet w-6 h-6 rounded-lg">
+                <Palette className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              </div>
+              <span className="text-xs font-semibold text-[#F4F6FF]">Design Assistant</span>
             </div>
-            <p className="text-[10px] text-[#6B7280] mt-1 text-left">
+            <p className="text-[10px] text-[#6B7280] mt-1.5">
               {personalityEmojis[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣'} {agent.name} &middot; {agent.mode} &middot; {agent.voice}
             </p>
           </button>
@@ -746,18 +746,20 @@ export function DashboardApp() {
 
       {/* Spend indicator */}
       {!sidebarCollapsed && (
-        <div className="mx-3 mt-3 mb-3 p-3 rounded-xl" style={{ background: 'var(--ag-bg-elevated, rgba(30, 30, 50, 0.7))', border: '1px solid var(--ag-border-default, rgba(139, 92, 246, 0.15))' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-[#ADFF2F]" />
-            <span className="text-xs text-[#6B7280]">This month</span>
+        <div className="mx-3 mt-2 mb-3 p-3 rounded-xl gs-card">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="gs-icon-pill gs-icon-pill-emerald w-5 h-5 rounded-md">
+              <DollarSign className="w-3 h-3" />
+            </div>
+            <span className="text-[10px] font-mono tracking-wider uppercase text-[#6B7280]">This month</span>
           </div>
-          <div className="text-lg font-bold text-[#E8E8F0] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
-          <div className="text-xs text-[#6B7280]">
-            Forecast: <span className="text-[#FFD700]">${usage.forecastUSD.toFixed(2)}</span>
+          <div className="text-base font-bold font-mono text-gradient">${usage.totalCostUSD.toFixed(2)}</div>
+          <div className="text-[10px] text-[#6B7280] mt-0.5">
+            Forecast: <span className="text-[#F59E0B]">${usage.forecastUSD.toFixed(2)}</span>
           </div>
-          <div className="mt-2 h-1.5 bg-[#0C0C18] rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#00F0FF] to-[#ADFF2F]"
+              className="h-full rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#10B981]"
               style={{ width: `${Math.min((usage.totalCostUSD / 5) * 100, 100)}%` }}
             />
           </div>
@@ -765,12 +767,12 @@ export function DashboardApp() {
       )}
 
       {/* User avatar area */}
-      <div className="p-3 space-y-1" style={{ borderTop: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
+      <div className="p-3 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {!sidebarCollapsed ? (
           <div className="flex items-center gap-3 px-3 py-2">
             <div
-              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center flex-shrink-0 text-white text-sm font-bold transition-shadow duration-300"
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 0 16px rgba(0, 240, 255, 0.2)'; }}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#10B981] flex items-center justify-center flex-shrink-0 text-white text-sm font-bold transition-shadow duration-300"
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 12px rgba(139,92,246,0.35)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
             >
               {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
@@ -778,7 +780,7 @@ export function DashboardApp() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate" style={{ color: 'var(--ag-text-primary, #F4F6FF)' }}>{user?.name?.split(' ')[0] || 'User'}</span>
-                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20 flex-shrink-0">
+                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#A78BFA] border border-[#8B5CF6]/20 flex-shrink-0">
                   {user?.plan === 'pro' ? 'Pro' : 'Free'}
                 </span>
               </div>
@@ -788,8 +790,8 @@ export function DashboardApp() {
               onClick={() => navigate('/dashboard/settings')}
               className="p-1.5 rounded-lg transition-colors flex-shrink-0"
               style={{ color: 'var(--ag-text-muted, #6B7280)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 240, 255, 0.08)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = '#A78BFA'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-muted, #6B7280)'; }}
               aria-label="Settings"
             >
               <Settings className="w-4 h-4" />
@@ -798,8 +800,8 @@ export function DashboardApp() {
         ) : (
           <div className="flex flex-col items-center gap-1">
             <div
-              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00F0FF] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-bold transition-shadow duration-300"
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--ag-glow-sm, 0 0 10px rgba(0, 240, 255, 0.1)), 0 0 16px rgba(0, 240, 255, 0.2)'; }}
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#10B981] flex items-center justify-center text-white text-sm font-bold transition-shadow duration-300"
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 12px rgba(139,92,246,0.35)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
             >
               {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
@@ -860,8 +862,8 @@ export function DashboardApp() {
       {/* ---- Welcome toast ---- */}
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-xl glass-card-v2 shadow-2xl shadow-[#00F0FF]/10">
-            <Hexagon className="w-5 h-5 text-[#00F0FF] shrink-0" />
+          <div className="flex items-center gap-3 px-5 py-3 rounded-xl glass-card-v2 shadow-2xl shadow-[#8B5CF6]/10">
+            <Hexagon className="w-5 h-5 text-[#A78BFA] shrink-0" />
             <span className="text-sm text-[#E8E8F0] font-medium">
               Welcome to Agentin! Your AI command center is ready.
             </span>

@@ -6,18 +6,23 @@ export function PrivacyPage() {
   return (
     <PublicPageShell title="Privacy Policy" icon={Shield} maxWidth="3xl">
       <div className="space-y-6">
-        <div>
-          <p className="text-[var(--ag-text-muted,#9CA3AF)] mb-4">Last updated: March 2026</p>
-          <p className="text-[var(--ag-text-secondary,#9CA3AF)] mb-8 leading-relaxed">
+        {/* Header */}
+        <div className="gs-card p-6 text-center">
+          <p className="gs-section-label mb-3">Privacy</p>
+          <h2 className="text-3xl sm:text-4xl font-bold font-heading text-gradient mb-3">
+            Privacy Policy
+          </h2>
+          <p className="text-[var(--ag-text-muted,#9CA3AF)] text-sm mb-4">Last updated: March 2026</p>
+          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm leading-relaxed max-w-xl mx-auto">
             Agentin Chat (&ldquo;Agentin&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;, &ldquo;us&rdquo;) is committed to protecting your privacy.
             This Privacy Policy explains how we collect, use, store, and share your information
             when you use our AI assistant platform at ai.agentin.chat and associated services.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* 1. Data Collection */}
-          <Section icon={Database} title="1. Data We Collect">
+          <Section icon={Database} title="1. Data We Collect" pill="gs-icon-pill-violet">
             <h3 className="font-medium text-[var(--ag-text-primary,#F4F6FF)] mt-3 mb-1">Account Information</h3>
             <p>When you create an account, we collect your name, email address, and username. If you sign up
             via Google or GitHub OAuth, we receive your public profile information (name, email, profile photo)
@@ -49,7 +54,7 @@ export function PrivacyPage() {
           </Section>
 
           {/* 2. How We Use Your Data */}
-          <Section icon={Eye} title="2. How We Use Your Data">
+          <Section icon={Eye} title="2. How We Use Your Data" pill="gs-icon-pill-sky">
             <p>We use your data for the following purposes:</p>
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li><strong>AI Assistant Services:</strong> To power your AI agents (Weebo, Edith, Jarvis) —
@@ -78,7 +83,7 @@ export function PrivacyPage() {
           </Section>
 
           {/* 3. Data Storage */}
-          <Section icon={Server} title="3. Data Storage &amp; Security">
+          <Section icon={Server} title="3. Data Storage &amp; Security" pill="gs-icon-pill-emerald">
             <h3 className="font-medium text-[var(--ag-text-primary,#F4F6FF)] mt-3 mb-1">Where We Store Data</h3>
             <p>Your data is stored on secure servers hosted by Hostinger (data center location: India/EU).
             We use Docker containerization with isolated services for security.</p>
@@ -108,46 +113,35 @@ export function PrivacyPage() {
           </Section>
 
           {/* 4. Google User Data Specific */}
-          <Section icon={Globe} title="4. Google User Data — Specific Disclosures">
+          <Section icon={Globe} title="4. Google User Data — Specific Disclosures" pill="gs-icon-pill-sky">
             <p>This section specifically addresses how Agentin handles data received from Google APIs,
             in compliance with the <a href="https://developers.google.com/terms/api-services-user-data-policy"
             className="text-[var(--ag-violet,#8B5CF6)] hover:underline" target="_blank" rel="noopener noreferrer">
             Google API Services User Data Policy</a>.</p>
 
             <h3 className="font-medium text-[var(--ag-text-primary,#F4F6FF)] mt-3 mb-1">Scopes We Request</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full mt-2 text-sm">
+            <div className="overflow-x-auto mt-2">
+              <table className="w-full text-sm rounded-xl overflow-hidden border border-white/[0.06]">
                 <thead>
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <th className="text-left py-2 text-[var(--ag-text-muted,#9CA3AF)]">Scope</th>
-                    <th className="text-left py-2 text-[var(--ag-text-muted,#9CA3AF)]">Purpose</th>
+                  <tr className="bg-white/[0.03]">
+                    <th className="text-left py-2 px-3 text-[var(--ag-text-muted,#9CA3AF)] font-medium">Scope</th>
+                    <th className="text-left py-2 px-3 text-[var(--ag-text-muted,#9CA3AF)] font-medium">Purpose</th>
                   </tr>
                 </thead>
                 <tbody className="text-[var(--ag-text-secondary,#9CA3AF)]">
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <td className="py-2 font-mono text-xs">openid</td>
-                    <td className="py-2">Verify your identity for sign-in</td>
-                  </tr>
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <td className="py-2 font-mono text-xs">email</td>
-                    <td className="py-2">Read your email address for account creation</td>
-                  </tr>
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <td className="py-2 font-mono text-xs">profile</td>
-                    <td className="py-2">Read your name and photo for personalization</td>
-                  </tr>
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <td className="py-2 font-mono text-xs">calendar.events</td>
-                    <td className="py-2">Read/create calendar events for AI scheduling</td>
-                  </tr>
-                  <tr className="border-b border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <td className="py-2 font-mono text-xs">gmail.readonly</td>
-                    <td className="py-2">Read emails for inbox summaries and smart replies</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 font-mono text-xs">gmail.send</td>
-                    <td className="py-2">Send emails when explicitly requested by user</td>
-                  </tr>
+                  {[
+                    { scope: 'openid', purpose: 'Verify your identity for sign-in' },
+                    { scope: 'email', purpose: 'Read your email address for account creation' },
+                    { scope: 'profile', purpose: 'Read your name and photo for personalization' },
+                    { scope: 'calendar.events', purpose: 'Read/create calendar events for AI scheduling' },
+                    { scope: 'gmail.readonly', purpose: 'Read emails for inbox summaries and smart replies' },
+                    { scope: 'gmail.send', purpose: 'Send emails when explicitly requested by user' },
+                  ].map((row, i) => (
+                    <tr key={row.scope} className={i % 2 === 0 ? '' : 'bg-white/[0.01]'}>
+                      <td className="py-2 px-3 font-mono text-xs text-[var(--ag-violet,#8B5CF6)]">{row.scope}</td>
+                      <td className="py-2 px-3">{row.purpose}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -186,7 +180,7 @@ export function PrivacyPage() {
           </Section>
 
           {/* 5. Third-Party Services */}
-          <Section icon={Lock} title="5. Third-Party Services">
+          <Section icon={Lock} title="5. Third-Party Services" pill="gs-icon-pill-amber">
             <p>Agentin integrates with the following third-party services:</p>
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li><strong>LLM Providers</strong> (Groq, OpenRouter, Together AI) — Process AI conversations.
@@ -200,7 +194,7 @@ export function PrivacyPage() {
           </Section>
 
           {/* 6. Data Deletion */}
-          <Section icon={Trash2} title="6. Your Rights &amp; Data Deletion">
+          <Section icon={Trash2} title="6. Your Rights &amp; Data Deletion" pill="gs-icon-pill-rose">
             <p>You have the following rights regarding your data:</p>
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li><strong>Access:</strong> View all your data from your Agentin dashboard.</li>
@@ -215,14 +209,14 @@ export function PrivacyPage() {
           </Section>
 
           {/* 7. Children */}
-          <Section icon={Shield} title="7. Children's Privacy">
+          <Section icon={Shield} title="7. Children's Privacy" pill="gs-icon-pill-violet">
             <p>Agentin is not intended for children under 13 years of age. We do not knowingly collect
             personal information from children under 13. If we learn that we have collected data from a
             child under 13, we will delete it promptly.</p>
           </Section>
 
           {/* 8. Changes */}
-          <Section icon={Mail} title="8. Changes to This Policy">
+          <Section icon={Mail} title="8. Changes to This Policy" pill="gs-icon-pill-sky">
             <p>We may update this Privacy Policy from time to time. We will notify you of significant
             changes by email or through a notice on our platform. The &ldquo;Last updated&rdquo; date at the top
             indicates when this policy was last revised.</p>
@@ -244,18 +238,23 @@ export function PrivacyPage() {
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: typeof Shield; title: string; children: React.ReactNode }) {
+function Section({ icon: Icon, title, children, pill }: {
+  icon: typeof Shield;
+  title: string;
+  children: React.ReactNode;
+  pill?: string;
+}) {
   return (
-    <SectionCard>
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet,#8B5CF6)]/10 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-[var(--ag-violet,#8B5CF6)]" />
+    <div className="gs-card p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`gs-icon-pill ${pill || 'gs-icon-pill-violet'} flex-shrink-0`}>
+          <Icon className="w-5 h-5" />
         </div>
-        <h2 className="text-xl font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">{title}</h2>
+        <h2 className="text-base font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">{title}</h2>
       </div>
-      <div className="text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed pl-[52px] space-y-2">
+      <div className="text-sm text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed pl-[52px] space-y-2">
         {children}
       </div>
-    </SectionCard>
+    </div>
   );
 }

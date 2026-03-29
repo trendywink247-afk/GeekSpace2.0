@@ -73,15 +73,15 @@ interface HealthSnapshot {
 
 // ---- Status helpers ----
 
-/** Maps component status string to green/amber/red/grey. */
+/** Maps component status string to design-system colors. */
 function statusColor(status: string): string {
   switch (status) {
     case 'ok': case 'reachable': case 'configured': case 'active':
-      return '#10B981'; // token green
+      return '#10B981'; // emerald
     case 'unreachable': case 'down': case 'no_backends': case 'not_running':
-      return '#EF4444'; // red
+      return '#EF4444'; // rose/red
     case 'not_configured': case 'disabled':
-      return '#6B7280'; // grey
+      return '#6B7280'; // muted grey
     default:
       return '#F59E0B'; // amber
   }
@@ -333,6 +333,7 @@ export function HealthDashboardPage() {
       />
 
       {/* ---- Stats Row ---- */}
+      <p className="gs-section-label">System Metrics</p>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: 'Requests', value: snapshot.metrics.totalRequests.toLocaleString(), icon: Activity, color: '#8B5CF6' },
@@ -355,13 +356,10 @@ export function HealthDashboardPage() {
 
       {/* ---- Component Status Grid ---- */}
       <div>
-        <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-          <Server className="w-5 h-5 text-[#10B981]" />
-          Components
-          <span className="text-xs text-[#9CA3AF] font-normal ml-1">
-            {healthyCount}/{totalCount} healthy
-          </span>
-        </h2>
+        <div className="flex items-center gap-3 mb-3">
+          <p className="gs-section-label">Service Components</p>
+          <span className="text-xs text-[#9CA3AF]">{healthyCount}/{totalCount} healthy</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {Object.entries(snapshot.components).map(([key, status], i) => {
             const Icon = componentIcons[key] || Wifi;
@@ -433,10 +431,7 @@ export function HealthDashboardPage() {
       {(snapshot.topEndpoints ?? []).length > 0 && (
         <BlurFade delay={0.2}>
           <div>
-            <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#F59E0B]" />
-              Hot Endpoints (5-min window)
-            </h2>
+            <p className="gs-section-label mb-3">Hot Endpoints (5-min window)</p>
             <SectionCard padding="sm" className="!p-0 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Braces, Minimize2, Copy, Check, AlertCircle } from 'lucide-react';
 
 export function JsonFormatterPage() {
@@ -23,14 +22,14 @@ export function JsonFormatterPage() {
           let cls = 'text-[#61FF7B]'; // number
           if (/^"/.test(match)) {
             if (/:$/.test(match)) {
-              cls = 'text-[#7B61FF]'; // key
+              cls = 'text-[#a78bfa]'; // key — violet
             } else {
-              cls = 'text-[#FFD700]'; // string value
+              cls = 'text-[#fbbf24]'; // string value — amber
             }
           } else if (/true|false/.test(match)) {
-            cls = 'text-[#00F0FF]'; // boolean
+            cls = 'text-[#34d399]'; // boolean — emerald
           } else if (/null/.test(match)) {
-            cls = 'text-[#FF6B6B]'; // null
+            cls = 'text-[#f87171]'; // null — red
           }
           return `<span class="${cls}">${match}</span>`;
         }
@@ -116,18 +115,20 @@ export function JsonFormatterPage() {
   const displayContent = output || input;
 
   return (
-    <div className="space-y-4 p-4 pb-24 md:pb-4 max-w-4xl mx-auto">
+    <div className="space-y-5 p-4 pb-24 md:pb-4 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <p className="gs-section-label mb-1">Developer Tools</p>
           <h2 className="text-lg font-semibold text-[#E8E8F0]">JSON Formatter</h2>
           <p className="text-xs text-[#6B7280] mt-0.5">Format, minify, and validate JSON — estimate token cost</p>
         </div>
         {charCount > 0 && (
-          <div className="flex items-center gap-3 text-xs text-[#6B7280]">
-            <span className="font-mono bg-[#0D0D14] border border-[#2A2A3A] rounded px-2 py-1">
+          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
+            <span className="gs-pill font-mono">
               {charCount.toLocaleString()} chars
             </span>
-            <span className="font-mono bg-[#0D0D14] border border-[#7B61FF]/40 rounded px-2 py-1 text-[#7B61FF]">
+            <span className="gs-pill gs-pill-active font-mono">
               ~{tokenEstimate.toLocaleString()} tokens
             </span>
           </div>
@@ -136,59 +137,52 @@ export function JsonFormatterPage() {
 
       {/* Action buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          size="sm"
+        <button
           onClick={format}
-          className="bg-[#7B61FF] hover:bg-[#6A50EE] text-white gap-1.5"
+          className="gs-btn-primary flex items-center gap-1.5 px-4 py-2 text-sm rounded-xl"
           title="Ctrl+Shift+F"
         >
           <Braces className="w-3.5 h-3.5" />
           Format
           <span className="text-[10px] opacity-60 ml-1">⌃⇧F</span>
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
+        </button>
+        <button
           onClick={minify}
-          className="border-[#2A2A3A] text-[#A0A0B0] hover:text-[#E8E8F0] gap-1.5"
+          className="gs-btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm rounded-xl"
           title="Ctrl+Shift+M"
         >
           <Minimize2 className="w-3.5 h-3.5" />
           Minify
           <span className="text-[10px] opacity-60 ml-1">⌃⇧M</span>
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
+        </button>
+        <button
           onClick={copy}
-          className="border-[#2A2A3A] text-[#A0A0B0] hover:text-[#E8E8F0] gap-1.5"
-          title="Ctrl+Shift+C"
           disabled={!displayContent}
+          className="gs-btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm rounded-xl disabled:opacity-40"
+          title="Ctrl+Shift+C"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-[#61FF7B]" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Copied!' : 'Copy'}
           <span className="text-[10px] opacity-60 ml-1">⌃⇧C</span>
-        </Button>
+        </button>
         {input && (
-          <Button
-            size="sm"
-            variant="ghost"
+          <button
             onClick={() => { setInput(''); setOutput(''); setError(null); }}
-            className="text-[#6B7280] hover:text-[#FF6B6B] ml-auto"
+            className="ml-auto text-sm text-[#6B7280] hover:text-[#f87171] transition-colors"
           >
             Clear
-          </Button>
+          </button>
         )}
       </div>
 
       {/* Error display */}
       {error && (
-        <div className="flex items-start gap-2 bg-[#FF6B6B]/10 border border-[#FF6B6B]/30 rounded-lg p-3 text-sm">
-          <AlertCircle className="w-4 h-4 text-[#FF6B6B] mt-0.5 flex-shrink-0" />
+        <div className="gs-card flex items-start gap-2 border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.06)] p-3 text-sm">
+          <AlertCircle className="w-4 h-4 text-[#f87171] mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-[#FF6B6B] font-medium">Invalid JSON</span>
-            {error.line && <span className="text-[#FF6B6B]/70 ml-2 text-xs">Line {error.line}</span>}
-            <p className="text-[#FF6B6B]/80 text-xs mt-1 font-mono">{error.message}</p>
+            <span className="text-[#f87171] font-medium">Invalid JSON</span>
+            {error.line && <span className="text-[#f87171]/70 ml-2 text-xs">Line {error.line}</span>}
+            <p className="text-[#f87171]/80 text-xs mt-1 font-mono">{error.message}</p>
           </div>
         </div>
       )}
@@ -197,9 +191,9 @@ export function JsonFormatterPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Input */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-[#6B7280] font-medium uppercase tracking-wide">Input</label>
+          <label className="gs-section-label">Input</label>
           <textarea
-            className="font-mono text-sm bg-[#0D0D14] border border-[#2A2A3A] rounded-lg p-3 text-[#E8E8F0] resize-none focus:outline-none focus:border-[#7B61FF]/60 min-h-[360px] placeholder:text-[#3A3A4A]"
+            className="gs-input font-mono text-sm resize-none min-h-[360px] placeholder:text-[#3A3A4A]"
             placeholder="Paste your JSON here..."
             value={input}
             onChange={(e) => handleChange(e.target.value)}
@@ -209,19 +203,19 @@ export function JsonFormatterPage() {
 
         {/* Output */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-[#6B7280] font-medium uppercase tracking-wide">
+          <label className="gs-section-label flex items-center gap-2">
             Output
             {output && (
-              <span className="ml-2 text-[#61FF7B] normal-case font-normal">✓ valid</span>
+              <span className="text-emerald-400 normal-case font-normal text-[10px] tracking-normal">✓ valid</span>
             )}
           </label>
           {output ? (
             <div
-              className="font-mono text-sm bg-[#0D0D14] border border-[#2A2A3A] rounded-lg p-3 overflow-auto min-h-[360px] whitespace-pre leading-relaxed"
+              className="gs-card font-mono text-sm p-3 overflow-auto min-h-[360px] whitespace-pre leading-relaxed"
               dangerouslySetInnerHTML={{ __html: highlight(output) }}
             />
           ) : (
-            <div className="font-mono text-sm bg-[#0D0D14] border border-[#2A2A3A] rounded-lg p-3 min-h-[360px] flex items-center justify-center text-[#3A3A4A]">
+            <div className="gs-card font-mono text-sm p-3 min-h-[360px] flex items-center justify-center text-[#3A3A4A]">
               Formatted output will appear here
             </div>
           )}

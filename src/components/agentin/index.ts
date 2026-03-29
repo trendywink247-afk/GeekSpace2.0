@@ -33,3 +33,10 @@ export { SectionCard } from './SectionCard';
  * @component
  */
 export { PublicPageShell } from './PublicPageShell';
+
+/**
+ * Glass-morphism tab bar matching landing page aesthetics.
+ * @component
+ */
+export { GsTabBar } from './GsTabBar';
+export type { GsTab } from './GsTabBar';

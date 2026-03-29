@@ -530,23 +530,23 @@ export function ConnectionsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <BlurFade delay={0.1}>
-        <SectionCard padding="sm">
+        <div className="gs-stat-card">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
-                <Plug className="w-5 h-5 text-[#00FF88]" />
-              </div>
+              <span className="gs-icon-pill gs-icon-pill-emerald">
+                <Plug className="w-5 h-5" />
+              </span>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">{connectedCount}</div>
                 <div className="text-xs text-[#9CA3AF]">Connected</div>
               </div>
             </div>
-        </SectionCard>
+        </div>
         </BlurFade>
         <BlurFade delay={0.15}>
-        <SectionCard padding="sm">
+        <div className="gs-stat-card">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[#00F0FF]" />
+              <span className="gs-icon-pill gs-icon-pill-sky">
+                <Activity className="w-5 h-5" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">{totalRequests}</div>

@@ -1,7 +1,7 @@
 // InboxPage.tsx -- Overhauled AI Inbox with triage, priority cards, keyboard nav
 // Owner: Aria (#FF6B9D) -- design tokens: #06061a bg, rgba(12,12,30,0.6) surface
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Send, Archive, Trash2, AlertCircle,
@@ -94,7 +94,7 @@ function TriageSummary({ messages }: TriageSummaryProps) {
   if (total === 0) return null;
 
   return (
-    <SectionCard className="bg-gradient-to-r from-[#FF6B9D]/[0.04] to-[#8B5CF6]/[0.04]" padding="sm">
+    <div className="gs-card p-3 bg-gradient-to-r from-[#FF6B9D]/[0.04] to-[#8B5CF6]/[0.04]">
       <div className="flex items-center gap-3 flex-wrap text-sm">
         <Sparkles className="w-4 h-4 text-[#FF6B9D] shrink-0" />
         <span className="text-[var(--ag-text-primary,#F4F6FF)] font-medium">AI Triage:</span>
@@ -115,7 +115,7 @@ function TriageSummary({ messages }: TriageSummaryProps) {
           AI suggests: Reply to {suggestReply} message{suggestReply > 1 ? 's' : ''}
         </p>
       )}
-    </SectionCard>
+    </div>
   );
 }
 
@@ -157,9 +157,7 @@ function MessageCard({
       onClick={onToggleExpand}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
       className={[
-        'rounded-xl border transition-all duration-200 outline-none group',
-        'bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]',
-        'hover:border-[rgba(139,92,246,0.15)]',
+        'gs-card transition-all duration-200 outline-none group',
         priorityBorder,
         isFocused ? 'ring-1 ring-[#FF6B9D]/40' : '',
         isUnread ? 'shadow-[0_0_12px_rgba(255,107,157,0.06)]' : 'opacity-80',
@@ -245,7 +243,7 @@ function MessageCard({
                 onChange={e => onReplyChange(e.target.value)}
                 placeholder="Type a reply..."
                 rows={3}
-                className="w-full min-h-[44px] bg-white/5 border border-[rgba(139,92,246,0.08)] rounded-lg px-3 py-2.5 text-sm text-[var(--ag-text-primary,#F4F6FF)] placeholder-[var(--ag-text-muted,#6B7280)]/60 focus:outline-none focus:border-[rgba(139,92,246,0.15)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/20 resize-none transition-colors"
+                className="gs-input w-full min-h-[44px] resize-none"
               />
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">
@@ -254,7 +252,7 @@ function MessageCard({
                 <button
                   onClick={onSendReply}
                   disabled={isSending || !replyText.trim()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-lg text-sm font-medium disabled:opacity-40 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                  className="gs-btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] text-sm disabled:opacity-40"
                 >
                   <Send className="w-3.5 h-3.5" />
                   {isSending ? 'Sending...' : 'Send Reply'}
@@ -368,7 +366,7 @@ function MessageCard({
 
 function EmptyInbox() {
   return (
-    <SectionCard padding="lg">
+    <div className="gs-card p-8">
       <div className="text-center py-12 space-y-4">
         <div className="w-16 h-16 rounded-2xl bg-[#FF6B9D]/5 border border-[#FF6B9D]/10 flex items-center justify-center mx-auto">
           <Inbox className="w-8 h-8 text-[#FF6B9D]/40" />
@@ -380,7 +378,7 @@ function EmptyInbox() {
           </p>
         </div>
       </div>
-    </SectionCard>
+    </div>
   );
 }
 
@@ -676,12 +674,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
           <button
             key={f}
             onClick={() => { setFilter(f); setFocusIdx(-1); }}
-            className={[
-              'px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
-              filter === f
-                ? 'bg-[#FF6B9D]/15 text-[#FF6B9D] border border-[#FF6B9D]/25'
-                : 'bg-white/5 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] hover:bg-white/10',
-            ].join(' ')}
+            className={filter === f ? 'gs-pill-active' : 'gs-pill'}
           >
             {f === 'urgent' ? 'Urgent' : f.charAt(0).toUpperCase() + f.slice(1)}
             {f === 'urgent' && messages.filter(m => m.priority === 'urgent').length > 0 && (
@@ -697,14 +690,14 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] rounded-xl p-4 space-y-3 animate-pulse">
+            <div key={i} className="bg-white/[0.04] rounded-xl p-4 space-y-3 animate-pulse">
               <div className="flex items-center gap-2">
-                <div className="h-4 w-24 bg-white/5 rounded" />
-                <div className="h-4 w-10 bg-white/5 rounded" />
-                <div className="ml-auto h-3 w-12 bg-white/5 rounded" />
+                <div className="h-4 w-24 bg-white/[0.04] rounded" />
+                <div className="h-4 w-10 bg-white/[0.04] rounded" />
+                <div className="ml-auto h-3 w-12 bg-white/[0.04] rounded" />
               </div>
-              <div className="h-4 w-3/4 bg-white/5 rounded" />
-              <div className="h-4 w-1/2 bg-white/5 rounded" />
+              <div className="h-4 w-3/4 bg-white/[0.04] rounded" />
+              <div className="h-4 w-1/2 bg-white/[0.04] rounded" />
             </div>
           ))}
         </div>

@@ -639,15 +639,15 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
         }
         actions={
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-lg bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#ADFF2F]" />
-              <span className="text-xs text-[#ADFF2F] font-mono">AI Ready</span>
+            <div className="px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-xs text-violet-400 font-mono">AI Ready</span>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={clearTerminal}
-              className="border-[var(--ag-border-default)] text-[var(--ag-text-muted)] hover:border-[#ADFF2F]/40 min-h-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-muted)] hover:border-violet-500/40 hover:bg-violet-500/5 min-h-[44px]"
               aria-label="Clear terminal"
             >
               <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
@@ -761,6 +761,7 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
 
       {/* Quick Commands */}
       <div className="flex flex-wrap gap-2 items-center">
+        <span className="gs-section-label w-full mb-0.5">Quick Commands</span>
         {[
           'gs me', '/briefing', '/habits', '/reminders', '/stats',
           'ai "What should I build next?"', '/help'
@@ -768,10 +769,10 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
           <button
             key={cmd}
             onClick={() => executeCommand(cmd)}
-            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
+            className={`px-3 py-2.5 min-h-[44px] rounded-lg text-xs transition-colors font-mono ${
               cmd.startsWith('ai ') || cmd.startsWith('/')
-                ? 'bg-[#ADFF2F]/10 border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/20'
-                : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
+                ? 'gs-pill gs-pill-active'
+                : 'gs-pill'
             }`}
           >
             {cmd}
