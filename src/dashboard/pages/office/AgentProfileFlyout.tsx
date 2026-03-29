@@ -160,28 +160,42 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
             onClick={onClose}
           />
 
-          {/* Panel */}
+          {/* Panel — glassmorphism */}
           <motion.div
             key="flyout-panel"
             className="fixed top-0 right-0 h-full w-[360px] max-w-[90vw] overflow-y-auto z-50"
             style={{
-              backgroundColor: C.card,
-              borderLeft: `1px solid ${color}33`,
+              background: 'rgba(6,6,26,0.7)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              borderLeft: `1px solid ${color}25`,
+              boxShadow: `-8px 0 40px rgba(0,0,0,0.3), 0 0 60px ${color}08`,
             }}
-            initial={{ x: 360 }}
-            animate={{ x: 0 }}
-            exit={{ x: 360 }}
+            initial={{ x: 360, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 360, opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           >
             {/* Header */}
             <div
               className="flex items-start justify-between p-5"
-              style={{ borderBottom: `1px solid ${color}15` }}
+              style={{
+                borderBottom: `1px solid ${color}15`,
+                background: `linear-gradient(135deg, ${color}06 0%, transparent 100%)`,
+              }}
             >
               <div className="flex items-start gap-3 min-w-0">
-                <span className="text-3xl">{meta?.emoji ?? '?'}</span>
+                <span
+                  className="text-3xl"
+                  style={{ filter: `drop-shadow(0 0 8px ${color}30)` }}
+                >
+                  {meta?.emoji ?? '?'}
+                </span>
                 <div className="min-w-0">
-                  <h2 className="text-lg font-bold text-[#F4F6FF]">
+                  <h2
+                    className="text-lg font-bold text-[#F4F6FF]"
+                    style={{ textShadow: `0 0 20px ${color}25` }}
+                  >
                     {id.charAt(0).toUpperCase() + id.slice(1)}
                   </h2>
                   <p className="text-xs text-[#9CA3AF]">{meta?.role ?? 'Agent'}</p>
@@ -268,27 +282,38 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
             {/* Actions */}
             <div className="px-5 pb-6 space-y-2">
               <AgentTooltip label={`Start a conversation with ${id.charAt(0).toUpperCase() + id.slice(1)}`}>
-                <button
+                <motion.button
                   onClick={() => onNavigateToChat(id)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-semibold transition-colors min-h-[44px]"
                   style={{
-                    backgroundColor: `${color}15`,
+                    background: `linear-gradient(135deg, ${color}18, ${color}0a)`,
                     color,
                     border: `1px solid ${color}30`,
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: `0 0 20px ${color}08`,
                   }}
                 >
                   <MessageCircle className="w-4 h-4" />
                   Chat with {id.charAt(0).toUpperCase() + id.slice(1)}
-                </button>
+                </motion.button>
               </AgentTooltip>
               <AgentTooltip label="Create and assign a new task to this agent">
-                <button
+                <motion.button
                   onClick={() => setShowTaskModal(true)}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#9CA3AF] bg-white/[0.03] border border-white/5 transition-colors hover:bg-white/[0.06] min-h-[44px]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#9CA3AF] transition-colors min-h-[44px]"
+                  style={{
+                    background: 'rgba(12,12,30,0.4)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
                 >
                   <ClipboardList className="w-4 h-4" />
                   Assign Task
-                </button>
+                </motion.button>
               </AgentTooltip>
             </div>
 

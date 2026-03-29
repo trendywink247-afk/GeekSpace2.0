@@ -276,6 +276,34 @@ let groupMeetingTimer = randomInt(75, 150); // 15-30 seconds — meetings happen
 let socialChatTimer = randomInt(25, 50);     // 5-10 seconds — more chatter
 let activeGroupId: string | null = null;
 
+// ── Smart bubble frequency system ──────────────────────────────────────────
+// Tracks activity level to dynamically adjust bubble frequency:
+// 'greeting' = first 30s, lively entry; 'idle' = quiet; 'active' = task in progress
+let activityLevel: 'greeting' | 'idle' | 'active' = 'greeting';
+let activityLevelTimer = 150; // 30s (150 ticks × 200ms) for greeting phase
+let lastSSEActivityTick = 0;
+
+/** Called when an SSE event indicates agent work (from OfficeStage) */
+export function notifyAgentActive(): void {
+  activityLevel = 'active';
+  lastSSEActivityTick = 0;
+  activityLevelTimer = 75; // stay active for 15s
+}
+
+// ── Personality-staggered sitting durations ──────────────────────────────────
+// Each agent sits for different durations based on personality
+const PERSONALITY_SIT_DURATION: Record<string, { min: number; max: number }> = {
+  edith:  { min: 35, max: 60 },  // focused, sits longest
+  jarvis: { min: 25, max: 40 },  // balanced
+  weebo:  { min: 15, max: 25 },  // energetic, wanders sooner
+  aria:   { min: 18, max: 30 },  // creative, moderate
+  forge:  { min: 28, max: 45 },  // deliberate
+  pulse:  { min: 22, max: 35 },  // analytical
+  echo:   { min: 20, max: 32 },  // reflective
+  cal:    { min: 24, max: 38 },  // balanced
+  nova:   { min: 12, max: 20 },  // restless, wanders most
+};
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function randomInt(min: number, max: number): number {
@@ -434,13 +462,14 @@ export function initBehavior(agent: CanvasAgent): void {
     setTimeout(() => recentWorkers.delete(agent.id), 120_000);
   }
 
-  // Stagger initial timers so agents don't all move at once (prevents synchronized mass movement)
-  const stagger = Math.floor(Math.random() * 30);
+  // Stagger initial timers using personality durations (prevents synchronized mass movement)
+  const sitDur = PERSONALITY_SIT_DURATION[agent.id] || { min: 15, max: 40 };
+  const stagger = Math.floor(Math.random() * sitDur.max);
   behaviorStates.set(agent.id, {
     mode: 'sitting',
     targetPoint: null,
     socialTarget: null,
-    timer: randomInt(25, 75) + stagger, // 5-15s initial desk time (staggered 0-30 ticks) then start roaming
+    timer: randomInt(sitDur.min, sitDur.max) + stagger,
     fidgetTimer: randomInt(5, 15),
     fidgetType: 'none',
     speed: AGENT_SPEED[agent.id] ?? 1.0,
@@ -552,7 +581,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
     assignedPoints,
     agents: chosen.map((a) => a.id),
     phase: 'gathering',
-    chatTimer: randomInt(75, 125),
+    chatTimer: randomInt(50, 80),
     chatStep: 0,
     behavior: shuffledPts[0].behavior,
   };
@@ -625,8 +654,8 @@ function tickGroupMeeting(
 
     case 'chatting': {
       gm.chatTimer--;
-      // Exchange bubbles every ~20 ticks (4 seconds)
-      if (gm.chatTimer % 20 === 0 && gm.chatStep < 5) {
+      // Exchange bubbles every ~30 ticks (6 seconds), max 3 exchanges
+      if (gm.chatTimer % 30 === 0 && gm.chatStep < 3) {
         const speaker = memberAgents[gm.chatStep % memberAgents.length];
         if (speaker) {
           const phrases = phrasesForBehavior(gm.behavior);
@@ -746,8 +775,8 @@ export function tickBehaviors(
   let changed = false;
   const isNight = theme === 'night';
 
-  // Cap concurrent movers — keep office lively, agents visually collaborating
-  const maxMovers = isNight ? 3 : 7;
+  // Cap concurrent wanderers — prevents chaotic "everyone moving" feel
+  const maxMovers = isNight ? 2 : 3;
   let activeMovers = agents.filter((a) => {
     const bs = behaviorStates.get(a.id);
     return bs && (bs.mode === 'wandering' || bs.mode === 'socializing' || bs.mode === 'group-meeting');
@@ -757,27 +786,47 @@ export function tickBehaviors(
     (a) => !a.isDormant && (a.state === 'idle' || a.state === 'done'),
   );
 
+  // ── Smart activity level tracking ──
+  activityLevelTimer--;
+  if (activityLevel === 'greeting' && activityLevelTimer <= 0) {
+    activityLevel = 'idle'; // greeting phase over, go quiet
+  }
+  if (activityLevel === 'active') {
+    lastSSEActivityTick++;
+    if (lastSSEActivityTick > 75) { // 15s of no activity → go idle
+      activityLevel = 'idle';
+    }
+  }
+
   // ── Global timers ──
   groupMeetingTimer--;
   socialChatTimer--;
 
-  // Trigger group meeting (less frequent at night)
+  // Trigger group meeting — reduced frequency, fewer exchanges
   if (groupMeetingTimer <= 0) {
     if (activeMovers < maxMovers) tryStartGroupMeeting(idleAgents);
-    groupMeetingTimer = isNight ? randomInt(150, 300) : randomInt(50, 100);
+    groupMeetingTimer = isNight ? randomInt(200, 400) : randomInt(80, 160);
   }
 
-  // Ambient social chat (calmer at night)
+  // Ambient social chat — frequency depends on activity level
   if (socialChatTimer <= 0) {
-    socialChatTimer = isNight ? randomInt(30, 60) : randomInt(10, 22);
-    // Any idle/sitting/wandering/returning agent can chat for more liveliness
-    const chatters = idleAgents.filter((a) => {
-      const bs = behaviorStates.get(a.id);
-      return bs && (bs.mode === 'sitting' || bs.mode === 'wandering' || bs.mode === 'returning');
-    });
-    if (chatters.length > 0) {
-      const speaker = pick(chatters);
-      newBubbles.push(makeBubble(speaker.id, pick(GENERAL_PHRASES)));
+    const chatInterval = activityLevel === 'greeting'
+      ? (isNight ? randomInt(20, 40) : randomInt(10, 22))  // greeting: normal rate
+      : activityLevel === 'active'
+        ? (isNight ? randomInt(25, 50) : randomInt(15, 30))  // active: moderate
+        : (isNight ? randomInt(60, 120) : randomInt(40, 80)); // idle: very quiet
+    socialChatTimer = chatInterval;
+    // Only emit bubble if not in idle quiet mode (or with small chance)
+    const shouldChat = activityLevel !== 'idle' || Math.random() < 0.3;
+    if (shouldChat) {
+      const chatters = idleAgents.filter((a) => {
+        const bs = behaviorStates.get(a.id);
+        return bs && (bs.mode === 'sitting' || bs.mode === 'wandering' || bs.mode === 'returning');
+      });
+      if (chatters.length > 0) {
+        const speaker = pick(chatters);
+        newBubbles.push(makeBubble(speaker.id, pick(GENERAL_PHRASES)));
+      }
     }
   }
 
@@ -880,8 +929,9 @@ export function tickBehaviors(
               bState.timer = randomInt(10, 25); // try again quickly
             }
           } else {
-            // Stay sitting briefly then get up — agents are autonomous
-            bState.timer = randomInt(15, 40); // 3-8s, not 60-120s
+            // Stay sitting — use personality-staggered durations
+            const sitDur = PERSONALITY_SIT_DURATION[agent.id] || { min: 15, max: 40 };
+            bState.timer = randomInt(sitDur.min, sitDur.max);
           }
         }
         break;
@@ -919,11 +969,24 @@ export function tickBehaviors(
             }
           }
 
-          // Linger at destination then always move to a new spot — no home desk
+          // Linger at destination then decide: continue wandering or return to sit
           if (bState.timer <= 0) {
             releasePoint(agent.id);
+            bState.wanderCount = (bState.wanderCount || 0) + 1;
 
-            // Always pick a new destination — agents roam freely forever
+            // After 2-3 spots, return to sitting (purposeful cycle)
+            const maxSpots = 2 + (Math.random() < 0.4 ? 1 : 0);
+            if (bState.wanderCount >= maxSpots) {
+              bState.mode = 'sitting';
+              bState.targetPoint = null;
+              const sitDur = PERSONALITY_SIT_DURATION[agent.id] || { min: 15, max: 40 };
+              bState.timer = randomInt(sitDur.min, sitDur.max);
+              bState.wanderCount = 0;
+              activeMovers--;
+              break;
+            }
+
+            // Pick a new destination — personality-weighted
             const perception = perceive(agent, agents, recentWorkers);
             const nextDest = chooseDestination(perception);
             if (nextDest) {
@@ -938,8 +1001,11 @@ export function tickBehaviors(
               updated.pathIndex = 0;
               changed = true;
             } else {
-              // Rare: no available points — linger and retry
-              bState.timer = randomInt(25, 50);
+              // Rare: no available points — return to sitting
+              bState.mode = 'sitting';
+              bState.targetPoint = null;
+              bState.timer = randomInt(20, 40);
+              bState.wanderCount = 0;
             }
           }
         } else {
@@ -995,18 +1061,15 @@ export function tickBehaviors(
           }
 
           if (bState.socialStep === 0 && bState.timer <= 0) {
+            // Single exchange: agent greets, target responds, then done
             bState.socialStep = 1;
             newBubbles.push(makeBubble(agent.id, pick(contextPhrases)));
-            bState.timer = 10;
+            bState.timer = 8;
           } else if (bState.socialStep === 1 && bState.timer <= 0) {
             bState.socialStep = 2;
             newBubbles.push(makeBubble(target.id, pick(contextPhrases)));
-            bState.timer = 10;
-          } else if (bState.socialStep === 2 && bState.timer <= 0) {
-            bState.socialStep = 3;
-            newBubbles.push(makeBubble(agent.id, pick(contextPhrases)));
-            bState.timer = 8;
-          } else if (bState.socialStep >= 3 && bState.timer <= 0) {
+            bState.timer = 6;
+          } else if (bState.socialStep >= 2 && bState.timer <= 0) {
             // After chat, roam to a new destination — no home desk
             bState.socialTarget = null;
             bState.socialStep = 0;

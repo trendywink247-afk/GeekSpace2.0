@@ -81,6 +81,118 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+// ---------------------------------------------------------------------------
+// Trail particles — emitted when agents walk
+// ---------------------------------------------------------------------------
+
+interface TrailParticle {
+  x: number;
+  y: number;
+  color: string;
+  alpha: number;
+  born: number;
+}
+
+const trailParticles: TrailParticle[] = [];
+const TRAIL_TTL = 800;
+const TRAIL_MAX = 120;
+const TRAIL_EMIT_INTERVAL = 3; // emit every N ticks
+
+/** Emit trail particles for walking agents */
+export function emitTrailParticles(agents: CanvasAgent[], tick: number): void {
+  if (tick % TRAIL_EMIT_INTERVAL !== 0) return;
+  for (const a of agents) {
+    if (!a.path || a.path.length === 0 || a.pathIndex >= a.path.length) continue;
+    if (trailParticles.length >= TRAIL_MAX) break;
+    // Emit 1-2 particles at agent feet position
+    const count = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < count; i++) {
+      trailParticles.push({
+        x: a.renderX + (Math.random() - 0.5) * 8,
+        y: a.renderY + 12 + Math.random() * 4,
+        color: a.color,
+        alpha: 0.25 + Math.random() * 0.1,
+        born: Date.now(),
+      });
+    }
+  }
+}
+
+/** Draw and cull trail particles */
+function drawTrailParticles(ctx: CanvasRenderingContext2D): void {
+  const now = Date.now();
+  let writeIdx = 0;
+  for (let i = 0; i < trailParticles.length; i++) {
+    const p = trailParticles[i];
+    const age = now - p.born;
+    if (age >= TRAIL_TTL) continue;
+    const t = age / TRAIL_TTL;
+    const alpha = p.alpha * (1 - t);
+    const size = 2 * (1 - t * 0.5);
+    ctx.fillStyle = hexToRgba(p.color, alpha);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    ctx.fill();
+    trailParticles[writeIdx++] = p;
+  }
+  trailParticles.length = writeIdx;
+}
+
+// ---------------------------------------------------------------------------
+// Ambient floating particles — background atmosphere
+// ---------------------------------------------------------------------------
+
+interface AmbientParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  baseAlpha: number;
+  phase: number;
+}
+
+let ambientParticles: AmbientParticle[] = [];
+const AMBIENT_COLORS = ['#8B5CF6', '#00F0FF', '#F59E0B', '#10B981'];
+
+/** Initialize ambient floating particles (call once) */
+export function initAmbientParticles(count: number): void {
+  ambientParticles = [];
+  for (let i = 0; i < count; i++) {
+    ambientParticles.push({
+      x: Math.random() * CANVAS_W,
+      y: Math.random() * CANVAS_H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.2,
+      color: AMBIENT_COLORS[i % AMBIENT_COLORS.length],
+      baseAlpha: 0.03 + Math.random() * 0.03,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+
+/** Draw ambient floating particles with gentle drift */
+function drawAmbientParticles(ctx: CanvasRenderingContext2D, tick: number, theme: 'day' | 'night'): void {
+  const alphaMultiplier = theme === 'day' ? 0.5 : 1.0;
+  for (const p of ambientParticles) {
+    // Drift
+    p.x += p.vx;
+    p.y += p.vy;
+    // Wrap around edges
+    if (p.x < 0) p.x = CANVAS_W;
+    if (p.x > CANVAS_W) p.x = 0;
+    if (p.y < 0) p.y = CANVAS_H;
+    if (p.y > CANVAS_H) p.y = 0;
+    // Breathing alpha
+    const alpha = p.baseAlpha * (0.6 + 0.4 * Math.sin(tick * 0.05 + p.phase)) * alphaMultiplier;
+    const size = 2 + Math.sin(tick * 0.03 + p.phase) * 1;
+    ctx.fillStyle = hexToRgba(p.color, alpha);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 /** Whether the pixel art background loaded successfully */
 export function isBgLoaded(): boolean {
   return bgLoaded && !!bgImage && bgImage.complete && bgImage.naturalWidth > 0;
@@ -174,17 +286,21 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   let furnitureOffsetX = 0, furnitureOffsetY = 0;
 
   if (pose === 'sit') {
-    sittingOffset = 8;
-    if (agent.facing === 'up') furnitureOffsetY = -8;
-    else if (agent.facing === 'down') furnitureOffsetY = 8;
-    else if (agent.facing === 'left') furnitureOffsetX = -8;
-    else if (agent.facing === 'right') furnitureOffsetX = 8;
+    // Deeper sink into furniture: agent looks embedded in chair/seat
+    sittingOffset = 12;
+    // Shift agent toward the furniture they're facing for tighter visual fit
+    const shiftAmount = 12;
+    if (agent.facing === 'up') furnitureOffsetY = -shiftAmount;
+    else if (agent.facing === 'down') furnitureOffsetY = shiftAmount;
+    else if (agent.facing === 'left') furnitureOffsetX = -shiftAmount;
+    else if (agent.facing === 'right') furnitureOffsetX = shiftAmount;
   } else if (pose === 'lean') {
-    sittingOffset = 3;
-    if (agent.facing === 'up') furnitureOffsetY = -4;
-    else if (agent.facing === 'down') furnitureOffsetY = 4;
-    else if (agent.facing === 'left') furnitureOffsetX = -4;
-    else if (agent.facing === 'right') furnitureOffsetX = 4;
+    sittingOffset = 4;
+    const leanShift = 6;
+    if (agent.facing === 'up') furnitureOffsetY = -leanShift;
+    else if (agent.facing === 'down') furnitureOffsetY = leanShift;
+    else if (agent.facing === 'left') furnitureOffsetX = -leanShift;
+    else if (agent.facing === 'right') furnitureOffsetX = leanShift;
   }
   // stand / none: no offset — agent stands normally
 
@@ -195,10 +311,20 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const drawX = cx - DW / 2 + furnitureOffsetX;
   const drawY = cy - DH + 16 + sittingOffset + bobOffset + furnitureOffsetY;
 
-  // Glow for active agents
-  if (agent.state !== 'idle') {
-    ctx.fillStyle = hexToRgba(agent.color, 0.06);
-    ctx.fillRect(cx - CELL, cy - CELL, CELL * 2, CELL * 2);
+  // Radial glow halo — brighter for active agents, subtle for idle
+  {
+    const isActive = agent.state !== 'idle' && agent.state !== 'done';
+    const pulseT = Math.sin(Date.now() / 1000 + cx * 0.01) * 0.5 + 0.5;
+    const glowAlpha = isActive ? 0.12 + pulseT * 0.18 : 0.04;
+    const glowRadius = isActive ? CELL * 2.5 : CELL * 1.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
+    grad.addColorStop(0, hexToRgba(agent.color, glowAlpha));
+    grad.addColorStop(0.6, hexToRgba(agent.color, glowAlpha * 0.3));
+    grad.addColorStop(1, hexToRgba(agent.color, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // Selection ring
@@ -579,17 +705,47 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
   const y2 = to.renderY;
 
   const elapsed = Date.now() - beam.createdAt;
-  const progress = Math.min(elapsed / beam.duration, 1);
+  const lifeProgress = Math.min(elapsed / beam.duration, 1);
+  const fadeOut = lifeProgress > 0.7 ? 1 - (lifeProgress - 0.7) / 0.3 : 1;
 
-  const numParticles = 10;
+  // Bezier control point: offset perpendicular to the line for organic curve
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const curveOffset = 30;
+  const cpx = mx + (-dy / (Math.sqrt(dx * dx + dy * dy) || 1)) * curveOffset;
+  const cpy = my + (dx / (Math.sqrt(dx * dx + dy * dy) || 1)) * curveOffset;
+
+  // Draw glow line along bezier
+  ctx.save();
+  ctx.shadowColor = beam.color;
+  ctx.shadowBlur = 8;
+  ctx.strokeStyle = hexToRgba(beam.color, 0.15 * fadeOut);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.quadraticCurveTo(cpx, cpy, x2, y2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Animated particles along the bezier curve
+  const numParticles = 12;
+  const flowSpeed = Date.now() / 600;
   for (let i = 0; i < numParticles; i++) {
-    const t = (i / numParticles + progress) % 1;
-    const px = Math.round(x1 + (x2 - x1) * t);
-    const py = Math.round(y1 + (y2 - y1) * t);
+    const t = ((i / numParticles) + flowSpeed) % 1;
+    // Quadratic bezier point
+    const u = 1 - t;
+    const px = u * u * x1 + 2 * u * t * cpx + t * t * x2;
+    const py = u * u * y1 + 2 * u * t * cpy + t * t * y2;
     const edgeFade = Math.min(t, 1 - t) * 4;
-    const alpha = Math.min(edgeFade, 0.7);
+    const alpha = Math.min(edgeFade, 0.8) * fadeOut;
+    const size = 1.5 + edgeFade * 0.5;
     ctx.fillStyle = hexToRgba(beam.color, alpha);
-    ctx.fillRect(px - 1, py - 1, 2, 2);
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -947,7 +1103,13 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   // 1. Background (pixel art image or solid fallback)
   drawBackground(ctx);
 
-  // 2. Particle beams (behind agents)
+  // 2. Ambient floating particles (behind everything else)
+  drawAmbientParticles(ctx, tick, activeTheme);
+
+  // 2b. Trail particles from walking agents
+  drawTrailParticles(ctx);
+
+  // 2c. Particle beams (behind agents)
   for (let i = 0; i < beams.length; i++) {
     drawParticleBeam(ctx, beams[i], agents);
   }
@@ -1019,7 +1181,9 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
     const particleAlphaMultiplier = activeTheme === 'day' ? 0.5 : 1.0;
     for (const p of effectState.particles) {
       ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha * particleAlphaMultiplier})`;
-      ctx.fillRect(p.x, p.y, 1, 1);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -1029,9 +1193,15 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
     ctx.fillStyle = 'rgba(255, 248, 220, 0.08)';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   } else {
-    // Night mode: subtle blue tint overlay
-    ctx.fillStyle = 'rgba(0, 10, 40, 0.15)';
+    // Night mode: deeper blue tint for immersive nighttime feel
+    ctx.fillStyle = 'rgba(8, 8, 40, 0.35)';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    // Warm window glow rectangles to simulate interior lights at night
+    ctx.fillStyle = 'rgba(255, 200, 100, 0.03)';
+    // Workspace area window glow
+    ctx.fillRect(1 * CELL, 14 * CELL, 6 * CELL, 3 * CELL);
+    // Meeting room window glow
+    ctx.fillRect(17 * CELL, 13 * CELL, 8 * CELL, 4 * CELL);
   }
 
   // 10. Debug overlay — collision grid visualization (only when enabled)
