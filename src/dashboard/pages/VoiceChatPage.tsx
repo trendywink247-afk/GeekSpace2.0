@@ -135,8 +135,8 @@ export function VoiceChatPage() {
       if (settings.ttsEnabled && tts.isSupported) {
         setVoiceState('speaking');
         tts.speak(reply, { rate: settings.speed });
-        // Add turn after speak starts so we can capture engine later
-        addTurn('agent', reply, tts.engine);
+        // Engine is set asynchronously by useTTS — add turn without it for now
+        addTurn('agent', reply);
       } else {
         addTurn('agent', reply);
         setVoiceState('idle');

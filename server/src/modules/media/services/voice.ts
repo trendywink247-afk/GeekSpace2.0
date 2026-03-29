@@ -58,7 +58,10 @@ async function isSidecarHealthy(url: string): Promise<boolean> {
     const timeout = setTimeout(() => ctrl.abort(), 3000);
     const res = await fetch(`${url}/health`, { signal: ctrl.signal });
     clearTimeout(timeout);
-    const ok = res.ok;
+    const body = res.ok
+      ? await res.json().catch(() => null) as { status?: string } | null
+      : null;
+    const ok = res.ok && body?.status === 'ok';
     _healthCache.set(url, { ok, time: Date.now() });
     return ok;
   } catch {
@@ -271,7 +274,10 @@ function detectEdgeTtsVoice(t: string): string {
 
 // Detect if text is non-English (Kokoro/Piper may not support these)
 function isNonLatinScript(t: string): boolean {
-  return /[\u0900-\u097F\u0C00-\u0C7F\u0B80-\u0BFF\u0A80-\u0AFF]/u.test(t);
+  return /[\u0900-\u097F]/u.test(t) ||
+    /[\u0C00-\u0C7F]/u.test(t) ||
+    /[\u0B80-\u0BFF]/u.test(t) ||
+    /[\u0A80-\u0AFF]/u.test(t);
 }
 
 // edge-tts fallback (existing pipeline)
@@ -302,8 +308,13 @@ export async function textToSpeech(text: string): Promise<{ audio: Buffer; engin
     const cached = await cacheGet(cacheKey);
     if (cached) {
       logger.info({ cacheKey }, 'voice:tts cache hit');
-      // We don't know the engine from cache, default to kokoro
-      return { audio: Buffer.from(cached, 'base64'), engine: 'kokoro' };
+      try {
+        const parsed = JSON.parse(cached) as { audioBase64: string; engine: TtsEngine };
+        return { audio: Buffer.from(parsed.audioBase64, 'base64'), engine: parsed.engine };
+      } catch {
+        // Legacy cache entry (raw base64) — decode without engine info
+        return { audio: Buffer.from(cached, 'base64'), engine: 'edge-tts' };
+      }
     }
   } catch { /* non-fatal */ }
 
@@ -319,7 +330,7 @@ export async function textToSpeech(text: string): Promise<{ audio: Buffer; engin
         const wav = await callKokoroTts(input);
         const audio = await wavToOggOpus(wav);
         logger.info({ bytes: audio.length, engine: 'kokoro' }, 'voice:tts complete');
-        cacheSet(cacheKey, audio.toString('base64'), 86400).catch(() => {});
+        cacheSet(cacheKey, JSON.stringify({ audioBase64: audio.toString('base64'), engine: 'kokoro' }), 86400).catch(() => {});
         return { audio, engine: 'kokoro' };
       }
     } catch (err) {
@@ -335,7 +346,7 @@ export async function textToSpeech(text: string): Promise<{ audio: Buffer; engin
         const wav = await callPiperTts(input);
         const audio = await wavToOggOpus(wav);
         logger.info({ bytes: audio.length, engine: 'piper' }, 'voice:tts complete');
-        cacheSet(cacheKey, audio.toString('base64'), 86400).catch(() => {});
+        cacheSet(cacheKey, JSON.stringify({ audioBase64: audio.toString('base64'), engine: 'piper' }), 86400).catch(() => {});
         return { audio, engine: 'piper' };
       }
     } catch (err) {
@@ -347,7 +358,7 @@ export async function textToSpeech(text: string): Promise<{ audio: Buffer; engin
   const edgeVoice = detectEdgeTtsVoice(input);
   const audio = await textToSpeechEdgeTts(input, edgeVoice);
   logger.info({ bytes: audio.length, engine: 'edge-tts' }, 'voice:tts complete');
-  cacheSet(cacheKey, audio.toString('base64'), 86400).catch(() => {});
+  cacheSet(cacheKey, JSON.stringify({ audioBase64: audio.toString('base64'), engine: 'edge-tts' }), 86400).catch(() => {});
   return { audio, engine: 'edge-tts' };
 }
 

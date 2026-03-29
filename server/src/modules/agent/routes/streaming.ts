@@ -182,7 +182,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       const { tokensIn, tokensOut } = await streamOllama(fullMessages, (chunk) => {
         fullReply += chunk;
         res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
-      });
+      }, intent);
 
       const latencyMs = Date.now() - start;
 

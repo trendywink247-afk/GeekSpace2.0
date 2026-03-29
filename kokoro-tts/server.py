@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Lazy-load pipeline on first request to avoid startup timeout
-_pipeline = None
+_pipelines: dict = {}
 _voices = {
     'af_heart': 'a',    # American female (default)
     'af_bella': 'a',    # American female
@@ -29,14 +29,14 @@ DEFAULT_VOICE = 'af_heart'
 
 
 def get_pipeline(lang_code='a'):
-    global _pipeline
-    if _pipeline is None:
-        logger.info('Loading Kokoro pipeline...')
+    global _pipelines
+    if lang_code not in _pipelines:
+        logger.info(f'Loading Kokoro pipeline for lang_code={lang_code}...')
         start = time.time()
         from kokoro import KPipeline
-        _pipeline = KPipeline(lang_code=lang_code)
+        _pipelines[lang_code] = KPipeline(lang_code=lang_code)
         logger.info(f'Kokoro pipeline loaded in {time.time() - start:.1f}s')
-    return _pipeline
+    return _pipelines[lang_code]
 
 
 @app.route('/health', methods=['GET'])

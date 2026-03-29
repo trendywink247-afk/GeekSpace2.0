@@ -643,7 +643,7 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     // 2. Transcribe (Groq Whisper)
     const sttResult = await transcribeVoice(audioBuffer, 'audio/ogg');
     const transcript = sttResult.text;
-    logger.info({ requestId, chatId, chars: transcript.length, transcript, sttEngine: sttResult.engine }, 'voice:transcribed');
+    logger.info({ requestId, chatId, chars: transcript.length, sttEngine: sttResult.engine }, 'voice:transcribed');
 
     if (!transcript) {
       await sendTelegramMessage(chatId, "Sorry, I couldn't make out what you said. Please try again.");

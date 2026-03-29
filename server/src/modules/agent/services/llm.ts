@@ -855,6 +855,7 @@ async function raceFreeTier(
   messages: ChatMessage[],
   userId: string | undefined,
   ollamaOk: boolean,
+  intent?: Intent,
 ): Promise<CallResult | null> {
   const promises: Array<Promise<CallResult>> = [];
 
@@ -867,7 +868,7 @@ async function raceFreeTier(
 
   if (ollamaOk) {
     promises.push(
-      callOllama(messages)
+      callOllama(messages, intent)
         .then(r => ({ ...r, provider: 'ollama' as Provider }))
     );
   }
@@ -889,6 +890,7 @@ async function tryFallbackChain(
   userId: string | undefined,
   isPremium: boolean,
   overDailyBudget: boolean,
+  intent?: Intent,
 ): Promise<CallResult | null> {
   for (const p of providers) {
     try {
@@ -896,7 +898,7 @@ async function tryFallbackChain(
         case 'ollama': {
           const ok = await isOllamaAvailable();
           if (!ok) continue;
-          const r = await callOllama(fullMessages);
+          const r = await callOllama(fullMessages, intent);
           return { ...r, provider: 'ollama' };
         }
         case 'openrouter-free': {
@@ -1266,7 +1268,7 @@ export async function routeChat(
   try {
     if (useRace) {
       // ---- Free tier race: T1(OpenRouter-free) + T6(Ollama) ----
-      const raceResult = await raceFreeTier(fullMessages, opts?.userId, ollamaOk);
+      const raceResult = await raceFreeTier(fullMessages, opts?.userId, ollamaOk, intent);
       if (!raceResult) throw new Error('Free-tier race: all providers failed');
 
       reply = raceResult.content;
@@ -1385,7 +1387,7 @@ export async function routeChat(
 
     logger.info({ failedProvider: useRace ? 'race-free' : provider, chain, userId: opts?.userId }, 'llm:starting_fallback_chain');
 
-    const fallback = await tryFallbackChain(chain, fullMessages, opts?.userId, isPremium, overDailyBudget);
+    const fallback = await tryFallbackChain(chain, fullMessages, opts?.userId, isPremium, overDailyBudget, intent);
     if (fallback) {
       reply = fallback.content;
       tokensIn = fallback.tokensIn;

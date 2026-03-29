@@ -61,6 +61,7 @@ export function useTTS(): UseTTSReturn {
   const [engine, setEngine] = useState<string | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
   const abortRef = useRef(false);
 
   const browserSupported =
@@ -68,6 +69,10 @@ export function useTTS(): UseTTSReturn {
 
   const stop = useCallback(() => {
     abortRef.current = true;
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
@@ -127,9 +132,11 @@ export function useTTS(): UseTTSReturn {
       }
       const blob = new Blob([audioArray], { type: result.mimeType || 'audio/ogg' });
       const url = URL.createObjectURL(blob);
+      objectUrlRef.current = url;
 
       if (abortRef.current) {
         URL.revokeObjectURL(url);
+        objectUrlRef.current = null;
         return false;
       }
 
@@ -146,12 +153,14 @@ export function useTTS(): UseTTSReturn {
       return new Promise<boolean>((resolve) => {
         audio.onended = () => {
           URL.revokeObjectURL(url);
+          objectUrlRef.current = null;
           audioRef.current = null;
           setIsSpeaking(false);
           resolve(true);
         };
         audio.onerror = () => {
           URL.revokeObjectURL(url);
+          objectUrlRef.current = null;
           audioRef.current = null;
           setIsSpeaking(false);
           resolve(false);
@@ -178,7 +187,13 @@ export function useTTS(): UseTTSReturn {
 
     // If we already know server is unavailable, go straight to browser
     if (serverTtsAvailable === false) {
-      speakBrowser(text, options);
+      if (browserSupported) {
+        speakBrowser(text, options);
+      } else {
+        setIsSpeaking(false);
+        setTtsMode(null);
+        setEngine(null);
+      }
       return;
     }
 
@@ -190,7 +205,13 @@ export function useTTS(): UseTTSReturn {
       } else if (!abortRef.current) {
         // Server failed — fall back to browser
         serverTtsAvailable = serverTtsAvailable === null ? false : serverTtsAvailable;
-        speakBrowser(text, options);
+        if (browserSupported) {
+          speakBrowser(text, options);
+        } else {
+          setIsSpeaking(false);
+          setTtsMode(null);
+          setEngine(null);
+        }
       }
     });
   }, [stop, speakBrowser, speakServer]);
@@ -199,6 +220,10 @@ export function useTTS(): UseTTSReturn {
   useEffect(() => {
     return () => {
       abortRef.current = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
@@ -211,7 +236,7 @@ export function useTTS(): UseTTSReturn {
     speak,
     stop,
     isSpeaking,
-    isSupported: browserSupported || true, // server TTS is always "supported"
+    isSupported: browserSupported || serverTtsAvailable !== false,
     ttsMode,
     engine,
   };
