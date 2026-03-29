@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeekSpace 2.0 — Landing Hero (Unified Design)</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     UNIFIED DESIGN TOKENS (--ag-* canonical)
+     ============================================ */
+  :root {
+    /* Backgrounds */
+    --ag-bg-deep: #05050A;
+    --ag-bg-base: #06061a;
+    --ag-bg-surface: rgba(12, 12, 30, 0.6);
+
+    /* Text — Unified (Tailwind slate scale) */
+    --ag-text-primary: #F1F5F9;
+    --ag-text-secondary: #94A3B8;
+    --ag-text-muted: #64748B;
+    --ag-text-dim: #475569;
+
+    /* Borders — Unified (white-opacity, neutral) */
+    --ag-border-faint: rgba(255, 255, 255, 0.04);
+    --ag-border-subtle: rgba(255, 255, 255, 0.06);
+    --ag-border-default: rgba(255, 255, 255, 0.08);
+    --ag-border-hover: rgba(255, 255, 255, 0.12);
+    --ag-border-active: rgba(255, 255, 255, 0.18);
+
+    /* Surfaces — White-opacity scale */
+    --ag-surface-1: rgba(255, 255, 255, 0.02);
+    --ag-surface-2: rgba(255, 255, 255, 0.04);
+    --ag-surface-3: rgba(255, 255, 255, 0.06);
+    --ag-surface-4: rgba(255, 255, 255, 0.08);
+    --ag-surface-5: rgba(255, 255, 255, 0.12);
+
+    /* Accents */
+    --ag-violet: #8B5CF6;
+    --ag-cyan: #00F0FF;
+    --ag-green: #10B981;
+    --ag-amber: #F59E0B;
+    --ag-pink: #FF2D78;
+    --ag-lime: #ADFF2F;
+
+    /* CTA Gradient (brand/marketing) */
+    --ag-cta-from: #8B5CF6;
+    --ag-cta-to: #F59E0B;
+    --ag-cta-gradient: linear-gradient(135deg, var(--ag-cta-from), var(--ag-cta-to));
+
+    /* Glass */
+    --ag-glass-bg: rgba(12, 12, 30, 0.4);
+    --ag-glass-blur: 20px;
+
+    /* Radius */
+    --ag-radius-sm: 8px;
+    --ag-radius-md: 12px;
+    --ag-radius-lg: 16px;
+    --ag-radius-xl: 24px;
+
+    /* Motion */
+    --ag-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--ag-bg-base);
+    color: var(--ag-text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
+
+  /* ---- NAVIGATION ---- */
+  .nav {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    width: min(92vw, 1100px);
+    background: rgba(12, 12, 30, 0.7);
+    backdrop-filter: blur(16px) saturate(1.5);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-xl);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px;
+  }
+  .nav-brand .violet { color: var(--ag-violet); }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a {
+    color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px;
+    font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: rgba(255,255,255,0.95); }
+  .nav-cta {
+    background: var(--ag-cta-gradient);
+    color: #fff; border: none; padding: 8px 20px;
+    border-radius: var(--ag-radius-md); font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.9; box-shadow: 0 0 20px rgba(139, 92, 246, 0.25); }
+
+  /* ---- HERO ---- */
+  .hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: clamp(100px, 14vh, 160px) 24px 60px;
+    text-align: center;
+  }
+
+  /* Aurora mesh gradient */
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+  }
+
+  /* Dot grid */
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 30%, transparent 100%);
+    opacity: 0.07;
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 900px; }
+
+  .micro-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em;
+    color: rgba(139, 92, 246, 0.8); margin-bottom: 20px;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 5.5vw + 1rem, 4.5rem);
+    font-weight: 800; line-height: 0.95; letter-spacing: -0.04em;
+    margin-bottom: 16px;
+  }
+  .hero-title .gradient-text {
+    background: linear-gradient(135deg, var(--ag-violet), var(--ag-green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    color: var(--ag-text-secondary);
+    margin-bottom: 40px; line-height: 1.6;
+  }
+  .hero-sub .typewriter {
+    color: var(--ag-text-primary);
+    border-right: 2px solid var(--ag-violet);
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { border-color: transparent; } }
+
+  /* ---- CTA BUTTONS (unified with Button component) ---- */
+  .cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+
+  .btn-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ag-cta-gradient);
+    color: #fff; border: none;
+    height: 48px; padding: 0 32px;
+    border-radius: var(--ag-radius-xl);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+  }
+  .btn-cta:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.25);
+  }
+
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ag-surface-2);
+    color: var(--ag-text-primary);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    height: 48px; padding: 0 32px;
+    border-radius: var(--ag-radius-xl);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-outline:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.5);
+  }
+
+  /* ---- AGENT AVATARS ---- */
+  .avatars-row {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 48px;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+    border: 2px solid var(--ag-bg-base);
+    position: relative;
+  }
+  .avatar .role {
+    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: var(--ag-text-muted); white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .avatar-more {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px dashed var(--ag-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--ag-text-muted);
+  }
+
+  /* ---- DEMO PANEL ---- */
+  .demo-panel {
+    position: relative; z-index: 1;
+    max-width: 800px; width: 100%; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    background: var(--ag-glass-bg);
+    backdrop-filter: blur(var(--ag-glass-blur)) saturate(1.5);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-lg);
+    overflow: hidden;
+  }
+
+  .demo-chat, .demo-agents {
+    padding: 20px;
+  }
+  .demo-chat { border-right: 1px solid var(--ag-border-subtle); }
+
+  .demo-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--ag-text-muted); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .demo-label .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .chat-msg {
+    padding: 10px 14px; border-radius: 14px;
+    font-size: 13px; line-height: 1.5; margin-bottom: 10px;
+    max-width: 90%;
+  }
+  .chat-msg.user {
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    margin-left: auto; border-bottom-right-radius: 4px;
+    color: var(--ag-text-primary);
+  }
+  .chat-msg.agent {
+    background: var(--ag-surface-3);
+    border: 1px solid var(--ag-border-subtle);
+    border-bottom-left-radius: 4px;
+    color: var(--ag-text-primary);
+  }
+
+  .typing-dots {
+    display: flex; gap: 4px; padding: 8px 14px;
+  }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ag-text-muted);
+    animation: bounce-dot 1.4s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce-dot { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+
+  .chat-input {
+    margin-top: 12px; padding: 10px 14px;
+    background: var(--ag-surface-2);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: 12px;
+    font-size: 12px; color: var(--ag-text-muted);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-input .send-icon {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--ag-cta-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+
+  /* Agent status cards */
+  .agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .agent-card {
+    background: var(--ag-surface-2);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-md);
+    padding: 12px;
+    transition: all var(--ag-transition-smooth);
+  }
+  .agent-card:hover {
+    background: var(--ag-surface-3);
+    border-color: var(--ag-border-hover);
+  }
+  .agent-card-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .agent-avatar-sm {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .agent-name {
+    font-size: 12px; font-weight: 600; color: var(--ag-text-primary);
+  }
+  .agent-task {
+    font-size: 11px; color: var(--ag-text-secondary); line-height: 1.4;
+  }
+  .agent-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; margin-top: 6px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .status-dot.active { animation: pulse-dot 2s ease-in-out infinite; }
+
+  /* ---- SCROLL INDICATOR ---- */
+  .scroll-indicator {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .scroll-indicator span {
+    font-size: 11px; color: var(--ag-text-muted);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em;
+  }
+  .scroll-arrow {
+    width: 20px; height: 20px;
+    border-right: 2px solid var(--ag-text-muted);
+    border-bottom: 2px solid var(--ag-text-muted);
+    transform: rotate(45deg);
+    animation: scroll-bounce 2s ease-in-out infinite;
+  }
+  @keyframes scroll-bounce { 0%, 100% { transform: rotate(45deg) translateY(0); } 50% { transform: rotate(45deg) translateY(6px); } }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .demo-panel { grid-template-columns: 1fr; }
+    .demo-chat { border-right: none; border-bottom: 1px solid var(--ag-border-subtle); }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav">
+  <div class="nav-brand">
+    <span>Agent</span><span class="violet">in</span>
+  </div>
+  <div class="nav-links">
+    <a href="#">Features</a>
+    <a href="#">Agents</a>
+    <a href="#">Pricing</a>
+    <a href="#">Docs</a>
+  </div>
+  <button class="nav-cta">Start Free</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="micro-label">AI-Powered Team</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">Your AI Team,</span> Self-Hosted
+    </h1>
+    <p class="hero-sub">
+      <span class="typewriter">Your Personal AI</span> &mdash; 9 specialized agents that work together autonomously. Deploy on your infrastructure, keep your data private.
+    </p>
+
+    <div class="cta-row">
+      <button class="btn-cta">Start Free &rarr;</button>
+      <button class="btn-outline">Meet Your Agents</button>
+    </div>
+
+    <div class="avatars-row">
+      <div class="avatar" style="background: #10B981;">W<span class="role">Assistant</span></div>
+      <div class="avatar" style="background: #8B5CF6;">E<span class="role">Coder</span></div>
+      <div class="avatar" style="background: #10B981;">J<span class="role">Ops</span></div>
+      <div class="avatar" style="background: #8B5CF6;">A<span class="role">Comms</span></div>
+      <div class="avatar" style="background: #F59E0B;">F<span class="role">Builder</span></div>
+      <div class="avatar-more">+4</div>
+    </div>
+  </div>
+
+  <!-- DEMO PANEL -->
+  <div class="demo-panel">
+    <!-- Chat side -->
+    <div class="demo-chat">
+      <div class="demo-label">
+        <span class="dot" style="background: #10B981;"></span> Chat
+      </div>
+      <div class="chat-msg user">Schedule a meeting with Rahul at 3 PM and draft a follow-up email</div>
+      <div class="chat-msg agent">On it! I'll coordinate with Cal for scheduling and Aria for the email draft.</div>
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+      <div class="chat-input">
+        <span>Ask your team anything...</span>
+        <div class="send-icon">&uarr;</div>
+      </div>
+    </div>
+
+    <!-- Agents side -->
+    <div class="demo-agents">
+      <div class="demo-label">
+        <span class="dot" style="background: #F59E0B;"></span> Agents
+      </div>
+      <div class="agent-grid">
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-avatar-sm" style="background: #84CC16;">C</div>
+            <span class="agent-name">Cal</span>
+          </div>
+          <div class="agent-task">Scheduling meeting...</div>
+          <div class="agent-status">
+            <span class="status-dot active" style="background: #10B981;"></span>
+            <span style="color: #10B981;">Active</span>
+          </div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-avatar-sm" style="background: #FF6B9D;">A</div>
+            <span class="agent-name">Aria</span>
+          </div>
+          <div class="agent-task">Drafting email...</div>
+          <div class="agent-status">
+            <span class="status-dot" style="background: #F59E0B;"></span>
+            <span style="color: #F59E0B;">Working</span>
+          </div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-avatar-sm" style="background: #6366F1;">E</div>
+            <span class="agent-name">Echo</span>
+          </div>
+          <div class="agent-task">Summarized 3 emails</div>
+          <div class="agent-status">
+            <span class="status-dot" style="background: #10B981;"></span>
+            <span style="color: #10B981;">Done &#10003;</span>
+          </div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-avatar-sm" style="background: #F59E0B;">F</div>
+            <span class="agent-name">Forge</span>
+          </div>
+          <div class="agent-task">Setting up reminder</div>
+          <div class="agent-status">
+            <span class="status-dot active" style="background: #10B981;"></span>
+            <span style="color: #10B981;">Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+</body>
+</html>

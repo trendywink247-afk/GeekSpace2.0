@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeekSpace 2.0 — Dashboard Overview (Unified Design)</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     UNIFIED DESIGN TOKENS (same as landing + login)
+     ============================================ */
+  :root {
+    --ag-bg-deep: #05050A;
+    --ag-bg-base: #06061a;
+    --ag-bg-surface: rgba(12, 12, 30, 0.6);
+    --ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
+
+    --ag-text-primary: #F1F5F9;
+    --ag-text-secondary: #94A3B8;
+    --ag-text-muted: #64748B;
+    --ag-text-dim: #475569;
+
+    --ag-border-faint: rgba(255, 255, 255, 0.04);
+    --ag-border-subtle: rgba(255, 255, 255, 0.06);
+    --ag-border-default: rgba(255, 255, 255, 0.08);
+    --ag-border-hover: rgba(255, 255, 255, 0.12);
+    --ag-border-active: rgba(255, 255, 255, 0.18);
+
+    --ag-surface-1: rgba(255, 255, 255, 0.02);
+    --ag-surface-2: rgba(255, 255, 255, 0.04);
+    --ag-surface-3: rgba(255, 255, 255, 0.06);
+    --ag-surface-4: rgba(255, 255, 255, 0.08);
+    --ag-surface-5: rgba(255, 255, 255, 0.12);
+
+    --ag-violet: #8B5CF6;
+    --ag-cyan: #00F0FF;
+    --ag-green: #10B981;
+    --ag-amber: #F59E0B;
+    --ag-pink: #FF2D78;
+    --ag-lime: #ADFF2F;
+
+    --ag-cta-from: #8B5CF6;
+    --ag-cta-to: #F59E0B;
+    --ag-cta-gradient: linear-gradient(135deg, var(--ag-cta-from), var(--ag-cta-to));
+
+    --ag-glass-bg: rgba(12, 12, 30, 0.4);
+    --ag-glass-blur: 20px;
+
+    --ag-radius-sm: 8px;
+    --ag-radius-md: 12px;
+    --ag-radius-lg: 16px;
+    --ag-radius-xl: 24px;
+
+    --ag-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Focus / Active (product accent = cyan) */
+    --ag-focus-ring: 0 0 0 2px rgba(0, 240, 255, 0.3);
+    --ag-active-bg: rgba(0, 240, 255, 0.08);
+    --ag-active-border: rgba(0, 240, 255, 0.25);
+
+    /* Glows */
+    --ag-glow-sm: 0 0 10px rgba(0, 240, 255, 0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--ag-bg-deep);
+    color: var(--ag-text-primary);
+    min-height: 100vh; display: flex;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif; }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar {
+    width: 240px; min-height: 100vh;
+    background: var(--ag-bg-base);
+    border-right: 1px solid var(--ag-border-subtle);
+    padding: 20px 12px;
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) { .sidebar { display: none; } }
+
+  .sidebar-brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 8px 20px; border-bottom: 1px solid var(--ag-border-faint);
+    margin-bottom: 16px;
+  }
+  .sidebar-brand-text {
+    font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700;
+  }
+  .sidebar-brand-text .violet { color: var(--ag-violet); }
+  .sidebar-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--ag-cyan), var(--ag-pink));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+
+  .sidebar-group { margin-bottom: 16px; }
+  .sidebar-group-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--ag-text-muted);
+    padding: 0 8px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--ag-radius-sm);
+    font-size: 13px; font-weight: 500;
+    color: var(--ag-text-secondary);
+    cursor: pointer; transition: all var(--ag-transition-smooth);
+    border: 1px solid transparent;
+  }
+  .sidebar-item:hover {
+    background: var(--ag-bg-surface-hover);
+    color: var(--ag-text-primary);
+  }
+  .sidebar-item.active {
+    background: var(--ag-active-bg);
+    color: var(--ag-cyan);
+    border-left: 2px solid var(--ag-cyan);
+    box-shadow: var(--ag-glow-sm);
+  }
+  .sidebar-item .icon { width: 16px; text-align: center; font-size: 14px; }
+  .sidebar-item .badge {
+    margin-left: auto;
+    background: var(--ag-cyan); color: var(--ag-bg-deep);
+    font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .sidebar-item .shortcut {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ag-text-muted);
+    padding: 1px 5px; border-radius: 4px;
+    border: 1px solid var(--ag-border-faint);
+    background: rgba(6, 6, 27, 0.8);
+  }
+
+  .sidebar-bottom {
+    margin-top: auto; padding-top: 16px;
+    border-top: 1px solid var(--ag-border-faint);
+  }
+
+  /* ---- MAIN CONTENT ---- */
+  .main {
+    flex: 1; padding: 32px; overflow-y: auto;
+    position: relative;
+  }
+
+  /* Aurora background (same subtle effect as landing) */
+  .main::before {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(16, 185, 129, 0.02) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 90%, rgba(245, 158, 11, 0.015) 0%, transparent 50%);
+  }
+  /* Dot grid */
+  .main::after {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(139, 92, 246, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.07;
+  }
+
+  .main-content { position: relative; z-index: 1; max-width: 1100px; }
+
+  /* ---- PAGE HEADER ---- */
+  .page-header {
+    margin-bottom: 28px;
+  }
+  .page-header-icon {
+    width: 40px; height: 40px; border-radius: var(--ag-radius-md);
+    background: rgba(0, 240, 255, 0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--ag-cyan); margin-bottom: 12px;
+  }
+  .page-header h1 {
+    font-size: 28px; font-weight: 700;
+    color: var(--ag-text-primary); margin-bottom: 4px;
+  }
+  .page-header .subtitle {
+    font-size: 15px; color: var(--ag-text-secondary);
+  }
+
+  /* ---- SECTION CARDS ---- */
+  .section-card {
+    background: var(--ag-bg-surface);
+    backdrop-filter: blur(var(--ag-glass-blur)) saturate(1.5);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-lg);
+    padding: 20px;
+    transition: all var(--ag-transition-smooth);
+  }
+  .section-card:hover {
+    border-color: var(--ag-border-hover);
+    box-shadow: var(--ag-glow-sm);
+  }
+  .section-card-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--ag-text-primary); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-card-title .icon { color: var(--ag-cyan); }
+
+  /* ---- GRID LAYOUTS ---- */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ---- STATS ROW ---- */
+  .stat-card {
+    background: var(--ag-surface-2);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-md);
+    padding: 16px;
+    transition: all var(--ag-transition-smooth);
+  }
+  .stat-card:hover {
+    border-color: var(--ag-border-hover);
+    background: var(--ag-surface-3);
+  }
+  .stat-label {
+    font-size: 12px; color: var(--ag-text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-size: 24px; font-weight: 700;
+    font-family: 'Syne', sans-serif;
+  }
+  .stat-hint { font-size: 12px; color: var(--ag-text-muted); margin-top: 4px; }
+
+  /* ---- QUICK ACTIONS ---- */
+  .quick-action {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: var(--ag-surface-2);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: var(--ag-radius-lg);
+    cursor: pointer; transition: all var(--ag-transition-smooth);
+  }
+  .quick-action:hover {
+    background: var(--ag-surface-3);
+    border-color: var(--ag-border-hover);
+    box-shadow: 0 0 24px var(--action-glow);
+  }
+  .quick-action .action-icon {
+    width: 36px; height: 36px; border-radius: var(--ag-radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .quick-action .action-label {
+    font-size: 13px; font-weight: 600; color: var(--ag-text-primary);
+  }
+  .quick-action .action-desc {
+    font-size: 11px; color: var(--ag-text-muted);
+  }
+
+  /* ---- REMINDER LIST ---- */
+  .reminder-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ag-border-faint);
+  }
+  .reminder-item:last-child { border-bottom: none; }
+  .reminder-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .reminder-text {
+    flex: 1; font-size: 13px; color: var(--ag-text-primary);
+  }
+  .reminder-time {
+    font-size: 11px; color: var(--ag-text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .reminder-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    font-weight: 600;
+  }
+
+  /* ---- HABIT STREAK ---- */
+  .streak-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0;
+  }
+  .streak-icon { font-size: 20px; }
+  .streak-info { flex: 1; }
+  .streak-name { font-size: 13px; font-weight: 500; color: var(--ag-text-primary); }
+  .streak-count { font-size: 11px; color: var(--ag-text-muted); }
+  .streak-fire {
+    font-size: 14px; font-weight: 700;
+    color: var(--ag-amber);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---- RECENT CONVERSATIONS ---- */
+  .convo-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ag-border-faint);
+  }
+  .convo-item:last-child { border-bottom: none; }
+  .convo-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .convo-text { font-size: 13px; color: var(--ag-text-secondary); line-height: 1.4; }
+  .convo-time {
+    font-size: 10px; color: var(--ag-text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* ---- PRODUCT BUTTONS (dashboard size) ---- */
+  .btn-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 36px; padding: 0 16px;
+    background: var(--ag-cyan);
+    color: var(--ag-bg-deep);
+    border: none; border-radius: 6px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-sm:hover { opacity: 0.9; }
+  .btn-sm.outline {
+    background: transparent;
+    color: var(--ag-text-primary);
+    border: 1px solid var(--ag-border-default);
+  }
+  .btn-sm.outline:hover {
+    background: var(--ag-surface-3);
+    border-color: var(--ag-border-hover);
+  }
+
+  /* ---- AGENT LIVE STRIP ---- */
+  .agent-strip {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 4px 0; margin-bottom: 20px;
+  }
+  .agent-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: var(--ag-surface-2);
+    border: 1px solid var(--ag-border-subtle);
+    border-radius: 20px;
+    font-size: 12px; white-space: nowrap;
+    transition: all var(--ag-transition-smooth);
+  }
+  .agent-chip:hover { border-color: var(--ag-border-hover); }
+  .agent-chip .chip-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .agent-chip .chip-name { font-weight: 600; color: var(--ag-text-primary); }
+  .agent-chip .chip-status { color: var(--ag-text-muted); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-avatar">R</div>
+    <div class="sidebar-brand-text">Agent<span class="violet">in</span></div>
+  </div>
+
+  <!-- Pinned -->
+  <div class="sidebar-group">
+    <div class="sidebar-item active">
+      <span class="icon">&#9776;</span> Home
+    </div>
+    <div class="sidebar-item">
+      <span class="icon">&#128172;</span> Chat
+      <span class="shortcut">C</span>
+    </div>
+  </div>
+
+  <!-- Create -->
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">&#10024; Create</div>
+    <div class="sidebar-item"><span class="icon">&#127912;</span> Creative Studio</div>
+    <div class="sidebar-item"><span class="icon">&#128444;</span> Images</div>
+    <div class="sidebar-item"><span class="icon">&#127909;</span> Video</div>
+    <div class="sidebar-item"><span class="icon">&#128187;</span> Website Builder</div>
+  </div>
+
+  <!-- My Agent -->
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">&#129302; My Agent</div>
+    <div class="sidebar-item"><span class="icon">&#128421;</span> Agent Office</div>
+    <div class="sidebar-item"><span class="icon">&#127919;</span> Goals</div>
+    <div class="sidebar-item"><span class="icon">&#129504;</span> Memory</div>
+    <div class="sidebar-item"><span class="icon">&#128218;</span> Recipes</div>
+  </div>
+
+  <!-- Work -->
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">&#9889; Work</div>
+    <div class="sidebar-item">
+      <span class="icon">&#128276;</span> Reminders
+      <span class="badge">3</span>
+    </div>
+    <div class="sidebar-item"><span class="icon">&#128197;</span> Calendar</div>
+    <div class="sidebar-item"><span class="icon">&#128268;</span> Workflows</div>
+    <div class="sidebar-item"><span class="icon">&#127919;</span> Focus & Habits</div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="sidebar-bottom">
+    <div class="sidebar-item"><span class="icon">&#9881;</span> Settings</div>
+    <div class="sidebar-item"><span class="icon">&#128179;</span> Billing</div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="main-content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-icon">&#9776;</div>
+      <h1>Good morning, Rahul</h1>
+      <p class="subtitle">Sunday, March 29 &mdash; You've saved ~2.4 hours this week</p>
+    </div>
+
+    <!-- AGENT LIVE STRIP -->
+    <div class="agent-strip">
+      <div class="agent-chip">
+        <span class="chip-dot" style="background: #00F0FF;"></span>
+        <span class="chip-name">Weebo</span>
+        <span class="chip-status">Idle</span>
+      </div>
+      <div class="agent-chip">
+        <span class="chip-dot" style="background: #8B5CF6;"></span>
+        <span class="chip-name">Edith</span>
+        <span class="chip-status">Reviewing code</span>
+      </div>
+      <div class="agent-chip">
+        <span class="chip-dot" style="background: #84CC16;"></span>
+        <span class="chip-name">Cal</span>
+        <span class="chip-status">2 events today</span>
+      </div>
+      <div class="agent-chip">
+        <span class="chip-dot" style="background: #FF6B9D;"></span>
+        <span class="chip-name">Aria</span>
+        <span class="chip-status">Draft ready</span>
+      </div>
+    </div>
+
+    <!-- WEEKLY STATS -->
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Messages</div>
+        <div class="stat-value" style="color: var(--ag-cyan);">47</div>
+        <div class="stat-hint">This week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Reminders Done</div>
+        <div class="stat-value" style="color: var(--ag-green);">12</div>
+        <div class="stat-hint">of 15 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Habits Logged</div>
+        <div class="stat-value" style="color: var(--ag-amber);">5</div>
+        <div class="stat-hint">3-day streak &#128293;</div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="grid-4">
+      <div class="quick-action" style="--action-glow: rgba(0,240,255,0.15);">
+        <div class="action-icon" style="background: rgba(0,240,255,0.08); color: #00F0FF;">&#128172;</div>
+        <div>
+          <div class="action-label">Chat with Agent</div>
+          <div class="action-desc">Ask anything</div>
+        </div>
+      </div>
+      <div class="quick-action" style="--action-glow: rgba(191,95,255,0.15);">
+        <div class="action-icon" style="background: rgba(191,95,255,0.08); color: #BF5FFF;">&#10024;</div>
+        <div>
+          <div class="action-label">Creative Studio</div>
+          <div class="action-desc">Images, video, design</div>
+        </div>
+      </div>
+      <div class="quick-action" style="--action-glow: rgba(0,255,136,0.15);">
+        <div class="action-icon" style="background: rgba(0,255,136,0.08); color: #00FF88;">&#128268;</div>
+        <div>
+          <div class="action-label">New Workflow</div>
+          <div class="action-desc">Automate tasks</div>
+        </div>
+      </div>
+      <div class="quick-action" style="--action-glow: rgba(245,158,11,0.15);">
+        <div class="action-icon" style="background: rgba(245,158,11,0.08); color: #F59E0B;">&#128276;</div>
+        <div>
+          <div class="action-label">Reminders</div>
+          <div class="action-desc">Alerts & tracking</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO-COLUMN: Reminders + Habits -->
+    <div class="grid-2">
+      <!-- Reminders -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <span class="icon">&#128276;</span> Due Today
+          <span style="margin-left: auto;"><button class="btn-sm outline" style="height: 28px; font-size: 11px;">View All</button></span>
+        </div>
+        <div class="reminder-item">
+          <div class="reminder-dot" style="background: #00F0FF;"></div>
+          <span class="reminder-text">Review Q1 expense report</span>
+          <span class="reminder-badge" style="background: rgba(245,158,11,0.15); color: #F59E0B;">High</span>
+          <span class="reminder-time">10:00 AM</span>
+        </div>
+        <div class="reminder-item">
+          <div class="reminder-dot" style="background: #00FF88;"></div>
+          <span class="reminder-text">Call dentist for appointment</span>
+          <span class="reminder-badge" style="background: rgba(0,240,255,0.1); color: #00F0FF;">Normal</span>
+          <span class="reminder-time">2:00 PM</span>
+        </div>
+        <div class="reminder-item">
+          <div class="reminder-dot" style="background: #FF2D78;"></div>
+          <span class="reminder-text">Submit GST return &mdash; Overdue</span>
+          <span class="reminder-badge" style="background: rgba(255,45,120,0.15); color: #FF2D78;">Urgent</span>
+          <span class="reminder-time" style="color: #FF2D78;">Yesterday</span>
+        </div>
+      </div>
+
+      <!-- Habits & Streaks -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <span class="icon">&#127919;</span> Today's Habits
+        </div>
+        <div class="streak-row">
+          <span class="streak-icon">&#128170;</span>
+          <div class="streak-info">
+            <div class="streak-name">Morning Workout</div>
+            <div class="streak-count">7-day streak</div>
+          </div>
+          <span class="streak-fire">&#128293; 7</span>
+        </div>
+        <div class="streak-row">
+          <span class="streak-icon">&#128214;</span>
+          <div class="streak-info">
+            <div class="streak-name">Read 30 minutes</div>
+            <div class="streak-count">3-day streak</div>
+          </div>
+          <span class="streak-fire">&#128293; 3</span>
+        </div>
+        <div class="streak-row">
+          <span class="streak-icon">&#129506;</span>
+          <div class="streak-info">
+            <div class="streak-name">Meditate</div>
+            <div class="streak-count" style="color: var(--ag-text-muted);">Not logged today</div>
+          </div>
+          <span style="font-size: 12px; color: var(--ag-text-muted);">&#9711;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO-COLUMN: Goals + Recent Conversations -->
+    <div class="grid-2">
+      <!-- Goals Summary -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <span class="icon">&#127919;</span> Active Goals
+          <span style="margin-left: auto; font-size: 20px; font-weight: 700; color: var(--ag-green);">67%</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="height: 4px; background: var(--ag-surface-3); border-radius: 2px; overflow: hidden;">
+            <div style="width: 67%; height: 100%; background: linear-gradient(90deg, var(--ag-cyan), var(--ag-green)); border-radius: 2px;"></div>
+          </div>
+        </div>
+        <div class="reminder-item">
+          <div class="reminder-dot" style="background: #8B5CF6;"></div>
+          <span class="reminder-text">Launch portfolio site</span>
+          <span class="reminder-badge" style="background: rgba(0,240,255,0.1); color: #00F0FF;">3/5 steps</span>
+        </div>
+        <div class="reminder-item">
+          <div class="reminder-dot" style="background: #10B981;"></div>
+          <span class="reminder-text">Learn TypeScript basics</span>
+          <span class="reminder-badge" style="background: rgba(16,185,129,0.15); color: #10B981;">2/4 steps</span>
+        </div>
+        <div style="margin-top: 12px;">
+          <button class="btn-sm" style="width: 100%; justify-content: center;">
+            &#43; New Goal
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Conversations -->
+      <div class="section-card">
+        <div class="section-card-title">
+          <span class="icon">&#128172;</span> Recent Conversations
+        </div>
+        <div class="convo-item">
+          <div class="convo-avatar" style="background: #00F0FF;">W</div>
+          <div>
+            <div class="convo-text">I've scheduled the meeting with Rahul and sent the calendar invite.</div>
+            <div class="convo-time">5m ago</div>
+          </div>
+        </div>
+        <div class="convo-item">
+          <div class="convo-avatar" style="background: #8B5CF6;">E</div>
+          <div>
+            <div class="convo-text">Fixed the auth middleware bug. The token validation now handles edge cases correctly.</div>
+            <div class="convo-time">2h ago</div>
+          </div>
+        </div>
+        <div class="convo-item">
+          <div class="convo-avatar" style="background: #FF6B9D;">A</div>
+          <div>
+            <div class="convo-text">Draft email for the client follow-up is ready in your inbox.</div>
+            <div class="convo-time">4h ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- FLOATING CHAT BUTTON -->
+<div style="
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--ag-cta-gradient);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: #fff; cursor: pointer;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+  transition: transform 0.2s;
+" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+  &#128172;
+</div>
+
+</body>
+</html>
