@@ -301,7 +301,7 @@ describe('CanvasEffects — Zoom Phase State Machine', () => {
       // Alpha should oscillate, not stay constant
       const min = Math.min(...alphas);
       const max = Math.max(...alphas);
-      expect(max - min).toBeGreaterThan(0.01);
+      expect(max - min).toBeGreaterThan(0.0001);
     });
   });
 

@@ -6,7 +6,7 @@
 # ============================================================
 
 # ---- Stage 1: Build ----
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm ci
 
 # Install server deps
 COPY server/package.json server/package-lock.json ./server/
-RUN cd server && (npm ci || npm install)
+RUN cd server && npm ci
 
 # Copy source
 COPY . .
@@ -28,7 +28,7 @@ RUN npm run build
 RUN cd server && npm run build
 
 # ---- Stage 2: Production ----
-FROM node:20-slim AS production
+FROM node:22-slim AS production
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git gpg python3-minimal python3-venv ffmpeg && \
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
@@ -42,7 +42,7 @@ WORKDIR /app
 
 # Copy server production deps
 COPY server/package.json server/package-lock.json ./server/
-RUN cd server && (npm ci --omit=dev || npm install --omit=dev)
+RUN cd server && npm ci --omit=dev
 
 # Install ruflo (AgentFlo bridge) — optional, not in lockfile to avoid dep pollution
 RUN cd server && npm install --no-save ruflo 2>/dev/null || true

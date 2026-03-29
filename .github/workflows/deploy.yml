@@ -15,7 +15,7 @@ on:
         default: false
 
 concurrency:
-  group: deploy-production
+  group: deploy-server
   cancel-in-progress: false
 
 jobs:
