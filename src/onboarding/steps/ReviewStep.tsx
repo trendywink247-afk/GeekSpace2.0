@@ -1,5 +1,4 @@
 import { Rocket, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import type { OnboardingState } from '@/types';
 
 interface ReviewStepProps {
@@ -51,25 +50,30 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Rocket className="w-6 h-6 text-[#8B5CF6]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Review & Launch
-        </h2>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="gs-icon-pill gs-icon-pill-violet">
+          <Rocket className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="gs-section-label">Final Step</p>
+          <h2 className="text-xl font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">
+            Review & Launch
+          </h2>
+        </div>
       </div>
-      <p className="text-[#6B7280] text-sm">
+      <p className="text-[var(--ag-text-muted,#9CA3AF)] text-sm">
         Everything looks good! Here's a summary of your setup.
       </p>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {sections.map((section) => (
-          <div key={section.label} className="p-4 rounded-xl bg-[#06060B] border border-[#8B5CF6]/20">
-            <h3 className="text-sm font-medium text-[#8B5CF6] mb-2">{section.label}</h3>
-            <div className="space-y-1">
+          <div key={section.label} className="gs-card p-4">
+            <p className="gs-section-label mb-2">{section.label}</p>
+            <div className="space-y-1.5">
               {section.items.map((item) => (
                 <div key={item.key} className="flex justify-between text-sm">
-                  <span className="text-[#6B7280]">{item.key}</span>
-                  <span className="text-[#E8E8F0] text-right max-w-[60%] truncate">{item.value}</span>
+                  <span className="text-[var(--ag-text-muted,#9CA3AF)]">{item.key}</span>
+                  <span className="text-[var(--ag-text-primary,#F4F6FF)] text-right max-w-[60%] truncate">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -77,29 +81,31 @@ export function ReviewStep({ onboarding, onLaunch, isLaunching }: ReviewStepProp
         ))}
       </div>
 
-      <div className="p-4 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30">
-        <div className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-[#10B981]" />
-          <p className="text-sm text-[#E8E8F0]">
+      <div className="gs-card p-4 border-emerald-500/20 bg-emerald-500/[0.05]">
+        <div className="flex items-center gap-3">
+          <div className="gs-icon-pill gs-icon-pill-emerald flex-shrink-0">
+            <Check className="w-4 h-4" />
+          </div>
+          <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]">
             You can update any of these settings later from your dashboard.
           </p>
         </div>
       </div>
 
-      <Button
+      <button
         onClick={onLaunch}
         disabled={isLaunching}
-        className="w-full h-12 min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-base font-semibold pulse-glow"
+        className="gs-btn-primary w-full h-12 min-h-[44px] text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
       >
         {isLaunching ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : (
           <>
-            <Rocket className="w-5 h-5 mr-2" />
+            <Rocket className="w-5 h-5" />
             Launch My Space
           </>
         )}
-      </Button>
+      </button>
     </div>
   );
 }

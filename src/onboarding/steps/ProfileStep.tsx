@@ -1,5 +1,4 @@
 import { User, Upload } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 
 // 9 preset avatar colors — colored circles with user's initial
 const AVATAR_COLORS = [
@@ -39,19 +38,24 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <User className="w-6 h-6 text-[#8B5CF6]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Profile Basics
-        </h2>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="gs-icon-pill gs-icon-pill-violet">
+          <User className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="gs-section-label">Step 1</p>
+          <h2 className="text-xl font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">
+            Profile Basics
+          </h2>
+        </div>
       </div>
-      <p className="text-[#6B7280] text-sm">
+      <p className="text-[var(--ag-text-muted,#9CA3AF)] text-sm">
         Let's start with the essentials. You can always change these later.
       </p>
 
       {/* Avatar Picker — 9 color presets + Upload */}
       <div>
-        <label className="text-sm text-[#9CA3AF] mb-3 block">Choose your avatar</label>
+        <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-3 block">Choose your avatar</label>
         <div className="grid grid-cols-5 gap-2.5 justify-items-center">
           {AVATAR_COLORS.map((color) => {
             const isSelected = !isCustomPhoto && avatar === color;
@@ -79,8 +83,8 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
             className={[
               'w-11 h-11 rounded-full flex items-center justify-center cursor-pointer transition-all min-w-[44px] min-h-[44px] overflow-hidden',
               isCustomPhoto
-                ? 'ring-[3px] ring-[#06B6D4]/80 scale-110'
-                : 'border-2 border-dashed border-white/20 hover:border-[#8B5CF6]/60 opacity-70 hover:opacity-100',
+                ? 'ring-[3px] ring-[var(--ag-violet,#8B5CF6)]/80 scale-110'
+                : 'border-2 border-dashed border-white/20 hover:border-[var(--ag-violet,#8B5CF6)]/60 opacity-70 hover:opacity-100',
             ].join(' ')}
             aria-label="Upload custom avatar"
             title="Upload your own photo"
@@ -88,7 +92,7 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
             {isCustomPhoto && avatar.startsWith('data:') ? (
               <img src={avatar} alt="Custom avatar" className="w-full h-full object-cover" />
             ) : (
-              <Upload className="w-4 h-4 text-[#9CA3AF]" />
+              <Upload className="w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
             )}
             <input
               type="file"
@@ -98,33 +102,33 @@ export function ProfileStep({ name, username, avatar, onNameChange, onUsernameCh
             />
           </label>
         </div>
-        <p className="text-xs text-[#6B7280]/60 text-center mt-2">Pick a color or upload a photo</p>
+        <p className="text-xs text-[var(--ag-text-muted,#9CA3AF)]/60 text-center mt-2">Pick a color or upload a photo</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm text-[#9CA3AF] mb-2 block">Display Name *</label>
-          <Input
+          <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-2 block">Display Name *</label>
+          <input
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Alex Chen"
-            className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
+            className="gs-input w-full"
             required
             aria-required="true"
           />
         </div>
         <div>
-          <label className="text-sm text-[#9CA3AF] mb-2 block">Username *</label>
-          <Input
+          <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-2 block">Username *</label>
+          <input
             value={username}
             onChange={(e) => onUsernameChange(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
             placeholder="alex"
-            className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
+            className="gs-input w-full"
             required
             aria-required="true"
           />
-          <p className="text-xs text-[#6B7280] mt-1">
-            Your URL: <span className="text-[#8B5CF6]">{username || 'you'}.agentin.chat</span>
+          <p className="text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-1">
+            Your URL: <span className="text-[var(--ag-violet,#8B5CF6)]">{username || 'you'}.agentin.chat</span>
           </p>
         </div>
       </div>

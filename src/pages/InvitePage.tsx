@@ -9,8 +9,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, User, Ticket, ArrowRight, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/api';
 import { PublicPageShell, SectionCard } from '@/components/agentin';
@@ -79,7 +77,10 @@ export function InvitePage() {
             <img src="/logo-agentin.webp" alt="Agentin" className="w-10 h-10 object-contain" />
             <span className="text-xl font-heading font-bold text-[var(--ag-text-primary,#F4F6FF)]">Agentin Chat</span>
           </div>
-          <h1 className="text-2xl font-heading font-bold text-[var(--ag-text-primary,#F4F6FF)] mb-1">
+          <p className="gs-section-label mb-2">
+            {step === 'code' ? 'Early Access' : 'Registration'}
+          </p>
+          <h1 className="text-2xl font-heading font-bold text-gradient mb-1">
             {step === 'code' ? "You're Invited" : 'Create Your Account'}
           </h1>
           <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">
@@ -96,12 +97,12 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Invite Code</label>
                 <div className="relative">
-                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#00F0FF)]" />
-                  <Input
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#00F0FF)] pointer-events-none" />
+                  <input
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     placeholder="e.g. ABCD1234"
-                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)] font-mono tracking-widest uppercase"
+                    className="gs-input w-full pl-9 font-mono tracking-widest uppercase"
                     autoFocus
                     data-testid="invite-code-input"
                   />
@@ -117,17 +118,17 @@ export function InvitePage() {
                 </p>
               )}
 
-              <Button
+              <button
                 type="submit"
-                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="gs-btn-primary w-full min-h-[44px] flex items-center justify-center gap-2"
                 data-testid="invite-code-submit"
               >
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+                Continue <ArrowRight className="w-4 h-4" />
+              </button>
 
               <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 Don't have an invite?{' '}
-                <a href="mailto:hello@agentin.chat" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">
+                <a href="mailto:hello@agentin.chat" className="text-[var(--ag-violet,#8B5CF6)] hover:underline">
                   Request access
                 </a>
               </p>
@@ -138,9 +139,9 @@ export function InvitePage() {
           {step === 'register' && (
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Invite code badge */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20">
-                <Ticket className="w-4 h-4 text-[#00FF88] flex-shrink-0" />
-                <span className="text-xs text-[#00FF88]">Invite code: <span className="font-mono font-bold">{inviteCode}</span></span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <Ticket className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs text-emerald-400">Invite code: <span className="font-mono font-bold">{inviteCode}</span></span>
                 <button
                   type="button"
                   onClick={() => { setStep('code'); setError(''); }}
@@ -153,12 +154,12 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Display Name (optional)</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
-                  <Input
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)] pointer-events-none" />
+                  <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
+                    className="gs-input w-full pl-9"
                   />
                 </div>
               </div>
@@ -166,12 +167,12 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Username *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted,#9CA3AF)] text-sm">@</span>
-                  <Input
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted,#9CA3AF)] text-sm pointer-events-none">@</span>
+                  <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                     placeholder="yourhandle"
-                    className="pl-7 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
+                    className="gs-input w-full pl-7"
                     required
                     data-testid="invite-username-input"
                   />
@@ -181,13 +182,13 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Email *</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
-                  <Input
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)] pointer-events-none" />
+                  <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
+                    className="gs-input w-full pl-9"
                     required
                     data-testid="invite-email-input"
                   />
@@ -197,13 +198,13 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Password *</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
-                  <Input
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)] pointer-events-none" />
+                  <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
+                    className="gs-input w-full pl-9"
                     required
                     minLength={8}
                     data-testid="invite-password-input"
@@ -217,24 +218,24 @@ export function InvitePage() {
                 </p>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="gs-btn-primary w-full min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-60"
                 data-testid="invite-register-submit"
               >
                 {isLoading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating account...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" />Creating account...</>
                 ) : (
-                  <>Join Beta <ArrowRight className="w-4 h-4 ml-2" /></>
+                  <>Join Beta <ArrowRight className="w-4 h-4" /></>
                 )}
-              </Button>
+              </button>
 
               <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 By joining, you agree to our{' '}
-                <Link to="/terms" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Terms</Link>
+                <Link to="/terms" className="text-[var(--ag-violet,#8B5CF6)] hover:underline">Terms</Link>
                 {' '}and{' '}
-                <Link to="/privacy" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Privacy Policy</Link>.
+                <Link to="/privacy" className="text-[var(--ag-violet,#8B5CF6)] hover:underline">Privacy Policy</Link>.
               </p>
             </form>
           )}
@@ -242,7 +243,7 @@ export function InvitePage() {
 
         <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Sign in</Link>
+          <Link to="/login" className="text-[var(--ag-violet,#8B5CF6)] hover:underline">Sign in</Link>
         </p>
       </div>
     </PublicPageShell>

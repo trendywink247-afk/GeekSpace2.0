@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   User,
@@ -37,8 +37,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -648,7 +646,7 @@ export function SettingsPage() {
             >
               <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
+            <Button onClick={handleSave} disabled={isSaving} className="gs-btn-primary min-h-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
               {isSaving ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
               ) : (
@@ -679,10 +677,8 @@ export function SettingsPage() {
               // Scroll to the tabs area smoothly
               document.getElementById('settings-tabs-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-              activeTab === id
-                ? 'bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/40'
-                : 'text-[#9CA3AF] hover:text-[#F4F6FF] border border-transparent hover:border-[rgba(139,92,246,0.15)]'
+            className={`flex items-center gap-1.5 min-h-[44px] whitespace-nowrap ${
+              activeTab === id ? 'gs-pill-active' : 'gs-pill'
             }`}
           >
             <NavIcon className="w-3 h-3" />
@@ -691,13 +687,12 @@ export function SettingsPage() {
         ))}
       </nav>
 
-      <Tabs id="settings-tabs-anchor" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <div id="settings-tabs-anchor" className="space-y-6">
 
         {/* Profile Tab */}
-        <TabsContent value="profile" className="space-y-6">
+        {activeTab === 'profile' && <div className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="border-[#00F0FF]/20">
-              <CardContent className="p-6 text-center">
+            <div className="gs-card p-6 text-center">
                 <div className="relative inline-block mb-4">
                   {profile.avatar ? (
                     <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[var(--ag-bg-surface)] object-cover" />
@@ -782,40 +777,38 @@ export function SettingsPage() {
                     </Badge>
                   );
                 })()}
-              </CardContent>
-            </Card>
+            </div>
 
-            <Card className="lg:col-span-2 border-[#00F0FF]/20">
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription className="text-[var(--ag-text-muted)]">Update your public profile</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="gs-card lg:col-span-2">
+              <p className="gs-section-label mb-1">Account</p>
+              <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Profile Information</h3>
+              <p className="text-sm text-[#9CA3AF] mb-4">Update your public profile</p>
+              <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Display Name</label>
-                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input" />
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Username</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted)]">@</span>
-                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)] pl-8" />
+                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
+                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input" />
                 </div>
                 <div>
                   <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl border border-[#00F0FF]/30 text-[var(--ag-text-primary)] min-h-[100px] resize-none focus:outline-none focus:border-[#00F0FF]" />
+                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input min-h-[100px] resize-none w-full p-3" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="border-[#00F0FF]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="gs-input" />
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Website</label>

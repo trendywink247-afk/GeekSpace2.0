@@ -545,41 +545,39 @@ export function ConnectionsPage() {
         <BlurFade delay={0.15}>
         <div className="gs-stat-card">
             <div className="flex items-center gap-3">
-              <span className="gs-icon-pill gs-icon-pill-sky">
-                <Activity className="w-5 h-5" />
-              </div>
+              </span>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">{totalRequests}</div>
                 <div className="text-xs text-[#9CA3AF]">Requests Today</div>
               </div>
             </div>
-        </SectionCard>
+        </div>
         </BlurFade>
         <BlurFade delay={0.2}>
-        <SectionCard padding="sm">
+        <div className="gs-stat-card">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-[#FFB800]" />
-              </div>
+              <span className="gs-icon-pill gs-icon-pill-amber">
+                <RefreshCw className="w-5 h-5" />
+              </span>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">{avgHealth}%</div>
                 <div className="text-xs text-[#9CA3AF]">Avg Health</div>
               </div>
             </div>
-        </SectionCard>
+        </div>
         </BlurFade>
         <BlurFade delay={0.25}>
-        <SectionCard padding="sm">
+        <div className="gs-stat-card">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#EC4899]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#EC4899]" />
-              </div>
+              <span className="gs-icon-pill gs-icon-pill-rose">
+                <Shield className="w-5 h-5" />
+              </span>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">100%</div>
                 <div className="text-xs text-[#9CA3AF]">Secure</div>
               </div>
             </div>
-        </SectionCard>
+        </div>
         </BlurFade>
       </div>
 
@@ -720,7 +718,7 @@ export function ConnectionsPage() {
                   placeholder="you@example.com"
                   value={emailAddress}
                   onChange={(e) => setEmailAddress(e.target.value)}
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF]"
+                  className="gs-input"
                 />
                 <Button
                   className="w-full bg-[#00FF88] hover:bg-[#00FF88]/80 text-[#06061a] min-h-[44px]"
@@ -741,15 +739,7 @@ export function ConnectionsPage() {
           <button
             key={opt}
             onClick={() => setStatusFilter(opt)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all min-h-[36px] ${
-              statusFilter === opt
-                ? opt === 'connected'
-                  ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
-                  : opt === 'disconnected'
-                  ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
-                  : 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
-                : 'border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:border-[rgba(139,92,246,0.15)] hover:text-[#F4F6FF]'
-            }`}
+            className={statusFilter === opt ? 'gs-pill-active' : 'gs-pill'}
           >
             {opt === 'all' ? `All (${integrations.length})` : opt === 'connected' ? `Connected (${connectedCount})` : `Disconnected (${integrations.length - connectedCount})`}
           </button>
@@ -1077,7 +1067,7 @@ export function ConnectionsPage() {
                                         setCustomBotError(null);
                                       }
                                     }}
-                                    className="bg-[#0C0C18] border-[#00F0FF]/20 text-[var(--ag-text-primary)] font-mono text-sm placeholder:text-[#8888AA]/50 min-h-[44px]"
+                                    className="gs-input font-mono text-sm min-h-[44px]"
                                   />
                                 </div>
 

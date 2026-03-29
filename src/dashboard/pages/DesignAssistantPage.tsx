@@ -1,5 +1,5 @@
 // DesignAssistantPage.tsx — Edith-owned design assistant
-// Revamped: design tokens, SectionCard, PageHeader, edith ownership, useAgentCanvas, brand-kit integration
+// Revamped: gs-card, gs-input, gs-btn-primary, gs-pill, gs-icon-pill, GsTabBar
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -381,10 +381,10 @@ export function DesignAssistantPage() {
         title="Design Assistant"
         subtitle="AI-powered design suggestions, color palettes, and brand kits"
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B5CF6]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
             </span>
             Edith
           </span>
@@ -394,6 +394,7 @@ export function DesignAssistantPage() {
       {/* ---- Prompt Bar ---- */}
       <BlurFade delay={0.1}>
         <SectionCard padding="md">
+          <p className="gs-section-label mb-3">Describe Your Design</p>
           <div className="space-y-3">
             <div className="flex gap-2">
               <textarea
@@ -402,12 +403,12 @@ export function DesignAssistantPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={activeType === 'brand-kit' ? 'Enter your company or brand name...' : 'Describe what you want to design...'}
                 rows={2}
-                className="flex-1 bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] rounded-lg px-4 py-3 text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--ag-cyan)]/40 text-sm min-h-[44px]"
+                className="gs-input flex-1 resize-none min-h-[44px]"
               />
               <button
                 onClick={isGenerating ? handleCancel : handleGenerate}
                 disabled={!prompt.trim() && !isGenerating}
-                className="min-w-[44px] min-h-[44px] px-4 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-cyan)] to-[var(--ag-violet)] text-[var(--ag-bg-deep)] hover:opacity-90 active:scale-95"
+                className="gs-btn-primary min-w-[44px] min-h-[44px] px-4 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isGenerating ? (
                   <>
@@ -429,11 +430,7 @@ export function DesignAssistantPage() {
                 <button
                   key={s.id}
                   onClick={() => setStyle(s.id)}
-                  className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                    style === s.id
-                      ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30'
-                      : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-transparent hover:border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)]'
-                  }`}
+                  className={style === s.id ? 'gs-pill gs-pill-active' : 'gs-pill'}
                 >
                   {s.label}
                 </button>
@@ -455,8 +452,8 @@ export function DesignAssistantPage() {
                 onClick={() => setActiveType(dt.id)}
                 className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                   isActive
-                    ? 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/25'
-                    : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
+                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/25'
+                    : 'gs-card text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -470,8 +467,8 @@ export function DesignAssistantPage() {
       {/* ---- Type description / redirect hint ---- */}
       {activeType !== 'color-palette' && activeType !== 'brand-kit' && (
         <BlurFade delay={0.2}>
-          <div className="flex items-center gap-2 rounded-lg bg-[var(--ag-bg-deep)]/60 border border-[var(--ag-border-subtle)] px-4 py-3">
-            <Sparkles className="w-4 h-4 text-[var(--ag-violet)] flex-shrink-0" />
+          <div className="gs-card flex items-center gap-2 px-4 py-3">
+            <Sparkles className="w-4 h-4 text-violet-400 flex-shrink-0" />
             <p className="text-xs text-[var(--ag-text-secondary)]">
               {activeType === 'image' && 'Your prompt will be enhanced and sent to the Image Generator for visual creation.'}
               {activeType === 'website' && 'Your design brief will open in the Website Builder with AI-powered layout suggestions.'}
@@ -483,8 +480,8 @@ export function DesignAssistantPage() {
 
       {activeType === 'brand-kit' && (
         <BlurFade delay={0.2}>
-          <div className="flex items-center gap-2 rounded-lg bg-[var(--ag-violet)]/5 border border-[var(--ag-violet)]/15 px-4 py-3">
-            <Wand2 className="w-4 h-4 text-[var(--ag-violet)] flex-shrink-0" />
+          <div className="gs-card flex items-center gap-2 px-4 py-3 border-violet-500/15">
+            <Wand2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
             <p className="text-xs text-[var(--ag-text-secondary)]">
               Enter your brand name to generate a complete identity: color palette, font pairing, taglines, and social media dimensions.
             </p>
@@ -499,12 +496,13 @@ export function DesignAssistantPage() {
             {/* Colors */}
             {brandKitColors.length > 0 && (
               <SectionCard title="Brand Colors" subtitle="Click any swatch to copy its hex code">
+                <p className="gs-section-label mb-3">Brand Colors</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                   {brandKitColors.map((c) => (
                     <button
                       key={c.hex}
                       onClick={() => handleCopyColor(c.hex)}
-                      className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all min-h-[44px]"
+                      className="group gs-card flex flex-col items-center gap-2 p-3 min-h-[44px]"
                     >
                       <div
                         className="w-full h-16 rounded-lg border border-white/10 shadow-md transition-shadow group-hover:shadow-lg"
@@ -513,7 +511,7 @@ export function DesignAssistantPage() {
                       <div className="text-center">
                         {c.name && <p className="text-xs font-medium text-[var(--ag-text-primary)]">{c.name}</p>}
                         <span className="flex items-center gap-1 text-[10px] font-mono text-[var(--ag-text-secondary)] group-hover:text-[var(--ag-text-primary)]">
-                          {copiedColors[c.hex] ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedColors[c.hex] ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                           {c.hex}
                         </span>
                         {c.usage && <p className="text-[10px] text-[var(--ag-text-muted)] mt-0.5 line-clamp-1">{c.usage}</p>}
@@ -526,12 +524,13 @@ export function DesignAssistantPage() {
 
             {/* Fonts */}
             {brandKitFonts.length > 0 && (
-              <SectionCard title="Typography" subtitle="Recommended font pairing">
+              <SectionCard>
+                <p className="gs-section-label mb-3">Typography</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {brandKitFonts.map((f) => (
                     <div
                       key={f.name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] min-h-[44px]"
+                      className="gs-card flex items-center justify-between p-3 min-h-[44px]"
                     >
                       <div>
                         <p className="text-sm font-semibold text-[var(--ag-text-primary)]">{f.name}</p>
@@ -542,7 +541,7 @@ export function DesignAssistantPage() {
                           href={f.googleFontsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-violet)]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)] transition-colors"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-violet-500/10 text-[var(--ag-text-muted)] hover:text-violet-400 transition-colors"
                           title="View on Google Fonts"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -556,14 +555,15 @@ export function DesignAssistantPage() {
 
             {/* Taglines */}
             {brandKitTaglines.length > 0 && (
-              <SectionCard title="Tagline Suggestions" subtitle="AI-generated brand messaging">
+              <SectionCard>
+                <p className="gs-section-label mb-3">Tagline Suggestions</p>
                 <div className="space-y-2">
                   {brandKitTaglines.map((tagline, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] min-h-[44px]"
+                      className="gs-card flex items-center gap-3 p-3 min-h-[44px]"
                     >
-                      <span className="text-xs font-mono text-[var(--ag-violet)] w-5 text-center shrink-0">{i + 1}</span>
+                      <span className="text-xs font-mono text-violet-400 w-5 text-center shrink-0">{i + 1}</span>
                       <p className="text-sm text-[var(--ag-text-primary)] italic">&ldquo;{tagline}&rdquo;</p>
                     </div>
                   ))}
@@ -580,7 +580,7 @@ export function DesignAssistantPage() {
           <SectionCard>
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                {isGenerating && <Loader2 className="w-4 h-4 text-[var(--ag-violet)] animate-spin" />}
+                {isGenerating && <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />}
                 <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">
                   {isGenerating ? 'Generating design...' : 'Design Result'}
                 </h3>
@@ -596,7 +596,7 @@ export function DesignAssistantPage() {
               {/* Live color swatches */}
               {liveColors.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-[var(--ag-text-primary)]/70 uppercase tracking-wider">Colors Found</h4>
+                  <p className="gs-section-label">Colors Found</p>
                   <div className="flex flex-wrap gap-3">
                     {liveColors.map((hex) => (
                       <button
@@ -609,7 +609,7 @@ export function DesignAssistantPage() {
                           style={{ backgroundColor: hex }}
                         />
                         <span className="flex items-center gap-1 text-[10px] font-mono text-[var(--ag-text-secondary)] group-hover:text-[var(--ag-text-primary)]">
-                          {copiedColors[hex] ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedColors[hex] ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                           {hex}
                         </span>
                       </button>
@@ -627,7 +627,7 @@ export function DesignAssistantPage() {
         <BlurFade delay={0.1}>
           <SectionCard>
             <div className="flex items-center justify-center gap-3 py-8">
-              <Loader2 className="w-5 h-5 text-[var(--ag-violet)] animate-spin" />
+              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
               <p className="text-sm text-[var(--ag-text-secondary)]">Generating brand identity...</p>
             </div>
           </SectionCard>
@@ -638,10 +638,10 @@ export function DesignAssistantPage() {
       {results.length > 0 && (
         <BlurFade delay={0.25}>
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]/80 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[var(--ag-text-secondary)]" />
+            <p className="gs-section-label flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" />
               Recent Designs
-            </h2>
+            </p>
 
             <div className="space-y-3">
               {results.map((result) => (
@@ -651,10 +651,10 @@ export function DesignAssistantPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{result.prompt}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] capitalize">
+                        <span className="gs-pill gs-pill-active text-[10px] capitalize">
                           {result.style}
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
+                        <span className="gs-pill text-[10px]">
                           {DESIGN_TYPES.find((dt) => dt.id === result.type)?.label}
                         </span>
                         <span className="text-[10px] text-[var(--ag-text-muted)]">{formatTimestamp(result.timestamp)}</span>
@@ -664,14 +664,14 @@ export function DesignAssistantPage() {
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleReuseResult(result)}
-                        className="min-w-[44px] min-h-[44px] rounded-lg bg-[var(--ag-bg-deep)] hover:bg-[var(--ag-violet)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] flex items-center justify-center transition-colors"
+                        className="min-w-[44px] min-h-[44px] gs-btn-ghost flex items-center justify-center"
                         title="Reuse prompt"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteResult(result.id)}
-                        className="min-w-[44px] min-h-[44px] rounded-lg bg-[var(--ag-bg-deep)] hover:bg-red-500/10 text-[var(--ag-text-secondary)] hover:text-red-400 flex items-center justify-center transition-colors"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[var(--ag-text-secondary)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -686,7 +686,7 @@ export function DesignAssistantPage() {
                         <button
                           key={c.hex}
                           onClick={() => handleCopyColor(c.hex)}
-                          className="group/swatch flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--ag-bg-deep)] hover:bg-[var(--ag-bg-elevated)] transition-colors min-h-[32px]"
+                          className="group/swatch flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] transition-colors min-h-[32px]"
                         >
                           <div
                             className="w-5 h-5 rounded border border-white/10"
@@ -694,7 +694,7 @@ export function DesignAssistantPage() {
                           />
                           <span className="text-[10px] font-mono text-[var(--ag-text-secondary)] group-hover/swatch:text-[var(--ag-text-primary)]">
                             {copiedColors[c.hex] ? (
-                              <span className="text-green-400 flex items-center gap-0.5"><Check className="w-3 h-3" /> Copied</span>
+                              <span className="text-emerald-400 flex items-center gap-0.5"><Check className="w-3 h-3" /> Copied</span>
                             ) : (
                               <>
                                 {c.name ? `${c.name} ${c.hex}` : c.hex}
@@ -724,8 +724,8 @@ export function DesignAssistantPage() {
         <BlurFade delay={0.2}>
           <SectionCard className="!border-dashed">
             <div className="flex flex-col items-center justify-center text-center space-y-3 py-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--ag-violet)]/10 to-[var(--ag-cyan)]/10 flex items-center justify-center">
-                <Sparkles className="w-7 h-7 text-[var(--ag-text-secondary)]" />
+              <div className="gs-icon-pill gs-icon-pill-violet">
+                <Sparkles className="w-6 h-6" />
               </div>
               <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Ready to design</h3>
               <p className="text-xs text-[var(--ag-text-secondary)] max-w-sm">
@@ -736,7 +736,7 @@ export function DesignAssistantPage() {
                   <button
                     key={example}
                     onClick={() => setPrompt(example)}
-                    className="text-xs min-h-[44px] px-3 py-1.5 rounded-full bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/20 transition-colors"
+                    className="gs-pill"
                   >
                     {example}
                   </button>

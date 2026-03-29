@@ -39,8 +39,6 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { suggestionService } from '@/services/api';
 import pkgJson from '../../../package.json';
@@ -503,6 +501,7 @@ export function RoadmapPage() {
       />
 
       {/* Recent Changes */}
+      <p className="gs-section-label">Changelog</p>
       <SectionCard title="Recent Changes" subtitle="Latest shipped improvements">
         <div className="space-y-3">
           {releaseNotes.map((note) => (
@@ -974,40 +973,39 @@ export function RoadmapPage() {
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label className="text-[#F4F6FF] text-sm">Title</Label>
-                <Input
+                <Label className="gs-section-label">Title</Label>
+                <input
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
                   maxLength={100}
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                  className="gs-input w-full"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#F4F6FF] text-sm">Description <span className="text-[#9CA3AF] font-normal">(min 20 chars)</span></Label>
-                <Textarea
+                <Label className="gs-section-label">Description <span className="text-[#9CA3AF] font-normal normal-case tracking-normal">(min 20 chars)</span></Label>
+                <textarea
                   value={editBody}
                   onChange={e => setEditBody(e.target.value)}
                   rows={4}
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF] resize-none"
+                  className="gs-input w-full resize-none"
                 />
                 <p className="text-right text-xs text-[#9CA3AF]">{editBody.length}/2000</p>
               </div>
               {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
               <div className="flex gap-2">
-                <Button
+                <button
                   onClick={() => setEditingSuggestion(null)}
-                  variant="outline"
-                  className="flex-1 border-[rgba(139,92,246,0.15)] text-[#9CA3AF] min-h-[44px]"
+                  className="gs-btn-ghost flex-1 min-h-[44px] rounded-xl"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={() => void handleEdit()}
                   disabled={editSaving || !editTitle.trim() || editBody.trim().length < 20}
-                  className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
+                  className="gs-btn-primary flex-1 min-h-[44px] rounded-xl disabled:opacity-50"
                 >
                   {editSaving ? 'Saving\u2026' : 'Save Changes'}
-                </Button>
+                </button>
               </div>
             </div>
           </DialogContent>
@@ -1094,7 +1092,7 @@ export function RoadmapPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteDialogId(null)} className="min-h-[44px] text-[#9CA3AF]">Cancel</Button>
+            <button onClick={() => setDeleteDialogId(null)} className="gs-btn-ghost min-h-[44px] rounded-xl px-4">Cancel</button>
             <Button
               variant="destructive"
               onClick={() => { if (deleteDialogId) void handleDelete(deleteDialogId); }}

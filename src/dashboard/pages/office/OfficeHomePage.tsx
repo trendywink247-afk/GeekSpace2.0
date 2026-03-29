@@ -603,13 +603,8 @@ function SuggestionStrip({ onSelect }: { onSelect: (text: string) => void }) {
         <button
           key={s}
           onClick={() => onSelect(s)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] whitespace-nowrap transition-all duration-200 hover:shadow-[var(--ag-glow-sm)]"
-          style={{
-            color: 'var(--ag-text-secondary)',
-            border: '1px solid var(--ag-border-subtle)',
-            background: i === 0 ? 'rgba(139,92,246,0.08)' : 'transparent',
-            animation: i === 0 ? 'shimmer 3s ease-in-out infinite' : undefined,
-          }}
+          className={`flex items-center gap-1 text-[11px] whitespace-nowrap transition-all duration-200 ${i === 0 ? 'gs-pill gs-pill-active' : 'gs-pill'}`}
+          style={{ animation: i === 0 ? 'shimmer 3s ease-in-out infinite' : undefined }}
         >
           {s}
           <ChevronRight className="w-3 h-3 opacity-40" />

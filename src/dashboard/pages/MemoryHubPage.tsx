@@ -1,11 +1,11 @@
 // ============================================================
 // Memory Hub — Unified memory management: Browse, Graph, Stats
 // Owner agent: echo (#6366F1)
-// Revamped: design tokens, SectionCard, PageHeader, useAgentCanvas
+// Redesigned: gs-card, gs-input, gs-btn-primary/ghost, gs-pill, GsTabBar
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, Search, Trash2, Clock, RefreshCw,
@@ -294,10 +294,10 @@ export function MemoryHubPage() {
     return counts;
   }, [memories]);
 
-  const hubTabs: { id: HubTab; label: string; icon: typeof List }[] = [
-    { id: 'browse', label: 'Browse', icon: List },
-    { id: 'graph', label: 'Graph', icon: Network },
-    { id: 'stats', label: 'Stats', icon: BarChart3 },
+  const hubTabs = [
+    { id: 'browse' as HubTab, label: 'Browse', icon: <List className="w-4 h-4" /> },
+    { id: 'graph' as HubTab, label: 'Graph', icon: <Network className="w-4 h-4" /> },
+    { id: 'stats' as HubTab, label: 'Stats', icon: <BarChart3 className="w-4 h-4" /> },
   ];
 
   const hasMemories = memories.length > 0;
@@ -316,45 +316,30 @@ export function MemoryHubPage() {
         subtitle="Your AI's memory is like a personal Wikipedia about you."
         actions={
           <>
-            <Button
-              variant="outline" size="sm"
+            <button
               onClick={handleExport}
               disabled={!hasMemories}
-              className="border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[44px]"
+              className="gs-btn-ghost min-h-[44px] px-3 flex items-center gap-1.5 text-sm disabled:opacity-40"
             >
-              <Download className="w-4 h-4 mr-1" />Export
-            </Button>
-            <Button
-              variant="outline" size="sm"
+              <Download className="w-4 h-4" />Export
+            </button>
+            <button
               onClick={() => void loadMemories()}
-              className="border-[var(--ag-border-default)] min-w-[44px] min-h-[44px]"
+              className="gs-btn-ghost min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-3"
               aria-label="Refresh memories"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
+            </button>
           </>
         }
       />
 
       {/* Hub tab switcher */}
-      <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5 w-fit">
-        {hubTabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors min-h-[44px] ${
-                isActive ? 'bg-[#6366F1]/20 text-[#6366F1]' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <GsTabBar
+        tabs={hubTabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* Loading state */}
       {isLoading && (
@@ -374,9 +359,9 @@ export function MemoryHubPage() {
           <AlertTriangle className="w-16 h-16 text-[var(--ag-pink)]/40 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">Could not load memories</h3>
           <p className="text-[var(--ag-text-secondary)] max-w-sm mx-auto mb-4">{loadError}</p>
-          <Button onClick={() => void loadMemories()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
-            <RefreshCw className="w-4 h-4 mr-2" /> Retry
-          </Button>
+          <button onClick={() => void loadMemories()} className="gs-btn-primary min-h-[44px] px-6 rounded-xl flex items-center gap-2 mx-auto">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
         </div>
       )}
 
@@ -398,13 +383,13 @@ export function MemoryHubPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
+            <button
               onClick={() => navigate('/dashboard/chat')}
-              className="bg-[#6366F1]/15 hover:bg-[#6366F1]/25 text-[#6366F1] border border-[#6366F1]/25 min-h-[44px] px-6"
+              className="gs-btn-ghost min-h-[44px] px-6 flex items-center gap-2 rounded-xl"
             >
-              <MessageSquare className="w-4 h-4 mr-2" />
+              <MessageSquare className="w-4 h-4" />
               Start Chat
-            </Button>
+            </button>
             <p className="text-xs text-[var(--ag-text-secondary)]">or add a memory manually below</p>
           </div>
           {/* Quick-add in empty state */}
@@ -412,22 +397,22 @@ export function MemoryHubPage() {
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
-                <Input
+                <input
                   ref={quickAddInputRef}
                   placeholder="Add a memory... (e.g. 'favorite color: blue')"
                   value={quickAddText}
                   onChange={e => setQuickAddText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleQuickAdd(); } }}
-                  className="pl-10 bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]"
+                  className="gs-input w-full pl-10 min-h-[44px] rounded-xl"
                 />
               </div>
-              <Button
+              <button
                 onClick={() => void handleQuickAdd()}
                 disabled={isAdding || !quickAddText.trim()}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[44px] min-h-[44px]"
+                className="gs-btn-primary min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-4 disabled:opacity-50"
               >
                 {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
+              </button>
             </div>
           </SectionCard>
         </div>
@@ -438,20 +423,21 @@ export function MemoryHubPage() {
         <>
           {/* Quick-add bar */}
           <SectionCard>
+            <p className="gs-section-label mb-3">Add Memory</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
-                <Input
+                <input
                   ref={quickAddInputRef}
                   placeholder="Add a memory... (e.g. 'favorite color: blue' or 'I work at Google')"
                   value={quickAddText}
                   onChange={e => setQuickAddText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleQuickAdd(); } }}
-                  className="pl-10 bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]"
+                  className="gs-input w-full pl-10 min-h-[44px] rounded-xl"
                 />
               </div>
               <Select value={quickAddCategory} onValueChange={setQuickAddCategory}>
-                <SelectTrigger className="w-full sm:w-[140px] bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]">
+                <SelectTrigger className="w-full sm:w-[140px] bg-white/[0.03] border border-white/[0.06] text-[var(--ag-text-primary)] rounded-xl min-h-[44px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -460,25 +446,25 @@ export function MemoryHubPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
+              <button
                 onClick={() => void handleQuickAdd()}
                 disabled={isAdding || !quickAddText.trim()}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[44px] min-h-[44px]"
+                className="gs-btn-primary min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl px-4 disabled:opacity-50"
               >
                 {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
+              </button>
             </div>
           </SectionCard>
 
           {/* Search + category tabs */}
           <div className="space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
-              <Input
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)] pointer-events-none" />
+              <input
                 placeholder="Search memories..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]"
+                className="gs-input w-full pl-10 min-h-[44px] rounded-xl"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -491,15 +477,13 @@ export function MemoryHubPage() {
                     key={tab.id}
                     onClick={() => setSelectedCategory(tab.id)}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm transition-all min-h-[44px] ${
-                      isActive
-                        ? 'bg-[#6366F1]/20 text-[#6366F1] border border-[#6366F1]/30'
-                        : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-subtle)]'
+                      isActive ? 'gs-pill-active' : 'gs-pill'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
                     {count > 0 && (
-                      <span className={`text-xs font-mono ${isActive ? 'text-[#6366F1]' : 'text-[var(--ag-text-secondary)]'}`}>
+                      <span className={`text-xs font-mono ${isActive ? 'text-[#8B5CF6]' : 'text-[var(--ag-text-secondary)]'}`}>
                         {count}
                       </span>
                     )}
@@ -524,7 +508,7 @@ export function MemoryHubPage() {
                 const isEditing = editingId === memory.id;
 
                 return (
-                  <SectionCard key={memory.id} className="group">
+                  <div key={memory.id} className="gs-card group p-4">
                     {isEditing ? (
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-xs text-[var(--ag-text-secondary)]">
@@ -534,7 +518,7 @@ export function MemoryHubPage() {
                         <Textarea
                           value={editValue}
                           onChange={e => setEditValue(e.target.value)}
-                          className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)] text-sm resize-none"
+                          className="bg-white/[0.03] border border-white/[0.06] text-sm resize-none rounded-xl min-h-[88px]"
                           rows={3} autoFocus
                           onKeyDown={e => {
                             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void saveInlineEdit(memory);
@@ -543,7 +527,7 @@ export function MemoryHubPage() {
                         />
                         <div className="flex items-center justify-between">
                           <Select value={editCategory} onValueChange={setEditCategory}>
-                            <SelectTrigger className="w-[130px] bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)] h-8 text-xs">
+                            <SelectTrigger className="w-[130px] bg-white/[0.03] border border-white/[0.06] h-8 text-xs rounded-lg">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -553,18 +537,17 @@ export function MemoryHubPage() {
                             </SelectContent>
                           </Select>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" onClick={cancelInlineEdit} className="h-8 px-3 text-[var(--ag-text-secondary)] min-h-[44px]">
-                              <X className="w-3.5 h-3.5 mr-1" /> Cancel
-                            </Button>
-                            <Button
-                              size="sm"
+                            <button onClick={cancelInlineEdit} className="gs-btn-ghost h-8 px-3 text-sm min-h-[44px] rounded-lg flex items-center gap-1">
+                              <X className="w-3.5 h-3.5" /> Cancel
+                            </button>
+                            <button
                               onClick={() => void saveInlineEdit(memory)}
                               disabled={isSaving || !editValue.trim()}
-                              className="h-8 px-3 bg-[var(--ag-lime)]/20 text-[var(--ag-lime)] hover:bg-[var(--ag-lime)]/30 border-0 min-h-[44px]"
+                              className="gs-btn-primary h-8 px-3 text-sm min-h-[44px] rounded-lg flex items-center gap-1 disabled:opacity-50"
                             >
                               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
                               Save
-                            </Button>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -572,9 +555,9 @@ export function MemoryHubPage() {
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <Badge className="bg-[#6366F1]/10 text-[#6366F1] text-xs px-2 py-0.5 rounded-full border-0">
-                              <CategoryIcon className="w-3 h-3 mr-1" />{memory.category}
-                            </Badge>
+                            <span className="gs-pill text-xs">
+                              <CategoryIcon className="w-3 h-3 mr-1 inline" />{memory.category}
+                            </span>
                             <Badge className={`${sourceStyle.bg} ${sourceStyle.text} text-xs px-2 py-0.5 rounded-full border-0`}>
                               {memory.source === 'telegram' && <MessageSquare className="w-3 h-3 mr-1" />}
                               {sourceStyle.label}
@@ -598,14 +581,14 @@ export function MemoryHubPage() {
                         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => openEditDialog(memory)}
-                            className="p-2 rounded-lg text-[var(--ag-text-secondary)] hover:text-[#6366F1] hover:bg-[#6366F1]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-xl text-[var(--ag-text-secondary)] hover:text-[#6366F1] hover:bg-[#6366F1]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                             aria-label="Edit memory" title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(memory.id)}
-                            className="p-2 rounded-lg text-[var(--ag-text-secondary)] hover:text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-xl text-[var(--ag-text-secondary)] hover:text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                             aria-label="Delete memory" title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -613,7 +596,7 @@ export function MemoryHubPage() {
                         </div>
                       </div>
                     )}
-                  </SectionCard>
+                  </div>
                 );
               })}
               <p className="text-center text-xs text-[var(--ag-text-secondary)] pt-2">
@@ -623,7 +606,7 @@ export function MemoryHubPage() {
           )}
 
           {/* Danger zone */}
-          <SectionCard className="!border-[var(--ag-pink)]/20 mt-8">
+          <div className="gs-card !border-[var(--ag-pink)]/20 mt-8 p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--ag-pink)] flex items-center gap-2">
@@ -631,15 +614,14 @@ export function MemoryHubPage() {
                 </h3>
                 <p className="text-xs text-[var(--ag-text-secondary)] mt-1">Permanently delete all memories. This action cannot be undone.</p>
               </div>
-              <Button
-                variant="outline" size="sm"
+              <button
                 onClick={() => setShowResetDialog(true)}
-                className="border-[var(--ag-pink)]/30 text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 shrink-0 min-h-[44px]"
+                className="gs-btn-ghost border border-[var(--ag-pink)]/30 text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 shrink-0 min-h-[44px] px-4 rounded-xl flex items-center gap-2 text-sm"
               >
-                <Trash2 className="w-4 h-4 mr-1" />Reset All Memories
-              </Button>
+                <Trash2 className="w-4 h-4" />Reset All Memories
+              </button>
             </div>
-          </SectionCard>
+          </div>
         </>
       )}
 
@@ -686,7 +668,7 @@ export function MemoryHubPage() {
             placeholder='Type "RESET" to confirm'
             value={resetConfirmText}
             onChange={e => setResetConfirmText(e.target.value)}
-            className="bg-[var(--ag-bg-deep)] border-[var(--ag-pink)]/20"
+            className="bg-white/[0.03] border border-[var(--ag-pink)]/20 rounded-xl"
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setShowResetDialog(false); setResetConfirmText(''); }} className="min-h-[44px]">Cancel</Button>
@@ -713,15 +695,16 @@ export function MemoryHubPage() {
               placeholder="Memory key (e.g. preferred_language)"
               value={editForm.key}
               onChange={e => setEditForm(p => ({ ...p, key: e.target.value }))}
+              className="gs-input rounded-xl"
             />
             <Textarea
               placeholder="Memory value -- what should your agent remember?"
               value={editForm.value}
               onChange={e => setEditForm(p => ({ ...p, value: e.target.value }))}
-              rows={4} className="resize-none"
+              rows={4} className="bg-white/[0.03] border border-white/[0.06] rounded-xl resize-none"
             />
             <Select value={editForm.category} onValueChange={val => setEditForm(p => ({ ...p, category: val }))}>
-              <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+              <SelectTrigger className="bg-white/[0.03] border border-white/[0.06] rounded-xl"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
                 {CATEGORY_OPTIONS.map(opt => (
                   <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -734,7 +717,7 @@ export function MemoryHubPage() {
             <Button
               onClick={() => void handleSaveEditDialog()}
               disabled={!editForm.key.trim() || !editForm.value.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+              className="gs-btn-primary min-h-[44px] rounded-xl px-6"
             >
               Save Changes
             </Button>

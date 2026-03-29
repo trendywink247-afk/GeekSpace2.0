@@ -21,7 +21,6 @@ import {
   Timer,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { recipeService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 
@@ -204,6 +203,7 @@ export function RecipesPage() {
       />
 
       {/* Recipe Grid */}
+      <p className="gs-section-label">Available Recipes</p>
       {recipes.length === 0 ? (
         <BlurFade delay={0.1}>
           <SectionCard className="text-center py-12">
@@ -306,28 +306,27 @@ export function RecipesPage() {
 
                   {/* Action Button — 44px min-height for mobile */}
                   {recipe.installed ? (
-                    <Button
-                      variant="outline"
-                      className="w-full min-h-[44px] border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                    <button
+                      className="gs-btn-ghost w-full min-h-[44px] rounded-xl flex items-center justify-center gap-2 hover:border-[#FF6161]/50 hover:text-[#FF6161] disabled:opacity-50"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
                       {isActionInProgress ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : null}
                       Deactivate
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
-                      className="w-full min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+                    <button
+                      className="gs-btn-primary w-full min-h-[44px] rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
                       {isActionInProgress ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : null}
                       Activate
-                    </Button>
+                    </button>
                   )}
                 </SectionCard>
               </BlurFade>

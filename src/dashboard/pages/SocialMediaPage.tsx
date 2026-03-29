@@ -1,7 +1,7 @@
 // SocialMediaPage.tsx — Aria-owned social media handler
 // Revamped: design tokens, SectionCard, PageHeader, aria ownership, useAgentCanvas
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { socialMediaService, agentService } from '@/services/api';
 import type { SocialAccount, ContentPlan, ContentPlanItem } from '@/services/api';
@@ -103,11 +102,7 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
         <button
           key={t.value}
           onClick={() => onChange(t.value)}
-          className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
-            selected === t.value
-              ? 'bg-[#FF6B9D]/20 text-[#FF6B9D] border border-[#FF6B9D]/40 shadow-[0_0_8px_rgba(255,107,157,0.15)]'
-              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
-          }`}
+          className={selected === t.value ? 'gs-pill-active' : 'gs-pill'}
         >
           {t.label}
         </button>
@@ -643,7 +638,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Platform</label>
                 <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="gs-input"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -652,14 +647,14 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               </div>
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Account Name</label>
-                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="gs-input" />
               </div>
             </div>
 
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Posting Method</label>
               <Select value={postingMethod} onValueChange={setPostingMethod}>
-                <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="gs-input"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="webhook">Webhook</SelectItem>
                   <SelectItem value="api">Direct API</SelectItem>
@@ -670,7 +665,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
             {postingMethod === 'webhook' && (
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Webhook URL</label>
-                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="gs-input" />
               </div>
             )}
 
@@ -678,11 +673,11 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Page ID</label>
-                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="gs-input" />
                 </div>
                 <div>
                   <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Access Token</label>
-                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="gs-input" />
                 </div>
               </div>
             )}
@@ -1121,7 +1116,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
                   placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}, or use AI Generate above...`}
-                  className="bg-[#06060B] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#FF6B9D]/30"
+                  className="gs-input text-sm min-h-[100px]"
                   disabled={aiGenerating}
                 />
                 <CharacterCounter count={composerText.length} platform={composerPlatform} />
@@ -1168,11 +1163,11 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
           <div className="space-y-3">
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Topic</label>
-              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="gs-input" />
             </div>
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Niche</label>
-              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="gs-input" />
             </div>
             <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
               {generating ? (
@@ -1462,6 +1457,7 @@ export function SocialMediaPage() {
   const [statsAccounts, setStatsAccounts] = useState<SocialAccount[]>([]);
   const [statsItems, setStatsItems] = useState<ContentPlanItem[]>([]);
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState('accounts');
 
   const loadStats = useCallback(async () => {
     try {
@@ -1524,25 +1520,21 @@ export function SocialMediaPage() {
           <StatsSummary accounts={statsAccounts} items={statsItems} />
         )}
 
-        <Tabs defaultValue="accounts" className="w-full">
-          <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
-            <TabsTrigger value="accounts" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Accounts</TabsTrigger>
-            <TabsTrigger value="plan" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Content Plan</TabsTrigger>
-            <TabsTrigger value="posts" className="data-[state=active]:bg-[#FF6B9D]/10 data-[state=active]:text-[#FF6B9D]">Posts</TabsTrigger>
-          </TabsList>
+        <GsTabBar
+          tabs={[
+            { id: 'accounts', label: 'Accounts' },
+            { id: 'plan', label: 'Content Plan' },
+            { id: 'posts', label: 'Posts' },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
 
-          <TabsContent value="accounts" className="mt-4">
-            <AccountsTab onAccountCreated={handleAccountCreated} />
-          </TabsContent>
-
-          <TabsContent value="plan" className="mt-4">
-            <ContentPlanTab onPostScheduled={handlePostScheduled} />
-          </TabsContent>
-
-          <TabsContent value="posts" className="mt-4">
-            <PostsTab />
-          </TabsContent>
-        </Tabs>
+        <div className="mt-4">
+          {activeTab === 'accounts' && <AccountsTab onAccountCreated={handleAccountCreated} />}
+          {activeTab === 'plan' && <ContentPlanTab onPostScheduled={handlePostScheduled} />}
+          {activeTab === 'posts' && <PostsTab />}
+        </div>
       </div>
     </PageShell>
   );

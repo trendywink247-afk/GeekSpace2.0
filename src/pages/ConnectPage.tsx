@@ -8,8 +8,6 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle2, XCircle, Loader2, UserPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { PublicPageShell, SectionCard } from '@/components/agentin';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
@@ -71,45 +69,51 @@ export function ConnectPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
             <img src="/logo-agentin.webp" alt="Agentin" className="w-7 h-7 object-contain" />
-            <span className="text-xl font-heading font-bold">Agentin Chat</span>
+            <span className="text-xl font-heading font-bold text-[var(--ag-text-primary,#F4F6FF)]">Agentin Chat</span>
           </div>
         </div>
 
         <SectionCard padding="lg">
             {stage === 'loading' && (
               <div className="text-center py-8">
-                <Loader2 className="w-8 h-8 text-[var(--ag-cyan,#00F0FF)] animate-spin mx-auto mb-4" />
+                <div className="gs-icon-pill gs-icon-pill-violet mx-auto mb-4">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
                 <p className="text-[var(--ag-text-muted,#9CA3AF)]">Loading invite...</p>
               </div>
             )}
 
             {stage === 'error' && (
               <div className="text-center py-8">
-                <XCircle className="w-12 h-12 text-[#FF6161] mx-auto mb-4" />
-                <h2 className="text-xl font-heading font-bold mb-2">Invalid Invite</h2>
-                <p className="text-[var(--ag-text-muted,#9CA3AF)] mb-6">{errorMsg}</p>
+                <div className="gs-icon-pill gs-icon-pill-rose mx-auto mb-4">
+                  <XCircle className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl font-heading font-bold mb-2 text-[var(--ag-text-primary,#F4F6FF)]">Invalid Invite</h2>
+                <p className="text-[var(--ag-text-muted,#9CA3AF)] mb-6 text-sm">{errorMsg}</p>
                 <Link to="/">
-                  <Button variant="outline" className="min-h-[44px] border-[var(--ag-border-subtle,rgba(139,92,246,0.15))] text-[var(--ag-cyan,#00F0FF)] hover:border-[var(--ag-border-default,rgba(139,92,246,0.25))] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan,#00F0FF)]/50">
+                  <button className="gs-btn-ghost min-h-[44px] px-6 py-2 flex items-center gap-2 mx-auto">
                     Go to Homepage
-                  </Button>
+                  </button>
                 </Link>
               </div>
             )}
 
             {stage === 'success' && (
               <div className="text-center py-8">
-                <CheckCircle2 className="w-12 h-12 text-[#00FF88] mx-auto mb-4" />
-                <h2 className="text-xl font-heading font-bold mb-2">Connection Established!</h2>
-                <p className="text-[var(--ag-text-muted,#9CA3AF)] mb-2">
-                  You are now connected with <span className="text-[var(--ag-cyan,#00F0FF)] font-medium">{invite?.ownerName}</span>.
+                <div className="gs-icon-pill gs-icon-pill-emerald mx-auto mb-4">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl font-heading font-bold mb-2 text-[var(--ag-text-primary,#F4F6FF)]">Connection Established!</h2>
+                <p className="text-[var(--ag-text-muted,#9CA3AF)] mb-2 text-sm">
+                  You are now connected with <span className="text-[var(--ag-violet,#8B5CF6)] font-medium">{invite?.ownerName}</span>.
                 </p>
                 <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-6">
                   They'll be able to collaborate with you through Agentin Chat.
                 </p>
                 <Link to="/login?signup=1">
-                  <Button className="min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan,#00F0FF)]/50">
+                  <button className="gs-btn-primary min-h-[44px] px-6 py-2 flex items-center gap-2 mx-auto">
                     Sign up to Agentin Chat
-                  </Button>
+                  </button>
                 </Link>
               </div>
             )}
@@ -125,58 +129,62 @@ export function ConnectPage() {
                       className="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-[var(--ag-border-subtle,rgba(139,92,246,0.15))]"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full mx-auto mb-3 bg-[var(--ag-cyan,#00F0FF)]/20 flex items-center justify-center text-2xl font-bold text-[var(--ag-cyan,#00F0FF)]">
+                    <div className="w-16 h-16 rounded-full mx-auto mb-3 bg-[var(--ag-violet,#8B5CF6)]/20 flex items-center justify-center text-2xl font-bold text-[var(--ag-violet,#8B5CF6)]">
                       {invite.ownerName?.[0]?.toUpperCase() ?? '?'}
                     </div>
                   )}
-                  <h2 className="text-xl font-heading font-bold mb-1">
+                  <h2 className="text-xl font-heading font-bold mb-1 text-[var(--ag-text-primary,#F4F6FF)]">
                     {invite.ownerName}
                   </h2>
                   <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">@{invite.ownerUsername}</p>
-                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--ag-cyan,#00F0FF)]/10 border border-[var(--ag-border-subtle,rgba(139,92,246,0.08))]">
-                    <UserPlus className="w-4 h-4 text-[var(--ag-cyan,#00F0FF)]" />
-                    <span className="text-sm text-[var(--ag-cyan,#00F0FF)]">Invited you to connect</span>
+                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--ag-violet,#8B5CF6)]/10 border border-[var(--ag-border-subtle,rgba(139,92,246,0.15))]">
+                    <UserPlus className="w-4 h-4 text-[var(--ag-violet,#8B5CF6)]" />
+                    <span className="text-sm text-[var(--ag-violet,#8B5CF6)]">Invited you to connect</span>
                   </div>
                 </div>
 
                 {/* Accept form */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] block mb-1.5">Your name <span className="text-[var(--ag-text-muted,#9CA3AF)]/60">(optional)</span></label>
-                    <Input
+                    <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] block mb-1.5">
+                      Your name <span className="text-[var(--ag-text-muted,#9CA3AF)]/60">(optional)</span>
+                    </label>
+                    <input
                       placeholder="e.g. Alex Smith"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))]"
+                      className="gs-input w-full"
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] block mb-1.5">Your email <span className="text-[var(--ag-text-muted,#9CA3AF)]/60">(optional)</span></label>
-                    <Input
+                    <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] block mb-1.5">
+                      Your email <span className="text-[var(--ag-text-muted,#9CA3AF)]/60">(optional)</span>
+                    </label>
+                    <input
                       type="email"
                       placeholder="e.g. you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))]"
+                      className="gs-input w-full"
                     />
                   </div>
-                  <Button
+                  <button
                     onClick={handleAccept}
                     disabled={stage === 'submitting'}
-                    className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan,#00F0FF)]/50"
+                    className="gs-btn-primary w-full min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {stage === 'submitting' ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         Connecting...
                       </>
                     ) : (
                       <>
-                        <UserPlus className="w-4 h-4 mr-2" />
+                        <UserPlus className="w-4 h-4" />
                         Accept Connection
                       </>
                     )}
-                  </Button>
+                  </button>
                   <p className="text-xs text-center text-[var(--ag-text-muted,#9CA3AF)]">
                     Invite expires {new Date(invite.expiresAt).toLocaleDateString()}
                   </p>

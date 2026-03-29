@@ -1,5 +1,5 @@
 // WorkflowsPage.tsx — Jarvis (#ADFF2F) ownership
-// Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, visual flow, mobile 44px
+// Redesigned: gs-card, gs-btn-primary, gs-input, GsTabBar, gs-section-label
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Play, Plus, Trash2, ChevronDown, ChevronRight, RefreshCw,
@@ -11,7 +11,6 @@ import { useAgentCanvas } from "@/hooks/useAgentCanvas";
 import { BlurFade } from "@/components/magicui/blur-fade";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import api from "@/services/api";
 
 // ---- Jarvis agent colour ----
@@ -269,7 +268,9 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
 
   return (
     <BlurFade delay={0.1}>
-      <SectionCard title="New Workflow">
+      <div className="gs-card p-5">
+        <p className="gs-section-label mb-1">New Workflow</p>
+        <h3 className="text-base font-semibold text-[#F4F6FF] mb-4">Configure your multi-agent chain</h3>
         <div className="space-y-4">
           {error && (
             <div className="rounded-lg border border-[#FF6161]/30 bg-[#FF6161]/10 p-2.5 text-sm text-[#FF6161]">
@@ -277,27 +278,35 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-sm font-medium text-[#F4F6FF]">Name</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Daily Standup Summary" />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Daily Standup Summary"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm"
+            />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-sm font-medium text-[#F4F6FF]">Description</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this workflow do?" />
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What does this workflow do?"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm"
+            />
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-[#F4F6FF]">Steps</label>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={addStep}
-                className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF]"
+                className="gs-btn-ghost flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs min-h-[36px]"
               >
-                <Plus className="h-3 w-3 mr-1" />Add Step
-              </Button>
+                <Plus className="h-3 w-3" />Add Step
+              </button>
             </div>
 
             {steps.map((step, idx) => {
@@ -312,22 +321,15 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="text-xs font-medium"
-                      style={{ color: "#9CA3AF" }}
-                    >
-                      Step {idx + 1}
-                    </span>
+                    <span className="text-xs font-medium text-[#9CA3AF]">Step {idx + 1}</span>
                     {steps.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="min-h-[44px] min-w-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                      <button
+                        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                         onClick={() => removeStep(idx)}
                         aria-label={"Remove step " + (idx + 1)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     )}
                   </div>
 
@@ -337,7 +339,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       <select
                         value={step.agent}
                         onChange={(e) => updateStep(idx, "agent", e.target.value)}
-                        className="w-full mt-1 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-2 py-2 text-sm text-[#F4F6FF] min-h-[44px] focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                        className="gs-input w-full mt-1 px-2 py-2 text-sm rounded-lg min-h-[44px]"
                       >
                         <option value="weebo">Weebo</option>
                         <option value="jarvis">Jarvis</option>
@@ -347,11 +349,11 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                     </div>
                     <div>
                       <label className="text-xs text-[#9CA3AF]">Output Key</label>
-                      <Input
+                      <input
                         value={step.output_key}
                         onChange={(e) => updateStep(idx, "output_key", e.target.value)}
                         placeholder="e.g. summary"
-                        className="mt-1 h-8 text-sm"
+                        className="gs-input w-full mt-1 px-2 py-2 text-sm rounded-lg"
                       />
                     </div>
                   </div>
@@ -365,7 +367,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       onChange={(e) => updateStep(idx, "prompt_template", e.target.value)}
                       placeholder={"Summarize the following: {{user_input}}"}
                       rows={3}
-                      className="mt-1 w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-3 py-2 text-sm text-[#F4F6FF] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                      className="gs-input w-full mt-1 px-3 py-2 text-sm rounded-lg resize-none"
                     />
                   </div>
                 </div>
@@ -374,24 +376,23 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button
-              variant="ghost"
+            <button
               onClick={onCancel}
-              className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF]"
+              className="gs-btn-ghost px-4 py-2.5 rounded-xl text-sm min-h-[44px]"
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleSubmit}
               disabled={saving}
-              className="min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="gs-btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-50"
             >
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Create Workflow
-            </Button>
+            </button>
           </div>
         </div>
-      </SectionCard>
+      </div>
     </BlurFade>
   );
 }
@@ -454,12 +455,10 @@ function WorkflowCard({
         const res = await api.get<WorkflowRun>("/workflows/runs/" + runId);
         const run = res.data;
 
-        // Update steps from server
         if (run.steps && run.steps.length > 0) {
           setRunSteps(run.steps);
         }
 
-        // Check if workflow finished
         if (run.status === "completed" || run.status === "failed") {
           setLastRun(run);
           setRunning(false);
@@ -472,7 +471,7 @@ function WorkflowCard({
           }
         }
       } catch {
-        // Ignore poll errors -- will retry
+        // Ignore poll errors
       }
     }, 2000);
   }, [workflow.steps, workflow.name, stopPolling, onRunDone, onRunFail]);
@@ -514,7 +513,7 @@ function WorkflowCard({
   };
 
   return (
-    <SectionCard>
+    <div className="gs-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -540,31 +539,27 @@ function WorkflowCard({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+          <button
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5 transition-colors"
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse workflow" : "Expand workflow"}
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size={confirmDelete ? "sm" : "icon"}
-            className={`min-h-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${confirmDelete ? "px-3 border border-[#FF6161]/40 bg-[#FF6161]/10" : "min-w-[44px]"}`}
+          </button>
+          <button
+            className={`min-h-[44px] flex items-center justify-center rounded-lg text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors ${confirmDelete ? "px-3 border border-[#FF6161]/40 bg-[#FF6161]/10" : "min-w-[44px]"}`}
             onClick={handleDelete}
             disabled={deleting}
             aria-label={confirmDelete ? "Confirm delete workflow" : "Delete workflow"}
           >
             <Trash2 className="h-3.5 w-3.5" />
             {confirmDelete && <span className="text-xs ml-1">Confirm?</span>}
-          </Button>
+          </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-4 space-y-4 border-t border-[rgba(139,92,246,0.08)] pt-4">
+        <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
           {/* Visual step flow */}
           <StepFlowVisualiser
             steps={workflow.steps}
@@ -573,20 +568,20 @@ function WorkflowCard({
 
           {/* Run input */}
           <div className="space-y-2">
-            <Input
+            <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Input for {{user_input}} (optional)"
-              className="text-sm"
+              className="gs-input w-full px-3 py-2.5 rounded-xl text-sm"
             />
-            <Button
+            <button
               onClick={handleRun}
               disabled={running}
-              className="w-full min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="gs-btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-50"
             >
-              {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               {running ? "Running\u2026" : "Run Workflow"}
-            </Button>
+            </button>
           </div>
 
           {error && (
@@ -595,20 +590,18 @@ function WorkflowCard({
             </div>
           )}
 
-          {/* Run result -- visible after completion */}
+          {/* Run result */}
           {lastRun && !running && (
-            <SectionCard padding="sm">
+            <div className="gs-card p-3">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-medium text-[#F4F6FF]">Latest Run</span>
                 <RunStatusBadge status={lastRun.status} />
               </div>
               {lastRun.error && <p className="text-xs text-[#FF6161] mb-2">{lastRun.error}</p>}
 
-              {/* Show step-by-step results */}
               {lastRun.steps && lastRun.steps.length > 0 ? (
                 <StepFlowVisualiser steps={workflow.steps} runSteps={lastRun.steps} />
               ) : (
-                /* Fallback: show context for older runs without step data */
                 <div className="space-y-2">
                   {Object.entries(lastRun.context).map(([key, value]) => (
                     <div key={key} className="space-y-1">
@@ -623,11 +616,11 @@ function WorkflowCard({
                   ))}
                 </div>
               )}
-            </SectionCard>
+            </div>
           )}
         </div>
       )}
-    </SectionCard>
+    </div>
   );
 }
 
@@ -684,149 +677,121 @@ export function WorkflowsPage() {
 
   return (
     <PageShell>
-      {/* Header with Jarvis ownership dot */}
-      <PageHeader
-        icon={GitBranch}
-        title="Workflows"
-        subtitle="Chain Weebo, Jarvis, and Edith together for multi-step tasks"
-        badge={
-          <span className="relative flex h-3 w-3" title="Owned by Jarvis">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: JARVIS }} />
-            <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: JARVIS }} />
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => void fetchWorkflows(true)}
-              disabled={refreshing}
-              aria-label="Refresh workflows"
-              className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
-            >
-              <RefreshCw className={"h-4 w-4 " + spinCls} />
-            </Button>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              New
-            </Button>
-          </div>
-        }
-      />
-
-      {error && (
-        <BlurFade delay={0.1}>
-          <div className="rounded-xl border border-[#FF6161]/30 bg-[#FF6161]/10 p-3 text-sm text-[#FF6161]">
-            {error}
-          </div>
-        </BlurFade>
-      )}
-
-      {/* How it works */}
-      <BlurFade delay={0.15}>
-        <SectionCard title="How It Works" subtitle="Multi-agent workflow orchestration">
-          <div className="space-y-2.5 text-sm text-[#9CA3AF]">
-            <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">1.</span>
-              <span>Each workflow is a chain of agent steps &mdash; Weebo, Jarvis, or Edith.</span>
+      <div className="space-y-6 pb-24 md:pb-6">
+        {/* Header with Jarvis ownership dot */}
+        <PageHeader
+          icon={GitBranch}
+          title="Workflows"
+          subtitle="Chain Weebo, Jarvis, and Edith together for multi-step tasks"
+          badge={
+            <span className="relative flex h-3 w-3" title="Owned by Jarvis">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: JARVIS }} />
+              <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: JARVIS }} />
+            </span>
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void fetchWorkflows(true)}
+                disabled={refreshing}
+                aria-label="Refresh workflows"
+                className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl"
+              >
+                <RefreshCw className={"h-4 w-4 " + spinCls} />
+              </button>
+              <button
+                onClick={() => setShowForm(true)}
+                className="gs-btn-primary flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[44px]"
+              >
+                <Plus className="h-4 w-4" />
+                New
+              </button>
             </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">2.</span>
-              <span>Each step&apos;s output is passed to the next using <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{previous_output}}"}</code> or <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{output_key}}"}</code>.</span>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">3.</span>
-              <span>Use <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{user_input}}"}</code> anywhere to inject your input when running.</span>
-            </div>
-          </div>
-        </SectionCard>
-      </BlurFade>
-
-      {/* New Workflow Form */}
-      {showForm && (
-        <NewWorkflowForm
-          onCreated={handleCreated}
-          onCancel={() => setShowForm(false)}
+          }
         />
-      )}
 
-      {/* Workflow List */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-20 rounded-xl animate-pulse"
-              style={{ background: "rgba(12,12,30,0.6)", border: "1px solid rgba(139,92,246,0.08)" }}
-            />
-          ))}
-        </div>
-      ) : workflows.length === 0 ? (
-        <BlurFade delay={0.2}>
-          <SectionCard className="text-center py-12">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${JARVIS}0d`, border: `1px solid ${JARVIS}1a` }}
-            >
-              <GitBranch className="h-8 w-8" style={{ color: `${JARVIS}4d` }} />
+        {error && (
+          <BlurFade delay={0.1}>
+            <div className="rounded-xl border border-[#FF6161]/30 bg-[#FF6161]/10 p-3 text-sm text-[#FF6161]">
+              {error}
             </div>
-            <p className="text-[#F4F6FF] font-medium mb-1">No workflows yet</p>
-            <p className="text-sm text-[#9CA3AF] mt-1 max-w-xs mx-auto">
-              Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.
-            </p>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="mt-4 min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
-            >
-              <Plus className="h-4 w-4 mr-1" />Create Workflow
-            </Button>
-          </SectionCard>
-        </BlurFade>
-      ) : (
-        <div className="space-y-3">
-          {workflows.map((wf, i) => (
-            <BlurFade key={wf.id} delay={0.1 + i * 0.05}>
-              <WorkflowCard
-                workflow={wf}
-                onDelete={handleDeleted}
-                onRunStart={handleRunStart}
-                onRunDone={handleRunDone}
-                onRunFail={handleRunFail}
-              />
-            </BlurFade>
-          ))}
-        </div>
-      )}
+          </BlurFade>
+        )}
 
-      {/* Agent legend */}
-      <BlurFade delay={0.25}>
-        <SectionCard>
-          <p className="text-xs font-medium text-[#9CA3AF] mb-3">Agent Guide</p>
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            {Object.entries(AGENT_LABELS).map(([key, label]) => {
-              const color = AGENT_COLORS[key] ?? "#6B7280";
-              const Icon = AGENT_ICONS[key] ?? Bot;
-              const descriptions: Record<string, string> = {
-                weebo: "tasks & productivity",
-                jarvis: "planning & research",
-                edith: "deep analysis",
-                weebofleet: "automation",
-              };
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
-                  <span className="font-medium" style={{ color }}>{label}</span>
-                  <span className="text-[#9CA3AF]">&mdash; {descriptions[key]}</span>
-                </div>
-              );
-            })}
+        {/* How it works */}
+        <BlurFade delay={0.15}>
+          <div className="gs-card p-5">
+            <p className="gs-section-label mb-1">How It Works</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-3">Multi-agent workflow orchestration</h3>
+            <div className="space-y-2.5 text-sm text-[#9CA3AF]">
+              <div className="flex items-start gap-2.5">
+                <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">1.</span>
+                <span>Each workflow is a chain of agent steps &mdash; Weebo, Jarvis, or Edith.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">2.</span>
+                <span>Each step&apos;s output is passed to the next using <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{previous_output}}"}</code> or <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{output_key}}"}</code>.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">3.</span>
+                <span>Use <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{user_input}}"}</code> anywhere to inject your input when running.</span>
+              </div>
+            </div>
           </div>
-        </SectionCard>
-      </BlurFade>
+        </BlurFade>
+
+        {/* New Workflow Form */}
+        {showForm && (
+          <NewWorkflowForm
+            onCreated={handleCreated}
+            onCancel={() => setShowForm(false)}
+          />
+        )}
+
+        {/* Workflow List */}
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-white/[0.04] rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : workflows.length === 0 ? (
+          <BlurFade delay={0.2}>
+            <div className="gs-card text-center py-12 px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ backgroundColor: `${JARVIS}0d`, border: `1px solid ${JARVIS}1a` }}
+              >
+                <GitBranch className="h-8 w-8" style={{ color: `${JARVIS}4d` }} />
+              </div>
+              <p className="text-[#F4F6FF] font-medium mb-1">No workflows yet</p>
+              <p className="text-sm text-[#9CA3AF] mt-1 max-w-xs mx-auto">
+                Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="gs-btn-primary mt-4 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] mx-auto"
+              >
+                <Plus className="h-4 w-4" />Create Workflow
+              </button>
+            </div>
+          </BlurFade>
+        ) : (
+          <div className="space-y-3">
+            {workflows.map((wf, i) => (
+              <BlurFade key={wf.id} delay={0.1 + i * 0.05}>
+                <WorkflowCard
+                  workflow={wf}
+                  onDelete={handleDeleted}
+                  onRunStart={handleRunStart}
+                  onRunDone={handleRunDone}
+                  onRunFail={handleRunFail}
+                />
+              </BlurFade>
+            ))}
+          </div>
+        )}
+      </div>
     </PageShell>
   );
 }

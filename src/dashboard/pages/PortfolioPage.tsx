@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
@@ -534,7 +533,7 @@ export function PortfolioPage() {
                 <button
                   key={item.label}
                   onClick={() => setActiveTab(item.tab)}
-                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20 hover:bg-[#EC4899]/20 transition-colors min-h-[44px]"
+                  className="gs-pill inline-flex items-center gap-1 text-xs min-h-[44px]"
                 >
                   <Plus className="w-3 h-3" />
                   {item.label}
@@ -595,26 +594,26 @@ export function PortfolioPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
-          <TabsList className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] p-1 flex flex-nowrap w-max md:w-auto">
-            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+          <TabsList className="gs-tab-bar flex flex-nowrap w-max md:w-auto p-1">
+            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>
-            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Code2 className="w-4 h-4 mr-2" />Skills
             </TabsTrigger>
-            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <FolderGit2 className="w-4 h-4 mr-2" />Projects
             </TabsTrigger>
-            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Award className="w-4 h-4 mr-2" />Milestones
             </TabsTrigger>
-            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Share2 className="w-4 h-4 mr-2" />Social
             </TabsTrigger>
-            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Bot className="w-4 h-4 mr-2" />AI Edit
             </TabsTrigger>
-            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Lightbulb className="w-4 h-4 mr-2" />Suggestions
               {suggestions.length > 0 && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[#EC4899] text-white rounded-full">
@@ -622,14 +621,13 @@ export function PortfolioPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <BarChart3 className="w-4 h-4 mr-2" />Analytics
             </TabsTrigger>
-            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale min-h-[44px]">
               <Eye className="w-4 h-4 mr-2" />Preview
             </TabsTrigger>
-            {/* 38.5: Messages tab */}
-            <TabsTrigger value="messages" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale relative min-h-[44px]">
+            <TabsTrigger value="messages" className="gs-tab data-[state=active]:gs-tab-active whitespace-nowrap press-scale relative min-h-[44px]">
               Messages
               {contacts.length > 0 && (
                 <span className="ml-1.5 bg-[#EC4899] text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
@@ -660,11 +658,11 @@ export function PortfolioPage() {
                     Generate
                   </button>
                 </div>
-                <Input
+                <input
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="Full-Stack Developer & AI Enthusiast"
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="gs-input w-full"
                 />
               </div>
               <div>
@@ -687,7 +685,7 @@ export function PortfolioPage() {
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                   placeholder="Tell visitors about yourself..."
-                  className="w-full p-3 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                  className="gs-input w-full min-h-[120px] resize-none"
                 />
               </div>
               {/* 59.9: SEO meta description */}
@@ -701,17 +699,17 @@ export function PortfolioPage() {
                   onChange={(e) => setMetaDescription(e.target.value.slice(0, 160))}
                   placeholder="A brief description of your portfolio for search engines..."
                   data-testid="meta-description-input"
-                  className="w-full p-3 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[60px] resize-none focus:outline-none focus:border-[#8B5CF6] text-sm"
+                  className="gs-input w-full min-h-[60px] resize-none text-sm"
                 />
                 <p className="text-xs text-[#4B5563] mt-1 text-right">{metaDescription.length}/160</p>
               </div>
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Avatar URL</label>
-                <Input
+                <input
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
                   placeholder="https://example.com/avatar.jpg or initials"
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="gs-input w-full"
                 />
               </div>
               <div>
@@ -854,16 +852,16 @@ export function PortfolioPage() {
               </div>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <Input
+                <input
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   placeholder="e.g. TypeScript, React, Docker..."
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                  className="gs-input flex-1"
                 />
-                <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
-                  <Plus className="w-4 h-4 mr-2" />Add
-                </Button>
+                <button onClick={addSkill} disabled={!newSkill.trim()} className="gs-btn-primary min-h-[44px] px-4 rounded-xl flex items-center gap-2 disabled:opacity-50">
+                  <Plus className="w-4 h-4" />Add
+                </button>
               </div>
 
               {skills.length === 0 ? (
@@ -877,7 +875,7 @@ export function PortfolioPage() {
                     <button
                       key={skill}
                       onClick={() => removeSkill(skill)}
-                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#EC4899]/10 border border-[#EC4899]/30 text-[#EC4899] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
+                      className="group gs-pill flex items-center gap-1.5 min-h-[44px] hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
                     >
                       {skill}
                       <X className="w-3 h-3 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity" />
@@ -908,31 +906,31 @@ export function PortfolioPage() {
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Name *</label>
-                      <Input
+                      <input
                         value={editingProject.name}
                         onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
                         placeholder="Project name"
-                        className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                        className="gs-input w-full"
                       />
                     </div>
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">URL</label>
-                      <Input
+                      <input
                         value={editingProject.url}
                         onChange={(e) => setEditingProject({ ...editingProject, url: e.target.value })}
                         placeholder="https://..."
-                        className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                        className="gs-input w-full"
                       />
                     </div>
                   </div>
                   {/* 47.5: Image URL field — preserves existing value on edit */}
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Image URL <span className="text-[#374151]">(optional)</span></label>
-                    <Input
+                    <input
                       value={editingProject.imageUrl ?? ''}
                       onChange={(e) => setEditingProject({ ...editingProject, imageUrl: e.target.value })}
                       placeholder="https://... (thumbnail or screenshot)"
-                      className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                      className="gs-input w-full"
                     />
                   </div>
                   <div>
@@ -941,18 +939,18 @@ export function PortfolioPage() {
                       value={editingProject.description}
                       onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                       placeholder="What does this project do?"
-                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                      className="gs-input w-full min-h-[80px] resize-none"
                     />
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Tags</label>
                     <div className="flex gap-2 mb-2">
-                      <Input
+                      <input
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                         placeholder="Add tag..."
-                        className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                        className="gs-input flex-1"
                       />
                       <Button onClick={addTag} variant="outline" className="border-[rgba(139,92,246,0.15)]">
                         <Plus className="w-4 h-4" />
@@ -974,12 +972,12 @@ export function PortfolioPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setEditingProject(null); setEditingProjectIdx(null); setTagInput(''); }} className="border-[rgba(139,92,246,0.15)]">
+                    <button onClick={() => { setEditingProject(null); setEditingProjectIdx(null); setTagInput(''); }} className="gs-btn-ghost min-h-[44px] px-4 rounded-xl">
                       Cancel
-                    </Button>
-                    <Button onClick={saveProject} disabled={!editingProject.name.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                    </button>
+                    <button onClick={saveProject} disabled={!editingProject.name.trim()} className="gs-btn-primary min-h-[44px] px-4 rounded-xl disabled:opacity-50">
                       {editingProjectIdx !== null ? 'Update' : 'Add'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 {/* 55.3: Inline live preview */}
@@ -1104,20 +1102,20 @@ export function PortfolioPage() {
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Title *</label>
-                      <Input
+                      <input
                         value={editingMilestone.title}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, title: e.target.value })}
                         placeholder="e.g. Launched SaaS product"
-                        className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                        className="gs-input w-full"
                       />
                     </div>
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Date</label>
-                      <Input
+                      <input
                         value={editingMilestone.date}
                         onChange={(e) => setEditingMilestone({ ...editingMilestone, date: e.target.value })}
                         placeholder="2025-01 or Jan 2025"
-                        className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                        className="gs-input w-full"
                       />
                     </div>
                   </div>
@@ -1127,16 +1125,16 @@ export function PortfolioPage() {
                       value={editingMilestone.description}
                       onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
                       placeholder="What happened and why it matters"
-                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                      className="gs-input w-full min-h-[80px] resize-none"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => { setEditingMilestone(null); setEditingMilestoneIdx(null); }} className="border-[rgba(139,92,246,0.15)]">
+                    <button onClick={() => { setEditingMilestone(null); setEditingMilestoneIdx(null); }} className="gs-btn-ghost min-h-[44px] px-4 rounded-xl">
                       Cancel
-                    </Button>
-                    <Button onClick={saveMilestone} disabled={!editingMilestone.title.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                    </button>
+                    <button onClick={saveMilestone} disabled={!editingMilestone.title.trim()} className="gs-btn-primary min-h-[44px] px-4 rounded-xl disabled:opacity-50">
                       {editingMilestoneIdx !== null ? 'Update' : 'Add'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
@@ -1205,11 +1203,11 @@ export function PortfolioPage() {
               ]).map((field) => (
                 <div key={field.key}>
                   <label className="text-sm text-[#9CA3AF] mb-2 block">{field.label}</label>
-                  <Input
+                  <input
                     value={social[field.key] || ''}
                     onChange={(e) => setSocial({ ...social, [field.key]: e.target.value })}
                     placeholder={field.placeholder}
-                    className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="gs-input w-full"
                   />
                 </div>
               ))}
@@ -1225,19 +1223,19 @@ export function PortfolioPage() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. Make my bio more professional, add a React project, rewrite my headline to focus on AI engineering..."
-                className="w-full p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] min-h-[140px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                className="gs-input w-full min-h-[140px] resize-none"
               />
-              <Button
+              <button
                 onClick={handleAiEdit}
                 disabled={aiLoading || !aiPrompt.trim()}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] w-full min-h-[44px]"
+                className="gs-btn-primary w-full min-h-[44px] rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {aiLoading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Applying...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" />Applying...</>
                 ) : (
-                  <><Sparkles className="w-4 h-4 mr-2" />Apply AI Edit</>
+                  <><Sparkles className="w-4 h-4" />Apply AI Edit</>
                 )}
-              </Button>
+              </button>
               <p className="text-xs text-[#9CA3AF] text-center">
                 Changes are applied locally -- review them in the other tabs, then click Save Changes to persist.
               </p>

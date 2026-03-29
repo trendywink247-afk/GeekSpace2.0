@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -28,11 +28,8 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
@@ -798,10 +795,10 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             <div className="px-3 py-1.5 rounded-full bg-[#84CC16]/10 border border-[#84CC16]/30">
               <span className="text-sm text-[#84CC16]">{activeReminders.length} active</span>
             </div>
-            <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
-              <Plus className="w-4 h-4 mr-2" />
+            <button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="gs-btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold min-h-[44px]">
+              <Plus className="w-4 h-4" />
               Add Reminder
-            </Button>
+            </button>
           </div>
         }
       />

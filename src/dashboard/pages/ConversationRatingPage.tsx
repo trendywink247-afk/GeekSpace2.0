@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import api from '@/services/api';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
@@ -167,18 +166,18 @@ export function ConversationRatingPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-2">
                   {conv.model && (
-                    <Badge variant="outline" className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] border-[rgba(139,92,246,0.15)]">
+                    <span className="gs-pill text-xs font-mono">
                       {conv.model}
-                    </Badge>
+                    </span>
                   )}
                   {conv.qualityScore !== null && (
-                    <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+                    <span className="gs-pill gs-pill-active text-xs">
                       {conv.qualityScore}/5
-                    </Badge>
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Rate:</span>
+                  <span className="gs-section-label text-[10px]">Rate:</span>
                   <StarRating
                     score={conv.qualityScore}
                     onRate={(s) => void handleRate(conv.id, s)}
@@ -194,25 +193,23 @@ export function ConversationRatingPage() {
       {totalPages > 1 && (
         <BlurFade delay={0.2}>
           <div className="flex items-center justify-center gap-3 pt-2">
-            <Button
-              variant="outline"
+            <button
               disabled={page <= 1 || loading}
               onClick={() => void load(page - 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="gs-btn-ghost flex items-center gap-1 min-h-[44px] min-w-[44px] px-4 rounded-xl disabled:opacity-40"
             >
-              <ChevronLeft size={16} className="mr-1" />
+              <ChevronLeft size={16} />
               Previous
-            </Button>
+            </button>
             <span className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">Page {page} of {totalPages}</span>
-            <Button
-              variant="outline"
+            <button
               disabled={page >= totalPages || loading}
               onClick={() => void load(page + 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="gs-btn-ghost flex items-center gap-1 min-h-[44px] min-w-[44px] px-4 rounded-xl disabled:opacity-40"
             >
               Next
-              <ChevronRight size={16} className="ml-1" />
-            </Button>
+              <ChevronRight size={16} />
+            </button>
           </div>
         </BlurFade>
       )}

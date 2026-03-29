@@ -17,7 +17,7 @@ import { MobileTable } from '@/components/ui/mobile-table';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
@@ -76,21 +76,21 @@ function BillingSkeleton() {
       {/* Header skeleton */}
       <div className="flex justify-between items-center">
         <div className="space-y-2">
-          <div className="h-9 w-32 rounded-lg bg-[rgba(139,92,246,0.06)] animate-pulse" />
-          <div className="h-4 w-48 rounded bg-[rgba(139,92,246,0.04)] animate-pulse" />
+          <div className="h-9 w-32 rounded-lg bg-white/[0.04] animate-pulse" />
+          <div className="h-4 w-48 rounded bg-white/[0.04] animate-pulse" />
         </div>
-        <div className="h-10 w-36 rounded-lg bg-[rgba(139,92,246,0.06)] animate-pulse" />
+        <div className="h-10 w-36 rounded-lg bg-white/[0.04] animate-pulse" />
       </div>
       {/* Current plan card skeleton */}
-      <div className="h-64 w-full rounded-xl bg-[rgba(139,92,246,0.04)] animate-pulse" />
+      <div className="h-64 w-full rounded-xl bg-white/[0.04] animate-pulse" />
       {/* Plan cards grid skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="p-6 rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] space-y-4 animate-pulse">
-            <div className="h-5 w-20 rounded bg-[rgba(139,92,246,0.06)]" />
-            <div className="h-8 w-24 rounded bg-[rgba(139,92,246,0.06)]" />
-            <div className="h-4 w-full rounded bg-[rgba(139,92,246,0.04)]" />
-            <div className="h-9 w-full rounded-md bg-[rgba(139,92,246,0.04)]" />
+          <div key={i} className="gs-card p-6 space-y-4 animate-pulse">
+            <div className="h-5 w-20 rounded bg-white/[0.04]" />
+            <div className="h-8 w-24 rounded bg-white/[0.04]" />
+            <div className="h-4 w-full rounded bg-white/[0.04]" />
+            <div className="h-9 w-full rounded-md bg-white/[0.04]" />
           </div>
         ))}
       </div>
@@ -298,12 +298,12 @@ export function BillingPage() {
     return (
       <div
         key={plan.id}
-        className={`relative overflow-hidden rounded-xl border bg-[rgba(12,12,30,0.6)] backdrop-blur-xl transition-all ${
+        className={`gs-card relative overflow-hidden transition-all ${
           isCurrent
-            ? 'border-[#8B5CF6] ring-1 ring-[#8B5CF6]/30'
+            ? '!border-[#8B5CF6] ring-1 ring-[#8B5CF6]/30'
             : isHighlighted
-              ? `border-[${NOVA}] ring-1 ring-[${NOVA}]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]`
-              : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+              ? `!border-[${NOVA}] ring-1 ring-[${NOVA}]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]`
+              : ''
         } ${isFree && !isCurrent ? 'opacity-60' : ''} ${extraClass}`}
       >
         {/* Badge */}
@@ -389,7 +389,7 @@ export function BillingPage() {
               <Button
                 onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
                 disabled={razorpayLoading === plan.id}
-                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
+                className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]"
               >
                 {razorpayLoading === plan.id ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -404,7 +404,7 @@ export function BillingPage() {
             <Button
               onClick={() => handleUpgrade(plan.id)}
               disabled={upgrading === plan.id || isFree}
-              className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
+              className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]"
             >
               {upgrading === plan.id ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -417,7 +417,7 @@ export function BillingPage() {
           {subscription?.plan === 'free' && plan.id === 'free' && (
             <button
               onClick={handleDayPass}
-              className="w-full mt-2 py-2 px-3 rounded-lg border border-[rgba(139,92,246,0.15)] text-[#8B5CF6] text-xs hover:bg-[#8B5CF6]/10 transition-colors min-h-[44px]"
+              className="gs-btn-ghost w-full mt-2 text-xs min-h-[44px]"
             >
               Try Weebo for $1/day {'\u2192'}
             </button>
@@ -476,7 +476,7 @@ export function BillingPage() {
       />
 
       {/* Payment Gateway Section — Stripe (USD) or Razorpay (INR) based on currency */}
-      <SectionCard>
+      <div className="gs-card">
         <div className="flex items-center gap-3 mb-4">
           <Star className="w-5 h-5 text-[#8B5CF6]" />
           <div className="flex-1">
@@ -503,7 +503,7 @@ export function BillingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+            <div className="gs-card p-5">
               <div className="font-bold text-[var(--ag-text-primary)] mb-1">Basic</div>
               <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '\u20B999' : '$1.19'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
               <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
@@ -515,18 +515,18 @@ export function BillingPage() {
                 <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : currency === 'INR' ? (
                 <div>
-                  <Button onClick={() => handleRazorpayCheckout('basic', 'Basic', 99)} disabled={razorpayLoading !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
+                  <Button onClick={() => handleRazorpayCheckout('basic', 'Basic', 99)} disabled={razorpayLoading !== null} className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]" data-testid="upgrade-basic-btn">
                     {razorpayLoading === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Pay &#8377;99 with Razorpay
                   </Button>
                   <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
                 </div>
               ) : (
-                <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-basic-btn">
+                <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]" data-testid="upgrade-basic-btn">
                   {checkingOut === 'basic' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Basic
                 </Button>
               )}
             </div>
-            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+            <div className="gs-card p-5">
               <div className="font-bold text-[var(--ag-text-primary)] mb-1">Pro</div>
               <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '\u20B9299' : '$3.59'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
               <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
@@ -538,13 +538,13 @@ export function BillingPage() {
                 <p className="text-xs text-[var(--ag-text-muted)]">{stripeStatus.expiresAt ? 'Renews ' + formatExpiry(stripeStatus.expiresAt) : 'Active'}</p>
               ) : currency === 'INR' ? (
                 <div>
-                  <Button onClick={() => handleRazorpayCheckout('pro', 'Pro', 299)} disabled={razorpayLoading !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
+                  <Button onClick={() => handleRazorpayCheckout('pro', 'Pro', 299)} disabled={razorpayLoading !== null} className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]" data-testid="upgrade-pro-btn">
                     {razorpayLoading === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Pay &#8377;299 with Razorpay
                   </Button>
                   <p className="text-xs text-[var(--ag-text-muted)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
                 </div>
               ) : (
-                <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="w-full bg-[#BF5FFF] hover:bg-[#A040FF] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(191,95,255,0.4)]" data-testid="upgrade-pro-btn">
+                <Button onClick={() => handleCheckout('pro')} disabled={checkingOut !== null} className="gs-btn-primary w-full disabled:opacity-50 min-h-[44px]" data-testid="upgrade-pro-btn">
                   {checkingOut === 'pro' ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Upgrade to Pro
                 </Button>
               )}
@@ -557,12 +557,12 @@ export function BillingPage() {
             <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
           </div>
         )}
-      </SectionCard>
+      </div>
 
       {/* Current Plan Card */}
       {subscription && (
-        <SectionCard padding="lg">
-          <div className="p-4 -m-6 mb-4 bg-gradient-to-br from-[#8B5CF6]/15 to-transparent border-b border-[rgba(139,92,246,0.15)]">
+        <div className="gs-card overflow-hidden">
+          <div className="p-4 mb-4 bg-gradient-to-br from-[#8B5CF6]/15 to-transparent border-b border-white/[0.06]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-2">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
@@ -592,9 +592,9 @@ export function BillingPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-2">
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="gs-stat-card">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-[#8B5CF6]" />
+                  <span className="gs-icon-pill gs-icon-pill-violet"><Zap className="w-4 h-4" /></span>
                   <span className="text-xs text-[#9CA3AF]">Credits Remaining</span>
                 </div>
                 <div className="text-2xl font-bold text-[#F4F6FF] font-mono">
@@ -602,9 +602,9 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[#9CA3AF]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="gs-stat-card">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-[#FFB800]" />
+                  <span className="gs-icon-pill gs-icon-pill-amber"><TrendingUp className="w-4 h-4" /></span>
                   <span className="text-xs text-[#9CA3AF]">Credits Used</span>
                 </div>
                 <div className="text-2xl font-bold text-[#F4F6FF] font-mono">
@@ -612,9 +612,9 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[#9CA3AF]">this cycle</div>
               </div>
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="gs-stat-card">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-[#10B981]" />
+                  <span className="gs-icon-pill gs-icon-pill-emerald"><Calendar className="w-4 h-4" /></span>
                   <span className="text-xs text-[#9CA3AF]">Cycle Ends</span>
                 </div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">
@@ -640,11 +640,12 @@ export function BillingPage() {
               </div>
             </div>
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* Plan Cards Grid */}
       <div>
+        <p className="gs-section-label mb-2">Choose Plan</p>
         <h2 className="text-xl font-bold text-[#F4F6FF] mb-4 font-heading">
           Available Plans
         </h2>
@@ -664,7 +665,10 @@ export function BillingPage() {
       </div>
 
       {/* Plan Comparison Table */}
-      <SectionCard title="Plan Comparison" subtitle="Compare features across all plans">
+      <div className="gs-card">
+        <p className="gs-section-label mb-1">Overview</p>
+        <h3 className="text-base font-semibold text-[#F4F6FF] mb-4">Plan Comparison</h3>
+        <p className="text-sm text-[#9CA3AF] -mt-3 mb-4">Compare features across all plans</p>
         <div className="overflow-x-auto -mx-4 px-4 md:-mx-5 md:px-5">
           <table className="w-full min-w-[500px]">
             <thead>
@@ -758,10 +762,13 @@ export function BillingPage() {
             </tbody>
           </table>
         </div>
-      </SectionCard>
+      </div>
 
       {/* Usage History Table */}
-      <SectionCard title="Usage History" subtitle="Last 30 days of daily usage">
+      <div className="gs-card">
+        <p className="gs-section-label mb-1">Activity</p>
+        <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Usage History</h3>
+        <p className="text-sm text-[#9CA3AF] mb-4">Last 30 days of daily usage</p>
         {usage.length === 0 ? (
           <div className="text-center py-8">
             <TrendingUp className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
@@ -782,10 +789,13 @@ export function BillingPage() {
             striped
           />
         )}
-      </SectionCard>
+      </div>
 
       {/* Credit History -- per-event detail */}
-      <SectionCard title="Credit History" subtitle="Last 20 AI requests with cost breakdown">
+      <div className="gs-card">
+        <p className="gs-section-label mb-1">Credits</p>
+        <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Credit History</h3>
+        <p className="text-sm text-[#9CA3AF] mb-4">Last 20 AI requests with cost breakdown</p>
         {events.length === 0 ? (
           <div className="text-center py-8">
             <Zap className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
@@ -843,7 +853,7 @@ export function BillingPage() {
             striped
           />
         )}
-      </SectionCard>
+      </div>
     </div>
     </PageShell>
   );

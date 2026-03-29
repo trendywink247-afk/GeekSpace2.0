@@ -442,39 +442,37 @@ export function DocsPage() {
     <PublicPageShell title="Documentation" icon={BookOpen} maxWidth="5xl">
       {/* hero text */}
       <div className="text-center mb-8">
-        <h2 className="font-heading text-3xl sm:text-4xl font-bold text-[var(--ag-text-primary,#F4F6FF)] tracking-tight">
+        <p className="gs-section-label mb-3">Docs</p>
+        <h2 className="font-heading text-3xl sm:text-4xl font-bold text-gradient tracking-tight">
           Documentation
         </h2>
         <p className="mt-3 text-sm sm:text-base text-[var(--ag-text-muted,#9CA3AF)] max-w-lg mx-auto leading-relaxed">
-          Everything you need to know about Agentin -- {docs.reduce((n, s) => n + s.articles.length, 0)} articles across {docs.length} sections
+          Everything you need to know about Agentin — {docs.reduce((n, s) => n + s.articles.length, 0)} articles across {docs.length} sections
         </p>
       </div>
 
       {/* Search */}
       <div className="relative mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--ag-text-muted,#9CA3AF)]" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--ag-text-muted,#9CA3AF)] pointer-events-none" />
         <input
           placeholder="Search documentation..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 text-base rounded-xl border border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] text-[var(--ag-text-primary,#F4F6FF)] placeholder:text-[var(--ag-text-muted,#9CA3AF)]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-violet,#8B5CF6)]/50 focus-visible:border-[var(--ag-violet,#8B5CF6)]/30 transition-all bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+          className="gs-input w-full pl-12 pr-4 py-4 text-base"
         />
       </div>
 
       {/* Sections */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filtered.map((section) => (
-          <div
-            key={section.id}
-            className="rounded-2xl border border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] hover:border-[rgba(139,92,246,0.15)] transition-all duration-300 overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl"
-          >
+          <div key={section.id} className="gs-card overflow-hidden">
             <div className="p-5">
               <button
                 className="flex items-center gap-4 w-full text-left min-h-[44px]"
                 onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
               >
-                <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet,#8B5CF6)]/10 flex items-center justify-center flex-shrink-0">
-                  <section.icon className="w-5 h-5 text-[var(--ag-violet,#8B5CF6)]" />
+                <div className="gs-icon-pill gs-icon-pill-violet flex-shrink-0">
+                  <section.icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-heading font-semibold text-[var(--ag-text-primary,#F4F6FF)]">{section.title}</h3>
@@ -489,14 +487,14 @@ export function DocsPage() {
               </button>
 
               {expandedSection === section.id && (
-                <div className="mt-4 ml-0 sm:ml-14 space-y-3 border-t border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] pt-4">
+                <div className="mt-4 ml-0 sm:ml-14 space-y-2 border-t border-white/[0.06] pt-4">
                   {section.articles.map((article) => {
                     const key = articleKey(section.id, article.title);
                     const isOpen = expandedArticle === key;
                     return (
                       <div
                         key={article.title}
-                        className="rounded-lg border border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] hover:border-[rgba(139,92,246,0.15)] transition-colors overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+                        className="rounded-xl border border-white/[0.06] hover:border-white/[0.10] transition-colors overflow-hidden bg-white/[0.02]"
                       >
                         <button
                           className="flex items-center gap-3 w-full text-left p-4 min-h-[44px]"
@@ -517,7 +515,7 @@ export function DocsPage() {
                         </button>
 
                         {isOpen && (
-                          <div className="px-4 pb-4 border-t border-[rgba(139,92,246,0.06)]">
+                          <div className="px-4 pb-4 border-t border-white/[0.04]">
                             <div className="pt-4 text-sm text-[var(--ag-text-muted,#9CA3AF)] leading-relaxed whitespace-pre-line">
                               {article.content}
                             </div>
@@ -534,14 +532,17 @@ export function DocsPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-[var(--ag-violet,#8B5CF6)]/30 mx-auto mb-4" />
-          <p className="text-[var(--ag-text-muted,#9CA3AF)]">No docs match your search</p>
+        <div className="gs-card text-center py-12 px-6">
+          <div className="gs-icon-pill gs-icon-pill-violet mx-auto mb-4">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <p className="text-[var(--ag-text-primary,#F4F6FF)] font-medium mb-1">No results found</p>
+          <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">No docs match your search</p>
         </div>
       )}
 
       {/* contact footer */}
-      <div className="mt-12 p-6 rounded-2xl border border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] bg-[var(--ag-bg-surface)] backdrop-blur-xl">
+      <div className="mt-12 gs-card p-6">
         <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">
           Need help? Contact us at{' '}
           <a href="mailto:support@agentin.chat" className="text-[var(--ag-violet,#8B5CF6)] hover:text-[var(--ag-violet,#8B5CF6)]/80 transition-colors">

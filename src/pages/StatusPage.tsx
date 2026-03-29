@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Activity } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { PublicPageShell, SectionCard } from '@/components/agentin';
 
 const COMPONENT_LABELS: Record<string, string> = {
@@ -63,15 +62,21 @@ export function StatusPage() {
   }, [fetchHealth]);
 
   const getStatusIcon = (s: 'operational' | 'degraded' | 'down') => {
-    if (s === 'operational') return <CheckCircle2 className="w-5 h-5 text-[#ADFF2F]" />;
-    if (s === 'degraded') return <AlertTriangle className="w-5 h-5 text-[#FFD700]" />;
-    return <XCircle className="w-5 h-5 text-[#FF6161]" />;
+    if (s === 'operational') return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
+    if (s === 'degraded') return <AlertTriangle className="w-5 h-5 text-amber-400" />;
+    return <XCircle className="w-5 h-5 text-rose-400" />;
   };
 
   const getStatusColor = (s: 'operational' | 'degraded' | 'down') => {
-    if (s === 'operational') return 'text-[#ADFF2F]';
-    if (s === 'degraded') return 'text-[#FFD700]';
-    return 'text-[#FF6161]';
+    if (s === 'operational') return 'text-emerald-400';
+    if (s === 'degraded') return 'text-amber-400';
+    return 'text-rose-400';
+  };
+
+  const getStatusPill = (s: 'operational' | 'degraded' | 'down') => {
+    if (s === 'operational') return 'gs-icon-pill-emerald';
+    if (s === 'degraded') return 'gs-icon-pill-amber';
+    return 'gs-icon-pill-rose';
   };
 
   const components = health?.components ?? {};
@@ -82,84 +87,94 @@ export function StatusPage() {
     <PublicPageShell title="System Status" icon={Activity} maxWidth="3xl">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold font-heading text-[var(--ag-text-primary,#F4F6FF)]">
+            <p className="gs-section-label mb-2">Monitoring</p>
+            <h1 className="text-3xl md:text-4xl font-bold font-heading text-gradient">
               System Status
             </h1>
-            <p className="text-[var(--ag-text-muted,#9CA3AF)] mt-1">
+            <p className="text-[var(--ag-text-muted,#9CA3AF)] mt-1 text-sm">
               {lastChecked ? `Last checked: ${lastChecked.toLocaleTimeString()}` : 'Checking\u2026'}
               {health && ` \u00b7 v${health.version} \u00b7 uptime ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m`}
             </p>
           </div>
-          <Button
-            variant="outline"
+          <button
             onClick={fetchHealth}
             disabled={checking}
-            className="min-h-[44px] border-[var(--ag-border-default,rgba(139,92,246,0.15))] hover:bg-[var(--ag-active-bg,rgba(0,240,255,0.08))]"
+            className="gs-btn-ghost flex items-center gap-2 min-h-[44px] px-4 py-2 disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`} />
             Refresh
-          </Button>
+          </button>
         </div>
 
         {/* Error state */}
         {error && (
-          <SectionCard className="border-[#FF6161]/30">
+          <div className="gs-card p-6 border-rose-500/30">
             <div className="text-center py-2">
-              <XCircle className="w-10 h-10 text-[#FF6161] mx-auto mb-3" />
-              <h2 className="text-xl font-bold font-heading text-[#FF6161]">Unable to Reach Server</h2>
-              <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Could not connect to the health endpoint</p>
+              <div className="gs-icon-pill gs-icon-pill-rose mx-auto mb-4">
+                <XCircle className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-bold font-heading text-rose-400 mb-2">Unable to Reach Server</h2>
+              <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">Could not connect to the health endpoint</p>
             </div>
-          </SectionCard>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {!health && !error && checking && (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white/[0.04] rounded-xl animate-pulse h-14" />
+            ))}
+          </div>
         )}
 
         {/* Overall status */}
         {health && (
           <>
-            <SectionCard className={allOk ? 'border-[#ADFF2F]/30' : 'border-[#FFD700]/30'}>
-              <div className="text-center py-2">
-                {allOk ? (
-                  <>
-                    <CheckCircle2 className="w-10 h-10 text-[#ADFF2F] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold font-heading text-[#ADFF2F]">All Systems Operational</h2>
-                    <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Everything is running smoothly</p>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-10 h-10 text-[#FFD700] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold font-heading text-[#FFD700]">Partial Degradation</h2>
-                    <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Some services are experiencing issues</p>
-                  </>
-                )}
+            <div className={`gs-card p-5 ${allOk ? 'border-emerald-500/30' : 'border-amber-500/30'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`gs-icon-pill ${allOk ? 'gs-icon-pill-emerald' : 'gs-icon-pill-amber'}`}>
+                  {allOk
+                    ? <CheckCircle2 className="w-5 h-5" />
+                    : <AlertTriangle className="w-5 h-5" />
+                  }
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold font-heading ${allOk ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {allOk ? 'All Systems Operational' : 'Partial Degradation'}
+                  </h2>
+                  <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">
+                    {allOk ? 'Everything is running smoothly' : 'Some services are experiencing issues'}
+                  </p>
+                </div>
               </div>
-            </SectionCard>
+            </div>
 
             {/* Component list */}
-            <div className="space-y-3">
+            <div className="space-y-2">
+              <p className="gs-section-label px-1">Components</p>
               {entries.map(([key, value]) => {
                 const status = componentStatus(value);
                 return (
-                  <SectionCard key={key} padding="sm">
-                    <div className="flex items-center justify-between min-h-[36px]">
+                  <div key={key} className="gs-card px-4 py-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {getStatusIcon(status)}
-                        <span className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">{COMPONENT_LABELS[key]}</span>
+                        <div className={`gs-icon-pill ${getStatusPill(status)}`} style={{ width: '32px', height: '32px' }}>
+                          {getStatusIcon(status)}
+                        </div>
+                        <span className="font-medium text-sm text-[var(--ag-text-primary,#F4F6FF)]">{COMPONENT_LABELS[key]}</span>
                       </div>
-                      <span className={`text-sm capitalize ${getStatusColor(status)}`}>
+                      <span className={`text-sm capitalize font-medium ${getStatusColor(status)}`}>
                         {status}
                       </span>
                     </div>
-                  </SectionCard>
+                  </div>
                 );
               })}
             </div>
           </>
-        )}
-
-        {/* Loading state */}
-        {!health && !error && checking && (
-          <div className="text-center text-[var(--ag-text-muted,#9CA3AF)] py-12">Checking system status&hellip;</div>
         )}
 
         {/* Contact */}

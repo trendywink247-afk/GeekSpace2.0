@@ -88,13 +88,18 @@ interface UseCaseStepProps {
 export function UseCaseStep({ selected, onSelect }: UseCaseStepProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Code className="w-6 h-6 text-[#8B5CF6]" />
-        <h2 className="text-xl font-semibold" style={{ fontFamily: 'Syne, sans-serif' }}>
-          What will you use Agentin for?
-        </h2>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="gs-icon-pill gs-icon-pill-violet">
+          <Code className="w-5 h-5" />
+        </div>
+        <div>
+          <p className="gs-section-label">Step 2</p>
+          <h2 className="text-xl font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">
+            What will you use Agentin for?
+          </h2>
+        </div>
       </div>
-      <p className="text-[#6B7280] text-sm">
+      <p className="text-[var(--ag-text-muted,#9CA3AF)] text-sm">
         Pick your main use case so your AI can tailor suggestions and shortcuts.
       </p>
 
@@ -108,11 +113,11 @@ export function UseCaseStep({ selected, onSelect }: UseCaseStepProps) {
               type="button"
               onClick={() => onSelect(uc.id)}
               className={[
-                'flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
+                'gs-card flex items-start gap-3 p-4 text-left transition-all',
                 'focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
                 isSelected
-                  ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
-                  : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40',
+                  ? 'border-[#8B5CF6]/60 bg-[#8B5CF6]/[0.08]'
+                  : 'hover:border-white/[0.12]',
               ].join(' ')}
             >
               <div
@@ -122,8 +127,8 @@ export function UseCaseStep({ selected, onSelect }: UseCaseStepProps) {
                 <Icon className="w-5 h-5" style={{ color: uc.color }} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-[#E8E8F0]">{uc.label}</div>
-                <div className="text-xs text-[#6B7280] mt-0.5">{uc.description}</div>
+                <div className="text-sm font-semibold text-[var(--ag-text-primary,#F4F6FF)]">{uc.label}</div>
+                <div className="text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-0.5">{uc.description}</div>
               </div>
               {isSelected && (
                 <div className="w-5 h-5 rounded-full bg-[#8B5CF6] flex items-center justify-center flex-shrink-0 mt-0.5">
