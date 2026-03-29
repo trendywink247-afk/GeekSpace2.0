@@ -641,8 +641,9 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     logger.info({ requestId, chatId, bytes: audioBuffer.length }, 'voice:downloaded');
 
     // 2. Transcribe (Groq Whisper)
-    const transcript = await transcribeVoice(audioBuffer, 'audio/ogg');
-    logger.info({ requestId, chatId, chars: transcript.length, transcript }, 'voice:transcribed');
+    const sttResult = await transcribeVoice(audioBuffer, 'audio/ogg');
+    const transcript = sttResult.text;
+    logger.info({ requestId, chatId, chars: transcript.length, transcript, sttEngine: sttResult.engine }, 'voice:transcribed');
 
     if (!transcript) {
       await sendTelegramMessage(chatId, "Sorry, I couldn't make out what you said. Please try again.");
@@ -690,9 +691,10 @@ async function handleVoiceMessage(update: TelegramUpdate, requestId: string): Pr
     extractMemories(link.user_id, transcript);
 
     // 7. TTS → OGG Opus
-    const audioReply = await textToSpeech(llmResponse.reply);
+    const ttsResult = await textToSpeech(llmResponse.reply);
+    const audioReply = ttsResult.audio;
     const totalMs = Date.now() - startTime;
-    logger.info({ requestId, chatId, bytes: audioReply.length, totalMs }, 'voice:tts complete');
+    logger.info({ requestId, chatId, bytes: audioReply.length, totalMs, ttsEngine: ttsResult.engine }, 'voice:tts complete');
 
     // 8. Send voice note (with transcript as caption)
     const caption = `🎤 "${transcript.slice(0, 200)}"`;

@@ -160,36 +160,31 @@ voiceRouter.post('/speak', requireAuth, async (req: AuthRequest, res) => {
 
 // ---- 80.8: Register job handlers ----
 
-registerJobHandler<{ audioBuffer: string; mimeType: string }, { text: string; duration_seconds: number }>(
+registerJobHandler<{ audioBuffer: string; mimeType: string }, { text: string; duration_seconds: number; engine: string }>(
   'voice:transcribe',
   async (payload) => {
     if (!isVoiceEnabled()) {
-      // TODO: swap for local Whisper (e.g. via Ollama audio endpoint) when available
-      throw new Error('Voice transcription not configured (missing OPENAI_API_KEY)');
+      throw new Error('Voice transcription not configured (no local whisper or Groq API key)');
     }
 
     const audioBuffer = Buffer.from(payload.audioBuffer, 'base64');
-    const text = await transcribeVoice(audioBuffer, payload.mimeType);
+    const result = await transcribeVoice(audioBuffer, payload.mimeType);
 
     // Estimate duration from buffer size (~16kbps for voice webm)
     const duration_seconds = Math.max(1, Math.round(audioBuffer.length / 2000));
 
-    return { text, duration_seconds };
+    return { text: result.text, duration_seconds, engine: result.engine };
   },
 );
 
-registerJobHandler<{ text: string; voice: string }, { audioBase64: string; mimeType: string }>(
+registerJobHandler<{ text: string; voice: string }, { audioBase64: string; mimeType: string; engine: string }>(
   'voice:synthesize',
   async (payload) => {
-    if (!isVoiceEnabled()) {
-      // TODO: swap for piper-tts or local TTS when available
-      throw new Error('TTS not configured (missing OPENAI_API_KEY)');
-    }
-
-    const audioBuffer = await textToSpeech(payload.text);
+    const result = await textToSpeech(payload.text);
     return {
-      audioBase64: audioBuffer.toString('base64'),
+      audioBase64: result.audio.toString('base64'),
       mimeType: 'audio/ogg',
+      engine: result.engine,
     };
   },
 );

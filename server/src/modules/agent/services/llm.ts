@@ -1,11 +1,11 @@
 // ============================================================
 // GeekSpace LLM Router — Phase 112: Dynamic Free-Tier + Kimi Per-User Cap
 //
-// Tier 0 (PicoClaw):     simple/code-micro intent → qwen2.5-coder:1.5b (88ms, $0)
-// automation intent:     OpenRouter-free first (Qwen3 235B MoE >> hermes3:8b for tool calling)
+// Tier 0 (PicoClaw):     simple/code-micro intent → qwen2.5-coder:3b (88ms, $0)
+// automation intent:     OpenRouter-free first (Qwen3 235B MoE >> qwen3:8b for tool calling)
 //
 // ALL users — sequential waterfall:
-//   Tier 1:   Ollama hermes3:8b          ($0, local)
+//   Tier 1:   Ollama qwen3:8b / qwen3:14b ($0, local, intent-based model + /think|/no_think)
 //   Tier 1.5: OpenRouter-free            ($0, dynamic model rotation — Qwen3 235B, Llama 3.3 70B, etc.)
 //              — Ollama fallback + automation-intent primary
 //   Tier 2:   Groq Llama 3.3 70B        ($0, free quota, 43,200 req/day × 3 keys)
@@ -345,16 +345,43 @@ function isPremiumPlan(plan?: string): boolean {
 
 // ---- Provider Callers ----
 
+// ---- Ollama intent-based model + thinking mode selection ----
+
+function selectOllamaModel(intent?: Intent): string {
+  if (intent === 'complex' || intent === 'planning') {
+    return config.ollamaComplexModel || config.ollamaModel;
+  }
+  return config.ollamaModel;
+}
+
+function applyThinkingMode(messages: ChatMessage[], intent?: Intent): ChatMessage[] {
+  if (!config.ollamaThinkingEnabled) return messages;
+  const useThinking = intent === 'complex' || intent === 'planning' || intent === 'coding' || intent === 'automation';
+  const tag = useThinking ? '/think' : '/no_think';
+  // Prepend thinking tag to the last user message
+  const result = [...messages];
+  for (let i = result.length - 1; i >= 0; i--) {
+    if (result[i].role === 'user') {
+      result[i] = { ...result[i], content: `${tag}\n${result[i].content}` };
+      break;
+    }
+  }
+  return result;
+}
+
 export async function streamOllama(
   messages: ChatMessage[],
   onChunk: (text: string) => void,
+  intent?: Intent,
 ): Promise<{ tokensIn: number; tokensOut: number }> {
+  const model = selectOllamaModel(intent);
+  const finalMessages = applyThinkingMode(messages, intent);
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: config.ollamaModel,
-      messages,
+      model,
+      messages: finalMessages,
       stream: true,
       keep_alive: '5m',
       options: { temperature: 0.7, num_predict: config.ollamaMaxTokens },
@@ -401,14 +428,16 @@ export async function streamOllama(
   return { tokensIn, tokensOut };
 }
 
-async function callOllama(messages: ChatMessage[]): Promise<{ content: string; tokensIn: number; tokensOut: number }> {
+async function callOllama(messages: ChatMessage[], intent?: Intent): Promise<{ content: string; tokensIn: number; tokensOut: number; model: string }> {
   const start = Date.now();
+  const model = selectOllamaModel(intent);
+  const finalMessages = applyThinkingMode(messages, intent);
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: config.ollamaModel,
-      messages,
+      model,
+      messages: finalMessages,
       stream: false,
       keep_alive: '5m',
       options: {
@@ -433,12 +462,13 @@ async function callOllama(messages: ChatMessage[]): Promise<{ content: string; t
   };
 
   const content = data.message?.content || '';
-  logger.debug({ provider: 'ollama', elapsed: Date.now() - start, model: config.ollamaModel }, 'Ollama response');
+  logger.debug({ provider: 'ollama', elapsed: Date.now() - start, model, intent }, 'Ollama response');
 
   return {
     content,
     tokensIn: data.prompt_eval_count || Math.ceil(messages.map(m => m.content).join('').length / 4),
     tokensOut: data.eval_count || Math.ceil(content.length / 4),
+    model,
   };
 }
 
@@ -1249,9 +1279,9 @@ export async function routeChat(
     } else {
       switch (provider) {
         case 'ollama': {
-          const result = await callOllama(fullMessages);
+          const result = await callOllama(fullMessages, intent);
           reply = result.content; tokensIn = result.tokensIn; tokensOut = result.tokensOut;
-          model = config.ollamaModel;
+          model = result.model;
           break;
         }
         case 'openrouter': {

@@ -78,9 +78,11 @@ export const config = {
 
   // Ollama (local engine)
   ollamaBaseUrl: optional('OLLAMA_BASE_URL', 'http://localhost:11434'),
-  ollamaModel: optional('OLLAMA_MODEL', 'hermes3:8b'),
-  ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 45000),
-  ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 512),
+  ollamaModel: optional('OLLAMA_MODEL', 'qwen3:8b'),
+  ollamaComplexModel: optional('OLLAMA_COMPLEX_MODEL', 'qwen3:14b'),
+  ollamaTimeout: optionalInt('OLLAMA_TIMEOUT_MS', 90000),
+  ollamaMaxTokens: optionalInt('OLLAMA_MAX_TOKENS', 4096),
+  ollamaThinkingEnabled: optional('OLLAMA_THINKING_ENABLED', 'true') === 'true',
 
   // OpenRouter / OpenAI-compatible fallback (cloud engine)
   openrouterApiKey: process.env.OPENROUTER_API_KEY || '',
@@ -130,9 +132,15 @@ export const config = {
   // OpenAI (kept for optional future use)
   openaiApiKey: process.env.OPENAI_API_KEY || '',
 
-  // Voice: edge-tts (TTS) + Groq Whisper (STT — uses existing GROQ_API_KEY)
+  // Voice: TTS fallback chain (Kokoro → Piper → edge-tts) + STT (whisper.cpp → Groq Whisper)
   edgeTtsBin: optional('EDGE_TTS_BIN', '/opt/tts-venv/bin/edge-tts'),
   ttsVoice: optional('TTS_VOICE', 'en-US-AriaNeural'),
+  kokoroTtsUrl: optional('KOKORO_TTS_URL', 'http://kokoro-tts:5101'),
+  kokoroTtsEnabled: optional('KOKORO_TTS_ENABLED', 'true') === 'true',
+  piperTtsUrl: optional('PIPER_TTS_URL', 'http://piper-tts:5100'),
+  piperTtsEnabled: optional('PIPER_TTS_ENABLED', 'true') === 'true',
+  whisperLocalUrl: optional('WHISPER_LOCAL_URL', 'http://whisper-stt:5102'),
+  whisperLocalEnabled: optional('WHISPER_LOCAL_ENABLED', 'true') === 'true',
 
   // Telegram
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',

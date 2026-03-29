@@ -9,4 +9,6 @@ export {
   textToSpeech,
   sendTelegramVoice,
   voiceCreditCost,
+  type TtsEngine,
+  type SttEngine,
 } from '../modules/media/services/voice.js';

@@ -28,6 +28,8 @@ export {
   textToSpeech,
   sendTelegramVoice,
   voiceCreditCost,
+  type TtsEngine,
+  type SttEngine,
 } from './services/voice.js';
 
 // ── Types ───────────────────────────────────────────────────

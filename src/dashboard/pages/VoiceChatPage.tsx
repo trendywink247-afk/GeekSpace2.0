@@ -18,6 +18,7 @@ interface VoiceTurn {
   role: 'user' | 'agent';
   text: string;
   timestamp: Date;
+  engine?: string | null;
 }
 
 type VoiceState = 'idle' | 'recording' | 'processing' | 'speaking' | 'error';
@@ -116,9 +117,9 @@ export function VoiceChatPage() {
     }
   }, [tts.isSpeaking, voiceState]);
 
-  const addTurn = useCallback((role: 'user' | 'agent', text: string) => {
+  const addTurn = useCallback((role: 'user' | 'agent', text: string, engine?: string | null) => {
     setTranscript(prev => {
-      const next = [...prev, { id: crypto.randomUUID(), role, text, timestamp: new Date() }];
+      const next = [...prev, { id: crypto.randomUUID(), role, text, timestamp: new Date(), engine }];
       return next.slice(-MAX_TURNS);
     });
   }, []);
@@ -130,12 +131,14 @@ export function VoiceChatPage() {
     try {
       const res = await agentService.chat(text, 'voice');
       const reply = res.data.text || 'No response';
-      addTurn('agent', reply);
       void notifyDone('voice response complete');
       if (settings.ttsEnabled && tts.isSupported) {
         setVoiceState('speaking');
         tts.speak(reply, { rate: settings.speed });
+        // Add turn after speak starts so we can capture engine later
+        addTurn('agent', reply, tts.engine);
       } else {
+        addTurn('agent', reply);
         setVoiceState('idle');
       }
     } catch {
@@ -145,7 +148,7 @@ export function VoiceChatPage() {
       toast.error('Voice chat error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addTurn, settings.ttsEnabled, settings.speed, tts.isSupported, notifyStart, notifyDone, notifyFail]);
+  }, [addTurn, settings.ttsEnabled, settings.speed, tts.isSupported, tts.engine, notifyStart, notifyDone, notifyFail]);
 
   const toggleRecording = useCallback(() => {
     if (voiceState === 'speaking') {
@@ -404,19 +407,26 @@ export function VoiceChatPage() {
                 <div
                   key={turn.id}
                   className={[
-                    'flex gap-2 text-sm rounded-lg px-3 py-2',
+                    'flex flex-col gap-0.5 text-sm rounded-lg px-3 py-2',
                     turn.role === 'user'
                       ? 'bg-[var(--ag-cyan)]/5 ml-4'
                       : 'bg-[var(--ag-bg-elevated)] mr-4',
                   ].join(' ')}
                 >
-                  <span className={[
-                    'font-semibold flex-shrink-0 text-xs mt-0.5',
-                    turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-weebo)]',
-                  ].join(' ')}>
-                    {turn.role === 'user' ? 'You' : agent.name || 'Weebo'}:
-                  </span>
-                  <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
+                  <div className="flex gap-2">
+                    <span className={[
+                      'font-semibold flex-shrink-0 text-xs mt-0.5',
+                      turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-weebo)]',
+                    ].join(' ')}>
+                      {turn.role === 'user' ? 'You' : agent.name || 'Weebo'}:
+                    </span>
+                    <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
+                  </div>
+                  {turn.role === 'agent' && turn.engine && (
+                    <span className="text-[10px] text-[var(--ag-text-muted)] ml-auto">
+                      via {turn.engine}
+                    </span>
+                  )}
                 </div>
               ))
             )}

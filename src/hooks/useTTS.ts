@@ -1,59 +1,30 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { voiceService, jobsService } from '@/services/api';
 
 /**
- * @fileoverview Text-to-Speech (TTS) hook using Web Speech API.
+ * @fileoverview Text-to-Speech (TTS) hook with server-side fallback chain.
  *
- * Provides browser-native speech synthesis with markdown stripping,
- * voice selection, and rate/pitch control.
- *
- * **Browser support:** Chrome, Edge, Safari, Firefox
- * - Requires HTTPS in production
- * - Rate: 0.1 (slow) to 10 (fast), default 1
- * - Pitch: 0 (low) to 2 (high), default 1
+ * Priority: Server TTS (Kokoro → Piper → edge-tts) → Browser Web Speech API.
+ * Auto-detects server availability on first call and caches the result.
  */
 
-/**
- * Configuration options for speech synthesis.
- *
- * @property rate - Speech rate multiplier (0.1–10, default 1)
- * @property pitch - Pitch level (0–2, default 1)
- * @property lang - Language/locale code (e.g., 'en-US', 'en-GB')
- */
 export interface TTSOptions {
   rate?: number;
   pitch?: number;
   lang?: string;
 }
 
-/**
- * Return value of the useTTS hook.
- *
- * @property speak - Function to start speaking text
- * @property stop - Function to cancel current speech
- * @property isSpeaking - True while utterance is playing
- * @property isSupported - True if Web Speech API is available
- */
+export type TtsMode = 'server' | 'browser';
+
 export interface UseTTSReturn {
   speak: (text: string, options?: TTSOptions) => void;
   stop: () => void;
   isSpeaking: boolean;
   isSupported: boolean;
+  ttsMode: TtsMode | null;
+  engine: string | null;
 }
 
-/**
- * Removes markdown formatting from text before TTS rendering.
- * Strips code blocks, formatting, links, images, and lists.
- *
- * **Examples:**
- * - `**bold**` → `bold`
- * - `` `code` `` → `code`
- * - `[link](url)` → `link`
- * - `# Heading` → `Heading`
- * - Code blocks and images are removed entirely
- *
- * @param text - Text possibly containing markdown
- * @returns Plain text with all markdown removed
- */
 function stripMarkdown(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, '')
@@ -69,14 +40,6 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-/**
- * Selects an appropriate voice for speech synthesis.
- * Prefers exact language match, then any English voice, then defaults to first available.
- *
- * @param lang - Desired language code (e.g., 'en-US'). Defaults to 'en-US' if not provided.
- * @returns A SpeechSynthesisVoice if available, null if Web Speech API unavailable.
- * @private
- */
 function pickEnglishVoice(lang?: string): SpeechSynthesisVoice | null {
   if (!window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
@@ -89,72 +52,36 @@ function pickEnglishVoice(lang?: string): SpeechSynthesisVoice | null {
   );
 }
 
-/**
- * React hook for browser-native text-to-speech synthesis.
- *
- * **Features:**
- * - Strips markdown before speaking (code blocks, formatting, links)
- * - Truncates to 2000 chars (Web Speech API limit)
- * - Cancels previous speech before starting new
- * - Exposes rate and pitch controls
- * - Gracefully disabled if Web Speech API unavailable
- *
- * **Browser support:**
- * - Chrome/Edge/Safari: Full support
- * - Firefox: Full support (as of v87)
- * - Requires HTTPS in production
- *
- * **Performance:**
- * - No network requests (browser-local synthesis)
- * - Voice availability depends on OS (Windows/macOS/iOS/Android)
- * - Memory: ~1MB per active utterance
- *
- * @returns Object with `speak`, `stop`, `isSpeaking`, `isSupported`
- *
- * @example
- * ```typescript
- * const { speak, stop, isSpeaking, isSupported } = useTTS();
- *
- * if (!isSupported) {
- *   return <p>Text-to-speech not supported</p>;
- * }
- *
- * return (
- *   <div>
- *     <button onClick={() => speak('Hello world!')}>Speak</button>
- *     {isSpeaking && <button onClick={stop}>Stop</button>}
- *     <p>Speaking: {isSpeaking ? 'Yes' : 'No'}</p>
- *   </div>
- * );
- * ```
- *
- * @example
- * ```typescript
- * // With custom rate and pitch
- * speak('Check this out!', {
- *   rate: 0.8,  // Slower
- *   pitch: 1.2, // Higher
- *   lang: 'en-GB'
- * });
- * ```
- */
+// Cache server availability across hook instances
+let serverTtsAvailable: boolean | null = null;
+
 export function useTTS(): UseTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [ttsMode, setTtsMode] = useState<TtsMode | null>(null);
+  const [engine, setEngine] = useState<string | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortRef = useRef(false);
 
-  const isSupported =
+  const browserSupported =
     typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   const stop = useCallback(() => {
-    if (!isSupported) return;
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
+    abortRef.current = true;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    if (browserSupported) {
+      window.speechSynthesis.cancel();
+    }
     utteranceRef.current = null;
-  }, [isSupported]);
+    setIsSpeaking(false);
+  }, [browserSupported]);
 
-  const speak = useCallback((text: string, options?: TTSOptions) => {
-    if (!isSupported) return;
-    // Cancel any current speech first
+  const speakBrowser = useCallback((text: string, options?: TTSOptions) => {
+    if (!browserSupported) return;
     window.speechSynthesis.cancel();
 
     const clean = stripMarkdown(text).slice(0, 2000);
@@ -172,15 +99,122 @@ export function useTTS(): UseTTSReturn {
     utterance.onerror = () => { setIsSpeaking(false); utteranceRef.current = null; };
 
     utteranceRef.current = utterance;
+    setTtsMode('browser');
+    setEngine('browser');
     window.speechSynthesis.speak(utterance);
-  }, [isSupported]);
+  }, [browserSupported]);
+
+  const speakServer = useCallback(async (text: string, options?: TTSOptions): Promise<boolean> => {
+    const clean = stripMarkdown(text).slice(0, 2000);
+    if (!clean) return false;
+
+    try {
+      abortRef.current = false;
+      const { jobId } = await voiceService.speak(clean);
+      const job = await jobsService.pollUntilDone(jobId, 60, 500);
+
+      if (abortRef.current) return false;
+
+      if (job.status === 'failed') return false;
+
+      const result = job.result as { audioBase64?: string; mimeType?: string; engine?: string } | undefined;
+      if (!result?.audioBase64) return false;
+
+      const audioBytes = atob(result.audioBase64);
+      const audioArray = new Uint8Array(audioBytes.length);
+      for (let i = 0; i < audioBytes.length; i++) {
+        audioArray[i] = audioBytes.charCodeAt(i);
+      }
+      const blob = new Blob([audioArray], { type: result.mimeType || 'audio/ogg' });
+      const url = URL.createObjectURL(blob);
+
+      if (abortRef.current) {
+        URL.revokeObjectURL(url);
+        return false;
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      if (options?.rate && options.rate !== 1) {
+        audio.playbackRate = options.rate;
+      }
+
+      setEngine(result.engine || 'server');
+      setTtsMode('server');
+
+      return new Promise<boolean>((resolve) => {
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          setIsSpeaking(false);
+          resolve(true);
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          setIsSpeaking(false);
+          resolve(false);
+        };
+        setIsSpeaking(true);
+        audio.play().catch(() => {
+          URL.revokeObjectURL(url);
+          audioRef.current = null;
+          setIsSpeaking(false);
+          resolve(false);
+        });
+      });
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const speak = useCallback((text: string, options?: TTSOptions) => {
+    // Cancel any current speech first
+    stop();
+    abortRef.current = false;
+
+    if (!text.trim()) return;
+
+    // If we already know server is unavailable, go straight to browser
+    if (serverTtsAvailable === false) {
+      speakBrowser(text, options);
+      return;
+    }
+
+    // Try server first, fall back to browser
+    setIsSpeaking(true);
+    speakServer(text, options).then((success) => {
+      if (success) {
+        serverTtsAvailable = true;
+      } else if (!abortRef.current) {
+        // Server failed — fall back to browser
+        serverTtsAvailable = serverTtsAvailable === null ? false : serverTtsAvailable;
+        speakBrowser(text, options);
+      }
+    });
+  }, [stop, speakBrowser, speakServer]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => { if (isSupported) window.speechSynthesis.cancel(); };
-  }, [isSupported]);
+    return () => {
+      abortRef.current = true;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      if (browserSupported) window.speechSynthesis.cancel();
+    };
+  }, [browserSupported]);
 
-  return { speak, stop, isSpeaking, isSupported };
+  return {
+    speak,
+    stop,
+    isSpeaking,
+    isSupported: browserSupported || true, // server TTS is always "supported"
+    ttsMode,
+    engine,
+  };
 }
 
 // Export helper for use in tests

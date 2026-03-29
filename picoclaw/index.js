@@ -1,7 +1,7 @@
 import express from 'express';
 
 const PORT = parseInt(process.env.PICOCLAW_PORT || '8080', 10);
-const MODEL = process.env.PICOCLAW_MODEL || 'qwen2.5-coder:1.5b';
+const MODEL = process.env.PICOCLAW_MODEL || 'qwen2.5-coder:3b';
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
 const OLLAMA_TIMEOUT_MS = parseInt(process.env.PICOCLAW_TIMEOUT_MS || '15000', 10);
 let modelWarmed = false;

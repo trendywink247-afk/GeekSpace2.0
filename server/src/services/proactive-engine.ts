@@ -206,8 +206,8 @@ export async function dailyBriefing(userId: string): Promise<string | null> {
     ).get(userId) as { external_id: string } | undefined;
     if (tgLink) {
       const chatId = tgLink.external_id;
-      textToSpeech(message).then((audioBuffer: Buffer) => {
-        return sendTelegramVoice(chatId, audioBuffer);
+      textToSpeech(message).then((result: { audio: Buffer; engine: string }) => {
+        return sendTelegramVoice(chatId, result.audio);
       }).catch((e: unknown) => {
         logger.warn({ err: (e as Error).message }, 'Voice briefing TTS failed — text sent OK');
       });

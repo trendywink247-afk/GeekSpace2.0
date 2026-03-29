@@ -22,8 +22,18 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       # Set to your actual Ollama container name/address
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
-      - OLLAMA_MODEL=hermes3:8b
-      - OLLAMA_TIMEOUT_MS=20000
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
+      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-qwen3:14b}
+      - OLLAMA_TIMEOUT_MS=90000
+      - OLLAMA_MAX_TOKENS=4096
+      - OLLAMA_THINKING_ENABLED=true
+      # Voice pipeline sidecars
+      - KOKORO_TTS_URL=http://kokoro-tts:5101
+      - KOKORO_TTS_ENABLED=true
+      - PIPER_TTS_URL=http://piper-tts:5100
+      - PIPER_TTS_ENABLED=true
+      - WHISPER_LOCAL_URL=http://whisper-stt:5102
+      - WHISPER_LOCAL_ENABLED=true
       - EDITH_GATEWAY_URL=${EDITH_GATEWAY_URL:-http://edith-bridge:8787}
       - EDITH_TOKEN=${EDITH_TOKEN:-}
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
@@ -117,7 +127,7 @@ services:
     environment:
       - OLLAMA_BASE_URL=${PICOCLAW_OLLAMA_URL:-http://ollama-qtzz-ollama-1:11434}
       - PICOCLAW_PORT=8080
-      - PICOCLAW_MODEL=qwen2.5-coder:1.5b
+      - PICOCLAW_MODEL=${PICOCLAW_MODEL:-qwen2.5-coder:3b}
       - PICOCLAW_TIMEOUT_MS=5000
     networks:
       - geekspace-net
@@ -371,8 +381,10 @@ services:
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://:${REDIS_PASSWORD}@staging-redis:6379
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
-      - OLLAMA_MODEL=hermes3:8b
-      - OLLAMA_TIMEOUT_MS=20000
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
+      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-qwen3:14b}
+      - OLLAMA_TIMEOUT_MS=90000
+      - OLLAMA_MAX_TOKENS=4096
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
       - PICOCLAW_ENABLED=${PICOCLAW_ENABLED:-true}
       - PICOCLAW_TIMEOUT_MS=5000
@@ -438,6 +450,111 @@ services:
         limits:
           memory: 64M
           cpus: '0.1'
+
+  # ---- Kokoro TTS (High-quality neural TTS — ONNX CPU) ----
+  kokoro-tts:
+    build: ./kokoro-tts
+    container_name: geekspace-kokoro-tts
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    expose:
+      - "5101"
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5101/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---- Piper TTS (Fast CPU-friendly TTS fallback) ----
+  piper-tts:
+    build: ./piper-tts
+    container_name: geekspace-piper-tts
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    expose:
+      - "5100"
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5100/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---- whisper.cpp STT (Local speech-to-text — CPU optimized) ----
+  whisper-stt:
+    build: ./whisper-stt
+    container_name: geekspace-whisper-stt
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    expose:
+      - "5102"
+    networks:
+      - geekspace-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5102/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 #-----geekos-agents----- DISABLED: kept for future use
 # DISABLED:  geekos-postgres:
