@@ -61,7 +61,7 @@ interface CommandPaletteProps {
 type PaletteTab = 'commands' | 'search';
 
 const DATA_TYPE_ICONS: Record<string, React.ReactNode> = {
-  note:         <FileText      className="w-4 h-4 text-[#00F0FF]" />,
+  note:         <FileText      className="w-4 h-4 text-[#8B5CF6]" />,
   reminder:     <Bell          className="w-4 h-4 text-[#FFB800]" />,
   habit:        <Target        className="w-4 h-4 text-[#00FF88]" />,
   memory:       <Brain         className="w-4 h-4 text-[#BF5FFF]" />,
@@ -504,17 +504,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -10 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-2xl mx-4 bg-[#0A0A14] border border-[#00F0FF]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden relative"
+        className="w-full max-w-2xl mx-4 bg-[#0A0A14] border border-[#8B5CF6]/20 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden relative"
       >
         {/* Top gradient border accent */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00F0FF]/60 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#8B5CF6]/60 to-transparent" />
         {/* Tab strip */}
-        <div className="flex border-b border-[#00F0FF]/10">
+        <div className="flex border-b border-[#8B5CF6]/10">
           <button
             onClick={() => { setTab('commands'); setSearch(''); }}
             className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors ${
               tab === 'commands'
-                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                ? 'text-[#8B5CF6] border-b-2 border-[#8B5CF6]'
                 : 'text-[#6B7280] hover:text-[#E8E8F0]'
             }`}
           >
@@ -525,7 +525,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             onClick={() => { setTab('search'); setSearch(''); setDataResults([]); }}
             className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors flex items-center justify-center gap-1.5 ${
               tab === 'search'
-                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                ? 'text-[#8B5CF6] border-b-2 border-[#8B5CF6]'
                 : 'text-[#6B7280] hover:text-[#E8E8F0]'
             }`}
           >
@@ -535,8 +535,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Header input */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-[#00F0FF]/10">
-          <Sparkles className="w-5 h-5 text-[#00F0FF]/50 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-[#8B5CF6]/10">
+          <Sparkles className="w-5 h-5 text-[#8B5CF6]/50 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -544,7 +544,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-[#F4F6FF] placeholder-[#4B5563] outline-none text-lg"
+            className="flex-1 bg-transparent text-[#E8E8F0] placeholder-[#4B5563] outline-none text-lg"
           />
           <div className="hidden sm:flex items-center gap-1.5">
             <kbd className="px-1.5 py-0.5 text-[10px] bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280] font-mono">
@@ -575,7 +575,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: catIdx * 0.04 }}
                 >
-                  <div className="px-3 py-2 text-[10px] font-semibold text-[#8892A4]/70 uppercase tracking-[0.12em]">
+                  <div className="px-3 py-2 text-[10px] font-semibold text-[#B8C4D4]/70 uppercase tracking-[0.12em]">
                     {category}
                   </div>
                   {items.map((cmd, cmdIdx) => {
@@ -593,17 +593,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         transition={{ duration: 0.15, delay: catIdx * 0.04 + cmdIdx * 0.02 }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 ${
                           isSelected
-                            ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
-                            : 'hover:bg-[#00F0FF]/5 border-l-2 border-transparent'
+                            ? 'bg-[#8B5CF6]/10 border-l-2 border-[#8B5CF6]'
+                            : 'hover:bg-[#8B5CF6]/5 border-l-2 border-transparent'
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150 ${
-                          isSelected ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
+                          isSelected ? 'bg-[#8B5CF6]/20 text-[#8B5CF6]' : 'bg-[#06060B] text-[#6B7280]'
                         }`}>
                           {cmd.icon}
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <div className={`font-medium text-sm ${isSelected ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
+                          <div className={`font-medium text-sm ${isSelected ? 'text-[#E8E8F0]' : 'text-[#B8C4D4]'}`}>
                             {cmd.title}
                           </div>
                           {cmd.subtitle && (
@@ -660,7 +660,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: groupIdx * 0.05 }}
                     >
-                      <div className="px-3 py-2 text-[10px] font-semibold text-[#8892A4]/70 uppercase tracking-[0.12em] flex items-center gap-2">
+                      <div className="px-3 py-2 text-[10px] font-semibold text-[#B8C4D4]/70 uppercase tracking-[0.12em] flex items-center gap-2">
                         {DATA_TYPE_ICONS[type]}
                         {DATA_TYPE_LABELS[type] ? `${DATA_TYPE_LABELS[type]}s` : type}
                         <span className="text-[#4B5563]">({groupedData[type].length})</span>
@@ -681,17 +681,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             transition={{ duration: 0.15, delay: groupIdx * 0.05 + rIdx * 0.02 }}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 ${
                               isSelected
-                                ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
-                                : 'hover:bg-[#00F0FF]/5 border-l-2 border-transparent'
+                                ? 'bg-[#8B5CF6]/10 border-l-2 border-[#8B5CF6]'
+                                : 'hover:bg-[#8B5CF6]/5 border-l-2 border-transparent'
                             }`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-150 ${
-                              isSelected ? 'bg-[#00F0FF]/20' : 'bg-[#06060B]'
+                              isSelected ? 'bg-[#8B5CF6]/20' : 'bg-[#06060B]'
                             }`}>
                               {DATA_TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[#6B7280]" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm truncate font-medium ${isSelected ? 'text-[#F4F6FF]' : 'text-[#E8E8F0]'}`}>
+                              <p className={`text-sm truncate font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#E8E8F0]'}`}>
                                 {r.title}
                               </p>
                               {r.snippet && r.snippet !== r.title && (
@@ -731,7 +731,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   Search notes, reminders, memories, and more...
                 </p>
                 <div className="flex justify-center gap-4 text-xs text-[#4B5563] mb-5">
-                  <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#00F0FF]" /> Notes</span>
+                  <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#8B5CF6]" /> Notes</span>
                   <span className="flex items-center gap-1"><Bell className="w-3 h-3 text-[#FFB800]" /> Reminders</span>
                   <span className="flex items-center gap-1"><Target className="w-3 h-3 text-[#00FF88]" /> Habits</span>
                   <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-[#BF5FFF]" /> Memories</span>
@@ -741,13 +741,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {/* Recent searches */}
                 {recentSearches.length > 0 && (
                   <div className="border-t border-[#1A1A2E] pt-4">
-                    <p className="text-xs text-[#8892A4] uppercase tracking-wider mb-2 px-2">Recent searches</p>
+                    <p className="text-xs text-[#B8C4D4] uppercase tracking-wider mb-2 px-2">Recent searches</p>
                     <div className="flex flex-wrap gap-2 px-2">
                       {recentSearches.slice(0, 6).map((s, i) => (
                         <button
                           key={i}
                           onClick={() => setSearch(s)}
-                          className="px-3 py-1.5 text-xs text-[#8892A4] bg-[#0C0C18] border border-[#1A1A2E] rounded-lg hover:border-[#00F0FF]/30 hover:text-[#E8E8F0] transition-colors"
+                          className="px-3 py-1.5 text-xs text-[#B8C4D4] bg-[#0C0C18] border border-[#1A1A2E] rounded-lg hover:border-[#8B5CF6]/30 hover:text-[#E8E8F0] transition-colors"
                         >
                           <Clock className="w-3 h-3 inline-block mr-1.5 -mt-0.5 opacity-50" />
                           {s}
@@ -762,7 +762,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         )}
 
         {/* Footer — unified keyboard hints */}
-        <div className="flex items-center justify-center gap-3 sm:gap-5 px-4 py-2.5 border-t border-[#00F0FF]/10 text-[11px] text-[#4B5563]">
+        <div className="flex items-center justify-center gap-3 sm:gap-5 px-4 py-2.5 border-t border-[#8B5CF6]/10 text-[11px] text-[#4B5563]">
           <span className="flex items-center gap-1.5">
             <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">&uarr;&darr;</kbd>
             Navigate

@@ -24,8 +24,8 @@ export function SectionCard({ children, title, subtitle, className = '', padding
     <div className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-300 ${paddingClass} ${className}`}>
       {(title || subtitle) && (
         <div className="mb-4">
-          {title && <h2 className="text-base font-semibold text-[var(--ag-text-primary,#F4F6FF)]">{title}</h2>}
-          {subtitle && <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5">{subtitle}</p>}
+          {title && <h2 className="text-base font-semibold text-[var(--ag-text-primary,#E8E8F0)]">{title}</h2>}
+          {subtitle && <p className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] mt-0.5">{subtitle}</p>}
         </div>
       )}
       {children}

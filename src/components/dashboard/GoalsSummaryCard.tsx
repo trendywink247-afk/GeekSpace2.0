@@ -42,7 +42,7 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
     <SectionCard>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-[#00F0FF]" />
+          <Target className="w-4 h-4 text-[#8B5CF6]" />
           <span className="text-sm font-semibold text-[#E8E8F0]">Goals</span>
           {stats && stats.active > 0 && (
             <span className="text-xs text-[#6B7280]">
@@ -52,7 +52,7 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
         </div>
         <button
           onClick={() => onNavigate?.('goals')}
-          className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00D4E0] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8B5CF6] hover:text-[#00D4E0] transition-colors"
         >
           View all <ArrowRight className="w-3 h-3" />
         </button>
@@ -88,7 +88,7 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
                 <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
                 <circle
                   cx="16" cy="16" r="13" fill="none"
-                  stroke="#00F0FF"
+                  stroke="#8B5CF6"
                   strokeWidth="2.5"
                   strokeDasharray={`${(goal.progress / 100) * 81.7} 81.7`}
                   strokeLinecap="round"
@@ -99,7 +99,7 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
                 <span className="text-sm text-[#E8E8F0] truncate block">{goal.title}</span>
                 <span className="text-xs text-[#6B7280]">{goal.progress}% complete</span>
               </div>
-              <TrendingUp className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
+              <TrendingUp className="w-3.5 h-3.5 text-[#8B5CF6] flex-shrink-0" />
             </div>
           ))}
         </div>

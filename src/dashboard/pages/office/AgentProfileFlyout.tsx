@@ -35,7 +35,7 @@ interface Props {
 const STATE_DOT_COLORS: Record<string, string> = {
   idle: '#4B5563',
   thinking: '#F59E0B',
-  typing: '#00F0FF',
+  typing: '#8B5CF6',
   tool_call: '#8B5CF6',
   responding: '#ADFF2F',
   done: '#10B981',
@@ -75,7 +75,7 @@ function StatItem({ label, value, color }: StatItemProps) {
       <span className="text-lg font-bold" style={{ color }}>
         {value}
       </span>
-      <span className="text-[10px] text-[#9CA3AF]">{label}</span>
+      <span className="text-[10px] text-[#B8C4D4]">{label}</span>
     </div>
   );
 }
@@ -108,7 +108,7 @@ function AgentTooltip({ label, children }: { label: string; children: React.Reac
             ref={setFloat}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#00F0FF]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"
+            className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#8B5CF6]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"
           >
             {label}
           </div>
@@ -193,12 +193,12 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                 </span>
                 <div className="min-w-0">
                   <h2
-                    className="text-lg font-bold text-[#F4F6FF]"
+                    className="text-lg font-bold text-[#E8E8F0]"
                     style={{ textShadow: `0 0 20px ${color}25` }}
                   >
                     {id.charAt(0).toUpperCase() + id.slice(1)}
                   </h2>
-                  <p className="text-xs text-[#9CA3AF]">{meta?.role ?? 'Agent'}</p>
+                  <p className="text-xs text-[#B8C4D4]">{meta?.role ?? 'Agent'}</p>
                 </div>
               </div>
               <button
@@ -211,7 +211,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
             {/* Description */}
             <div className="px-5 py-4">
-              <p className="text-xs leading-relaxed text-[#9CA3AF]">{description}</p>
+              <p className="text-xs leading-relaxed text-[#B8C4D4]">{description}</p>
             </div>
 
             {/* Current State */}
@@ -222,7 +222,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: stateDotColor }}
                   />
-                  <span className="text-xs text-[#F4F6FF]">Idle</span>
+                  <span className="text-xs text-[#E8E8F0]">Idle</span>
                   <span className="text-[10px] text-[#4B5563] ml-auto">Current state</span>
                 </div>
               </AgentTooltip>
@@ -230,7 +230,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
             {/* Today's Stats */}
             <div className="px-5 pb-4">
-              <h3 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-semibold text-[#B8C4D4] uppercase tracking-wider mb-2">
                 Today&apos;s Stats
               </h3>
               <div className="flex gap-2">
@@ -244,7 +244,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
             {/* Specialists */}
             {specialists.length > 0 && (
               <div className="px-5 pb-4">
-                <h3 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-semibold text-[#B8C4D4] uppercase tracking-wider mb-2">
                   Specialists
                 </h3>
                 <div className="space-y-2">
@@ -260,7 +260,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                         >
                           <span className="text-base">{sMeta?.emoji ?? '?'}</span>
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs font-medium text-[#F4F6FF]">
+                            <span className="text-xs font-medium text-[#E8E8F0]">
                               {sid.charAt(0).toUpperCase() + sid.slice(1)}
                             </span>
                             <p className="text-[10px] text-[#4B5563]">
@@ -304,7 +304,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                   onClick={() => setShowTaskModal(true)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#9CA3AF] transition-colors min-h-[44px]"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl py-2.5 text-sm font-medium text-[#B8C4D4] transition-colors min-h-[44px]"
                   style={{
                     background: 'rgba(12,12,30,0.4)',
                     backdropFilter: 'blur(8px)',
@@ -344,7 +344,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-bold text-[#F4F6FF]">
+                      <h3 className="text-sm font-bold text-[#E8E8F0]">
                         What should {id.charAt(0).toUpperCase() + id.slice(1)} do?
                       </h3>
                       <button
@@ -357,7 +357,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
                     {/* Task type dropdown */}
                     <label className="block mb-3">
-                      <span className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1 block">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B8C4D4] mb-1 block">
                         Task Type
                       </span>
                       <select
@@ -366,8 +366,8 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                         style={{
                           background: '#12121F',
-                          color: '#F4F6FF',
-                          border: '1px solid rgba(0,240,255,0.1)',
+                          color: '#E8E8F0',
+                          border: '1px solid rgba(139,92,246,0.1)',
                         }}
                       >
                         {(Object.entries(TASK_TYPE_LABELS) as [TaskType, string][]).map(([key, label]) => (
@@ -378,7 +378,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
 
                     {/* Task description input */}
                     <label className="block mb-4">
-                      <span className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-1 block">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B8C4D4] mb-1 block">
                         Description
                       </span>
                       <input
@@ -391,8 +391,8 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                         className="w-full rounded-lg px-3 py-2.5 text-xs outline-none placeholder:text-[#4B5563] min-h-[44px]"
                         style={{
                           background: '#12121F',
-                          color: '#F4F6FF',
-                          border: '1px solid rgba(0,240,255,0.1)',
+                          color: '#E8E8F0',
+                          border: '1px solid rgba(139,92,246,0.1)',
                         }}
                       />
                     </label>

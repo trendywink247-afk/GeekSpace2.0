@@ -3,12 +3,12 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 /* ── Agent config ── */
 const AGENTS = [
-  { id: 'weebo', name: 'Weebo', sheet: 0, color: '#00F0FF' },
+  { id: 'weebo', name: 'Weebo', sheet: 0, color: '#8B5CF6' },
   { id: 'edith', name: 'Edith', sheet: 1, color: '#8B5CF6' },
   { id: 'jarvis', name: 'Jarvis', sheet: 2, color: '#ADFF2F' },
   { id: 'aria', name: 'Aria', sheet: 3, color: '#FF2D78' },
   { id: 'forge', name: 'Forge', sheet: 4, color: '#FFB800' },
-  { id: 'pulse', name: 'Pulse', sheet: 5, color: '#00F0FF' },
+  { id: 'pulse', name: 'Pulse', sheet: 5, color: '#8B5CF6' },
   { id: 'echo', name: 'Echo', sheet: 0, hueShift: 120, color: '#8B5CF6' },
   { id: 'cal', name: 'Cal', sheet: 2, hueShift: 90, color: '#ADFF2F' },
   { id: 'nova', name: 'Nova', sheet: 3, hueShift: 180, color: '#FF2D78' },
@@ -223,7 +223,7 @@ export function SpriteTeaser() {
           style={{
             background: 'linear-gradient(145deg, rgba(12,12,24,0.7), rgba(8,8,18,0.85))',
             borderColor: 'rgba(255,255,255,0.06)',
-            boxShadow: '0 0 40px rgba(0,240,255,0.03)',
+            boxShadow: '0 0 40px rgba(139,92,246,0.03)',
           }}
         >
           <canvas

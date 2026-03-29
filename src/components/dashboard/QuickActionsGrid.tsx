@@ -16,9 +16,9 @@ const actions = [
     label: 'Chat with Agent',
     desc: 'Ask anything, get instant help',
     icon: MessageSquare,
-    color: '#00F0FF',
-    bgColor: 'rgba(0,240,255,0.08)',
-    borderColor: 'rgba(0,240,255,0.15)',
+    color: '#8B5CF6',
+    bgColor: 'rgba(139,92,246,0.08)',
+    borderColor: 'rgba(139,92,246,0.15)',
     page: 'chat',
     useChat: true,
   },
@@ -58,7 +58,7 @@ export function QuickActionsGrid({ onNavigate, onOpenChat }: QuickActionsGridPro
   return (
     <section>
       <h2
-        className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider mb-3"
+        className="text-sm font-semibold text-[#B8C4D4] uppercase tracking-wider mb-3"
         style={{ fontFamily: 'Syne, sans-serif' }}
       >
         Quick Actions
@@ -91,15 +91,15 @@ export function QuickActionsGrid({ onNavigate, onOpenChat }: QuickActionsGridPro
               <action.icon className="w-5 h-5" style={{ color: action.color }} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#F4F6FF] group-hover:text-white transition-colors">
+              <div className="text-sm font-semibold text-[#E8E8F0] group-hover:text-white transition-colors">
                 {action.label}
               </div>
-              <div className="text-xs text-[#8892A4] mt-0.5 leading-relaxed">
+              <div className="text-xs text-[#B8C4D4] mt-0.5 leading-relaxed">
                 {action.desc}
               </div>
             </div>
             <ArrowRight
-              className="w-4 h-4 text-[#8892A4]/30 group-hover:text-[#8892A4]/70 transition-all group-hover:translate-x-0.5 absolute top-4 right-4"
+              className="w-4 h-4 text-[#B8C4D4]/30 group-hover:text-[#B8C4D4]/70 transition-all group-hover:translate-x-0.5 absolute top-4 right-4"
             />
           </button>
         ))}

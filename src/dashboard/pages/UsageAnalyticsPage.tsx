@@ -54,7 +54,7 @@ const PROVIDER_COLORS = ['#10B981', '#8B5CF6', '#FFB800', '#FF2D78', '#61D4FF', 
 const KPI_COLORS = { cost: '#10B981', messages: '#8B5CF6', tokens: '#FFB800', tools: '#FF2D78' };
 const TOOLTIP_STYLE = {
   contentStyle: { backgroundColor: '#0C0C1E', border: '1px solid rgba(139,92,246,0.15)', borderRadius: '8px' },
-  itemStyle: { color: '#F4F6FF' },
+  itemStyle: { color: '#E8E8F0' },
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -99,8 +99,8 @@ function CreditCircle({ used, total }: { used: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold text-[#F4F6FF] font-mono">{fmt(remaining)}</span>
-        <span className="text-[10px] text-[#9CA3AF]">left</span>
+        <span className="text-lg font-bold text-[#E8E8F0] font-mono">{fmt(remaining)}</span>
+        <span className="text-[10px] text-[#B8C4D4]">left</span>
       </div>
     </div>
   );
@@ -277,7 +277,7 @@ export function UsageAnalyticsPage() {
       <PageShell>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <AlertTriangle className="w-10 h-10 text-[#FF6161]" />
-          <p className="text-[#9CA3AF]">{error}</p>
+          <p className="text-[#B8C4D4]">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-sm font-medium transition-colors min-h-[44px]"
@@ -316,7 +316,7 @@ export function UsageAnalyticsPage() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                   summaryRange === r
                     ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
+                    : 'text-[#B8C4D4] hover:text-[#E8E8F0]'
                 }`}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -370,10 +370,10 @@ export function UsageAnalyticsPage() {
                   </div>
                 )}
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#10B981] transition-colors font-mono">
+              <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#10B981] transition-colors font-mono">
                 ${(summary?.totalCostUSD ?? 0).toFixed(2)}
               </div>
-              <div className="text-xs sm:text-sm text-[#9CA3AF]">Total Cost</div>
+              <div className="text-xs sm:text-sm text-[#B8C4D4]">Total Cost</div>
             </SectionCard>
 
             {/* Messages */}
@@ -383,10 +383,10 @@ export function UsageAnalyticsPage() {
                   <MessageSquare className="w-5 h-5" style={{ color: KPI_COLORS.messages }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#8B5CF6] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#8B5CF6] transition-colors">
                 {fmt(summary?.totalMessages ?? 0)}
               </div>
-              <div className="text-xs sm:text-sm text-[#9CA3AF]">Messages</div>
+              <div className="text-xs sm:text-sm text-[#B8C4D4]">Messages</div>
             </SectionCard>
 
             {/* Tokens */}
@@ -396,10 +396,10 @@ export function UsageAnalyticsPage() {
                   <Coins className="w-5 h-5" style={{ color: KPI_COLORS.tokens }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FFB800] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FFB800] transition-colors">
                 {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
               </div>
-              <div className="text-xs sm:text-sm text-[#9CA3AF]">Tokens In / Out</div>
+              <div className="text-xs sm:text-sm text-[#B8C4D4]">Tokens In / Out</div>
             </SectionCard>
 
             {/* Tool Calls */}
@@ -409,10 +409,10 @@ export function UsageAnalyticsPage() {
                   <Wrench className="w-5 h-5" style={{ color: KPI_COLORS.tools }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FF2D78] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[#E8E8F0] group-hover:text-[#FF2D78] transition-colors">
                 {fmt(summary?.totalToolCalls ?? 0)}
               </div>
-              <div className="text-xs sm:text-sm text-[#9CA3AF]">Tool Calls</div>
+              <div className="text-xs sm:text-sm text-[#B8C4D4]">Tool Calls</div>
             </SectionCard>
           </>
         )}
@@ -423,7 +423,7 @@ export function UsageAnalyticsPage() {
         <SectionCard>
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5 text-[#10B981]" />
-            <h2 className="text-base font-semibold text-[#F4F6FF]">Today's Usage</h2>
+            <h2 className="text-base font-semibold text-[#E8E8F0]">Today's Usage</h2>
             <Badge variant="outline" className="border-[#10B981]/30 text-[#10B981] text-xs ml-2">
               Live
             </Badge>
@@ -433,8 +433,8 @@ export function UsageAnalyticsPage() {
             <div className="flex flex-col items-center gap-2 col-span-2 sm:col-span-1">
               <CreditCircle used={todayUsage.tokenUsed} total={todayUsage.tokenBudget} />
               <div className="text-center">
-                <div className="text-xs text-[#9CA3AF]">Token Budget</div>
-                <div className="text-xs font-mono text-[#F4F6FF]">
+                <div className="text-xs text-[#B8C4D4]">Token Budget</div>
+                <div className="text-xs font-mono text-[#E8E8F0]">
                   {fmt(todayUsage.tokenUsed)} / {fmt(todayUsage.tokenBudget)}
                 </div>
               </div>
@@ -443,8 +443,8 @@ export function UsageAnalyticsPage() {
             <div className="flex flex-col items-center gap-2">
               <CreditCircle used={todayUsage.messages.used} total={todayUsage.messages.limit} />
               <div className="text-center">
-                <div className="text-xs text-[#9CA3AF]">Messages</div>
-                <div className="text-xs font-mono text-[#F4F6FF]">
+                <div className="text-xs text-[#B8C4D4]">Messages</div>
+                <div className="text-xs font-mono text-[#E8E8F0]">
                   {todayUsage.messages.used} / {todayUsage.messages.limit}
                 </div>
               </div>
@@ -453,8 +453,8 @@ export function UsageAnalyticsPage() {
             <div className="flex flex-col items-center gap-2">
               <CreditCircle used={todayUsage.voice.used} total={todayUsage.voice.limit} />
               <div className="text-center">
-                <div className="text-xs text-[#9CA3AF]">Voice</div>
-                <div className="text-xs font-mono text-[#F4F6FF]">
+                <div className="text-xs text-[#B8C4D4]">Voice</div>
+                <div className="text-xs font-mono text-[#E8E8F0]">
                   {todayUsage.voice.used} / {todayUsage.voice.limit}
                 </div>
               </div>
@@ -463,8 +463,8 @@ export function UsageAnalyticsPage() {
             <div className="flex flex-col items-center gap-2">
               <CreditCircle used={todayUsage.images.used} total={todayUsage.images.limit} />
               <div className="text-center">
-                <div className="text-xs text-[#9CA3AF]">Images</div>
-                <div className="text-xs font-mono text-[#F4F6FF]">
+                <div className="text-xs text-[#B8C4D4]">Images</div>
+                <div className="text-xs font-mono text-[#E8E8F0]">
                   {todayUsage.images.used} / {todayUsage.images.limit}
                 </div>
               </div>
@@ -492,7 +492,7 @@ export function UsageAnalyticsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#10B981]" />
-            <h2 className="text-base font-semibold text-[#F4F6FF]">Cost Over Time</h2>
+            <h2 className="text-base font-semibold text-[#E8E8F0]">Cost Over Time</h2>
           </div>
           <div className="flex gap-1 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-lg p-0.5">
             {(['7d', '14d', '30d'] as ChartRange[]).map((r) => (
@@ -502,7 +502,7 @@ export function UsageAnalyticsPage() {
                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                   chartRange === r
                     ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
+                    : 'text-[#B8C4D4] hover:text-[#E8E8F0]'
                 }`}
               >
                 {r}
@@ -523,9 +523,9 @@ export function UsageAnalyticsPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.06)" />
-                <XAxis dataKey="label" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="label" stroke="#B8C4D4" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis
-                  stroke="#9CA3AF"
+                  stroke="#B8C4D4"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -546,14 +546,14 @@ export function UsageAnalyticsPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Provider Breakdown */}
         <SectionCard>
-          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Provider Breakdown</h2>
+          <h2 className="text-base font-semibold text-[#E8E8F0] mb-4">Provider Breakdown</h2>
           {loading ? (
             <Skeleton className="w-full h-[220px] rounded-lg" />
           ) : pieData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[220px] gap-2">
               <BarChart3 className="w-8 h-8 text-[#10B981]/20" />
-              <p className="text-sm text-[#9CA3AF]">No provider data yet</p>
-              <p className="text-xs text-[#9CA3AF]/60">Start chatting to see provider breakdown</p>
+              <p className="text-sm text-[#B8C4D4]">No provider data yet</p>
+              <p className="text-xs text-[#B8C4D4]/60">Start chatting to see provider breakdown</p>
             </div>
           ) : (
             <>
@@ -587,7 +587,7 @@ export function UsageAnalyticsPage() {
                 {pieData.map((p) => (
                   <div key={p.provider} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                    <span className="text-xs text-[#9CA3AF]">{friendlyProvider(p.provider)}</span>
+                    <span className="text-xs text-[#B8C4D4]">{friendlyProvider(p.provider)}</span>
                   </div>
                 ))}
               </div>
@@ -597,14 +597,14 @@ export function UsageAnalyticsPage() {
 
         {/* Hourly Activity */}
         <SectionCard>
-          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Hourly Activity</h2>
+          <h2 className="text-base font-semibold text-[#E8E8F0] mb-4">Hourly Activity</h2>
           {loading ? (
             <Skeleton className="w-full h-[250px] rounded-lg" />
           ) : hourlyData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[250px] gap-2">
               <Activity className="w-8 h-8 text-[#10B981]/20" />
-              <p className="text-sm text-[#9CA3AF]">No activity data yet</p>
-              <p className="text-xs text-[#9CA3AF]/60">Your hourly usage patterns will appear here</p>
+              <p className="text-sm text-[#B8C4D4]">No activity data yet</p>
+              <p className="text-xs text-[#B8C4D4]/60">Your hourly usage patterns will appear here</p>
             </div>
           ) : (
             <div className="min-h-[180px] h-[250px]">
@@ -612,8 +612,8 @@ export function UsageAnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hourlyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.06)" vertical={false} />
-                    <XAxis dataKey="hour" stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="hour" stroke="#B8C4D4" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#B8C4D4" fontSize={11} tickLine={false} axisLine={false} />
                     <Tooltip
                       {...TOOLTIP_STYLE}
                       cursor={{ fill: 'rgba(139,92,246,0.08)' }}
@@ -631,14 +631,14 @@ export function UsageAnalyticsPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Top Tools by Cost */}
         <SectionCard className="lg:col-span-2">
-          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Top Tools by Cost</h2>
+          <h2 className="text-base font-semibold text-[#E8E8F0] mb-4">Top Tools by Cost</h2>
           {loading ? (
             <Skeleton className="w-full h-[200px] rounded-lg" />
           ) : toolData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[200px] gap-2">
               <Wrench className="w-8 h-8 text-[#FF2D78]/20" />
-              <p className="text-sm text-[#9CA3AF]">No tool usage yet</p>
-              <p className="text-xs text-[#9CA3AF]/60">Tool call costs will appear after your first agent run</p>
+              <p className="text-sm text-[#B8C4D4]">No tool usage yet</p>
+              <p className="text-xs text-[#B8C4D4]/60">Tool call costs will appear after your first agent run</p>
             </div>
           ) : (
             <div className="min-h-[180px] h-[200px]">
@@ -655,13 +655,13 @@ export function UsageAnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.06)" horizontal={false} />
                     <XAxis
                       type="number"
-                      stroke="#9CA3AF"
+                      stroke="#B8C4D4"
                       fontSize={11}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={safeDollar2}
                     />
-                    <YAxis type="category" dataKey="name" stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={false} width={75} />
+                    <YAxis type="category" dataKey="name" stroke="#B8C4D4" fontSize={11} tickLine={false} axisLine={false} width={75} />
                     <Tooltip
                       {...TOOLTIP_STYLE}
                       formatter={safeDollar4}
@@ -676,7 +676,7 @@ export function UsageAnalyticsPage() {
 
         {/* Billing Summary */}
         <SectionCard>
-          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Billing</h2>
+          <h2 className="text-base font-semibold text-[#E8E8F0] mb-4">Billing</h2>
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -686,8 +686,8 @@ export function UsageAnalyticsPage() {
           ) : !billing ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2">
               <DollarSign className="w-8 h-8 text-[#10B981]/20" />
-              <p className="text-sm text-[#9CA3AF]">No billing data</p>
-              <p className="text-xs text-[#9CA3AF]/60">Billing info will appear after your first cycle</p>
+              <p className="text-sm text-[#B8C4D4]">No billing data</p>
+              <p className="text-xs text-[#B8C4D4]/60">Billing info will appear after your first cycle</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -707,14 +707,14 @@ export function UsageAnalyticsPage() {
                 { label: 'Resets', value: new Date(billing.resetDate).toLocaleDateString() },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between text-sm">
-                  <span className="text-[#9CA3AF]">{item.label}</span>
-                  <span className="text-[#F4F6FF] font-mono">{item.value}</span>
+                  <span className="text-[#B8C4D4]">{item.label}</span>
+                  <span className="text-[#E8E8F0] font-mono">{item.value}</span>
                 </div>
               ))}
 
               {/* Usage progress bar */}
               <div className="pt-2">
-                <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-1.5">
+                <div className="flex items-center justify-between text-xs text-[#B8C4D4] mb-1.5">
                   <span>Usage</span>
                   <span>{billing.monthlyAllowance > 0 ? `${Math.min(100, ((billing.usageThisMonth?.totalCostUSD ?? 0) / billing.monthlyAllowance * 100)).toFixed(0)}%` : '0%'}</span>
                 </div>
@@ -747,9 +747,9 @@ export function UsageAnalyticsPage() {
       {/* Usage Event Log */}
       <SectionCard>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-[#F4F6FF]">Usage Events</h2>
+          <h2 className="text-base font-semibold text-[#E8E8F0]">Usage Events</h2>
           {eventsTotal > 0 && (
-            <Badge variant="outline" className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF]">
+            <Badge variant="outline" className="border-[rgba(139,92,246,0.15)] text-[#B8C4D4]">
               {eventsTotal.toLocaleString()} total
             </Badge>
           )}
@@ -763,8 +763,8 @@ export function UsageAnalyticsPage() {
         ) : events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
             <MessageSquare className="w-8 h-8 text-[#8B5CF6]/20" />
-            <p className="text-sm text-[#9CA3AF]">No usage events yet</p>
-            <p className="text-xs text-[#9CA3AF]/60">Each AI request will be logged here with cost details</p>
+            <p className="text-sm text-[#B8C4D4]">No usage events yet</p>
+            <p className="text-xs text-[#B8C4D4]/60">Each AI request will be logged here with cost details</p>
           </div>
         ) : (
           <>
@@ -773,21 +773,21 @@ export function UsageAnalyticsPage() {
                 {
                   key: 'time', label: 'Time', primary: true,
                   render: (event) => (
-                    <span className="text-[#9CA3AF] font-mono text-xs">
+                    <span className="text-[#B8C4D4] font-mono text-xs">
                       {new Date(event.createdAt).toLocaleString(undefined, {
                         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                       })}
                     </span>
                   ),
                 },
-                { key: 'provider', label: 'Provider', render: (event) => <span className="text-[#F4F6FF]">{friendlyProvider(event.provider)}</span> },
-                { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#9CA3AF] font-mono text-xs">{friendlyModel(event.model)}</span> },
-                { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[#F4F6FF] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
+                { key: 'provider', label: 'Provider', render: (event) => <span className="text-[#E8E8F0]">{friendlyProvider(event.provider)}</span> },
+                { key: 'model', label: 'Model', hideOnMobile: true, render: (event) => <span className="text-[#B8C4D4] font-mono text-xs">{friendlyModel(event.model)}</span> },
+                { key: 'tokens', label: 'Tokens', render: (event) => <span className="text-[#E8E8F0] font-mono text-xs">{fmt(event.tokensIn)} / {fmt(event.tokensOut)}</span> },
                 { key: 'cost', label: 'Cost', render: (event) => <span className="text-[#10B981] font-mono text-xs">{fmtCost(event.costUSD)}</span> },
                 {
                   key: 'channel', label: 'Channel', hideOnMobile: true,
                   render: (event) => (
-                    <Badge variant="outline" className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] text-xs">
+                    <Badge variant="outline" className="border-[rgba(139,92,246,0.15)] text-[#B8C4D4] text-xs">
                       {event.channel}
                     </Badge>
                   ),
@@ -802,14 +802,14 @@ export function UsageAnalyticsPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-4">
-                <span className="text-xs text-[#9CA3AF]">
+                <span className="text-xs text-[#B8C4D4]">
                   Page {eventsPage} of {totalPages}
                 </span>
                 <div className="flex gap-2">
                   <button
                     disabled={eventsPage <= 1}
                     onClick={() => handleEventsPage(eventsPage - 1)}
-                    className="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+                    className="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-[rgba(139,92,246,0.15)] text-[#B8C4D4] hover:text-[#E8E8F0] hover:border-[rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
                   >
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Prev
@@ -817,7 +817,7 @@ export function UsageAnalyticsPage() {
                   <button
                     disabled={eventsPage >= totalPages}
                     onClick={() => handleEventsPage(eventsPage + 1)}
-                    className="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+                    className="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-[rgba(139,92,246,0.15)] text-[#B8C4D4] hover:text-[#E8E8F0] hover:border-[rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[44px]"
                   >
                     Next
                     <ChevronRight className="w-4 h-4 ml-1" />

@@ -193,7 +193,7 @@ const CATEGORIES: { id: Category; label: string }[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  code: '#00F0FF',
+  code: '#8B5CF6',
   research: '#8B5CF6',
   writing: '#FF2D78',
   learning: '#ADFF2F',
@@ -408,7 +408,7 @@ export function AISpecialistPage() {
         name: 'Base64 Encoder / Decoder',
         icon: Lock,
         description: 'Encode or decode Base64 strings and files. Supports binary and Unicode.',
-        accentColor: '#00F0FF',
+        accentColor: '#8B5CF6',
       },
     ] as const;
 

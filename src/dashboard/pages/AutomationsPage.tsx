@@ -49,7 +49,7 @@ import type { AutomationTrigger, AutomationAction, AutomationLog, Automation } f
 const TRIGGER_META: Record<AutomationTrigger, { icon: typeof Clock; label: string; color: string; description: string }> = {
   time: { icon: CalendarClock, label: 'Scheduled', color: '#FFB800', description: 'Run on a schedule' },
   event: { icon: Activity, label: 'Event', color: '#00FF88', description: 'When an event fires' },
-  webhook: { icon: Webhook, label: 'Webhook', color: '#00F0FF', description: 'When a URL is called' },
+  webhook: { icon: Webhook, label: 'Webhook', color: '#8B5CF6', description: 'When a URL is called' },
   manual: { icon: Hand, label: 'Manual', color: '#6B7280', description: 'Trigger by hand' },
   keyword: { icon: Hash, label: 'Keyword', color: '#FF2D78', description: 'When a message matches' },
   health_down: { icon: HeartPulse, label: 'Health Check', color: '#FF6161', description: 'When a URL is down' },
@@ -633,7 +633,7 @@ export function AutomationsPage() {
         title="Automations"
         subtitle="Jarvis-powered triggers and actions"
         badge={
-          <span className="inline-flex items-center gap-1.5 text-sm font-normal text-[#9CA3AF]">
+          <span className="inline-flex items-center gap-1.5 text-sm font-normal text-[#B8C4D4]">
             <span className="w-2 h-2 rounded-full bg-[#ADFF2F] animate-pulse" />
             {automations.length}
           </span>
@@ -663,7 +663,7 @@ export function AutomationsPage() {
             >
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
               <span className="text-lg font-bold tabular-nums" style={{ color: s.color, fontFamily: 'Space Grotesk, sans-serif' }}>{s.value}</span>
-              <span className="text-xs text-[#9CA3AF]">{s.label}</span>
+              <span className="text-xs text-[#B8C4D4]">{s.label}</span>
             </div>
           ))}
         </div>
@@ -683,8 +683,8 @@ export function AutomationsPage() {
                 className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-200 text-left group"
               >
                 <div className="text-2xl mb-2">{t.icon}</div>
-                <h3 className="text-sm font-semibold text-[#F4F6FF] mb-1 group-hover:text-[#ADFF2F] transition-colors">{t.name}</h3>
-                <p className="text-xs text-[#9CA3AF] leading-relaxed mb-3">{t.description}</p>
+                <h3 className="text-sm font-semibold text-[#E8E8F0] mb-1 group-hover:text-[#ADFF2F] transition-colors">{t.name}</h3>
+                <p className="text-xs text-[#B8C4D4] leading-relaxed mb-3">{t.description}</p>
                 <span className="text-xs text-[#ADFF2F] font-medium">Use Template <ArrowRight className="w-3 h-3 inline ml-1" /></span>
               </button>
             ))}
@@ -702,7 +702,7 @@ export function AutomationsPage() {
             placeholder="Search automations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] h-11 text-base"
+            className="pl-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#E8E8F0] h-11 text-base"
           />
         </div>
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
@@ -728,7 +728,7 @@ export function AutomationsPage() {
             const isExpanded = expandedRunHistory === auto.id;
 
             const triggerBorderColor: Record<string, string> = {
-              time: '#00F0FF',
+              time: '#8B5CF6',
               keyword: '#00FF88',
               webhook: '#8B5CF6',
               manual: '#6B7280',
@@ -779,12 +779,12 @@ export function AutomationsPage() {
                       <div className="flex items-center gap-2 text-sm text-[var(--ag-text-muted)] mb-1.5">
                         <TriggerIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: triggerColor }} />
                         <span>{getTriggerSummary(auto)}</span>
-                        <ArrowRight className="w-3 h-3 text-[#9CA3AF] flex-shrink-0" />
+                        <ArrowRight className="w-3 h-3 text-[#B8C4D4] flex-shrink-0" />
                         <span>{getActionSummary(auto)}</span>
                       </div>
 
                       {/* Run stats line */}
-                      <div className="flex items-center gap-3 text-xs text-[#9CA3AF] flex-wrap">
+                      <div className="flex items-center gap-3 text-xs text-[#B8C4D4] flex-wrap">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Last run: {fmtRelativeTime(lastRun)}
@@ -832,7 +832,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
                         title="Edit"
-                        className="text-[#9CA3AF] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="text-[#B8C4D4] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
@@ -843,7 +843,7 @@ export function AutomationsPage() {
                         onClick={() => handleDuplicate(auto.id)}
                         disabled={duplicatingId === auto.id}
                         title="Duplicate"
-                        className="text-[#9CA3AF] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="text-[#B8C4D4] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         {duplicatingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                       </Button>
@@ -853,7 +853,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleDelete(auto.id, auto.name)}
                         title="Delete"
-                        className="text-[#9CA3AF] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="text-[#B8C4D4] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -875,7 +875,7 @@ export function AutomationsPage() {
                     <button
                       type="button"
                       onClick={() => toggleRunHistory(auto.id)}
-                      className="flex items-center gap-2 text-xs text-[#9CA3AF] hover:text-[#ADFF2F] transition-colors min-h-[44px]"
+                      className="flex items-center gap-2 text-xs text-[#B8C4D4] hover:text-[#ADFF2F] transition-colors min-h-[44px]"
                     >
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       Run history
@@ -888,7 +888,7 @@ export function AutomationsPage() {
                             <Loader2 className="w-4 h-4 animate-spin text-[#ADFF2F]" />
                           </div>
                         ) : runHistoryLogs.length === 0 ? (
-                          <p className="text-xs text-[#9CA3AF] py-2 pl-1">No runs yet</p>
+                          <p className="text-xs text-[#B8C4D4] py-2 pl-1">No runs yet</p>
                         ) : (
                           runHistoryLogs.map((log) => {
                             const rawLog = log as unknown as Record<string, unknown>;
@@ -910,9 +910,9 @@ export function AutomationsPage() {
                                 <span className="text-xs text-[var(--ag-text-muted)] flex-shrink-0 w-20">
                                   {createdAt ? fmtRelativeTime(createdAt) : '--'}
                                 </span>
-                                <span className="text-xs text-[#9CA3AF] truncate flex-1">{output || '--'}</span>
+                                <span className="text-xs text-[#B8C4D4] truncate flex-1">{output || '--'}</span>
                                 {durationMs > 0 && (
-                                  <span className="text-[10px] text-[#9CA3AF] font-mono flex-shrink-0">{durationMs}ms</span>
+                                  <span className="text-[10px] text-[#B8C4D4] font-mono flex-shrink-0">{durationMs}ms</span>
                                 )}
                               </div>
                             );
@@ -930,10 +930,10 @@ export function AutomationsPage() {
               <div className="w-16 h-16 rounded-2xl bg-[#ADFF2F]/5 flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-8 h-8 text-[#ADFF2F]/30" />
               </div>
-              <p className="text-[#F4F6FF] font-medium mb-1">
+              <p className="text-[#E8E8F0] font-medium mb-1">
                 {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
               </p>
-              <p className="text-sm text-[#9CA3AF] mb-4 max-w-xs mx-auto">
+              <p className="text-sm text-[#B8C4D4] mb-4 max-w-xs mx-auto">
                 {searchQuery || filter !== 'all'
                   ? 'Try adjusting your search or filter criteria.'
                   : 'Create one from a template or build your own.'}
@@ -952,7 +952,7 @@ export function AutomationsPage() {
       {/* SECTION 4: CREATE / EDIT DIALOG                                     */}
       {/* ================================================================== */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-[rgba(12,12,30,0.95)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] text-[#F4F6FF] max-w-lg mx-2 md:mx-auto p-0 rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[rgba(12,12,30,0.95)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] text-[#E8E8F0] max-w-lg mx-2 md:mx-auto p-0 rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="px-5 pt-5 pb-0">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#ADFF2F]" />
@@ -964,7 +964,7 @@ export function AutomationsPage() {
             {/* Section 1: Name & Description */}
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-[#9CA3AF] mb-1.5 block uppercase tracking-wider">Name</label>
+                <label className="text-xs font-medium text-[#B8C4D4] mb-1.5 block uppercase tracking-wider">Name</label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -973,7 +973,7 @@ export function AutomationsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-[#9CA3AF] mb-1.5 block uppercase tracking-wider">Description</label>
+                <label className="text-xs font-medium text-[#B8C4D4] mb-1.5 block uppercase tracking-wider">Description</label>
                 <Input
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -985,7 +985,7 @@ export function AutomationsPage() {
 
             {/* Section 2: WHEN (Trigger) */}
             <div>
-              <label className="text-xs font-medium text-[#9CA3AF] mb-2.5 block uppercase tracking-wider">When (Trigger)</label>
+              <label className="text-xs font-medium text-[#B8C4D4] mb-2.5 block uppercase tracking-wider">When (Trigger)</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {(Object.entries(TRIGGER_META) as [AutomationTrigger, typeof TRIGGER_META[AutomationTrigger]][]).map(([key, meta]) => {
                   const isSelected = form.triggerType === key;
@@ -1001,9 +1001,9 @@ export function AutomationsPage() {
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
-                      <Icon className="w-4 h-4" style={{ color: isSelected ? meta.color : '#9CA3AF' }} />
-                      <span className={`text-xs font-medium ${isSelected ? 'text-[#F4F6FF]' : 'text-[#9CA3AF]'}`}>{meta.label}</span>
-                      <span className="text-[10px] text-[#9CA3AF] leading-tight">{meta.description}</span>
+                      <Icon className="w-4 h-4" style={{ color: isSelected ? meta.color : '#B8C4D4' }} />
+                      <span className={`text-xs font-medium ${isSelected ? 'text-[#E8E8F0]' : 'text-[#B8C4D4]'}`}>{meta.label}</span>
+                      <span className="text-[10px] text-[#B8C4D4] leading-tight">{meta.description}</span>
                     </button>
                   );
                 })}
@@ -1012,7 +1012,7 @@ export function AutomationsPage() {
               {/* Trigger config fields */}
               {form.triggerType === 'time' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3 space-y-3">
-                  <p className="text-xs text-[#9CA3AF] font-medium">Schedule</p>
+                  <p className="text-xs text-[#B8C4D4] font-medium">Schedule</p>
                   <div className="flex flex-wrap gap-2">
                     {SCHEDULE_PRESETS.map(({ label, value }) => (
                       <button
@@ -1022,7 +1022,7 @@ export function AutomationsPage() {
                         className={`text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] ${
                           form.intervalMinutes === value
                             ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/40 text-[#ADFF2F]'
-                            : 'bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.15)]'
+                            : 'bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:text-[#E8E8F0] hover:border-[rgba(139,92,246,0.15)]'
                         }`}
                       >
                         {label}
@@ -1030,7 +1030,7 @@ export function AutomationsPage() {
                     ))}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#9CA3AF]">Custom:</span>
+                    <span className="text-xs text-[#B8C4D4]">Custom:</span>
                     <input
                       type="number"
                       min={1}
@@ -1039,14 +1039,14 @@ export function AutomationsPage() {
                       onChange={(e) => setForm({ ...form, intervalMinutes: Math.max(1, parseInt(e.target.value, 10) || 60) })}
                       className="w-20 p-2 text-sm rounded-lg bg-[var(--ag-bg-surface)] border border-white/10 text-[var(--ag-text-primary)] h-11"
                     />
-                    <span className="text-xs text-[#9CA3AF]">minutes</span>
+                    <span className="text-xs text-[#B8C4D4]">minutes</span>
                   </div>
                 </div>
               )}
 
               {form.triggerType === 'webhook' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3">
-                  <p className="text-xs text-[#9CA3AF] mb-2 font-medium">Incoming Webhook</p>
+                  <p className="text-xs text-[#B8C4D4] mb-2 font-medium">Incoming Webhook</p>
                   <p className="text-xs text-[var(--ag-text-muted)] mb-2">POST to this URL to trigger the automation:</p>
                   <code className="text-xs text-[#FFB800] bg-[#FFB800]/5 px-2 py-1 rounded block break-all">/api/webhooks/receive/&lt;auto-id&gt;</code>
                   <pre className="text-xs text-[#ADFF2F]/60 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed mt-2 p-2 bg-[var(--ag-bg-surface)] rounded-lg border border-white/[0.03]">
@@ -1061,7 +1061,7 @@ export function AutomationsPage() {
 
               {form.triggerType === 'keyword' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3 space-y-2">
-                  <label className="text-xs text-[#9CA3AF] font-medium block">Keyword to match</label>
+                  <label className="text-xs text-[#B8C4D4] font-medium block">Keyword to match</label>
                   <Input
                     value={form.keywordValue}
                     onChange={(e) => setForm({ ...form, keywordValue: e.target.value })}
@@ -1073,7 +1073,7 @@ export function AutomationsPage() {
 
               {form.triggerType === 'health_down' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3 space-y-2">
-                  <label className="text-xs text-[#9CA3AF] font-medium block">URL to monitor</label>
+                  <label className="text-xs text-[#B8C4D4] font-medium block">URL to monitor</label>
                   <Input
                     type="url"
                     value={form.healthUrl}
@@ -1093,7 +1093,7 @@ export function AutomationsPage() {
 
             {/* Section 3: DO (Action) */}
             <div>
-              <label className="text-xs font-medium text-[#9CA3AF] mb-2.5 block uppercase tracking-wider">Do (Action)</label>
+              <label className="text-xs font-medium text-[#B8C4D4] mb-2.5 block uppercase tracking-wider">Do (Action)</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(ACTION_META) as [AutomationAction, typeof ACTION_META[AutomationAction]][]).map(([key, meta]) => {
                   const isSelected = form.actionType === key;
@@ -1109,10 +1109,10 @@ export function AutomationsPage() {
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
-                      <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isSelected ? '#ADFF2F' : '#9CA3AF' }} />
+                      <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isSelected ? '#ADFF2F' : '#B8C4D4' }} />
                       <div className="min-w-0">
-                        <span className={`text-xs font-medium block ${isSelected ? 'text-[#F4F6FF]' : 'text-[#9CA3AF]'}`}>{meta.label}</span>
-                        <span className="text-[10px] text-[#9CA3AF] block truncate">{meta.description}</span>
+                        <span className={`text-xs font-medium block ${isSelected ? 'text-[#E8E8F0]' : 'text-[#B8C4D4]'}`}>{meta.label}</span>
+                        <span className="text-[10px] text-[#B8C4D4] block truncate">{meta.description}</span>
                       </div>
                     </button>
                   );
@@ -1122,7 +1122,7 @@ export function AutomationsPage() {
               {/* Action config fields */}
               {(form.actionType === 'telegram-message' || form.actionType === 'whatsapp-message' || form.actionType === 'manychat-broadcast') && (
                 <div className="mt-3 space-y-1.5">
-                  <label className="text-xs text-[#9CA3AF] font-medium">Message text</label>
+                  <label className="text-xs text-[#B8C4D4] font-medium">Message text</label>
                   <textarea
                     placeholder="Message to send..."
                     value={form.actionConfig.message ?? ''}
@@ -1136,7 +1136,7 @@ export function AutomationsPage() {
               {(form.actionType === 'n8n-webhook' || form.actionType === 'call_api') && (
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs text-[#9CA3AF] font-medium">Webhook URL</label>
+                    <label className="text-xs text-[#B8C4D4] font-medium">Webhook URL</label>
                     <Input
                       type="url"
                       placeholder="https://your-webhook-endpoint.com/..."
@@ -1152,7 +1152,7 @@ export function AutomationsPage() {
                   </div>
                   {form.actionType === 'call_api' && (
                     <div className="space-y-1.5">
-                      <label className="text-xs text-[#9CA3AF] font-medium">HTTP Method</label>
+                      <label className="text-xs text-[#B8C4D4] font-medium">HTTP Method</label>
                       <div className="flex gap-2">
                         {(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const).map(method => (
                           <button
@@ -1162,7 +1162,7 @@ export function AutomationsPage() {
                             className={`text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] font-mono ${
                               (form.actionConfig.method ?? 'POST') === method
                                 ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/40 text-[#ADFF2F]'
-                                : 'bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.15)]'
+                                : 'bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:text-[#E8E8F0] hover:border-[rgba(139,92,246,0.15)]'
                             }`}
                           >
                             {method}
@@ -1177,7 +1177,7 @@ export function AutomationsPage() {
               {form.actionType === 'create_reminder' && (
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs text-[#9CA3AF] font-medium">Reminder text</label>
+                    <label className="text-xs text-[#B8C4D4] font-medium">Reminder text</label>
                     <Input
                       placeholder="What to remind about..."
                       value={form.actionConfig.reminder_text ?? ''}
@@ -1186,21 +1186,21 @@ export function AutomationsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs text-[#9CA3AF] font-medium">When (date &amp; time)</label>
+                    <label className="text-xs text-[#B8C4D4] font-medium">When (date &amp; time)</label>
                     <Input
                       type="datetime-local"
                       value={form.actionConfig.reminder_datetime ?? ''}
                       onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_datetime: e.target.value } })}
                       className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base [color-scheme:dark]"
                     />
-                    <p className="text-[10px] text-[#9CA3AF]">Leave blank to create reminder immediately when automation fires.</p>
+                    <p className="text-[10px] text-[#B8C4D4]">Leave blank to create reminder immediately when automation fires.</p>
                   </div>
                 </div>
               )}
 
               {form.actionType === 'log' && (
                 <div className="mt-3 space-y-1.5">
-                  <label className="text-xs text-[#9CA3AF] font-medium">Log message</label>
+                  <label className="text-xs text-[#B8C4D4] font-medium">Log message</label>
                   <Input
                     placeholder="Message to log..."
                     value={form.actionConfig.message ?? ''}
@@ -1213,9 +1213,9 @@ export function AutomationsPage() {
 
             {/* Section 4: Preview */}
             <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[#8B5CF6]/[0.02] p-4">
-              <p className="text-xs text-[#9CA3AF] font-medium mb-2 uppercase tracking-wider">Preview</p>
-              <p className="text-sm text-[#F4F6FF]">
-                <span style={{ color: TRIGGER_META[form.triggerType]?.color || '#9CA3AF' }}>
+              <p className="text-xs text-[#B8C4D4] font-medium mb-2 uppercase tracking-wider">Preview</p>
+              <p className="text-sm text-[#E8E8F0]">
+                <span style={{ color: TRIGGER_META[form.triggerType]?.color || '#B8C4D4' }}>
                   {form.triggerType === 'time' ? (() => {
                     const m = form.intervalMinutes;
                     if (m < 60) return `Every ${m} minutes`;
@@ -1225,7 +1225,7 @@ export function AutomationsPage() {
                     return `Every ${Math.round(m / 60)} hours`;
                   })() : TRIGGER_META[form.triggerType]?.label || form.triggerType}
                 </span>
-                <ArrowRight className="w-3.5 h-3.5 inline mx-2 text-[#9CA3AF]" />
+                <ArrowRight className="w-3.5 h-3.5 inline mx-2 text-[#B8C4D4]" />
                 <span className="text-[#ADFF2F]">{ACTION_META[form.actionType]?.label || form.actionType}</span>
               </p>
               {editingId && (
@@ -1278,7 +1278,7 @@ export function AutomationsPage() {
           <select
             value={logsStatusFilter}
             onChange={(e) => setLogsStatusFilter(e.target.value as typeof logsStatusFilter)}
-            className="text-xs px-3 py-2 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] focus:outline-none focus:border-[#8B5CF6]/30 min-h-[44px]"
+            className="text-xs px-3 py-2 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#B8C4D4] focus:outline-none focus:border-[#8B5CF6]/30 min-h-[44px]"
             aria-label="Filter logs by status"
           >
             <option value="">All statuses</option>
@@ -1291,8 +1291,8 @@ export function AutomationsPage() {
         {logs.length === 0 ? (
           <div className="py-12 text-center">
             <Clock className="w-10 h-10 text-[#ADFF2F]/20 mx-auto mb-3" />
-            <p className="text-[#F4F6FF]">No automation runs yet</p>
-            <p className="text-sm text-[#9CA3AF]">Trigger an automation to see its history here</p>
+            <p className="text-[#E8E8F0]">No automation runs yet</p>
+            <p className="text-sm text-[#B8C4D4]">Trigger an automation to see its history here</p>
           </div>
         ) : (
           <div className="rounded-xl overflow-hidden border border-[rgba(139,92,246,0.08)]">
@@ -1300,11 +1300,11 @@ export function AutomationsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[var(--ag-border-subtle)] /50">
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium text-xs uppercase tracking-wider">Status</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Code</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium text-xs uppercase tracking-wider">Output</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium text-xs uppercase tracking-wider hidden md:table-cell">Duration</th>
-                    <th className="text-left px-4 py-3 text-[#9CA3AF] font-medium text-xs uppercase tracking-wider">Time</th>
+                    <th className="text-left px-4 py-3 text-[#B8C4D4] font-medium text-xs uppercase tracking-wider">Status</th>
+                    <th className="text-left px-4 py-3 text-[#B8C4D4] font-medium text-xs uppercase tracking-wider hidden sm:table-cell">Code</th>
+                    <th className="text-left px-4 py-3 text-[#B8C4D4] font-medium text-xs uppercase tracking-wider">Output</th>
+                    <th className="text-left px-4 py-3 text-[#B8C4D4] font-medium text-xs uppercase tracking-wider hidden md:table-cell">Duration</th>
+                    <th className="text-left px-4 py-3 text-[#B8C4D4] font-medium text-xs uppercase tracking-wider">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1329,7 +1329,7 @@ export function AutomationsPage() {
                         <td className="px-4 py-3 hidden sm:table-cell">
                           {(() => {
                             const httpCode = parseHttpStatus(output);
-                            if (!httpCode) return <span className="text-[#9CA3AF] text-xs">--</span>;
+                            if (!httpCode) return <span className="text-[#B8C4D4] text-xs">--</span>;
                             return (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold border ${getHttpStatusBg(httpCode)}`}>
                                 {httpCode}
@@ -1342,16 +1342,16 @@ export function AutomationsPage() {
                             try {
                               const parsed = JSON.parse(output);
                               return (
-                                <pre className="text-xs text-[#9CA3AF] p-2 /50 rounded-lg overflow-auto max-h-24 whitespace-pre-wrap break-all">
+                                <pre className="text-xs text-[#B8C4D4] p-2 /50 rounded-lg overflow-auto max-h-24 whitespace-pre-wrap break-all">
                                   {JSON.stringify(parsed, null, 2)}
                                 </pre>
                               );
                             } catch {
                               return <span className="truncate block">{output}</span>;
                             }
-                          })() : <span className="text-[#9CA3AF]">--</span>}
+                          })() : <span className="text-[#B8C4D4]">--</span>}
                         </td>
-                        <td className="px-4 py-3 text-[#9CA3AF] font-mono text-xs hidden md:table-cell">
+                        <td className="px-4 py-3 text-[#B8C4D4] font-mono text-xs hidden md:table-cell">
                           {durationMs > 0 ? `${durationMs}ms` : '--'}
                         </td>
                         <td className="px-4 py-3 text-[var(--ag-text-muted)] text-xs whitespace-nowrap">
@@ -1398,9 +1398,9 @@ export function AutomationsPage() {
                 return (
                   <div key={dl.id} className="flex flex-col gap-1 bg-[rgba(12,12,30,0.6)] rounded-xl px-4 py-3 border border-[#FF6161]/10">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium text-[#F4F6FF] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
+                      <span className="text-xs font-medium text-[#E8E8F0] truncate">{auto?.name ?? dl.automation_id.slice(0, 8)}</span>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-[#9CA3AF] whitespace-nowrap">
+                        <span className="text-xs text-[#B8C4D4] whitespace-nowrap">
                           {fmtRelativeTime(new Date(dl.failed_at).toISOString())}
                         </span>
                         <Button
@@ -1419,7 +1419,7 @@ export function AutomationsPage() {
                     {dl.retry_count > 0 && (
                       <span className="text-xs text-[#F59E0B]">Retried {dl.retry_count}x</span>
                     )}
-                    <span className="text-xs text-[#9CA3AF] truncate font-mono">{dl.url}</span>
+                    <span className="text-xs text-[#B8C4D4] truncate font-mono">{dl.url}</span>
                   </div>
                 );
               })}

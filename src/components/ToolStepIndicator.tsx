@@ -97,7 +97,7 @@ export function ToolStepIndicator({ steps, isActive }: ToolStepIndicatorProps) {
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: 0.1 }}
-            className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-[#8892A4]"
+            className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-[#B8C4D4]"
           >
             <span>{'\u{2728}'}</span>
             <span>
@@ -125,10 +125,10 @@ function StepCard({ step }: { step: ToolStep }) {
         'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all',
         'bg-[#0C0C18]/50 border',
         isActive
-          ? 'border-[#00F0FF]/15'
+          ? 'border-[#8B5CF6]/15'
           : isError
             ? 'border-[#FF2D78]/15'
-            : 'border-[#00F0FF]/5',
+            : 'border-[#8B5CF6]/5',
         isActive ? '' : 'opacity-70',
       ].join(' ')}
     >
@@ -139,7 +139,7 @@ function StepCard({ step }: { step: ToolStep }) {
       <span
         className={[
           'flex-1 min-w-0 truncate',
-          isActive ? 'text-[#E8E8F0]' : isError ? 'text-[#FF2D78]' : 'text-[#9CA3AF]',
+          isActive ? 'text-[#E8E8F0]' : isError ? 'text-[#FF2D78]' : 'text-[#B8C4D4]',
         ].join(' ')}
       >
         {step.content}
@@ -153,7 +153,7 @@ function StepCard({ step }: { step: ToolStep }) {
           </span>
         )}
         {isActive && (
-          <Loader2 className="w-3 h-3 text-[#00F0FF] animate-spin" />
+          <Loader2 className="w-3 h-3 text-[#8B5CF6] animate-spin" />
         )}
         {step.status === 'done' && (
           <Check className="w-3 h-3 text-[#ADFF2F]" />

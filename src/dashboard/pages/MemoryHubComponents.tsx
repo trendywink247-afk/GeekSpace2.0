@@ -36,7 +36,7 @@ export const CATEGORY_OPTIONS = [
 ] as const;
 
 export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  manual: { bg: 'bg-[#00F0FF]/10', text: 'text-[#00F0FF]', label: 'Manual' },
+  manual: { bg: 'bg-[#8B5CF6]/10', text: 'text-[#8B5CF6]', label: 'Manual' },
   chat: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
   extracted: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
   inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[#8B5CF6]', label: 'Inferred' },
@@ -45,12 +45,12 @@ export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: st
 };
 
 export const GRAPH_COLORS: Record<string, string> = {
-  personal: '#00F0FF',
+  personal: '#8B5CF6',
   work: '#FFB800',
   preference: '#FF2D78',
   goal: '#ADFF2F',
   fact: '#8B5CF6',
-  general: '#8892A4',
+  general: '#B8C4D4',
   context: '#00D4B0',
   task: '#FF6161',
 };
@@ -81,7 +81,7 @@ export function formatRelativeDate(dateStr: string): string {
 }
 
 export function getSourceStyle(source: string) {
-  return SOURCE_STYLES[source] ?? { bg: 'bg-[#8892A4]/10', text: 'text-[#8892A4]', label: source };
+  return SOURCE_STYLES[source] ?? { bg: 'bg-[#B8C4D4]/10', text: 'text-[#B8C4D4]', label: source };
 }
 
 export function getCategoryIcon(category: string) {
@@ -151,16 +151,16 @@ export function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) 
           <div
             key={category}
             className="h-full transition-all duration-500"
-            style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }}
+            style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: GRAPH_COLORS[category] ?? '#B8C4D4' }}
           />
         ))}
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {breakdown.map(({ category, count, pct }) => (
           <div key={category} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? '#B8C4D4' }} />
             <span className="capitalize">{category}</span>
-            <span className="text-[#F4F6FF] font-medium">{count}</span>
+            <span className="text-[#E8E8F0] font-medium">{count}</span>
             <span>({pct}%)</span>
           </div>
         ))}
@@ -180,7 +180,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
       if (e) { e.count++; e.memories.push(m); } else { map.set(cat, { count: 1, memories: [m] }); }
     }
     return Array.from(map.entries()).map(([cat, data], i) => {
-      const color = GRAPH_COLORS[cat] ?? '#8892A4';
+      const color = GRAPH_COLORS[cat] ?? '#B8C4D4';
       const angle = (i / map.size) * Math.PI * 2;
       return {
         id: cat,
@@ -209,7 +209,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
               <line x1={200} y1={180} x2={n.cx} y2={n.cy} stroke={hovered === n.id ? n.color : 'rgba(255,255,255,0.1)'} strokeWidth={hovered === n.id ? 2 : 1} strokeDasharray={hovered === n.id ? undefined : '4 4'} />
               <circle cx={n.cx} cy={n.cy} r={n.r} fill={n.color} opacity={hovered === n.id ? 0.3 : 0.15} stroke={n.color} strokeWidth={hovered === n.id ? 2 : 1} />
               <text x={n.cx} y={n.cy - n.r - 6} textAnchor="middle" fill={n.color} fontSize="10" fontWeight="500">{n.label}</text>
-              <text x={n.cx} y={n.cy + 4} textAnchor="middle" fill="#F4F6FF" fontSize="12" fontWeight="bold">{n.count}</text>
+              <text x={n.cx} y={n.cy + 4} textAnchor="middle" fill="#E8E8F0" fontSize="12" fontWeight="bold">{n.count}</text>
             </g>
           ))}
         </svg>
@@ -217,7 +217,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
       <div className="lg:w-72 space-y-2">
         {hovered ? (
           <>
-            <h3 className="text-sm font-medium text-[#F4F6FF]">
+            <h3 className="text-sm font-medium text-[#E8E8F0]">
               {nodes.find(n => n.id === hovered)?.label} ({hovMems.length})
             </h3>
             <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
@@ -225,7 +225,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
                 <div key={m.id} className="p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
                   <span className="text-[#6366F1] font-mono">{m.key}</span>
                   <span className="text-[var(--ag-text-secondary)] mx-1">=</span>
-                  <span className="text-[#F4F6FF]">{m.value}</span>
+                  <span className="text-[#E8E8F0]">{m.value}</span>
                 </div>
               ))}
             </div>

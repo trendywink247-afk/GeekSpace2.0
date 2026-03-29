@@ -25,8 +25,8 @@ export function LogoutConfirmDialog({ open, userName, userEmail, onStay, onSignO
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 flex items-center justify-center mx-auto mb-4">
-            <Hexagon className="w-7 h-7 text-[#00F0FF]" />
+          <div className="w-14 h-14 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center mx-auto mb-4">
+            <Hexagon className="w-7 h-7 text-[#8B5CF6]" />
           </div>
           <h2 id="logout-dialog-title" className="text-xl font-bold text-white mb-1">Leaving so soon?</h2>
           {userName && (
@@ -54,7 +54,7 @@ export function LogoutConfirmDialog({ open, userName, userEmail, onStay, onSignO
           <Button
             onClick={onStay}
             autoFocus
-            className="w-full bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/20"
+            className="w-full bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/20"
           >
             Stay signed in
           </Button>

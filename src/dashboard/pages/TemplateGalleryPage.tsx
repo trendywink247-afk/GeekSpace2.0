@@ -153,13 +153,13 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       <SectionCard padding="md">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B8C4D4]" />
             <input
               type="text"
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg text-[#F4F6FF] placeholder-[#9CA3AF] focus:border-[rgba(139,92,246,0.3)] focus:shadow-[0_0_12px_rgba(139,92,246,0.1)] outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg text-[#E8E8F0] placeholder-[#B8C4D4] focus:border-[rgba(139,92,246,0.3)] focus:shadow-[0_0_12px_rgba(139,92,246,0.1)] outline-none transition-all duration-200"
             />
           </div>
 
@@ -169,7 +169,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
               className={`flex items-center gap-2 px-3 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
                 selectedCategory === 'all'
                   ? 'bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                  : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] hover:text-[#F4F6FF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                  : 'bg-[rgba(12,12,30,0.6)] text-[#B8C4D4] hover:text-[#E8E8F0] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
               }`}
             >
               <LayoutTemplate className="w-4 h-4" />
@@ -185,7 +185,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                   className={`flex items-center gap-2 px-3 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
                     selectedCategory === cat.id
                       ? 'bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                      : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] hover:text-[#F4F6FF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                      : 'bg-[rgba(12,12,30,0.6)] text-[#B8C4D4] hover:text-[#E8E8F0] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -209,8 +209,8 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
           <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
             <LayoutTemplate className="w-8 h-8 text-[#8B5CF6]/50" />
           </div>
-          <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No templates found</h3>
-          <p className="text-[#9CA3AF] text-sm max-w-xs mx-auto">Try adjusting your search or filters to discover templates</p>
+          <h3 className="text-lg font-medium text-[#E8E8F0] mb-2">No templates found</h3>
+          <p className="text-[#B8C4D4] text-sm max-w-xs mx-auto">Try adjusting your search or filters to discover templates</p>
         </SectionCard>
         </BlurFade>
       ) : (
@@ -245,13 +245,13 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 )}
 
                 {/* Category badge */}
-                <div className="absolute top-3 right-3 px-2 py-1 bg-[rgba(12,12,30,0.8)] text-[#9CA3AF] text-xs rounded-full capitalize border border-[rgba(139,92,246,0.08)]">
+                <div className="absolute top-3 right-3 px-2 py-1 bg-[rgba(12,12,30,0.8)] text-[#B8C4D4] text-xs rounded-full capitalize border border-[rgba(139,92,246,0.08)]">
                   {template.category}
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[#F4F6FF] font-medium text-lg">{template.name}</h3>
-                  <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mt-1">
+                  <h3 className="text-[#E8E8F0] font-medium text-lg">{template.name}</h3>
+                  <div className="flex items-center gap-3 text-xs text-[#B8C4D4] mt-1">
                     <span>{template.cloneCount ?? 0} uses</span>
                     {template.isOfficial && <span className="text-[#F59E0B]">Agentin</span>}
                   </div>
@@ -260,7 +260,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
 
               {/* Content */}
               <div className="p-4">
-                <p className="text-[#9CA3AF] text-sm mb-4 line-clamp-2">
+                <p className="text-[#B8C4D4] text-sm mb-4 line-clamp-2">
                   {template.description || 'No description available'}
                 </p>
 
@@ -312,17 +312,17 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
                   <Check className="w-4 h-4 text-[#F59E0B]" />
                 </div>
-                <h2 className="text-lg font-medium text-[#F4F6FF]">Template Cloned!</h2>
+                <h2 className="text-lg font-medium text-[#E8E8F0]">Template Cloned!</h2>
               </div>
               <button
                 onClick={() => setCloneResult(null)}
                 className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[rgba(139,92,246,0.08)] rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-[#9CA3AF]" />
+                <X className="w-5 h-5 text-[#B8C4D4]" />
               </button>
             </div>
             <div className="p-4">
-              <p className="text-[#9CA3AF] text-sm mb-4">
+              <p className="text-[#B8C4D4] text-sm mb-4">
                 &ldquo;{cloneResult.name}&rdquo; has been added to your workspace.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">

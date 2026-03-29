@@ -47,13 +47,13 @@ interface PicoTask {
 // ---- Agent Colors (Design System) ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: '#00F0FF',
+  weebo: '#8B5CF6',
   edith: '#8B5CF6',
   jarvis: '#ADFF2F',
 };
 
 function getAgentColor(personality: string): string {
-  return AGENT_COLORS[personality] || '#00F0FF';
+  return AGENT_COLORS[personality] || '#8B5CF6';
 }
 
 // ---- Constants ----
@@ -80,7 +80,7 @@ const INTERVAL_OPTIONS = [
 
 const TOOL_OPTIONS = [
   { id: 'recipes' as const, label: 'Recipes', short: 'RCP', icon: ChefHat, color: '#00FF88' },
-  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: '#00F0FF' },
+  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: '#8B5CF6' },
   { id: 'video-gen' as const, label: 'Video Gen', short: 'VID', icon: Video, color: '#FFB800' },
   { id: 'website-builder' as const, label: 'Website Builder', short: 'WEB', icon: Globe, color: '#A855F7' },
   { id: 'social-media' as const, label: 'Social Media', short: 'SOC', icon: Share2, color: '#FF2D78' },
@@ -95,7 +95,7 @@ const statusColors: Record<string, string> = {
   cancelled: '#6B7280',
   disabled: '#FF6161',
   failed: '#FF6161',
-  queued: '#00F0FF',
+  queued: '#8B5CF6',
   running: '#FFB800',
   paused: '#FFB800',
 };
@@ -551,7 +551,7 @@ export function PicoFleetPage() {
             onClick={() => loadData()}
             disabled={refreshing}
             aria-label="Refresh fleet"
-            className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="min-h-[44px] min-w-[44px] text-[#B8C4D4] hover:text-[#E8E8F0] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -683,7 +683,7 @@ export function PicoFleetPage() {
               // Empty slot — show create button or inline form
               if (creatingSlot === slotNum) {
                 const personalities = [
-                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#00F0FF' },
+                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#8B5CF6' },
                   { id: 'jarvis' as const, letter: 'J', label: 'Jarvis', color: '#ADFF2F' },
                   { id: 'edith' as const, letter: 'E', label: 'Edith', color: '#8B5CF6' },
                 ];
@@ -929,7 +929,7 @@ export function PicoFleetPage() {
                             <span className="hidden sm:flex items-center gap-1.5 shrink-0">
                               {(() => {
                                 const taskAgent = agents.find(a => a.name === task.agent_name);
-                                const agentColor = taskAgent ? getAgentColor(taskAgent.personality) : '#9CA3AF';
+                                const agentColor = taskAgent ? getAgentColor(taskAgent.personality) : '#B8C4D4';
                                 return (
                                   <span
                                     className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
@@ -977,7 +977,7 @@ export function PicoFleetPage() {
                                 <div className="text-sm text-[var(--ag-text-primary)] flex items-center gap-1.5">
                                   {(() => {
                                     const detailAgent = agents.find(a => a.name === task.agent_name);
-                                    const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#9CA3AF';
+                                    const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#B8C4D4';
                                     return (
                                       <span
                                         className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
@@ -1059,7 +1059,7 @@ export function PicoFleetPage() {
               <SectionCard title="Personality" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#00F0FF' },
+                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#8B5CF6' },
                     { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', letter: 'J', color: '#ADFF2F' },
                     { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#8B5CF6' },
                   ].map(p => (
@@ -1097,7 +1097,7 @@ export function PicoFleetPage() {
               <SectionCard title="Mode" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#00F0FF' },
+                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#8B5CF6' },
                     { id: 'builder', name: 'Builder', desc: 'Code gen, portfolio updates, full toolset', color: '#00FF88' },
                     { id: 'operator', name: 'Operator', desc: 'Full automation, API calls, workflows', color: '#FFB800' },
                   ].map(m => (

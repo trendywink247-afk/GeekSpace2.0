@@ -46,13 +46,13 @@ export class ErrorBoundary extends Component<Props, State> {
               <span className="text-xl">⚡</span>
             </div>
             <p className="text-[#E8E8F0] text-base font-semibold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>Something went wrong</p>
-            <p className="text-[#9CA3AF] text-sm mb-4">{this.state.error?.message}</p>
+            <p className="text-[#B8C4D4] text-sm mb-4">{this.state.error?.message}</p>
             <button
               onClick={() => {
                 sessionStorage.removeItem('error-boundary-reloaded');
                 window.location.reload();
               }}
-              className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[#8B5CF6] border border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
             >
               Reload page
             </button>

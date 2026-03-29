@@ -24,7 +24,7 @@ export function PWAInstallPrompt() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-[#E8E8F0]">Install Agentin</h3>
-                <p className="text-sm text-[#9CA3AF] mt-0.5">
+                <p className="text-sm text-[#B8C4D4] mt-0.5">
                   {isMobile 
                     ? 'Add to home screen for quick access' 
                     : 'Install as app for better experience'}

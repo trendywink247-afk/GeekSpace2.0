@@ -29,7 +29,7 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss }: Props) {
-  const color = AGENT_COLORS[agent.id] ?? '#00F0FF';
+  const color = AGENT_COLORS[agent.id] ?? '#8B5CF6';
   const stateLabel = STATE_LABELS[agent.state] ?? agent.state;
 
   const [showChatInput, setShowChatInput] = useState(false);
@@ -79,7 +79,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
           <span className="text-base">{agent.emoji}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-[#F4F6FF] truncate">
+              <span className="text-sm font-semibold text-[#E8E8F0] truncate">
                 {agent.name}
               </span>
               <span
@@ -89,7 +89,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
                   boxShadow: `0 0 6px ${color}60`,
                 }}
               />
-              <span className="text-[10px] text-[#9CA3AF]">{stateLabel}</span>
+              <span className="text-[10px] text-[#B8C4D4]">{stateLabel}</span>
             </div>
             <span className="text-[10px] text-[#4B5563]">
               {taskCount} task{taskCount !== 1 ? 's' : ''} today
@@ -113,7 +113,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
                 className="px-2.5 py-1.5 text-xs rounded-lg flex-1 min-w-[150px] outline-none placeholder:text-[#4B5563]"
                 style={{
                   background: 'rgba(12,12,30,0.6)',
-                  color: '#F4F6FF',
+                  color: '#E8E8F0',
                   border: `1px solid ${color}30`,
                   boxShadow: `0 0 8px ${color}10`,
                 }}
@@ -159,7 +159,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
                 className="px-2.5 py-1.5 text-xs rounded-lg flex-1 min-w-[140px] outline-none placeholder:text-[#4B5563]"
                 style={{
                   background: 'rgba(12,12,30,0.6)',
-                  color: '#F4F6FF',
+                  color: '#E8E8F0',
                   border: '1px dashed rgba(139,92,246,0.3)',
                 }}
               />
@@ -197,7 +197,7 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
             onClick={onDismiss}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="px-1.5 py-1 rounded-lg text-[11px] text-[#4B5563] hover:text-[#9CA3AF] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="px-1.5 py-1 rounded-lg text-[11px] text-[#4B5563] hover:text-[#B8C4D4] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             ✕
           </motion.button>

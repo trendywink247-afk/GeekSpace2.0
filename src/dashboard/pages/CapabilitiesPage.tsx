@@ -1,4 +1,4 @@
-// CapabilitiesPage — owner: weebo (#00F0FF)
+// CapabilitiesPage — owner: weebo (#8B5CF6)
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 
 import { useState } from 'react';
@@ -46,8 +46,8 @@ const capabilities: Capability[] = [
     id: 'multi-model-chat',
     category: 'chat',
     icon: Brain,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Multi-Model Intelligence',
     description: 'Your agent automatically routes to the right AI brain — free Llama for quick answers, Kimi K2 for deep technical work — based on complexity and your credit balance.',
     examples: ['Explain CRDT data structures', 'Debug this TypeScript error', 'Design a URL shortener system'],
@@ -58,8 +58,8 @@ const capabilities: Capability[] = [
     id: 'voice-notes',
     category: 'chat',
     icon: Mic,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Voice Notes',
     description: 'Send a voice message on Telegram and get a spoken audio reply back. Full Whisper transcription → agent reasoning → TTS pipeline.',
     examples: ["Voice: What's on my agenda?", 'Voice: Remind me at 5pm to ship the PR', 'Voice: Summarize what I built this week'],
@@ -71,8 +71,8 @@ const capabilities: Capability[] = [
     id: 'web-crawler',
     category: 'chat',
     icon: Globe,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Live Web Research',
     description: 'Hand your agent any URL — job posting, article, competitor page — and get an instant structured summary with key insights extracted.',
     examples: ['Summarize this Hacker News thread: [URL]', 'What are the pricing tiers on this page?', 'Extract tech stack mentions from this blog'],
@@ -83,8 +83,8 @@ const capabilities: Capability[] = [
     id: 'memory-chat',
     category: 'chat',
     icon: Layers,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Context-Aware Conversations',
     description: 'Your agent remembers conversation history across sessions, extracting facts automatically — your stack, preferences, schedule — and weaving them into every reply.',
     examples: ['Remember I prefer TypeScript over Python', 'What did we discuss last week?', 'Keep in mind my deadline is March 15th'],
@@ -95,8 +95,8 @@ const capabilities: Capability[] = [
     id: 'hinglish',
     category: 'chat',
     icon: Globe,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Hinglish & Indian Languages',
     description: 'Talk to your agent in Hinglish, Hindi, or Tanglish. It understands "kal subah 8 baje remind karo" as naturally as English. Built for Indian users first.',
     examples: ['kal subah 8 baje remind karo gym ke liye', 'swiggy pe 350 rupay kharcha hua', 'mujhe ek tweet likhne mein help karo'],
@@ -107,8 +107,8 @@ const capabilities: Capability[] = [
     id: 'researcher',
     category: 'chat',
     icon: Telescope,
-    color: '#00F0FF',
-    glow: 'rgba(0,240,255,0.12)',
+    color: '#8B5CF6',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Agent-as-Researcher',
     description: 'Ask for deep research and your agent launches an async investigation — searching the web, synthesizing findings, and delivering a structured report via Telegram when done.',
     examples: ['Research best budget phones under 15000 in India', 'Compare React vs Vue for a solo dev', 'Find top 5 AI tools for content creators 2024'],
@@ -453,27 +453,27 @@ const capabilities: Capability[] = [
 // ── Pipeline data ──────────────────────────────────────────
 
 const pipelineSteps = [
-  { label: 'Your message', detail: '"build me a hello world page"', color: '#00F0FF', icon: MessageSquare },
+  { label: 'Your message', detail: '"build me a hello world page"', color: '#8B5CF6', icon: MessageSquare },
   { label: 'Intent classified', detail: 'coding → complex', color: '#BF5FFF', icon: Brain },
   { label: 'Model selected', detail: 'Kimi K2 (best for coding)', color: '#F59E0B', icon: Zap },
   { label: 'Action extracted', detail: 'generate_code { title, html, css, js }', color: '#00FF88', icon: Code },
   { label: 'Artifact saved', detail: 'auto-added to My Projects', color: '#EC4899', icon: CheckCircle2 },
-  { label: 'Preview delivered', detail: 'api.../preview/userId/abc', color: '#00F0FF', icon: ExternalLink },
+  { label: 'Preview delivered', detail: 'api.../preview/userId/abc', color: '#8B5CF6', icon: ExternalLink },
 ];
 
 // ── Hidden powers ──────────────────────────────────────────
 
 const hiddenPowers = [
-  { icon: Mic, color: '#00F0FF', title: 'Full voice loop on Telegram', description: 'Speak to your agent, get audio back. No typing ever needed — complete speech-to-speech pipeline on your phone.' },
+  { icon: Mic, color: '#8B5CF6', title: 'Full voice loop on Telegram', description: 'Speak to your agent, get audio back. No typing ever needed — complete speech-to-speech pipeline on your phone.' },
   { icon: Eye, color: '#BF5FFF', title: 'You have a 24/7 AI twin', description: 'Your portfolio agent knows your projects, skills, and availability. Recruiters get accurate, helpful answers at 3am while you sleep.' },
   { icon: ArrowRight, color: '#F59E0B', title: 'Swipe-to-reply escalation', description: 'Swipe-reply on a visitor escalation notification in Telegram and your agent knows exactly which question you\'re answering. Zero ambiguity.' },
   { icon: Lock, color: '#00FF88', title: 'Visitor contact capture', description: 'Your portfolio AI naturally collects visitor names and contact info during the conversation, building your professional network automatically.' },
   { icon: Cpu, color: '#EC4899', title: '3 agents running in parallel', description: 'Queue tasks across 3 background slots simultaneously — they work while you\'re offline, reporting back via Telegram when done.' },
   { icon: Code, color: '#BF5FFF', title: 'Code is yours forever', description: 'Every website, snippet, and artifact your agent generates is saved with a permanent preview link. It also appears in your portfolio Projects.' },
-  { icon: Shield, color: '#00F0FF', title: 'Multi-tier keyword routing', description: 'The escalation system uses 3-tier matching: native Telegram reply, keyword scoring, and smart fall-through — so chat requests never get eaten.' },
+  { icon: Shield, color: '#8B5CF6', title: 'Multi-tier keyword routing', description: 'The escalation system uses 3-tier matching: native Telegram reply, keyword scoring, and smart fall-through — so chat requests never get eaten.' },
   { icon: Star, color: '#F59E0B', title: 'Credits forecast your month', description: 'The sidebar shows your current spend and forecasts your full monthly bill — so you never get surprised at the end of the cycle.' },
   { icon: Camera, color: '#00FF88', title: 'Receipt OCR → auto expense', description: 'Send a photo of any receipt on Telegram — Groq vision reads it, extracts amount and merchant, and auto-logs the expense. No typing needed.' },
-  { icon: Eye, color: '#00F0FF', title: 'Screenshot fast-path', description: 'Say "take screenshot of [URL]" and your agent captures a full-page screenshot via crawl4ai and sends it as a Telegram photo in seconds.' },
+  { icon: Eye, color: '#8B5CF6', title: 'Screenshot fast-path', description: 'Say "take screenshot of [URL]" and your agent captures a full-page screenshot via crawl4ai and sends it as a Telegram photo in seconds.' },
   { icon: Link, color: '#BF5FFF', title: 'Links extraction', description: 'Say "get links from [URL]" and your agent crawls the page, extracts every link, and sends you a clean formatted list — perfect for research.' },
   { icon: Brain, color: '#EC4899', title: 'Context threading via FTS5', description: 'Your agent runs full-text search over your entire conversation history — it can recall what you discussed weeks ago and weave it into the current reply.' },
 ];
@@ -481,8 +481,8 @@ const hiddenPowers = [
 // ── Category config ────────────────────────────────────────
 
 const categoryConfig: Record<Category, { label: string; color: string; emoji: string }> = {
-  all: { label: 'All Powers', color: '#F4F6FF', emoji: '⚡' },
-  chat: { label: 'Chat & Answer', color: '#00F0FF', emoji: '🧠' },
+  all: { label: 'All Powers', color: '#E8E8F0', emoji: '⚡' },
+  chat: { label: 'Chat & Answer', color: '#8B5CF6', emoji: '🧠' },
   create: { label: 'Create & Build', color: '#BF5FFF', emoji: '⚗️' },
   automate: { label: 'Automate', color: '#00FF88', emoji: '🔄' },
   connect: { label: 'Connect', color: '#F59E0B', emoji: '🌐' },
@@ -511,7 +511,7 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[#00F0FF]/20',
+    Core: 'bg-[#8B5CF6]/10 text-[var(--ag-cyan)] border-[#8B5CF6]/20',
     Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
     New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
   };
@@ -570,7 +570,7 @@ function CapabilityCard({
 
         {/* Title + description */}
         <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{cap.title}</h3>
-        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed flex-1 mb-3">{cap.description}</p>
+        <p className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] leading-relaxed flex-1 mb-3">{cap.description}</p>
 
         {/* Wow factor */}
         {cap.wow && (
@@ -591,7 +591,7 @@ function CapabilityCard({
               onClick={() => handleCopy(ex)}
               className="w-full flex items-center justify-between gap-2 px-2.5 min-h-[44px] rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
             >
-              <span className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
+              <span className="text-[11px] text-[var(--ag-text-secondary,#B8C4D4)] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
                 {ex}
               </span>
               {copied === ex ? (
@@ -618,7 +618,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#B8C4D4)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#E8E8F0)] transition-all"
             >
               Open
             </button>
@@ -646,9 +646,9 @@ function PipelineVisualizer() {
       {/* Pipeline */}
       <div>
         {/* Example message */}
-        <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[#00F0FF]/15 text-center">
-          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">You type: </span>
-          <span className="text-sm text-[var(--ag-cyan,#00F0FF)] font-mono">"build me a hello world page"</span>
+        <div className="mb-6 p-3 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 text-center">
+          <span className="text-xs text-[var(--ag-text-secondary,#B8C4D4)]">You type: </span>
+          <span className="text-sm text-[var(--ag-cyan,#8B5CF6)] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -673,7 +673,7 @@ function PipelineVisualizer() {
                 >
                   <step.icon className="w-4 h-4" style={{ color: step.color }} />
                 </div>
-                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] font-medium text-center leading-tight">{step.label}</span>
+                <span className="text-[10px] text-[var(--ag-text-secondary,#B8C4D4)] font-medium text-center leading-tight">{step.label}</span>
                 {activeStep === i && (
                   <span className="text-[9px] text-center leading-tight font-mono px-1" style={{ color: step.color }}>
                     {step.detail}
@@ -707,7 +707,7 @@ function PipelineVisualizer() {
                     <div className="text-[10px] font-mono mt-0.5" style={{ color: step.color }}>{step.detail}</div>
                   )}
                 </div>
-                <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">{i + 1}/{pipelineSteps.length}</span>
+                <span className="text-[10px] text-[var(--ag-text-secondary,#B8C4D4)]">{i + 1}/{pipelineSteps.length}</span>
               </button>
               {i < pipelineSteps.length - 1 && (
                 <div className="flex justify-center">
@@ -718,7 +718,7 @@ function PipelineVisualizer() {
           ))}
         </div>
 
-        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] text-center mt-4">
+        <p className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] text-center mt-4">
           Click any step to see the exact data flowing through it
         </p>
       </div>
@@ -747,7 +747,7 @@ function HiddenPowers() {
               </div>
               <div>
                 <div className="text-xs font-semibold text-[var(--ag-text-primary)] mb-1">{power.title}</div>
-                <div className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed">{power.description}</div>
+                <div className="text-[11px] text-[var(--ag-text-secondary,#B8C4D4)] leading-relaxed">{power.description}</div>
               </div>
             </div>
           ))}
@@ -756,7 +756,7 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#B8C4D4)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#E8E8F0)] transition-all flex items-center justify-center gap-2"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
@@ -805,8 +805,8 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         subtitle={`${capabilities.length} powers across chat, creation, automation, and intelligence`}
         badge={
           <span className="relative flex h-2.5 w-2.5" title="Weebo online">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-50" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-50" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#8B5CF6]" />
           </span>
         }
       />
@@ -824,7 +824,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse at 15% 50%, rgba(0,240,255,0.08) 0%, transparent 55%),
+              radial-gradient(ellipse at 15% 50%, rgba(139,92,246,0.08) 0%, transparent 55%),
               radial-gradient(ellipse at 85% 20%, rgba(191,95,255,0.10) 0%, transparent 55%),
               radial-gradient(ellipse at 60% 85%, rgba(0,255,136,0.06) 0%, transparent 50%)
             `,
@@ -834,7 +834,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `linear-gradient(rgba(0,240,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,1) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(139,92,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,1) 1px, transparent 1px)`,
             backgroundSize: '40px 40px',
           }}
         />
@@ -842,23 +842,23 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div className="relative z-10">
           {/* Eyebrow */}
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-5 h-5 rounded-full bg-[#00F0FF]/15 border border-[#00F0FF]/25 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center">
               <Sparkles className="w-2.5 h-2.5 text-[var(--ag-cyan)]" />
             </div>
             <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-black text-[var(--ag-text-primary,#F4F6FF)] mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-[var(--ag-text-primary,#E8E8F0)] mb-4 leading-tight">
             Your Agent Can Do{' '}
             <span
               className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #00F0FF, #BF5FFF, #00FF88, #F59E0B)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #8B5CF6, #BF5FFF, #00FF88, #F59E0B)' }}
             >
               Everything
             </span>
           </h1>
 
-          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
+          <p className="text-[var(--ag-text-secondary,#B8C4D4)] text-base md:text-lg max-w-2xl mb-8 leading-relaxed">
             {capabilities.length} capabilities across chat, creation, automation, and intelligence.
             Powered by 5 AI models that route to the right brain for each task — automatically.
           </p>
@@ -866,7 +866,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { value: `${capabilities.length}+`, label: 'Capabilities', color: '#00F0FF' },
+              { value: `${capabilities.length}+`, label: 'Capabilities', color: '#8B5CF6' },
               { value: '5', label: 'AI Models', color: '#BF5FFF' },
               { value: '3', label: 'Channels', color: '#00FF88' },
               { value: '24/7', label: 'Always On', color: '#F59E0B' },
@@ -877,7 +877,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
                 style={{ background: `${stat.color}08` }}
               >
                 <div className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.value}</div>
-                <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5 font-medium">{stat.label}</div>
+                <div className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] mt-0.5 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -907,7 +907,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
               style={
                 isActive
                   ? { backgroundColor: cfg.color, color: '#05050A', boxShadow: `0 0 16px ${cfg.color}40` }
-                  : { backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF' }
+                  : { backgroundColor: 'rgba(255,255,255,0.05)', color: '#B8C4D4' }
               }
             >
               <span>{cfg.emoji}</span>
@@ -947,12 +947,12 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(0,240,255,0.15) 0%, transparent 60%)',
+            backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 60%)',
           }}
         />
         <div className="relative z-10">
-          <h3 className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] mb-2">Ready to explore?</h3>
-          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-[var(--ag-text-primary,#E8E8F0)] mb-2">Ready to explore?</h3>
+          <p className="text-[var(--ag-text-secondary,#B8C4D4)] text-sm mb-6 max-w-md mx-auto">
             Click any prompt above to copy it, then open the chat and paste. Your agent is waiting.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -966,7 +966,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <Button
               variant="outline"
               onClick={() => onNavigate?.('connections')}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#B8C4D4)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#E8E8F0)] min-h-[44px]"
             >
               <Link2 className="w-4 h-4 mr-2" />
               Set Up Integrations

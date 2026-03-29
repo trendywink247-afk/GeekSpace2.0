@@ -60,14 +60,14 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
     <section>
       <div className="flex items-center justify-between mb-3">
         <h2
-          className="text-sm font-semibold text-[#8892A4] uppercase tracking-wider"
+          className="text-sm font-semibold text-[#B8C4D4] uppercase tracking-wider"
           style={{ fontFamily: 'Syne, sans-serif' }}
         >
           Recent Creations
         </h2>
         <button
           onClick={() => onNavigate?.('gallery')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#B8C4D4] hover:text-[#8B5CF6] transition-colors"
         >
           View all
           <ArrowRight className="w-3 h-3" />
@@ -105,7 +105,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-[#8892A4]/20" />
+                        <ImageIcon className="w-8 h-8 text-[#B8C4D4]/20" />
                       </div>
                     )}
                     {/* Type badge */}
@@ -114,17 +114,17 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
                       style={{
                         background: gen.type === 'image'
                           ? 'rgba(191,95,255,0.8)'
-                          : 'rgba(0,240,255,0.8)',
+                          : 'rgba(139,92,246,0.8)',
                         color: '#fff',
                       }}
                     >
                       {gen.type === 'image' ? 'Image' : 'Text'}
                     </span>
                   </div>
-                  <p className="text-xs text-[#F4F6FF] mt-2 truncate group-hover:text-[#BF5FFF] transition-colors">
+                  <p className="text-xs text-[#E8E8F0] mt-2 truncate group-hover:text-[#BF5FFF] transition-colors">
                     {gen.title.length > 40 ? gen.title.slice(0, 37) + '...' : gen.title}
                   </p>
-                  <p className="text-[10px] text-[#8892A4] mt-0.5">
+                  <p className="text-[10px] text-[#B8C4D4] mt-0.5">
                     {relativeTime(gen.createdAt)}
                   </p>
                 </button>
@@ -134,14 +134,14 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
             <div className="py-8 text-center">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'linear-gradient(135deg, rgba(191,95,255,0.12), rgba(0,240,255,0.08))' }}
+                style={{ background: 'linear-gradient(135deg, rgba(191,95,255,0.12), rgba(139,92,246,0.08))' }}
               >
                 <Sparkles className="w-6 h-6 text-[#BF5FFF]" />
               </div>
-              <p className="text-sm font-medium text-[#F4F6FF] mb-1">
+              <p className="text-sm font-medium text-[#E8E8F0] mb-1">
                 No creations yet
               </p>
-              <p className="text-xs text-[#8892A4] mb-3">
+              <p className="text-xs text-[#B8C4D4] mb-3">
                 Generate your first image or text with AI
               </p>
               <Button

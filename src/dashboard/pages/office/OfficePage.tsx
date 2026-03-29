@@ -102,7 +102,7 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
       {/* Aurora gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-1/3 -left-1/4 w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)' }} />
-        <div className="absolute -bottom-1/4 -right-1/4 w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,240,255,0.05) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-1/4 -right-1/4 w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)' }} />
       </div>
 
       <motion.h2
@@ -112,7 +112,7 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
         transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.2 }}
         style={{
           fontFamily: 'Syne, sans-serif',
-          color: '#F4F6FF',
+          color: '#E8E8F0',
           textShadow: '0 0 40px rgba(139,92,246,0.3)',
         }}
       >
@@ -143,7 +143,7 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
               <span className="text-xs md:text-sm font-semibold" style={{ color, textShadow: `0 0 12px ${color}40` }}>
                 {id.charAt(0).toUpperCase() + id.slice(1)}
               </span>
-              <span className="text-[10px] md:text-xs" style={{ color: '#8892A4' }}>
+              <span className="text-[10px] md:text-xs" style={{ color: '#B8C4D4' }}>
                 {meta.role}
               </span>
             </motion.div>
@@ -160,8 +160,8 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         style={{
-          background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,240,255,0.2))',
-          color: '#F4F6FF',
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(139,92,246,0.2))',
+          color: '#E8E8F0',
           border: '1px solid rgba(139,92,246,0.4)',
           boxShadow: '0 0 30px rgba(139,92,246,0.2)',
         }}
@@ -356,7 +356,7 @@ export function OfficePage() {
           <div
             className="absolute bottom-0 left-0 right-0 h-px"
             style={{
-              background: 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(0,240,255,0.3) 50%, rgba(16,185,129,0.3) 100%)',
+              background: 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(139,92,246,0.3) 50%, rgba(16,185,129,0.3) 100%)',
               backgroundSize: '200% 100%',
               animation: 'headerGradientShift 6s ease infinite',
             }}
@@ -372,7 +372,7 @@ export function OfficePage() {
               />
             </div>
             <h1
-              className="text-lg font-bold text-[#F4F6FF] tracking-wide"
+              className="text-lg font-bold text-[#E8E8F0] tracking-wide"
               style={{
                 fontFamily: 'Syne, sans-serif',
                 textShadow: '0 0 30px rgba(139,92,246,0.3)',
@@ -411,7 +411,7 @@ export function OfficePage() {
                 whileTap={{ scale: 0.95 }}
                 style={{
                   background: officeTheme === mode ? 'rgba(139,92,246,0.2)' : 'transparent',
-                  color: officeTheme === mode ? '#8B5CF6' : '#9CA3AF',
+                  color: officeTheme === mode ? '#8B5CF6' : '#B8C4D4',
                 }}
               >
                 {mode === 'day' ? '\u2600\uFE0F' : mode === 'night' ? '\uD83C\uDF19' : '\u26A1'}

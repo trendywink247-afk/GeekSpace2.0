@@ -96,10 +96,10 @@ interface AnalyticsData {
 const HEATMAP_EMPTY = '#0C0C18';
 const HEATMAP_COLORS = [
   HEATMAP_EMPTY,
-  'rgba(0,240,255,0.2)',
-  'rgba(0,240,255,0.5)',
-  'rgba(0,240,255,0.8)',
-  'rgba(0,240,255,1)',
+  'rgba(139,92,246,0.2)',
+  'rgba(139,92,246,0.5)',
+  'rgba(139,92,246,0.8)',
+  'rgba(139,92,246,1)',
 ];
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -188,12 +188,12 @@ function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
   if (trend === 'down') {
     return <TrendingDown className="w-4 h-4 text-[#FF2D78]" />;
   }
-  return <ArrowUpRight className="w-4 h-4 text-[#9CA3AF] opacity-40" />;
+  return <ArrowUpRight className="w-4 h-4 text-[#B8C4D4] opacity-40" />;
 }
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
 
-function MiniSparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = '#8B5CF6' }: { data: number[]; color?: string }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const w = 60;
@@ -233,7 +233,7 @@ function OverviewCard({
   label,
   trend,
   sparkData,
-  color = '#00F0FF',
+  color = '#8B5CF6',
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   value: string | number;
@@ -254,8 +254,8 @@ function OverviewCard({
         <TrendArrow trend={trend} />
       </div>
       <div>
-        <div className="text-2xl font-bold text-[#F4F6FF] tracking-tight">{value}</div>
-        <div className="text-xs text-[#9CA3AF] mt-0.5">{label}</div>
+        <div className="text-2xl font-bold text-[#E8E8F0] tracking-tight">{value}</div>
+        <div className="text-xs text-[#B8C4D4] mt-0.5">{label}</div>
       </div>
       {sparkData.length >= 2 && (
         <div className="mt-auto">
@@ -392,7 +392,7 @@ function ActivityHeatmap({
     <div className="relative">
       {tooltip && (
         <div
-          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[#F4F6FF] pointer-events-none whitespace-nowrap"
+          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[#E8E8F0] pointer-events-none whitespace-nowrap"
           style={{
             top: tooltip.y - 28,
             left: tooltip.x,
@@ -418,7 +418,7 @@ function ActivityHeatmap({
               y={i * step + cellSize - 1}
               textAnchor="middle"
               className="text-[8px]"
-              fill="#9CA3AF"
+              fill="#B8C4D4"
               fontFamily="system-ui, sans-serif"
               fontSize="8"
             >
@@ -446,7 +446,7 @@ function ActivityHeatmap({
         </svg>
       </div>
       {/* Legend */}
-      <div className="flex items-center gap-2 mt-2 text-xs text-[#9CA3AF]">
+      <div className="flex items-center gap-2 mt-2 text-xs text-[#B8C4D4]">
         <span>Less</span>
         {HEATMAP_COLORS.map((color, i) => (
           <div
@@ -472,7 +472,7 @@ interface AIInsight {
 const INSIGHT_BORDER_COLORS: Record<string, string> = {
   achievement: '#ADFF2F',
   warning: '#F59E0B',
-  tip: '#00F0FF',
+  tip: '#8B5CF6',
   positive: '#8B5CF6',
 };
 
@@ -482,7 +482,7 @@ function InsightCard({ text }: { text: string }) {
   return (
     <div className="border-l-2 border-[#ADFF2F] pl-4 py-2 flex items-start gap-2.5">
       <Lightbulb className="w-4 h-4 text-[#ADFF2F] mt-0.5 flex-shrink-0" />
-      <span className="text-sm text-[#F4F6FF]">{text}</span>
+      <span className="text-sm text-[#E8E8F0]">{text}</span>
     </div>
   );
 }
@@ -495,7 +495,7 @@ function AIInsightCard({ insight }: { insight: AIInsight }) {
       style={{ borderColor }}
     >
       <span className="text-base mt-0.5 flex-shrink-0 leading-none">{insight.icon}</span>
-      <span className="text-sm text-[#F4F6FF]">{insight.text}</span>
+      <span className="text-sm text-[#E8E8F0]">{insight.text}</span>
     </div>
   );
 }
@@ -530,7 +530,7 @@ function UsageBarChart({
         const barWidth = (item.value / maxVal) * 100;
         return (
           <div key={item.label} className="flex items-center gap-3">
-            <span className="text-xs text-[#9CA3AF] w-20 text-right flex-shrink-0">
+            <span className="text-xs text-[#B8C4D4] w-20 text-right flex-shrink-0">
               {item.label}
             </span>
             <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden relative">
@@ -543,7 +543,7 @@ function UsageBarChart({
                 }}
               />
             </div>
-            <span className="text-xs text-[#F4F6FF] w-12 text-right font-medium flex-shrink-0">
+            <span className="text-xs text-[#E8E8F0] w-12 text-right font-medium flex-shrink-0">
               {pct}%
             </span>
           </div>
@@ -577,7 +577,7 @@ function PeriodTabs({
           className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
             value === tab.key
               ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
-              : 'text-[#9CA3AF] hover:text-[#F4F6FF] border border-transparent'
+              : 'text-[#B8C4D4] hover:text-[#E8E8F0] border border-transparent'
           }`}
         >
           {tab.label}
@@ -898,7 +898,7 @@ export function AnalyticsPage() {
       0,
     );
     return [
-      { label: 'Chat', value: chat, color: '#00F0FF' },
+      { label: 'Chat', value: chat, color: '#8B5CF6' },
       { label: 'Reminders', value: reminders, color: '#ADFF2F' },
       { label: 'Habits', value: habits, color: '#8B5CF6' },
       { label: 'Focus', value: focus, color: '#FF2D78' },
@@ -914,8 +914,8 @@ export function AnalyticsPage() {
       borderRadius: '8px',
       fontSize: '12px',
     },
-    itemStyle: { color: '#F4F6FF' },
-    labelStyle: { color: '#9CA3AF' },
+    itemStyle: { color: '#E8E8F0' },
+    labelStyle: { color: '#B8C4D4' },
   };
 
   const latencyChartData = useMemo(() => {
@@ -934,7 +934,7 @@ export function AnalyticsPage() {
   }, [filteredSnapshots]);
 
   const PROVIDER_COLORS_MAP: Record<string, string> = {
-    OpenRouter: '#00F0FF',
+    OpenRouter: '#8B5CF6',
     PicoClaw: '#ADFF2F',
     Groq: '#8B5CF6',
     Together: '#FF2D78',
@@ -955,7 +955,7 @@ export function AnalyticsPage() {
   const delegationChartData = useMemo(() => {
     const AGENT_COLORS: Record<string, string> = {
       Weebo: '#ADFF2F',
-      Cal: '#00F0FF',
+      Cal: '#8B5CF6',
       Echo: '#8B5CF6',
       Forge: '#FF2D78',
       Aria: '#F59E0B',
@@ -996,7 +996,7 @@ export function AnalyticsPage() {
             <button
               onClick={handleExportCSV}
               disabled={exporting || loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
               aria-label="Export analytics as CSV"
               title="Export as CSV"
             >
@@ -1006,7 +1006,7 @@ export function AnalyticsPage() {
             <button
               onClick={load}
               disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
               aria-label="Refresh analytics"
             >
               <RefreshCw
@@ -1048,7 +1048,7 @@ export function AnalyticsPage() {
               sparkData={filteredSnapshots.map(
                 (d) => d.messagesReceived + d.agentCalls,
               )}
-              color="#00F0FF"
+              color="#8B5CF6"
             />
             <OverviewCard
               icon={CheckCircle2}
@@ -1107,12 +1107,12 @@ export function AnalyticsPage() {
         <div className="flex items-center justify-between mb-4 -mt-1">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs text-[#9CA3AF]">Powered by Pulse</span>
+            <span className="text-xs text-[#B8C4D4]">Powered by Pulse</span>
           </div>
           <button
             onClick={() => void loadAiInsights(true)}
             disabled={aiInsightsLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
             title="Regenerate insights"
           >
             <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
@@ -1149,7 +1149,7 @@ export function AnalyticsPage() {
       {/* 4. Agent Metrics Charts (recharts) */}
       {!loading && (
         <section>
-          <h2 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[#E8E8F0] mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#10B981]" />
             Agent Metrics
           </h2>
@@ -1166,8 +1166,8 @@ export function AnalyticsPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" />
-                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
+                    <XAxis dataKey="name" tick={{ fill: '#B8C4D4', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#B8C4D4', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
                     <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number) => [`${value}ms`, 'Latency']} />
                     <Area type="monotone" dataKey="latency" stroke="#10B981" fill="url(#latencyGrad)" strokeWidth={2} dot={{ r: 3, fill: '#10B981', strokeWidth: 2, stroke: '#06061a' }} />
                   </AreaChart>
@@ -1202,7 +1202,7 @@ export function AnalyticsPage() {
               {/* Legend */}
               <div className="flex flex-wrap justify-center gap-3 mt-2">
                 {providerPieData.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[#B8C4D4]">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROVIDER_COLORS_MAP[entry.name] }} />
                     {entry.name}
                   </div>
@@ -1216,8 +1216,8 @@ export function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={delegationChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#B8C4D4', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#B8C4D4', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                       {delegationChartData.map((entry) => (
@@ -1253,13 +1253,13 @@ export function AnalyticsPage() {
               const agentColors: Record<string, string> = {
                 weebo: '#ADFF2F',
                 jarvis: '#8B5CF6',
-                edith: '#00F0FF',
+                edith: '#8B5CF6',
                 pulse: '#10B981',
                 builtin: '#F59E0B',
               };
               return (
                 <div key={a.agent} className="flex items-center gap-3">
-                  <span className="text-xs text-[#F4F6FF] w-16 capitalize flex-shrink-0">
+                  <span className="text-xs text-[#E8E8F0] w-16 capitalize flex-shrink-0">
                     {a.agent}
                   </span>
                   <div className="flex-1 h-2 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden">
@@ -1272,7 +1272,7 @@ export function AnalyticsPage() {
                       }}
                     />
                   </div>
-                  <span className="text-xs text-[#9CA3AF] w-8 text-right flex-shrink-0">
+                  <span className="text-xs text-[#B8C4D4] w-8 text-right flex-shrink-0">
                     {a.count}
                   </span>
                 </div>
@@ -1283,7 +1283,7 @@ export function AnalyticsPage() {
       )}
 
       {/* Footer */}
-      <p className="text-xs text-[#9CA3AF] text-center pb-4">
+      <p className="text-xs text-[#B8C4D4] text-center pb-4">
         Insights update in real time as you use Agentin
       </p>
     </div>

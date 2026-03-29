@@ -167,8 +167,8 @@ export const C = {
   green: '#ADFF2F',
   pink: '#FF2D78',
   purple: '#8B5CF6',
-  text: '#F4F6FF',
-  muted: '#9CA3AF',
+  text: '#E8E8F0',
+  muted: '#B8C4D4',
   dim: '#4B5563',
   border: 'rgba(139,92,246,0.08)',
 };

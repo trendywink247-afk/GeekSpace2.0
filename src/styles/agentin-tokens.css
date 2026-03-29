@@ -6,27 +6,27 @@
   --ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
   --ag-bg-elevated: rgba(30, 30, 50, 0.7);
 
-  /* Borders */
-  --ag-border-subtle: rgba(139, 92, 246, 0.08);
-  --ag-border-default: rgba(139, 92, 246, 0.15);
-  --ag-border-glow: rgba(0, 240, 255, 0.2);
-  --ag-border-active: rgba(0, 240, 255, 0.4);
+  /* Borders — white-opacity (matching landing page) */
+  --ag-border-subtle: rgba(255, 255, 255, 0.06);
+  --ag-border-default: rgba(255, 255, 255, 0.08);
+  --ag-border-glow: rgba(139, 92, 246, 0.2);
+  --ag-border-active: rgba(139, 92, 246, 0.4);
 
   /* Text */
-  --ag-text-primary: #F4F6FF;
-  --ag-text-secondary: #9CA3AF;
+  --ag-text-primary: #E8E8F0;
+  --ag-text-secondary: #B8C4D4;
   --ag-text-muted: #6B7280;
-  --ag-text-accent: #00F0FF;
+  --ag-text-accent: #8B5CF6;
 
   /* Accents */
   --ag-violet: #8B5CF6;
-  --ag-cyan: #00F0FF;
+  --ag-cyan: #8B5CF6;
   --ag-green: #10B981;
   --ag-amber: #F59E0B;
   --ag-pink: #FF2D78;
   --ag-lime: #ADFF2F;
 
-  /* Agent Colors */
+  /* Agent Identity Colors (character-specific, NOT UI accent) */
   --ag-weebo: #00F0FF;
   --ag-edith: #8B5CF6;
   --ag-jarvis: #ADFF2F;
@@ -38,8 +38,8 @@
   --ag-nova: #EC4899;
 
   /* Effects */
-  --ag-glow-sm: 0 0 10px rgba(0, 240, 255, 0.1);
-  --ag-glow-md: 0 0 20px rgba(0, 240, 255, 0.15);
+  --ag-glow-sm: 0 0 10px rgba(139, 92, 246, 0.1);
+  --ag-glow-md: 0 0 20px rgba(139, 92, 246, 0.15);
   --ag-glow-lg: 0 0 40px rgba(139, 92, 246, 0.2);
   --ag-noise-opacity: 0.025;
 
@@ -56,13 +56,18 @@
 
   /* Glass morphism */
   --ag-glass-bg: rgba(12, 12, 30, 0.4);
-  --ag-glass-border: rgba(139, 92, 246, 0.12);
+  --ag-glass-border: rgba(255, 255, 255, 0.06);
   --ag-glass-blur: 16px;
 
-  /* Active/focus states */
-  --ag-focus-ring: 0 0 0 2px rgba(0, 240, 255, 0.3);
-  --ag-active-bg: rgba(0, 240, 255, 0.08);
-  --ag-active-border: rgba(0, 240, 255, 0.25);
+  /* Active/focus states — violet-based */
+  --ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.3);
+  --ag-active-bg: rgba(139, 92, 246, 0.08);
+  --ag-active-border: rgba(139, 92, 246, 0.25);
+
+  /* CTA Gradient (brand) */
+  --ag-cta-from: #8B5CF6;
+  --ag-cta-to: #F59E0B;
+  --ag-cta-gradient: linear-gradient(135deg, var(--ag-cta-from), var(--ag-cta-to));
 
   /* Gradients */
   --ag-gradient-aurora: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.06) 0%, transparent 50%),
@@ -70,6 +75,6 @@
     radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.03) 0%, transparent 50%);
 
   /* Scrollbar */
-  --ag-scrollbar-thumb: rgba(0, 240, 255, 0.15);
-  --ag-scrollbar-thumb-hover: rgba(0, 240, 255, 0.3);
+  --ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
+  --ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
 }

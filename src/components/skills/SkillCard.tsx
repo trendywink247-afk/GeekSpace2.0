@@ -33,7 +33,7 @@ const tierBadge: Record<string, { bg: string; text: string; label: string }> = {
 // ----- Agent colours (deterministic from name) ----------------
 
 const AGENT_COLORS = [
-  '#00F0FF', '#8B5CF6', '#FFB800', '#00FF88', '#FF2D78',
+  '#8B5CF6', '#8B5CF6', '#FFB800', '#00FF88', '#FF2D78',
   '#FF6B6B', '#36D399', '#F472B6', '#A78BFA',
 ];
 
@@ -70,7 +70,7 @@ export function SkillCard({
     <button
       type="button"
       onClick={() => onClick(skill)}
-      className="w-full text-left rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-[#00F0FF]/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+      className="w-full text-left rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-[#8B5CF6]/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
     >
       {/* Top: icon + name + tier */}
       <div className="flex items-start gap-3 mb-2">
@@ -88,7 +88,7 @@ export function SkillCard({
       </div>
 
       {/* Description (2-line clamp) */}
-      <p className="text-xs text-[#9CA3AF] line-clamp-2 mb-3 leading-relaxed">
+      <p className="text-xs text-[#B8C4D4] line-clamp-2 mb-3 leading-relaxed">
         {skill.description}
       </p>
 
@@ -107,7 +107,7 @@ export function SkillCard({
             </div>
           ))}
           {skill.compatibleAgents.length > 5 && (
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-[#9CA3AF] bg-white/10 border border-white/10">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-[#B8C4D4] bg-white/10 border border-white/10">
               +{skill.compatibleAgents.length - 5}
             </div>
           )}
@@ -132,7 +132,7 @@ export function SkillCard({
               e.stopPropagation();
               onInstall(skill.id);
             }}
-            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors duration-150 disabled:opacity-50 min-h-[32px]"
+            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20 transition-colors duration-150 disabled:opacity-50 min-h-[32px]"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Install'}
           </button>

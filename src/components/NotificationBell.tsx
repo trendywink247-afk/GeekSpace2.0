@@ -120,7 +120,7 @@ export function NotificationBell() {
               {unread > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                  className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
                 >
                   <CheckCheck className="w-3 h-3" /> Mark all read
                 </button>
@@ -135,7 +135,7 @@ export function NotificationBell() {
           <div className="overflow-y-auto max-h-[320px]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -147,7 +147,7 @@ export function NotificationBell() {
                 <div
                   key={n.id}
                   className="flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer"
-                  style={{ background: n.read ? 'transparent' : 'rgba(0,240,255,0.03)' }}
+                  style={{ background: n.read ? 'transparent' : 'rgba(139,92,246,0.03)' }}
                   onClick={() => handleMarkRead(n.id)}
                 >
                   <span className="text-lg flex-shrink-0 mt-0.5">{typeIcons[n.type] || '🔔'}</span>
@@ -157,7 +157,7 @@ export function NotificationBell() {
                         {n.title}
                       </span>
                       {!n.read && (
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
                       )}
                     </div>
                     {n.message && (
@@ -174,7 +174,7 @@ export function NotificationBell() {
           <div className="border-t border-white/5 px-4 py-2">
             <button
               onClick={() => { setOpen(false); navigate('/dashboard/proactive'); }}
-              className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 w-full justify-center py-1"
+              className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 w-full justify-center py-1"
             >
               View all <ExternalLink className="w-3 h-3" />
             </button>

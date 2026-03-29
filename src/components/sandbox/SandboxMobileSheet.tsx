@@ -85,7 +85,7 @@ export function SandboxMobileSheet({
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-[#0C0C18] border-t border-[rgba(0,240,255,0.18)] rounded-t-2xl safe-area-pb${dragging ? '' : ' transition-[height] duration-200 ease-out'}`}
+      className={`fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-[#0C0C18] border-t border-[rgba(139,92,246,0.18)] rounded-t-2xl safe-area-pb${dragging ? '' : ' transition-[height] duration-200 ease-out'}`}
       style={{ height: `${heightPct}vh` }}
     >
       {/* Handle bar + status row */}
@@ -96,8 +96,8 @@ export function SandboxMobileSheet({
         onTouchEnd={onTouchEnd}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Terminal size={14} className="text-[#00F0FF] shrink-0" />
-          <span className="text-xs font-medium text-[#00F0FF] font-['Space_Grotesk']">Terminal</span>
+          <Terminal size={14} className="text-[#8B5CF6] shrink-0" />
+          <span className="text-xs font-medium text-[#8B5CF6] font-['Space_Grotesk']">Terminal</span>
           <span className="text-xs text-muted-foreground truncate">— {status}</span>
         </div>
         {/* Drag pill */}
@@ -119,7 +119,7 @@ export function SandboxMobileSheet({
       {!isCollapsed && (
         <div
           ref={outputRef}
-          className="flex-1 overflow-y-auto px-4 pb-2 font-['JetBrains_Mono'] text-xs leading-5 text-[rgba(0,240,255,0.85)]"
+          className="flex-1 overflow-y-auto px-4 pb-2 font-['JetBrains_Mono'] text-xs leading-5 text-[rgba(139,92,246,0.85)]"
         >
           {output.length === 0
             ? <span className="text-muted-foreground">Type a command below…</span>
@@ -133,9 +133,9 @@ export function SandboxMobileSheet({
       {/* Input row */}
       <form
         onSubmit={handleSubmit}
-        className="shrink-0 flex items-center gap-2 px-4 pb-3 pt-2 border-t border-[rgba(0,240,255,0.1)]"
+        className="shrink-0 flex items-center gap-2 px-4 pb-3 pt-2 border-t border-[rgba(139,92,246,0.1)]"
       >
-        <span className="text-[#00F0FF] font-['JetBrains_Mono'] text-sm shrink-0 select-none">$</span>
+        <span className="text-[#8B5CF6] font-['JetBrains_Mono'] text-sm shrink-0 select-none">$</span>
         <input
           type="text"
           value={inputValue}
@@ -146,11 +146,11 @@ export function SandboxMobileSheet({
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="flex-1 min-w-0 h-11 bg-transparent text-sm font-['JetBrains_Mono'] text-foreground placeholder:text-muted-foreground/50 outline-none caret-[#00F0FF]"
+          className="flex-1 min-w-0 h-11 bg-transparent text-sm font-['JetBrains_Mono'] text-foreground placeholder:text-muted-foreground/50 outline-none caret-[#8B5CF6]"
         />
         <button
           type="submit"
-          className="shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-[rgba(0,240,255,0.12)] active:bg-[rgba(0,240,255,0.22)] text-[#00F0FF]"
+          className="shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-[rgba(139,92,246,0.12)] active:bg-[rgba(139,92,246,0.22)] text-[#8B5CF6]"
           aria-label="Run command"
         >
           <ChevronUp size={18} />

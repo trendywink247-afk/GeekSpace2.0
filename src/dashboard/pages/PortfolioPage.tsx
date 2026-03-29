@@ -447,7 +447,7 @@ export function PortfolioPage() {
               </div>
             )}
             {portfolioStats !== null && (
-              <span className="text-xs text-[#9CA3AF] hidden sm:inline-flex items-center gap-1">
+              <span className="text-xs text-[#B8C4D4] hidden sm:inline-flex items-center gap-1">
                 <Eye className="w-3 h-3 text-[#EC4899]" />
                 {portfolioStats.totalViews} views
                 {lastViewedAt && (
@@ -508,10 +508,10 @@ export function PortfolioPage() {
       {completionPct < 100 && (
         <SectionCard>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-[#F4F6FF]">
+            <span className="text-sm font-semibold text-[#E8E8F0]">
               Profile {completionPct}% complete
             </span>
-            <span className="text-xs text-[#9CA3AF]">{completedCount}/{completionItems.length} fields</span>
+            <span className="text-xs text-[#B8C4D4]">{completedCount}/{completionItems.length} fields</span>
           </div>
           <div className="w-full bg-[#06061a] rounded-full h-2 mb-3">
             <div
@@ -551,9 +551,9 @@ export function PortfolioPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Link className="w-4 h-4 text-[#EC4899]" />
-                <span className="text-sm font-semibold text-[#F4F6FF]">Share Your Portfolio</span>
+                <span className="text-sm font-semibold text-[#E8E8F0]">Share Your Portfolio</span>
               </div>
-              <p className="text-xs text-[#9CA3AF] truncate">
+              <p className="text-xs text-[#B8C4D4] truncate">
                 {`${window.location.origin}/portfolio/${user.username}`}
               </p>
             </div>
@@ -859,7 +859,7 @@ export function PortfolioPage() {
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   placeholder="e.g. TypeScript, React, Docker..."
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#E8E8F0]"
                 />
                 <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
                   <Plus className="w-4 h-4 mr-2" />Add
@@ -869,7 +869,7 @@ export function PortfolioPage() {
               {skills.length === 0 ? (
                 <div className="text-center py-8">
                   <Code2 className="w-10 h-10 text-[#EC4899]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF]">No skills added yet</p>
+                  <p className="text-[#B8C4D4]">No skills added yet</p>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -1204,12 +1204,12 @@ export function PortfolioPage() {
                 { key: 'email' as const, label: 'Email', placeholder: 'you@example.com' },
               ]).map((field) => (
                 <div key={field.key}>
-                  <label className="text-sm text-[#9CA3AF] mb-2 block">{field.label}</label>
+                  <label className="text-sm text-[#B8C4D4] mb-2 block">{field.label}</label>
                   <Input
                     value={social[field.key] || ''}
                     onChange={(e) => setSocial({ ...social, [field.key]: e.target.value })}
                     placeholder={field.placeholder}
-                    className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#E8E8F0]"
                   />
                 </div>
               ))}
@@ -1225,7 +1225,7 @@ export function PortfolioPage() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. Make my bio more professional, add a React project, rewrite my headline to focus on AI engineering..."
-                className="w-full p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] min-h-[140px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                className="w-full p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#E8E8F0] min-h-[140px] resize-none focus:outline-none focus:border-[#8B5CF6]"
               />
               <Button
                 onClick={handleAiEdit}
@@ -1238,7 +1238,7 @@ export function PortfolioPage() {
                   <><Sparkles className="w-4 h-4 mr-2" />Apply AI Edit</>
                 )}
               </Button>
-              <p className="text-xs text-[#9CA3AF] text-center">
+              <p className="text-xs text-[#B8C4D4] text-center">
                 Changes are applied locally -- review them in the other tabs, then click Save Changes to persist.
               </p>
             </div>
@@ -1336,7 +1336,7 @@ export function PortfolioPage() {
                   ))}
                 </div>
               )}
-              <p className="text-xs text-[#9CA3AF] text-center pt-4">
+              <p className="text-xs text-[#B8C4D4] text-center pt-4">
                 Suggestions are based on memories from your agent conversations. Review before applying.
               </p>
             </div>
@@ -1349,11 +1349,11 @@ export function PortfolioPage() {
               <div className="flex items-center gap-2 flex-wrap justify-end mb-4">
                   {/* 66.6: Date range filter for export */}
                   <input type="date" value={analyticsFrom} onChange={(e) => setAnalyticsFrom(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] h-8 min-h-[44px]"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#E8E8F0] h-8 min-h-[44px]"
                     aria-label="Analytics export from date" />
-                  <span className="text-xs text-[#9CA3AF]">--</span>
+                  <span className="text-xs text-[#B8C4D4]">--</span>
                   <input type="date" value={analyticsTo} onChange={(e) => setAnalyticsTo(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] h-8 min-h-[44px]"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#E8E8F0] h-8 min-h-[44px]"
                     aria-label="Analytics export to date" />
                   <Button
                     variant="outline"
@@ -1460,7 +1460,7 @@ export function PortfolioPage() {
                 </div>
               )}
               {user?.username ? (
-                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[rgba(139,92,246,0.08)] shadow-[0_0_20px_rgba(0,240,255,0.06)]">
+                <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[rgba(139,92,246,0.08)] shadow-[0_0_20px_rgba(139,92,246,0.06)]">
                   <div className="flex items-center gap-2 px-4 py-2 bg-[#06061a] border-b border-[rgba(139,92,246,0.08)]">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-[#FF6161]/40" />
@@ -1531,10 +1531,10 @@ export function PortfolioPage() {
           <div className="glass-card-v2 border border-[rgba(139,92,246,0.15)] rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-[#EC4899]" />
-              <h3 className="text-lg font-semibold text-[#F4F6FF]">Generated {generateTarget.field}</h3>
+              <h3 className="text-lg font-semibold text-[#E8E8F0]">Generated {generateTarget.field}</h3>
             </div>
             <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
-              <p className="text-[#F4F6FF] whitespace-pre-wrap">{generatedPreview}</p>
+              <p className="text-[#E8E8F0] whitespace-pre-wrap">{generatedPreview}</p>
             </div>
             <div className="flex gap-3">
               <Button

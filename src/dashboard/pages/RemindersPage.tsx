@@ -42,7 +42,7 @@ import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
-  personal: '#00F0FF',
+  personal: '#8B5CF6',
   work: '#00FF88',
   health: '#FF2D78',
   other: '#FFB800',
@@ -50,7 +50,7 @@ const categoryColors: Record<string, string> = {
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
   low:    { label: 'Low',    color: '#6B7280', bg: '#6B728020' },
-  normal: { label: 'Normal', color: '#00F0FF', bg: '#00F0FF20' },
+  normal: { label: 'Normal', color: '#8B5CF6', bg: '#8B5CF620' },
   high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
   urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
 };
@@ -1295,7 +1295,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
             // Grouped view for active reminders (date or category)
             (groupMode === 'category' ? groupRemindersByCategory(filteredReminders) : groupRemindersByDate(filteredReminders)).map(({ label, items }) => {
               // Smart grouping: color-coded headers by time context
-              const groupHeaderColor = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#84CC16' : label === 'Tomorrow' || label === 'This Week' ? '#E8E8F0' : '#8892A4';
+              const groupHeaderColor = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#84CC16' : label === 'Tomorrow' || label === 'This Week' ? '#E8E8F0' : '#B8C4D4';
               const groupBadgeBg = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#84CC16' : '#8B5CF6';
               return (
               <div key={label} className="mb-4">

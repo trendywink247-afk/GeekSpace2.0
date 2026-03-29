@@ -38,12 +38,12 @@ function StarRating({ score, onRate, disabled }: { score: number | null; onRate:
             onMouseEnter={() => setHovered(s)}
             onMouseLeave={() => setHovered(null)}
             disabled={disabled}
-            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
           >
             <Star
               size={20}
-              className={active ? 'fill-yellow-400 text-yellow-400' : 'text-[var(--ag-text-primary,#F4F6FF)]/30 hover:text-yellow-300'}
+              className={active ? 'fill-yellow-400 text-yellow-400' : 'text-[var(--ag-text-primary,#E8E8F0)]/30 hover:text-yellow-300'}
             />
           </button>
         );
@@ -105,7 +105,7 @@ export function ConversationRatingPage() {
   return (
     <PageShell spacing={4}>
       {/* Weebo dot */}
-      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#00F0FF] shadow-[0_0_6px_rgba(0,240,255,0.4)]" aria-hidden="true" />
+      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#8B5CF6] shadow-[0_0_6px_rgba(139,92,246,0.4)]" aria-hidden="true" />
 
       <PageHeader
         icon={MessageSquare}
@@ -113,7 +113,7 @@ export function ConversationRatingPage() {
         subtitle={`${total} conversations — rate quality to improve your AI`}
         badge={
           total > 0 ? (
-            <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+            <Badge className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20 text-xs">
               {total}
             </Badge>
           ) : undefined
@@ -122,7 +122,7 @@ export function ConversationRatingPage() {
 
       {loading && (
         <BlurFade delay={0.1}>
-          <div className="flex items-center justify-center py-12 text-[var(--ag-text-secondary,#9CA3AF)]">Loading conversations...</div>
+          <div className="flex items-center justify-center py-12 text-[var(--ag-text-secondary,#B8C4D4)]">Loading conversations...</div>
         </BlurFade>
       )}
 
@@ -137,7 +137,7 @@ export function ConversationRatingPage() {
       {!loading && !error && conversations.length === 0 && (
         <BlurFade delay={0.1}>
           <SectionCard>
-            <div className="text-center py-12 text-[var(--ag-text-secondary,#9CA3AF)]">
+            <div className="text-center py-12 text-[var(--ag-text-secondary,#B8C4D4)]">
               <MessageSquare size={40} className="mx-auto mb-3 opacity-30" />
               <p>No conversations yet. Chat with your agent to get started.</p>
             </div>
@@ -151,34 +151,34 @@ export function ConversationRatingPage() {
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mb-1">{formatDate(conv.createdAt)}</p>
+                  <p className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] mb-1">{formatDate(conv.createdAt)}</p>
                   {conv.userMessage && (
                     <div className="mb-2">
-                      <span className="text-xs font-medium text-[#00F0FF] uppercase tracking-wide">You</span>
-                      <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
+                      <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">You</span>
+                      <p className="text-sm text-[var(--ag-text-primary,#E8E8F0)]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
                     </div>
                   )}
                   <div>
                     <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">Agent</span>
-                    <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
+                    <p className="text-sm text-[var(--ag-text-primary,#E8E8F0)]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-2">
                   {conv.model && (
-                    <Badge variant="outline" className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] border-[rgba(139,92,246,0.15)]">
+                    <Badge variant="outline" className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] border-[rgba(139,92,246,0.15)]">
                       {conv.model}
                     </Badge>
                   )}
                   {conv.qualityScore !== null && (
-                    <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+                    <Badge className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20 text-xs">
                       {conv.qualityScore}/5
                     </Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Rate:</span>
+                  <span className="text-xs text-[var(--ag-text-secondary,#B8C4D4)]">Rate:</span>
                   <StarRating
                     score={conv.qualityScore}
                     onRate={(s) => void handleRate(conv.id, s)}
@@ -198,17 +198,17 @@ export function ConversationRatingPage() {
               variant="outline"
               disabled={page <= 1 || loading}
               onClick={() => void load(page - 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#E8E8F0)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
             >
               <ChevronLeft size={16} className="mr-1" />
               Previous
             </Button>
-            <span className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">Page {page} of {totalPages}</span>
+            <span className="text-sm text-[var(--ag-text-secondary,#B8C4D4)]">Page {page} of {totalPages}</span>
             <Button
               variant="outline"
               disabled={page >= totalPages || loading}
               onClick={() => void load(page + 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#E8E8F0)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
             >
               Next
               <ChevronRight size={16} className="ml-1" />

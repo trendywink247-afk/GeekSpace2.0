@@ -11,9 +11,9 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         className
       )}
       style={{
-        background: 'linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6))',
-        backdropFilter: 'blur(24px) saturate(1.4)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+        background: 'rgba(6, 6, 26, 0.9)',
+        backdropFilter: 'blur(16px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
       }}
       {...props}
     />

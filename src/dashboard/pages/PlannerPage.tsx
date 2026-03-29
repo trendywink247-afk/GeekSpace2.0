@@ -67,7 +67,7 @@ const DURATION_OPTIONS = [
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  reminder: '#00F0FF',
+  reminder: '#8B5CF6',
   habit: '#22C55E',
   custom: '#8B5CF6',
 };
@@ -75,7 +75,7 @@ const TYPE_COLORS: Record<string, string> = {
 const PRIORITY_COLORS: Record<string, string> = {
   urgent: '#EF4444',
   high: '#F97316',
-  normal: '#00F0FF',
+  normal: '#8B5CF6',
   low: '#6B7280',
 };
 
@@ -150,10 +150,10 @@ function StatBadge({
 }) {
   return (
     <div className="flex items-baseline gap-1">
-      <span className={`text-lg font-bold ${accent ? 'text-[#00F0FF]' : 'text-[#F4F6FF]'}`}>
+      <span className={`text-lg font-bold ${accent ? 'text-[#8B5CF6]' : 'text-[#E8E8F0]'}`}>
         {value}{suffix}
       </span>
-      <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">{label}</span>
+      <span className="text-[10px] text-[#B8C4D4] uppercase tracking-wider">{label}</span>
     </div>
   );
 }
@@ -165,7 +165,7 @@ function BacklogCard({
   item: BacklogItem;
   onDragStart: (item: BacklogItem) => void;
 }) {
-  const borderColor = item.type === 'reminder' ? '#00F0FF' : '#22C55E';
+  const borderColor = item.type === 'reminder' ? '#8B5CF6' : '#22C55E';
   const priorityColor = item.priority ? PRIORITY_COLORS[item.priority] || '#6B7280' : undefined;
 
   return (
@@ -180,7 +180,7 @@ function BacklogCard({
         borderLeftColor: `${borderColor}60`,
       }}
     >
-      <GripVertical className="w-3 h-3 text-[#9CA3AF]/40 flex-shrink-0 group-hover:text-[#9CA3AF]" />
+      <GripVertical className="w-3 h-3 text-[#B8C4D4]/40 flex-shrink-0 group-hover:text-[#B8C4D4]" />
 
       <div
         className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
@@ -194,7 +194,7 @@ function BacklogCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-[#F4F6FF] truncate leading-relaxed">{item.title}</p>
+        <p className="text-xs text-[#E8E8F0] truncate leading-relaxed">{item.title}</p>
       </div>
 
       {priorityColor && item.priority && item.priority !== 'normal' && (
@@ -256,14 +256,14 @@ function TimeBlockCard({
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="flex items-center gap-0.5 text-[10px] text-[#9CA3AF]">
+          <span className="flex items-center gap-0.5 text-[10px] text-[#B8C4D4]">
             <Clock className="w-3 h-3" />
             {durationLabel}
           </span>
 
           <button
             onClick={() => onRemove(block.id)}
-            className="w-11 h-11 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[#9CA3AF]/40 hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors opacity-0 group-hover:opacity-100"
+            className="w-11 h-11 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[#B8C4D4]/40 hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors opacity-0 group-hover:opacity-100"
             title="Remove block"
           >
             <Trash2 className="w-3 h-3" />
@@ -299,7 +299,7 @@ function QuickAddForm({
           value={title}
           onChange={e => onTitleChange(e.target.value)}
           placeholder="What are you working on?"
-          className="h-9 sm:h-7 text-xs bg-white/5 border-[rgba(139,92,246,0.08)] text-[#F4F6FF] placeholder:text-[#9CA3AF]/60 flex-1"
+          className="h-9 sm:h-7 text-xs bg-white/5 border-[rgba(139,92,246,0.08)] text-[#E8E8F0] placeholder:text-[#B8C4D4]/60 flex-1"
           onKeyDown={e => {
             if (e.key === 'Enter') onSubmit();
             if (e.key === 'Escape') onCancel();
@@ -315,14 +315,14 @@ function QuickAddForm({
         </Button>
         <button
           onClick={onCancel}
-          className="w-11 h-11 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+          className="w-11 h-11 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5"
         >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-[#9CA3AF] mr-1">Duration:</span>
+        <span className="text-[10px] text-[#B8C4D4] mr-1">Duration:</span>
         {DURATION_OPTIONS.map(opt => (
           <button
             key={opt.value}
@@ -331,7 +331,7 @@ function QuickAddForm({
               px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded text-[10px] font-medium border transition-colors min-h-[44px] sm:min-h-0
               ${duration === opt.value
                 ? 'bg-[#8B5CF6]/20 border-[#8B5CF6]/40 text-[#8B5CF6]'
-                : 'bg-white/5 border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:border-[rgba(139,92,246,0.15)] hover:text-[#F4F6FF]'}
+                : 'bg-white/5 border-[rgba(139,92,246,0.08)] text-[#B8C4D4] hover:border-[rgba(139,92,246,0.15)] hover:text-[#E8E8F0]'}
             `}
           >
             {opt.label}
@@ -632,8 +632,8 @@ export function PlannerPage() {
                 onClick={() => setViewMode('day')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
                   viewMode === 'day'
-                    ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
+                    : 'text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5 inline mr-1.5" />Day
@@ -642,8 +642,8 @@ export function PlannerPage() {
                 onClick={() => setViewMode('week')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
                   viewMode === 'week'
-                    ? 'bg-[#00F0FF]/15 text-[#00F0FF]'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
+                    : 'text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5'
                 }`}
               >
                 <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
@@ -680,12 +680,12 @@ export function PlannerPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                className="h-11 w-11 sm:h-9 sm:w-9 text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm font-semibold text-[#F4F6FF]">
+              <span className="text-sm font-semibold text-[#E8E8F0]">
                 {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
                 {' - '}
                 {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
@@ -693,7 +693,7 @@ export function PlannerPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                className="h-11 w-11 sm:h-9 sm:w-9 text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -702,7 +702,7 @@ export function PlannerPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+              className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] sm:min-h-0 sm:h-7"
               onClick={goToday}
             >
               This Week
@@ -722,13 +722,13 @@ export function PlannerPage() {
                       key={dateKey(d)}
                       onClick={() => { setCurrentDate(d); setViewMode('day'); }}
                       className={`p-2 text-center transition-colors min-h-[44px] ${
-                        isDateToday ? 'bg-[#00F0FF]/[0.05]' : 'hover:bg-white/[0.02]'
+                        isDateToday ? 'bg-[#8B5CF6]/[0.05]' : 'hover:bg-white/[0.02]'
                       }`}
                     >
-                      <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`}>
+                      <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[#8B5CF6]' : 'text-[#B8C4D4]'}`}>
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}
                       </span>
-                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[#00F0FF]' : 'text-[#F4F6FF]'}`}>
+                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[#8B5CF6]' : 'text-[#E8E8F0]'}`}>
                         {d.getDate()}
                       </span>
                     </button>
@@ -740,7 +740,7 @@ export function PlannerPage() {
               <div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
                 {HOURS.filter((_, i) => i % 2 === 0).map(hour => (
                   <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.03]">
-                    <div className="p-1.5 text-right text-[10px] text-[#9CA3AF] font-mono border-r border-[var(--ag-border-subtle)]">
+                    <div className="p-1.5 text-right text-[10px] text-[#B8C4D4] font-mono border-r border-[var(--ag-border-subtle)]">
                       {formatHour(hour)}
                     </div>
                     {weekDates.map(d => {
@@ -752,7 +752,7 @@ export function PlannerPage() {
                         <div
                           key={dk2}
                           className={`p-0.5 min-h-[48px] border-r border-white/[0.03] transition-colors ${
-                            isCurrent ? 'bg-[#00F0FF]/[0.03]' : ''
+                            isCurrent ? 'bg-[#8B5CF6]/[0.03]' : ''
                           } ${isDateToday ? 'bg-white/[0.01]' : ''}`}
                           onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
                           onDrop={e => {
@@ -817,11 +817,11 @@ export function PlannerPage() {
           <SectionCard padding="sm" className="overflow-hidden !p-0">
             <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <LayoutGrid className="w-4 h-4 text-[#9CA3AF]" />
-                <span className="text-sm font-semibold text-[#F4F6FF]">Backlog</span>
+                <LayoutGrid className="w-4 h-4 text-[#B8C4D4]" />
+                <span className="text-sm font-semibold text-[#E8E8F0]">Backlog</span>
                 <Badge
                   variant="outline"
-                  className="text-xs border-[#00F0FF]/30 text-[#00F0FF] bg-[#00F0FF]/10"
+                  className="text-xs border-[#8B5CF6]/30 text-[#8B5CF6] bg-[#8B5CF6]/10"
                 >
                   {backlogItems.length}
                 </Badge>
@@ -831,20 +831,20 @@ export function PlannerPage() {
             <div className="p-2 space-y-1.5 max-h-[40vh] lg:max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
               {backlogItems.length === 0 && !habitsLoading ? (
                 <div className="py-8 text-center">
-                  <div className="w-10 h-10 rounded-full bg-[#00F0FF]/5 border border-[#00F0FF]/10 flex items-center justify-center mx-auto mb-3">
-                    <CalendarCheck className="w-5 h-5 text-[#00F0FF]/40" />
+                  <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/5 border border-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-3">
+                    <CalendarCheck className="w-5 h-5 text-[#8B5CF6]/40" />
                   </div>
-                  <p className="text-xs text-[#9CA3AF]">
+                  <p className="text-xs text-[#B8C4D4]">
                     {isToday ? 'All caught up!' : 'No items for this day'}
                   </p>
-                  <p className="text-[10px] text-[#9CA3AF]/60 mt-1">
+                  <p className="text-[10px] text-[#B8C4D4]/60 mt-1">
                     Reminders and habits appear here
                   </p>
                 </div>
               ) : habitsLoading ? (
                 <div className="py-8 text-center">
-                  <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin mx-auto" />
-                  <p className="text-xs text-[#9CA3AF] mt-2">Loading...</p>
+                  <div className="w-5 h-5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin mx-auto" />
+                  <p className="text-xs text-[#B8C4D4] mt-2">Loading...</p>
                 </div>
               ) : (
                 backlogItems.map(item => (
@@ -858,9 +858,9 @@ export function PlannerPage() {
             </div>
 
             <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
-              <div className="flex items-center gap-3 text-[10px] text-[#9CA3AF]">
+              <div className="flex items-center gap-3 text-[10px] text-[#B8C4D4]">
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#00F0FF]" />
+                  <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
                   Reminders
                 </span>
                 <span className="flex items-center gap-1">
@@ -885,21 +885,21 @@ export function PlannerPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5"
                   onClick={goPrev}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <button
                   onClick={goToday}
-                  className="text-sm font-semibold text-[#F4F6FF] hover:text-[#00F0FF] transition-colors min-h-[44px] px-2"
+                  className="text-sm font-semibold text-[#E8E8F0] hover:text-[#8B5CF6] transition-colors min-h-[44px] px-2"
                 >
                   {formatDate(currentDate)}
                 </button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5"
                   onClick={goNext}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -909,7 +909,7 @@ export function PlannerPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+                  className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] sm:min-h-0 sm:h-7"
                   onClick={goToday}
                 >
                   Today
@@ -929,8 +929,8 @@ export function PlannerPage() {
                     key={hour}
                     className={`
                       flex border-b border-white/[0.03] min-h-[64px] transition-colors duration-150
-                      ${isCurrentHour ? 'bg-[#00F0FF]/[0.03]' : ''}
-                      ${isDrop ? 'bg-[#00F0FF]/[0.06]' : ''}
+                      ${isCurrentHour ? 'bg-[#8B5CF6]/[0.03]' : ''}
+                      ${isDrop ? 'bg-[#8B5CF6]/[0.06]' : ''}
                     `}
                     onDragOver={e => handleDragOver(e, hour)}
                     onDragLeave={handleDragLeave}
@@ -941,8 +941,8 @@ export function PlannerPage() {
                       w-16 sm:w-20 flex-shrink-0 py-2 px-2 sm:px-3 text-right
                       border-r transition-colors duration-150
                       ${isCurrentHour
-                        ? 'border-r-2 border-r-[#00F0FF] text-[#00F0FF]'
-                        : 'border-r-white/5 text-[#9CA3AF]'}
+                        ? 'border-r-2 border-r-[#8B5CF6] text-[#8B5CF6]'
+                        : 'border-r-white/5 text-[#B8C4D4]'}
                     `}>
                       <span className="font-mono text-xs sm:text-sm">
                         {formatHour(hour)}
@@ -952,7 +952,7 @@ export function PlannerPage() {
                     {/* Drop zone / blocks area */}
                     <div className={`
                       flex-1 py-1.5 px-2 sm:px-3 relative min-h-[64px]
-                      ${isDrop ? 'ring-1 ring-inset ring-[#00F0FF]/30 rounded-r-lg' : ''}
+                      ${isDrop ? 'ring-1 ring-inset ring-[#8B5CF6]/30 rounded-r-lg' : ''}
                     `}>
                       {slotBlocks.map(block => (
                         <TimeBlockCard
@@ -963,8 +963,8 @@ export function PlannerPage() {
                       ))}
 
                       {isDrop && slotBlocks.length === 0 && (
-                        <div className="absolute inset-1 border border-dashed border-[#00F0FF]/40 rounded-lg flex items-center justify-center">
-                          <span className="text-[10px] text-[#00F0FF]/60">Drop here</span>
+                        <div className="absolute inset-1 border border-dashed border-[#8B5CF6]/40 rounded-lg flex items-center justify-center">
+                          <span className="text-[10px] text-[#8B5CF6]/60">Drop here</span>
                         </div>
                       )}
 

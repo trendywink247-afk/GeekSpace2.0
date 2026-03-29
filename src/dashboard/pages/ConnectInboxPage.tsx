@@ -57,7 +57,7 @@ export function ConnectInboxPage() {
                 `focus-visible:ring-[${ARIA}]/50`,
                 activeTab === id
                   ? `border-[${ARIA}] text-[${ARIA}] bg-[${ARIA}]/5`
-                  : 'border-transparent text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5',
+                  : 'border-transparent text-[#B8C4D4] hover:text-[#E8E8F0] hover:bg-white/5',
               ].join(' ')}
               aria-selected={activeTab === id}
               aria-controls={`tabpanel-${id}`}

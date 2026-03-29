@@ -20,11 +20,13 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        cta: "bg-[image:linear-gradient(135deg,#8B5CF6,#F59E0B)] text-white hover:opacity-90 shadow-[0_0_20px_rgba(139,92,246,0.15)] hover:shadow-[0_0_25px_rgba(139,92,246,0.25)]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        hero: "h-12 rounded-2xl px-8 text-base font-semibold",
         icon: "size-9",
         "icon-sm": "size-9",
         "icon-lg": "size-10",

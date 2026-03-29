@@ -28,7 +28,7 @@ export function JsonFormatterPage() {
               cls = 'text-[#FFD700]'; // string value
             }
           } else if (/true|false/.test(match)) {
-            cls = 'text-[#00F0FF]'; // boolean
+            cls = 'text-[#8B5CF6]'; // boolean
           } else if (/null/.test(match)) {
             cls = 'text-[#FF6B6B]'; // null
           }

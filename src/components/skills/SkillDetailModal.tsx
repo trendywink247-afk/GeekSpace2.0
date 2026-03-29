@@ -64,7 +64,7 @@ export function SkillDetailModal({
               <DialogTitle className="text-lg font-bold text-[#E8E8F0]">
                 {skill.name}
               </DialogTitle>
-              <DialogDescription className="text-xs text-[#9CA3AF]">
+              <DialogDescription className="text-xs text-[#B8C4D4]">
                 v1.0 &middot; Agentin
               </DialogDescription>
             </div>
@@ -92,7 +92,7 @@ export function SkillDetailModal({
             {skill.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-[#9CA3AF] border border-white/10"
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-[#B8C4D4] border border-white/10"
               >
                 {tag}
               </span>
@@ -144,7 +144,7 @@ export function SkillDetailModal({
               type="button"
               disabled={actionLoading}
               onClick={() => onInstall(skill.id)}
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors duration-150 disabled:opacity-50 min-h-[44px]"
+              className="flex-1 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20 transition-colors duration-150 disabled:opacity-50 min-h-[44px]"
             >
               {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Install'}
             </button>

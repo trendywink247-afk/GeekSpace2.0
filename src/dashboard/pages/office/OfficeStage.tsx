@@ -417,7 +417,7 @@ export default function OfficeStage({
           id: `greet-${id}-${Date.now()}`,
           agentId: id,
           text: phrase,
-          color: AGENT_COLORS[id] || '#00F0FF',
+          color: AGENT_COLORS[id] || '#8B5CF6',
           createdAt: Date.now(),
           expiresAt: Date.now() + SPEECH_BUBBLE_TTL + 1000, // slightly longer for greetings
         }]);
@@ -489,7 +489,7 @@ export default function OfficeStage({
                   id: `think-${Date.now()}`,
                   agentId: agentId as AgentId,
                   text: phrase,
-                  color: AGENT_COLORS[agentId as AgentId] || '#00F0FF',
+                  color: AGENT_COLORS[agentId as AgentId] || '#8B5CF6',
                   createdAt: Date.now(),
                   expiresAt: Date.now() + SPEECH_BUBBLE_TTL,
                 }]);
@@ -650,7 +650,7 @@ export default function OfficeStage({
       id: `beam-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       fromAgentId: fromId,
       toAgentId: toId,
-      color: AGENT_COLORS[fromId] || '#00F0FF',
+      color: AGENT_COLORS[fromId] || '#8B5CF6',
       createdAt: Date.now(),
       duration: PARTICLE_BEAM_TTL,
     };
@@ -667,7 +667,7 @@ export default function OfficeStage({
       id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
       agentId,
       text: text.slice(0, 60),
-      color: AGENT_COLORS[agentId] || '#00F0FF',
+      color: AGENT_COLORS[agentId] || '#8B5CF6',
       createdAt: now,
       expiresAt: now + SPEECH_BUBBLE_TTL,
       pixelX: agent?.renderX,
@@ -843,7 +843,7 @@ export default function OfficeStage({
       if (!assetsReadyRef.current) {
         ctx.fillStyle = '#05050A';
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-        ctx.fillStyle = '#00F0FF';
+        ctx.fillStyle = '#8B5CF6';
         ctx.font = '14px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('Initializing agents...', CANVAS_W / 2, CANVAS_H / 2);

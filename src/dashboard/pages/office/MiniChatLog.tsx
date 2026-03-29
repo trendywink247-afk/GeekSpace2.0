@@ -17,7 +17,7 @@ interface Props {
 
 function agentColor(name: string): string {
   const lower = name.toLowerCase() as AgentId;
-  return AGENT_COLORS[lower] ?? '#9CA3AF';
+  return AGENT_COLORS[lower] ?? '#B8C4D4';
 }
 
 function agentDisplayName(name: string): string {
@@ -51,20 +51,20 @@ export function MiniChatLog({ messages }: Props) {
       {/* Header */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-[#F4F6FF]"
+        className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-[#E8E8F0]"
       >
         <span>
           Agent Comms
           {collapsed && messages.length > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-[10px] font-bold">
+            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] text-[10px] font-bold">
               {messages.length}
             </span>
           )}
         </span>
         {collapsed ? (
-          <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF]" />
+          <ChevronDown className="w-3.5 h-3.5 text-[#B8C4D4]" />
         ) : (
-          <ChevronUp className="w-3.5 h-3.5 text-[#9CA3AF]" />
+          <ChevronUp className="w-3.5 h-3.5 text-[#B8C4D4]" />
         )}
       </button>
 
@@ -84,7 +84,7 @@ export function MiniChatLog({ messages }: Props) {
                 <span style={{ color: agentColor(msg.toAgent) }}>
                   {agentDisplayName(msg.toAgent)}
                 </span>
-                <span className="text-[#9CA3AF]">: {msg.text}</span>
+                <span className="text-[#B8C4D4]">: {msg.text}</span>
               </div>
             ))
           )}

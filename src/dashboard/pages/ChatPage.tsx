@@ -51,12 +51,12 @@ type StreamHealth = 'connected' | 'slow' | 'disconnected';
 // ── Constants ──
 
 const LANG_COLORS: Record<string, { label: string; bg: string; text: string }> = {
-  javascript: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  js: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  javascript: { label: 'JavaScript', bg: 'bg-violet-500/15', text: 'text-violet-400' },
+  js: { label: 'JavaScript', bg: 'bg-violet-500/15', text: 'text-violet-400' },
   typescript: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
   ts: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
   tsx: { label: 'TSX', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  jsx: { label: 'JSX', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  jsx: { label: 'JSX', bg: 'bg-violet-500/15', text: 'text-violet-400' },
   python: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
   py: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
   html: { label: 'HTML', bg: 'bg-orange-500/15', text: 'text-orange-400' },
@@ -331,7 +331,7 @@ function ToolStepCard({ step }: { step: ToolStep }) {
 }
 
 /** Agent color from conversation title hash */
-const AGENT_COLORS = ['#00F0FF', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
+const AGENT_COLORS = ['#8B5CF6', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
 
 function getAgentColor(id: string): string {
   const hash = id.charCodeAt(0) + (id.charCodeAt(1) || 0);
@@ -1180,7 +1180,7 @@ export function ChatPage() {
   const personalityMeta: Record<AgentPersonality, { emoji: string; color: string; glow: string; initial: string }> = {
     edith: { emoji: 'E', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
     jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
-    weebo: { emoji: 'W', color: '#00F0FF', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
+    weebo: { emoji: 'W', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'W' },
     aria: { emoji: 'A', color: '#FF6B9D', glow: '0 0 12px rgba(255,107,157,0.4)', initial: 'A' },
     forge: { emoji: 'F', color: '#F59E0B', glow: '0 0 12px rgba(245,158,11,0.4)', initial: 'F' },
     pulse: { emoji: 'P', color: '#10B981', glow: '0 0 12px rgba(16,185,129,0.4)', initial: 'P' },
@@ -1606,7 +1606,7 @@ export function ChatPage() {
                           className={`w-4 h-4 transition-colors ${
                             star <= (ratingHover || sessionRating || 0)
                               ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-[#F4F6FF]/20'
+                              : 'text-[#E8E8F0]/20'
                           }`}
                         />
                       </button>
@@ -1738,8 +1738,8 @@ export function ChatPage() {
           {/* Agent Picker */}
           <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
             {[
-              { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
-              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#00F0FF' },
+              { id: '', name: 'Auto', emoji: '🤖', color: '#B8C4D4' },
+              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#8B5CF6' },
               { id: 'edith', name: 'Edith', emoji: '⚡', color: '#8B5CF6' },
               { id: 'jarvis', name: 'Jarvis', emoji: '🎩', color: '#ADFF2F' },
               { id: 'aria', name: 'Aria', emoji: '🎨', color: '#FF6B9D' },
@@ -1757,7 +1757,7 @@ export function ChatPage() {
                 style={{
                   border: `1px solid ${selectedAgent === p.id ? p.color + '60' : 'rgba(255,255,255,0.06)'}`,
                   background: selectedAgent === p.id ? p.color + '15' : 'transparent',
-                  color: selectedAgent === p.id ? p.color : '#8892A4',
+                  color: selectedAgent === p.id ? p.color : '#B8C4D4',
                 }}
               >
                 <span>{p.emoji}</span>

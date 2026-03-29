@@ -191,7 +191,7 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
           </span>
           <span
             className="text-xs leading-snug block"
-            style={{ color: 'var(--ag-text-primary, #F4F6FF)' }}
+            style={{ color: 'var(--ag-text-primary, #E8E8F0)' }}
           >
             {current.text}
           </span>
@@ -201,7 +201,7 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
         <button
           onClick={() => dismissCurrent(current.id)}
           className="flex-shrink-0 text-xs leading-none opacity-60 hover:opacity-100 transition-opacity mt-0.5 ml-1 min-h-[44px] min-w-[44px] flex items-start justify-center pt-0.5"
-          style={{ color: 'var(--ag-text-primary, #F4F6FF)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          style={{ color: 'var(--ag-text-primary, #E8E8F0)', background: 'transparent', border: 'none', cursor: 'pointer' }}
           aria-label="Dismiss insight"
         >
           x

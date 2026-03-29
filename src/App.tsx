@@ -54,7 +54,7 @@ function App() {
         Skip to main content
       </a>
       <ErrorBoundary>
-      <div className="min-h-screen bg-[#05050A] text-[#F4F6FF] overflow-x-hidden">
+      <div className="min-h-screen bg-[#05050A] text-[#E8E8F0] overflow-x-hidden">
         <Routes>
           {/* Auth-aware public routes — redirect to dashboard if already signed in */}
           <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
@@ -111,7 +111,7 @@ function App() {
           style: {
             background: '#0C0C18',
             border: '1px solid rgba(139,92,246,0.2)',
-            color: '#F4F6FF',
+            color: '#E8E8F0',
           },
         }}
       />

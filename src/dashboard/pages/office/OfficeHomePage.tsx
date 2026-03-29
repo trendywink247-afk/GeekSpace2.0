@@ -199,7 +199,7 @@ function TodayTab({
                 key={r.id}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 group backdrop-blur-sm transition-all duration-200 hover:shadow-[var(--ag-glow-sm)]"
                 style={{
-                  background: r.overdue ? 'rgba(255,45,120,0.06)' : 'rgba(0,240,255,0.04)',
+                  background: r.overdue ? 'rgba(255,45,120,0.06)' : 'rgba(139,92,246,0.04)',
                   border: `1px solid ${r.overdue ? 'rgba(255,45,120,0.15)' : 'var(--ag-border-subtle)'}`,
                 }}
               >
@@ -400,7 +400,7 @@ function ChatInputBar() {
         disabled={!hasText || sending}
         className="flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 disabled:opacity-40 flex-shrink-0"
         style={{
-          background: hasText && !sending ? 'rgba(0,240,255,0.15)' : 'rgba(0,240,255,0.08)',
+          background: hasText && !sending ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
           color: 'var(--ag-cyan)',
           boxShadow: hasText && !sending ? 'var(--ag-glow-sm)' : 'none',
         }}
@@ -516,7 +516,7 @@ function EnhancedSidebar({
               onClick={() => setActiveTab(key)}
               className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-200 min-h-[32px] text-[11px] sm:text-xs whitespace-nowrap"
               style={{
-                background: active ? 'rgba(0,240,255,0.1)' : 'transparent',
+                background: active ? 'rgba(139,92,246,0.1)' : 'transparent',
                 color: active ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
                 border: active ? '1px solid var(--ag-border-glow)' : '1px solid transparent',
                 boxShadow: active ? 'var(--ag-glow-sm)' : 'none',
@@ -889,7 +889,7 @@ export function OfficeHomePage() {
                     onClick={() => { setOfficeTheme(mode); localStorage.setItem('office_theme', mode); }}
                     className="px-1.5 py-0.5 rounded-md text-[10px] transition-all duration-200"
                     style={{
-                      background: officeTheme === mode ? 'rgba(0,240,255,0.15)' : 'transparent',
+                      background: officeTheme === mode ? 'rgba(139,92,246,0.15)' : 'transparent',
                       color: officeTheme === mode ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
                     }}
                   >

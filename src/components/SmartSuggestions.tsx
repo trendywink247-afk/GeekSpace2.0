@@ -61,7 +61,7 @@ export function SmartSuggestions({ onNavigate }: SmartSuggestionsProps) {
     // 3. Feature discovery (rotate daily)
     const discoveryFeatures = [
       { id: 'discover-creative', label: 'Try Creative Studio', page: 'creative-studio', icon: ImageIcon, agentColor: '#FF6B9D' },
-      { id: 'discover-voice', label: 'Try Voice Chat', page: 'voice', icon: Mic, agentColor: '#00F0FF' },
+      { id: 'discover-voice', label: 'Try Voice Chat', page: 'voice', icon: Mic, agentColor: '#8B5CF6' },
       { id: 'discover-docs', label: 'Try Docs Workspace', page: 'docs', icon: FileText, agentColor: '#10B981' },
       { id: 'discover-focus', label: 'Track your habits', page: 'focus', icon: Target, agentColor: '#F59E0B' },
     ];
@@ -102,7 +102,7 @@ export function SmartSuggestions({ onNavigate }: SmartSuggestionsProps) {
               >
                 <s.icon className="w-3.5 h-3.5" style={{ color: s.agentColor }} />
               </div>
-              <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] group-hover:text-[var(--ag-text-primary,#F4F6FF)] flex-1 truncate">
+              <span className="text-xs text-[var(--ag-text-secondary,#B8C4D4)] group-hover:text-[var(--ag-text-primary,#E8E8F0)] flex-1 truncate">
                 {s.label}
               </span>
               {s.badge && (

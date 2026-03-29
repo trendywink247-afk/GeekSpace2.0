@@ -94,13 +94,13 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
         className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #0C0C18 0%, #06060f 100%)',
-          border: '1px solid rgba(0, 240, 255, 0.15)',
+          border: '1px solid rgba(139, 92, 246, 0.15)',
         }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+            <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
             <span className="text-sm font-semibold text-[#E8E8F0]">
               Set up Agentin · Step {step} of {TOTAL_STEPS}
             </span>
@@ -112,7 +112,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
 
         {/* Progress bar */}
         <div className="mx-6 h-1 rounded-full bg-white/5 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #00F0FF, #8B5CF6)' }} />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #8B5CF6, #8B5CF6)' }} />
         </div>
 
         {/* Body */}
@@ -122,14 +122,14 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-5">
               <div className="text-center">
                 <div className="text-4xl mb-3">🤖</div>
-                <h2 className="text-xl font-bold text-[#F4F6FF]">Meet Agentin</h2>
+                <h2 className="text-xl font-bold text-[#E8E8F0]">Meet Agentin</h2>
                 <p className="text-sm text-[#6B7280] mt-2 max-w-sm mx-auto">
                   Your personal AI that plans goals, delegates tasks to specialist agents, and works proactively in the background.
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { icon: Target, label: 'Goals & Planning', color: '#00F0FF' },
+                  { icon: Target, label: 'Goals & Planning', color: '#8B5CF6' },
                   { icon: Zap, label: 'Auto Delegation', color: '#8B5CF6' },
                   { icon: Bell, label: 'Smart Alerts', color: '#F59E0B' },
                 ].map(f => (
@@ -142,7 +142,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
               <button
                 onClick={() => setStep(2)}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors text-black"
-                style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}
+                style={{ background: 'linear-gradient(135deg, #8B5CF6, #8B5CF6)' }}
               >
                 Let's set you up <ArrowRight className="w-4 h-4" />
               </button>
@@ -163,14 +163,14 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                     onClick={() => setPersonality(p.id)}
                     className="flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all"
                     style={{
-                      borderColor: personality === p.id ? '#00F0FF' : 'rgba(255,255,255,0.08)',
-                      background: personality === p.id ? 'rgba(0,240,255,0.08)' : 'transparent',
+                      borderColor: personality === p.id ? '#8B5CF6' : 'rgba(255,255,255,0.08)',
+                      background: personality === p.id ? 'rgba(139,92,246,0.08)' : 'transparent',
                     }}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{p.emoji}</span>
                       <span className="text-sm font-semibold text-[#E8E8F0]">{p.label}</span>
-                      {personality === p.id && <CheckCircle2 className="w-3.5 h-3.5 text-[#00F0FF] ml-auto" />}
+                      {personality === p.id && <CheckCircle2 className="w-3.5 h-3.5 text-[#8B5CF6] ml-auto" />}
                     </div>
                     <span className="text-[10px] text-[#6B7280]">{p.tagline} — {p.description}</span>
                   </button>
@@ -194,7 +194,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                     placeholder="e.g. Learn TypeScript in 30 days"
                     value={goalTitle}
                     onChange={e => setGoalTitle(e.target.value)}
-                    className="w-full rounded-xl bg-[#10101E] border border-white/10 px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className="w-full rounded-xl bg-[#10101E] border border-white/10 px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
                     autoFocus
                   />
                   <div className="flex flex-wrap gap-2">
@@ -218,7 +218,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                       <ArrowLeft className="w-4 h-4 inline mr-1" />Back
                     </button>
                     {goalTitle.trim() ? (
-                      <button onClick={handleCreateGoal} className="flex-[2] py-3 rounded-xl text-sm font-semibold text-black transition-colors" style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}>
+                      <button onClick={handleCreateGoal} className="flex-[2] py-3 rounded-xl text-sm font-semibold text-black transition-colors" style={{ background: 'linear-gradient(135deg, #8B5CF6, #8B5CF6)' }}>
                         <Target className="w-4 h-4 inline mr-1" /> Create Goal
                       </button>
                     ) : (
@@ -233,7 +233,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   <div className="text-3xl mb-2">🎯</div>
                   <p className="text-sm text-emerald-400 font-medium">Goal created! AI is planning your steps...</p>
                   <p className="text-xs text-gray-500 mt-1">You can track progress in the Goals page.</p>
-                  <button onClick={() => setStep(4)} className="mt-4 px-6 py-2.5 rounded-xl text-sm font-semibold text-black" style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}>
+                  <button onClick={() => setStep(4)} className="mt-4 px-6 py-2.5 rounded-xl text-sm font-semibold text-black" style={{ background: 'linear-gradient(135deg, #8B5CF6, #8B5CF6)' }}>
                     Continue <ArrowRight className="w-4 h-4 inline ml-1" />
                   </button>
                 </div>
@@ -279,7 +279,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-5">
               <div className="text-center">
                 <div className="text-4xl mb-3">🎉</div>
-                <h2 className="text-xl font-bold text-[#F4F6FF]">You're all set!</h2>
+                <h2 className="text-xl font-bold text-[#E8E8F0]">You're all set!</h2>
                 <p className="text-sm text-[#6B7280] mt-2">
                   Your agent is ready. Connect Telegram for on-the-go access, or dive straight in.
                 </p>
@@ -308,7 +308,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   onClick={handleFinish}
                   disabled={saving}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-black transition-colors"
-                  style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #8B5CF6)' }}
                 >
                   {saving ? 'Saving...' : (<><PartyPopper className="w-4 h-4" /> Start Using Agentin</>)}
                 </button>
@@ -332,7 +332,7 @@ function NavButtons({ back, next }: { back: () => void; next: () => void }) {
       <button onClick={back} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-white/20 transition-colors">
         <ArrowLeft className="w-4 h-4 inline mr-1" />Back
       </button>
-      <button onClick={next} className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-black transition-colors" style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}>
+      <button onClick={next} className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-black transition-colors" style={{ background: 'linear-gradient(135deg, #8B5CF6, #8B5CF6)' }}>
         Continue <ArrowRight className="w-4 h-4" />
       </button>
     </div>

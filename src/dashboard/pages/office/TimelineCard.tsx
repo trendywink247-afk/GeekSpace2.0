@@ -24,14 +24,14 @@ const TYPE_CONFIG: Record<
   TimelineEntry['type'],
   { borderColor: string; icon: string; bgTint?: string }
 > = {
-  reply:       { borderColor: '#00F0FF', icon: '💬' },            // overridden by agentColor below
-  tool_call:   { borderColor: '#00F0FF', icon: '🔧' },
+  reply:       { borderColor: '#8B5CF6', icon: '💬' },            // overridden by agentColor below
+  tool_call:   { borderColor: '#8B5CF6', icon: '🔧' },
   insight:     { borderColor: '#F59E0B', icon: '💡', bgTint: 'rgba(245,158,11,0.04)' },
   reminder:    { borderColor: '#8B5CF6', icon: '⏰' },
   automation:  { borderColor: '#EC4899', icon: '⚡' },
-  multi_agent: { borderColor: '#00F0FF', icon: '🌐' },
+  multi_agent: { borderColor: '#8B5CF6', icon: '🌐' },
   habit:       { borderColor: '#ADFF2F', icon: '🔥' },
-  comm:        { borderColor: '#00F0FF', icon: '💬' },             // overridden by agentColor below
+  comm:        { borderColor: '#8B5CF6', icon: '💬' },             // overridden by agentColor below
 };
 
 // ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ interface TimelineCardProps {
 // Sub-renderers
 // ---------------------------------------------------------------------------
 function AgentPill({ agentId }: { agentId: AgentId }) {
-  const color = AGENT_COLORS[agentId] ?? '#9CA3AF';
+  const color = AGENT_COLORS[agentId] ?? '#B8C4D4';
   const meta = AGENT_META[agentId];
   return (
     <span
@@ -112,7 +112,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
       : entry.type === 'habit'
       ? [
           { label: 'Log', action: 'log', color: '#ADFF2F' },
-          { label: 'Skip', action: 'skip', color: '#9CA3AF' },
+          { label: 'Skip', action: 'skip', color: '#B8C4D4' },
         ]
       : []);
 
@@ -147,7 +147,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
                   </span>
                   <span
                     className="text-[11px] font-bold truncate"
-                    style={{ color: AGENT_COLORS[entry.relatedAgents[0]] ?? '#9CA3AF' }}
+                    style={{ color: AGENT_COLORS[entry.relatedAgents[0]] ?? '#B8C4D4' }}
                   >
                     {entry.relatedAgents[0].charAt(0).toUpperCase() + entry.relatedAgents[0].slice(1)}
                   </span>
@@ -177,10 +177,10 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
       <div className="pl-0.5">
         {/* reply: response preview */}
         {entry.type === 'reply' && (
-          <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#F4F6FF' }}>
+          <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: '#E8E8F0' }}>
             {entry.action}
             {entry.details && (
-              <span style={{ color: '#9CA3AF' }}> — {entry.details}</span>
+              <span style={{ color: '#B8C4D4' }}> — {entry.details}</span>
             )}
           </p>
         )}
@@ -188,11 +188,11 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         {/* tool_call: tool name + params */}
         {entry.type === 'tool_call' && (
           <div>
-            <p className="text-[11px] font-medium" style={{ color: '#F4F6FF' }}>
+            <p className="text-[11px] font-medium" style={{ color: '#E8E8F0' }}>
               {entry.action}
             </p>
             {entry.details && (
-              <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: '#9CA3AF' }}>
+              <p className="text-[10px] font-mono mt-0.5 truncate" style={{ color: '#B8C4D4' }}>
                 {entry.details}
               </p>
             )}
@@ -201,7 +201,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
 
         {/* insight: insight text, gold-tinted bg already set */}
         {entry.type === 'insight' && (
-          <p className="text-[11px] leading-relaxed" style={{ color: '#F4F6FF' }}>
+          <p className="text-[11px] leading-relaxed" style={{ color: '#E8E8F0' }}>
             {entry.action}
             {entry.details && (
               <span style={{ color: '#F59E0B' }}> {entry.details}</span>
@@ -212,7 +212,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         {/* reminder: text + Done/Snooze */}
         {entry.type === 'reminder' && (
           <div>
-            <p className="text-[11px]" style={{ color: '#F4F6FF' }}>
+            <p className="text-[11px]" style={{ color: '#E8E8F0' }}>
               {entry.action}
             </p>
             {actions.length > 0 && onAction && (
@@ -233,11 +233,11 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         {/* automation: name + result */}
         {entry.type === 'automation' && (
           <div>
-            <p className="text-[11px] font-medium" style={{ color: '#F4F6FF' }}>
+            <p className="text-[11px] font-medium" style={{ color: '#E8E8F0' }}>
               {entry.action}
             </p>
             {entry.details && (
-              <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>
+              <p className="text-[10px] mt-0.5" style={{ color: '#B8C4D4' }}>
                 {entry.details}
               </p>
             )}
@@ -247,7 +247,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         {/* multi_agent: task + agent avatar pills */}
         {entry.type === 'multi_agent' && (
           <div>
-            <p className="text-[11px] mb-1.5" style={{ color: '#F4F6FF' }}>
+            <p className="text-[11px] mb-1.5" style={{ color: '#E8E8F0' }}>
               {entry.action}
             </p>
             {entry.relatedAgents && entry.relatedAgents.length > 0 && (
@@ -264,7 +264,7 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
         {entry.type === 'habit' && (
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-[11px] font-medium" style={{ color: '#F4F6FF' }}>
+              <p className="text-[11px] font-medium" style={{ color: '#E8E8F0' }}>
                 {entry.action}
               </p>
               {entry.details && (
@@ -293,10 +293,10 @@ export default function TimelineCard({ entry, onAction }: TimelineCardProps) {
 
         {/* comm: From → To: message */}
         {entry.type === 'comm' && (
-          <p className="text-[11px] leading-relaxed" style={{ color: '#F4F6FF' }}>
+          <p className="text-[11px] leading-relaxed" style={{ color: '#E8E8F0' }}>
             {entry.action}
             {entry.details && (
-              <span style={{ color: '#9CA3AF' }}> {entry.details}</span>
+              <span style={{ color: '#B8C4D4' }}> {entry.details}</span>
             )}
           </p>
         )}

@@ -322,7 +322,7 @@ function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: stri
               <div className="flex justify-end mt-1">
                 <span
                   className="text-[10px] font-mono tabular-nums"
-                  style={{ color: isOver ? '#FF6161' : bodyLen > 250 ? '#FFB800' : '#9CA3AF' }}
+                  style={{ color: isOver ? '#FF6161' : bodyLen > 250 ? '#FFB800' : '#B8C4D4' }}
                 >
                   {bodyLen}/280
                 </span>

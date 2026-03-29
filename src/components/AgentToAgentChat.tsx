@@ -155,12 +155,12 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md glass-card-v2 border border-[#00F0FF]/30 rounded-2xl shadow-2xl shadow-[#00F0FF]/10 flex flex-col max-h-[80vh] animate-in fade-in zoom-in duration-200">
+      <div className="relative w-full max-w-md glass-card-v2 border border-[#8B5CF6]/30 rounded-2xl shadow-2xl shadow-[#8B5CF6]/10 flex flex-col max-h-[80vh] animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[#06060B] rounded-t-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-[#8B5CF6]/20 bg-[#06060B] rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00FF88] to-[#00F0FF] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00FF88] to-[#8B5CF6] flex items-center justify-center">
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#00FF88] border-2 border-[#06060B]" />
@@ -174,7 +174,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors"
           >
             <X className="w-5 h-5 text-[#6B7280]" />
           </button>
@@ -201,15 +201,15 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
                   <div
                     className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-[#00F0FF] text-white rounded-br-md'
-                        : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
+                        ? 'bg-[#8B5CF6] text-white rounded-br-md'
+                        : 'bg-[#06060B] text-[#E8E8F0] border border-[#8B5CF6]/20 rounded-bl-md'
                     }`}
                   >
                     {msg.content}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-7 h-7 rounded-full bg-[#00F0FF]/20 flex items-center justify-center ml-2 flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-[#00F0FF]" />
+                    <div className="w-7 h-7 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center ml-2 flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-[#8B5CF6]" />
                     </div>
                   )}
                 </>
@@ -221,11 +221,11 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               <div className="w-7 h-7 rounded-full bg-[#00FF88]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
                 <Bot className="w-4 h-4 text-[#00FF88]" />
               </div>
-              <div className="bg-[#06060B] border border-[#00F0FF]/20 rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="bg-[#06060B] border border-[#8B5CF6]/20 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-2 h-2 bg-[#8B5CF6]/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-[#8B5CF6]/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-[#8B5CF6]/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] rounded-b-2xl">
+        <div className="p-4 border-t border-[#8B5CF6]/20 bg-[#06060B] rounded-b-2xl">
           {canChat === false ? (
             <div className="text-center py-2 text-sm text-[#6B7280]">
               {error || 'Agent chat is not enabled for this user'}
@@ -248,7 +248,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
                 onKeyDown={handleKeyDown}
                 placeholder={`Message ${targetName}'s agent...`}
                 disabled={isSending || canChat === null}
-                className="flex-1 bg-[#0C0C18] border-[#00F0FF]/30 text-[#E8E8F0] rounded-xl"
+                className="flex-1 bg-[#0C0C18] border-[#8B5CF6]/30 text-[#E8E8F0] rounded-xl"
               />
               <Button
                 onClick={sendMessage}

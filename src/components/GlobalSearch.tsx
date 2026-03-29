@@ -17,7 +17,7 @@ export interface SearchResult {
 }
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
-  note:         <FileText      className="w-4 h-4 text-[#00F0FF]" />,
+  note:         <FileText      className="w-4 h-4 text-[#8B5CF6]" />,
   reminder:     <Bell          className="w-4 h-4 text-[#FFB800]" />,
   habit:        <Target        className="w-4 h-4 text-[#00FF88]" />,
   memory:       <Brain         className="w-4 h-4 text-[#BF5FFF]" />,
@@ -125,11 +125,11 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg mx-4 bg-[#0D0D1A] border border-[#00F0FF]/30 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg mx-4 bg-[#0D0D1A] border border-[#8B5CF6]/30 rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Input row */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#00F0FF]/10">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#8B5CF6]/10">
           <Search className="w-5 h-5 text-[#6B7280] flex-shrink-0" />
           <input
             ref={inputRef}
@@ -147,7 +147,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
         {/* Spinner */}
         {loading && (
           <div className="flex justify-center py-5">
-            <div className="w-5 h-5 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
@@ -162,7 +162,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
                 onMouseEnter={() => setSelectedIndex(idx)}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                   idx === selectedIndex
-                    ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
+                    ? 'bg-[#8B5CF6]/10 border-l-2 border-[#8B5CF6]'
                     : 'hover:bg-[#1A1A2E] border-l-2 border-transparent'
                 }`}
               >
@@ -199,7 +199,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
               Type 2+ characters to search across all your data
             </p>
             <div className="flex justify-center gap-4 text-xs text-[#4B5563]">
-              <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#00F0FF]" /> Notes</span>
+              <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#8B5CF6]" /> Notes</span>
               <span className="flex items-center gap-1"><Bell className="w-3 h-3 text-[#FFB800]" /> Reminders</span>
               <span className="flex items-center gap-1"><Target className="w-3 h-3 text-[#00FF88]" /> Habits</span>
               <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-[#BF5FFF]" /> Memories</span>
