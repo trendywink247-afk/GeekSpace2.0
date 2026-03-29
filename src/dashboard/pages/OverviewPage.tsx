@@ -23,9 +23,6 @@ import {
   CalendarDays,
   Check,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { AgentStatusStrip } from '@/components/AgentStatusStrip';
 import { LiveAgentFeed } from '@/components/LiveAgentFeed';
@@ -1323,29 +1320,17 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <section
             className={`transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-            >
-              Get started
-            </h2>
-            <Card
-              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
-            >
-              <CardContent className="p-5">
+            <p className="gs-section-label mb-3">Get started</p>
+            <div className="gs-card overflow-hidden p-5">
                 <div className="flex items-start gap-3 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
-                  >
-                    <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 gs-icon-pill-violet">
+                    <Sparkles className="w-5 h-5 text-[#A78BFA]" />
                   </div>
                   <div>
-                    <h3
-                      className="text-base font-bold text-[var(--ag-text-primary)] font-heading"
-                    >
-                      Welcome to Agentin!
+                    <h3 className="text-base font-bold text-[#E2E8F0] font-heading">
+                      Welcome to <span className="text-gradient">Agentin!</span>
                     </h3>
-                    <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
+                    <p className="text-xs text-[#CBD5E1] mt-0.5">
                       Complete these steps to unlock your full AI experience.
                     </p>
                   </div>
@@ -1416,8 +1401,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     </button>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           </section>
         )}
 
@@ -1426,24 +1410,16 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
           <section
             className={`transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
-            <Card
-              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
-            >
-              <CardContent className="p-6 sm:p-8">
+            <div className="gs-card p-6 sm:p-8">
                 <div className="flex items-start gap-4 mb-5">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
-                  >
-                    <Sparkles className="w-6 h-6 text-[var(--ag-cyan)]" />
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 gs-icon-pill-violet">
+                    <Sparkles className="w-6 h-6 text-[#A78BFA]" />
                   </div>
                   <div>
-                    <h3
-                      className="text-lg font-bold text-[var(--ag-text-primary)] font-heading"
-                    >
-                      Welcome to Agentin!
+                    <h3 className="text-lg font-bold text-[#E2E8F0] font-heading">
+                      Welcome to <span className="text-gradient">Agentin!</span>
                     </h3>
-                    <p className="text-sm text-[var(--ag-text-secondary)] mt-1 leading-relaxed">
+                    <p className="text-sm text-[#CBD5E1] mt-1 leading-relaxed">
                       Start by chatting with Weebo, setting a reminder, or connecting Telegram.
                       Your dashboard will light up as you go.
                     </p>
@@ -1452,46 +1428,42 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     onClick={() => onOpenChat?.()}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-jarvis)]/15 transition-all hover:border-[var(--ag-jarvis)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(173,255,47,0.06)' }}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#34D399]/15 transition-all hover:border-[#34D399]/30 hover:scale-[1.02] active:scale-95 min-h-[44px] bg-[#10B981]/[0.06]"
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
-                      <Send className="w-4 h-4 text-[var(--ag-jarvis)]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center gs-icon-pill-emerald flex-shrink-0">
+                      <Send className="w-4 h-4 text-[#34D399]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Chat with Weebo</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Ask anything</div>
+                      <div className="text-sm font-medium text-[#E2E8F0]">Chat with Weebo</div>
+                      <div className="text-xs text-[#CBD5E1]">Ask anything</div>
                     </div>
                   </button>
                   <button
                     onClick={() => onNavigate?.('reminders?openAdd=true')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-border-default)] transition-all hover:border-[var(--ag-border-glow)] hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(0,240,255,0.06)' }}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#8B5CF6]/15 transition-all hover:border-[#8B5CF6]/30 hover:scale-[1.02] active:scale-95 min-h-[44px] bg-[#8B5CF6]/[0.06]"
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-cyan)]/10 flex-shrink-0">
-                      <Bell className="w-4 h-4 text-[var(--ag-cyan)]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center gs-icon-pill-violet flex-shrink-0">
+                      <Bell className="w-4 h-4 text-[#A78BFA]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Set a Reminder</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Stay on track</div>
+                      <div className="text-sm font-medium text-[#E2E8F0]">Set a Reminder</div>
+                      <div className="text-xs text-[#CBD5E1]">Stay on track</div>
                     </div>
                   </button>
                   <button
                     onClick={() => onNavigate?.('connections')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-violet)]/15 transition-all hover:border-[var(--ag-violet)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(139,92,246,0.06)' }}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[#F59E0B]/15 transition-all hover:border-[#F59E0B]/30 hover:scale-[1.02] active:scale-95 min-h-[44px] bg-[#F59E0B]/[0.06]"
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-violet)]/10 flex-shrink-0">
-                      <Link2 className="w-4 h-4 text-[var(--ag-violet)]" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center gs-icon-pill-amber flex-shrink-0">
+                      <Link2 className="w-4 h-4 text-[#F59E0B]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Telegram</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Chat on the go</div>
+                      <div className="text-sm font-medium text-[#E2E8F0]">Connect Telegram</div>
+                      <div className="text-xs text-[#CBD5E1]">Chat on the go</div>
                     </div>
                   </button>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           </section>
         )}
 
@@ -1509,9 +1481,9 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             }}
             className="relative"
           >
-            <div className="flex items-center gap-2 rounded-2xl border p-2 transition-all backdrop-blur-xl focus-within:shadow-[var(--ag-glow-sm)]" style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0 ml-1">
-                <MessageSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
+            <div className="flex items-center gap-2 gs-card p-2 focus-within:ring-1 focus-within:ring-[#8B5CF6]/30">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center gs-icon-pill-violet flex-shrink-0 ml-1">
+                <MessageSquare className="w-4 h-4 text-[#A78BFA]" />
               </div>
               <input
                 ref={quickChatRef}
@@ -1519,16 +1491,15 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 value={quickChatInput}
                 onChange={(e) => setQuickChatInput(e.target.value)}
                 placeholder="Ask Weebo anything..."
-                className="flex-1 bg-transparent text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none min-h-[44px] px-1"
+                className="flex-1 bg-transparent text-sm text-[#E2E8F0] placeholder:text-[#CBD5E1]/50 outline-none min-h-[44px] px-1"
               />
-              <Button
+              <button
                 type="submit"
-                size="sm"
                 disabled={!quickChatInput.trim()}
-                className="rounded-xl bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/25 border-0 disabled:opacity-30 min-h-[44px] min-w-[44px] px-3"
+                className="gs-btn-primary disabled:opacity-30 min-h-[44px] min-w-[44px] px-3 rounded-xl"
               >
                 <Send className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
           </form>
         </section>

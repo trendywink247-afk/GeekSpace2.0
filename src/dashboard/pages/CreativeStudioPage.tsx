@@ -748,7 +748,7 @@ export function CreativeStudioPage() {
               <span className="gs-pill gs-pill-active text-[10px]">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] text-xs">
+              <span className="gs-pill">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>

@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader } from '@/components/agentin';
+import { PageShell, PageHeader, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,
@@ -65,11 +65,11 @@ function timeLeft(expiresAt: string): string {
 // ---- Shimmer placeholder for loading states ----
 function ShimmerCard() {
   return (
-    <div className="rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] overflow-hidden animate-pulse">
-      <div className="aspect-square bg-[var(--ag-bg-elevated)]" />
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.04] overflow-hidden animate-pulse">
+      <div className="aspect-square bg-white/[0.04]" />
       <div className="p-3 space-y-2">
-        <div className="h-3 rounded bg-[var(--ag-bg-elevated)] w-3/4" />
-        <div className="h-3 rounded bg-[var(--ag-bg-elevated)] w-1/2" />
+        <div className="h-3 rounded bg-white/[0.04] w-3/4" />
+        <div className="h-3 rounded bg-white/[0.04] w-1/2" />
       </div>
     </div>
   );
@@ -315,7 +315,7 @@ export function ImageCreatorPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
-          toast.type === 'success' ? 'bg-[#ADFF2F]/10 text-[#ADFF2F] border border-[#ADFF2F]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+          toast.type === 'success' ? 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>
           {toast.text}
         </div>
@@ -415,7 +415,7 @@ export function ImageCreatorPage() {
               {assignedAgent ? (
                 <button
                   onClick={() => setShowAgentPicker(!showAgentPicker)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-[#00FF88]/20 bg-[#00FF88]/5 hover:border-[#00FF88]/40 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 hover:border-[#8B5CF6]/40 transition-colors"
               >
                 <span className="text-lg">
                   {assignedAgent.personality === 'edith' ? '⚡' : assignedAgent.personality === 'jarvis' ? '🎩' : '🤖'}
@@ -465,7 +465,7 @@ export function ImageCreatorPage() {
                         <button
                           key={agent.id}
                           onClick={() => { setAssignedAgent(agent); setShowAgentPicker(false); }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#8B5CF6]/5 transition-colors text-left ${isAssigned ? 'bg-[#00FF88]/5' : ''}`}
+                          className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#8B5CF6]/5 transition-colors text-left ${isAssigned ? 'bg-[#8B5CF6]/5' : ''}`}
                         >
                           <span className="text-lg">
                             {agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'}
@@ -478,7 +478,7 @@ export function ImageCreatorPage() {
                             {agent.status === 'active' ? <Wifi className="w-3 h-3" style={{ color }} /> : <WifiOff className="w-3 h-3" style={{ color }} />}
                             <span className="text-xs capitalize" style={{ color }}>{agent.status}</span>
                           </div>
-                          {isAssigned && <Check className="w-4 h-4 text-[#00FF88]" />}
+                          {isAssigned && <Check className="w-4 h-4 text-[#8B5CF6]" />}
                         </button>
                       );
                     })}
@@ -492,30 +492,14 @@ export function ImageCreatorPage() {
       />
 
       {/* Tab Bar */}
-      <div className="flex gap-1 p-1 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] w-fit">
-        {([
-          { id: 'generate' as const, label: 'Generate', icon: Sparkles },
-          { id: 'gallery' as const, label: 'Gallery', icon: Images },
-        ]).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
-              activeTab === tab.id
-                ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 shadow-sm'
-                : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-            {tab.id === 'gallery' && images.length > 0 && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6]">
-                {images.length}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <GsTabBar<TabId>
+        tabs={[
+          { id: 'generate', label: 'Generate', icon: <Sparkles className="w-4 h-4" /> },
+          { id: 'gallery', label: 'Gallery', icon: <Images className="w-4 h-4" />, badge: images.length > 0 ? images.length : undefined },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* === GENERATE TAB === */}
       {activeTab === 'generate' && (
@@ -539,9 +523,9 @@ export function ImageCreatorPage() {
                 subtitle: 'Reference image + prompt',
                 desc: 'Upload an image as reference and describe the changes you want.',
                 icon: Upload,
-                activeColor: 'var(--ag-cyan)',
-                activeBg: 'rgba(0,240,255,0.05)',
-                activeBorder: 'rgba(0,240,255,0.4)',
+                activeColor: '#10B981',
+                activeBg: 'rgba(16,185,129,0.06)',
+                activeBorder: 'rgba(16,185,129,0.4)',
               },
             ].map(card => {
               const Icon = card.icon;
@@ -560,7 +544,7 @@ export function ImageCreatorPage() {
                     borderColor: isActive ? card.activeBorder : undefined,
                   }}
                 >
-                  {isActive && <BorderBeam size={150} duration={10} colorFrom="#8B5CF6" colorTo="#00F0FF" />}
+                  {isActive && <BorderBeam size={150} duration={10} colorFrom="#8B5CF6" colorTo="#10B981" />}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: isActive ? `${card.activeColor}30` : 'var(--ag-bg-elevated)' }}>
@@ -582,8 +566,8 @@ export function ImageCreatorPage() {
             <div
               className="relative rounded-2xl border overflow-hidden p-6"
               style={{
-                borderColor: mode === 'imagine' ? 'rgba(139,92,246,0.2)' : 'rgba(0,240,255,0.2)',
-                background: mode === 'imagine' ? 'rgba(139,92,246,0.03)' : 'rgba(0,240,255,0.03)',
+                borderColor: mode === 'imagine' ? 'rgba(139,92,246,0.2)' : 'rgba(16,185,129,0.2)',
+                background: mode === 'imagine' ? 'rgba(139,92,246,0.03)' : 'rgba(16,185,129,0.03)',
               }}
             >
               {/* Reference image upload (edit mode) */}
@@ -654,10 +638,10 @@ export function ImageCreatorPage() {
                             <div className="text-xs text-[var(--ag-text-secondary)]">{m.description}</div>
                           </div>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            m.tier === 'auto' ? 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)]' :
-                            m.tier === 'free' ? 'bg-[#00FF88]/10 text-[#00FF88]' :
-                            m.tier === 'premium' ? 'bg-[#FFB800]/10 text-[#FFB800]' :
-                            'bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]'
+                            m.tier === 'auto' ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]' :
+                            m.tier === 'free' ? 'bg-[#10B981]/10 text-[#10B981]' :
+                            m.tier === 'premium' ? 'bg-[#F59E0B]/10 text-[#F59E0B]' :
+                            'bg-[#8B5CF6]/10 text-[#8B5CF6]'
                           }`}>
                             {m.cost}
                           </span>
@@ -675,11 +659,7 @@ export function ImageCreatorPage() {
                       <button
                         key={preset.label}
                         onClick={() => { setWidth(preset.w); setHeight(preset.h); }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] ${
-                          width === preset.w && height === preset.h
-                            ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
-                            : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[#8B5CF6]/30'
-                        }`}
+                        className={width === preset.w && height === preset.h ? 'gs-pill gs-pill-active' : 'gs-pill'}
                       >
                         {preset.label}
                       </button>
@@ -712,7 +692,7 @@ export function ImageCreatorPage() {
                           <select
                             value={value}
                             onChange={(e) => onChange(e.target.value)}
-                            className="w-full bg-[var(--ag-bg-surface)] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] outline-none focus:border-[#8B5CF6]/50 appearance-none cursor-pointer"
+                            className="gs-input w-full appearance-none cursor-pointer"
                           >
                             <option value="">Select {label.toLowerCase()}...</option>
                             {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -730,11 +710,7 @@ export function ImageCreatorPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder={mode === 'edit' ? 'Describe the changes you want to make...' : 'Describe the image you want to generate...'}
                 rows={3}
-                className={`w-full bg-[var(--ag-bg-deep)] border rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none outline-none text-sm ${
-                  mode === 'imagine'
-                    ? 'border-[#8B5CF6]/20 focus:border-[#8B5CF6]/50'
-                    : 'border-[var(--ag-border-glow)] focus:border-[var(--ag-border-active)]'
-                }`}
+                className="gs-input w-full resize-none"
               />
 
               {/* Enhance prompt */}
@@ -780,7 +756,7 @@ export function ImageCreatorPage() {
                   </div>
                   {genPhase === 'generating' && (
                     <div className="w-full h-1 rounded-full bg-[var(--ag-bg-deep)] overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#00F0FF] rounded-full animate-pulse" style={{ width: '60%' }} />
+                      <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#10B981] rounded-full animate-pulse" style={{ width: '60%' }} />
                     </div>
                   )}
                 </div>
@@ -800,7 +776,7 @@ export function ImageCreatorPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={generating || !prompt.trim() || imageCount >= maxImages}
-                  className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#7C3AED] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="gs-btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {generating ? (
                     <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
@@ -816,13 +792,13 @@ export function ImageCreatorPage() {
           {images.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-[#8B5CF6]" />
-                  Recent Generations
-                </h2>
+                  <span className="gs-section-label">Recent Generations</span>
+                </div>
                 <button
                   onClick={() => setActiveTab('gallery')}
-                  className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors"
+                  className="gs-btn-ghost text-xs px-3 py-1.5"
                 >
                   View all in Gallery
                 </button>
@@ -892,7 +868,7 @@ export function ImageCreatorPage() {
 
           {/* Available Models panel */}
           {models.length > 0 && (
-            <div className="rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden">
+            <div className="gs-card overflow-hidden !p-0">
               <button
                 onClick={() => setShowModelsPanel(p => !p)}
                 className="w-full flex items-center justify-between p-4 hover:bg-[#8B5CF6]/5 transition-colors text-left"
@@ -919,10 +895,10 @@ export function ImageCreatorPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-[var(--ag-text-primary)]">{model.name}</span>
                             <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                              model.tier === 'auto' ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)]' :
-                              model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
-                              model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
-                              'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]'
+                              model.tier === 'auto' ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]' :
+                              model.tier === 'free' ? 'bg-[#10B981]/15 text-[#10B981]' :
+                              model.tier === 'premium' ? 'bg-[#F59E0B]/15 text-[#F59E0B]' :
+                              'bg-[#8B5CF6]/15 text-[#8B5CF6]'
                             }`}>{model.cost}</span>
                             {isDefault && <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30">Default</span>}
                           </div>
@@ -954,16 +930,12 @@ export function ImageCreatorPage() {
         <>
           {/* Gallery controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-1 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {(['all', 'generated', 'edited'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setGalleryFilter(f)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all min-h-[44px] ${
-                    galleryFilter === f
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
-                      : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-                  }`}
+                  className={galleryFilter === f ? 'gs-pill gs-pill-active' : 'gs-pill'}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
@@ -973,11 +945,7 @@ export function ImageCreatorPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowDateFilter(!showDateFilter)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
-                  showDateFilter || dateFrom || dateTo
-                    ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#8B5CF6]'
-                    : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-                }`}
+                className={showDateFilter || dateFrom || dateTo ? 'gs-pill gs-pill-active flex items-center gap-1.5' : 'gs-pill flex items-center gap-1.5'}
               >
                 <Calendar className="w-3.5 h-3.5" />
                 {dateFrom || dateTo ? 'Filtered' : 'Date'}
@@ -985,7 +953,7 @@ export function ImageCreatorPage() {
               <button
                 onClick={() => void loadGallery()}
                 disabled={galleryLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[#8B5CF6] hover:bg-[#8B5CF6]/10 transition-colors disabled:opacity-50"
+                className="gs-btn-ghost flex items-center gap-1.5 text-xs disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${galleryLoading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -1006,7 +974,7 @@ export function ImageCreatorPage() {
                     type="date"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] outline-none focus:border-[#8B5CF6]/40"
+                    className="gs-input text-xs"
                   />
                 </div>
               ))}
@@ -1037,7 +1005,7 @@ export function ImageCreatorPage() {
               </p>
               <button
                 onClick={() => setActiveTab('generate')}
-                className="mt-2 px-4 py-2 rounded-xl bg-[#8B5CF6]/15 text-[#8B5CF6] text-sm font-medium hover:bg-[#8B5CF6]/25 transition-colors border border-[#8B5CF6]/30 min-h-[44px]"
+                className="gs-btn-primary mt-2"
               >
                 Start Generating
               </button>

@@ -4,10 +4,9 @@ import {
   Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square,
   ThumbsUp, ThumbsDown, RefreshCw, Pencil, Pin, Search, Plus, Trash2,
   ChevronDown, ChevronRight, X, PanelLeftClose, PanelLeft,
-  Wifi, WifiOff, Clock, Star,
+  Wifi, WifiOff, Clock, Star, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { agentService, memoryService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -364,15 +363,11 @@ function ConversationItem({
   return (
     <div
       className={[
-        'group/conv flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all text-sm min-h-[44px] backdrop-blur-md',
+        'group/conv flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all text-sm min-h-[44px]',
         isActive
-          ? 'text-[var(--ag-text-primary)]'
-          : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]',
+          ? 'gs-card text-[#E2E8F0]'
+          : 'text-[#CBD5E1] hover:text-[#E2E8F0] hover:bg-[#8B5CF6]/[0.06] hover:border hover:border-[#8B5CF6]/20 border border-transparent',
       ].join(' ')}
-      style={{
-        background: isActive ? 'var(--ag-active-bg)' : 'transparent',
-        border: isActive ? '1px solid var(--ag-active-border)' : '1px solid transparent',
-      }}
       onClick={onClick}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -1197,8 +1192,8 @@ export function ChatPage() {
       {sidebarOpen && (
         <div className='w-64 md:w-72 flex-shrink-0 border-r flex flex-col rounded-l-xl overflow-hidden backdrop-blur-xl' style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
           {/* Sidebar Header */}
-          <div className='flex items-center justify-between px-3 py-3 border-b' style={{ borderColor: 'var(--ag-border-subtle)' }}>
-            <h3 className='text-xs font-semibold text-[var(--ag-text-primary)] uppercase tracking-wider'>Conversations</h3>
+          <div className='flex items-center justify-between px-3 py-3 border-b border-white/[0.06]'>
+            <p className='gs-section-label'>Conversations</p>
             <button
               onClick={() => setSidebarOpen(false)}
               className='p-1 rounded hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-w-[28px] min-h-[28px] flex items-center justify-center'
@@ -1213,7 +1208,7 @@ export function ChatPage() {
           <div className='px-3 py-2'>
             <button
               onClick={clearChat}
-              className='flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/20 transition-colors text-xs font-medium min-h-[44px]'
+              className='gs-btn-primary w-full text-xs min-h-[44px] justify-center'
             >
               <Plus className='w-3.5 h-3.5' />
               New Chat
@@ -1223,13 +1218,13 @@ export function ChatPage() {
           {/* Search conversations */}
           <div className='px-3 pb-2'>
             <div className='relative'>
-              <Search className='w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted)]' />
+              <Search className='w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B5CF6]/50' />
               <input
                 type='text'
                 value={conversationSearch}
                 onChange={(e) => setConversationSearch(e.target.value)}
                 placeholder='Search conversations...'
-                className='w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] text-xs focus:outline-none focus:border-[var(--ag-border-default)] min-h-[36px]'
+                className='gs-input w-full pl-8 text-xs min-h-[36px]'
               />
             </div>
           </div>
@@ -1237,7 +1232,12 @@ export function ChatPage() {
           {/* Conversation list */}
           <div className='flex-1 overflow-y-auto px-2 pb-2 space-y-0.5 scrollbar-hide'>
             {filteredConversations.length === 0 ? (
-              <p className='text-xs text-[var(--ag-text-muted)] text-center py-8'>No conversations yet</p>
+              <div className='text-center py-8'>
+                <div className='gs-icon-pill-violet w-10 h-10 mx-auto mb-2 flex items-center justify-center'>
+                  <MessageSquare className='w-5 h-5 text-[#A78BFA]' />
+                </div>
+                <p className='gs-section-label'>No conversations yet</p>
+              </div>
             ) : (
               filteredConversations.map((conv) => (
                 <ConversationItem
@@ -1358,13 +1358,13 @@ export function ChatPage() {
                 />
               </div>
               <div>
-                <p className='text-lg font-semibold text-[var(--ag-text-primary)] font-heading'>{timeContext.greeting}</p>
-                <p className='text-sm text-[var(--ag-text-secondary)] mt-1 max-w-xs'>
+                <p className='text-lg font-semibold text-[#E2E8F0] font-heading'>{timeContext.greeting}</p>
+                <p className='gs-section-label mt-1'>
                   {voice.isSupported ? 'Type, speak, or try a suggestion below' : 'Type a message or try a suggestion below'}
                 </p>
               </div>
               {voiceMode && voice.isSupported && (
-                <div className='flex items-center gap-1.5 text-xs text-[var(--ag-cyan)]'>
+                <div className='flex items-center gap-1.5 text-xs text-[#A78BFA]'>
                   <Sparkles className='w-3.5 h-3.5' />
                   Voice mode active
                 </div>
@@ -1375,9 +1375,9 @@ export function ChatPage() {
                   <button
                     key={prompt.text}
                     onClick={() => handleStarterPrompt(prompt.text)}
-                    className='flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-left text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-200 min-h-[44px]'
+                    className='gs-card flex items-center gap-2.5 px-4 py-3 text-left text-sm text-[#CBD5E1] hover:text-[#E2E8F0] hover:border-[#8B5CF6]/30 transition-all duration-200 min-h-[44px]'
                   >
-                    <Clock className='w-4 h-4 text-[var(--ag-cyan)]/50 shrink-0' />
+                    <Clock className='w-4 h-4 text-[#8B5CF6]/50 shrink-0' />
                     <span className='line-clamp-2'>{prompt.text}</span>
                   </button>
                 ))}
@@ -1418,10 +1418,10 @@ export function ChatPage() {
                 )}
                 <div
                   className={[
-                    'max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
+                    'max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed group/msg relative',
                     msg.role === 'user'
-                      ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-text-primary)] rounded-tr-sm'
-                      : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] rounded-tl-sm',
+                      ? 'bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 rounded-tr-sm text-[#E2E8F0]'
+                      : 'bg-white/[0.03] border border-white/[0.06] rounded-tl-sm text-[#CBD5E1]',
                   ].join(' ')}
                 >
                   {/* Editing mode for user messages */}
@@ -1753,12 +1753,7 @@ export function ChatPage() {
                 key={p.id}
                 type='button'
                 onClick={() => setSelectedAgent(p.id)}
-                className='flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium shrink-0 transition-all'
-                style={{
-                  border: `1px solid ${selectedAgent === p.id ? p.color + '60' : 'rgba(255,255,255,0.06)'}`,
-                  background: selectedAgent === p.id ? p.color + '15' : 'transparent',
-                  color: selectedAgent === p.id ? p.color : '#8892A4',
-                }}
+                className={`shrink-0 transition-all ${selectedAgent === p.id ? 'gs-pill-active' : 'gs-pill'}`}
               >
                 <span>{p.emoji}</span>
                 <span>{p.name}</span>
@@ -1835,7 +1830,7 @@ export function ChatPage() {
                 enterKeyHint='send'
                 inputMode='text'
                 autoCapitalize='sentences'
-                className='w-full resize-none bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-violet)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--ag-violet)]/15 focus:shadow-[0_0_20px_rgba(139,92,246,0.08)] rounded-xl px-3 py-2.5 text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation transition-all duration-200'
+                className='gs-input w-full resize-none text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation'
               />
               {input.length > 200 && (
                 <span className='absolute right-2 bottom-1.5 text-[10px] text-[var(--ag-text-muted)] tabular-nums pointer-events-none'>
@@ -1864,14 +1859,14 @@ export function ChatPage() {
             >
               <Sparkles className='w-4 h-4' />
             </button>
-            <Button
+            <button
               type='submit'
               disabled={!input.trim() || isTyping}
-              className='bg-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/80 text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 shrink-0'
+              className='gs-btn-primary h-10 px-3 min-w-[44px] min-h-[44px] shrink-0 disabled:opacity-40'
               aria-label='Send message'
             >
               <Send className='w-4 h-4' />
-            </Button>
+            </button>
           </form>
           <div className='flex items-center justify-between mt-1.5 px-0.5'>
             <p className='text-[10px] text-[var(--ag-text-muted)]'>
