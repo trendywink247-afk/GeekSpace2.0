@@ -26,3 +26,10 @@ export { PageHeader } from './PageHeader';
  * @component
  */
 export { SectionCard } from './SectionCard';
+
+/**
+ * Layout wrapper for public (non-dashboard) pages.
+ * Provides the Agentin background effects and sticky header navigation.
+ * @component
+ */
+export { PublicPageShell } from './PublicPageShell';

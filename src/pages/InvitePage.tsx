@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/api';
+import { PublicPageShell, SectionCard } from '@/components/agentin';
 
 export function InvitePage() {
   const navigate = useNavigate();
@@ -70,53 +71,42 @@ export function InvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06061a] text-[#F4F6FF] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #00F0FF 0%, transparent 70%)' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full opacity-8"
-          style={{ background: 'radial-gradient(circle, #ADFF2F 0%, transparent 70%)' }} />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md">
+    <PublicPageShell title="Join Agentin" maxWidth="3xl" className="flex items-center justify-center min-h-[calc(100dvh-120px)]">
+      <div className="w-full max-w-md">
         {/* Logo -- PNG per branding standard (978512c) */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
             <img src="/logo-agentin.webp" alt="Agentin" className="w-10 h-10 object-contain" />
-            <span className="text-xl font-bold text-[#F4F6FF]">Agentin Chat</span>
+            <span className="text-xl font-heading font-bold text-[var(--ag-text-primary,#F4F6FF)]">Agentin Chat</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#F4F6FF] mb-1">
+          <h1 className="text-2xl font-heading font-bold text-[var(--ag-text-primary,#F4F6FF)] mb-1">
             {step === 'code' ? "You're Invited" : 'Create Your Account'}
           </h1>
-          <p className="text-sm text-[#9CA3AF]">
+          <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">
             {step === 'code'
               ? 'Enter your invite code to get early access to Agentin Chat.'
               : 'Fill in your details to join the beta.'}
           </p>
         </div>
 
-        <div
-          className="rounded-2xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-colors backdrop-blur-xl p-6 shadow-2xl"
-          style={{ background: 'rgba(12,12,30,0.6)' }}
-        >
+        <SectionCard padding="lg">
           {/* Step 1: Invite code */}
           {step === 'code' && (
             <form onSubmit={handleCodeSubmit} className="space-y-4">
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Invite Code</label>
+                <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Invite Code</label>
                 <div className="relative">
-                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00F0FF]" />
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#00F0FF)]" />
                   <Input
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     placeholder="e.g. ABCD1234"
-                    className="pl-9 bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)] text-[#F4F6FF] font-mono tracking-widest uppercase"
+                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)] font-mono tracking-widest uppercase"
                     autoFocus
                     data-testid="invite-code-input"
                   />
                 </div>
-                <p className="text-xs text-[#9CA3AF] mt-1.5">
+                <p className="text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-1.5">
                   Received an invite email? Copy the code from the link.
                 </p>
               </div>
@@ -129,15 +119,15 @@ export function InvitePage() {
 
               <Button
                 type="submit"
-                className="w-full min-h-[44px] bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
                 data-testid="invite-code-submit"
               >
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
-              <p className="text-center text-xs text-[#9CA3AF]">
+              <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 Don't have an invite?{' '}
-                <a href="mailto:hello@agentin.chat" className="text-[#00F0FF] hover:underline">
+                <a href="mailto:hello@agentin.chat" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">
                   Request access
                 </a>
               </p>
@@ -154,34 +144,34 @@ export function InvitePage() {
                 <button
                   type="button"
                   onClick={() => { setStep('code'); setError(''); }}
-                  className="ml-auto text-sm text-[#9CA3AF] hover:text-[#F4F6FF] underline min-h-[44px] min-w-[44px] flex items-center justify-end pr-1"
+                  className="ml-auto text-sm text-[var(--ag-text-muted,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] underline min-h-[44px] min-w-[44px] flex items-center justify-end pr-1"
                 >
                   change
                 </button>
               </div>
 
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Display Name (optional)</label>
+                <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Display Name (optional)</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="pl-9 bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Username *</label>
+                <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Username *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-sm">@</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted,#9CA3AF)] text-sm">@</span>
                   <Input
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                     placeholder="yourhandle"
-                    className="pl-7 bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="pl-7 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
                     required
                     data-testid="invite-username-input"
                   />
@@ -189,15 +179,15 @@ export function InvitePage() {
               </div>
 
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Email *</label>
+                <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Email *</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-9 bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
                     required
                     data-testid="invite-email-input"
                   />
@@ -205,15 +195,15 @@ export function InvitePage() {
               </div>
 
               <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Password *</label>
+                <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Password *</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted,#9CA3AF)]" />
                   <Input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="pl-9 bg-[#06061a] border-[rgba(139,92,246,0.08)] focus:border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="pl-9 bg-[var(--ag-bg-base,#06061a)] border-[var(--ag-border-subtle,rgba(139,92,246,0.08))] focus:border-[var(--ag-border-default,rgba(139,92,246,0.15))] text-[var(--ag-text-primary,#F4F6FF)]"
                     required
                     minLength={8}
                     data-testid="invite-password-input"
@@ -230,7 +220,7 @@ export function InvitePage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full min-h-[44px] bg-[#00F0FF] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
                 data-testid="invite-register-submit"
               >
                 {isLoading ? (
@@ -240,21 +230,21 @@ export function InvitePage() {
                 )}
               </Button>
 
-              <p className="text-center text-xs text-[#9CA3AF]">
+              <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 By joining, you agree to our{' '}
-                <Link to="/terms" className="text-[#00F0FF] hover:underline">Terms</Link>
+                <Link to="/terms" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Terms</Link>
                 {' '}and{' '}
-                <Link to="/privacy" className="text-[#00F0FF] hover:underline">Privacy Policy</Link>.
+                <Link to="/privacy" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Privacy Policy</Link>.
               </p>
             </form>
           )}
-        </div>
+        </SectionCard>
 
-        <p className="text-center text-xs text-[#9CA3AF] mt-4">
+        <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#00F0FF] hover:underline">Sign in</Link>
+          <Link to="/login" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Sign in</Link>
         </p>
       </div>
-    </div>
+    </PublicPageShell>
   );
 }
