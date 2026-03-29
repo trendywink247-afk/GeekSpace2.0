@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download, Flame, Calendar, BarChart3 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { userService, activityService, type ActivityEntry } from '@/services/api';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
@@ -172,14 +171,14 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
   const totalEvents = useMemo(() => data.reduce((sum, d) => sum + d.count, 0), [data]);
 
   return (
-    <SectionCard>
+    <div className="gs-card">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-[var(--ag-green)]" />
-          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Activity Heatmap</span>
-          <span className="text-xs text-[var(--ag-text-muted)]">last 90 days</span>
+          <Flame className="w-4 h-4 text-[#10B981]" />
+          <span className="text-sm font-medium text-[#F4F6FF]">Activity Heatmap</span>
+          <span className="text-xs text-[#9CA3AF]">last 90 days</span>
         </div>
-        <span className="text-xs text-[var(--ag-text-muted)]">{totalEvents} total events</span>
+        <span className="text-xs text-[#9CA3AF]">{totalEvents} total events</span>
       </div>
 
       {/* Scrollable container for mobile */}
@@ -253,7 +252,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
           {/* Tooltip */}
           {tooltip && (
             <div
-              className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[var(--ag-text-primary)] bg-[#12121F] border border-[var(--ag-border-subtle)] shadow-lg whitespace-nowrap"
+              className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[#F4F6FF] bg-[#12121F] border border-white/[0.06] shadow-lg whitespace-nowrap"
               style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}
             >
               {tooltip.text}
@@ -261,7 +260,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
           )}
         </div>
       </div>
-    </SectionCard>
+    </div>
   );
 }
 
@@ -317,17 +316,14 @@ function StatsBar({ stats }: { stats: ActivityStats }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
       {items.map(({ label, value, icon: Icon }) => (
-        <div
-          key={label}
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all"
-        >
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#10B981]/10 flex-shrink-0">
-            <Icon className="w-3.5 h-3.5 text-[var(--ag-green)]" />
+        <div key={label} className="gs-stat-card group">
+          <div className="flex items-center justify-between mb-2">
+            <span className="gs-icon-pill gs-icon-pill-emerald">
+              <Icon className="w-4 h-4" />
+            </span>
           </div>
-          <div className="min-w-0">
-            <div className="text-sm font-bold text-[var(--ag-text-primary)] tabular-nums">{value.toLocaleString()}</div>
-            <div className="text-[10px] text-[var(--ag-text-muted)] leading-none">{label}</div>
-          </div>
+          <div className="text-xl font-bold text-[#F4F6FF] tabular-nums">{value.toLocaleString()}</div>
+          <div className="text-xs text-[#9CA3AF]">{label}</div>
         </div>
       ))}
     </div>
@@ -488,15 +484,13 @@ export function ActivityPage() {
           entries.length > 0 ? (
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* 64.8: CSV export button */}
-              <Button
-                size="sm"
-                variant="outline"
+              <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="min-h-[44px] border-[#10B981]/30 text-[#10B981]/70 hover:text-[#10B981] hover:border-[#10B981]/50"
+                className="gs-btn-ghost min-h-[44px] text-[#10B981] border-[#10B981]/30 hover:border-[#10B981]/50 disabled:opacity-50"
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />{exporting ? 'Exporting...' : 'Export CSV'}
-              </Button>
+              </button>
               {showClearConfirm ? (
                 <>
                   <span className="text-xs text-[#FF6161]">Clear all?</span>
@@ -511,20 +505,18 @@ export function ActivityPage() {
                   </Button>
                   <button
                     onClick={() => setShowClearConfirm(false)}
-                    className="text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] min-h-[44px] px-2 flex items-center"
+                    className="text-xs text-[#9CA3AF] hover:text-[#F4F6FF] min-h-[44px] px-2 flex items-center"
                   >
                     Cancel
                   </button>
                 </>
               ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="min-h-[44px] border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+                  className="gs-btn-ghost min-h-[44px] text-[#FF6161] border-[#FF6161]/30 hover:border-[#FF6161]/50"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-1.5" />Clear all
-                </Button>
+                </button>
               )}
             </div>
           ) : undefined
@@ -536,44 +528,44 @@ export function ActivityPage() {
 
       {/* GAP-8: Activity Heatmap */}
       {heatmapLoading ? (
-        <SectionCard>
+        <div className="gs-card animate-pulse">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-4 h-4 rounded bg-[#1a1a2e] animate-pulse" />
-            <div className="h-4 w-32 rounded bg-[#1a1a2e] animate-pulse" />
+            <div className="w-4 h-4 rounded bg-white/[0.04]" />
+            <div className="h-4 w-32 rounded bg-white/[0.04]" />
           </div>
           <div className="flex gap-[1px] ml-8">
             {Array.from({ length: 13 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-[1px]">
                 {Array.from({ length: 7 }).map((_, j) => (
-                  <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[#1a1a2e] animate-pulse" />
+                  <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-white/[0.04]" />
                 ))}
               </div>
             ))}
           </div>
-        </SectionCard>
+        </div>
       ) : (
         <ActivityHeatmap data={heatmapData} />
       )}
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
-        <Input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+        <input
           placeholder="Search by action or details..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[var(--ag-border-default)] text-[var(--ag-text-primary)] min-h-[44px]"
+          className="gs-input pl-10 w-full min-h-[44px]"
         />
       </div>
 
       {/* 65.9: Date-range filter */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ag-text-muted)]">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#9CA3AF]">
         <span>From:</span>
         <input
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+          className="gs-input text-xs min-h-[44px]"
           aria-label="Filter from date"
         />
         <span>To:</span>
@@ -581,7 +573,7 @@ export function ActivityPage() {
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+          className="gs-input text-xs min-h-[44px]"
           aria-label="Filter to date"
         />
         {(dateFrom || dateTo) && (
@@ -597,7 +589,7 @@ export function ActivityPage() {
 
       {/* Filter chips */}
       <div data-testid="filter-chips" className="flex gap-2 flex-wrap">
-        <Filter className="w-4 h-4 text-[var(--ag-text-muted)] self-center flex-shrink-0" />
+        <Filter className="w-4 h-4 text-[#9CA3AF] self-center flex-shrink-0" />
         {FILTER_CHIPS.map((chip) => {
           const Icon = FILTER_ICONS[chip];
           const color = FILTER_COLORS[chip];
@@ -606,11 +598,7 @@ export function ActivityPage() {
             <button
               key={chip}
               onClick={() => setActiveFilter(chip)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border ${
-                isActive
-                  ? 'border-current'
-                  : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)]'
-              }`}
+              className={`flex items-center gap-1.5 min-h-[44px] ${isActive ? 'gs-pill-active' : 'gs-pill'}`}
               style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
             >
               <Icon className="w-3 h-3" />
@@ -626,7 +614,7 @@ export function ActivityPage() {
       </div>
 
       {/* 66.7: Category color legend */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ag-text-muted)]">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-[#9CA3AF]">
         <span className="font-medium">Legend:</span>
         {(Object.entries(FILTER_COLORS) as Array<[FilterType, string]>).filter(([k]) => k !== 'All').map(([cat, color]) => (
           <span key={cat} className="flex items-center gap-1">
@@ -637,7 +625,7 @@ export function ActivityPage() {
       </div>
 
       {/* Activity list */}
-      <SectionCard padding="sm" className="!p-0">
+      <div className="gs-card !p-0 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-8 h-8 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
@@ -647,12 +635,12 @@ export function ActivityPage() {
             <div className="w-16 h-16 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center mx-auto mb-4">
               <Activity className="w-8 h-8 text-[#10B981]/40" />
             </div>
-            <p className="text-[var(--ag-text-primary)] font-medium mb-1">
+            <p className="text-[#F4F6FF] font-medium mb-1">
               {serverQ || activeFilter !== 'All'
                 ? 'No events match your filters'
                 : 'No activity yet'}
             </p>
-            <p className="text-sm text-[var(--ag-text-muted)]">
+            <p className="text-sm text-[#9CA3AF]">
               {serverQ || activeFilter !== 'All'
                 ? 'Try adjusting your search or filters'
                 : 'Every action you take -- chats, reminders, habits, integrations -- is tracked here so you can review what your AI has been doing for you'}
@@ -660,14 +648,14 @@ export function ActivityPage() {
             {(serverQ || activeFilter !== 'All') && (
               <button
                 onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                className="text-xs text-[var(--ag-green)] hover:underline mt-3 min-h-[44px]"
+                className="text-xs text-[#10B981] hover:underline mt-3 min-h-[44px]"
               >
                 Clear filters
               </button>
             )}
           </div>
         ) : (
-          <div className="divide-y divide-[var(--ag-border-subtle)]">
+          <div className="divide-y divide-white/[0.06]">
             {filtered.map((entry) => (
               <div
                 key={entry.id}
@@ -675,17 +663,17 @@ export function ActivityPage() {
               >
                 <ActivityIcon icon={entry.icon} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{entry.action}</p>
+                  <p className="text-sm font-medium text-[#F4F6FF] truncate">{entry.action}</p>
                   {entry.details && (
-                    <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">{entry.details}</p>
+                    <p className="text-xs text-[#9CA3AF] truncate mt-0.5">{entry.details}</p>
                   )}
                 </div>
                 <div className="flex-shrink-0 text-right flex items-start gap-2">
                   <div>
-                    <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">
+                    <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[#9CA3AF] whitespace-nowrap">
                       {timeAgo(entry.created_at)}
                     </span>
-                    <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">
+                    <p className="text-xs text-[#6B7280] mt-0.5">
                       {getCategory(entry.icon)}
                     </p>
                   </div>
@@ -702,24 +690,24 @@ export function ActivityPage() {
             ))}
           </div>
         )}
-      </SectionCard>
+      </div>
 
       {entries.length > 0 && entries.length < total && (
         <div className="flex justify-center">
           <button
             onClick={handleLoadMore}
             disabled={loadingMore}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#10B981]/30 text-[var(--ag-green)] text-sm hover:bg-[#10B981]/10 disabled:opacity-50 transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#10B981]/50"
+            className="gs-btn-ghost min-h-[44px] text-[#10B981] border-[#10B981]/30 hover:border-[#10B981]/50 disabled:opacity-50"
           >
             {loadingMore ? (
-              <div className="w-4 h-4 border-2 border-[#10B981]/30 border-t-[#10B981] rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#10B981]/30 border-t-[#10B981] rounded-full animate-spin mr-2" />
             ) : null}
             {loadingMore ? 'Loading...' : `Load more (${total - entries.length} remaining)`}
           </button>
         </div>
       )}
       {filtered.length > 0 && (
-        <p className="text-xs text-[var(--ag-text-muted)] text-center">
+        <p className="text-xs text-[#9CA3AF] text-center">
           Showing {filtered.length} of {displayTotal} events
         </p>
       )}

@@ -2,7 +2,7 @@
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 
 import { useState } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
@@ -518,13 +518,13 @@ function CapabilityCard({
 
   return (
     <div
-      className="relative rounded-2xl border border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-surface,rgba(12,12,30,0.6))] backdrop-blur-xl transition-all duration-300 hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 hover:shadow-lg group overflow-hidden flex flex-col"
+      className="gs-card relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg group overflow-hidden flex flex-col !p-0"
       style={{
         animationDelay: `${idx * 60}ms`,
         '--cap-color': cap.color,
       } as React.CSSProperties}
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 24px ${cap.glow}`; (e.currentTarget as HTMLDivElement).style.borderColor = `${cap.color}30`; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(139,92,246,0.08)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
     >
       {/* Top glow bar */}
       <div
@@ -569,8 +569,8 @@ function CapabilityCard({
         </div>
 
         {/* Title + description */}
-        <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{cap.title}</h3>
-        <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed flex-1 mb-3">{cap.description}</p>
+        <h3 className="text-sm font-semibold text-[#F4F6FF] mb-1.5">{cap.title}</h3>
+        <p className="text-xs text-[#9CA3AF] leading-relaxed flex-1 mb-3">{cap.description}</p>
 
         {/* Wow factor */}
         {cap.wow && (

@@ -962,8 +962,8 @@ export function SettingsPage() {
                   </Button>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+            <div className="space-y-3">
               {sessionsLoading ? (
                 <div className="flex items-center gap-2 py-4 text-[var(--ag-text-muted)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1622,22 +1622,19 @@ export function SettingsPage() {
           </div>
 
           <div className="gs-card">
-            <div className="p-0">
-              <div className="flex items-start gap-3">
-                <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">How Memory Works</h4>
-                  <p className="text-xs text-[var(--ag-text-muted)]">
-                    Your agent learns about you through conversations — extracting facts, preferences, and context.
-                    Memories improve response quality over time. You can delete any memory at any time.
-                  </p>
-                </div>
+            <div className="flex items-start gap-3">
+              <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">How Memory Works</h4>
+                <p className="text-xs text-[var(--ag-text-muted)]">
+                  Your agent learns about you through conversations — extracting facts, preferences, and context.
+                  Memories improve response quality over time. You can delete any memory at any time.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border-[#00F0FF]/20">
-            <CardContent className="p-4 space-y-4">
+          <div className="gs-card space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Chat History Export</h4>
@@ -1648,7 +1645,7 @@ export function SettingsPage() {
                   size="sm"
                   onClick={handleExportConversations}
                   disabled={isExportingConversations}
-                  className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
+                  className="gs-btn-ghost text-[var(--ag-cyan)]"
                 >
                   {isExportingConversations ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1669,7 +1666,7 @@ export function SettingsPage() {
                     size="sm"
                     onClick={handleExportMarkdown7Days}
                     disabled={isExportingMarkdown7Days}
-                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                    className="gs-btn-ghost text-[#BF5FFF]"
                   >
                     {isExportingMarkdown7Days ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1683,7 +1680,7 @@ export function SettingsPage() {
                     size="sm"
                     onClick={handleExportMarkdown}
                     disabled={isExportingMarkdown}
-                    className="border-[#BF5FFF]/30 text-[#BF5FFF] hover:bg-[#BF5FFF]/10"
+                    className="gs-btn-ghost text-[#BF5FFF]"
                   >
                     {isExportingMarkdown ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1739,25 +1736,23 @@ export function SettingsPage() {
                 </div>
               ))}
             </div>
-          </SectionCard>
-          <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[#00F0FF]/20">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">What We Never Show</h4>
-                  <p className="text-xs text-[var(--ag-text-muted)]">
-                    Raw chat logs, internal system data, precise location (only city if enabled), and API keys are never exposed publicly.
-                  </p>
-                </div>
+          </div>
+          <div className="gs-card">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">What We Never Show</h4>
+                <p className="text-xs text-[var(--ag-text-muted)]">
+                  Raw chat logs, internal system data, precise location (only city if enabled), and API keys are never exposed publicly.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
           <div className="flex justify-end">
             <Button
               onClick={() => void handlePrivacySave()}
               disabled={savingPrivacy}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
+              className="gs-btn-primary min-h-[44px] press-scale"
             >
               {savingPrivacy ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
@@ -1766,16 +1761,15 @@ export function SettingsPage() {
               )}
             </Button>
           </div>
-        </TabsContent>
+        </div>}
 
         {/* Theme Tab */}
-        <TabsContent value="theme" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Customize the look of your dashboard</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        {activeTab === 'theme' && <div className="space-y-6">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Display</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Appearance</h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Customize the look of your dashboard</p>
+            <div className="space-y-6">
               {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-3 block">Theme Mode</label>
@@ -1897,9 +1891,9 @@ export function SettingsPage() {
                     placeholder="Describe a vibe (optional)..."
                     value={bgVibe}
                     onChange={(e) => setBgVibe(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[#00F0FF]/60"
+                    className="gs-input flex-1"
                   />
-                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="gs-btn-primary min-h-[44px]">
                     {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </div>
@@ -1911,25 +1905,24 @@ export function SettingsPage() {
                     />
                     <p className="text-xs text-[var(--ag-text-muted)]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
-                      <Button onClick={handleApplyBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">Apply</Button>
-                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[#00F0FF]/30">Try another</Button>
+                      <Button onClick={handleApplyBg} size="sm" className="gs-btn-primary min-h-[44px] press-scale">Apply</Button>
+                      <Button onClick={handleGenerateBg} variant="outline" size="sm" className="gs-btn-ghost">Try another</Button>
                     </div>
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>}
 
-        <TabsContent value="voice" className="space-y-6">
-          <Card className="border-[#00F0FF]/20">
-            <CardHeader>
-              <CardTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Volume2 className="w-5 h-5 text-[var(--ag-cyan)]" />Voice Settings
-              </CardTitle>
-              <CardDescription className="text-[var(--ag-text-muted)]">Configure text-to-speech and voice input.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        {activeTab === 'voice' && <div className="space-y-6">
+          <div className="gs-card">
+            <p className="gs-section-label mb-1">Audio</p>
+            <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
+              <Volume2 className="w-5 h-5 text-[var(--ag-cyan)]" />Voice Settings
+            </h3>
+            <p className="text-sm text-[#9CA3AF] mb-4">Configure text-to-speech and voice input.</p>
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-medium text-[var(--ag-text-primary)]">Enable TTS (Text-to-Speech)</h4>
@@ -1947,7 +1940,7 @@ export function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--ag-text-primary)]">Language</label>
-                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00F0FF]/40">
+                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="gs-input w-full">
                   <option value="en-US">English (US)</option>
                   <option value="en-GB">English (UK)</option>
                   <option value="hi-IN">Hindi (India)</option>
@@ -1955,7 +1948,7 @@ export function SettingsPage() {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[#00F0FF]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10">
+                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="gs-btn-ghost text-[var(--ag-cyan)]">
                   {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
                   {ttsSample ? "Speaking..." : "Test Voice"}
                 </Button>
@@ -1968,10 +1961,10 @@ export function SettingsPage() {
                   <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+        </div>}
+      </div>
 
       {/* App Version Footer */}
       {appVersion && (

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,8 +12,6 @@ import {
   GripVertical, Trash2, X, CalendarCheck, LayoutGrid,
   Calendar as CalendarIcon, Sparkles,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import api from '@/services/api';
 import { plannerService, type PlannerBlock } from '@/services/api';
@@ -294,25 +292,24 @@ function QuickAddForm({
   return (
     <div className="rounded-lg p-2.5 border border-[#8B5CF6]/30 bg-[#8B5CF6]/[0.06] space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
       <div className="flex items-center gap-2">
-        <Input
+        <input
           ref={inputRef}
           value={title}
           onChange={e => onTitleChange(e.target.value)}
           placeholder="What are you working on?"
-          className="h-9 sm:h-7 text-xs bg-white/5 border-[rgba(139,92,246,0.08)] text-[#F4F6FF] placeholder:text-[#9CA3AF]/60 flex-1"
+          className="gs-input flex-1 h-9 text-xs px-2.5 rounded-lg"
           onKeyDown={e => {
             if (e.key === 'Enter') onSubmit();
             if (e.key === 'Escape') onCancel();
           }}
         />
-        <Button
-          size="sm"
-          className="h-9 sm:h-7 px-2 text-xs bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-white min-w-[44px]"
+        <button
+          className="gs-btn-primary px-3 h-9 text-xs rounded-lg min-w-[44px] disabled:opacity-50"
           onClick={onSubmit}
           disabled={!title.trim()}
         >
           Add
-        </Button>
+        </button>
         <button
           onClick={onCancel}
           className="w-11 h-11 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
@@ -651,15 +648,13 @@ export function PlannerPage() {
             </div>
 
             {/* Ask Cal CTA */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs"
+            <button
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs min-h-[44px] border border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 transition-colors"
               onClick={() => navigate('/dashboard/chat?agent=cal&prompt=Plan+my+week')}
             >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              <Sparkles className="w-3.5 h-3.5" />
               Ask Cal
-            </Button>
+            </button>
           </div>
         }
       />
@@ -673,40 +668,34 @@ export function PlannerPage() {
 
       {/* Week View */}
       {viewMode === 'week' && (
-        <SectionCard padding="sm" className="overflow-hidden !p-0">
+        <div className="gs-card overflow-hidden !p-0">
           {/* Week header with nav */}
-          <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+              <button
+                className="gs-btn-ghost flex items-center justify-center h-11 w-11 rounded-lg"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })}
               >
                 <ChevronLeft className="w-4 h-4" />
-              </Button>
+              </button>
               <span className="text-sm font-semibold text-[#F4F6FF]">
                 {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
                 {' - '}
                 {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+              <button
+                className="gs-btn-ghost flex items-center justify-center h-11 w-11 rounded-lg"
                 onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })}
               >
                 <ChevronRight className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+            <button
+              className="gs-btn-ghost text-xs text-[#00F0FF] px-3 py-1.5 rounded-lg min-h-[44px] sm:min-h-0"
               onClick={goToday}
             >
               This Week
-            </Button>
+            </button>
           </div>
 
           {/* Week grid */}
@@ -807,15 +796,15 @@ export function PlannerPage() {
               </div>
             </div>
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* Main Layout (Day View) */}
       {viewMode === 'day' && <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
         {/* Left: Backlog Panel */}
         <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-          <SectionCard padding="sm" className="overflow-hidden !p-0">
-            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
+          <div className="gs-card overflow-hidden !p-0">
+            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 text-[#9CA3AF]" />
                 <span className="text-sm font-semibold text-[#F4F6FF]">Backlog</span>
@@ -857,7 +846,7 @@ export function PlannerPage() {
               )}
             </div>
 
-            <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
+            <div className="px-4 py-2.5 border-t border-white/[0.06]">
               <div className="flex items-center gap-3 text-[10px] text-[#9CA3AF]">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-[#00F0FF]" />
@@ -873,47 +862,41 @@ export function PlannerPage() {
                 </span>
               </div>
             </div>
-          </SectionCard>
+          </div>
         </div>
 
         {/* Right: Timeline */}
         <div className="flex-1 min-w-0">
-          <SectionCard padding="sm" className="overflow-hidden !p-0">
+          <div className="gs-card overflow-hidden !p-0">
             {/* Date header */}
-            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                <button
+                  className="gs-btn-ghost flex items-center justify-center h-11 w-11 rounded-lg"
                   onClick={goPrev}
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </Button>
+                </button>
                 <button
                   onClick={goToday}
                   className="text-sm font-semibold text-[#F4F6FF] hover:text-[#00F0FF] transition-colors min-h-[44px] px-2"
                 >
                   {formatDate(currentDate)}
                 </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5"
+                <button
+                  className="gs-btn-ghost flex items-center justify-center h-11 w-11 rounded-lg"
                   onClick={goNext}
                 >
                   <ChevronRight className="w-4 h-4" />
-                </Button>
+                </button>
               </div>
               {!isToday && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-[#00F0FF] hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+                <button
+                  className="gs-btn-ghost text-xs text-[#00F0FF] px-3 py-1.5 rounded-lg min-h-[44px] sm:min-h-0"
                   onClick={goToday}
                 >
                   Today
-                </Button>
+                </button>
               )}
             </div>
 
@@ -1013,7 +996,7 @@ export function PlannerPage() {
                 </div>
               )}
             </div>
-          </SectionCard>
+          </div>
         </div>
       </div>}
     </div>

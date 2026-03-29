@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import {
   DollarSign,
   MessageSquare,
@@ -22,7 +22,6 @@ import {
   Activity,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { MobileTable } from '@/components/ui/mobile-table';
 import {
@@ -308,16 +307,12 @@ export function UsageAnalyticsPage() {
           </span>
         }
         actions={
-          <div className="flex gap-1 bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg p-1">
+          <div className="flex gap-1">
             {(['day', 'week', 'month'] as SummaryRange[]).map((r) => (
               <button
                 key={r}
                 onClick={() => handleSummaryRange(r)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
-                  summaryRange === r
-                    ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
-                }`}
+                className={`min-h-[44px] ${summaryRange === r ? 'gs-pill-active' : 'gs-pill'}`}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}
               </button>
@@ -347,22 +342,20 @@ export function UsageAnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <SectionCard key={i} padding="md">
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
-                <Skeleton className="h-7 w-24" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            </SectionCard>
+            <div key={i} className="bg-white/[0.04] rounded-xl p-4 space-y-3 animate-pulse">
+              <div className="h-10 w-10 rounded-lg bg-white/[0.04]" />
+              <div className="h-7 w-24 rounded bg-white/[0.04]" />
+              <div className="h-4 w-16 rounded bg-white/[0.04]" />
+            </div>
           ))
         ) : (
           <>
             {/* Total Cost */}
-            <SectionCard padding="md" className="group">
+            <div className="gs-stat-card group">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.cost}15` }}>
-                  <DollarSign className="w-5 h-5" style={{ color: KPI_COLORS.cost }} />
-                </div>
+                <span className="gs-icon-pill gs-icon-pill-emerald">
+                  <DollarSign className="w-5 h-5" />
+                </span>
                 {summary?.forecastUSD !== undefined && (
                   <div className="flex items-center gap-1 text-xs font-mono text-[#FFB800]">
                     <TrendingUp className="w-3 h-3" />
@@ -374,53 +367,53 @@ export function UsageAnalyticsPage() {
                 ${(summary?.totalCostUSD ?? 0).toFixed(2)}
               </div>
               <div className="text-xs sm:text-sm text-[#9CA3AF]">Total Cost</div>
-            </SectionCard>
+            </div>
 
             {/* Messages */}
-            <SectionCard padding="md" className="group">
+            <div className="gs-stat-card group">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.messages}15` }}>
-                  <MessageSquare className="w-5 h-5" style={{ color: KPI_COLORS.messages }} />
-                </div>
+                <span className="gs-icon-pill gs-icon-pill-violet">
+                  <MessageSquare className="w-5 h-5" />
+                </span>
               </div>
               <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#8B5CF6] transition-colors">
                 {fmt(summary?.totalMessages ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[#9CA3AF]">Messages</div>
-            </SectionCard>
+            </div>
 
             {/* Tokens */}
-            <SectionCard padding="md" className="group">
+            <div className="gs-stat-card group">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.tokens}15` }}>
-                  <Coins className="w-5 h-5" style={{ color: KPI_COLORS.tokens }} />
-                </div>
+                <span className="gs-icon-pill gs-icon-pill-amber">
+                  <Coins className="w-5 h-5" />
+                </span>
               </div>
               <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FFB800] transition-colors">
                 {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[#9CA3AF]">Tokens In / Out</div>
-            </SectionCard>
+            </div>
 
             {/* Tool Calls */}
-            <SectionCard padding="md" className="group">
+            <div className="gs-stat-card group">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${KPI_COLORS.tools}15` }}>
-                  <Wrench className="w-5 h-5" style={{ color: KPI_COLORS.tools }} />
-                </div>
+                <span className="gs-icon-pill gs-icon-pill-rose">
+                  <Wrench className="w-5 h-5" />
+                </span>
               </div>
               <div className="text-xl sm:text-2xl font-bold text-[#F4F6FF] group-hover:text-[#FF2D78] transition-colors">
                 {fmt(summary?.totalToolCalls ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[#9CA3AF]">Tool Calls</div>
-            </SectionCard>
+            </div>
           </>
         )}
       </div>
 
       {/* Today's Real-Time Usage */}
       {!loading && todayUsage && (
-        <SectionCard>
+        <div className="gs-card">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5 text-[#10B981]" />
             <h2 className="text-base font-semibold text-[#F4F6FF]">Today's Usage</h2>
@@ -484,26 +477,22 @@ export function UsageAnalyticsPage() {
               Running low on credits — upgrade your plan
             </button>
           )}
-        </SectionCard>
+        </div>
       )}
 
       {/* Cost Over Time Chart */}
-      <SectionCard>
+      <div className="gs-card">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#10B981]" />
             <h2 className="text-base font-semibold text-[#F4F6FF]">Cost Over Time</h2>
           </div>
-          <div className="flex gap-1 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-lg p-0.5">
+          <div className="flex gap-1">
             {(['7d', '14d', '30d'] as ChartRange[]).map((r) => (
               <button
                 key={r}
                 onClick={() => handleChartRange(r)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
-                  chartRange === r
-                    ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
-                }`}
+                className={`min-h-[44px] ${chartRange === r ? 'gs-pill-active' : 'gs-pill'}`}
               >
                 {r}
               </button>
@@ -512,7 +501,7 @@ export function UsageAnalyticsPage() {
         </div>
         <div className="min-h-[180px] h-[280px]">
           {loading ? (
-            <Skeleton className="w-full h-full rounded-lg" />
+            <div className="w-full h-full rounded-lg bg-white/[0.04] animate-pulse" />
           ) : mounted && (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -540,15 +529,16 @@ export function UsageAnalyticsPage() {
             </ResponsiveContainer>
           )}
         </div>
-      </SectionCard>
+      </div>
 
       {/* Two-column: Provider Breakdown + Hourly Activity */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Provider Breakdown */}
-        <SectionCard>
+        <div className="gs-card">
+          <p className="gs-section-label mb-2">Analytics</p>
           <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Provider Breakdown</h2>
           {loading ? (
-            <Skeleton className="w-full h-[220px] rounded-lg" />
+            <div className="w-full h-[220px] rounded-lg bg-white/[0.04] animate-pulse" />
           ) : pieData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[220px] gap-2">
               <BarChart3 className="w-8 h-8 text-[#10B981]/20" />
@@ -593,13 +583,14 @@ export function UsageAnalyticsPage() {
               </div>
             </>
           )}
-        </SectionCard>
+        </div>
 
         {/* Hourly Activity */}
-        <SectionCard>
+        <div className="gs-card">
+          <p className="gs-section-label mb-2">Analytics</p>
           <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Hourly Activity</h2>
           {loading ? (
-            <Skeleton className="w-full h-[250px] rounded-lg" />
+            <div className="w-full h-[250px] rounded-lg bg-white/[0.04] animate-pulse" />
           ) : hourlyData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[250px] gap-2">
               <Activity className="w-8 h-8 text-[#10B981]/20" />
@@ -624,16 +615,17 @@ export function UsageAnalyticsPage() {
               )}
             </div>
           )}
-        </SectionCard>
+        </div>
       </div>
 
       {/* Three-column: Top Tools + Billing */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Top Tools by Cost */}
-        <SectionCard className="lg:col-span-2">
+        <div className="gs-card lg:col-span-2">
+          <p className="gs-section-label mb-2">Tools</p>
           <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Top Tools by Cost</h2>
           {loading ? (
-            <Skeleton className="w-full h-[200px] rounded-lg" />
+            <div className="w-full h-[200px] rounded-lg bg-white/[0.04] animate-pulse" />
           ) : toolData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[200px] gap-2">
               <Wrench className="w-8 h-8 text-[#FF2D78]/20" />
@@ -672,15 +664,16 @@ export function UsageAnalyticsPage() {
               )}
             </div>
           )}
-        </SectionCard>
+        </div>
 
         {/* Billing Summary */}
-        <SectionCard>
-          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Billing</h2>
+        <div className="gs-card">
+          <p className="gs-section-label mb-2">Billing</p>
+          <h2 className="text-base font-semibold text-[#F4F6FF] mb-4">Billing Summary</h2>
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-5 w-full" />
+                <div key={i} className="h-5 w-full rounded bg-white/[0.04] animate-pulse" />
               ))}
             </div>
           ) : !billing ? (
@@ -741,13 +734,16 @@ export function UsageAnalyticsPage() {
               )}
             </div>
           )}
-        </SectionCard>
+        </div>
       </div>
 
       {/* Usage Event Log */}
-      <SectionCard>
+      <div className="gs-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-[#F4F6FF]">Usage Events</h2>
+          <div>
+            <p className="gs-section-label mb-1">Log</p>
+            <h2 className="text-base font-semibold text-[#F4F6FF]">Usage Events</h2>
+          </div>
           {eventsTotal > 0 && (
             <Badge variant="outline" className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF]">
               {eventsTotal.toLocaleString()} total
@@ -757,7 +753,7 @@ export function UsageAnalyticsPage() {
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+              <div key={i} className="h-10 w-full rounded bg-white/[0.04] animate-pulse" />
             ))}
           </div>
         ) : events.length === 0 ? (
@@ -827,7 +823,7 @@ export function UsageAnalyticsPage() {
             )}
           </>
         )}
-      </SectionCard>
+      </div>
     </div>
     </PullToRefreshWrapper>
     </PageShell>

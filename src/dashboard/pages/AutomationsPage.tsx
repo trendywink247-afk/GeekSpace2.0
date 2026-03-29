@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Zap,
@@ -32,11 +32,8 @@ import {
   BarChart3,
   Loader2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { automationLogService, automationService } from '@/services/api';
 import { confirmAction } from '@/utils/alerts';
@@ -639,17 +636,17 @@ export function AutomationsPage() {
           </span>
         }
         actions={
-          <Button
+          <button
             onClick={handleOpenAdd}
-            className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px] px-5 press-scale"
+            className="gs-btn-primary flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
           >
-            <Plus className="w-4 h-4 mr-2" />New Automation
-          </Button>
+            <Plus className="w-4 h-4" />New Automation
+          </button>
         }
       />
 
       {/* Compact stat pills */}
-      <SectionCard padding="sm">
+      <div className="gs-card p-3">
         <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
           {[
             { label: 'Total', value: automationStats?.total ?? automations.length, icon: BarChart3, color: '#ADFF2F' },
@@ -667,13 +664,14 @@ export function AutomationsPage() {
             </div>
           ))}
         </div>
-      </SectionCard>
+      </div>
 
       {/* ================================================================== */}
       {/* SECTION 2: TEMPLATE GALLERY                                        */}
       {/* ================================================================== */}
       {showTemplates && (
-        <SectionCard title="Quick Start Templates">
+        <div className="gs-card p-4">
+          <p className="gs-section-label mb-3">Quick Start Templates</p>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory md:grid md:grid-cols-5 md:overflow-visible">
             {TEMPLATES.map((t) => (
               <button
@@ -689,7 +687,7 @@ export function AutomationsPage() {
               </button>
             ))}
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* ================================================================== */}
@@ -698,20 +696,18 @@ export function AutomationsPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
-          <Input
+          <input
             placeholder="Search automations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)] text-[#F4F6FF] h-11 text-base"
+            className="gs-input w-full pl-10 pr-4 py-2.5 rounded-xl h-11"
           />
         </div>
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] overflow-x-auto flex-nowrap w-auto">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white min-h-[44px] flex-none px-4">All</TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-[#00FF88] data-[state=active]:text-[#06060B] min-h-[44px] flex-none px-4">Active</TabsTrigger>
-            <TabsTrigger value="inactive" className="data-[state=active]:bg-[#6B7280] data-[state=active]:text-white min-h-[44px] flex-none px-4">Paused</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <GsTabBar
+          tabs={[{ id: 'all', label: 'All' }, { id: 'active', label: 'Active' }, { id: 'inactive', label: 'Paused' }]}
+          activeTab={filter}
+          onChange={(id) => setFilter(id as typeof filter)}
+        />
       </div>
 
       {/* ================================================================== */}
@@ -805,58 +801,48 @@ export function AutomationsPage() {
                     {/* Action buttons */}
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {/* Run Now */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleRun(auto.id)}
                         disabled={runningId === auto.id}
                         title="Run now"
-                        className="text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="gs-btn-ghost flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-[#ADFF2F] hover:bg-[#ADFF2F]/10 disabled:opacity-50"
                       >
                         {runningId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                      </Button>
+                      </button>
                       {/* Test Fire */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleTestFire(auto.id)}
                         disabled={testingId === auto.id}
                         title="Test fire (dry run)"
-                        className="text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="gs-btn-ghost flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-[#F59E0B] hover:bg-[#F59E0B]/10 disabled:opacity-50"
                       >
                         {testingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
-                      </Button>
+                      </button>
                       {/* Edit */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleOpenEdit(auto.id)}
                         title="Edit"
-                        className="text-[#9CA3AF] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="gs-btn-ghost flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10"
                       >
                         <Edit3 className="w-4 h-4" />
-                      </Button>
+                      </button>
                       {/* Duplicate */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleDuplicate(auto.id)}
                         disabled={duplicatingId === auto.id}
                         title="Duplicate"
-                        className="text-[#9CA3AF] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="gs-btn-ghost flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 disabled:opacity-50"
                       >
                         {duplicatingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
-                      </Button>
+                      </button>
                       {/* Delete */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
                         onClick={() => handleDelete(auto.id, auto.name)}
                         title="Delete"
-                        className="text-[#9CA3AF] hover:text-[#FF2D78] hover:bg-[#FF2D78]/10 min-h-[44px] min-w-[44px] p-0"
+                        className="gs-btn-ghost flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg hover:text-[#FF2D78] hover:bg-[#FF2D78]/10"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -925,26 +911,24 @@ export function AutomationsPage() {
             );
           })
         ) : (
-          <SectionCard>
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-2xl bg-[#ADFF2F]/5 flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-[#ADFF2F]/30" />
-              </div>
-              <p className="text-[#F4F6FF] font-medium mb-1">
-                {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
-              </p>
-              <p className="text-sm text-[#9CA3AF] mb-4 max-w-xs mx-auto">
-                {searchQuery || filter !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Create one from a template or build your own.'}
-              </p>
-              {!searchQuery && filter === 'all' && (
-                <Button onClick={handleOpenAdd} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
-                  <Plus className="w-4 h-4 mr-2" /> Create Automation
-                </Button>
-              )}
+          <div className="gs-card text-center py-12 px-6">
+            <div className="gs-icon-pill gs-icon-pill-violet w-16 h-16 mx-auto mb-4">
+              <Zap className="w-7 h-7" />
             </div>
-          </SectionCard>
+            <p className="text-[#F4F6FF] font-medium mb-1">
+              {searchQuery || filter !== 'all' ? 'No automations match your filters' : 'No automations yet'}
+            </p>
+            <p className="text-sm text-[#9CA3AF] mb-4 max-w-xs mx-auto">
+              {searchQuery || filter !== 'all'
+                ? 'Try adjusting your search or filter criteria.'
+                : 'Create one from a template or build your own.'}
+            </p>
+            {!searchQuery && filter === 'all' && (
+              <button onClick={handleOpenAdd} className="gs-btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] mx-auto">
+                <Plus className="w-4 h-4" /> Create Automation
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -965,20 +949,20 @@ export function AutomationsPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-[#9CA3AF] mb-1.5 block uppercase tracking-wider">Name</label>
-                <Input
+                <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g., Morning briefing, Deploy webhook..."
-                  className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base focus:border-[#8B5CF6]/50"
+                  className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                 />
               </div>
               <div>
                 <label className="text-xs font-medium text-[#9CA3AF] mb-1.5 block uppercase tracking-wider">Description</label>
-                <Input
+                <input
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="What does this automation do?"
-                  className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base focus:border-[#8B5CF6]/50"
+                  className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                 />
               </div>
             </div>
@@ -1062,11 +1046,11 @@ export function AutomationsPage() {
               {form.triggerType === 'keyword' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3 space-y-2">
                   <label className="text-xs text-[#9CA3AF] font-medium block">Keyword to match</label>
-                  <Input
+                  <input
                     value={form.keywordValue}
                     onChange={(e) => setForm({ ...form, keywordValue: e.target.value })}
                     placeholder="e.g., spent, reminder, alert..."
-                    className="bg-[var(--ag-bg-surface)] border-white/10 text-[var(--ag-text-primary)] h-11 text-base"
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
               )}
@@ -1074,12 +1058,12 @@ export function AutomationsPage() {
               {form.triggerType === 'health_down' && (
                 <div className="mt-3 rounded-xl border border-[var(--ag-border-subtle)] p-3 space-y-2">
                   <label className="text-xs text-[#9CA3AF] font-medium block">URL to monitor</label>
-                  <Input
+                  <input
                     type="url"
                     value={form.healthUrl}
                     onChange={(e) => setForm({ ...form, healthUrl: e.target.value })}
                     placeholder="https://your-site.com"
-                    className="bg-[var(--ag-bg-surface)] border-white/10 text-[var(--ag-text-primary)] h-11 text-base"
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
               )}
@@ -1128,7 +1112,7 @@ export function AutomationsPage() {
                     value={form.actionConfig.message ?? ''}
                     onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
                     rows={3}
-                    className="w-full p-3 rounded-xl border border-white/10 text-[var(--ag-text-primary)] text-base resize-none focus:border-[#8B5CF6]/50 focus:outline-none transition-colors"
+                    className="gs-input w-full px-3 py-2.5 rounded-xl resize-none"
                   />
                 </div>
               )}
@@ -1137,12 +1121,12 @@ export function AutomationsPage() {
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
                     <label className="text-xs text-[#9CA3AF] font-medium">Webhook URL</label>
-                    <Input
+                    <input
                       type="url"
                       placeholder="https://your-webhook-endpoint.com/..."
                       value={form.webhookUrl}
                       onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
-                      className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base"
+                      className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                     />
                     {form.webhookUrl && form.webhookUrl.startsWith('http://') && !form.webhookUrl.startsWith('https://') && (
                       <p className="text-xs flex items-center gap-1.5 text-[#F59E0B]">
@@ -1178,20 +1162,20 @@ export function AutomationsPage() {
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
                     <label className="text-xs text-[#9CA3AF] font-medium">Reminder text</label>
-                    <Input
+                    <input
                       placeholder="What to remind about..."
                       value={form.actionConfig.reminder_text ?? ''}
                       onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_text: e.target.value } })}
-                      className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base"
+                      className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs text-[#9CA3AF] font-medium">When (date &amp; time)</label>
-                    <Input
+                    <input
                       type="datetime-local"
                       value={form.actionConfig.reminder_datetime ?? ''}
                       onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, reminder_datetime: e.target.value } })}
-                      className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base [color-scheme:dark]"
+                      className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px] [color-scheme:dark]"
                     />
                     <p className="text-[10px] text-[#9CA3AF]">Leave blank to create reminder immediately when automation fires.</p>
                   </div>
@@ -1201,11 +1185,11 @@ export function AutomationsPage() {
               {form.actionType === 'log' && (
                 <div className="mt-3 space-y-1.5">
                   <label className="text-xs text-[#9CA3AF] font-medium">Log message</label>
-                  <Input
+                  <input
                     placeholder="Message to log..."
                     value={form.actionConfig.message ?? ''}
                     onChange={(e) => setForm({ ...form, actionConfig: { ...form.actionConfig, message: e.target.value } })}
-                    className="border-white/10 text-[var(--ag-text-primary)] h-11 text-base"
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
               )}
@@ -1229,15 +1213,13 @@ export function AutomationsPage() {
                 <span className="text-[#ADFF2F]">{ACTION_META[form.actionType]?.label || form.actionType}</span>
               </p>
               {editingId && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={() => handleDryRun(editingId)}
-                  className="mt-2 text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px] text-xs"
+                  className="gs-btn-ghost mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-[#F59E0B] hover:bg-[#F59E0B]/10 min-h-[44px]"
                 >
-                  <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
+                  <FlaskConical className="w-3.5 h-3.5" />
                   Test Dry Run
-                </Button>
+                </button>
               )}
             </div>
 
@@ -1251,20 +1233,19 @@ export function AutomationsPage() {
 
             {/* Section 5: Save */}
             <div className="flex gap-3 pt-1">
-              <Button
-                variant="outline"
+              <button
                 onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                className="flex-1 border-white/10 hover:bg-white/5 min-h-[44px] press-scale"
+                className="gs-btn-ghost flex-1 px-4 py-2.5 rounded-xl text-sm font-medium min-h-[44px]"
               >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleSave}
                 disabled={!!validationError}
-                className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px] press-scale disabled:opacity-40"
+                className="gs-btn-primary flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-40"
               >
                 {editingId ? 'Save Changes' : 'Create Automation'}
-              </Button>
+              </button>
             </div>
           </div>
         </DialogContent>
@@ -1273,7 +1254,8 @@ export function AutomationsPage() {
       {/* ================================================================== */}
       {/* SECTION 6: RECENT RUNS (global logs)                                */}
       {/* ================================================================== */}
-      <SectionCard title="Recent Runs">
+      <div className="gs-card p-5">
+        <p className="gs-section-label mb-4">Recent Runs</p>
         <div className="flex items-center justify-end mb-3">
           <select
             value={logsStatusFilter}
@@ -1365,20 +1347,18 @@ export function AutomationsPage() {
             </div>
             {logsHasMore && (
               <div className="flex justify-center p-3 border-t border-[rgba(139,92,246,0.08)]">
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleLoadMoreLogs}
                   disabled={logsLoadingMore}
-                  className="text-[#ADFF2F] hover:text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px]"
+                  className="gs-btn-ghost flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] disabled:opacity-50"
                 >
                   {logsLoadingMore ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 mr-2" />
+                    <ChevronDown className="w-4 h-4" />
                   )}
                   Load More Runs
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -1403,16 +1383,14 @@ export function AutomationsPage() {
                         <span className="text-xs text-[#9CA3AF] whitespace-nowrap">
                           {fmtRelativeTime(new Date(dl.failed_at).toISOString())}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => handleRetryDeadLetter(dl.id)}
                           disabled={retryingDeadLetterId === dl.id}
-                          className="text-xs text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] min-w-[44px] px-3"
+                          className="gs-btn-ghost flex items-center gap-1 text-xs text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] min-w-[44px] px-3 rounded-lg disabled:opacity-50"
                         >
-                          {retryingDeadLetterId === dl.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                          {retryingDeadLetterId === dl.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                           {retryingDeadLetterId === dl.id ? '' : 'Retry'}
-                        </Button>
+                        </button>
                       </div>
                     </div>
                     <span className="text-xs text-[#FF6161] truncate">{dl.last_error ?? dl.error}</span>
@@ -1426,7 +1404,7 @@ export function AutomationsPage() {
             </div>
           </div>
         )}
-      </SectionCard>
+      </div>
     </div>
     </PageShell>
   );

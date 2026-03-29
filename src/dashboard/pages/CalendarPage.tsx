@@ -662,30 +662,22 @@ export function CalendarPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => void handleSync()}
                   disabled={syncing}
-                  className="gap-1.5 min-h-[44px] border-[rgba(139,92,246,0.15)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm min-h-[44px] disabled:opacity-50"
                 >
-                  <RefreshCw
-                    className={
-                      "h-3.5 w-3.5" + (syncing ? " animate-spin" : "")
-                    }
-                  />
+                  <RefreshCw className={"h-3.5 w-3.5" + (syncing ? " animate-spin" : "")} />
                   {syncing ? "Syncing..." : "Sync Now"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+                <button
                   onClick={() => void handleDisconnect()}
                   disabled={disconnecting}
-                  className="gap-1.5 text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm min-h-[44px] border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                 >
                   <Unlink className="h-3.5 w-3.5" />
                   {disconnecting ? "Disconnecting..." : "Disconnect"}
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
@@ -701,15 +693,14 @@ export function CalendarPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                size="sm"
+              <button
                 onClick={handleConnect}
-                className="gap-1.5 shrink-0 min-h-[44px] bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                className="gs-btn-primary flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-xl text-sm font-semibold min-h-[44px]"
               >
                 <Link2 className="h-3.5 w-3.5" />
                 Connect Google Calendar
                 <ExternalLink className="h-3 w-3 opacity-60" />
-              </Button>
+              </button>
             </div>
           )}
       </div>
@@ -721,43 +712,37 @@ export function CalendarPage() {
         <div className="space-y-4">
           {/* Calendar grid */}
           <BlurFade delay={0.15}>
-          <SectionCard className="overflow-hidden">
+          <div className="gs-card p-4 overflow-hidden">
               {/* Month navigation */}
               <div className="flex items-center justify-between mb-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={goToPrevMonth}
                   aria-label="Previous month"
-                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="gs-btn-ghost flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl"
                 >
-                  <ChevronLeft className="h-5 w-5 text-[#9CA3AF]" />
-                </Button>
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[#F4F6FF]">{monthLabel}</h2>
                   {!(
                     viewYear === today.getFullYear() &&
                     viewMonth === today.getMonth()
                   ) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={goToToday}
-                      className="text-xs min-h-[44px] px-3 border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF]"
+                      className="gs-btn-ghost text-xs min-h-[44px] px-3 rounded-xl"
                     >
                       Today
-                    </Button>
+                    </button>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={goToNextMonth}
                   aria-label="Next month"
-                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="gs-btn-ghost flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl"
                 >
-                  <ChevronRight className="h-5 w-5 text-[#9CA3AF]" />
-                </Button>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
               </div>
 
               {/* Day headers */}
@@ -839,12 +824,12 @@ export function CalendarPage() {
                   Today
                 </div>
               </div>
-          </SectionCard>
+          </div>
           </BlurFade>
 
           {/* Selected day event list */}
           <BlurFade delay={0.2}>
-          <SectionCard>
+          <div className="gs-card p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="h-4 w-4 text-[#00F0FF]" />
                 <h2 className="text-base font-semibold text-[#F4F6FF]">
@@ -864,19 +849,17 @@ export function CalendarPage() {
                 <div className="py-6 text-center text-[#6B7280]">
                   <Calendar className="mx-auto h-8 w-8 mb-2 opacity-30" />
                   <p className="text-sm text-[#9CA3AF]">No events or reminders for this day.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={() => {
                       setManualDate(dateKey(selectedDate));
                       setAddMode("manual");
                       setShowAddDialog(true);
                     }}
-                    className="mt-3 gap-1.5 text-xs"
+                    className="gs-btn-ghost flex items-center gap-1.5 mt-3 px-3 py-2 rounded-xl text-xs min-h-[44px]"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Event
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -982,17 +965,13 @@ export function CalendarPage() {
                               )}
                               {ev.isLocal && (
                                 <div className="pt-1">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteLocalEvent(ev.id)
-                                    }
-                                    className="gap-1.5 text-xs text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50 h-8"
+                                  <button
+                                    onClick={() => handleDeleteLocalEvent(ev.id)}
+                                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 px-3 py-1.5 rounded-lg transition-colors"
                                   >
                                     <X className="h-3 w-3" />
                                     Delete
-                                  </Button>
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -1028,20 +1007,21 @@ export function CalendarPage() {
                   ))}
                 </div>
               )}
-          </SectionCard>
+          </div>
           </BlurFade>
         </div>
 
         {/* Right sidebar: upcoming events widget */}
         <div className="space-y-4">
           <BlurFade delay={0.2}>
-          <SectionCard title="Upcoming">
+          <div className="gs-card p-4">
+              <p className="gs-section-label mb-3">Upcoming</p>
               {loading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-14 rounded-lg bg-[#F4F6FF]/5 animate-pulse"
+                      className="h-14 rounded-lg bg-white/[0.04] animate-pulse"
                     />
                   ))}
                 </div>
@@ -1098,13 +1078,14 @@ export function CalendarPage() {
                   })}
                 </div>
               )}
-          </SectionCard>
+          </div>
           </BlurFade>
 
           {/* How it works -- shown when not connected */}
           {!loading && !status?.connected && (
             <BlurFade delay={0.25}>
-            <SectionCard title="How It Works">
+            <div className="gs-card p-4">
+              <p className="gs-section-label mb-3">How It Works</p>
                 <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
@@ -1155,7 +1136,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 </div>
-            </SectionCard>
+            </div>
             </BlurFade>
           )}
         </div>
@@ -1202,7 +1183,7 @@ export function CalendarPage() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="nl-input">Describe your event</Label>
-                <Input
+                <input
                   id="nl-input"
                   placeholder='e.g. "Team standup tomorrow 10am for 30 min"'
                   value={nlInput}
@@ -1214,6 +1195,7 @@ export function CalendarPage() {
                     }
                   }}
                   autoFocus
+                  className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                 />
                 <p className="text-xs text-[#6B7280]">
                   Supports: &quot;tomorrow&quot;, &quot;today&quot;, &quot;next
@@ -1225,44 +1207,48 @@ export function CalendarPage() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="event-title">Title</Label>
-                <Input
+                <input
                   id="event-title"
                   placeholder="Event title"
                   value={manualTitle}
                   onChange={(e) => setManualTitle(e.target.value)}
                   autoFocus
+                  className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="event-date">Date</Label>
-                  <Input
+                  <input
                     id="event-date"
                     type="date"
                     value={manualDate}
                     onChange={(e) => setManualDate(e.target.value)}
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="event-time">Time</Label>
-                  <Input
+                  <input
                     id="event-time"
                     type="time"
                     value={manualTime}
                     onChange={(e) => setManualTime(e.target.value)}
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="event-duration">Duration (min)</Label>
-                  <Input
+                  <input
                     id="event-duration"
                     type="number"
                     min="5"
                     max="480"
                     value={manualDuration}
                     onChange={(e) => setManualDuration(e.target.value)}
+                    className="gs-input w-full px-3 py-2.5 rounded-xl min-h-[44px]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1309,25 +1295,24 @@ export function CalendarPage() {
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
+            <button
               onClick={() => setShowAddDialog(false)}
-              className="min-h-[44px]"
+              className="gs-btn-ghost px-4 py-2 rounded-xl text-sm min-h-[44px]"
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleAddEvent}
               disabled={
                 addMode === "natural"
                   ? !nlInput.trim()
                   : !manualTitle.trim() || !manualDate
               }
-              className="min-h-[44px] bg-[#00F0FF] text-black hover:bg-[#00F0FF]/90"
+              className="gs-btn-primary flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-semibold min-h-[44px] disabled:opacity-50"
             >
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="h-4 w-4" />
               Add Event
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1449,7 +1434,7 @@ export function CalendarPage() {
               onChange={(e) => setAiInput(e.target.value)}
               placeholder="Ask about your calendar..."
               disabled={aiLoading}
-              className="flex-1 bg-[#12121F] border border-[rgba(0,240,255,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[#F4F6FF] placeholder:text-[#8892A4]/60 outline-none focus:border-[#00F0FF]/40 transition-colors disabled:opacity-50"
+              className="gs-input flex-1 px-3 py-2.5 rounded-lg min-h-[44px] text-sm disabled:opacity-50"
             />
             <button
               type="submit"
