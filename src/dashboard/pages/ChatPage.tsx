@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square,
   ThumbsUp, ThumbsDown, RefreshCw, Pencil, Pin, Search, Plus, Trash2,
@@ -1390,9 +1391,12 @@ export function ChatPage() {
             const isEditing = editingMsgId === msg.id;
 
             return (
-              <div
+              <motion.div
                 key={msg.id}
                 id={`msg-${msg.id}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 className={['flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
               >
                 {/* Agent avatar */}
@@ -1571,7 +1575,7 @@ export function ChatPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
 
@@ -1831,7 +1835,7 @@ export function ChatPage() {
                 enterKeyHint='send'
                 inputMode='text'
                 autoCapitalize='sentences'
-                className='w-full resize-none bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-cyan)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--ag-cyan)]/20 rounded-lg px-3 py-2.5 text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation'
+                className='w-full resize-none bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-violet)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--ag-violet)]/15 focus:shadow-[0_0_20px_rgba(139,92,246,0.08)] rounded-xl px-3 py-2.5 text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation transition-all duration-200'
               />
               {input.length > 200 && (
                 <span className='absolute right-2 bottom-1.5 text-[10px] text-[var(--ag-text-muted)] tabular-nums pointer-events-none'>

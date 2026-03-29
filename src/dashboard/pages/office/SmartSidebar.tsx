@@ -3,6 +3,7 @@
 // Bottom chat input always visible — sends to /api/agent/chat.
 
 import { useState, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import type { SSEEvent, TimelineEntry, SidebarTab, AgentId } from './types';
 import type { OfficeData } from './useOfficeData';
 import { C, AGENT_COLORS } from './constants';
@@ -202,10 +203,15 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
       className="flex flex-col h-full"
       style={{ background: 'var(--ag-bg-base, #06061a)' }}
     >
-      {/* ── Tab bar ───────────────────────────────────────────────── */}
+      {/* ── Tab bar — glassmorphism ────────────────────────────────── */}
       <div
-        className="flex items-center gap-1 px-2 py-2 flex-shrink-0 border-b"
-        style={{ borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))' }}
+        className="flex items-center gap-1 px-2 py-2 flex-shrink-0 relative"
+        style={{
+          background: 'rgba(6,6,26,0.5)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(139,92,246,0.1)',
+        }}
       >
         {TABS.map(({ key, label, shortLabel }) => {
           const active = activeTab === key;
@@ -213,15 +219,23 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-150 min-h-[44px] text-[11px] sm:text-xs"
+              className="relative px-3 py-1.5 rounded-lg font-medium transition-all duration-150 min-h-[44px] text-[11px] sm:text-xs"
               style={{
-                background: active ? 'rgba(0,240,255,0.1)' : 'transparent',
-                color: active ? '#00F0FF' : '#9CA3AF',
-                border: active ? '1px solid rgba(0,240,255,0.2)' : '1px solid transparent',
+                background: active ? 'rgba(139,92,246,0.1)' : 'transparent',
+                color: active ? '#E8E8F0' : '#6B7280',
               }}
             >
               <span className="hidden sm:inline">{label}</span>
               <span className="sm:hidden">{shortLabel}</span>
+              {active && (
+                <span
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-0.5 rounded-full"
+                  style={{
+                    background: '#8B5CF6',
+                    boxShadow: '0 0 8px rgba(139,92,246,0.5)',
+                  }}
+                />
+              )}
             </button>
           );
         })}
@@ -232,18 +246,33 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
         {activeTab === 'timeline' && (
           <div className="flex flex-col gap-1.5 p-2">
             {timelineEntries.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <p className="text-xs" style={{ color: C.dim }}>
-                  No events yet. Send a message to see agent activity.
+              <motion.div
+                className="flex flex-col items-center justify-center py-12 gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <span className="text-3xl opacity-40">🤖</span>
+                <p className="text-xs text-center" style={{ color: '#6B7280' }}>
+                  No activity yet — agents are warming up
                 </p>
-              </div>
+                <p className="text-[10px]" style={{ color: '#4B5563' }}>
+                  Send a message to see agent activity
+                </p>
+              </motion.div>
             ) : (
-              timelineEntries.map((entry) => (
-                <TimelineCard
+              timelineEntries.map((entry, i) => (
+                <motion.div
                   key={entry.id}
-                  entry={entry}
-                  onAction={handleCardAction}
-                />
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
+                >
+                  <TimelineCard
+                    entry={entry}
+                    onAction={handleCardAction}
+                  />
+                </motion.div>
               ))
             )}
           </div>
@@ -281,10 +310,15 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
         )}
       </div>
 
-      {/* ── Chat input (always visible) ───────────────────────────── */}
+      {/* ── Chat input (always visible) — glassmorphism ──────────── */}
       <div
-        className="flex items-center gap-2 px-3 py-2 flex-shrink-0 border-t pb-4 md:pb-2"
-        style={{ borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))', background: 'var(--ag-bg-base, #06061a)' }}
+        className="flex items-center gap-2 px-3 py-2.5 flex-shrink-0 pb-4 md:pb-2.5"
+        style={{
+          background: 'rgba(6,6,26,0.7)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderTop: '1px solid rgba(139,92,246,0.1)',
+        }}
       >
         <input
           ref={inputRef}
@@ -292,24 +326,35 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask an agent..."
+          placeholder="Ask any agent..."
           disabled={sending}
-          className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[44px]"
+          className="flex-1 text-xs rounded-xl px-3.5 py-2.5 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[44px] transition-all"
           style={{
-            background: 'var(--ag-bg-elevated, rgba(30,30,50,0.7))',
-            color: 'var(--ag-text-primary, #F4F6FF)',
-            border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))',
+            background: 'rgba(12,12,30,0.5)',
+            color: '#F4F6FF',
+            border: chatInput.trim()
+              ? '1px solid rgba(139,92,246,0.3)'
+              : '1px solid rgba(139,92,246,0.08)',
+            boxShadow: chatInput.trim() ? '0 0 12px rgba(139,92,246,0.08)' : 'none',
           }}
         />
         <button
           onClick={() => void handleSend()}
           disabled={!chatInput.trim() || sending}
-          className="flex items-center justify-center w-11 h-11 rounded-lg transition-opacity disabled:opacity-40 flex-shrink-0"
-          style={{ background: 'rgba(0,240,255,0.12)', color: '#00F0FF' }}
+          className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0"
+          style={{
+            background: chatInput.trim()
+              ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,240,255,0.2))'
+              : 'rgba(139,92,246,0.08)',
+            color: chatInput.trim() ? '#E8E8F0' : '#4B5563',
+            border: chatInput.trim()
+              ? '1px solid rgba(139,92,246,0.3)'
+              : '1px solid rgba(139,92,246,0.06)',
+          }}
           aria-label="Send message"
         >
           {sending ? (
-            <div className="w-3.5 h-3.5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
           ) : (
             <span className="text-sm">▶</span>
           )}

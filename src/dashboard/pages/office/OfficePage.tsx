@@ -1,7 +1,8 @@
 // src/dashboard/pages/office/OfficePage.tsx
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor } from 'lucide-react';
+import { Monitor, Moon, Sun, Zap, Wifi, WifiOff, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
@@ -67,98 +68,107 @@ const AGENT_INTRO_ORDER: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge
 
 function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
   const [visible, setVisible] = useState(false);
-  const [cardsShown, setCardsShown] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    if (!visible) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    AGENT_INTRO_ORDER.forEach((_, i) => {
-      timers.push(setTimeout(() => setCardsShown(i + 1), 600 + i * 200));
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [visible]);
-
   const handleDismiss = () => {
     markVisited();
     setVisible(false);
-    setTimeout(onDismiss, 350);
+    setTimeout(onDismiss, 400);
   };
 
   return (
-    <div
+    <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: visible ? 1 : 0 }}
+      transition={{ duration: 0.4 }}
       style={{
-        backgroundColor: visible ? 'rgba(5,5,10,0.85)' : 'rgba(5,5,10,0)',
-        transition: 'background-color 0.4s ease',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
+        backgroundColor: 'rgba(5,5,10,0.88)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       }}
     >
-      <h2
-        className="text-2xl md:text-3xl font-bold tracking-wide mb-6"
+      {/* Noise texture overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.035]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '128px 128px',
+      }} />
+
+      {/* Aurora gradient orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-1/3 -left-1/4 w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-1/4 -right-1/4 w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,240,255,0.05) 0%, transparent 70%)' }} />
+      </div>
+
+      <motion.h2
+        className="text-2xl md:text-3xl font-bold tracking-wide mb-6 relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.2 }}
         style={{
           fontFamily: 'Syne, sans-serif',
           color: '#F4F6FF',
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(12px)',
-          transition: 'opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s',
+          textShadow: '0 0 40px rgba(139,92,246,0.3)',
         }}
       >
         Meet Your Agent Team
-      </h2>
+      </motion.h2>
 
-      <div className="grid grid-cols-3 gap-3 md:gap-4 px-4 max-w-md w-full mb-8">
+      <div className="grid grid-cols-3 gap-3 md:gap-4 px-4 max-w-md w-full mb-8 relative z-10">
         {AGENT_INTRO_ORDER.map((id, i) => {
           const meta = AGENT_META[id];
           const color = AGENT_COLORS[id];
-          const shown = i < cardsShown;
           return (
-            <div
+            <motion.div
               key={id}
-              className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 md:py-4"
+              className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 md:py-4"
+              initial={{ opacity: 0, y: 40, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.4 + i * 0.1 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               style={{
-                background: shown ? `${color}10` : 'transparent',
-                border: shown ? `1px solid ${color}25` : '1px solid transparent',
-                opacity: shown ? 1 : 0,
-                transform: shown ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.95)',
-                transition: 'all 0.3s ease',
+                background: 'rgba(12,12,30,0.5)',
+                backdropFilter: 'blur(12px)',
+                border: `1px solid ${color}30`,
+                borderLeft: `3px solid ${color}60`,
+                boxShadow: `0 0 20px ${color}10`,
               }}
             >
               <span className="text-xl md:text-2xl">{meta.emoji}</span>
-              <span className="text-xs md:text-sm font-semibold" style={{ color }}>
+              <span className="text-xs md:text-sm font-semibold" style={{ color, textShadow: `0 0 12px ${color}40` }}>
                 {id.charAt(0).toUpperCase() + id.slice(1)}
               </span>
               <span className="text-[10px] md:text-xs" style={{ color: '#8892A4' }}>
                 {meta.role}
               </span>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-      <button
+      <motion.button
         onClick={handleDismiss}
-        className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all"
+        className="px-8 py-3 rounded-xl text-sm font-bold tracking-wide relative z-10 min-h-[44px]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 1.4 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
         style={{
-          background: 'rgba(0,240,255,0.15)',
-          color: '#00F0FF',
-          border: '1px solid rgba(0,240,255,0.3)',
-          opacity: cardsShown >= AGENT_INTRO_ORDER.length ? 1 : 0,
-          transform: cardsShown >= AGENT_INTRO_ORDER.length ? 'translateY(0)' : 'translateY(8px)',
-          transition: 'opacity 0.4s ease, transform 0.4s ease, background 0.2s',
-          pointerEvents: cardsShown >= AGENT_INTRO_ORDER.length ? 'auto' : 'none',
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,240,255,0.2))',
+          color: '#F4F6FF',
+          border: '1px solid rgba(139,92,246,0.4)',
+          boxShadow: '0 0 30px rgba(139,92,246,0.2)',
         }}
-        onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.background = 'rgba(0,240,255,0.25)'; }}
-        onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = 'rgba(0,240,255,0.15)'; }}
       >
-        Get Started
-      </button>
-    </div>
+        Enter Mission Control
+      </motion.button>
+    </motion.div>
   );
 }
 
@@ -332,24 +342,41 @@ export function OfficePage() {
             height: `${CANVAS_H_PX}px`,
           } : undefined}
         >
-        {/* Header overlay */}
+        {/* Header overlay — glassmorphism */}
         <div
           className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2.5"
           style={{
-            background: 'linear-gradient(to bottom, rgba(6,6,26,0.85) 0%, transparent 100%)',
+            background: 'rgba(6,6,26,0.6)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(139,92,246,0.15)',
           }}
         >
+          {/* Animated gradient border-bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-px"
+            style={{
+              background: 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(0,240,255,0.3) 50%, rgba(16,185,129,0.3) 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'headerGradientShift 6s ease infinite',
+            }}
+          />
+          <style>{`@keyframes headerGradientShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }`}</style>
+
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Monitor className="w-5 h-5 text-[#00F0FF]" />
+              <Monitor className="w-5 h-5 text-[#8B5CF6]" />
               <div
-                className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#00F0FF]"
-                style={{ boxShadow: '0 0 4px #00F0FF' }}
+                className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"
+                style={{ boxShadow: '0 0 6px rgba(139,92,246,0.6)' }}
               />
             </div>
             <h1
               className="text-lg font-bold text-[#F4F6FF] tracking-wide"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              style={{
+                fontFamily: 'Syne, sans-serif',
+                textShadow: '0 0 30px rgba(139,92,246,0.3)',
+              }}
             >
               Agent Mission Control
             </h1>
@@ -359,6 +386,7 @@ export function OfficePage() {
                 background: 'rgba(139,92,246,0.12)',
                 color: '#8B5CF6',
                 border: '1px solid rgba(139,92,246,0.2)',
+                backdropFilter: 'blur(8px)',
               }}
             >
               9 AGENTS
@@ -366,49 +394,71 @@ export function OfficePage() {
           </div>
           <div className="flex items-center gap-2">
           {/* Day/Night/Auto toggle */}
-          <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--ag-bg-elevated, rgba(30,30,50,0.7))', border: '1px solid var(--ag-border-subtle, rgba(139,92,246,0.08))' }}>
+          <div
+            className="flex items-center gap-1 rounded-lg p-0.5"
+            style={{
+              background: 'rgba(12,12,30,0.5)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(139,92,246,0.1)',
+            }}
+          >
             {(['day', 'night', 'auto'] as const).map(mode => (
-              <button
+              <motion.button
                 key={mode}
                 onClick={() => { setOfficeTheme(mode); localStorage.setItem('office_theme', mode); }}
                 className="px-2 py-1 rounded-md text-xs transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 style={{
-                  background: officeTheme === mode ? 'rgba(0,240,255,0.15)' : 'transparent',
-                  color: officeTheme === mode ? '#00F0FF' : '#9CA3AF',
+                  background: officeTheme === mode ? 'rgba(139,92,246,0.2)' : 'transparent',
+                  color: officeTheme === mode ? '#8B5CF6' : '#9CA3AF',
                 }}
               >
                 {mode === 'day' ? '\u2600\uFE0F' : mode === 'night' ? '\uD83C\uDF19' : '\u26A1'}
-              </button>
+              </motion.button>
             ))}
           </div>
 
           {/* Connection badge */}
           <span
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${
-              connectionMode === 'live'
-                ? 'bg-[#ADFF2F]/10 text-[#ADFF2F]'
-                : connectionMode === 'reconnecting'
-                  ? 'bg-[#F59E0B]/10 text-[#F59E0B]'
-                  : 'bg-[#FF2D78]/10 text-[#FF2D78]'
-            }`}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider"
             style={{
+              background: connectionMode === 'live'
+                ? 'rgba(16,185,129,0.1)'
+                : connectionMode === 'reconnecting'
+                  ? 'rgba(245,158,11,0.1)'
+                  : 'rgba(255,45,120,0.1)',
+              color: connectionMode === 'live'
+                ? '#10B981'
+                : connectionMode === 'reconnecting'
+                  ? '#F59E0B'
+                  : '#FF2D78',
+              backdropFilter: 'blur(8px)',
+              border: `1px solid ${
+                connectionMode === 'live'
+                  ? 'rgba(16,185,129,0.2)'
+                  : connectionMode === 'reconnecting'
+                    ? 'rgba(245,158,11,0.2)'
+                    : 'rgba(255,45,120,0.2)'
+              }`,
               boxShadow: connectionMode === 'live'
-                ? '0 0 8px rgba(173,255,47,0.15)'
+                ? '0 0 12px rgba(16,185,129,0.15)'
                 : undefined,
             }}
           >
             <span className="relative flex h-2 w-2">
               {connectionMode === 'live' && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-50" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-50" />
               )}
               <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  connectionMode === 'live'
-                    ? 'bg-[#ADFF2F]'
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{
+                  backgroundColor: connectionMode === 'live'
+                    ? '#10B981'
                     : connectionMode === 'reconnecting'
-                      ? 'bg-[#F59E0B]'
-                      : 'bg-[#FF2D78]'
-                }`}
+                      ? '#F59E0B'
+                      : '#FF2D78',
+                }}
               />
             </span>
             {connectionMode === 'live'
@@ -505,14 +555,16 @@ export function OfficePage() {
 
       </div>{/* end main content flex row */}
 
-      {/* Status strip: 9 agent dots with name + working status */}
+      {/* Status strip: glassmorphism pills with breathing glow */}
+      <style>{`@keyframes agentBreath { 0%,100% { box-shadow: var(--breath-shadow-dim); } 50% { box-shadow: var(--breath-shadow-bright); } }`}</style>
       <div
-        className="flex-shrink-0 flex items-center justify-center gap-3 md:gap-4 px-3 py-2 border-t overflow-x-auto"
+        className="flex-shrink-0 flex items-center justify-center gap-2 md:gap-3 px-3 py-2 border-t overflow-x-auto"
         style={{
-          borderColor: 'var(--ag-border-subtle, rgba(139,92,246,0.08))',
-          background: 'var(--ag-bg-surface, rgba(12,12,30,0.6))',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          borderColor: 'rgba(139,92,246,0.12)',
+          background: 'rgba(6,6,26,0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          scrollSnapType: 'x mandatory',
         }}
       >
         {ALL_AGENT_IDS.map((agentId) => {
@@ -520,32 +572,47 @@ export function OfficePage() {
           const meta = AGENT_META[agentId];
           const hours = AGENT_WORK_HOURS[agentId];
           const isOnDuty = currentHour >= hours.start && currentHour < hours.end;
+          const isSelected = selectedAgentId === agentId;
           return (
-            <button
+            <motion.button
               key={agentId}
               onClick={() => setSelectedAgentId(agentId)}
-              className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-2 py-1 transition-all min-h-[44px]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-1.5 flex-shrink-0 rounded-full px-3 py-1.5 transition-all min-h-[40px]"
               style={{
-                background: selectedAgentId === agentId ? `${agentColor}15` : 'transparent',
-                border: selectedAgentId === agentId ? `1px solid ${agentColor}30` : '1px solid transparent',
-              }}
+                scrollSnapAlign: 'center',
+                background: isSelected
+                  ? `rgba(${parseInt(agentColor.slice(1,3),16)},${parseInt(agentColor.slice(3,5),16)},${parseInt(agentColor.slice(5,7),16)},0.12)`
+                  : 'rgba(12,12,30,0.4)',
+                backdropFilter: 'blur(8px)',
+                border: isSelected
+                  ? `1px solid ${agentColor}50`
+                  : `1px solid rgba(255,255,255,0.04)`,
+                opacity: isOnDuty ? 1 : 0.4,
+                ['--breath-shadow-dim' as string]: `0 0 4px ${agentColor}20`,
+                ['--breath-shadow-bright' as string]: `0 0 12px ${agentColor}40`,
+                animation: isOnDuty && !isSelected ? 'agentBreath 3s ease-in-out infinite' : 'none',
+                boxShadow: isSelected ? `0 0 16px ${agentColor}30, inset 0 0 8px ${agentColor}10` : undefined,
+                transform: isSelected ? 'scale(1.08)' : undefined,
+              } as React.CSSProperties}
               title={`${agentId.charAt(0).toUpperCase() + agentId.slice(1)} - ${meta?.role ?? 'Agent'} (${isOnDuty ? 'On duty' : 'Off duty'})`}
             >
+              <span className="text-sm">{meta?.emoji}</span>
               <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                 style={{
                   backgroundColor: isOnDuty ? agentColor : '#4B5563',
-                  boxShadow: isOnDuty ? `0 0 6px ${agentColor}50` : 'none',
-                  opacity: isOnDuty ? 1 : 0.5,
+                  boxShadow: isOnDuty ? `0 0 6px ${agentColor}60` : 'none',
                 }}
               />
               <span
                 className="text-[10px] font-medium tracking-wide hidden sm:inline"
-                style={{ color: isOnDuty ? agentColor : '#4B5563' }}
+                style={{ color: isOnDuty ? '#E8E8F0' : '#4B5563' }}
               >
                 {agentId.charAt(0).toUpperCase() + agentId.slice(1)}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>

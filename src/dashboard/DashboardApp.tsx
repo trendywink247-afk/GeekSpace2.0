@@ -18,6 +18,7 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
 import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
+import { AgentinLogo } from '@/components/AgentinLogo';
 import { AgentSetupWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -549,13 +550,15 @@ export function DashboardApp() {
       <div className="h-14 flex items-center px-4" style={{ borderBottom: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
         <button
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
+          className="group flex items-center gap-3 flex-1 transition-all duration-300"
           aria-label="Go to dashboard home"
         >
-          <img src="/logo-agentin.webp" alt="Agentin" className="w-8 h-8 object-contain" />
+          <span className="group-hover:brightness-[1.3] transition-all duration-300">
+            <AgentinLogo size={28} animate />
+          </span>
           {!sidebarCollapsed && (
-            <span className="font-bold text-lg" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-[#E8E8F0]">Agent</span><span className="text-[#00F0FF]">in</span>
+            <span className="font-bold text-lg transition-all duration-300" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <span className="text-[#E8E8F0]">Agent</span><span style={{ color: '#8B5CF6', textShadow: '0 0 20px rgba(139,92,246,0.4)' }} className="group-hover:[text-shadow:0_0_30px_rgba(139,92,246,0.6)] transition-all duration-300">in</span>
             </span>
           )}
         </button>

@@ -107,9 +107,9 @@ const COLLAB_RECV_PHRASES: Record<string, string[]> = {
   cal: ['Scheduling...', 'Booking it.', 'Time sorted.'],
   nova: ['Investigating!', 'Deep diving.', 'Searching...'],
 };
-import { renderFrame, loadOfficeAssets } from './OfficeCanvasRenderer';
+import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
-import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors } from './agentBehavior';
+import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive } from './agentBehavior';
 import {
   isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath,
 } from './navigation';
@@ -358,7 +358,12 @@ export default function OfficeStage({
     Promise.all([
       loadOfficeAssets(),
       loadSpriteSheets(),
-    ]).then(() => setAssetsReady(true)).catch(() => setAssetsReady(true)); // show even if assets fail
+    ]).then(() => {
+      // Initialize ambient floating particles (fewer on mobile)
+      const isMobile = window.innerWidth < 768;
+      initAmbientParticles(isMobile ? 5 : 15);
+      setAssetsReady(true);
+    }).catch(() => setAssetsReady(true)); // show even if assets fail
   }, []);
 
   // Keep assetsReadyRef in sync so the rAF closure can read it without stale capture
@@ -510,6 +515,8 @@ export default function OfficeStage({
             }
             // Cancel idle wandering — agent walks to their desk for work
             cancelIdleBehavior(agentId);
+            // Notify smart frequency system that agents are active
+            notifyAgentActive();
             {
               const desk = getAgentDesk(agentId);
               const deskValid = validateTarget(desk.x, desk.y, agent.x, agent.y);
@@ -845,10 +852,13 @@ export default function OfficeStage({
       }
 
       ctx.imageSmoothingEnabled = false;
+      const tick = Math.floor(time / 200);
+      // Emit trail particles for walking agents
+      emitTrailParticles(agentsRef.current, tick);
       renderFrame(ctx, {
         agents: agentsRef.current,
         beams: beamsRef.current,
-        tick: Math.floor(time / 200), // tick counter for sprite animations
+        tick, // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
       }, undefined, undefined, effectStateRef.current, themeRef.current);
 

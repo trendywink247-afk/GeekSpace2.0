@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -692,31 +693,68 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         />
 
         {/* ─── Agent Status Strip ─── */}
-        <AgentStatusStrip
-          onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.06 }}
+        >
+          <AgentStatusStrip
+            onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
+          />
+        </motion.div>
 
         {/* ─── Live Agent Feed ─── */}
-        <LiveAgentFeed onNavigate={onNavigate} />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.12 }}
+        >
+          <LiveAgentFeed onNavigate={onNavigate} />
+        </motion.div>
 
         {/* ─── Goals Summary ─── */}
-        <GoalsSummaryCard onNavigate={onNavigate} />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.18 }}
+          whileHover={{ y: -2 }}
+        >
+          <GoalsSummaryCard onNavigate={onNavigate} />
+        </motion.div>
 
         {/* ─── Sprint 4: Quick Actions Grid ─── */}
-        <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.24 }}
+        >
+          <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
+        </motion.div>
 
         {/* ─── Sprint 4: Creations + Streak row ─── */}
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <motion.div
+          className="grid gap-4 lg:grid-cols-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.30 }}
+        >
+          <motion.div className="lg:col-span-2" whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
             <RecentGenerations onNavigate={onNavigate} />
-          </div>
-          <div className="lg:col-span-1">
+          </motion.div>
+          <motion.div className="lg:col-span-1" whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
             <StreakCard onNavigate={onNavigate} />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* ─── Sprint 4: Inbox Card ─── */}
-        <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.36 }}
+          whileHover={{ y: -2 }}
+        >
+          <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
+        </motion.div>
 
         {/* ─── Load error banner ─── */}
         {loadErrors > 0 && !loadErrDismissed && (
