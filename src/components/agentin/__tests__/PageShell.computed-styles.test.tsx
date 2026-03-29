@@ -230,7 +230,7 @@ describe.skip('PageShell — Computed Styles Verification', () => {
       const shell = container.firstChild as HTMLElement;
 
       // Duration classes: duration-300, duration-500, etc.
-      const hasDuration = /duration-[345]00/.test(shell.className);
+      const hasDuration = /duration-300|duration-400|duration-500/.test(shell.className);
       expect(hasDuration || shell.className.includes('animate')).toBe(true);
     });
   });

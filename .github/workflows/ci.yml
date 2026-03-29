@@ -161,7 +161,7 @@ jobs:
 
           echo "=== Building & deploying staging container ==="
           DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-            docker compose up -d --build staging
+            docker compose up -d --build --remove-orphans staging
 
           echo "=== Health check (staging :3002) ==="
           for i in $(seq 1 30); do
@@ -220,7 +220,7 @@ jobs:
             docker compose build --build-arg GIT_SHA=$GIT_SHA geekspace
 
           echo "=== Deploying production container ==="
-          docker compose up -d geekspace
+          docker compose up -d --remove-orphans geekspace
 
           echo "=== Syncing static files to Caddy ==="
           docker cp geekspace-app:/app/dist/assets/. /srv/assets/
@@ -255,7 +255,7 @@ jobs:
 
           echo "=== Also update staging to match production ==="
           DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-            docker compose up -d --build staging
+            docker compose up -d --build --remove-orphans staging
 
           echo "=== Verifying public URL ==="
           if curl -sf https://ai.agentin.chat/api/health > /dev/null 2>&1; then

@@ -31,6 +31,7 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -42,6 +43,9 @@ export default defineConfig({
           }
           if (id.includes('node_modules/framer-motion')) {
             return 'framer-motion';
+          }
+          if (id.includes('node_modules/@blocknote/')) {
+            return 'blocknote';
           }
         },
       },
