@@ -804,7 +804,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       />
 
       {/* Quick Add - Natural Language */}
-      <SectionCard className="bg-gradient-to-r from-[#84CC16]/[0.06] to-[#8B5CF6]/[0.04]">
+      <div className="gs-card p-4 bg-gradient-to-r from-[#84CC16]/[0.06] to-[#8B5CF6]/[0.04]">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-5 h-5 text-[#84CC16]" />
             <span className="text-sm font-medium text-[var(--ag-text-primary)]">Quick Add</span>
