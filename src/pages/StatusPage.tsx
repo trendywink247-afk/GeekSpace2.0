@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { PublicPageShell, SectionCard } from '@/components/agentin';
 
 const COMPONENT_LABELS: Record<string, string> = {
   database: 'Database',
@@ -34,7 +33,6 @@ interface HealthData {
 }
 
 export function StatusPage() {
-  const navigate = useNavigate();
   const [health, setHealth] = useState<HealthData | null>(null);
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -81,18 +79,15 @@ export function StatusPage() {
   const allOk = entries.every(([, v]) => componentStatus(v) === 'operational');
 
   return (
-    <div className="min-h-screen bg-[#06061a] text-[#F4F6FF]">
-      <div className="max-w-3xl mx-auto px-6 py-12 pb-24 md:pb-12">
-        <Button variant="ghost" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')} className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] mb-8 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
-          <ArrowLeft className="w-4 h-4 mr-2" />Back
-        </Button>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-8">
+    <PublicPageShell title="System Status" icon={Activity} maxWidth="3xl">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
+            <h1 className="text-3xl md:text-4xl font-bold font-heading text-[var(--ag-text-primary,#F4F6FF)]">
               System Status
             </h1>
-            <p className="text-[#9CA3AF]">
+            <p className="text-[var(--ag-text-muted,#9CA3AF)] mt-1">
               {lastChecked ? `Last checked: ${lastChecked.toLocaleTimeString()}` : 'Checking\u2026'}
               {health && ` \u00b7 v${health.version} \u00b7 uptime ${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m`}
             </p>
@@ -101,87 +96,80 @@ export function StatusPage() {
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="min-h-[44px] border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="min-h-[44px] border-[var(--ag-border-default,rgba(139,92,246,0.15))] hover:bg-[var(--ag-active-bg,rgba(0,240,255,0.08))]"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
+        {/* Error state */}
         {error && (
-          <Card className="mb-8 border bg-[#FF6161]/5 border-[#FF6161]/30" style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}>
-            <CardContent className="p-6 text-center">
+          <SectionCard className="border-[#FF6161]/30">
+            <div className="text-center py-2">
               <XCircle className="w-10 h-10 text-[#FF6161] mx-auto mb-3" />
-              <h2 className="text-xl font-bold text-[#FF6161]">Unable to Reach Server</h2>
-              <p className="text-sm text-[#9CA3AF] mt-1">Could not connect to the health endpoint</p>
-            </CardContent>
-          </Card>
+              <h2 className="text-xl font-bold font-heading text-[#FF6161]">Unable to Reach Server</h2>
+              <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Could not connect to the health endpoint</p>
+            </div>
+          </SectionCard>
         )}
 
+        {/* Overall status */}
         {health && (
           <>
-            <Card
-              className={`mb-8 border ${allOk ? 'border-[#ADFF2F]/30' : 'border-[#FFD700]/30'}`}
-              style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
-            >
-              <CardContent className="p-6 text-center">
+            <SectionCard className={allOk ? 'border-[#ADFF2F]/30' : 'border-[#FFD700]/30'}>
+              <div className="text-center py-2">
                 {allOk ? (
                   <>
                     <CheckCircle2 className="w-10 h-10 text-[#ADFF2F] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold text-[#ADFF2F]">All Systems Operational</h2>
-                    <p className="text-sm text-[#9CA3AF] mt-1">Everything is running smoothly</p>
+                    <h2 className="text-xl font-bold font-heading text-[#ADFF2F]">All Systems Operational</h2>
+                    <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Everything is running smoothly</p>
                   </>
                 ) : (
                   <>
                     <AlertTriangle className="w-10 h-10 text-[#FFD700] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold text-[#FFD700]">Partial Degradation</h2>
-                    <p className="text-sm text-[#9CA3AF] mt-1">Some services are experiencing issues</p>
+                    <h2 className="text-xl font-bold font-heading text-[#FFD700]">Partial Degradation</h2>
+                    <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mt-1">Some services are experiencing issues</p>
                   </>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
 
+            {/* Component list */}
             <div className="space-y-3">
               {entries.map(([key, value]) => {
                 const status = componentStatus(value);
                 return (
-                  <Card
-                    key={key}
-                    className="border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-colors"
-                    style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
-                  >
-                    <CardContent className="p-4 min-h-[44px] flex items-center">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(status)}
-                          <span className="font-medium text-[#F4F6FF]">{COMPONENT_LABELS[key]}</span>
-                        </div>
-                        <span className={`text-sm capitalize ${getStatusColor(status)}`}>
-                          {status}
-                        </span>
+                  <SectionCard key={key} padding="sm">
+                    <div className="flex items-center justify-between min-h-[36px]">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(status)}
+                        <span className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">{COMPONENT_LABELS[key]}</span>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <span className={`text-sm capitalize ${getStatusColor(status)}`}>
+                        {status}
+                      </span>
+                    </div>
+                  </SectionCard>
                 );
               })}
             </div>
           </>
         )}
 
+        {/* Loading state */}
         {!health && !error && checking && (
-          <div className="text-center text-[#9CA3AF] py-12">Checking system status&hellip;</div>
+          <div className="text-center text-[var(--ag-text-muted,#9CA3AF)] py-12">Checking system status&hellip;</div>
         )}
 
-        <div
-          className="mt-12 p-6 rounded-xl border border-[rgba(139,92,246,0.08)]"
-          style={{ background: 'rgba(12,12,30,0.6)', backdropFilter: 'blur(16px) saturate(180%)' }}
-        >
-          <p className="text-sm text-[#9CA3AF]">
+        {/* Contact */}
+        <SectionCard>
+          <p className="text-sm text-[var(--ag-text-muted,#9CA3AF)]">
             Experiencing issues? Contact us at{' '}
-            <a href="mailto:support@agentin.chat" className="text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors">support@agentin.chat</a>
+            <a href="mailto:support@agentin.chat" className="text-[var(--ag-violet,#8B5CF6)] hover:text-[var(--ag-violet,#8B5CF6)]/80 transition-colors">support@agentin.chat</a>
           </p>
-        </div>
+        </SectionCard>
       </div>
-    </div>
+    </PublicPageShell>
   );
 }
