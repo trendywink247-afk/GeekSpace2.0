@@ -734,13 +734,16 @@ function HiddenPowers() {
   const visiblePowers = expanded ? hiddenPowers : hiddenPowers.slice(0, 4);
 
   return (
-    <SectionCard title="Hidden Powers" subtitle="Things most users never discover — but you should know">
+    <div className="gs-card">
+      <p className="gs-section-label mb-1">Discovery</p>
+      <h3 className="text-base font-semibold text-[#F4F6FF] mb-1">Hidden Powers</h3>
+      <p className="text-sm text-[#9CA3AF] mb-4">Things most users never discover — but you should know</p>
       <div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {visiblePowers.map((power, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/3 border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all group"
+              className="flex items-start gap-3 p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-all group"
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform group-hover:scale-110"
@@ -749,8 +752,8 @@ function HiddenPowers() {
                 <power.icon className="w-4 h-4" style={{ color: power.color }} />
               </div>
               <div>
-                <div className="text-xs font-semibold text-[var(--ag-text-primary)] mb-1">{power.title}</div>
-                <div className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] leading-relaxed">{power.description}</div>
+                <div className="text-xs font-semibold text-[#F4F6FF] mb-1">{power.title}</div>
+                <div className="text-[11px] text-[#9CA3AF] leading-relaxed">{power.description}</div>
               </div>
             </div>
           ))}
@@ -759,14 +762,14 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-white/[0.06] text-xs text-[#9CA3AF] hover:border-white/[0.1] hover:text-[#F4F6FF] transition-all flex items-center justify-center gap-2"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
-    </SectionCard>
+    </div>
   );
 }
 
@@ -946,7 +949,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
       <HiddenPowers />
 
       {/* ── CTA ───────────────────────────────────────────── */}
-      <SectionCard className="text-center relative overflow-hidden">
+      <div className="gs-card text-center relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
@@ -954,29 +957,28 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           }}
         />
         <div className="relative z-10">
-          <h3 className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] mb-2">Ready to explore?</h3>
-          <p className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm mb-6 max-w-md mx-auto">
+          <h3 className="text-xl font-bold text-[#F4F6FF] mb-2">Ready to explore?</h3>
+          <p className="text-[#9CA3AF] text-sm mb-6 max-w-md mx-auto">
             Click any prompt above to copy it, then open the chat and paste. Your agent is waiting.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
+            <button
               onClick={() => onOpenChat?.()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-6 min-h-[44px] transition-all duration-200"
+              className="gs-btn-primary px-6 min-h-[44px]"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Open Agent Chat
-            </Button>
-            <Button
-              variant="outline"
+            </button>
+            <button
               onClick={() => onNavigate?.('connections')}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
+              className="gs-btn-ghost min-h-[44px]"
             >
               <Link2 className="w-4 h-4 mr-2" />
               Set Up Integrations
-            </Button>
+            </button>
           </div>
         </div>
-      </SectionCard>
+      </div>
     </div>
     </PageShell>
   );
