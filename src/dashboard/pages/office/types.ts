@@ -88,6 +88,15 @@ export interface CanvasAgent {
   path: Array<{ x: number; y: number }>;
   /** Index into `path` of the next tile to step onto. */
   pathIndex: number;
+  /** Transient visual effects applied by the canvas renderer. */
+  fx?: {
+    /** Current bounce Y offset in pixels (negative = up). Decays to 0. */
+    bounceY?: number;
+    /** Date.now() when a bounce animation started (task completion). */
+    bounceStart?: number;
+    /** Date.now() when a glow pulse started (delegation). */
+    glowStart?: number;
+  };
 }
 
 /**

@@ -131,6 +131,21 @@ const FAILURE_PHRASES: Record<string, string[]> = {
   cal: ['Conflict found.', 'Rescheduling...', 'Adjusting slots.'],
   nova: ['Dead end. New path.', 'Pivoting search...', 'Different source.'],
 };
+
+// ── Delegation reaction system ─────────────────────────────────────────────
+// Tracks active delegations so delegators react when specialists complete tasks.
+const delegationTracker = new Map<AgentId, {
+  delegatorId: AgentId;
+  taskSnippet: string;
+  timestamp: number;
+}>();
+
+const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
+  weebo: ['Nice one, {name}!', '{name} crushed it!', 'Solid work, {name}!'],
+  edith: ['{name} delivered.', 'Well done, {name}.', 'As expected from {name}.'],
+  jarvis: ['{name} nailed it!', 'Great work, {name}!', 'Smooth, {name}.'],
+};
+
 import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
 import { SMART_OBJECTS } from './smartObjects';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
@@ -549,6 +564,27 @@ export default function OfficeStage({
             if (evt.state === 'task_completed') {
               const phrases = COMPLETION_PHRASES[agentId] || COMPLETION_PHRASES.weebo;
               addBubble(agentId, phrases[Math.floor(Math.random() * phrases.length)]);
+              // Bounce effect on completion
+              agent.fx = { ...agent.fx, bounceStart: Date.now() };
+
+              // Delegation reaction: if this specialist was delegated to, the delegator reacts
+              const delegation = delegationTracker.get(agentId);
+              if (delegation) {
+                const delegatorIdx = next.findIndex(a => a.id === delegation.delegatorId);
+                if (delegatorIdx !== -1) {
+                  const delegator = { ...next[delegatorIdx] };
+                  const reactionPhrases = DELEGATION_REACTION_PHRASES[delegation.delegatorId] || ['{name} finished!'];
+                  const phrase = reactionPhrases[Math.floor(Math.random() * reactionPhrases.length)]
+                    .replace('{name}', agentId.charAt(0).toUpperCase() + agentId.slice(1));
+                  addBubble(delegation.delegatorId, phrase);
+                  // Delegator bounces in appreciation
+                  delegator.fx = { ...delegator.fx, bounceStart: Date.now() };
+                  // Return beam from specialist to delegator
+                  addBeam(agentId, delegation.delegatorId);
+                  next[delegatorIdx] = delegator;
+                }
+                delegationTracker.delete(agentId);
+              }
             }
             if (evt.state === 'task_failed') {
               const phrases = FAILURE_PHRASES[agentId] || FAILURE_PHRASES.weebo;
@@ -570,7 +606,17 @@ export default function OfficeStage({
 
           case 'delegating': {
             agent.state = 'delegating';
+            // Glow pulse effect on delegator
+            agent.fx = { ...agent.fx, glowStart: Date.now() };
             const targetId = evt.targetAgent as SpecialistId | undefined;
+            // Track delegation for reaction system
+            if (targetId) {
+              delegationTracker.set(targetId as AgentId, {
+                delegatorId: agentId,
+                taskSnippet: evt.content?.slice(0, 40) || 'task',
+                timestamp: Date.now(),
+              });
+            }
             // Show delegation context bubble on the delegator
             {
               const targetName = targetId ? (targetId.charAt(0).toUpperCase() + targetId.slice(1)) : 'team';
@@ -751,6 +797,14 @@ export default function OfficeStage({
       if (behaviorAccum >= BEHAVIOR_INTERVAL) {
         behaviorAccum -= BEHAVIOR_INTERVAL;
         tickRef.current++;
+
+        // Auto-expire stale delegation tracker entries (every ~60s)
+        if (tickRef.current % 300 === 0) {
+          const now = Date.now();
+          for (const [specId, entry] of delegationTracker) {
+            if (now - entry.timestamp > 5 * 60 * 1000) delegationTracker.delete(specId);
+          }
+        }
 
         // Compute full BFS paths for agents that need them
         setAgents(prev => {
