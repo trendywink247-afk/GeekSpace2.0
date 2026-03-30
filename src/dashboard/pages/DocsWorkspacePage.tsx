@@ -5,14 +5,12 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { FileText, Plus, Search, Pin, Clock, Archive, Folder,
   Trash2, Star, Globe, ChevronRight, Sparkles, FolderPlus,
   Maximize2, Minimize2, RefreshCw, Check, Loader2, MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import api from '@/services/api';
@@ -294,21 +292,21 @@ export function DocsWorkspacePage() {
               <div className="flex items-center gap-2">
                 <div className="relative max-w-xs hidden sm:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                  <Input
+                  <input
+                    type="text"
                     placeholder="Search documents..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-9 h-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)]"
+                    className="gs-input pl-9 h-10"
                   />
                 </div>
-                <Button
-                  size="sm"
+                <button
                   onClick={handleCreate}
-                  className="gap-1.5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shrink-0 min-h-[44px]"
+                  className="gs-btn-primary gap-1.5 shrink-0 min-h-[44px] flex items-center"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New</span>
-                </Button>
+                </button>
               </div>
             }
           />
@@ -317,11 +315,12 @@ export function DocsWorkspacePage() {
           <div className="flex sm:hidden flex-col gap-2 mt-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-              <Input
+              <input
+                type="text"
                 placeholder="Search documents..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 h-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)]"
+                className="gs-input pl-9 h-10"
               />
             </div>
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -329,11 +328,7 @@ export function DocsWorkspacePage() {
                 <button
                   key={v.id}
                   onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
-                  className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[44px]
-                    ${viewFilter === v.id
-                      ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
-                      : 'bg-white/5 text-[#9CA3AF] border border-[rgba(139,92,246,0.08)]'
-                    }`}
+                  className={`gs-pill whitespace-nowrap min-h-[44px] ${viewFilter === v.id ? 'gs-pill-active' : ''}`}
                 >
                   {v.label}
                 </button>
@@ -359,10 +354,10 @@ export function DocsWorkspacePage() {
                 rows={1}
               />
               {quickCapture && (
-                <Button size="sm" onClick={handleQuickCapture}
-                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+                <button onClick={handleQuickCapture}
+                  className="gs-btn-primary min-h-[44px]">
                   Capture
-                </Button>
+                </button>
               )}
             </div>
           </div>
@@ -373,7 +368,7 @@ export function DocsWorkspacePage() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="h-36 rounded-2xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] animate-pulse backdrop-blur-xl" />
+                <div key={i} className="h-36 bg-white/[0.04] animate-pulse rounded-xl" />
               ))}
             </div>
           ) : filteredDocs.length === 0 ? (
@@ -389,10 +384,10 @@ export function DocsWorkspacePage() {
                   {search ? 'Try a different search term' : 'Start writing. Your AI-powered workspace awaits.'}
                 </p>
                 {!search && (
-                  <Button onClick={handleCreate} className="gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+                  <button onClick={handleCreate} className="gs-btn-primary gap-2 min-h-[44px] flex items-center">
                     <Plus className="w-4 h-4" />
                     Create Document
-                  </Button>
+                  </button>
                 )}
               </div>
             </BlurFade>
@@ -400,7 +395,7 @@ export function DocsWorkspacePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocs.map((doc, idx) => (
                 <BlurFade key={doc.id} delay={0.05 + idx * 0.03}>
-                  <SectionCard className="!p-0 cursor-pointer group" padding="sm">
+                  <div className="gs-card cursor-pointer group !p-0">
                     <button
                       onClick={() => { setSelectedDoc(doc); setEditorOpen(true); }}
                       className="w-full text-left p-4 min-h-[44px]"
@@ -448,7 +443,7 @@ export function DocsWorkspacePage() {
                         </div>
                       </div>
                     </button>
-                  </SectionCard>
+                  </div>
                 </BlurFade>
               ))}
             </div>
@@ -462,20 +457,21 @@ export function DocsWorkspacePage() {
           <DialogHeader>
             <DialogTitle className="text-[#F4F6FF]">New Folder</DialogTitle>
           </DialogHeader>
-          <Input
+          <input
+            type="text"
             value={newFolderName}
             onChange={e => setNewFolderName(e.target.value)}
             placeholder="Folder name"
-            className="bg-[#06061a] border-[rgba(139,92,246,0.08)]"
+            className="gs-input"
             onKeyDown={e => { if (e.key === 'Enter') handleCreateFolder(); }}
             autoFocus
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewFolderOpen(false)} className="min-h-[44px]">Cancel</Button>
-            <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+            <button onClick={() => setNewFolderOpen(false)} className="gs-btn-ghost min-h-[44px]">Cancel</button>
+            <button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
+              className="gs-btn-primary min-h-[44px]">
               Create
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -718,15 +714,14 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
           {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : ''}
         </span>
 
-        <Button
-          size="sm"
+        <button
           onClick={openConversationModal}
-          className="gap-1.5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+          className="gs-btn-primary gap-1.5 min-h-[44px] flex items-center"
           title="Create from Conversation"
         >
           <MessageSquare className="w-4 h-4" />
           <span className="hidden sm:inline">From Chat</span>
-        </Button>
+        </button>
       </header>
 
       {/* AI Writing Toolbar — forge amber accents */}
@@ -832,7 +827,7 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
             )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConvModalOpen(false)} className="min-h-[44px]">Cancel</Button>
+            <button onClick={() => setConvModalOpen(false)} className="gs-btn-ghost min-h-[44px]">Cancel</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -225,10 +225,10 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, ttsEnabled: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
+              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[#8B5CF6]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[#8B5CF6]' : 'bg-[#6B7280]'}`} />
               </div>
-              <span className="text-[var(--ag-text-secondary)]">Voice replies</span>
+              <span className="text-[#9CA3AF]">Voice replies</span>
             </label>
 
             {/* Auto-send toggle */}
@@ -239,15 +239,15 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, autoSend: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
+              <div className="w-9 h-5 rounded-full bg-white/[0.06] peer-checked:bg-[#8B5CF6]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[#8B5CF6]' : 'bg-[#6B7280]'}`} />
               </div>
-              <span className="text-[var(--ag-text-secondary)]">Auto-send</span>
+              <span className="text-[#9CA3AF]">Auto-send</span>
             </label>
 
             {/* Speed selector */}
             <div className="flex items-center gap-2 min-h-[44px]">
-              <span className="text-[var(--ag-text-secondary)]">Speed</span>
+              <span className="text-[#9CA3AF]">Speed</span>
               <div className="relative">
                 <select
                   value={settings.speed}
@@ -258,7 +258,7 @@ export function VoiceChatPage() {
                     <option key={s} value={s}>{s}x</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--ag-text-muted)] pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6B7280] pointer-events-none" />
               </div>
             </div>
           </div>
@@ -274,23 +274,23 @@ export function VoiceChatPage() {
             {/* Concentric rings for listening/recording */}
             {voiceState === 'recording' && (
               <>
-                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-cyan)]/40 animate-voice-ring-1" />
-                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-cyan)]/25 animate-voice-ring-2" />
-                <span className="absolute w-56 h-56 rounded-full border border-[var(--ag-cyan)]/12 animate-voice-ring-3" />
+                <span className="absolute w-32 h-32 rounded-full border border-[#8B5CF6]/40 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[#8B5CF6]/25 animate-voice-ring-2" />
+                <span className="absolute w-56 h-56 rounded-full border border-[#8B5CF6]/12 animate-voice-ring-3" />
               </>
             )}
 
-            {/* Speaking pulse rings — weebo cyan */}
+            {/* Speaking pulse rings — violet */}
             {voiceState === 'speaking' && (
               <>
-                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-weebo)]/50 animate-voice-ring-1" />
-                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-weebo)]/25 animate-voice-ring-2" />
+                <span className="absolute w-32 h-32 rounded-full border border-[#8B5CF6]/50 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[#8B5CF6]/25 animate-voice-ring-2" />
               </>
             )}
 
             {/* Idle pulse glow */}
             {voiceState === 'idle' && (
-              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-cyan)]/5 animate-voice-idle-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[#8B5CF6]/5 animate-voice-idle-pulse" />
             )}
 
             {/* Error glow */}
@@ -303,20 +303,20 @@ export function VoiceChatPage() {
               className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300"
               style={{
                 background: voiceState === 'recording'
-                  ? 'radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(12,12,24,1) 80%)'
+                  ? 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(12,12,24,1) 80%)'
                   : voiceState === 'speaking'
-                    ? 'radial-gradient(circle, rgba(0,240,255,0.12) 0%, rgba(12,12,24,1) 80%)'
+                    ? 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(12,12,24,1) 80%)'
                     : 'radial-gradient(circle, rgba(12,12,24,0.8) 0%, rgba(12,12,24,1) 80%)',
                 border: `2px solid ${
-                  voiceState === 'recording' ? 'var(--ag-cyan)'
-                  : voiceState === 'speaking' ? 'var(--ag-weebo)'
-                  : voiceState === 'error' ? 'var(--ag-pink)'
-                  : 'rgba(0,240,255,0.2)'
+                  voiceState === 'recording' ? '#8B5CF6'
+                  : voiceState === 'speaking' ? '#8B5CF6'
+                  : voiceState === 'error' ? '#FF2D78'
+                  : 'rgba(139,92,246,0.2)'
                 }`,
                 boxShadow: voiceState === 'recording'
-                  ? '0 0 32px rgba(0,240,255,0.35)'
+                  ? '0 0 32px rgba(139,92,246,0.35)'
                   : voiceState === 'speaking'
-                    ? '0 0 24px rgba(0,240,255,0.25)'
+                    ? '0 0 24px rgba(139,92,246,0.25)'
                     : voiceState === 'error'
                       ? '0 0 20px rgba(255,45,120,0.25)'
                       : 'none',
@@ -324,14 +324,14 @@ export function VoiceChatPage() {
               }}
             >
               {voiceState === 'processing' ? (
-                <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
+                <Loader2 className="w-9 h-9 text-[#8B5CF6] animate-spin" />
               ) : (
-                /* Weebo dot — #00F0FF */
+                /* Weebo dot — violet */
                 <span
                   className="w-4 h-4 rounded-full"
                   style={{
-                    backgroundColor: 'var(--ag-weebo)',
-                    boxShadow: '0 0 12px rgba(0,240,255,0.5)',
+                    backgroundColor: '#8B5CF6',
+                    boxShadow: '0 0 12px rgba(139,92,246,0.5)',
                   }}
                   aria-label="Weebo agent"
                 />
@@ -345,7 +345,7 @@ export function VoiceChatPage() {
               {[0, 1, 2, 3, 4, 5, 6].map(i => (
                 <span
                   key={i}
-                  className="w-1.5 bg-[var(--ag-cyan)] rounded-full animate-voice-wave"
+                  className="w-1.5 bg-[#8B5CF6] rounded-full animate-voice-wave"
                   style={{
                     animationDelay: `${i * 0.1}s`,
                     animationDuration: `${0.5 + (i % 3) * 0.15}s`,
@@ -361,7 +361,7 @@ export function VoiceChatPage() {
               {[0, 1, 2, 3, 4].map(i => (
                 <span
                   key={i}
-                  className="w-1.5 rounded-full animate-voice-bar bg-[var(--ag-weebo)]"
+                  className="w-1.5 rounded-full animate-voice-bar bg-[#8B5CF6]"
                   style={{
                     animationDelay: `${i * 0.12}s`,
                     animationDuration: `${0.4 + i * 0.08}s`,
@@ -375,11 +375,11 @@ export function VoiceChatPage() {
           <p
             className="text-sm font-medium transition-colors"
             style={{
-              color: voiceState === 'recording' ? 'var(--ag-cyan)'
-                : voiceState === 'processing' ? 'rgba(0,240,255,0.7)'
-                : voiceState === 'speaking' ? 'var(--ag-weebo)'
-                : voiceState === 'error' ? 'var(--ag-pink)'
-                : 'var(--ag-text-secondary)',
+              color: voiceState === 'recording' ? '#8B5CF6'
+                : voiceState === 'processing' ? 'rgba(139,92,246,0.7)'
+                : voiceState === 'speaking' ? '#A78BFA'
+                : voiceState === 'error' ? '#FF2D78'
+                : '#9CA3AF',
             }}
           >
             {voiceState === 'error' && <AlertCircle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
@@ -388,7 +388,7 @@ export function VoiceChatPage() {
 
           {/* Interim transcript preview */}
           {interimText && voiceState === 'recording' && (
-            <p className="text-xs text-[var(--ag-text-secondary)] italic max-w-xs text-center truncate px-4">
+            <p className="text-xs text-[#9CA3AF] italic max-w-xs text-center truncate px-4">
               &ldquo;{interimText}&rdquo;
             </p>
           )}
@@ -399,9 +399,9 @@ export function VoiceChatPage() {
           <div ref={scrollRef} className="space-y-2 overflow-y-auto max-h-full">
             {transcript.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
-                <p className="text-sm text-[var(--ag-text-muted)]">No conversation yet</p>
-                <p className="text-xs text-[var(--ag-text-muted)]/60 mt-1">Tap the microphone to start</p>
+                <Mic className="w-8 h-8 text-[#8B5CF6]/20 mb-3" />
+                <p className="text-sm text-[#6B7280]">No conversation yet</p>
+                <p className="text-xs text-[#6B7280]/60 mt-1">Tap the microphone to start</p>
               </div>
             ) : (
               transcript.map(turn => (
@@ -410,21 +410,21 @@ export function VoiceChatPage() {
                   className={[
                     'flex flex-col gap-0.5 text-sm rounded-xl px-3 py-2',
                     turn.role === 'user'
-                      ? 'bg-[var(--ag-cyan)]/5 ml-4'
+                      ? 'bg-[#8B5CF6]/5 ml-4'
                       : 'bg-white/[0.04] mr-4',
                   ].join(' ')}
                 >
                   <div className="flex gap-2">
                     <span className={[
                       'font-semibold flex-shrink-0 text-xs mt-0.5',
-                      turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-weebo)]',
+                      turn.role === 'user' ? 'text-[#8B5CF6]' : 'text-[#A78BFA]',
                     ].join(' ')}>
                       {turn.role === 'user' ? 'You' : agent.name || 'Weebo'}:
                     </span>
-                    <span className="text-[var(--ag-text-primary)]/90 break-words">{turn.text}</span>
+                    <span className="text-[#F4F6FF]/90 break-words">{turn.text}</span>
                   </div>
                   {turn.role === 'agent' && turn.engine && (
-                    <span className="text-[10px] text-[var(--ag-text-muted)] ml-auto">
+                    <span className="text-[10px] text-[#6B7280] ml-auto">
                       via {turn.engine}
                     </span>
                   )}
@@ -448,24 +448,24 @@ export function VoiceChatPage() {
               'relative min-h-[64px] min-w-[64px] w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200',
               !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-white/[0.04]' :
               voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-white/[0.04]' :
-              voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-95' :
-              voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-95' :
-              'bg-[var(--ag-cyan)]/15 border-2 border-[var(--ag-cyan)]/30 hover:bg-[var(--ag-cyan)]/25 hover:border-[var(--ag-cyan)]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
+              voiceState === 'recording' ? 'bg-[#FF2D78] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[#FF2D78]/90 cursor-pointer active:scale-95' :
+              voiceState === 'speaking' ? 'bg-[#8B5CF6]/20 border-2 border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/30 cursor-pointer active:scale-95' :
+              'bg-[#8B5CF6]/15 border-2 border-[#8B5CF6]/30 hover:bg-[#8B5CF6]/25 hover:border-[#8B5CF6]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
-              <Loader2 className="w-7 h-7 text-[var(--ag-cyan)] animate-spin" />
+              <Loader2 className="w-7 h-7 text-[#8B5CF6] animate-spin" />
             ) : voiceState === 'recording' ? (
               <MicOff className="w-7 h-7 text-white" />
             ) : voiceState === 'speaking' ? (
-              <span className="w-5 h-5 rounded-sm bg-[var(--ag-weebo)]" />
+              <span className="w-5 h-5 rounded-sm bg-[#8B5CF6]" />
             ) : (
-              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
+              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[#8B5CF6]' : 'text-[#6B7280]'}`} />
             )}
           </button>
 
           {!voice.isSupported && (
-            <p className="text-xs text-[var(--ag-pink)]">Voice not supported in this browser</p>
+            <p className="text-xs text-[#FF2D78]">Voice not supported in this browser</p>
           )}
         </div>
 

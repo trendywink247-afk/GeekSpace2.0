@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Code, LayoutTemplate, Wand2, Wrench, Send, Loader2, Eye,
@@ -365,7 +365,7 @@ export function WebsiteBuilderPage() {
           className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
             deviceMode === mode
               ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
-              : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
+              : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
           }`}
           aria-label={`Preview ${label}`}
           title={label}
@@ -425,24 +425,24 @@ export function WebsiteBuilderPage() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <TabsList className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] flex w-max min-w-full">
-            <TabsTrigger value="projects" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+          <div className="gs-tab-bar flex w-max min-w-full">
+            <button onClick={() => handleTabChange('projects')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'projects' ? 'gs-tab-active' : ''}`}>
               <Code className="w-4 h-4" />
               My Projects
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            </button>
+            <button onClick={() => handleTabChange('templates')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'templates' ? 'gs-tab-active' : ''}`}>
               <LayoutTemplate className="w-4 h-4" />
               Templates
-            </TabsTrigger>
-            <TabsTrigger value="builder" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            </button>
+            <button onClick={() => handleTabChange('builder')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'builder' ? 'gs-tab-active' : ''}`}>
               <Wrench className="w-4 h-4" />
               Builder
-            </TabsTrigger>
-            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            </button>
+            <button onClick={() => handleTabChange('weebos')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'weebos' ? 'gs-tab-active' : ''}`}>
               <Bot className="w-4 h-4" />
               Weebos
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
         </div>
 
         <TabsContent value="projects" className="mt-6">
@@ -457,7 +457,7 @@ export function WebsiteBuilderPage() {
 
         <TabsContent value="builder" className="mt-6">
           {/* Project selector */}
-          <SectionCard padding="md" className="mb-6">
+          <div className="gs-card p-4 mb-6">
             <label className="text-sm text-[#9CA3AF] mb-2 block">Working on:</label>
             <div className="flex gap-2 flex-wrap">
               <button
@@ -491,7 +491,7 @@ export function WebsiteBuilderPage() {
                 ))
               )}
             </div>
-          </SectionCard>
+          </div>
 
           {/* Mode selector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -531,16 +531,16 @@ export function WebsiteBuilderPage() {
               }}
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'dev'
-                  ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
-                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[rgba(12,12,30,0.6)]'
+                  ? 'border-[#10B981]/40 bg-[#10B981]/5 shadow-[0_0_20px_rgba(16,185,129,0.08)]'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#10B981]/30 hover:shadow-[0_0_15px_rgba(16,185,129,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
               style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
+                  builderMode === 'dev' ? 'bg-[#10B981]/20' : 'bg-[#10B981]/10'
                 }`}>
-                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
+                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#10B981]' : 'text-[#9CA3AF]'}`} />
                 </div>
                 <div>
                   <h3 className="text-[#F4F6FF] font-semibold">Feelin&apos; to be a Dev</h3>
@@ -555,7 +555,7 @@ export function WebsiteBuilderPage() {
 
           {/* ---- Imagine Mode ---- */}
           {builderMode === 'imagine' && (
-            <SectionCard padding="lg">
+            <div className="gs-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
                 <h3 className="text-[#F4F6FF] font-semibold">
@@ -597,7 +597,7 @@ export function WebsiteBuilderPage() {
                   )}
                 </button>
               </div>
-            </SectionCard>
+            </div>
           )}
 
           {/* ---- Dev Mode ---- */}
@@ -605,7 +605,7 @@ export function WebsiteBuilderPage() {
             <div className="space-y-4">
               {/* Title input — only shown for new projects */}
               {!selectedProject && (
-                <SectionCard padding="md">
+                <div className="gs-card p-4">
                   <p className="text-sm text-[#9CA3AF]">
                     Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
                   </p>
@@ -616,7 +616,7 @@ export function WebsiteBuilderPage() {
                     placeholder="Project name (e.g. Hello World)"
                     className="w-full mt-3 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none min-h-[44px]"
                   />
-                </SectionCard>
+                </div>
               )}
 
               {/* Split view: code + preview side by side */}
@@ -819,7 +819,7 @@ export function WebsiteBuilderPage() {
           ) : (
             <>
               {/* Assigned agents */}
-              <SectionCard padding="lg">
+              <div className="gs-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-[#F4F6FF] flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#8B5CF6]" />
@@ -901,11 +901,11 @@ export function WebsiteBuilderPage() {
                                   {task.status === 'running' ? (
                                     <Loader2 className="w-3.5 h-3.5 text-[#FFB800] animate-spin shrink-0" />
                                   ) : (
-                                    <Clock className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                                    <Clock className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
                                   )}
                                   <span className="text-xs text-[#F4F6FF] truncate flex-1">{task.description}</span>
                                   <span className="text-xs capitalize shrink-0"
-                                    style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
+                                    style={{ color: task.status === 'running' ? '#FFB800' : '#10B981' }}>
                                     {task.status}
                                   </span>
                                 </div>
@@ -927,11 +927,11 @@ export function WebsiteBuilderPage() {
                     })}
                   </div>
                 )}
-              </SectionCard>
+              </div>
 
               {/* Quick task for assigned agents */}
               {assignedAgents.length > 0 && (
-                <SectionCard padding="lg">
+                <div className="gs-card p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <Send className="w-4 h-4 text-[#8B5CF6]" />
                     <h3 className="text-sm font-semibold text-[#F4F6FF]">Assign Task</h3>
@@ -963,7 +963,7 @@ export function WebsiteBuilderPage() {
                   <p className="text-xs text-[#9CA3AF] mt-2">
                     The planner will break your request into tasks and assign them to available agents.
                   </p>
-                </SectionCard>
+                </div>
               )}
 
               {/* Assign from fleet */}
@@ -1009,12 +1009,12 @@ export function WebsiteBuilderPage() {
                   </h3>
 
                   {creatingSlot !== null ? (
-                    <SectionCard padding="lg" className="max-w-md">
+                    <div className="gs-card p-5 max-w-md">
                       <p className="text-sm text-[#9CA3AF] mb-3">Choose personality for Slot {creatingSlot}</p>
                       <div className="flex gap-2 mb-3">
                         {([
                           { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
-                          { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: '#00F0FF' },
+                          { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: '#10B981' },
                           { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: '#8B5CF6' },
                         ]).map(p => (
                           <button
@@ -1054,7 +1054,7 @@ export function WebsiteBuilderPage() {
                           {savingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deploy'}
                         </button>
                       </div>
-                    </SectionCard>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {emptySlots.slice(0, 3).map(slot => (

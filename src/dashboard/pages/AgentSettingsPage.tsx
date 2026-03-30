@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
@@ -24,12 +24,9 @@ import {
   Users,
   Settings,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { confirmAction, showSuccess, showError } from '@/utils/alerts';
 import { agentService, memoryService, integrationService } from '@/services/api';
@@ -46,7 +43,7 @@ interface AgentDef {
 }
 
 const AGENTS: AgentDef[] = [
-  { id: 'weebo', name: 'Weebo', color: '#00F0FF', description: 'Balanced all-rounder' },
+  { id: 'weebo', name: 'Weebo', color: '#8B5CF6', description: 'Balanced all-rounder' },
   { id: 'edith', name: 'Edith', color: '#8B5CF6', description: 'Strategic & focused' },
   { id: 'jarvis', name: 'Jarvis', color: '#ADFF2F', description: 'Professional & efficient' },
 ];
@@ -281,11 +278,11 @@ export function AgentSettingsPage() {
       {/* Toast notification */}
       {saveToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="px-4 py-2.5 rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.15)] shadow-lg shadow-[#00F0FF]/10 text-sm text-[#F4F6FF] flex items-center gap-2">
+          <div className="px-4 py-2.5 rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.15)] shadow-lg shadow-[#8B5CF6]/10 text-sm text-[#F4F6FF] flex items-center gap-2">
             {saveToast.includes('Saved') || saveToast.includes('Switched') || saveToast.includes('Cleared') ? (
               <Check className="w-4 h-4 text-[#ADFF2F]" />
             ) : (
-              <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+              <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
             )}
             {saveToast}
           </div>
@@ -299,14 +296,14 @@ export function AgentSettingsPage() {
         subtitle={`Configure ${currentAgent.name} — personality, memory, tools & channels`}
         badge={
           <span className="relative flex h-3 w-3" title="Owned by Weebo">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00F0FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8B5CF6]" />
           </span>
         }
       />
 
       {/* Agent Selector Header */}
-      <SectionCard padding="lg">
+      <div className="gs-card p-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Active agent avatar */}
@@ -341,7 +338,7 @@ export function AgentSettingsPage() {
                 <button
                   key={a.id}
                   onClick={() => handleAgentSwitch(a.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
+                  className={`relative flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                     isActive
                       ? 'text-white'
                       : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/[0.03]'
@@ -367,50 +364,47 @@ export function AgentSettingsPage() {
             })}
           </div>
         </div>
-      </SectionCard>
+      </div>
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-transparent border-b border-[rgba(139,92,246,0.08)] rounded-none p-0 h-auto gap-0">
+        <div className="gs-tab-bar">
           {[
             { value: 'personality', label: 'Personality', icon: Bot },
             { value: 'memory', label: 'Memory', icon: Brain },
             { value: 'tools', label: 'Tools', icon: Wrench },
             { value: 'channels', label: 'Channels', icon: Link2 },
           ].map((tab) => (
-            <TabsTrigger
+            <button
               key={tab.value}
-              value={tab.value}
-              className={`flex-1 sm:flex-none rounded-none border-b-2 border-transparent px-4 sm:px-6 py-3 min-h-[44px] text-sm font-medium transition-all duration-200 bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:bg-transparent ${
-                activeTab === tab.value
-                  ? '!border-b-[#00F0FF] !text-[#00F0FF]'
-                  : '!text-[#9CA3AF] hover:!text-[#F4F6FF]'
-              }`}
+              onClick={() => setActiveTab(tab.value)}
+              className={`gs-tab ${activeTab === tab.value ? 'gs-tab-active' : ''}`}
             >
               <tab.icon className="w-4 h-4 mr-1.5 inline" />
               {tab.label}
-            </TabsTrigger>
+            </button>
           ))}
-        </TabsList>
+        </div>
 
         {/* ========== PERSONALITY TAB ========== */}
         <TabsContent value="personality" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Agent Name */}
-          <SectionCard title="Agent Name" subtitle="This name is used in conversations and greetings." padding="lg">
-            <Input
+          <div className="gs-card p-5"><p className="gs-section-label mb-3">Agent Name</p><p className="text-xs text-[#9CA3AF] mb-3">This name is used in conversations and greetings.</p>
+            <input
+              type="text"
               value={agentName}
               onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
-              className="bg-white/[0.03] border border-white/[0.08] rounded-xl min-h-[44px] text-[#F4F6FF] max-w-md focus:border-[#8B5CF6]/40 focus:ring-[#8B5CF6]/20"
+              className="gs-input max-w-md"
               placeholder="What should your agent be called?"
               maxLength={30}
             />
-          </SectionCard>
+          </div>
 
           {/* Model Selector */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+                <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
                 Primary Model
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">Choose the LLM that powers your agent's responses.</p>
@@ -438,13 +432,13 @@ export function AgentSettingsPage() {
                 );
               })}
             </div>
-          </SectionCard>
+          </div>
 
           {/* Personality Sliders */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#00F0FF]" />
+                <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
                 Personality Tuning
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
@@ -456,7 +450,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Creativity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
                     {['Precise', 'Focused', 'Balanced', 'Creative', 'Exploratory'][creativityStep]}
                   </span>
                 </div>
@@ -465,7 +459,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:border-[#8B5CF6] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                   <span>Factual</span>
@@ -477,7 +471,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Tone</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
                     {TONE_LABELS[toneStep]}
                   </span>
                 </div>
@@ -486,7 +480,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setTone(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:border-[#8B5CF6] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                   <span>Casual</span>
@@ -498,7 +492,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Verbosity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
                     {VERBOSITY_LABELS[verbosityStep]}
                   </span>
                 </div>
@@ -507,7 +501,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:border-[#8B5CF6] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                   <span>Terse</span>
@@ -519,7 +513,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Humor</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
                     {HUMOR_LABELS[humorStep]}
                   </span>
                 </div>
@@ -528,7 +522,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setHumor(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:border-[#8B5CF6] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                   <span>Serious</span>
@@ -540,7 +534,7 @@ export function AgentSettingsPage() {
               <div className="md:col-span-2 md:max-w-[calc(50%-1rem)]">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[#F4F6FF]">Empathy</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[#00F0FF]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[#8B5CF6]">
                     {EMPATHY_LABELS[empathyStep]}
                   </span>
                 </div>
@@ -549,7 +543,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setEmpathy(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[#00F0FF] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:bg-[#8B5CF6] [&_[data-slot=slider-thumb]]:border-[#8B5CF6] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                   <span>Direct</span>
@@ -557,13 +551,13 @@ export function AgentSettingsPage() {
                 </div>
               </div>
             </div>
-          </SectionCard>
+          </div>
 
           {/* Language Preference */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Globe className="w-5 h-5 text-[#00F0FF]" />
+                <Globe className="w-5 h-5 text-[#8B5CF6]" />
                 Language Preference
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">Your agent will respond primarily in this language.</p>
@@ -590,19 +584,19 @@ export function AgentSettingsPage() {
                 );
               })}
             </div>
-          </SectionCard>
+          </div>
 
           {/* Custom Instructions */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Brain className="w-5 h-5 text-[#00F0FF]" />
+                <Brain className="w-5 h-5 text-[#8B5CF6]" />
                 Custom Instructions
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">These instructions guide your agent's behavior across all conversations.</p>
             </div>
             <div className="relative">
-              <Textarea
+              <textarea
                 value={customInstructions}
                 onChange={(e) => {
                   if (e.target.value.length <= 500) {
@@ -610,7 +604,7 @@ export function AgentSettingsPage() {
                     setCustomInstructions(e.target.value);
                   }
                 }}
-                className="bg-white/[0.03] border border-white/[0.08] rounded-xl min-h-[120px] text-[#F4F6FF] resize-none pr-16 focus:border-[#8B5CF6]/40 focus:ring-[#8B5CF6]/20"
+                className="gs-input min-h-[120px] resize-none pr-16"
                 placeholder="Tell your agent how to behave. E.g. 'Always respond with bullet points' or 'Be encouraging and use emojis'..."
                 maxLength={500}
               />
@@ -620,13 +614,13 @@ export function AgentSettingsPage() {
                 {instructionsLength}/500
               </span>
             </div>
-          </SectionCard>
+          </div>
 
           {/* Autonomy Level */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Shield className="w-5 h-5 text-[#00F0FF]" />
+                <Shield className="w-5 h-5 text-[#8B5CF6]" />
                 Autonomy Level
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
@@ -642,18 +636,18 @@ export function AgentSettingsPage() {
                     onClick={() => { isDirty.current = true; setAutonomyLevel(level.id); }}
                     className={`w-full flex items-start gap-3 p-4 min-h-[44px] rounded-xl border text-left transition-all duration-200 ${
                       isActive
-                        ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5'
+                        ? 'border-[#8B5CF6]/40 bg-[#8B5CF6]/5'
                         : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                     }`}
                   >
                     <div className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isActive ? 'border-[#00F0FF]' : 'border-[#9CA3AF]/50'
+                      isActive ? 'border-[#8B5CF6]' : 'border-[#9CA3AF]/50'
                     }`}>
-                      {isActive && <div className="w-2 h-2 rounded-full bg-[#00F0FF]" />}
+                      {isActive && <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <level.icon className="w-4 h-4" style={{ color: isActive ? '#00F0FF' : '#9CA3AF' }} />
+                        <level.icon className="w-4 h-4" style={{ color: isActive ? '#8B5CF6' : '#9CA3AF' }} />
                         <span className={`text-sm font-medium ${isActive ? 'text-[#F4F6FF]' : 'text-[#9CA3AF]'}`}>
                           {level.label}
                         </span>
@@ -664,13 +658,13 @@ export function AgentSettingsPage() {
                 );
               })}
             </div>
-          </SectionCard>
+          </div>
 
           {/* Agent Assignment */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#00F0FF]" />
+                <Users className="w-5 h-5 text-[#8B5CF6]" />
                 Agent Assignments
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
@@ -702,38 +696,37 @@ export function AgentSettingsPage() {
                 );
               })}
             </div>
-          </SectionCard>
+          </div>
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button
-              size="lg"
+            <button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-8 min-h-[44px] transition-all duration-200 rounded-xl"
+              className="gs-btn-primary px-8 min-h-[44px] flex items-center gap-2"
             >
               {isSaving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="w-4 h-4" />
                   Save Changes
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </TabsContent>
 
         {/* ========== MEMORY TAB ========== */}
         <TabsContent value="memory" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Memory Toggle */}
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Brain className="w-5 h-5 text-[#00F0FF]" />
+                <Brain className="w-5 h-5 text-[#8B5CF6]" />
                 <div>
                   <h2 className="text-base font-semibold text-[#F4F6FF]">Agent can remember things</h2>
                   <p className="text-sm text-[#9CA3AF] mt-0.5">
@@ -744,18 +737,18 @@ export function AgentSettingsPage() {
               <Switch
                 checked={memoryEnabled}
                 onCheckedChange={setMemoryEnabled}
-                className={`${memoryEnabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                className={`${memoryEnabled ? '!bg-[#8B5CF6]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#8B5CF6] data-[state=unchecked]:!bg-[#1A1A2E]`}
               />
             </div>
 
             {memoryEnabled && memoryCount > 0 && (
               <div className="mt-4 pt-4 border-t border-[rgba(139,92,246,0.08)]">
                 <p className="text-sm text-[#9CA3AF]">
-                  Your agent currently has <span className="text-[#00F0FF] font-semibold">{memoryCount}</span> {memoryCount === 1 ? 'memory' : 'memories'} stored.
+                  Your agent currently has <span className="text-[#8B5CF6] font-semibold">{memoryCount}</span> {memoryCount === 1 ? 'memory' : 'memories'} stored.
                 </p>
               </div>
             )}
-          </SectionCard>
+          </div>
 
           {/* Memory Manager Link */}
           <button
@@ -771,11 +764,11 @@ export function AgentSettingsPage() {
                 <p className="text-sm text-[#9CA3AF]">View, edit, and manage individual memories</p>
               </div>
             </div>
-            <ExternalLink className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#00F0FF] transition-colors" />
+            <ExternalLink className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#8B5CF6] transition-colors" />
           </button>
 
           {/* Clear All Memories */}
-          <SectionCard padding="lg" className="!border-[#FF2D78]/20">
+          <div className="gs-card p-5 !border-[#FF2D78]/20">
             <h2 className="text-base font-semibold mb-2 flex items-center gap-2 text-[#FF2D78]">
               <Trash2 className="w-5 h-5" />
               Danger Zone
@@ -783,31 +776,30 @@ export function AgentSettingsPage() {
             <p className="text-sm text-[#9CA3AF] mb-4">
               Permanently delete all memories your agent has stored. This cannot be undone.
             </p>
-            <Button
-              variant="outline"
+            <button
               onClick={handleClearAllMemories}
-              className="border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78] min-h-[44px] rounded-xl"
+              className="gs-btn-ghost border-[#FF2D78]/30 text-[#FF2D78] hover:bg-[#FF2D78]/10 hover:text-[#FF2D78] min-h-[44px] flex items-center gap-2"
               disabled={memoryCount === 0 || isClearing}
             >
               {isClearing ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-4 h-4" />
               )}
               Clear All Memories
               {memoryCount > 0 && (
-                <span className="ml-2 text-xs opacity-70">({memoryCount})</span>
+                <span className="text-xs opacity-70">({memoryCount})</span>
               )}
-            </Button>
-          </SectionCard>
+            </button>
+          </div>
         </TabsContent>
 
         {/* ========== TOOLS TAB ========== */}
         <TabsContent value="tools" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-[#00F0FF]" />
+                <Wrench className="w-5 h-5 text-[#8B5CF6]" />
                 Available Tools
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
@@ -823,7 +815,7 @@ export function AgentSettingsPage() {
                     key={tool.id}
                     className={`flex items-center justify-between p-4 min-h-[44px] rounded-xl border transition-all duration-200 ${
                       enabled
-                        ? 'border-[#00F0FF]/20 bg-[#00F0FF]/5'
+                        ? 'border-[#8B5CF6]/20 bg-[#8B5CF6]/5'
                         : 'border-[rgba(139,92,246,0.08)]'
                     }`}
                   >
@@ -836,7 +828,7 @@ export function AgentSettingsPage() {
                       >
                         <tool.icon
                           className="w-4 h-4 transition-colors duration-200"
-                          style={{ color: enabled ? '#00F0FF' : '#9CA3AF' }}
+                          style={{ color: enabled ? '#8B5CF6' : '#9CA3AF' }}
                         />
                       </div>
                       <div>
@@ -849,21 +841,21 @@ export function AgentSettingsPage() {
                     <Switch
                       checked={enabled}
                       onCheckedChange={() => toggleTool(tool.id)}
-                      className={`${enabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                      className={`${enabled ? '!bg-[#8B5CF6]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#8B5CF6] data-[state=unchecked]:!bg-[#1A1A2E]`}
                     />
                   </div>
                 );
               })}
             </div>
-          </SectionCard>
+          </div>
         </TabsContent>
 
         {/* ========== CHANNELS TAB ========== */}
         <TabsContent value="channels" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <SectionCard padding="lg">
+          <div className="gs-card p-5">
             <div className="mb-4">
               <h2 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2">
-                <Link2 className="w-5 h-5 text-[#00F0FF]" />
+                <Link2 className="w-5 h-5 text-[#8B5CF6]" />
                 Connected Channels
               </h2>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
@@ -892,14 +884,12 @@ export function AgentSettingsPage() {
                       Connected
                     </span>
                   ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
+                    <button
                       onClick={() => navigate('/dashboard/connections')}
-                      className="border-[#0088CC]/30 text-[#0088CC] hover:bg-[#0088CC]/10 hover:text-[#0088CC] text-xs min-h-[44px] rounded-xl"
+                      className="gs-btn-ghost border-[#0088CC]/30 text-[#0088CC] hover:bg-[#0088CC]/10 hover:text-[#0088CC] text-xs min-h-[44px]"
                     >
                       Setup
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -907,8 +897,8 @@ export function AgentSettingsPage() {
               {/* Web Chat */}
               <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-[#00F0FF]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-[#8B5CF6]" />
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-[#F4F6FF]">Web Chat</h3>
@@ -937,7 +927,7 @@ export function AgentSettingsPage() {
                 </span>
               </div>
             </div>
-          </SectionCard>
+          </div>
         </TabsContent>
       </Tabs>
     </PageShell>

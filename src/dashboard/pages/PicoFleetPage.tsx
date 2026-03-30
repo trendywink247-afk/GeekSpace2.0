@@ -1,7 +1,7 @@
-// PicoFleetPage — Revamped: design tokens, PageShell + PageHeader + SectionCard,
+// PicoFleetPage — Revamped: design tokens, PageShell + PageHeader,
 // useAgentCanvas (jarvis), Jarvis ownership dot (#ADFF2F), mobile 44px QA
 import { useState, useEffect, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Zap, Plus, Trash2, Clock, CheckCircle, XCircle, AlertCircle,
@@ -9,14 +9,9 @@ import {
   Settings2, Timer, Check, Bot, Image, Video, Globe, ChefHat,
   Edit3, Save, Share2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
@@ -47,8 +42,8 @@ interface PicoTask {
 // ---- Agent Colors (Design System) ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: '#00F0FF',
-  edith: '#8B5CF6',
+  weebo: '#8B5CF6',
+  edith: '#A78BFA',
   jarvis: '#ADFF2F',
 };
 
@@ -80,7 +75,7 @@ const INTERVAL_OPTIONS = [
 
 const TOOL_OPTIONS = [
   { id: 'recipes' as const, label: 'Recipes', short: 'RCP', icon: ChefHat, color: '#00FF88' },
-  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: '#00F0FF' },
+  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: '#8B5CF6' },
   { id: 'video-gen' as const, label: 'Video Gen', short: 'VID', icon: Video, color: '#FFB800' },
   { id: 'website-builder' as const, label: 'Website Builder', short: 'WEB', icon: Globe, color: '#A855F7' },
   { id: 'social-media' as const, label: 'Social Media', short: 'SOC', icon: Share2, color: '#FF2D78' },
@@ -95,7 +90,7 @@ const statusColors: Record<string, string> = {
   cancelled: '#6B7280',
   disabled: '#FF6161',
   failed: '#FF6161',
-  queued: '#00F0FF',
+  queued: '#8B5CF6',
   running: '#FFB800',
   paused: '#FFB800',
 };
@@ -514,7 +509,7 @@ export function PicoFleetPage() {
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
           <div
-            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[var(--ag-bg-surface)]/95 backdrop-blur-sm border shadow-2xl"
+            className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[rgba(255,255,255,0.02)]/95 backdrop-blur-sm border shadow-2xl"
             style={{ borderColor: toast.type === 'success' ? '#00FF8840' : '#FF616140' }}
           >
             {toast.type === 'success' ? (
@@ -522,8 +517,8 @@ export function PicoFleetPage() {
             ) : (
               <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
             )}
-            <span className="text-sm text-[var(--ag-text-primary)]">{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss notification">
+            <span className="text-sm text-[#F4F6FF]">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-[#6B7280] hover:text-[#F4F6FF] min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss notification">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -545,38 +540,45 @@ export function PicoFleetPage() {
           </span>
         }
         actions={
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => loadData()}
             disabled={refreshing}
             aria-label="Refresh fleet"
-            className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="gs-btn-ghost min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl px-3"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
+          </button>
         }
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-[var(--ag-bg-surface)] border" style={{ borderColor: BORDER_SUBTLE }}>
-          <TabsTrigger value="fleet" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+      <div className="w-full">
+        <div className="gs-tab-bar">
+          <button
+            onClick={() => setActiveTab('fleet')}
+            className={`gs-tab ${activeTab === 'fleet' ? 'gs-tab-active' : ''} gap-2 min-h-[44px]`}
+          >
             <Zap className="w-4 h-4" />
             Fleet
-          </TabsTrigger>
-          <TabsTrigger value="config" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+          </button>
+          <button
+            onClick={() => setActiveTab('config')}
+            className={`gs-tab ${activeTab === 'config' ? 'gs-tab-active' : ''} gap-2 min-h-[44px]`}
+          >
             <Settings2 className="w-4 h-4" />
             Agent Config
-          </TabsTrigger>
-          <TabsTrigger value="cron" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+          </button>
+          <button
+            onClick={() => setActiveTab('cron')}
+            className={`gs-tab ${activeTab === 'cron' ? 'gs-tab-active' : ''} gap-2 min-h-[44px]`}
+          >
             <Timer className="w-4 h-4" />
             Cron Jobs
-          </TabsTrigger>
-        </TabsList>
+          </button>
+        </div>
 
         {/* ============= TAB 1: FLEET ============= */}
-        <TabsContent value="fleet" className="mt-6 space-y-6">
+        {activeTab === 'fleet' && <div className="mt-6 space-y-6">
           {/* Agent Cards — 3 columns */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {slots.map(({ slotNum, agent }) => {
@@ -585,52 +587,48 @@ export function PicoFleetPage() {
                 const isPermanent = slotNum === 1;
                 const tools = parseAssignedTools(agent.assigned_tools);
                 return (
-                  <Card key={slotNum} className={`border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all press-scale ${!agent.enabled ? 'opacity-60' : ''}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
-                          <span
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{
-                              backgroundColor: `${getAgentColor(agent.personality)}20`,
-                              border: `2px solid ${getAgentColor(agent.personality)}`,
-                              color: getAgentColor(agent.personality),
-                            }}
-                          >
-                            {agent.personality === 'edith' ? 'E' : agent.personality === 'jarvis' ? 'J' : 'W'}
-                          </span>
-                          {agent.name}
-                        </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={!!agent.enabled}
-                            onCheckedChange={() => handleToggleEnabled(agent)}
-                            disabled={!!agent.enabled && agents.filter(a => a.enabled).length <= 1}
-                            title={!!agent.enabled && agents.filter(a => a.enabled).length <= 1 ? 'At least one Weebo must remain active' : ''}
-                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                          />
-                          <Badge
-                            variant="outline"
-                            className="text-xs capitalize"
-                            style={{ borderColor: `${color}40`, color }}
-                          >
-                            {agent.enabled ? agent.status : 'disabled'}
-                          </Badge>
-                          {!isPermanent && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAgent(agent)}
-                              aria-label={`Remove ${agent.name}`}
-                              className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                  <div key={slotNum} className={`gs-card p-4 hover:border-[rgba(139,92,246,0.15)] transition-all press-scale ${!agent.enabled ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center justify-between pb-3">
+                      <div className="text-lg text-[#F4F6FF] font-semibold flex items-center gap-2">
+                        <span
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                          style={{
+                            backgroundColor: `${getAgentColor(agent.personality)}20`,
+                            border: `2px solid ${getAgentColor(agent.personality)}`,
+                            color: getAgentColor(agent.personality),
+                          }}
+                        >
+                          {agent.personality === 'edith' ? 'E' : agent.personality === 'jarvis' ? 'J' : 'W'}
+                        </span>
+                        {agent.name}
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={!!agent.enabled}
+                          onCheckedChange={() => handleToggleEnabled(agent)}
+                          disabled={!!agent.enabled && agents.filter(a => a.enabled).length <= 1}
+                          title={!!agent.enabled && agents.filter(a => a.enabled).length <= 1 ? 'At least one Weebo must remain active' : ''}
+                          className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <Badge
+                          variant="outline"
+                          className="text-xs capitalize"
+                          style={{ borderColor: `${color}40`, color }}
+                        >
+                          {agent.enabled ? agent.status : 'disabled'}
+                        </Badge>
+                        {!isPermanent && (
+                          <button
+                            onClick={() => handleDeleteAgent(agent)}
+                            aria-label={`Remove ${agent.name}`}
+                            className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 press-scale rounded-xl flex items-center justify-center transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div>
                       {/* Tool badges */}
                       {tools.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -650,47 +648,45 @@ export function PicoFleetPage() {
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)]">
-                          <div className="text-xs text-[var(--ag-text-muted)] mb-1">Completed</div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-[rgba(139,92,246,0.08)]">
+                          <div className="text-xs text-[#6B7280] mb-1">Completed</div>
                           <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                         </div>
-                        <div className="p-3 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)]">
-                          <div className="text-xs text-[var(--ag-text-muted)] mb-1">Failed</div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-[rgba(139,92,246,0.08)]">
+                          <div className="text-xs text-[#6B7280] mb-1">Failed</div>
                           <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-[var(--ag-text-muted)] flex items-center gap-1">
+                        <span className="text-xs text-[#6B7280] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Slot {slotNum}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => { setSelectedAgentId(agent.id); setActiveTab('config'); }}
                           aria-label={`Configure ${agent.name}`}
-                          className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] px-3"
+                          className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] px-3 rounded-xl flex items-center transition-colors"
                         >
                           <Settings2 className="w-3 h-3 mr-1" />
                           Config
-                        </Button>
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               }
 
               // Empty slot — show create button or inline form
               if (creatingSlot === slotNum) {
                 const personalities = [
-                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#00F0FF' },
+                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#8B5CF6' },
                   { id: 'jarvis' as const, letter: 'J', label: 'Jarvis', color: '#ADFF2F' },
                   { id: 'edith' as const, letter: 'E', label: 'Edith', color: '#8B5CF6' },
                 ];
                 return (
-                  <Card key={slotNum} className="border-[rgba(139,92,246,0.15)] border-dashed">
-                    <CardContent className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? 'p-3' : 'p-4'}`}>
-                      <p className="text-sm text-[var(--ag-text-muted)]">Choose personality</p>
+                  <div key={slotNum} className="gs-card border-dashed p-4">
+                    <div className={`flex flex-col items-center gap-3 min-h-[180px] ${isMobile ? '' : ''}`}>
+                      <p className="text-sm text-[#6B7280]">Choose personality</p>
                       <div className="flex gap-2">
                         {personalities.map((p) => (
                           <button
@@ -716,95 +712,88 @@ export function PicoFleetPage() {
                           </button>
                         ))}
                       </div>
-                      <Input
+                      <input
                         value={newAgentName}
                         onChange={(e) => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[200px]"
+                        className="gs-input max-w-[200px] rounded-xl"
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                         autoFocus
                       />
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); setNewAgentPersonality('weebo'); }}
-                          className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-muted)]"
+                          className="gs-btn-ghost px-3 py-1.5 rounded-xl text-sm min-h-[44px]"
                         >
                           Cancel
-                        </Button>
-                        <Button
-                          size="sm"
+                        </button>
+                        <button
                           onClick={handleCreateAgent}
                           disabled={!newAgentName.trim() || savingAgent}
-                          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+                          className="gs-btn-primary min-h-[44px] px-4 rounded-xl disabled:opacity-50"
                         >
                           {savingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deploy'}
-                        </Button>
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               }
 
               return (
-                <Card
+                <div
                   key={slotNum}
-                  className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)] border-dashed hover:border-[rgba(139,92,246,0.15)] transition-all cursor-pointer group press-scale"
+                  className="gs-card border-dashed hover:border-[rgba(139,92,246,0.15)] transition-all cursor-pointer group press-scale"
                   onClick={() => setCreatingSlot(slotNum)}
                 >
-                  <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
-                    <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center group-hover:bg-[#8B5CF6]/10 transition-colors">
+                  <div className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
+                    <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center group-hover:bg-[#8B5CF6]/15 transition-colors">
                       <Plus className="w-6 h-6 text-[#8B5CF6]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium text-[var(--ag-text-primary)]">Deploy Agent</p>
-                      <p className="text-xs text-[var(--ag-text-muted)]">Slot {slotNum} available</p>
+                      <p className="text-sm font-medium text-[#F4F6FF]">Deploy Agent</p>
+                      <p className="text-xs text-[#6B7280]">Slot {slotNum} available</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
 
           {/* Quick Task */}
-          <Card className="border-[rgba(139,92,246,0.08)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Send className="w-4 h-4 text-[#8B5CF6]" />
-                Quick Task
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex gap-3">
-                <Input
-                  value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
-                  placeholder="Describe a task in natural language..."
-                  className="flex-1 bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
-                  onKeyDown={(e) => e.key === 'Enter' && !planning && handlePlanTask()}
-                  disabled={planning}
-                />
-                <Button
-                  onClick={handlePlanTask}
-                  disabled={!taskInput.trim() || planning}
-                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[100px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
-                >
-                  {planning ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Plan
-                    </>
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-[var(--ag-text-muted)] mt-2">
-                The planner will break your request into tasks and assign them to available agents.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="gs-card p-4">
+            <p className="gs-section-label mb-3 flex items-center gap-2">
+              <Send className="w-4 h-4 text-[#8B5CF6]" />
+              Quick Task
+            </p>
+            <div className="flex gap-3">
+              <input
+                value={taskInput}
+                onChange={(e) => setTaskInput(e.target.value)}
+                placeholder="Describe a task in natural language..."
+                className="gs-input flex-1 rounded-xl"
+                onKeyDown={(e) => e.key === 'Enter' && !planning && handlePlanTask()}
+                disabled={planning}
+              />
+              <button
+                onClick={handlePlanTask}
+                disabled={!taskInput.trim() || planning}
+                className="gs-btn-primary min-w-[100px] min-h-[44px] rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {planning ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    Plan
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-[#6B7280] mt-2">
+              The planner will break your request into tasks and assign them to available agents.
+            </p>
+          </div>
 
           {/* Escalation dialog */}
           {showEscalateDialog && (
@@ -1059,7 +1048,7 @@ export function PicoFleetPage() {
               <SectionCard title="Personality" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#00F0FF' },
+                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#8B5CF6' },
                     { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', letter: 'J', color: '#ADFF2F' },
                     { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#8B5CF6' },
                   ].map(p => (
@@ -1097,7 +1086,7 @@ export function PicoFleetPage() {
               <SectionCard title="Mode" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#00F0FF' },
+                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#8B5CF6' },
                     { id: 'builder', name: 'Builder', desc: 'Code gen, portfolio updates, full toolset', color: '#00FF88' },
                     { id: 'operator', name: 'Operator', desc: 'Full automation, API calls, workflows', color: '#FFB800' },
                   ].map(m => (
