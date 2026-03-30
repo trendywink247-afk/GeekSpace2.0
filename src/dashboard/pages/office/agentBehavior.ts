@@ -8,7 +8,7 @@ import {
   AGENT_COLORS,
 } from './constants';
 import {
-  isWalkable, validateTarget,
+  isWalkable, validateTarget, findFullPath,
 } from './navigation';
 import { perceive } from './perception';
 import type { AgentPerception } from './perception';
@@ -41,6 +41,20 @@ const PATIO_PHRASES = ['Fresh air!', 'Nice day', 'Back to work soon', 'Peaceful 
 const BOOKSHELF_PHRASES = ['Good read', 'Found it!', 'Check this out', 'Interesting...'];
 const GENERAL_PHRASES = ['Hey!', 'Nice work!', "How's it going?", 'Almost done!', 'High five!'];
 
+// ── Personality-specific idle phrases ──────────────────────────────────────
+// Each agent has unique idle chatter reflecting their character and role.
+const PERSONALITY_IDLE_PHRASES: Record<string, string[]> = {
+  weebo: ['What should we create?', 'Ooh, I have an idea!', 'Feeling inspired!', "Let's make something cool!", 'Creative juices flowing~', 'Brainstorming...'],
+  edith: ['Running analysis...', 'Patterns detected.', 'Optimizing workflow.', 'Strategic review time.', 'Data looks promising.', 'Cross-referencing...'],
+  jarvis: ['All systems green.', 'Schedule on track.', 'Ops running smooth.', 'Checking automations.', "Everything's in order.", 'Monitoring status...'],
+  aria: ['Color palette vibes!', 'Design mode on.', 'Sketching ideas...', 'Visual concept brewing.', 'Aesthetics matter!', 'Layout looks clean.'],
+  forge: ['Code compiles clean.', 'Build pipeline green.', 'Ship it!', 'Refactoring time.', 'Debugging done.', 'Tests passing.'],
+  pulse: ['Numbers look good.', 'Crunching data...', 'Trend spotted!', 'Analytics update.', 'Metrics are up!', 'Charting progress.'],
+  echo: ['How are you feeling?', 'Remember to breathe.', "You're doing great!", 'Time for a check-in?', 'Mindful moment.', 'Stay focused!'],
+  cal: ['Schedule looks tight.', 'Next meeting in...', 'Calendar synced.', 'Block that focus time!', 'Reminder set.', 'Slots optimized.'],
+  nova: ['Found a paper!', 'Deep dive time.', 'Interesting lead...', 'Research mode on.', 'Hypothesis forming.', 'Cross-referencing sources.'],
+};
+
 /**
  * Returns the appropriate speech bubble phrases for the given interaction behavior.
  * @param behavior - The interaction point behavior type (coffee, relax, present, etc) or 'general'.
@@ -61,6 +75,18 @@ function phrasesForBehavior(
   }
 }
 
+// ── Natural rest cycle tracking ─────────────────────────────────────────────
+// Max 1-2 agents resting at any time; adds life without making the office feel empty.
+const REST_AGENT_CAP = 2;
+const restingAgents = new Set<string>();
+const REST_PHRASES = ['Taking a breather', 'Recharging...', 'Quick rest', 'Stretching it out', 'Back in a sec'];
+
+// ── Agent avoidance (bump / excuse-me) ─────────────────────────────────────
+// When two walking agents are about to collide on the same tile, one pauses
+// briefly and the other reroutes. Tracked per-agent with a cooldown timer.
+const AVOIDANCE_PHRASES = ['Excuse me!', 'After you!', 'Oops!', 'Go ahead!', 'My bad!'];
+const avoidanceCooldown = new Map<AgentId, number>(); // remaining cooldown ticks
+
 // ── Agent behavior state ────────────────────────────────────────────────────
 // State machine for each agent, updated every behavior tick (200ms).
 // Tracks current mode, targets, timers, and animation state.
@@ -70,6 +96,10 @@ function phrasesForBehavior(
  * Determines which animation frame set to use and where speech bubbles appear.
  */
 export type FacingDirection = 'down' | 'up' | 'left' | 'right';
+
+// ── Ambient awareness (idle glance) ────────────────────────────────────────
+// Sitting agents occasionally turn to face a working agent for a few ticks.
+const glanceState = new Map<AgentId, { savedFacing: FacingDirection; timer: number; targetId: AgentId }>();
 
 /**
  * Idle fidget animation types shown while sitting or waiting.
@@ -89,7 +119,7 @@ type FidgetType = 'none' | 'typing' | 'looking' | 'stretching';
  * - 'working': SSE event triggered (typing, thinking) — special state
  * - 'group-meeting': 3+ agents at meeting table, synchronized animation
  */
-type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'working' | 'group-meeting' | 'delivering';
+type BehaviorMode = 'sitting' | 'wandering' | 'socializing' | 'returning' | 'working' | 'group-meeting' | 'delivering' | 'resting';
 
 /**
  * Internal state object for each agent.
@@ -343,6 +373,38 @@ function computeFacing(fromX: number, fromY: number, toX: number, toY: number): 
   return dy >= 0 ? 'down' : 'up';
 }
 
+/**
+ * Detects if a wandering agent's next path step conflicts with another walking agent.
+ * Returns the conflicting agent or null if path is clear.
+ */
+function detectPathCollision(
+  agent: CanvasAgent,
+  allAgents: CanvasAgent[],
+): CanvasAgent | null {
+  // Agent must have a path to check
+  if (!agent.path || agent.pathIndex >= agent.path.length) return null;
+  const nextStep = agent.path[agent.pathIndex];
+
+  for (const other of allAgents) {
+    if (other.id === agent.id || other.isDormant) continue;
+    // Check if another walking agent occupies our next tile
+    if (other.x === nextStep.x && other.y === nextStep.y) {
+      const otherBs = behaviorStates.get(other.id);
+      if (otherBs && (otherBs.mode === 'wandering' || otherBs.mode === 'socializing' || otherBs.mode === 'delivering')) {
+        return other;
+      }
+    }
+    // Check if another walking agent's next step is our next tile
+    if (other.path && other.pathIndex < other.path.length) {
+      const otherNext = other.path[other.pathIndex];
+      if (otherNext.x === nextStep.x && otherNext.y === nextStep.y) {
+        return other;
+      }
+    }
+  }
+  return null;
+}
+
 // ── Perception-driven destination selection ──────────────────────────────────
 // Agents ALWAYS pick a smart object interaction point -- never random walkable tiles.
 // Uses personality-weighted selection with contextual overrides.
@@ -497,6 +559,8 @@ export function cancelIdleBehavior(agentId: AgentId): void {
   setTimeout(() => recentWorkers.delete(agentId), 120_000);
 
   releasePoint(agentId);
+  restingAgents.delete(agentId); // clear rest state if resting
+  glanceState.delete(agentId); // clear any active glance
   bState.mode = 'sitting';
   bState.targetPoint = null;
   bState.socialTarget = null;
@@ -569,6 +633,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   const assignedPoints = new Map<AgentId, InteractionPoint>();
   for (let i = 0; i < count; i++) {
     assignedPoints.set(chosen[i].id, shuffledPts[i]);
+    reservePoint(shuffledPts[i].x, shuffledPts[i].y, chosen[i].id);
   }
 
   const cpts = shuffledPts.slice(0, count);
@@ -768,7 +833,7 @@ function tickGroupMeeting(
  */
 export function tickBehaviors(
   agents: CanvasAgent[],
-  _tick: number,
+  tick: number,
   theme?: 'day' | 'night',
 ): { updatedAgents: CanvasAgent[]; newBubbles: SpeechBubble[] } {
   const newBubbles: SpeechBubble[] = [];
@@ -825,7 +890,14 @@ export function tickBehaviors(
       });
       if (chatters.length > 0) {
         const speaker = pick(chatters);
-        newBubbles.push(makeBubble(speaker.id, pick(GENERAL_PHRASES)));
+        const bs = behaviorStates.get(speaker.id);
+        // Use personality phrases when sitting at desk, location phrases at objects, generic as fallback
+        const phrases = (bs?.mode === 'sitting' && PERSONALITY_IDLE_PHRASES[speaker.id])
+          ? PERSONALITY_IDLE_PHRASES[speaker.id]
+          : (bs?.targetPoint?.behavior)
+            ? phrasesForBehavior(bs.targetPoint.behavior)
+            : GENERAL_PHRASES;
+        newBubbles.push(makeBubble(speaker.id, pick(phrases)));
       }
     }
   }
@@ -834,13 +906,27 @@ export function tickBehaviors(
   const { targets: groupTargets } = tickGroupMeeting(agents, newBubbles);
 
   const updatedAgents = agents.map((agent) => {
-    // Skip agents actively working (not idle)
-    if (agent.state !== 'idle' && agent.state !== 'done') return agent;
-
     let bState = behaviorStates.get(agent.id);
     if (!bState) {
       initBehavior(agent);
       bState = behaviorStates.get(agent.id)!;
+    }
+
+    // Working agents: stay at desk with state-appropriate animations
+    const isWorking = agent.state !== 'idle' && agent.state !== 'done';
+    if (isWorking) {
+      bState.mode = 'working';
+      bState.facing = 'down';
+      // State-specific fidget: thinking/delegating = looking around, everything else = typing
+      if (bState.fidgetTimer <= 0) {
+        bState.fidgetType = (agent.state === 'thinking' || agent.state === 'delegating')
+          ? 'looking' : 'typing';
+        // Faster fidget cycling during tool calls (intense work), slower for thinking
+        bState.fidgetTimer = agent.state === 'tool_call' ? randomInt(4, 8) : randomInt(6, 15);
+      }
+      bState.timer--;
+      bState.fidgetTimer--;
+      return agent;
     }
 
     // Decrease timers
@@ -871,6 +957,45 @@ export function tickBehaviors(
         // Sitting at desk: always face down (front-facing) unless actively interacting
         bState.facing = 'down';
 
+        // Ambient awareness: idle agents occasionally glance toward working agents
+        const glance = glanceState.get(agent.id);
+        if (glance) {
+          // Active glance — override facing
+          bState.facing = glance.savedFacing === 'down' ? glance.savedFacing : glance.savedFacing; // keep override via below
+          glance.timer--;
+          if (glance.timer <= 0) {
+            bState.facing = glance.savedFacing;
+            glanceState.delete(agent.id);
+          } else {
+            // Compute facing toward the working agent
+            const glanceTarget = agents.find(a => a.id === glance.targetId);
+            if (glanceTarget) {
+              bState.facing = computeFacing(agent.x, agent.y, glanceTarget.x, glanceTarget.y);
+            }
+          }
+        } else if (tick % 25 === 0 && Math.random() < 0.4) {
+          // 40% chance every 5s to glance at a working agent
+          const workingAgents = agents.filter(a =>
+            a.id !== agent.id && !a.isDormant &&
+            (a.state === 'thinking' || a.state === 'tool_call' || a.state === 'typing' || a.state === 'responding'),
+          );
+          if (workingAgents.length > 0) {
+            const target = pickRandom(workingAgents);
+            // Max 2 agents glancing at same worker
+            let glancersAtTarget = 0;
+            for (const [, g] of glanceState) {
+              if (g.targetId === target.id) glancersAtTarget++;
+            }
+            if (glancersAtTarget < 2) {
+              glanceState.set(agent.id, {
+                savedFacing: bState.facing,
+                timer: randomInt(5, 8), // 1-1.6s
+                targetId: target.id,
+              });
+            }
+          }
+        }
+
         // Time to wander or socialize?
         if (bState.timer <= 0) {
           // Respect concurrent mover cap
@@ -878,6 +1003,33 @@ export function tickBehaviors(
             bState.timer = randomInt(5, 15); // short retry — don't idle long
             break;
           }
+          // Natural rest chance: 12% when few agents resting (adds life)
+          if (restingAgents.size < REST_AGENT_CAP && !restingAgents.has(agent.id) && Math.random() < 0.12) {
+            const perception = perceive(agent, agents, recentWorkers);
+            // Find a relaxation destination (couch, patio, lounge)
+            const relaxPoints = perception.availableInteractionPoints.filter(
+              (ip) => ip.behavior === 'relax' || ip.behavior === 'chat',
+            );
+            const relaxDest = relaxPoints.length > 0 ? pick(relaxPoints) : null;
+            if (relaxDest) {
+              const validPt = validateTarget(relaxDest.x, relaxDest.y, agent.x, agent.y);
+              reservePoint(validPt.x, validPt.y, agent.id);
+              bState.mode = 'resting';
+              bState.targetPoint = relaxDest;
+              bState.speed = (AGENT_SPEED[agent.id] ?? 1.0) * 0.8; // walk slowly to rest spot
+              bState.timer = randomInt(40, 80); // rest for 8-16 seconds
+              bState.fidgetType = 'stretching';
+              updated.targetX = validPt.x;
+              updated.targetY = validPt.y;
+              updated.path = [];
+              updated.pathIndex = 0;
+              changed = true;
+              restingAgents.add(agent.id);
+              newBubbles.push(makeBubble(agent.id, pick(REST_PHRASES)));
+              break;
+            }
+          }
+
           const wanderChance = isNight ? 0.50 : 0.88;
           const roll = Math.random();
           if (roll < wanderChance) {
@@ -1009,6 +1161,35 @@ export function tickBehaviors(
             }
           }
         } else {
+          // Avoidance check: detect if another agent is about to collide
+          const cooldown = avoidanceCooldown.get(agent.id) ?? 0;
+          if (cooldown > 0) {
+            avoidanceCooldown.set(agent.id, cooldown - 1);
+          } else {
+            const blocker = detectPathCollision(updated, agents);
+            if (blocker) {
+              // Lower-priority agent (alphabetical) reroutes, other pauses briefly
+              const isYielder = agent.id < blocker.id;
+              avoidanceCooldown.set(agent.id, 20); // 4s cooldown
+              avoidanceCooldown.set(blocker.id, 20);
+
+              if (isYielder) {
+                // Reroute: temporarily avoid the blocker's tile
+                const target = bState.targetPoint;
+                if (target) {
+                  const repath = findFullPath(agent.x, agent.y, target.x, target.y);
+                  if (repath.length > 0) {
+                    updated.path = repath;
+                    updated.pathIndex = 0;
+                    changed = true;
+                  }
+                }
+              }
+              // Show excuse-me bubble on one of the two agents
+              newBubbles.push(makeBubble(agent.id, pick(AVOIDANCE_PHRASES)));
+            }
+          }
+
           // Update facing while walking toward target
           bState.facing = computeFacing(
             agent.x, agent.y,
@@ -1182,6 +1363,23 @@ export function tickBehaviors(
             updated.pathIndex = 0;
             changed = true;
           }
+        }
+        break;
+      }
+
+      case 'resting': {
+        // Agent rests at a lounge/patio spot with stretching animation
+        bState.fidgetType = 'stretching';
+        if (bState.fidgetTimer <= 0) bState.fidgetTimer = randomInt(10, 20);
+        if (bState.timer <= 0) {
+          // Done resting — return to normal cycle
+          restingAgents.delete(agent.id);
+          releasePoint(agent.id);
+          bState.mode = 'sitting';
+          bState.targetPoint = null;
+          bState.timer = randomInt(15, 30);
+          bState.fidgetType = 'none';
+          newBubbles.push(makeBubble(agent.id, 'Back to work!'));
         }
         break;
       }

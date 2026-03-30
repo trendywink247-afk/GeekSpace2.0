@@ -107,7 +107,47 @@ const COLLAB_RECV_PHRASES: Record<string, string[]> = {
   cal: ['Scheduling...', 'Booking it.', 'Time sorted.'],
   nova: ['Investigating!', 'Deep diving.', 'Searching...'],
 };
+
+const COMPLETION_PHRASES: Record<string, string[]> = {
+  weebo: ['Nailed it!', 'Done and done!', 'Tada! All set!'],
+  edith: ['Analysis complete.', 'Task finalized.', 'Objective achieved.'],
+  jarvis: ['Mission accomplished.', 'All done.', 'Task complete.'],
+  aria: ['Masterpiece done!', 'Beautiful work!', 'Looks amazing!'],
+  forge: ['Build successful.', 'Deployed!', 'All tests pass.'],
+  pulse: ['Report ready.', 'Data delivered.', 'Numbers crunched.'],
+  echo: ['Great progress!', 'Well done!', 'Proud of you!'],
+  cal: ['Scheduled!', 'All organized.', 'Calendar updated.'],
+  nova: ['Research complete.', 'Findings ready.', 'Discovery made!'],
+};
+
+const FAILURE_PHRASES: Record<string, string[]> = {
+  weebo: ['Hmm, let me try again...', 'Oops, one more try!', 'Almost had it...'],
+  edith: ['Recalculating.', 'Adjusting parameters.', 'Need to reassess.'],
+  jarvis: ['Adjusting approach.', 'Rerouting.', 'Retry in progress.'],
+  aria: ['Back to the canvas...', 'New angle needed.', 'Reimagining...'],
+  forge: ['Build failed. Fixing...', 'Debugging...', 'Patching issue.'],
+  pulse: ['Data mismatch.', 'Rechecking...', 'Anomaly detected.'],
+  echo: ["It's okay, trying again.", 'Learning from this.', 'Second attempt...'],
+  cal: ['Conflict found.', 'Rescheduling...', 'Adjusting slots.'],
+  nova: ['Dead end. New path.', 'Pivoting search...', 'Different source.'],
+};
+
+// ── Delegation reaction system ─────────────────────────────────────────────
+// Tracks active delegations so delegators react when specialists complete tasks.
+const delegationTracker = new Map<AgentId, {
+  delegatorId: AgentId;
+  taskSnippet: string;
+  timestamp: number;
+}>();
+
+const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
+  weebo: ['Nice one, {name}!', '{name} crushed it!', 'Solid work, {name}!'],
+  edith: ['{name} delivered.', 'Well done, {name}.', 'As expected from {name}.'],
+  jarvis: ['{name} nailed it!', 'Great work, {name}!', 'Smooth, {name}.'],
+};
+
 import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
+import { SMART_OBJECTS } from './smartObjects';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
 import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive } from './agentBehavior';
 import {
@@ -142,6 +182,7 @@ interface Props {
   selectedAgentId: string | null;
   onAgentSelect: (id: string | null) => void;
   onAgentDoubleClick: (id: string) => void;
+  onObjectClick?: (objectId: string, objectType: string, label: string) => void;
   theme?: 'day' | 'night';
 }
 
@@ -301,6 +342,7 @@ export default function OfficeStage({
   selectedAgentId,
   onAgentSelect,
   onAgentDoubleClick,
+  onObjectClick,
   theme,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -512,6 +554,41 @@ export default function OfficeStage({
                 { x: agent.renderX, y: agent.renderY },
                 agentId,
               );
+              // Show tool name in speech bubble for context
+              if (evt.tool) {
+                const toolLabel = evt.tool.length > 25 ? evt.tool.slice(0, 22) + '...' : evt.tool;
+                addBubble(agentId, `Using ${toolLabel}...`);
+              }
+            }
+            // Completion and failure bubbles with personality
+            if (evt.state === 'task_completed') {
+              const phrases = COMPLETION_PHRASES[agentId] || COMPLETION_PHRASES.weebo;
+              addBubble(agentId, phrases[Math.floor(Math.random() * phrases.length)]);
+              // Bounce effect on completion
+              agent.fx = { ...agent.fx, bounceStart: Date.now() };
+
+              // Delegation reaction: if this specialist was delegated to, the delegator reacts
+              const delegation = delegationTracker.get(agentId);
+              if (delegation) {
+                const delegatorIdx = next.findIndex(a => a.id === delegation.delegatorId);
+                if (delegatorIdx !== -1) {
+                  const delegator = { ...next[delegatorIdx] };
+                  const reactionPhrases = DELEGATION_REACTION_PHRASES[delegation.delegatorId] || ['{name} finished!'];
+                  const phrase = reactionPhrases[Math.floor(Math.random() * reactionPhrases.length)]
+                    .replace('{name}', agentId.charAt(0).toUpperCase() + agentId.slice(1));
+                  addBubble(delegation.delegatorId, phrase);
+                  // Delegator bounces in appreciation
+                  delegator.fx = { ...delegator.fx, bounceStart: Date.now() };
+                  // Return beam from specialist to delegator
+                  addBeam(agentId, delegation.delegatorId);
+                  next[delegatorIdx] = delegator;
+                }
+                delegationTracker.delete(agentId);
+              }
+            }
+            if (evt.state === 'task_failed') {
+              const phrases = FAILURE_PHRASES[agentId] || FAILURE_PHRASES.weebo;
+              addBubble(agentId, phrases[Math.floor(Math.random() * phrases.length)]);
             }
             // Cancel idle wandering — agent walks to their desk for work
             cancelIdleBehavior(agentId);
@@ -529,7 +606,23 @@ export default function OfficeStage({
 
           case 'delegating': {
             agent.state = 'delegating';
+            // Glow pulse effect on delegator
+            agent.fx = { ...agent.fx, glowStart: Date.now() };
             const targetId = evt.targetAgent as SpecialistId | undefined;
+            // Track delegation for reaction system
+            if (targetId) {
+              delegationTracker.set(targetId as AgentId, {
+                delegatorId: agentId,
+                taskSnippet: evt.content?.slice(0, 40) || 'task',
+                timestamp: Date.now(),
+              });
+            }
+            // Show delegation context bubble on the delegator
+            {
+              const targetName = targetId ? (targetId.charAt(0).toUpperCase() + targetId.slice(1)) : 'team';
+              const taskSnippet = evt.content ? evt.content.slice(0, 30) : 'task';
+              addBubble(agentId, `${targetName}: ${taskSnippet}`);
+            }
             if (targetId && SPECIALIST_AGENTS.includes(targetId as SpecialistId)) {
               // Route specialist toward THEIR DESK for focused work
               const specIdx = next.findIndex(a => a.id === targetId);
@@ -543,9 +636,12 @@ export default function OfficeStage({
                 spec.targetX = validTarget.x;
                 spec.targetY = validTarget.y;
                 next[specIdx] = spec;
-                // Reaction bubble from the delegated agent
+                // Reaction bubble with task context instead of generic phrase
+                const taskContext = evt.content ? evt.content.slice(0, 25) : null;
                 const recvPhrases = COLLAB_RECV_PHRASES[targetId] || COLLAB_RECV_PHRASES.weebo;
-                const phrase = recvPhrases[Math.floor(Math.random() * recvPhrases.length)];
+                const phrase = taskContext
+                  ? `On it: ${taskContext}...`
+                  : recvPhrases[Math.floor(Math.random() * recvPhrases.length)];
                 addBubble(targetId as AgentId, phrase); // eslint-disable-line react-hooks/immutability
               }
             }
@@ -701,6 +797,14 @@ export default function OfficeStage({
       if (behaviorAccum >= BEHAVIOR_INTERVAL) {
         behaviorAccum -= BEHAVIOR_INTERVAL;
         tickRef.current++;
+
+        // Auto-expire stale delegation tracker entries (every ~60s)
+        if (tickRef.current % 300 === 0) {
+          const now = Date.now();
+          for (const [specId, entry] of delegationTracker) {
+            if (now - entry.timestamp > 5 * 60 * 1000) delegationTracker.delete(specId);
+          }
+        }
 
         // Compute full BFS paths for agents that need them
         setAgents(prev => {
@@ -907,6 +1011,23 @@ export default function OfficeStage({
     [agents],
   );
 
+  const hitTestObject = useCallback(
+    (offsetX: number, offsetY: number): { id: string; type: string; label: string } | null => {
+      const cellX = (offsetX / CELL) | 0;
+      const cellY = (offsetY / CELL) | 0;
+      for (const obj of SMART_OBJECTS) {
+        // Check if click is on footprint or interaction points
+        const onFootprint = obj.footprint.some(f => f.x === cellX && f.y === cellY);
+        const onIP = obj.interactionPoints.some(ip => ip.x === cellX && ip.y === cellY);
+        if (onFootprint || onIP) {
+          return { id: obj.id, type: obj.type, label: obj.label };
+        }
+      }
+      return null;
+    },
+    [],
+  );
+
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -923,10 +1044,20 @@ export default function OfficeStage({
 
       clickTimerRef.current = setTimeout(() => {
         clickTimerRef.current = null;
-        onAgentSelect(hit);
+        if (hit) {
+          onAgentSelect(hit);
+        } else {
+          // No agent hit — check for smart object
+          const objHit = hitTestObject(ox, oy);
+          if (objHit && onObjectClick) {
+            onObjectClick(objHit.id, objHit.type, objHit.label);
+          } else {
+            onAgentSelect(null);
+          }
+        }
       }, CLICK_DOUBLE_THRESHOLD_MS);
     },
-    [hitTestAgent, onAgentSelect],
+    [hitTestAgent, hitTestObject, onAgentSelect, onObjectClick],
   );
 
   const handleDoubleClick = useCallback(
@@ -950,6 +1081,29 @@ export default function OfficeStage({
     [hitTestAgent, onAgentDoubleClick],
   );
 
+  // ---- Hover cursor for agents + smart objects (RAF-throttled) ----
+  const hoverRafRef = useRef(0);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = e.currentTarget;
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      if (hoverRafRef.current) return; // skip if RAF already pending
+      hoverRafRef.current = requestAnimationFrame(() => {
+        hoverRafRef.current = 0;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = CANVAS_W / rect.width;
+        const scaleY = CANVAS_H / rect.height;
+        const ox = (clientX - rect.left) * scaleX;
+        const oy = (clientY - rect.top) * scaleY;
+        const agentHit = hitTestAgent(ox, oy);
+        const objHit = !agentHit ? hitTestObject(ox, oy) : null;
+        canvas.style.cursor = (agentHit || objHit) ? 'pointer' : 'default';
+      });
+    },
+    [hitTestAgent, hitTestObject],
+  );
+
   // ---- Render ----
 
   return (
@@ -971,6 +1125,7 @@ export default function OfficeStage({
           }}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
+          onMouseMove={handleMouseMove}
         />
         <SpeechBubbleLayer
           bubbles={bubbles}

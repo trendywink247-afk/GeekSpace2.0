@@ -170,9 +170,9 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 16, y: 2 }, { x: 17, y: 2 }, { x: 18, y: 2 }, { x: 19, y: 2 }, { x: 20, y: 2 },
     ],
     interactionPoints: [
-      { x: 17, y: 4, facing: 'down', behavior: 'relax' },
-      { x: 19, y: 4, facing: 'down', behavior: 'chat' },
-      { x: 19, y: 5, facing: 'down', behavior: 'relax' },
+      { x: 17, y: 4, facing: 'up', behavior: 'relax' },
+      { x: 19, y: 4, facing: 'up', behavior: 'chat' },
+      { x: 19, y: 5, facing: 'up', behavior: 'relax' },
     ],
     maxOccupants: 3,
   },

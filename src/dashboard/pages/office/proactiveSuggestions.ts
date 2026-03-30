@@ -12,7 +12,7 @@
  *
  * **Lifecycle:**
  * 1. Called by OfficePage every 5-10 seconds
- * 2. Fetches data from `/api/agent/reminders`, `/api/inbox/summary`, `/api/activity`
+ * 2. Fetches data from `/api/reminders`, `/api/inbox/count`, `/api/activity`, `/api/habits`
  * 3. Generates suggestions matching agents to data (e.g., Cal for reminders)
  * 4. Returns array sorted by priority (1=highest first)
  * 5. Displayed in InsightToast for 5-minute window
@@ -124,12 +124,12 @@ function getToken(): string | null {
  * **Usage:** Prefer this over `fetch()` for API calls that may fail gracefully.
  *
  * @template T - Expected response type (auto-inferred from context)
- * @param path - API path (e.g., '/api/agent/reminders')
+ * @param path - API path (e.g., '/api/reminders')
  * @returns Parsed JSON response on success, or null on any error
  *
  * @example
  * ```typescript
- * const reminders = await safeFetch<ReminderData>('/api/agent/reminders');
+ * const reminders = await safeFetch<ReminderData>('/api/reminders');
  * if (reminders) {
  *   console.log(`${reminders.count} reminders`);
  * } else {
@@ -166,8 +166,8 @@ interface InboxData {
 }
 
 interface ActivityData {
-  todayCount?: number;
-  streakDays?: number;
+  activity?: Array<{ created_at?: string }>;
+  total?: number;
 }
 
 /**
@@ -179,16 +179,32 @@ interface ActivityData {
  *
  * @returns Array of proactive suggestions, sorted by priority (1=high first)
  */
+interface HabitData {
+  habits?: Array<{ name?: string; current_streak?: number; logged_today?: boolean }>;
+}
+
+interface GoalData {
+  goals?: Array<{ title?: string; status?: string; progress?: number }>;
+  stats?: { active?: number; completionRate?: number };
+}
+
+interface WorkspaceData {
+  artifacts?: Array<{ title?: string; type?: string; created_at?: string; status?: string }>;
+}
+
 export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
   const suggestions: ProactiveSuggestion[] = [];
   const now = Date.now();
-  const expiry = now + 5 * 60 * 1000; // 5 minute TTL
+  const expiry = now + 15 * 60 * 1000; // 15 minute TTL
 
   // Fetch data in parallel from available endpoints
-  const [reminders, inbox, activity] = await Promise.all([
-    safeFetch<ReminderData>('/api/agent/reminders'),
-    safeFetch<InboxData>('/api/inbox/summary'),
+  const [reminders, inbox, activity, habits, goals, workspace] = await Promise.all([
+    safeFetch<ReminderData>('/api/reminders'),
+    safeFetch<InboxData>('/api/inbox/count'),
     safeFetch<ActivityData>('/api/activity'),
+    safeFetch<HabitData>('/api/habits'),
+    safeFetch<GoalData>('/api/agent/goals?status=active'),
+    safeFetch<WorkspaceData>('/api/agent/workspace?limit=5'),
   ]);
 
   // Cal: Reminder suggestions
@@ -229,26 +245,75 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
   }
 
   // Pulse: Activity/productivity suggestions
-  if (activity) {
-    if ((activity.todayCount ?? 0) > 10) {
+  if (activity?.activity) {
+    const todayStr = new Date().toDateString();
+    const todayCount = activity.activity.filter(a =>
+      a.created_at && new Date(a.created_at).toDateString() === todayStr
+    ).length;
+    if (todayCount > 10) {
       suggestions.push({
         id: `pulse-productivity-${now}`,
         agentId: 'pulse',
         agentName: 'Pulse',
-        text: `Productivity up — ${activity.todayCount} actions today`,
+        text: `Productivity up — ${todayCount} actions today`,
         actionLink: '/dashboard/metrics',
         action: { label: 'View Metrics', href: '/dashboard/metrics' },
         priority: 3,
         expiresAt: expiry,
       });
     }
-    if ((activity.streakDays ?? 0) >= 3) {
+  }
+
+  // Echo: Habit nudges
+  if (habits?.habits) {
+    const unloggedHabits = habits.habits.filter(h => !h.logged_today);
+    if (unloggedHabits.length > 0) {
       suggestions.push({
-        id: `pulse-streak-${now}`,
-        agentId: 'pulse',
-        agentName: 'Pulse',
-        text: `${activity.streakDays}-day activity streak`,
-        priority: 3,
+        id: `echo-habits-${now}`,
+        agentId: 'echo',
+        agentName: 'Echo',
+        text: unloggedHabits.length > 1
+          ? `${unloggedHabits.length} habits not logged today`
+          : `"${unloggedHabits[0].name}" not logged today`,
+        action: { label: 'Log Habits', href: '/dashboard/focus' },
+        priority: 2,
+        expiresAt: expiry,
+      });
+    }
+  }
+
+  // Weebo: Unfinished workspace artifacts
+  if (workspace?.artifacts) {
+    const drafts = workspace.artifacts.filter(a => a.status === 'draft' || a.status === 'in_progress');
+    if (drafts.length > 0) {
+      const title = drafts[0].title ? `"${drafts[0].title.slice(0, 30)}"` : 'a draft';
+      suggestions.push({
+        id: `weebo-draft-${now}`,
+        agentId: 'weebo',
+        agentName: 'Weebo',
+        text: `You have ${title} unfinished — want to continue?`,
+        action: { label: 'Open Workspace', href: '/dashboard/workspace' },
+        priority: 2,
+        expiresAt: expiry,
+      });
+    }
+  }
+
+  // Nova: Active goals context
+  if (goals?.goals && goals.goals.length > 0) {
+    const activeGoals = goals.goals.filter(g => g.status === 'active');
+    if (activeGoals.length > 0) {
+      const goal = activeGoals[0];
+      const progress = goal.progress ?? 0;
+      suggestions.push({
+        id: `nova-goals-${now}`,
+        agentId: 'nova',
+        agentName: 'Nova',
+        text: progress > 0
+          ? `Goal "${goal.title?.slice(0, 25)}" is ${progress}% complete`
+          : `Goal "${goal.title?.slice(0, 25)}" needs attention`,
+        action: { label: 'View Goals', href: '/dashboard/goals' },
+        priority: progress > 50 ? 3 : 2,
         expiresAt: expiry,
       });
     }
@@ -264,6 +329,16 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
       text: 'Good morning — ready to review today\'s tasks?',
       actionLink: '/dashboard/office',
       action: { label: 'Open Office', href: '/dashboard/office' },
+      priority: 3,
+      expiresAt: expiry,
+    });
+  } else if (hour >= 17 && hour <= 18) {
+    suggestions.push({
+      id: `jarvis-evening-${now}`,
+      agentId: 'jarvis',
+      agentName: 'Jarvis',
+      text: 'Wrapping up — here\'s your day summary',
+      action: { label: 'View Summary', href: '/dashboard/metrics' },
       priority: 3,
       expiresAt: expiry,
     });

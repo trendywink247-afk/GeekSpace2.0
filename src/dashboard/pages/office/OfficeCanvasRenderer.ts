@@ -13,6 +13,7 @@ import type { CanvasAgent, ParticleBeam } from './types';
 import {
   CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
   C,
+  CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
 } from './constants';
 import { ROOMS } from './roomZones';
 import { SMART_OBJECTS } from './smartObjects';
@@ -275,7 +276,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   // Anchor: sprite feet at tile bottom.
   // Sitting offset: shift sprite down when at furniture interaction point
   const behaviorMode = getAgentBehaviorMode(agent.id);
-  const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting');
+  const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting' || behaviorMode === 'resting');
   const pose = isAtFurniture ? getAgentPose(agent.id) : 'none';
 
   // Pose-specific visual offsets:
@@ -308,15 +309,44 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   const isIdle = !isWalking && !isAtFurniture;
   const bobOffset = isIdle ? Math.round(Math.sin(tick * 0.3) * 1) : 0;
 
-  const drawX = cx - DW / 2 + furnitureOffsetX;
-  const drawY = cy - DH + 16 + sittingOffset + bobOffset + furnitureOffsetY;
+  // Bounce effect on task completion (damped sine, 500ms)
+  let bounceOffset = 0;
+  if (agent.fx?.bounceStart) {
+    const elapsed = Date.now() - agent.fx.bounceStart;
+    const duration = 500;
+    if (elapsed < duration) {
+      const t = elapsed / duration;
+      bounceOffset = -Math.abs(Math.sin(t * Math.PI * 2.5)) * 6 * (1 - t);
+    } else {
+      agent.fx.bounceStart = undefined;
+      agent.fx.bounceY = 0;
+    }
+  }
 
-  // Radial glow halo — brighter for active agents, subtle for idle
+  const drawX = cx - DW / 2 + furnitureOffsetX;
+  const drawY = cy - DH + 16 + sittingOffset + bobOffset + bounceOffset + furnitureOffsetY;
+
+  // Radial glow halo — brighter for active agents, pulsing on delegation
   {
     const isActive = agent.state !== 'idle' && agent.state !== 'done';
     const pulseT = Math.sin(Date.now() / 1000 + cx * 0.01) * 0.5 + 0.5;
-    const glowAlpha = isActive ? 0.12 + pulseT * 0.18 : 0.04;
-    const glowRadius = isActive ? CELL * 2.5 : CELL * 1.5;
+    let glowAlpha = isActive ? 0.12 + pulseT * 0.18 : 0.04;
+    let glowRadius = isActive ? CELL * 2.5 : CELL * 1.5;
+
+    // Delegation glow pulse: 3 bright pulses over 1.5s
+    if (agent.fx?.glowStart) {
+      const elapsed = Date.now() - agent.fx.glowStart;
+      const duration = 1500;
+      if (elapsed < duration) {
+        const t = elapsed / duration;
+        const pulse = Math.sin(t * Math.PI * 3) * (1 - t);
+        glowAlpha += Math.max(0, pulse * 0.25);
+        glowRadius = CELL * 3.5;
+      } else {
+        agent.fx.glowStart = undefined;
+      }
+    }
+
     const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
     grad.addColorStop(0, hexToRgba(agent.color, glowAlpha));
     grad.addColorStop(0.6, hexToRgba(agent.color, glowAlpha * 0.3));
@@ -1071,6 +1101,77 @@ export function drawDebugOverlay(ctx: CanvasRenderingContext2D, collisionMap: bo
 }
 
 // ---------------------------------------------------------------------------
+// Environmental storytelling overlays — dynamic mini-icons on objects
+// ---------------------------------------------------------------------------
+
+const ALL_DESK_POSITIONS: Record<string, { x: number; y: number }> = {
+  ...CORE_DESK_POSITIONS,
+  ...SPECIALIST_POSITIONS,
+};
+
+/** Draw tiny document icons near desks of working agents */
+function drawDeskDocuments(ctx: CanvasRenderingContext2D, agents: CanvasAgent[], tick: number): void {
+  for (const agent of agents) {
+    if (agent.state === 'idle' || agent.state === 'done') continue;
+    const desk = ALL_DESK_POSITIONS[agent.id];
+    if (!desk) continue;
+    // Only show when agent is near their desk
+    if (Math.abs(agent.x - desk.x) > 2 || Math.abs(agent.y - desk.y) > 2) continue;
+
+    const baseX = desk.x * CELL + CELL + 4;
+    const baseY = desk.y * CELL - 6;
+    const bob1 = Math.sin(tick * 0.08) * 0.5;
+    const bob2 = Math.cos(tick * 0.08) * 0.5;
+
+    // Doc icon 1 — small rectangle with "text lines"
+    ctx.fillStyle = hexToRgba(agent.color, 0.25);
+    ctx.fillRect(baseX, baseY + bob1, 4, 5);
+    ctx.fillStyle = hexToRgba(agent.color, 0.12);
+    ctx.fillRect(baseX + 1, baseY + 1 + bob1, 2, 1);
+    ctx.fillRect(baseX + 1, baseY + 3 + bob1, 2, 1);
+
+    // Doc icon 2 — slightly offset
+    ctx.fillStyle = hexToRgba(agent.color, 0.2);
+    ctx.fillRect(baseX + 7, baseY + 2 + bob2, 4, 5);
+    ctx.fillStyle = hexToRgba(agent.color, 0.1);
+    ctx.fillRect(baseX + 8, baseY + 3 + bob2, 2, 1);
+    ctx.fillRect(baseX + 8, baseY + 5 + bob2, 2, 1);
+  }
+}
+
+/** Draw animated squiggle lines on the whiteboard when agents are meeting */
+function drawWhiteboardScribbles(ctx: CanvasRenderingContext2D, agents: CanvasAgent[], tick: number): void {
+  const meetingAgents = agents.filter(a =>
+    a.x >= 16 && a.x <= 25 && a.y >= 12 && a.y <= 19 &&
+    !a.isDormant,
+  );
+  if (meetingAgents.length < 2) return;
+
+  const wbX = 19 * CELL;
+  const wbY = 13 * CELL;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const y = wbY + 6 + i * 7;
+    ctx.moveTo(wbX + 2, y);
+    for (let x = 0; x < 24; x += 4) {
+      ctx.lineTo(wbX + 2 + x, y + Math.sin((tick + x + i * 12) * 0.15) * 2);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Draw all environmental overlays */
+function drawEnvironmentalOverlays(ctx: CanvasRenderingContext2D, agents: CanvasAgent[], tick: number): void {
+  drawDeskDocuments(ctx, agents, tick);
+  drawWhiteboardScribbles(ctx, agents, tick);
+}
+
+// ---------------------------------------------------------------------------
 // renderFrame — main entry, called every render tick
 // Optional showDebug parameter draws the collision grid overlay.
 // ---------------------------------------------------------------------------
@@ -1175,6 +1276,9 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   // 7. Foreground layer disabled — was causing agent head/body clipping
   // when walking through desk areas. Re-enable once depth masking is refined.
   // if (isBgLoaded()) { drawForeground(ctx); }
+
+  // 7b. Environmental storytelling overlays (desk docs, whiteboard scribbles)
+  drawEnvironmentalOverlays(ctx, agents, tick);
 
   // 8. Draw ambient particles (from CanvasEffects) — dimmer in day mode
   if (effectState) {

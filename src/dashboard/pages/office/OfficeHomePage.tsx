@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Monitor, Bell, CheckCircle2, Calendar, BarChart3, Clock, Send, Flame, ChevronRight, Users, ChevronsUp } from 'lucide-react';
+import { Monitor, Bell, CheckCircle2, Calendar, BarChart3, Clock, Send, Flame, ChevronRight, Users, ChevronsUp, MessageSquare } from 'lucide-react';
 import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
@@ -23,6 +23,9 @@ import type { OfficeData } from './useOfficeData';
 import { agentService, agentTasksService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
 import SmartSidebar from './SmartSidebar';
+import { GoalsTab } from './GoalsTab';
+import { DigestModal } from './DigestModal';
+import { generateSuggestions } from './proactiveSuggestions';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
 // ---------------------------------------------------------------------------
@@ -149,12 +152,13 @@ function formatEventTime(epoch: number): string {
 // Enhanced sidebar tab type
 // ---------------------------------------------------------------------------
 
-type EnhancedTab = 'today' | 'timeline' | 'tasks' | 'insights';
+type EnhancedTab = 'today' | 'timeline' | 'tasks' | 'goals' | 'insights';
 
 const ENHANCED_TABS: { key: EnhancedTab; label: string; shortLabel: string }[] = [
   { key: 'today',    label: 'Today',    shortLabel: 'Today' },
   { key: 'timeline', label: 'Timeline', shortLabel: 'Feed' },
   { key: 'tasks',    label: 'Tasks',    shortLabel: 'Tasks' },
+  { key: 'goals',    label: 'Goals',    shortLabel: 'Goals' },
   { key: 'insights', label: 'Insights', shortLabel: 'Stats' },
 ];
 
@@ -541,6 +545,8 @@ function EnhancedSidebar({
           />
         )}
 
+        {activeTab === 'goals' && <GoalsTab />}
+
         {activeTab === 'insights' && <InsightsTab weeklyStats={weeklyStats} />}
 
         {/* Timeline and Tasks delegate to SmartSidebar internals.
@@ -729,6 +735,10 @@ export function OfficeHomePage() {
   const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+  const [objectPopover, setObjectPopover] = useState<{ id: string; type: string; label: string } | null>(null);
+  const objectPopoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (objectPopoverTimer.current) clearTimeout(objectPopoverTimer.current); }, []);
+  const [proactiveSuggestions, setProactiveSuggestions] = useState<InsightCard[]>([]);
 
   // Mobile "tap to expand" hint — visible for 3s then fades out
   const [showTapHint, setShowTapHint] = useState(true);
@@ -769,6 +779,41 @@ export function OfficeHomePage() {
         dismissed: false,
       }));
   }, [officeData?.timeline, dismissedInsights]);
+
+  // Proactive suggestions polling (every 30s)
+  useEffect(() => {
+    let mounted = true;
+    const fetchSuggestions = async () => {
+      const suggestions = await generateSuggestions();
+      if (!mounted) return;
+      setProactiveSuggestions(suggestions
+        .filter(s => !dismissedInsights.includes(s.id))
+        .map(s => ({
+          id: s.id,
+          agentId: s.agentId,
+          agentName: s.agentName,
+          text: s.text,
+          category: 'general' as const,
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+          action: s.action,
+        }))
+      );
+    };
+    void fetchSuggestions();
+    const interval = setInterval(() => void fetchSuggestions(), 30000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, [dismissedInsights]);
+
+  // Merge timeline insights + proactive suggestions
+  const allInsights = useMemo<InsightCard[]>(() => {
+    const ids = new Set(insightCards.map(c => c.id));
+    const merged = [...insightCards];
+    for (const s of proactiveSuggestions) {
+      if (!ids.has(s.id)) merged.push(s);
+    }
+    return merged;
+  }, [insightCards, proactiveSuggestions]);
 
   // Fetch task count when agent selected
   useEffect(() => {
@@ -926,12 +971,33 @@ export function OfficeHomePage() {
             selectedAgentId={selectedAgentId}
             onAgentSelect={setSelectedAgentId}
             onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
+            onObjectClick={(id, type, label) => {
+              if (objectPopoverTimer.current) clearTimeout(objectPopoverTimer.current);
+              setObjectPopover({ id, type, label });
+              objectPopoverTimer.current = setTimeout(() => setObjectPopover(null), 4000);
+            }}
             theme={resolvedTheme}
           />
 
+          {/* Object click popover */}
+          {objectPopover && (
+            <div
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 rounded-xl transition-opacity duration-300"
+              style={{
+                background: 'rgba(12,12,30,0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(139,92,246,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              }}
+            >
+              <span className="text-xs font-medium text-[#E8E8F0]">{objectPopover.label}</span>
+              <span className="text-[10px] text-[#6B7280] ml-2 capitalize">{objectPopover.type}</span>
+            </div>
+          )}
+
           {/* Insight toasts */}
           <InsightToast
-            insights={insightCards}
+            insights={allInsights}
             onDismiss={(id) => setDismissedInsights((prev) => [...prev, id])}
           />
 
@@ -955,6 +1021,7 @@ export function OfficeHomePage() {
                 }
               }}
               onDismiss={() => setSelectedAgentId(null)}
+              officeData={officeData}
             />
           )}
 
@@ -999,6 +1066,41 @@ export function OfficeHomePage() {
         </BlurFade>
       </div>
 
+      {/* Insight Cards Row */}
+      <BlurFade delay={0.18} inView>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 pb-3">
+          {[
+            { label: 'Messages Today', value: officeData?.metrics?.messagesToday ?? 0, icon: MessageSquare, color: 'var(--ag-cyan)' },
+            { label: 'Tasks Done', value: officeData?.taskStats?.completedToday ?? 0, icon: CheckCircle2, color: 'var(--ag-lime)' },
+            { label: 'Reminders Due', value: reminders.length, icon: Bell, color: 'var(--ag-violet)' },
+            { label: 'Habit Streak', value: habits.reduce((max, h) => Math.max(max, h.streak ?? 0), 0), icon: Flame, color: 'var(--ag-pink)' },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 backdrop-blur-md transition-all duration-200 hover:scale-[1.02]"
+              style={{
+                background: 'rgba(12,12,30,0.5)',
+                border: '1px solid rgba(139,92,246,0.08)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+              }}
+            >
+              <div
+                className="flex items-center justify-center w-8 h-8 rounded-lg"
+                style={{ background: `${card.color}15` }}
+              >
+                <card.icon className="w-4 h-4" style={{ color: card.color }} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg font-bold leading-tight" style={{ color: card.color }}>
+                  {card.value}
+                </div>
+                <div className="text-[10px] text-[var(--ag-text-secondary)] truncate">{card.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </BlurFade>
+
       {/* Suggestion strip at bottom with BlurFade */}
       <BlurFade delay={0.2} inView>
         <SuggestionStrip onSelect={handleSuggestion} />
@@ -1009,7 +1111,11 @@ export function OfficeHomePage() {
         agentId={flyoutAgentId}
         onClose={() => setFlyoutAgentId(null)}
         onNavigateToChat={(id) => { setFlyoutAgentId(null); navigate(`/dashboard/chat?agent=${id}`); }}
+        officeData={officeData}
       />
+
+      {/* "What did I miss?" digest modal */}
+      <DigestModal officeData={officeData} />
     </div>
   );
 }

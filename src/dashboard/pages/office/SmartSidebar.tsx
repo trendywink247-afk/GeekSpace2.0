@@ -10,6 +10,7 @@ import { AGENT_COLORS } from './constants';
 import TimelineCard from './TimelineCard';
 import TasksTab from './TasksTab';
 import MetricsTab from './MetricsTab';
+import { GoalsTab } from './GoalsTab';
 
 // ---------------------------------------------------------------------------
 // Helpers (mirror what useOfficeData uses)
@@ -109,6 +110,7 @@ function sseToEntry(ev: SSEEvent, _index: number): TimelineEntry {
 const TABS: { key: SidebarTab; label: string; shortLabel: string }[] = [
   { key: 'timeline', label: 'Timeline', shortLabel: 'Feed' },
   { key: 'tasks',    label: 'Tasks',    shortLabel: 'Tasks' },
+  { key: 'goals',    label: 'Goals',    shortLabel: 'Goals' },
   { key: 'metrics',  label: 'Metrics',  shortLabel: 'Stats' },
 ];
 
@@ -308,6 +310,8 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
             delegationStatus={officeData?.delegationStatus}
           />
         )}
+
+        {activeTab === 'goals' && <GoalsTab />}
       </div>
 
       {/* ── Chat input (always visible) — glassmorphism ──────────── */}

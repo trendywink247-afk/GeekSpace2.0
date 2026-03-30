@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AGENT_COLORS } from './constants';
 import type { CanvasAgent } from './types';
+import type { OfficeData } from './useOfficeData';
 
 interface Props {
   agent: CanvasAgent;
@@ -10,6 +11,17 @@ interface Props {
   onChat: (message?: string) => void;
   onAssignTask: (title?: string) => void;
   onDismiss: () => void;
+  officeData?: OfficeData | null;
+}
+
+function getTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 const STATE_LABELS: Record<string, string> = {
@@ -28,9 +40,30 @@ const STATE_LABELS: Record<string, string> = {
   task_failed: 'Task failed',
 };
 
-export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss }: Props) {
+export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss, officeData }: Props) {
   const color = AGENT_COLORS[agent.id] ?? '#00F0FF';
   const stateLabel = STATE_LABELS[agent.state] ?? agent.state;
+
+  // Compute last action context from timeline or current work
+  const contextLine = (() => {
+    // When actively working, show current tool or content
+    if (agent.state !== 'idle' && agent.state !== 'done') {
+      if (agent.lastTool) return `Using ${agent.lastTool.slice(0, 25)}...`;
+      if (agent.lastContent) return agent.lastContent.slice(0, 40);
+      return null;
+    }
+    // When idle, show last action from timeline
+    if (!officeData?.timeline) return null;
+    const agentName = agent.name?.toLowerCase();
+    const lastEntry = officeData.timeline.find(
+      t => ((t as unknown as Record<string, unknown>).agentId as string)?.toLowerCase() === agentName
+        || t.action?.toLowerCase().includes(agentName ?? ''),
+    );
+    if (!lastEntry) return null;
+    const ago = getTimeAgo(lastEntry.created_at);
+    const action = lastEntry.action.length > 35 ? lastEntry.action.slice(0, 32) + '...' : lastEntry.action;
+    return `Last: ${action} \u00B7 ${ago}`;
+  })();
 
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatText, setChatText] = useState('');
@@ -94,6 +127,11 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
             <span className="text-[10px] text-[#4B5563]">
               {taskCount} task{taskCount !== 1 ? 's' : ''} today
             </span>
+            {contextLine && (
+              <span className="text-[10px] text-[#6B7280] truncate block max-w-[220px]">
+                {contextLine}
+              </span>
+            )}
           </div>
         </div>
 
