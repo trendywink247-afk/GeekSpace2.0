@@ -4,6 +4,7 @@
 // Max queue of TOAST_MAX_QUEUE. Discards stale toasts on tab focus regain.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { InsightCard } from './types';
 import { AGENT_COLORS } from './constants';
 import type { AgentId } from './types';
@@ -30,6 +31,7 @@ interface InsightToastProps {
 // ---------------------------------------------------------------------------
 
 export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToastProps) {
+  const navigate = useNavigate();
   // The current insight being displayed (or null)
   const [current, setCurrent] = useState<InsightCard | null>(null);
   // Fade state: 'in' | 'out' | 'hidden'
@@ -199,10 +201,12 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
 
         {/* CTA button */}
         {current.action && (
-          <a
-            href={current.action.href}
-            onClick={() => dismissCurrent(current.id)}
-            className="flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:brightness-110 mt-0.5"
+          <button
+            onClick={() => {
+              navigate(current.action!.href);
+              dismissCurrent(current.id);
+            }}
+            className="flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:brightness-110 mt-0.5 cursor-pointer"
             style={{
               background: `${agentColor}20`,
               color: agentColor,
@@ -210,7 +214,7 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
             }}
           >
             {current.action.label}
-          </a>
+          </button>
         )}
 
         {/* Dismiss button */}

@@ -166,8 +166,8 @@ interface InboxData {
 }
 
 interface ActivityData {
-  todayCount?: number;
-  streakDays?: number;
+  activity?: Array<{ created_at?: string }>;
+  total?: number;
 }
 
 /**
@@ -180,7 +180,7 @@ interface ActivityData {
  * @returns Array of proactive suggestions, sorted by priority (1=high first)
  */
 interface HabitData {
-  habits?: Array<{ name?: string; streak?: number; last_logged?: string }>;
+  habits?: Array<{ name?: string; current_streak?: number; logged_today?: boolean }>;
 }
 
 interface GoalData {
@@ -199,10 +199,10 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
 
   // Fetch data in parallel from available endpoints
   const [reminders, inbox, activity, habits, goals, workspace] = await Promise.all([
-    safeFetch<ReminderData>('/api/agent/reminders'),
-    safeFetch<InboxData>('/api/inbox/summary'),
+    safeFetch<ReminderData>('/api/reminders'),
+    safeFetch<InboxData>('/api/inbox/count'),
     safeFetch<ActivityData>('/api/activity'),
-    safeFetch<HabitData>('/api/focus/habits'),
+    safeFetch<HabitData>('/api/habits'),
     safeFetch<GoalData>('/api/agent/goals?status=active'),
     safeFetch<WorkspaceData>('/api/agent/workspace?limit=5'),
   ]);
@@ -245,26 +245,19 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
   }
 
   // Pulse: Activity/productivity suggestions
-  if (activity) {
-    if ((activity.todayCount ?? 0) > 10) {
+  if (activity?.activity) {
+    const todayStr = new Date().toDateString();
+    const todayCount = activity.activity.filter(a =>
+      a.created_at && new Date(a.created_at).toDateString() === todayStr
+    ).length;
+    if (todayCount > 10) {
       suggestions.push({
         id: `pulse-productivity-${now}`,
         agentId: 'pulse',
         agentName: 'Pulse',
-        text: `Productivity up — ${activity.todayCount} actions today`,
+        text: `Productivity up — ${todayCount} actions today`,
         actionLink: '/dashboard/metrics',
         action: { label: 'View Metrics', href: '/dashboard/metrics' },
-        priority: 3,
-        expiresAt: expiry,
-      });
-    }
-    if ((activity.streakDays ?? 0) >= 3) {
-      suggestions.push({
-        id: `pulse-streak-${now}`,
-        agentId: 'pulse',
-        agentName: 'Pulse',
-        text: `${activity.streakDays}-day activity streak — keep it going!`,
-        action: { label: 'View Stats', href: '/dashboard/metrics' },
         priority: 3,
         expiresAt: expiry,
       });
@@ -273,17 +266,15 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
 
   // Echo: Habit nudges
   if (habits?.habits) {
-    const staleHabits = habits.habits.filter(h => {
-      if (!h.last_logged) return true;
-      const lastLogged = new Date(h.last_logged).getTime();
-      return now - lastLogged > 2 * 24 * 60 * 60 * 1000; // 2 days
-    });
-    if (staleHabits.length > 0) {
+    const unloggedHabits = habits.habits.filter(h => !h.logged_today);
+    if (unloggedHabits.length > 0) {
       suggestions.push({
         id: `echo-habits-${now}`,
         agentId: 'echo',
         agentName: 'Echo',
-        text: `You haven't logged ${staleHabits.length > 1 ? `${staleHabits.length} habits` : `"${staleHabits[0].name}"`} in 2+ days`,
+        text: unloggedHabits.length > 1
+          ? `${unloggedHabits.length} habits not logged today`
+          : `"${unloggedHabits[0].name}" not logged today`,
         action: { label: 'Log Habits', href: '/dashboard/focus' },
         priority: 2,
         expiresAt: expiry,
