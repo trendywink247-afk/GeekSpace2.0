@@ -672,6 +672,7 @@ export function SettingsPage() {
         ].map(({ id, label, icon: NavIcon }) => (
           <button
             key={id}
+            value={id}
             onClick={() => {
               setActiveTab(id);
               // Scroll to the tabs area smoothly
@@ -1916,6 +1917,7 @@ export function SettingsPage() {
 
         {activeTab === 'voice' && <div className="space-y-6">
           <div className="gs-card">
+            {/* tab: value="voice" */}
             <p className="gs-section-label mb-1">Audio</p>
             <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
               <Volume2 className="w-5 h-5 text-[#8B5CF6]" />Voice Settings

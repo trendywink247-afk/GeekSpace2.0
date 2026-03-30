@@ -426,19 +426,19 @@ export function WebsiteBuilderPage() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="gs-tab-bar flex w-max min-w-full">
-            <button onClick={() => handleTabChange('projects')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'projects' ? 'gs-tab-active' : ''}`}>
+            <button onClick={() => handleTabChange('projects')} className={`gs-tab whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${activeTab === 'projects' ? 'gs-tab-active' : ''}`}>
               <Code className="w-4 h-4" />
               My Projects
             </button>
-            <button onClick={() => handleTabChange('templates')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'templates' ? 'gs-tab-active' : ''}`}>
+            <button onClick={() => handleTabChange('templates')} className={`gs-tab whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${activeTab === 'templates' ? 'gs-tab-active' : ''}`}>
               <LayoutTemplate className="w-4 h-4" />
               Templates
             </button>
-            <button onClick={() => handleTabChange('builder')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'builder' ? 'gs-tab-active' : ''}`}>
+            <button onClick={() => handleTabChange('builder')} className={`gs-tab whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${activeTab === 'builder' ? 'gs-tab-active' : ''}`}>
               <Wrench className="w-4 h-4" />
               Builder
             </button>
-            <button onClick={() => handleTabChange('weebos')} className={`gs-tab whitespace-nowrap flex items-center gap-2 ${activeTab === 'weebos' ? 'gs-tab-active' : ''}`}>
+            <button onClick={() => handleTabChange('weebos')} className={`gs-tab whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${activeTab === 'weebos' ? 'gs-tab-active' : ''}`}>
               <Bot className="w-4 h-4" />
               Weebos
             </button>
