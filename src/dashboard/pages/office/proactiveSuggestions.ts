@@ -12,7 +12,7 @@
  *
  * **Lifecycle:**
  * 1. Called by OfficePage every 5-10 seconds
- * 2. Fetches data from `/api/agent/reminders`, `/api/inbox/summary`, `/api/activity`
+ * 2. Fetches data from `/api/reminders`, `/api/inbox/count`, `/api/activity`, `/api/habits`
  * 3. Generates suggestions matching agents to data (e.g., Cal for reminders)
  * 4. Returns array sorted by priority (1=highest first)
  * 5. Displayed in InsightToast for 5-minute window
@@ -124,12 +124,12 @@ function getToken(): string | null {
  * **Usage:** Prefer this over `fetch()` for API calls that may fail gracefully.
  *
  * @template T - Expected response type (auto-inferred from context)
- * @param path - API path (e.g., '/api/agent/reminders')
+ * @param path - API path (e.g., '/api/reminders')
  * @returns Parsed JSON response on success, or null on any error
  *
  * @example
  * ```typescript
- * const reminders = await safeFetch<ReminderData>('/api/agent/reminders');
+ * const reminders = await safeFetch<ReminderData>('/api/reminders');
  * if (reminders) {
  *   console.log(`${reminders.count} reminders`);
  * } else {

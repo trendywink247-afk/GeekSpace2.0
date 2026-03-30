@@ -208,6 +208,7 @@ export function OfficePage() {
   const [taskCount, setTaskCount] = useState(0);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
   const [objectPopover, setObjectPopover] = useState<{ id: string; type: string; label: string } | null>(null);
+  const objectPopoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<InsightCard[]>([]);
 
   // Day/Night theme
@@ -516,8 +517,9 @@ export function OfficePage() {
           onAgentSelect={setSelectedAgentId}
           onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
           onObjectClick={(id, type, label) => {
+            if (objectPopoverTimer.current) clearTimeout(objectPopoverTimer.current);
             setObjectPopover({ id, type, label });
-            setTimeout(() => setObjectPopover(null), 4000);
+            objectPopoverTimer.current = setTimeout(() => setObjectPopover(null), 4000);
           }}
           theme={resolvedTheme}
         />

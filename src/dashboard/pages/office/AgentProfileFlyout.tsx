@@ -169,7 +169,7 @@ function PersonalitySliders({ agentColor }: { agentColor: string }) {
   const [loaded, setLoaded] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load current values on mount
+  // Load current values on mount + cleanup debounce timer
   useEffect(() => {
     agentService.getConfig()
       .then(res => {
@@ -180,6 +180,7 @@ function PersonalitySliders({ agentColor }: { agentColor: string }) {
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, []);
 
   const debouncedSave = useCallback((field: string, value: number) => {
