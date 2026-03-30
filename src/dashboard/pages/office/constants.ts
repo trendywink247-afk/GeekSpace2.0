@@ -142,20 +142,20 @@ export const COLLISION_MAP: boolean[][] = [
 // Desk positions — spread across rooms for visual variety
 // All verified walkable: COLLISION_MAP[y][x] === false
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 4, y: 14 },    // workspace left
-  edith: { x: 14, y: 14 },   // workspace center-right
-  jarvis: { x: 7, y: 19 },   // lower meeting area
+  weebo: { x: 4, y: 14 },    // desk-cluster-left, facing down
+  edith: { x: 12, y: 14 },   // desk-cluster-right, facing down
+  jarvis: { x: 7, y: 18 },   // desk-cluster-left, facing left (between clusters)
 };
 
 // Specialist desk positions — distributed across different rooms
 // All verified walkable against COLLISION_MAP
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 20, y: 13 },    // meeting room
-  forge: { x: 2, y: 5 },     // pantry area (upper-left)
-  pulse: { x: 17, y: 13 },   // meeting room entrance
-  echo: { x: 4, y: 3 },      // patio adjacent
-  cal: { x: 24, y: 14 },     // workspace far-right
-  nova: { x: 8, y: 3 },      // upper corridor
+  aria: { x: 20, y: 13 },    // meeting-tv, facing up
+  forge: { x: 1, y: 18 },    // desk-cluster-left, facing right
+  pulse: { x: 13, y: 18 },   // desk-cluster-right, facing left
+  echo: { x: 8, y: 14 },     // desk-cluster-right, facing down
+  cal: { x: 24, y: 14 },     // whiteboard, facing right
+  nova: { x: 10, y: 21 },    // desk-cluster-right, facing up
 };
 
 // Design tokens
