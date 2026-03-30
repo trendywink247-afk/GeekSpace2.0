@@ -30,19 +30,21 @@ export interface RoomZone {
 }
 
 export const ROOMS: RoomZone[] = [
-  {
-    id: 'patio',
-    label: 'Patio',
-    bounds: { x: 0, y: 0, w: 12, h: 8 },
-    behaviorBias: 'break',
-    color: 'rgba(76,175,80,0.15)',
-  },
+  // Pantry before patio: pantry (smaller) overlaps patio (larger), so it must
+  // come first for getRoomAt() first-match to resolve coffee area correctly.
   {
     id: 'pantry',
     label: 'Pantry',
     bounds: { x: 5, y: 2, w: 7, h: 5 },
     behaviorBias: 'coffee',
     color: 'rgba(255,152,0,0.15)',
+  },
+  {
+    id: 'patio',
+    label: 'Patio',
+    bounds: { x: 0, y: 0, w: 12, h: 8 },
+    behaviorBias: 'break',
+    color: 'rgba(76,175,80,0.15)',
   },
   {
     id: 'lounge',
