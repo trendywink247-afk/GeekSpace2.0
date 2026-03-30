@@ -276,7 +276,7 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   // Anchor: sprite feet at tile bottom.
   // Sitting offset: shift sprite down when at furniture interaction point
   const behaviorMode = getAgentBehaviorMode(agent.id);
-  const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting');
+  const isAtFurniture = !isWalking && (behaviorMode === 'wandering' || behaviorMode === 'socializing' || behaviorMode === 'group-meeting' || behaviorMode === 'resting');
   const pose = isAtFurniture ? getAgentPose(agent.id) : 'none';
 
   // Pose-specific visual offsets:

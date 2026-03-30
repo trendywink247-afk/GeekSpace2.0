@@ -633,6 +633,7 @@ function tryStartGroupMeeting(idleAgents: CanvasAgent[]): void {
   const assignedPoints = new Map<AgentId, InteractionPoint>();
   for (let i = 0; i < count; i++) {
     assignedPoints.set(chosen[i].id, shuffledPts[i]);
+    reservePoint(shuffledPts[i].x, shuffledPts[i].y, chosen[i].id);
   }
 
   const cpts = shuffledPts.slice(0, count);
