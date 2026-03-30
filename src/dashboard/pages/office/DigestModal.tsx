@@ -16,11 +16,29 @@ interface Props {
 }
 
 /** Tracks page visibility and shows a digest modal when user returns after 2+ hours. */
+/** Compute away info outside the component to avoid impure calls during render. */
+function computeAwayInfo(): { shouldShow: boolean; duration: string } {
+  const lastActive = Number(localStorage.getItem(LAST_ACTIVE_KEY) || '0');
+  const shown = sessionStorage.getItem('gs_digest_shown');
+  const now = Date.now();
+  if (lastActive > 0 && !shown && now - lastActive > AWAY_THRESHOLD_MS) {
+    const hours = Math.floor((now - lastActive) / 3600000);
+    const mins = Math.floor(((now - lastActive) % 3600000) / 60000);
+    return { shouldShow: true, duration: hours > 0 ? `${hours}h ${mins}m` : `${mins}m` };
+  }
+  return { shouldShow: false, duration: '' };
+}
+
 export function DigestModal({ officeData }: Props) {
-  const [show, setShow] = useState(false);
-  const [awayDuration, setAwayDuration] = useState('');
+  const [awayInfo] = useState(computeAwayInfo);
+  const [show, setShow] = useState(awayInfo.shouldShow);
+  const awayDuration = awayInfo.duration;
 
   useEffect(() => {
+    if (awayInfo.shouldShow) {
+      sessionStorage.setItem('gs_digest_shown', '1');
+    }
+
     // Update last-active timestamp on visibility change
     const handleVisibility = () => {
       if (document.hidden) {
@@ -29,22 +47,11 @@ export function DigestModal({ officeData }: Props) {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
-    // On mount: check if we've been away
-    const lastActive = Number(localStorage.getItem(LAST_ACTIVE_KEY) || '0');
-    const shown = sessionStorage.getItem('gs_digest_shown');
-    if (lastActive > 0 && !shown && Date.now() - lastActive > AWAY_THRESHOLD_MS) {
-      const hours = Math.floor((Date.now() - lastActive) / 3600000);
-      const mins = Math.floor(((Date.now() - lastActive) % 3600000) / 60000);
-      setAwayDuration(hours > 0 ? `${hours}h ${mins}m` : `${mins}m`);
-      setShow(true);
-      sessionStorage.setItem('gs_digest_shown', '1');
-    }
-
     // Mark as active now
     localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
 
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+  }, [awayInfo.shouldShow]);
 
   // Build agent activity summary from timeline
   const agentSummary = (() => {

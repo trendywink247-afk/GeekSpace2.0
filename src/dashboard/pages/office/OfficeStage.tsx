@@ -9,7 +9,7 @@
 // Smooth movement: agents interpolate renderX/renderY toward their grid
 // position each tick, giving sub-pixel gliding instead of tile-snapping.
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type {
   AgentId, SpecialistId,
   AgentStateType, CanvasAgent, SSEEvent,
@@ -257,6 +257,15 @@ function buildInitialAgents(): CanvasAgent[] {
 
     const deskTarget = validateSpawnPosition(id, seat.x, seat.y);
 
+    // Validate spawn position — if blocked, snap to nearest walkable tile
+    if (isBlocked(startX, startY)) {
+      const valid = nearestWalkable(startX, startY);
+      if (valid) {
+        startX = valid.x;
+        startY = valid.y;
+      }
+    }
+
     agents.push({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
@@ -421,28 +430,43 @@ export default function OfficeStage({
     return () => resetAllBehaviors();
   }, []);
 
-  // ---- Validate all agent positions on init (skip target reset for arrival walk) ----
+  // ---- Refs for game loop (declared early so callbacks can reference them) ----
+  const agentsRef = useRef(agents);
+  const beamsRef = useRef(beams);
+  useLayoutEffect(() => { agentsRef.current = agents; }, [agents]);
+  useLayoutEffect(() => { beamsRef.current = beams; }, [beams]);
 
-  useEffect(() => {
-    setAgents(prev => prev.map(agent => {
-      if (isBlocked(agent.x, agent.y)) {
-        const valid = nearestWalkable(agent.x, agent.y);
-        if (valid) {
-          console.warn(`[Office] Agent ${agent.id} spawned on blocked tile (${agent.x},${agent.y}), moved to (${valid.x},${valid.y})`);
-          // Preserve targetX/Y so arrival walk-in still works
-          return {
-            ...agent,
-            x: valid.x,
-            y: valid.y,
-            renderX: valid.x * CELL + CELL / 2,
-            renderY: valid.y * CELL + CELL / 2,
-            path: [],
-            pathIndex: 0,
-          };
-        }
-      }
-      return agent;
-    }));
+  // ---- Particle beams ----
+
+  const addBeam = useCallback((fromId: AgentId, toId: AgentId) => {
+    const beam: ParticleBeam = {
+      id: `beam-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      fromAgentId: fromId,
+      toAgentId: toId,
+      color: AGENT_COLORS[fromId] || '#00F0FF',
+      createdAt: Date.now(),
+      duration: PARTICLE_BEAM_TTL,
+    };
+    setBeams(prev => [...prev.slice(-(MAX_PARTICLE_BEAMS - 1)), beam]);
+  }, []);
+
+  // ---- Speech bubbles ----
+
+  const addBubble = useCallback((agentId: AgentId, text: string) => {
+    const now = Date.now();
+    // Snapshot the agent's current render position for the bubble
+    const agent = agentsRef.current.find(a => a.id === agentId);
+    const bubble: SpeechBubble = {
+      id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
+      agentId,
+      text: text.slice(0, 60),
+      color: AGENT_COLORS[agentId] || '#00F0FF',
+      createdAt: now,
+      expiresAt: now + SPEECH_BUBBLE_TTL,
+      pixelX: agent?.renderX,
+      pixelY: agent?.renderY,
+    };
+    setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
   }, []);
 
   // ---- Greeting bubbles on first visit (staggered per agent) ----
@@ -642,12 +666,12 @@ export default function OfficeStage({
                 const phrase = taskContext
                   ? `On it: ${taskContext}...`
                   : recvPhrases[Math.floor(Math.random() * recvPhrases.length)];
-                addBubble(targetId as AgentId, phrase); // eslint-disable-line react-hooks/immutability
+                addBubble(targetId as AgentId, phrase);
               }
             }
             // Create beam from core to specialist
             if (targetId) {
-              addBeam(agentId, targetId as AgentId); // eslint-disable-line react-hooks/immutability
+              addBeam(agentId, targetId as AgentId);
             }
             break;
           }
@@ -739,48 +763,11 @@ export default function OfficeStage({
     });
   }, [events.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ---- Particle beams ----
-
-  const addBeam = useCallback((fromId: AgentId, toId: AgentId) => {
-    const beam: ParticleBeam = {
-      id: `beam-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      fromAgentId: fromId,
-      toAgentId: toId,
-      color: AGENT_COLORS[fromId] || '#00F0FF',
-      createdAt: Date.now(),
-      duration: PARTICLE_BEAM_TTL,
-    };
-    setBeams(prev => [...prev.slice(-(MAX_PARTICLE_BEAMS - 1)), beam]);
-  }, []);
-
-  // ---- Speech bubbles ----
-
-  const addBubble = useCallback((agentId: AgentId, text: string) => {
-    const now = Date.now();
-    // Snapshot the agent's current render position for the bubble
-    const agent = agentsRef.current.find(a => a.id === agentId);
-    const bubble: SpeechBubble = {
-      id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
-      agentId,
-      text: text.slice(0, 60),
-      color: AGENT_COLORS[agentId] || '#00F0FF',
-      createdAt: now,
-      expiresAt: now + SPEECH_BUBBLE_TTL,
-      pixelX: agent?.renderX,
-      pixelY: agent?.renderY,
-    };
-    setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
-  }, []);
-
   // ---- rAF game loop: smooth movement every frame, behavior at ~5fps ----
-  const agentsRef = useRef(agents);
-  agentsRef.current = agents; // eslint-disable-line react-hooks/immutability
-  const beamsRef = useRef(beams);
-  beamsRef.current = beams;
   const selectedRef = useRef(selectedAgentId);
-  selectedRef.current = selectedAgentId;
   const themeRef = useRef(theme);
-  themeRef.current = theme;
+  useLayoutEffect(() => { selectedRef.current = selectedAgentId; }, [selectedAgentId]);
+  useLayoutEffect(() => { themeRef.current = theme; }, [theme]);
 
   useEffect(() => {
     let lastTime = 0;
