@@ -1027,17 +1027,25 @@ export default function OfficeStage({
     [hitTestAgent, onAgentDoubleClick],
   );
 
-  // ---- Hover cursor for agents + smart objects ----
+  // ---- Hover cursor for agents + smart objects (RAF-throttled) ----
+  const hoverRafRef = useRef(0);
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const scaleX = CANVAS_W / rect.width;
-      const scaleY = CANVAS_H / rect.height;
-      const ox = (e.clientX - rect.left) * scaleX;
-      const oy = (e.clientY - rect.top) * scaleY;
-      const agentHit = hitTestAgent(ox, oy);
-      const objHit = !agentHit ? hitTestObject(ox, oy) : null;
-      e.currentTarget.style.cursor = (agentHit || objHit) ? 'pointer' : 'default';
+      const canvas = e.currentTarget;
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      if (hoverRafRef.current) return; // skip if RAF already pending
+      hoverRafRef.current = requestAnimationFrame(() => {
+        hoverRafRef.current = 0;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = CANVAS_W / rect.width;
+        const scaleY = CANVAS_H / rect.height;
+        const ox = (clientX - rect.left) * scaleX;
+        const oy = (clientY - rect.top) * scaleY;
+        const agentHit = hitTestAgent(ox, oy);
+        const objHit = !agentHit ? hitTestObject(ox, oy) : null;
+        canvas.style.cursor = (agentHit || objHit) ? 'pointer' : 'default';
+      });
     },
     [hitTestAgent, hitTestObject],
   );

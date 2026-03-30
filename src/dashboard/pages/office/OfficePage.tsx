@@ -209,6 +209,7 @@ export function OfficePage() {
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
   const [objectPopover, setObjectPopover] = useState<{ id: string; type: string; label: string } | null>(null);
   const objectPopoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (objectPopoverTimer.current) clearTimeout(objectPopoverTimer.current); }, []);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<InsightCard[]>([]);
 
   // Day/Night theme

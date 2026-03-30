@@ -737,6 +737,7 @@ export function OfficeHomePage() {
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
   const [objectPopover, setObjectPopover] = useState<{ id: string; type: string; label: string } | null>(null);
   const objectPopoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (objectPopoverTimer.current) clearTimeout(objectPopoverTimer.current); }, []);
   const [proactiveSuggestions, setProactiveSuggestions] = useState<InsightCard[]>([]);
 
   // Mobile "tap to expand" hint — visible for 3s then fades out
