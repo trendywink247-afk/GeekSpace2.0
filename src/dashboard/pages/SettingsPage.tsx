@@ -1551,6 +1551,7 @@ export function SettingsPage() {
               )}
             </div>
           </div>
+          </div>
 
           {reactionSummary.length > 0 && (
             <div className="gs-card">
@@ -1692,7 +1693,7 @@ export function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>}
+        }
 
         {/* Privacy Tab */}
         {activeTab === 'privacy' && <div className="space-y-6">
