@@ -831,50 +831,46 @@ export function PicoFleetPage() {
           )}
 
           {/* Recent Activity */}
-          <Card className="border-[rgba(139,92,246,0.08)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#00FF88]" />
-                Recent Activity
-                <Badge variant="outline" className="ml-2 border-[rgba(139,92,246,0.08)] text-[var(--ag-text-muted)] text-xs">
-                  {recentTasks.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {recentTasks.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-[var(--ag-text-muted)] text-sm">No recent activity. Assign tasks to your fleet to see progress here.</p>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {recentTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
+          <div className="gs-card p-4">
+            <p className="gs-section-label mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#00FF88]" />
+              Recent Activity
+              <Badge variant="outline" className="ml-2 border-[rgba(139,92,246,0.08)] text-[#9CA3AF] text-xs">
+                {recentTasks.length}
+              </Badge>
+            </p>
+            {recentTasks.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-[#6B7280] text-sm">No recent activity. Assign tasks to your fleet to see progress here.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {recentTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-white/[0.02] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: getStatusColor(task.status) }}
+                    />
+                    <span className="flex-1 text-sm text-[#F4F6FF] truncate">
+                      {task.description}
+                    </span>
+                    <span
+                      className="text-xs capitalize shrink-0"
+                      style={{ color: getStatusColor(task.status) }}
                     >
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: getStatusColor(task.status) }}
-                      />
-                      <span className="flex-1 text-sm text-[var(--ag-text-primary)] truncate">
-                        {task.description}
-                      </span>
-                      <span
-                        className="text-xs capitalize shrink-0"
-                        style={{ color: getStatusColor(task.status) }}
-                      >
-                        {task.status}
-                      </span>
-                      <span className="text-xs text-[var(--ag-text-muted)] shrink-0 hidden sm:block">
-                        {formatTime(task.completed_at || task.started_at || task.created_at || null)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      {task.status}
+                    </span>
+                    <span className="text-xs text-[#6B7280] shrink-0 hidden sm:block">
+                      {formatTime(task.completed_at || task.started_at || task.created_at || null)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Task History */}
           <Card className="border-[rgba(139,92,246,0.08)]">
