@@ -840,8 +840,8 @@ export function tickBehaviors(
   let changed = false;
   const isNight = theme === 'night';
 
-  // Cap concurrent wanderers — prevents chaotic "everyone moving" feel
-  const maxMovers = isNight ? 2 : 3;
+  // Cap concurrent wanderers — allow enough motion to feel alive
+  const maxMovers = isNight ? 4 : 6;
   let activeMovers = agents.filter((a) => {
     const bs = behaviorStates.get(a.id);
     return bs && (bs.mode === 'wandering' || bs.mode === 'socializing' || bs.mode === 'group-meeting');

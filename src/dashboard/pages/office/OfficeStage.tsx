@@ -283,6 +283,7 @@ function buildInitialAgents(): CanvasAgent[] {
       isSpecialist: !isCoreAgent,
       isDormant: false,
       parentAgent: isCoreAgent ? undefined : SPECIALIST_PARENT[id as keyof typeof SPECIALIST_PARENT],
+      facing: seat.y === 20 ? 'up' : seat.x >= 20 ? 'up' : seat.x === 24 ? 'right' : 'down',
       path: [],
       pathIndex: 0,
     });
