@@ -24,7 +24,7 @@ export function GsTabBar<T extends string = string>({
   scrollable = true,
 }: GsTabBarProps<T>) {
   return (
-    <div className={`gs-tab-bar ${scrollable ? 'overflow-x-auto scrollbar-none' : ''} ${className}`}>
+    <div role="tablist" className={`gs-tab-bar ${scrollable ? 'overflow-x-auto scrollbar-none' : ''} ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (

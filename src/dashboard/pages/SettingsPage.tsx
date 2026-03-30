@@ -708,7 +708,7 @@ export function SettingsPage() {
                       const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
                       setProfile({ ...profile, avatar: url });
                     }}
-                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#8B5CF6] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
+                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#8B5CF6] flex items-center justify-center hover:bg-[#A78BFA] transition-colors press-scale"
                     title="Generate new pixel avatar"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
@@ -717,7 +717,7 @@ export function SettingsPage() {
                 {/* 53.9: Upload photo with live preview */}
                 <div className="mt-2">
                   <label className="cursor-pointer">
-                    <span className="text-xs text-[#8B5CF6] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
+                    <span className="text-xs text-[#8B5CF6] hover:text-[#A78BFA] transition-colors underline underline-offset-2">Upload Photo</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
@@ -1550,7 +1550,6 @@ export function SettingsPage() {
                 ))
               )}
             </div>
-          </div>
           </div>
 
           {reactionSummary.length > 0 && (

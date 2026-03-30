@@ -1085,7 +1085,7 @@ export function ConnectionsPage() {
                                 <Button
                                   onClick={handleCustomBotConnect}
                                   disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
-                                  className="w-full bg-[#8B5CF6] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
+                                  className="w-full bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
                                 >
                                   {customBotStatus === 'verifying' ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>

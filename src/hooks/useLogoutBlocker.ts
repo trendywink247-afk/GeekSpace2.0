@@ -15,7 +15,9 @@ import { confirmAction } from '@/utils/alerts';
  */
 export function useLogoutBlocker(onConfirmLogout: () => void): void {
   const logoutRef = useRef(onConfirmLogout);
-  logoutRef.current = onConfirmLogout;
+  // Keep ref current without triggering re-renders; must run inside an effect
+  // to satisfy react-hooks/refs (no ref writes during render).
+  useLayoutEffect(() => { logoutRef.current = onConfirmLogout; });
 
   const showConfirm = useCallback(async () => {
     const confirmed = await confirmAction(

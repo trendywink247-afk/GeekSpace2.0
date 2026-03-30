@@ -524,6 +524,7 @@ export function AISpecialistPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)] pointer-events-none" />
               <input
+                aria-label="Search specialists"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search specialists..."
@@ -538,6 +539,7 @@ export function AISpecialistPage() {
                 return (
                   <button
                     key={cat.id}
+                    aria-pressed={isActive}
                     onClick={() => setActiveCategory(cat.id)}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
                       isActive ? 'gs-pill-active' : 'gs-pill'
