@@ -50,7 +50,6 @@ import type {
 } from '@/types';
 
 const PROVIDER_COLORS = ['#10B981', '#8B5CF6', '#FFB800', '#FF2D78', '#61D4FF', '#FF9F61'];
-const KPI_COLORS = { cost: '#10B981', messages: '#8B5CF6', tokens: '#FFB800', tools: '#FF2D78' };
 const TOOLTIP_STYLE = {
   contentStyle: { backgroundColor: '#0C0C1E', border: '1px solid rgba(139,92,246,0.15)', borderRadius: '8px' },
   itemStyle: { color: '#F4F6FF' },

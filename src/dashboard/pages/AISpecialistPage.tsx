@@ -1,10 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Star, MessageCircle, Sparkles, Braces, Wrench, FileText, Palette, GitCompare, Lock, Clock, Zap } from 'lucide-react';
+import { Search, Star, MessageCircle, Sparkles, Braces, Wrench, FileText, Palette, GitCompare, Lock, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { JsonFormatterPage } from './tools/JsonFormatterPage';
 import { BorderBeam } from '@/components/magicui/border-beam';
-import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
+import { PageShell, PageHeader, GsTabBar } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 

@@ -1,7 +1,7 @@
 // InboxPage.tsx -- Overhauled AI Inbox with triage, priority cards, keyboard nav
 // Owner: Aria (#FF6B9D) -- design tokens: #06061a bg, rgba(12,12,30,0.6) surface
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader, SectionCard, GsTabBar } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Send, Archive, Trash2, AlertCircle,

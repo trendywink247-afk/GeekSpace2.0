@@ -545,6 +545,8 @@ export function ConnectionsPage() {
         <BlurFade delay={0.15}>
         <div className="gs-stat-card">
             <div className="flex items-center gap-3">
+              <span className="gs-icon-pill gs-icon-pill-violet">
+                <Activity className="w-5 h-5" />
               </span>
               <div>
                 <div className="text-2xl font-bold text-[#F4F6FF]">{totalRequests}</div>

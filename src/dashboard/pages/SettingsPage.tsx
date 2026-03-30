@@ -962,7 +962,6 @@ export function SettingsPage() {
                   </Button>
                 )}
               </div>
-            </div>
             <div className="space-y-3">
               {sessionsLoading ? (
                 <div className="flex items-center gap-2 py-4 text-[var(--ag-text-muted)]">
