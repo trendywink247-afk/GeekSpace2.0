@@ -15,7 +15,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('applies border with subtle transparency', () => {
@@ -24,7 +24,7 @@ describe('SectionCard', () => {
       );
       const card = container.firstChild as HTMLElement;
       // Should have gs-card class (border is inside .gs-card CSS rule)
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('uses CSS custom properties for border color (--ag-border or similar)', () => {
@@ -44,7 +44,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('applies hover:shadow-* for glow effect on hover', () => {
@@ -52,7 +52,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('applies hover:inset-shadow or bg-gradient for inset highlight', () => {
@@ -61,7 +61,7 @@ describe('SectionCard', () => {
       );
       const card = container.firstChild as HTMLElement;
       // Hover effects are defined inside .gs-card CSS rule
-      const hasGsCard = /gs-card/.test(card.className);
+      const hasGsCard = /\bgs-card\b/.test(card.className);
       expect(hasGsCard).toBe(true);
     });
 
@@ -70,7 +70,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
   });
 
@@ -161,7 +161,7 @@ describe('SectionCard', () => {
       );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toMatch(/custom-class/);
-      expect(card.className).toMatch(/gs-card/); // Base classes still present
+      expect(card.className).toMatch(/\bgs-card\b/); // Base classes still present
     });
 
     it('custom className does not override critical classes (gs-card)', () => {
@@ -170,7 +170,7 @@ describe('SectionCard', () => {
       );
       const card = container.firstChild as HTMLElement;
       // gs-card should still be present
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
   });
 

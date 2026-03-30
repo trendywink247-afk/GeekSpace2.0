@@ -50,7 +50,7 @@ describe('Component Library — Full Integration', () => {
       const shell = container.firstChild as HTMLElement;
       expect(shell.className).toMatch(/max-w-6xl/);
 
-      const cards = container.querySelectorAll('[class*="gs-card"]');
+      const cards = container.querySelectorAll('.gs-card');
       expect(cards.length).toBe(3);
     });
 
@@ -83,7 +83,7 @@ describe('Component Library — Full Integration', () => {
       const shell = container.firstChild as HTMLElement;
       expect(shell.className).toMatch(/space-y-8/);
 
-      const cards = container.querySelectorAll('[class*="gs-card"]');
+      const cards = container.querySelectorAll('.gs-card');
       expect(cards.length).toBe(5);
     });
   });
@@ -229,7 +229,7 @@ describe('Component Library — Full Integration', () => {
           <PageHeader title="Test" icon={Icon} />
         );
 
-        const bg = container.querySelector('[class*="gs-icon-pill"]');
+        const bg = container.querySelector('.gs-icon-pill');
         expect(bg).toBeTruthy();
       });
     });

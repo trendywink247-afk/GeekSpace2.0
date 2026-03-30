@@ -15,7 +15,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('has border with subtle transparency', () => {
@@ -23,7 +23,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('uses CSS custom properties for colors (--ag-*)', () => {
@@ -40,7 +40,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
   });
 
@@ -51,7 +51,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('applies hover:shadow-* for glow effect', () => {
@@ -59,7 +59,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('applies smooth transitions (transition or duration-300)', () => {
@@ -67,7 +67,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/gs-card/);
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
 
     it('has inset highlight on hover (before: or after: pseudo-element)', () => {
@@ -75,8 +75,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Hover effects (pseudo-elements etc.) are defined inside .gs-card CSS rule
-      expect(card.className).toMatch(/gs-card/);
+      // Hover/transition and box-shadow styles are defined on .gs-card and .gs-card:hover in src/index.css
+      expect(card.className).toMatch(/\bgs-card\b/);
     });
   });
 
@@ -266,7 +266,7 @@ describe('SectionCard — Edge Cases & Interactions', () => {
       const { container } = render(
         <SectionCard title="Empty Card" />
       );
-      expect(container.querySelector('[class*="gs-card"]')).toBeTruthy();
+      expect(container.querySelector('.gs-card')).toBeTruthy();
     });
 
     it('handles null title gracefully', () => {
