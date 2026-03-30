@@ -115,8 +115,8 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 2, y: 20 }, { x: 3, y: 20 }, { x: 4, y: 20 }, { x: 5, y: 20 }, { x: 6, y: 20 },
     ],
     interactionPoints: [
-      { x: 4, y: 14, facing: 'down', behavior: 'work' },
-      { x: 4, y: 15, facing: 'down', behavior: 'work' },
+      { x: 3, y: 16, facing: 'down', behavior: 'work' },
+      { x: 5, y: 16, facing: 'down', behavior: 'work' },
       { x: 1, y: 18, facing: 'right', behavior: 'work' },
       { x: 7, y: 18, facing: 'left', behavior: 'work' },
       { x: 4, y: 21, facing: 'up', behavior: 'work' },
@@ -135,9 +135,9 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 8, y: 20 }, { x: 9, y: 20 }, { x: 10, y: 20 }, { x: 11, y: 20 }, { x: 12, y: 20 },
     ],
     interactionPoints: [
-      { x: 8, y: 14, facing: 'down', behavior: 'work' },
-      { x: 12, y: 14, facing: 'down', behavior: 'work' },
-      { x: 7, y: 16, facing: 'right', behavior: 'work' },
+      { x: 9, y: 16, facing: 'down', behavior: 'work' },
+      { x: 11, y: 16, facing: 'down', behavior: 'work' },
+      { x: 7, y: 17, facing: 'right', behavior: 'work' },
       { x: 13, y: 18, facing: 'left', behavior: 'work' },
       { x: 10, y: 21, facing: 'up', behavior: 'work' },
     ],
