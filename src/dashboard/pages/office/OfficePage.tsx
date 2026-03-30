@@ -8,6 +8,8 @@ import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import SmartSidebar from './SmartSidebar';
 import { InsightToast } from './InsightToast';
+import { DigestModal } from './DigestModal';
+import { generateSuggestions } from './proactiveSuggestions';
 import { useOfficeData } from './useOfficeData';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { isFirstVisit, markVisited } from './AnimationTierSelector';
@@ -205,6 +207,8 @@ export function OfficePage() {
   const [flyoutAgentId, setFlyoutAgentId] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
+  const [objectPopover, setObjectPopover] = useState<{ id: string; type: string; label: string } | null>(null);
+  const [proactiveSuggestions, setProactiveSuggestions] = useState<InsightCard[]>([]);
 
   // Day/Night theme
   const [officeTheme, setOfficeTheme] = useState<OfficeTheme>(() => {
@@ -240,6 +244,41 @@ export function OfficePage() {
         dismissed: false,
       }));
   }, [officeData?.timeline, dismissedInsights]);
+
+  // Proactive suggestions polling (every 30s)
+  useEffect(() => {
+    let mounted = true;
+    const fetchSuggestions = async () => {
+      const suggestions = await generateSuggestions();
+      if (!mounted) return;
+      setProactiveSuggestions(suggestions
+        .filter(s => !dismissedInsights.includes(s.id))
+        .map(s => ({
+          id: s.id,
+          agentId: s.agentId,
+          agentName: s.agentName,
+          text: s.text,
+          category: 'general' as const,
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+          action: s.action,
+        }))
+      );
+    };
+    void fetchSuggestions();
+    const interval = setInterval(() => void fetchSuggestions(), 30000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, [dismissedInsights]);
+
+  // Merge timeline insights + proactive suggestions
+  const allInsights = useMemo<InsightCard[]>(() => {
+    const ids = new Set(insightCards.map(c => c.id));
+    const merged = [...insightCards];
+    for (const s of proactiveSuggestions) {
+      if (!ids.has(s.id)) merged.push(s);
+    }
+    return merged;
+  }, [insightCards, proactiveSuggestions]);
 
   // Fetch task count when an agent is selected for spotlight
   useEffect(() => {
@@ -476,12 +515,35 @@ export function OfficePage() {
           selectedAgentId={selectedAgentId}
           onAgentSelect={setSelectedAgentId}
           onAgentDoubleClick={(id) => setFlyoutAgentId(id)}
+          onObjectClick={(id, type, label) => {
+            setObjectPopover({ id, type, label });
+            setTimeout(() => setObjectPopover(null), 4000);
+          }}
           theme={resolvedTheme}
         />
 
+        {/* Object click popover */}
+        {objectPopover && (
+          <motion.div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-4 py-2.5 rounded-xl"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            style={{
+              background: 'rgba(12,12,30,0.85)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(139,92,246,0.2)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            <span className="text-xs font-medium text-[#E8E8F0]">{objectPopover.label}</span>
+            <span className="text-[10px] text-[#6B7280] ml-2 capitalize">{objectPopover.type}</span>
+          </motion.div>
+        )}
+
         {/* Insight toasts */}
         <InsightToast
-          insights={insightCards}
+          insights={allInsights}
           onDismiss={(id) => setDismissedInsights(prev => [...prev, id])}
         />
 
@@ -505,6 +567,7 @@ export function OfficePage() {
               }
             }}
             onDismiss={() => setSelectedAgentId(null)}
+            officeData={officeData}
           />
         )}
         </div>{/* end scale wrapper */}
@@ -625,7 +688,10 @@ export function OfficePage() {
           setFlyoutAgentId(null);
           navigate(`/dashboard/chat?agent=${agentIdArg}`);
         }}
+        officeData={officeData}
       />
+
+      <DigestModal officeData={officeData} />
     </div>
   );
 }

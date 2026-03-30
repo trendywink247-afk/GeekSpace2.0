@@ -197,6 +197,22 @@ export function InsightToast({ insights, onDismiss, onClickInsight }: InsightToa
           </span>
         </button>
 
+        {/* CTA button */}
+        {current.action && (
+          <a
+            href={current.action.href}
+            onClick={() => dismissCurrent(current.id)}
+            className="flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:brightness-110 mt-0.5"
+            style={{
+              background: `${agentColor}20`,
+              color: agentColor,
+              border: `1px solid ${agentColor}30`,
+            }}
+          >
+            {current.action.label}
+          </a>
+        )}
+
         {/* Dismiss button */}
         <button
           onClick={() => dismissCurrent(current.id)}

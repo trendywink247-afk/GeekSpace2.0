@@ -1,5 +1,5 @@
 // src/dashboard/pages/office/AgentProfileFlyout.tsx
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle, ClipboardList } from 'lucide-react';
 import {
@@ -21,8 +21,12 @@ import {
   C,
 } from './constants';
 import type { AgentId, SpecialistId } from './types';
+import type { OfficeData } from './useOfficeData';
 import { createTask, TASK_TYPE_LABELS } from './taskQueue';
 import type { TaskType } from './taskQueue';
+import { agentService } from '@/services/api';
+
+const CORE_AGENT_IDS = new Set(['weebo', 'edith', 'jarvis']);
 
 interface Props {
   agentId: string | null;
@@ -30,6 +34,8 @@ interface Props {
   onNavigateToChat: (agentId: string) => void;
   /** Callback when a task is assigned via the flyout modal. */
   onTaskAssigned?: (agentId: AgentId, taskLabel: string) => void;
+  /** Office data for real-time agent stats. */
+  officeData?: OfficeData | null;
 }
 
 const STATE_DOT_COLORS: Record<string, string> = {
@@ -118,7 +124,109 @@ function AgentTooltip({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskAssigned }: Props) {
+// ---------------------------------------------------------------------------
+// Personality sliders sub-component (core agents only)
+// ---------------------------------------------------------------------------
+
+interface SliderProps {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  color: string;
+  leftLabel: string;
+  rightLabel: string;
+}
+
+function PersonalitySlider({ label, value, onChange, color, leftLabel, rightLabel }: SliderProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[10px] text-[#9CA3AF] w-16 flex-shrink-0">{label}</span>
+      <div className="flex-1 flex items-center gap-1.5">
+        <span className="text-[9px] text-[#4B5563]">{leftLabel}</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="flex-1 h-1 rounded-full appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, ${color} ${value}%, rgba(255,255,255,0.06) ${value}%)`,
+            accentColor: color,
+          }}
+        />
+        <span className="text-[9px] text-[#4B5563]">{rightLabel}</span>
+      </div>
+      <span className="text-[10px] font-medium w-6 text-right" style={{ color }}>{value}</span>
+    </div>
+  );
+}
+
+function PersonalitySliders({ agentColor }: { agentColor: string }) {
+  const [creativity, setCreativity] = useState(50);
+  const [verbosity, setVerbosity] = useState(50);
+  const [formality, setFormality] = useState(30);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load current values on mount
+  useEffect(() => {
+    agentService.getConfig()
+      .then(res => {
+        const d = res.data;
+        setCreativity(d.creativity ?? 50);
+        setVerbosity(d.verbosity ?? 50);
+        setFormality(d.formality ?? 30);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  const debouncedSave = useCallback((field: string, value: number) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      agentService.updateConfig({ [field]: value }).catch(() => {});
+    }, 500);
+  }, []);
+
+  if (!loaded) return null;
+
+  return (
+    <div className="px-5 pb-4">
+      <h3 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-2">
+        Personality
+      </h3>
+      <div className="flex flex-col gap-2.5 rounded-lg bg-white/[0.02] p-3">
+        <PersonalitySlider
+          label="Creativity"
+          value={creativity}
+          onChange={v => { setCreativity(v); debouncedSave('creativity', v); }}
+          color={agentColor}
+          leftLabel="Precise"
+          rightLabel="Creative"
+        />
+        <PersonalitySlider
+          label="Verbosity"
+          value={verbosity}
+          onChange={v => { setVerbosity(v); debouncedSave('verbosity', v); }}
+          color={agentColor}
+          leftLabel="Brief"
+          rightLabel="Detailed"
+        />
+        <PersonalitySlider
+          label="Formality"
+          value={formality}
+          onChange={v => { setFormality(v); debouncedSave('formality', v); }}
+          color={agentColor}
+          leftLabel="Casual"
+          rightLabel="Formal"
+        />
+      </div>
+    </div>
+  );
+}
+
+export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskAssigned, officeData }: Props) {
   const isOpen = agentId !== null;
   const id = (agentId ?? 'weebo') as AgentId;
   const meta = AGENT_META[id];
@@ -126,6 +234,24 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
   const description = AGENT_DESCRIPTIONS[id] ?? '';
   const specialists = getSpecialistsForAgent(id);
   const stateDotColor = STATE_DOT_COLORS['idle'] ?? '#4B5563';
+
+  // Compute per-agent stats from officeData
+  const agentStats = (() => {
+    if (!officeData) return { tasks: '—', comms: '—', tools: '—', uptime: '—' };
+    const allTasks = Object.values(officeData.taskBoard).flat() as Array<Record<string, unknown>>;
+    const myTasks = allTasks.filter(t => t.agent_id === id);
+    const tasksCompleted = myTasks.filter(t => t.status === 'completed').length;
+    const myComms = officeData.comms.filter(c => c.agent_id === id).length;
+    const toolCalls = officeData.metrics?.toolCallsToday ?? 0;
+    // Uptime: hours since midnight (agents are always "on")
+    const hoursUp = new Date().getHours();
+    return {
+      tasks: String(tasksCompleted),
+      comms: String(myComms),
+      tools: String(toolCalls),
+      uptime: `${hoursUp}h`,
+    };
+  })();
 
   // A.4 — Assign Task modal state
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -234,10 +360,10 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                 Today&apos;s Stats
               </h3>
               <div className="flex gap-2">
-                <StatItem label="Tasks" value="--" color={color} />
-                <StatItem label="Comms" value="--" color={color} />
-                <StatItem label="Tools" value="--" color={color} />
-                <StatItem label="Uptime" value="--" color={color} />
+                <StatItem label="Tasks" value={agentStats.tasks} color={color} />
+                <StatItem label="Comms" value={agentStats.comms} color={color} />
+                <StatItem label="Tools" value={agentStats.tools} color={color} />
+                <StatItem label="Uptime" value={agentStats.uptime} color={color} />
               </div>
             </div>
 
@@ -278,6 +404,9 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                 </div>
               </div>
             )}
+
+            {/* Personality Sliders — Core agents only */}
+            {CORE_AGENT_IDS.has(id) && <PersonalitySliders agentColor={color} />}
 
             {/* Actions */}
             <div className="px-5 pb-6 space-y-2">
