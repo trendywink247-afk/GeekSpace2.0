@@ -3,7 +3,7 @@
 //
 // Public invite registration page. URL: /invite?code=XXXX
 // Pre-fills invite code from query param. On success -> /onboarding
-// Design tokens: weebo (#00F0FF)
+// Design tokens: weebo (#8B5CF6)
 // ============================================================
 
 import { useState } from 'react';
@@ -97,7 +97,7 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Invite Code</label>
                 <div className="relative">
-                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#00F0FF)] pointer-events-none" />
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#8B5CF6)] pointer-events-none" />
                   <input
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}

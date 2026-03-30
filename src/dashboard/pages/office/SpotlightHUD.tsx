@@ -29,7 +29,7 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss }: Props) {
-  const color = AGENT_COLORS[agent.id] ?? '#00F0FF';
+  const color = AGENT_COLORS[agent.id] ?? '#8B5CF6';
   const stateLabel = STATE_LABELS[agent.state] ?? agent.state;
 
   const [showChatInput, setShowChatInput] = useState(false);

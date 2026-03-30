@@ -251,10 +251,10 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
         <button
           onClick={handleCopy}
           className={[
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50',
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
             copied
               ? 'text-[var(--ag-green)] bg-[var(--ag-green)]/10'
-              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-cyan)]/10',
+              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10',
           ].join(' ')}
           title="Copy code"
           aria-label="Copy code"
@@ -300,13 +300,13 @@ function ToolStepCard({ step }: { step: ToolStep }) {
         className='flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-colors text-xs'
       >
         {isRunning ? (
-          <RefreshCw className='w-3 h-3 text-[var(--ag-cyan)] animate-spin shrink-0' />
+          <RefreshCw className='w-3 h-3 text-[#8B5CF6] animate-spin shrink-0' />
         ) : isDone ? (
           <Check className='w-3 h-3 text-[var(--ag-lime)] shrink-0' />
         ) : (
           <X className='w-3 h-3 text-[var(--ag-pink)] shrink-0' />
         )}
-        <span className={isRunning ? 'text-[var(--ag-cyan)]' : isDone ? 'text-[var(--ag-text-secondary)]' : 'text-[var(--ag-pink)]'}>
+        <span className={isRunning ? 'text-[#8B5CF6]' : isDone ? 'text-[var(--ag-text-secondary)]' : 'text-[var(--ag-pink)]'}>
           {step.label}
         </span>
         {step.durationMs != null && (
@@ -330,7 +330,7 @@ function ToolStepCard({ step }: { step: ToolStep }) {
 }
 
 /** Agent color from conversation title hash */
-const AGENT_COLORS = ['#00F0FF', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
+const AGENT_COLORS = ['#8B5CF6', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
 
 function getAgentColor(id: string): string {
   const hash = id.charCodeAt(0) + (id.charCodeAt(1) || 0);
@@ -377,7 +377,7 @@ function ConversationItem({
         className='w-2 h-2 rounded-full shrink-0'
         style={{ backgroundColor: dotColor }}
       />
-      {pinned && <Pin className='w-3 h-3 text-[var(--ag-cyan)] shrink-0 rotate-45' />}
+      {pinned && <Pin className='w-3 h-3 text-[#8B5CF6] shrink-0 rotate-45' />}
       <div className='flex-1 min-w-0'>
         <p className='truncate text-xs'>{title || 'New conversation'}</p>
         {timestamp && (
@@ -388,7 +388,7 @@ function ConversationItem({
         <div className='flex items-center gap-0.5 shrink-0'>
           <button
             onClick={(e) => { e.stopPropagation(); onPin(); }}
-            className='p-1 rounded hover:bg-[var(--ag-active-bg)] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] min-w-[24px] min-h-[24px] flex items-center justify-center'
+            className='p-1 rounded hover:bg-[var(--ag-active-bg)] text-[var(--ag-text-muted)] hover:text-[#8B5CF6] min-w-[24px] min-h-[24px] flex items-center justify-center'
             title={pinned ? 'Unpin' : 'Pin'}
             aria-label={pinned ? 'Unpin conversation' : 'Pin conversation'}
           >
@@ -1175,7 +1175,7 @@ export function ChatPage() {
   const personalityMeta: Record<AgentPersonality, { emoji: string; color: string; glow: string; initial: string }> = {
     edith: { emoji: 'E', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
     jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
-    weebo: { emoji: 'W', color: '#00F0FF', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
+    weebo: { emoji: 'W', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'W' },
     aria: { emoji: 'A', color: '#FF6B9D', glow: '0 0 12px rgba(255,107,157,0.4)', initial: 'A' },
     forge: { emoji: 'F', color: '#F59E0B', glow: '0 0 12px rgba(245,158,11,0.4)', initial: 'F' },
     pulse: { emoji: 'P', color: '#10B981', glow: '0 0 12px rgba(16,185,129,0.4)', initial: 'P' },
@@ -1196,7 +1196,7 @@ export function ChatPage() {
             <p className='gs-section-label'>Conversations</p>
             <button
               onClick={() => setSidebarOpen(false)}
-              className='p-1 rounded hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+              className='p-1 rounded hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-w-[28px] min-h-[28px] flex items-center justify-center'
               title='Close sidebar'
               aria-label='Close sidebar'
             >
@@ -1270,7 +1270,7 @@ export function ChatPage() {
             {!sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className='p-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[36px] min-w-[36px] flex items-center justify-center'
+                className='p-1.5 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[36px] min-w-[36px] flex items-center justify-center'
                 title='Open conversation sidebar'
                 aria-label='Open conversation sidebar'
               >
@@ -1309,7 +1309,7 @@ export function ChatPage() {
             {tts.isSpeaking && (
               <button
                 onClick={() => tts.stop()}
-                className='p-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50'
+                className='p-1.5 rounded-lg hover:bg-[#8B5CF6]/10 text-[#8B5CF6] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50'
                 title='Stop speaking'
                 aria-label='Stop speaking'
               >
@@ -1319,10 +1319,10 @@ export function ChatPage() {
             <button
               onClick={toggleVoiceMode}
               className={[
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50',
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50',
                 voiceMode
-                  ? 'bg-[var(--ag-cyan)]/20 text-[var(--ag-cyan)] ring-1 ring-[var(--ag-cyan)]/40'
-                  : 'hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)]',
+                  ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] ring-1 ring-[#8B5CF6]/40'
+                  : 'hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)]',
               ].join(' ')}
               title={voiceMode ? 'Voice mode on' : 'Enable voice mode'}
             >
@@ -1331,7 +1331,7 @@ export function ChatPage() {
             </button>
             <button
               onClick={clearChat}
-              className='p-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50'
+              className='p-1.5 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50'
               title='Clear chat'
               aria-label='Clear chat'
             >
@@ -1430,7 +1430,7 @@ export function ChatPage() {
                       <textarea
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
-                        className='w-full bg-[var(--ag-bg-deep)] border border-[var(--ag-border-default)] rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[var(--ag-cyan)]/40 min-h-[60px]'
+                        className='w-full bg-[var(--ag-bg-deep)] border border-[var(--ag-border-default)] rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[#8B5CF6]/40 min-h-[60px]'
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -1449,7 +1449,7 @@ export function ChatPage() {
                         </button>
                         <button
                           onClick={handleConfirmEdit}
-                          className='px-2.5 py-1 rounded text-xs bg-[var(--ag-cyan)]/20 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/30 min-h-[28px]'
+                          className='px-2.5 py-1 rounded text-xs bg-[#8B5CF6]/20 text-[#8B5CF6] hover:bg-[#8B5CF6]/30 min-h-[28px]'
                         >
                           Send
                         </button>
@@ -1468,7 +1468,7 @@ export function ChatPage() {
                       {msg.role === 'agent' ? renderMessageContent(msg.content) : (
                         <>
                           {msg.mentionedAgent && (
-                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] mb-1'>
+                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#8B5CF6]/10 text-[#8B5CF6] mb-1'>
                               <span>{msg.mentionedAgent.emoji}</span>
                               <span>{msg.mentionedAgent.name}</span>
                             </span>
@@ -1496,7 +1496,7 @@ export function ChatPage() {
                           {/* Regenerate */}
                           <button
                             onClick={() => handleRegenerate(msg.id)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] min-w-[28px] min-h-[28px] flex items-center justify-center'
                             title='Regenerate response'
                             aria-label='Regenerate response'
                             disabled={isTyping}
@@ -1506,7 +1506,7 @@ export function ChatPage() {
                           {/* Pin to notes */}
                           <button
                             onClick={() => handlePinToNotes(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] min-w-[28px] min-h-[28px] flex items-center justify-center'
                             title='Pin to notes'
                             aria-label='Pin to notes'
                           >
@@ -1539,7 +1539,7 @@ export function ChatPage() {
                           {/* Copy */}
                           <button
                             onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] min-w-[28px] min-h-[28px] flex items-center justify-center'
                             title='Copy message'
                             aria-label='Copy message'
                           >
@@ -1554,7 +1554,7 @@ export function ChatPage() {
                           {/* Edit */}
                           <button
                             onClick={() => handleStartEdit(msg.id)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] min-w-[28px] min-h-[28px] flex items-center justify-center'
                             title='Edit message'
                             aria-label='Edit message'
                             disabled={isTyping}
@@ -1564,7 +1564,7 @@ export function ChatPage() {
                           {/* Copy */}
                           <button
                             onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
+                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] min-w-[28px] min-h-[28px] flex items-center justify-center'
                             title='Copy message'
                             aria-label='Copy message'
                           >
@@ -1664,15 +1664,15 @@ export function ChatPage() {
               <div className='bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5'>
                 <span className='text-xs text-[var(--ag-text-secondary)] mr-1'>{agentName} is typing</span>
                 <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
+                  className='w-1.5 h-1.5 rounded-full bg-[#8B5CF6]/60'
                   style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }}
                 />
                 <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
+                  className='w-1.5 h-1.5 rounded-full bg-[#8B5CF6]/60'
                   style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }}
                 />
                 <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
+                  className='w-1.5 h-1.5 rounded-full bg-[#8B5CF6]/60'
                   style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '400ms' }}
                 />
               </div>
@@ -1691,7 +1691,7 @@ export function ChatPage() {
                     rafRef.current = 0;
                   }
                 }}
-                className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-cyan)]/40 transition-all min-h-[36px]'
+                className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[#8B5CF6]/40 transition-all min-h-[36px]'
               >
                 <Square className='w-3 h-3' />
                 Stop generating
@@ -1709,7 +1709,7 @@ export function ChatPage() {
           )}
           {interimText && (
             <div className='flex justify-end'>
-              <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[var(--ag-cyan)]/5 text-[var(--ag-text-secondary)] border border-dashed border-[var(--ag-cyan)]/20 italic'>
+              <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[#8B5CF6]/5 text-[var(--ag-text-secondary)] border border-dashed border-[#8B5CF6]/20 italic'>
                 {interimText}
               </div>
             </div>
@@ -1721,7 +1721,7 @@ export function ChatPage() {
           <div className='absolute bottom-20 right-4 z-10'>
             <button
               onClick={scrollToBottom}
-              className='flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/10 transition-all shadow-lg shadow-[var(--ag-cyan)]/10 min-h-[44px] min-w-[44px] justify-center'
+              className='flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[#8B5CF6]/30 text-[#8B5CF6] hover:bg-[#8B5CF6]/10 transition-all shadow-lg shadow-[#8B5CF6]/10 min-h-[44px] min-w-[44px] justify-center'
               aria-label='Scroll to bottom'
               title='Scroll to bottom'
             >
@@ -1739,7 +1739,7 @@ export function ChatPage() {
           <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
             {[
               { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
-              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#00F0FF' },
+              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#8B5CF6' },
               { id: 'edith', name: 'Edith', emoji: '⚡', color: '#8B5CF6' },
               { id: 'jarvis', name: 'Jarvis', emoji: '🎩', color: '#ADFF2F' },
               { id: 'aria', name: 'Aria', emoji: '🎨', color: '#FF6B9D' },
@@ -1782,7 +1782,7 @@ export function ChatPage() {
           {/* Mentioned agent badge */}
           {mentionedAgent && (
             <div className='flex items-center gap-1 pb-1.5'>
-              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--ag-cyan)]/10 border border-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]'>
+              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#8B5CF6]/10 border border-[#8B5CF6]/15 text-[#8B5CF6]'>
                 <span>{mentionedAgent.emoji}</span>
                 <span>@{mentionedAgent.name}</span>
                 <button
@@ -1853,7 +1853,7 @@ export function ChatPage() {
                 'h-10 px-2.5 min-w-[44px] min-h-[44px] rounded-md transition-all shrink-0 text-xs font-medium',
                 councilMode
                   ? 'bg-[var(--ag-aria)]/20 text-[var(--ag-aria)] border border-[var(--ag-aria)]/40 ring-1 ring-[var(--ag-aria)]/30'
-                  : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-cyan)] hover:border-[var(--ag-border-default)]',
+                  : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:text-[#8B5CF6] hover:border-[var(--ag-border-default)]',
               ].join(' ')}
               aria-label='Toggle council mode'
             >

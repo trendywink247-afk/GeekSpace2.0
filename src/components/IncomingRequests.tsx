@@ -104,7 +104,7 @@ export function IncomingRequests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -112,7 +112,7 @@ export function IncomingRequests() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-8">
-        <MessageSquare className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
+        <MessageSquare className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-3" />
         <p className="text-[#6B7280]">No pending contact requests</p>
         <p className="text-xs text-[#6B7280]/70 mt-1">
           When someone wants to reach you, they'll appear here
@@ -127,7 +127,7 @@ export function IncomingRequests() {
         <h3 className="font-semibold text-[#E8E8F0]">
           Incoming Requests ({requests.length})
         </h3>
-        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#00F0FF]/30">
+        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#8B5CF6]/30">
           Refresh
         </Button>
       </div>
@@ -140,11 +140,11 @@ export function IncomingRequests() {
       )}
 
       {requests.map((request) => (
-        <Card key={request.id} className="glass-card-v2 border-[#00F0FF]/20">
+        <Card key={request.id} className="glass-card-v2 border-[#8B5CF6]/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0">
                 {request.fromUser?.avatar ? (
                   <img
                     src={request.fromUser.avatar}
@@ -152,7 +152,7 @@ export function IncomingRequests() {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="w-5 h-5 text-[#00F0FF]" />
+                  <User className="w-5 h-5 text-[#8B5CF6]" />
                 )}
               </div>
 

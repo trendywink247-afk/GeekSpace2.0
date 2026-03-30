@@ -78,13 +78,13 @@ describe('PageHeader — Edge Cases & Integration', () => {
       });
     });
 
-    it('icon background is cyan (#00F0FF) accent color', () => {
+    it('icon background is cyan (#8B5CF6) accent color', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
       const iconBg = container.querySelector('[class*="bg-"]');
       // Check for cyan color reference
-      expect(iconBg?.className).toMatch(/bg-.*00F0FF|bg-cyan/i);
+      expect(iconBg?.className).toMatch(/bg-.*8B5CF6|bg-cyan/i);
     });
   });
 

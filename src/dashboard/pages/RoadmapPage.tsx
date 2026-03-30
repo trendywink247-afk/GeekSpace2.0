@@ -66,7 +66,7 @@ const releaseNotes: ReleaseNote[] = [
     phase: 'Phase 6',
     title: 'Performance & Monitoring',
     date: 'Mar 2026',
-    color: '#00F0FF',
+    color: '#8B5CF6',
     items: [
       'Expense fast-path — auto-categorizes spending in 660ms, zero AI credits',
       'Focus session fast-path — instant Pomodoro start via regex parser',
@@ -122,7 +122,7 @@ const releaseNotes: ReleaseNote[] = [
     phase: 'Phase 72',
     title: 'Suggestion Intelligence Polish',
     date: 'Feb 2026',
-    color: '#00F0FF',
+    color: '#8B5CF6',
     items: [
       'Status change notifications for suggestion owners',
       'Status timeline in suggestion detail modal',
@@ -451,7 +451,7 @@ export function RoadmapPage() {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'accepted': return '#00FF88';
-      case 'triaged': return '#00F0FF';
+      case 'triaged': return '#8B5CF6';
       case 'rejected': return '#FF2D78';
       case 'shipped_main': return '#BF5FFF';
       case 'shipped_prod': return '#F59E0B';

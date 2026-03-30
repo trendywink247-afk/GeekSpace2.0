@@ -551,7 +551,7 @@ export function SettingsPage() {
     anthropic: '#d4a574',
     qwen: '#6366f1',
     openrouter: '#ef4444',
-    custom: '#00F0FF',
+    custom: '#8B5CF6',
   };
 
   return (
@@ -559,7 +559,7 @@ export function SettingsPage() {
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* 57.9: Agent config save-confirmation toast */}
       {savedToast && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/40 text-[#8B5CF6] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
           <Save className="w-4 h-4" />
           Settings saved
         </div>
@@ -573,7 +573,7 @@ export function SettingsPage() {
           data-testid="shortcuts-modal"
         >
           <div
-            className="bg-[var(--ag-bg-surface)] border border-[#00F0FF]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="bg-[var(--ag-bg-surface)] border border-[#8B5CF6]/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
@@ -606,7 +606,7 @@ export function SettingsPage() {
                     {items.map(({ key, desc }) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-[var(--ag-text-muted)] text-sm">{desc}</span>
-                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs font-mono">{key}</kbd>
+                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[#8B5CF6]/20 text-[#8B5CF6] text-xs font-mono">{key}</kbd>
                       </div>
                     ))}
                   </div>
@@ -624,8 +624,8 @@ export function SettingsPage() {
         badge={
           <>
             <span className="relative flex h-2.5 w-2.5" title="Weebo active">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#8B5CF6]" />
             </span>
             {hasUnsavedChanges && !isSaving && (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
@@ -640,7 +640,7 @@ export function SettingsPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowShortcuts(true)}
-              className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#00F0FF] hover:border-[#00F0FF]/40 text-xs min-h-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#8B5CF6] hover:border-[#8B5CF6]/40 text-xs min-h-[44px]"
               title="Keyboard shortcuts (?)"
               data-testid="shortcuts-btn"
             >
@@ -697,7 +697,7 @@ export function SettingsPage() {
                   {profile.avatar ? (
                     <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[var(--ag-bg-surface)] object-cover" />
                   ) : (
-                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
                       {(profile.name || user?.email?.split('@')[0] || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
                   )}
@@ -708,7 +708,7 @@ export function SettingsPage() {
                       const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
                       setProfile({ ...profile, avatar: url });
                     }}
-                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#00F0FF] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
+                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#8B5CF6] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
                     title="Generate new pixel avatar"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
@@ -717,7 +717,7 @@ export function SettingsPage() {
                 {/* 53.9: Upload photo with live preview */}
                 <div className="mt-2">
                   <label className="cursor-pointer">
-                    <span className="text-xs text-[var(--ag-cyan)] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
+                    <span className="text-xs text-[#8B5CF6] hover:text-[#00D4B0] transition-colors underline underline-offset-2">Upload Photo</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
@@ -769,8 +769,8 @@ export function SettingsPage() {
                       variant="outline"
                       className="mt-3"
                       style={{
-                        borderColor: isPremium ? 'rgba(0,240,255,0.4)' : 'rgba(0,255,136,0.3)',
-                        color: isPremium ? '#00F0FF' : '#00FF88',
+                        borderColor: isPremium ? 'rgba(139,92,246,0.4)' : 'rgba(0,255,136,0.3)',
+                        color: isPremium ? '#8B5CF6' : '#00FF88',
                       }}
                     >
                       {label}
@@ -838,8 +838,8 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-[var(--ag-cyan)]" />
+                    <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-[#8B5CF6]" />
                     </div>
                     <div>
                       <div className="font-medium text-[var(--ag-text-primary)]">{item.title}</div>
@@ -971,7 +971,7 @@ export function SettingsPage() {
                 </div>
               ) : sessions.length === 0 ? (
                 <div className="text-center py-6">
-                  <Monitor className="w-8 h-8 text-[var(--ag-cyan)]/30 mx-auto mb-2" />
+                  <Monitor className="w-8 h-8 text-[#8B5CF6]/30 mx-auto mb-2" />
                   <p className="text-sm text-[var(--ag-text-muted)]">No active sessions found</p>
                 </div>
               ) : (
@@ -981,18 +981,18 @@ export function SettingsPage() {
                     s.id === [...sessions].sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())[0].id;
                   return (
                     <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl  border transition-all ${
-                      isCurrent ? 'border-[#00F0FF]/50 ring-1 ring-[#00F0FF]/20' : 'border-[#00F0FF]/20'
+                      isCurrent ? 'border-[#8B5CF6]/50 ring-1 ring-[#8B5CF6]/20' : 'border-[#8B5CF6]/20'
                     }`}>
                       <div className="flex items-center gap-3">
-                        <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
+                        <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[#8B5CF6]' : 'text-[var(--ag-text-muted)]'}`} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-[var(--ag-text-primary)] truncate max-w-[200px]">
                               {s.user_agent.slice(0, 40) || 'Unknown browser'}
                             </span>
                             {isCurrent && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/15 text-[var(--ag-cyan)] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] animate-pulse" />
                                 Current
                               </span>
                             )}
@@ -1026,12 +1026,12 @@ export function SettingsPage() {
           <div className="gs-card">
             <p className="gs-section-label mb-1">Locale</p>
             <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
-              <MapPin className="w-4 h-4 text-[var(--ag-cyan)]" />Timezone
+              <MapPin className="w-4 h-4 text-[#8B5CF6]" />Timezone
             </h3>
             <p className="text-sm text-[#9CA3AF] mb-4">Auto-detected from your browser</p>
             <div className="flex items-center justify-between p-3 rounded-xl border border-white/[0.06]">
                 <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-[var(--ag-cyan)]" />
+                  <Globe className="w-5 h-5 text-[#8B5CF6]" />
                   <div>
                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">{detectedTimezone}</p>
                     <p className="text-xs text-[var(--ag-text-muted)]">
@@ -1052,12 +1052,12 @@ export function SettingsPage() {
           <div className="gs-card">
             <p className="gs-section-label mb-1">Privacy</p>
             <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
-              <FileDown className="w-4 h-4 text-[var(--ag-cyan)]" />Data Export (GDPR)
+              <FileDown className="w-4 h-4 text-[#8B5CF6]" />Data Export (GDPR)
             </h3>
             <p className="text-sm text-[#9CA3AF] mb-4">Download a copy of all your data stored in Agentin</p>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-white/[0.06]">
-                <Shield className="w-4 h-4 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#8B5CF6]/5 border border-white/[0.06]">
+                <Shield className="w-4 h-4 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[var(--ag-text-muted)]">
                   Your export includes your profile, conversation history, memories, active sessions, and preferences.
                   The file is downloaded directly to your device and is not stored on our servers.
@@ -1067,7 +1067,7 @@ export function SettingsPage() {
                 variant="outline"
                 onClick={() => void handleGDPRExport()}
                 disabled={isExportingGDPR}
-                className="gs-btn-ghost border-[#00F0FF]/30 text-[var(--ag-cyan)]"
+                className="gs-btn-ghost border-[#8B5CF6]/30 text-[#8B5CF6]"
                 data-testid="gdpr-export-btn"
               >
                 {isExportingGDPR ? (
@@ -1100,8 +1100,8 @@ export function SettingsPage() {
                   disabled={modelSaving}
                   className={`w-full text-left p-3 rounded-xl border transition-all ${
                     preferredModel === opt.value
-                      ? 'bg-[#00F0FF]/10 border-[#00F0FF] text-[var(--ag-cyan)]'
-                      : ' border-[#00F0FF]/20 text-[var(--ag-text-primary)] hover:border-[#00F0FF]/50'
+                      ? 'bg-[#8B5CF6]/10 border-[#8B5CF6] text-[#8B5CF6]'
+                      : ' border-[#8B5CF6]/20 text-[var(--ag-text-primary)] hover:border-[#8B5CF6]/50'
                   }`}
                 >
                   <div className="font-medium text-sm">{opt.label}</div>
@@ -1192,7 +1192,7 @@ export function SettingsPage() {
                     'bg-[#F97316]',
                     'bg-[#EAB308]',
                     'bg-[#22C55E]',
-                    'bg-[#00F0FF]',
+                    'bg-[#8B5CF6]',
                   ];
                   return (
                     <div className="mt-2 space-y-1">
@@ -1335,7 +1335,7 @@ export function SettingsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteConfirmText(''); setDeleteError(''); }}
-                      className="border-[#00F0FF]/20 text-[var(--ag-text-muted)]"
+                      className="border-[#8B5CF6]/20 text-[var(--ag-text-muted)]"
                     >
                       Cancel
                     </Button>
@@ -1387,14 +1387,14 @@ export function SettingsPage() {
             <div className="space-y-4">
               {apiKeys.length === 0 && !showAddKey && (
                 <div className="text-center py-8">
-                  <Key className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+                  <Key className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
                   <p className="text-[var(--ag-text-muted)] mb-2">No API keys added yet</p>
                   <p className="text-sm text-[var(--ag-text-muted)]">Add your provider keys to use your own credits</p>
                 </div>
               )}
 
               {apiKeys.map((key) => (
-                <div key={key.id} className="rounded-xl border border-[#00F0FF]/20 overflow-hidden">
+                <div key={key.id} className="rounded-xl border border-[#8B5CF6]/20 overflow-hidden">
                   <div className="flex items-center justify-between p-4 gap-2">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${providerColors[key.provider]}20` }}>
@@ -1412,7 +1412,7 @@ export function SettingsPage() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Button variant="ghost" size="sm"
                         onClick={() => { setRotatingKeyId(rotatingKeyId === key.id ? null : key.id); setRotateValue(''); }}
-                        className="text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] text-xs px-2">
+                        className="text-[#8B5CF6]/70 hover:text-[#8B5CF6] text-xs px-2">
                         Rotate
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))} className="text-[#FF6161] hover:text-[#FF6161]">
@@ -1421,7 +1421,7 @@ export function SettingsPage() {
                     </div>
                   </div>
                   {rotatingKeyId === key.id && (
-                    <div className="px-4 pb-4 flex gap-2 border-t border-[#00F0FF]/10 pt-3">
+                    <div className="px-4 pb-4 flex gap-2 border-t border-[#8B5CF6]/10 pt-3">
                       <Input
                         type="password"
                         placeholder="Paste new key value…"
@@ -1431,7 +1431,7 @@ export function SettingsPage() {
                       />
                       <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
                         onClick={() => handleRotateKey(key.id)}
-                        className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30">
+                        className="bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20 border border-[#8B5CF6]/30">
                         {isRotating ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
                       </Button>
                     </div>
@@ -1440,7 +1440,7 @@ export function SettingsPage() {
               ))}
 
               {showAddKey && (
-                <div className="p-4 rounded-xl border border-[#00F0FF]/30 space-y-3">
+                <div className="p-4 rounded-xl border border-[#8B5CF6]/30 space-y-3">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Provider</label>
                     <div className="flex gap-2 flex-wrap">
@@ -1450,8 +1450,8 @@ export function SettingsPage() {
                           onClick={() => setNewKeyProvider(p)}
                           className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
-                              ? 'bg-[#00F0FF]/20 border border-[#00F0FF] text-[var(--ag-cyan)]'
-                              : 'bg-[var(--ag-bg-surface)] border border-[#00F0FF]/20 text-[var(--ag-text-muted)]'
+                              ? 'bg-[#8B5CF6]/20 border border-[#8B5CF6] text-[#8B5CF6]'
+                              : 'bg-[var(--ag-bg-surface)] border border-[#8B5CF6]/20 text-[var(--ag-text-muted)]'
                           }`}
                         >
                           {p}
@@ -1507,29 +1507,29 @@ export function SettingsPage() {
             <div className="space-y-3">
               {memoriesLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : memories.length === 0 ? (
                 <div className="text-center py-8">
-                  <Brain className="w-10 h-10 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+                  <Brain className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
                   <p className="text-[var(--ag-text-muted)] mb-2">No memories yet</p>
                   <p className="text-sm text-[var(--ag-text-muted)]">Your agent learns about you through conversations</p>
                 </div>
               ) : (
                 memories.map((memory) => (
-                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl border border-[#00F0FF]/20 group hover:border-[#00F0FF]/40 transition-all">
+                  <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl border border-[#8B5CF6]/20 group hover:border-[#8B5CF6]/40 transition-all">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center mt-0.5" style={{
-                        backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#00F0FF15'
+                        backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#8B5CF615'
                       }}>
                         <Tag className="w-4 h-4" style={{
-                          color: memory.category === 'fact' ? '#00FF88' : '#00F0FF'
+                          color: memory.category === 'fact' ? '#00FF88' : '#8B5CF6'
                         }} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-[var(--ag-text-primary)]">{memory.key}</span>
-                          <Badge variant="outline" className="text-xs border-[#00F0FF]/30 text-[var(--ag-text-muted)]">{memory.category}</Badge>
+                          <Badge variant="outline" className="text-xs border-[#8B5CF6]/30 text-[var(--ag-text-muted)]">{memory.category}</Badge>
                         </div>
                         <p className="text-sm text-[var(--ag-text-muted)]">{memory.value}</p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-[var(--ag-text-muted)]/60">
@@ -1566,7 +1566,7 @@ export function SettingsPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.1] transition-colors"
                   >
                     <span className="text-base leading-none">{reaction}</span>
-                    <span className="text-xs font-bold text-[var(--ag-cyan)]">{count}</span>
+                    <span className="text-xs font-bold text-[#8B5CF6]">{count}</span>
                   </div>
                 ))}
               </div>
@@ -1623,7 +1623,7 @@ export function SettingsPage() {
 
           <div className="gs-card">
             <div className="flex items-start gap-3">
-              <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+              <Brain className="w-5 h-5 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">How Memory Works</h4>
                 <p className="text-xs text-[var(--ag-text-muted)]">
@@ -1645,7 +1645,7 @@ export function SettingsPage() {
                   size="sm"
                   onClick={handleExportConversations}
                   disabled={isExportingConversations}
-                  className="gs-btn-ghost text-[var(--ag-cyan)]"
+                  className="gs-btn-ghost text-[#8B5CF6]"
                 >
                   {isExportingConversations ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1710,8 +1710,8 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-[#00F0FF]" />
+                    <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
+                      <item.icon className="w-5 h-5 text-[#8B5CF6]" />
                     </div>
                     <div>
                       <div className="font-medium text-[#F4F6FF]">{item.title}</div>
@@ -1739,7 +1739,7 @@ export function SettingsPage() {
           </div>
           <div className="gs-card">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+              <Shield className="w-5 h-5 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">What We Never Show</h4>
                 <p className="text-xs text-[var(--ag-text-muted)]">
@@ -1773,7 +1773,7 @@ export function SettingsPage() {
               {/* 56.7: Prominent 3-way theme toggle with icons */}
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-3 block">Theme Mode</label>
-                <div className="inline-flex rounded-xl border border-[#00F0FF]/20 p-1 gap-1">
+                <div className="inline-flex rounded-xl border border-[#8B5CF6]/20 p-1 gap-1">
                   {([
                     { id: 'dark', label: 'Dark', Icon: Moon },
                     { id: 'light', label: 'Light', Icon: Sun },
@@ -1787,7 +1787,7 @@ export function SettingsPage() {
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         themeMode === id
-                          ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] shadow-inner'
+                          ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] shadow-inner'
                           : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
                       }`}
                     >
@@ -1803,7 +1803,7 @@ export function SettingsPage() {
                 <div
                   className="mt-3 rounded-xl border overflow-hidden transition-all duration-500"
                   style={{
-                    borderColor: themeMode === 'light' ? '#e5e7eb' : 'rgba(0,240,255,0.15)',
+                    borderColor: themeMode === 'light' ? '#e5e7eb' : 'rgba(139,92,246,0.15)',
                     background: themeMode === 'light' ? '#ffffff' : '#0C0C18',
                   }}
                 >
@@ -1870,7 +1870,7 @@ export function SettingsPage() {
               </div>
 
               {/* Compact Mode */}
-              <div className="flex items-center justify-between py-3 border-t border-[#00F0FF]/10">
+              <div className="flex items-center justify-between py-3 border-t border-[#8B5CF6]/10">
                 <div>
                   <p className="text-sm font-medium text-[var(--ag-text-primary)]">Compact Mode</p>
                   <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Reduce card padding and spacing for a denser layout</p>
@@ -1900,7 +1900,7 @@ export function SettingsPage() {
                 {bgPreview && (
                   <div className="space-y-2">
                     <div
-                      className="h-24 rounded-xl border border-[#00F0FF]/20"
+                      className="h-24 rounded-xl border border-[#8B5CF6]/20"
                       style={{ background: bgPreview.gradient }}
                     />
                     <p className="text-xs text-[var(--ag-text-muted)]">"{bgPreview.name}" — click Apply to use this background</p>
@@ -1919,7 +1919,7 @@ export function SettingsPage() {
           <div className="gs-card">
             <p className="gs-section-label mb-1">Audio</p>
             <h3 className="text-base font-semibold text-[#F4F6FF] flex items-center gap-2 mb-1">
-              <Volume2 className="w-5 h-5 text-[var(--ag-cyan)]" />Voice Settings
+              <Volume2 className="w-5 h-5 text-[#8B5CF6]" />Voice Settings
             </h3>
             <p className="text-sm text-[#9CA3AF] mb-4">Configure text-to-speech and voice input.</p>
             <div className="space-y-6">
@@ -1935,7 +1935,7 @@ export function SettingsPage() {
                   <label className="text-sm font-medium text-[var(--ag-text-primary)]">Speech Rate</label>
                   <span className="text-xs text-[var(--ag-text-muted)]">{voiceSettings.rate.toFixed(1)}x</span>
                 </div>
-                <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#00F0FF]" />
+                <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#8B5CF6]" />
                 <div className="flex justify-between text-xs text-[var(--ag-text-muted)]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
               </div>
               <div className="space-y-2">
@@ -1948,14 +1948,14 @@ export function SettingsPage() {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="gs-btn-ghost text-[var(--ag-cyan)]">
+                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="gs-btn-ghost text-[#8B5CF6]">
                   {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
                   {ttsSample ? "Speaking..." : "Test Voice"}
                 </Button>
                 <p className="text-xs text-[var(--ag-text-muted)]">Plays a sample phrase with your current settings.</p>
               </div>
-              <div className="rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/15 px-4 py-3 flex items-start gap-3">
-                <Mic className="w-4 h-4 text-[var(--ag-cyan)] mt-0.5 shrink-0" />
+              <div className="rounded-lg bg-[#8B5CF6]/5 border border-[#8B5CF6]/15 px-4 py-3 flex items-start gap-3">
+                <Mic className="w-4 h-4 text-[#8B5CF6] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[var(--ag-text-primary)] font-medium">Keyboard Shortcut</p>
                   <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">Press Alt + V anywhere to open Voice Chat instantly.</p>

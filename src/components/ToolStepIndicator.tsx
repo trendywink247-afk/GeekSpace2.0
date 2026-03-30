@@ -125,10 +125,10 @@ function StepCard({ step }: { step: ToolStep }) {
         'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all',
         'bg-[#0C0C18]/50 border',
         isActive
-          ? 'border-[#00F0FF]/15'
+          ? 'border-[#8B5CF6]/15'
           : isError
             ? 'border-[#FF2D78]/15'
-            : 'border-[#00F0FF]/5',
+            : 'border-[#8B5CF6]/5',
         isActive ? '' : 'opacity-70',
       ].join(' ')}
     >
@@ -153,7 +153,7 @@ function StepCard({ step }: { step: ToolStep }) {
           </span>
         )}
         {isActive && (
-          <Loader2 className="w-3 h-3 text-[#00F0FF] animate-spin" />
+          <Loader2 className="w-3 h-3 text-[#8B5CF6] animate-spin" />
         )}
         {step.status === 'done' && (
           <Check className="w-3 h-3 text-[#ADFF2F]" />

@@ -231,7 +231,7 @@ describe('Component Library — CRITICAL GAPS', () => {
       const iconBg = container.querySelector('[class*="bg-"]');
 
       // Should contain cyan hex or CSS custom property
-      expect(iconBg?.className).toMatch(/(00F0FF|cyan|icon-bg)/i);
+      expect(iconBg?.className).toMatch(/(8B5CF6|cyan|icon-bg)/i);
     });
   });
 
@@ -352,7 +352,7 @@ describe('Component Library — CRITICAL GAPS', () => {
       expect(container.firstChild).toBeTruthy();
     });
 
-    it('TODO: PageHeader icon uses cyan (#00F0FF)', () => {
+    it('TODO: PageHeader icon uses cyan (#8B5CF6)', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
@@ -360,7 +360,7 @@ describe('Component Library — CRITICAL GAPS', () => {
       const iconBg = container.querySelector('[class*="bg-"]');
 
       // Should reference cyan color
-      // expect(iconBg?.style.backgroundColor).toMatch(/00F0FF|cyan/);
+      // expect(iconBg?.style.backgroundColor).toMatch(/8B5CF6|cyan/);
 
       expect(iconBg).toBeTruthy();
     });

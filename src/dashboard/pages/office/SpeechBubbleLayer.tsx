@@ -47,7 +47,7 @@ export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }
         const px = agent?.renderX ?? (bubble.pixelX ?? 0);
         const py = agent?.renderY ?? (bubble.pixelY ?? 0);
         const pos = pixelToScreen(px, py, canvasWidth, canvasHeight);
-        const color = AGENT_COLORS[bubble.agentId] ?? '#00F0FF';
+        const color = AGENT_COLORS[bubble.agentId] ?? '#8B5CF6';
         const truncated =
           bubble.text.length > 30 ? bubble.text.slice(0, 27) + '...' : bubble.text;
         const isMounted = mounted.has(bubble.id);

@@ -37,7 +37,7 @@ function StarRating({ score, onRate, disabled }: { score: number | null; onRate:
             onMouseEnter={() => setHovered(s)}
             onMouseLeave={() => setHovered(null)}
             disabled={disabled}
-            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
           >
             <Star
@@ -104,7 +104,7 @@ export function ConversationRatingPage() {
   return (
     <PageShell spacing={4}>
       {/* Weebo dot */}
-      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#00F0FF] shadow-[0_0_6px_rgba(0,240,255,0.4)]" aria-hidden="true" />
+      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#8B5CF6] shadow-[0_0_6px_rgba(139,92,246,0.4)]" aria-hidden="true" />
 
       <PageHeader
         icon={MessageSquare}
@@ -112,7 +112,7 @@ export function ConversationRatingPage() {
         subtitle={`${total} conversations — rate quality to improve your AI`}
         badge={
           total > 0 ? (
-            <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+            <Badge className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20 text-xs">
               {total}
             </Badge>
           ) : undefined
@@ -153,7 +153,7 @@ export function ConversationRatingPage() {
                   <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mb-1">{formatDate(conv.createdAt)}</p>
                   {conv.userMessage && (
                     <div className="mb-2">
-                      <span className="text-xs font-medium text-[#00F0FF] uppercase tracking-wide">You</span>
+                      <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">You</span>
                       <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
                     </div>
                   )}

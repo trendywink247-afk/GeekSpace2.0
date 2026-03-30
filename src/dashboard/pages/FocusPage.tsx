@@ -80,7 +80,7 @@ const BREAK_TIPS = [
   'Grab a healthy snack',
 ];
 
-const RING_COLORS = ['#00F0FF', '#ADFF2F', '#FF2D78'];
+const RING_COLORS = ['#8B5CF6', '#ADFF2F', '#FF2D78'];
 
 // ---------- Utilities ----------
 
@@ -200,7 +200,7 @@ function useTimer(startMs: number | null, durationMin: number | null) {
 
 // ---------- Sub-components ----------
 
-function TimerRing({ progress, size = 220, strokeWidth = 10, color = '#00F0FF', children }: {
+function TimerRing({ progress, size = 220, strokeWidth = 10, color = '#8B5CF6', children }: {
   progress: number;
   size?: number;
   strokeWidth?: number;
@@ -324,7 +324,7 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
               {hasData && (
                 <rect
                   x={x} y={y} width={barWidth} height={Math.max(barH, 4)} rx={6}
-                  fill={isToday ? '#00F0FF' : '#00F0FF'}
+                  fill={isToday ? '#8B5CF6' : '#8B5CF6'}
                   opacity={isToday ? 1 : 0.5}
                   style={{ transition: 'height 0.4s ease-out, y 0.4s ease-out' }}
                 />
@@ -339,7 +339,7 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
               <text
                 x={x + barWidth / 2} y={chartHeight + 16}
                 textAnchor="middle"
-                fill={isToday ? '#00F0FF' : '#8892A4'}
+                fill={isToday ? '#8B5CF6' : '#8892A4'}
                 fontSize="10"
                 fontWeight={isToday ? 'bold' : 'normal'}
                 fontFamily="inherit"
@@ -399,7 +399,7 @@ function CelebrationPulse() {
   return (
     <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
       <div className="w-64 h-64 rounded-full bg-[#ADFF2F]/10 animate-ping" />
-      <div className="absolute w-48 h-48 rounded-full bg-[#00F0FF]/10 animate-ping" style={{ animationDelay: '0.15s' }} />
+      <div className="absolute w-48 h-48 rounded-full bg-[#8B5CF6]/10 animate-ping" style={{ animationDelay: '0.15s' }} />
       <div className="absolute w-32 h-32 rounded-full bg-[#FF2D78]/10 animate-ping" style={{ animationDelay: '0.3s' }} />
     </div>
   );
@@ -429,10 +429,10 @@ function HabitLogButton({ habit, onLog }: { habit: Habit; onLog: (id: number) =>
       className={`
         min-h-[44px] min-w-[44px] px-4 rounded-lg flex items-center justify-center gap-2
         font-medium text-sm transition-all duration-300
-        focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
         ${isComplete
           ? 'bg-[#ADFF2F]/15 text-[#ADFF2F] cursor-default'
-          : 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 active:scale-95'
+          : 'bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20 active:scale-95'
         }
         ${animating ? 'scale-110' : ''}
       `}
@@ -760,9 +760,9 @@ export function FocusPage() {
           <Button
             variant="ghost" size="sm"
             onClick={toggleFocusMode}
-            className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
+            className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
               settings?.focus_mode_active
-                ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20'
+                ? 'bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20'
                 : 'text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
             }`}
             aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
@@ -778,7 +778,7 @@ export function FocusPage() {
         <div className="gs-card p-3 border-[rgba(139,92,246,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[var(--ag-text-primary,#F4F6FF)]">
-              <Bell size={14} className="inline mr-1.5 text-[var(--ag-cyan)]" />
+              <Bell size={14} className="inline mr-1.5 text-[#8B5CF6]" />
               {deferredCount} message{deferredCount > 1 ? 's' : ''} held during focus
             </span>
             <button
@@ -805,7 +805,7 @@ export function FocusPage() {
               <circle
                 cx="32" cy="32" r="28"
                 fill="none"
-                stroke={focusStreak >= 7 ? '#ADFF2F' : focusStreak >= 3 ? '#00F0FF' : '#FF2D78'}
+                stroke={focusStreak >= 7 ? '#ADFF2F' : focusStreak >= 3 ? '#8B5CF6' : '#FF2D78'}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={`${Math.min(focusStreak / 7, 1) * 175.9} 175.9`}
@@ -828,7 +828,7 @@ export function FocusPage() {
         </div>
         <div className="gs-card p-3 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Clock size={14} className="text-[var(--ag-cyan)]" />
+            <Clock size={14} className="text-[#8B5CF6]" />
             <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">This week</span>
           </div>
           <p className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] font-heading">
@@ -863,7 +863,7 @@ export function FocusPage() {
               {session ? (
                 <div className="space-y-5">
                   <TimerRing progress={progress} size={240} strokeWidth={10}>
-                    <div className="text-4xl font-mono font-bold text-[var(--ag-cyan)] tracking-wider">
+                    <div className="text-4xl font-mono font-bold text-[#8B5CF6] tracking-wider">
                       {remaining !== null ? remainStr : elapsedStr}
                     </div>
                     <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1">
@@ -872,7 +872,7 @@ export function FocusPage() {
                   </TimerRing>
                   {session.goal && (
                     <p className="text-center text-sm text-[var(--ag-text-primary,#F4F6FF)]/80">
-                      <Target size={12} className="inline mr-1 text-[var(--ag-cyan)]" />
+                      <Target size={12} className="inline mr-1 text-[#8B5CF6]" />
                       {session.goal}
                     </p>
                   )}
@@ -884,7 +884,7 @@ export function FocusPage() {
                     disabled={loading}
                     className="w-full h-14 px-8 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-medium
                       transition-colors flex items-center justify-center gap-2
-                      focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+                      focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
                       disabled:opacity-50 active:scale-[0.98] min-h-[44px]"
                   >
                     <Pause size={18} />
@@ -910,7 +910,7 @@ export function FocusPage() {
                         onClick={() => setDurInput(d.value)}
                         className={`
                           rounded-xl p-2.5 text-center transition-all duration-200
-                          focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+                          focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
                           min-h-[44px]
                           ${durInput === d.value
                             ? 'bg-[#8B5CF6]/15 border border-[#8B5CF6]/40 text-[#8B5CF6]'
@@ -940,7 +940,7 @@ export function FocusPage() {
           {completedHistory.length > 0 && (
             <SectionCard title="This week">
               <div className="flex items-center gap-2 -mt-3 mb-2">
-                <TrendingUp size={16} className="text-[var(--ag-cyan)]" />
+                <TrendingUp size={16} className="text-[#8B5CF6]" />
               </div>
               <WeeklyFocusChart sessions={history} />
             </SectionCard>
@@ -1008,8 +1008,8 @@ export function FocusPage() {
             <Button
               size="sm" variant="ghost"
               onClick={() => setShowAddHabit(true)}
-              className="text-[var(--ag-cyan)] min-h-[44px] min-w-[44px] hover:bg-[#00F0FF]/10
-                focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="text-[#8B5CF6] min-h-[44px] min-w-[44px] hover:bg-[#8B5CF6]/10
+                focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
               aria-label="Add habit"
             >
               <Plus size={16} className="mr-1" />
@@ -1072,7 +1072,7 @@ export function FocusPage() {
                     <button
                       className="min-h-[44px] min-w-[36px] rounded-lg text-[var(--ag-text-secondary,#9CA3AF)]/30 hover:text-red-400
                         hover:bg-red-400/10 flex items-center justify-center transition-colors
-                        focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
+                        focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none"
                       onClick={() => void handleDeleteHabit(h.id)}
                       disabled={deletingHabitId === h.id}
                       aria-label={`Delete ${h.name}`}
@@ -1101,7 +1101,7 @@ export function FocusPage() {
         <DialogContent className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
           <DialogHeader>
             <DialogTitle className="font-heading flex items-center gap-2">
-              <Play size={18} className="text-[var(--ag-cyan)]" />
+              <Play size={18} className="text-[#8B5CF6]" />
               Start Focus Session
             </DialogTitle>
           </DialogHeader>
@@ -1128,10 +1128,10 @@ export function FocusPage() {
                     onClick={() => setDurInput(d.value)}
                     className={`
                       rounded-xl p-3 text-center transition-all duration-200
-                      focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+                      focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
                       min-h-[44px]
                       ${durInput === d.value
-                        ? 'bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)]'
+                        ? 'bg-[#8B5CF6]/15 border border-[#8B5CF6]/40 text-[#8B5CF6]'
                         : 'bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)]'
                       }
                     `}
@@ -1154,7 +1154,7 @@ export function FocusPage() {
             <Button
               onClick={handleStartFocus}
               disabled={loading}
-              className="bg-[#00F0FF] text-black hover:bg-[#00d4e0] min-h-[44px] px-6 font-semibold"
+              className="bg-[#8B5CF6] text-black hover:bg-[#00d4e0] min-h-[44px] px-6 font-semibold"
             >
               {loading ? 'Starting...' : 'Start'}
             </Button>
@@ -1167,7 +1167,7 @@ export function FocusPage() {
         <DialogContent className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
           <DialogHeader>
             <DialogTitle className="font-heading flex items-center gap-2">
-              <Plus size={18} className="text-[var(--ag-cyan)]" />
+              <Plus size={18} className="text-[#8B5CF6]" />
               Add Habit
             </DialogTitle>
           </DialogHeader>
@@ -1192,9 +1192,9 @@ export function FocusPage() {
                     onClick={() => setNewHabitIcon(ic)}
                     className={`text-xl p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]
                       flex items-center justify-center
-                      focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+                      focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
                       ${newHabitIcon === ic
-                        ? 'bg-[#00F0FF]/15 ring-1 ring-[#00F0FF]/40 scale-110'
+                        ? 'bg-[#8B5CF6]/15 ring-1 ring-[#8B5CF6]/40 scale-110'
                         : 'hover:bg-[var(--ag-bg-surface)]'
                       }`}
                   >
@@ -1212,7 +1212,7 @@ export function FocusPage() {
                     key={f.value}
                     onClick={() => setNewHabitFreq(f.value)}
                     className={`rounded-xl p-3 text-center text-sm transition-all duration-200 min-h-[44px]
-                      focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
+                      focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none
                       ${newHabitFreq === f.value
                         ? 'gs-pill-active font-medium'
                         : 'gs-pill'

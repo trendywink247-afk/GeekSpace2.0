@@ -199,7 +199,7 @@ function TodayTab({
                 key={r.id}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 group backdrop-blur-sm transition-all duration-200 hover:shadow-[var(--ag-glow-sm)]"
                 style={{
-                  background: r.overdue ? 'rgba(255,45,120,0.06)' : 'rgba(0,240,255,0.04)',
+                  background: r.overdue ? 'rgba(255,45,120,0.06)' : 'rgba(139,92,246,0.04)',
                   border: `1px solid ${r.overdue ? 'rgba(255,45,120,0.15)' : 'var(--ag-border-subtle)'}`,
                 }}
               >
@@ -310,7 +310,7 @@ function InsightsTab({ weeklyStats }: { weeklyStats: OverviewWeeklyStats | null 
   }
 
   const cards = [
-    { label: 'Messages', value: weeklyStats.messagesThisWeek, color: 'var(--ag-cyan)', icon: '\uD83D\uDCAC' },
+    { label: 'Messages', value: weeklyStats.messagesThisWeek, color: '#8B5CF6', icon: '\uD83D\uDCAC' },
     { label: 'Reminders Done', value: weeklyStats.remindersCompleted, color: 'var(--ag-lime)', icon: '\u2705' },
     { label: 'Habits Logged', value: weeklyStats.habitsLogged, color: 'var(--ag-violet)', icon: '\uD83D\uDD25' },
   ];
@@ -318,7 +318,7 @@ function InsightsTab({ weeklyStats }: { weeklyStats: OverviewWeeklyStats | null 
   return (
     <div className="flex flex-col gap-3 p-3">
       <span className="text-xs font-semibold text-[var(--ag-text-primary)] tracking-wide uppercase flex items-center gap-2">
-        <BarChart3 className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
+        <BarChart3 className="w-3.5 h-3.5 text-[#8B5CF6]" />
         This Week
       </span>
       <div className="grid grid-cols-3 gap-2">
@@ -388,7 +388,7 @@ function ChatInputBar() {
         onKeyDown={handleKeyDown}
         placeholder="Ask an agent..."
         disabled={sending}
-        className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[var(--ag-text-muted)] disabled:opacity-50 min-h-[36px] transition-shadow duration-200 focus:shadow-[0_0_0_1px_var(--ag-cyan),var(--ag-glow-sm)]"
+        className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[var(--ag-text-muted)] disabled:opacity-50 min-h-[36px] transition-shadow duration-200 focus:shadow-[0_0_0_1px_#8B5CF6,var(--ag-glow-sm)]"
         style={{
           background: 'rgba(12, 12, 30, 0.8)',
           color: 'var(--ag-text-primary)',
@@ -400,14 +400,14 @@ function ChatInputBar() {
         disabled={!hasText || sending}
         className="flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 disabled:opacity-40 flex-shrink-0"
         style={{
-          background: hasText && !sending ? 'rgba(0,240,255,0.15)' : 'rgba(0,240,255,0.08)',
-          color: 'var(--ag-cyan)',
+          background: hasText && !sending ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
+          color: '#8B5CF6',
           boxShadow: hasText && !sending ? 'var(--ag-glow-sm)' : 'none',
         }}
         aria-label="Send message"
       >
         {sending ? (
-          <div className="w-3.5 h-3.5 border-2 border-[var(--ag-cyan)]/30 border-t-[var(--ag-cyan)] rounded-full animate-spin" />
+          <div className="w-3.5 h-3.5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
         ) : (
           <Send className="w-3.5 h-3.5" />
         )}
@@ -516,8 +516,8 @@ function EnhancedSidebar({
               onClick={() => setActiveTab(key)}
               className="px-2.5 py-1.5 rounded-full font-medium transition-all duration-200 min-h-[32px] text-[11px] sm:text-xs whitespace-nowrap"
               style={{
-                background: active ? 'rgba(0,240,255,0.1)' : 'transparent',
-                color: active ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                background: active ? 'rgba(139,92,246,0.1)' : 'transparent',
+                color: active ? '#8B5CF6' : 'var(--ag-text-secondary)',
                 border: active ? '1px solid var(--ag-border-glow)' : '1px solid transparent',
                 boxShadow: active ? 'var(--ag-glow-sm)' : 'none',
               }}
@@ -686,7 +686,7 @@ function HeaderBar({ weeklyStats, connectionMode }: { weeklyStats: OverviewWeekl
       {weeklyStats && (
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-center">
-            <span className="text-xs font-bold text-[var(--ag-cyan)] block">{weeklyStats.messagesThisWeek}</span>
+            <span className="text-xs font-bold text-[#8B5CF6] block">{weeklyStats.messagesThisWeek}</span>
             <span className="text-[9px] text-[var(--ag-text-secondary)]">msgs</span>
           </div>
           <div className="w-px h-5" style={{ background: 'var(--ag-border-subtle)' }} />
@@ -884,8 +884,8 @@ export function OfficeHomePage() {
                     onClick={() => { setOfficeTheme(mode); localStorage.setItem('office_theme', mode); }}
                     className="px-1.5 py-0.5 rounded-md text-[10px] transition-all duration-200"
                     style={{
-                      background: officeTheme === mode ? 'rgba(0,240,255,0.15)' : 'transparent',
-                      color: officeTheme === mode ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                      background: officeTheme === mode ? 'rgba(139,92,246,0.15)' : 'transparent',
+                      color: officeTheme === mode ? '#8B5CF6' : 'var(--ag-text-secondary)',
                     }}
                   >
                     {mode === 'day' ? '\u2600\uFE0F' : mode === 'night' ? '\uD83C\uDF19' : '\u26A1'}

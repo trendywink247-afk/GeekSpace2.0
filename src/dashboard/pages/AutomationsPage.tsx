@@ -46,7 +46,7 @@ import type { AutomationTrigger, AutomationAction, AutomationLog, Automation } f
 const TRIGGER_META: Record<AutomationTrigger, { icon: typeof Clock; label: string; color: string; description: string }> = {
   time: { icon: CalendarClock, label: 'Scheduled', color: '#FFB800', description: 'Run on a schedule' },
   event: { icon: Activity, label: 'Event', color: '#00FF88', description: 'When an event fires' },
-  webhook: { icon: Webhook, label: 'Webhook', color: '#00F0FF', description: 'When a URL is called' },
+  webhook: { icon: Webhook, label: 'Webhook', color: '#8B5CF6', description: 'When a URL is called' },
   manual: { icon: Hand, label: 'Manual', color: '#6B7280', description: 'Trigger by hand' },
   keyword: { icon: Hash, label: 'Keyword', color: '#FF2D78', description: 'When a message matches' },
   health_down: { icon: HeartPulse, label: 'Health Check', color: '#FF6161', description: 'When a URL is down' },
@@ -724,7 +724,7 @@ export function AutomationsPage() {
             const isExpanded = expandedRunHistory === auto.id;
 
             const triggerBorderColor: Record<string, string> = {
-              time: '#00F0FF',
+              time: '#8B5CF6',
               keyword: '#00FF88',
               webhook: '#8B5CF6',
               manual: '#6B7280',

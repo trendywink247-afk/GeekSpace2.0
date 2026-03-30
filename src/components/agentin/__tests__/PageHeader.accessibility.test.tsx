@@ -137,8 +137,8 @@ describe('PageHeader — Accessibility', () => {
         <PageHeader title="Test" icon={Cloud} />
       );
 
-      // Icon bg is #00F0FF (cyan), icon should be visible
-      // TODO: Verify icon SVG stroke/fill contrasts with #00F0FF
+      // Icon bg is #8B5CF6 (cyan), icon should be visible
+      // TODO: Verify icon SVG stroke/fill contrasts with #8B5CF6
       const icon = container.querySelector('svg');
       expect(icon).toBeTruthy();
     });

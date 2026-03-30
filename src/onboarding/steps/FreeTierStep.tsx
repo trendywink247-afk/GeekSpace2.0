@@ -71,7 +71,7 @@ export function FreeTierStep({ onContinueFree, onUpgrade }: FreeTierStepProps) {
         {/* Header */}
         <div className="grid grid-cols-3 text-xs font-semibold border-b border-[#8B5CF6]/10">
           <div className="p-3 text-[#6B7280]">Feature</div>
-          <div className="p-3 text-center text-[#00F0FF]">Free</div>
+          <div className="p-3 text-center text-[#8B5CF6]">Free</div>
           <div className="p-3 text-center text-[#BF5FFF]">Premium</div>
         </div>
 

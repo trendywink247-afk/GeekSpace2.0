@@ -73,7 +73,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
           {!loading && unreadCount > 0 && (
             <span
               className="inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1"
-              style={{ background: '#00F0FF', color: '#05050A' }}
+              style={{ background: '#8B5CF6', color: '#05050A' }}
             >
               {unreadCount}
             </span>
@@ -81,19 +81,19 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
         </div>
         <button
           onClick={() => onNavigate?.('inbox')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#8B5CF6] transition-colors"
         >
           Open Inbox
           <ArrowRight className="w-3 h-3" />
         </button>
       </div>
       <Card
-        className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
+        className="border-[#8B5CF6]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
         style={{ background: '#0C0C18' }}
       >
         <CardContent className="p-0">
           {loading ? (
-            <div className="divide-y divide-[#00F0FF]/5">
+            <div className="divide-y divide-[#8B5CF6]/5">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="p-4 flex items-start gap-3">
                   <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -106,16 +106,16 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
             </div>
           ) : messages.length > 0 ? (
             <>
-              <div className="divide-y divide-[#00F0FF]/5">
+              <div className="divide-y divide-[#8B5CF6]/5">
                 {messages.map((msg) => {
-                  const agentColors = ['#00F0FF', '#BF5FFF', '#00FF88'];
+                  const agentColors = ['#8B5CF6', '#BF5FFF', '#00FF88'];
                   const colorIdx = msg.id.charCodeAt(0) % agentColors.length;
                   const color = agentColors[colorIdx];
                   return (
                     <button
                       key={msg.id}
                       onClick={() => onOpenChat?.()}
-                      className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#00F0FF]/[0.03] transition-colors group"
+                      className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#8B5CF6]/[0.03] transition-colors group"
                     >
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
@@ -128,7 +128,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                         A
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#00F0FF] transition-colors leading-snug">
+                        <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#8B5CF6] transition-colors leading-snug">
                           {msg.content.length > 70
                             ? msg.content.slice(0, 67) + '...'
                             : msg.content}
@@ -140,17 +140,17 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                       {/* Unread dot */}
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
-                        style={{ background: '#00F0FF' }}
+                        style={{ background: '#8B5CF6' }}
                       />
                     </button>
                   );
                 })}
               </div>
-              <div className="p-3 border-t border-[#00F0FF]/5">
+              <div className="p-3 border-t border-[#8B5CF6]/5">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full text-[#00F0FF] hover:bg-[#00F0FF]/10 text-xs"
+                  className="w-full text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs"
                   onClick={() => onNavigate?.('inbox')}
                 >
                   <Inbox className="w-3.5 h-3.5 mr-1.5" />
@@ -162,9 +162,9 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
             <div className="p-8 text-center">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'rgba(0,240,255,0.08)' }}
+                style={{ background: 'rgba(139,92,246,0.08)' }}
               >
-                <MessageSquare className="w-6 h-6 text-[#00F0FF]/30" />
+                <MessageSquare className="w-6 h-6 text-[#8B5CF6]/30" />
               </div>
               <p className="text-sm font-medium text-[#F4F6FF] mb-1">
                 Inbox is clear
@@ -175,7 +175,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                className="text-[#8B5CF6] hover:bg-[#8B5CF6]/10"
                 onClick={() => onOpenChat?.()}
               >
                 <MessageSquare className="w-3.5 h-3.5 mr-1" />

@@ -779,9 +779,9 @@ export function CalendarPage() {
                           ? "text-[#F4F6FF]"
                           : "text-[#6B7280]/40",
                         isToday ? "ring-1 ring-inset ring-[#84CC16] bg-[#84CC16]/5" : "",
-                        isSelected && !isToday ? "bg-[#00F0FF]/10" : "",
+                        isSelected && !isToday ? "bg-[#8B5CF6]/10" : "",
                         isSelected && isToday ? "bg-[#84CC16]/15 ring-2 ring-[#84CC16]" : "",
-                        "hover:bg-[#00F0FF]/8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                        "hover:bg-[#8B5CF6]/8 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none",
                       ].join(" ")}
                     >
                       <span
@@ -797,7 +797,7 @@ export function CalendarPage() {
                       {(hasEvents || hasReminders) && (
                         <div className="flex items-center gap-0.5 mt-1">
                           {hasEvents && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
                           )}
                           {hasReminders && (
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -812,7 +812,7 @@ export function CalendarPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-3 text-xs text-[#6B7280]">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
                   Events
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -831,7 +831,7 @@ export function CalendarPage() {
           <BlurFade delay={0.2}>
           <div className="gs-card p-4">
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-4 w-4 text-[#00F0FF]" />
+                <Clock className="h-4 w-4 text-[#8B5CF6]" />
                 <h2 className="text-base font-semibold text-[#F4F6FF]">
                 {isSameDay(selectedDate, today)
                   ? "Today"
@@ -888,7 +888,7 @@ export function CalendarPage() {
                             onClick={() =>
                               setExpandedEventId(isExpanded ? null : ev.id)
                             }
-                            className="w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 text-left hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.8)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
+                            className="w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 text-left hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.8)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none"
                           >
                             <div
                               className={`rounded-full ${catBg} p-1.5 mt-0.5 shrink-0`}
@@ -1065,7 +1065,7 @@ export function CalendarPage() {
                               {DateTime.fromMillis(ms).toLocaleString({ month: 'short', day: 'numeric' })}{" "}
                               {formatTime(ms)}
                             </p>
-                            <span className="text-xs text-[#00F0FF] font-medium">
+                            <span className="text-xs text-[#8B5CF6] font-medium">
                               {relativeCountdown(ms)}
                             </span>
                           </div>
@@ -1088,7 +1088,7 @@ export function CalendarPage() {
               <p className="gs-section-label mb-3">How It Works</p>
                 <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[#F4F6FF]">
                       Connect your Google account
@@ -1100,7 +1100,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[#F4F6FF]">
                       Events are pulled automatically
@@ -1112,7 +1112,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[#F4F6FF]">
                       Context-aware responses
@@ -1124,7 +1124,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#8B5CF6] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[#F4F6FF]">
                       You stay in control
@@ -1158,7 +1158,7 @@ export function CalendarPage() {
             <button
               onClick={() => setAddMode("natural")}
               className={[
-                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none",
                 addMode === "natural"
                   ? "bg-[rgba(12,12,30,0.6)] text-[#F4F6FF] shadow-sm"
                   : "text-[#6B7280] hover:text-[#F4F6FF]",
@@ -1169,7 +1169,7 @@ export function CalendarPage() {
             <button
               onClick={() => setAddMode("manual")}
               className={[
-                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 focus-visible:outline-none",
                 addMode === "manual"
                   ? "bg-[rgba(12,12,30,0.6)] text-[#F4F6FF] shadow-sm"
                   : "text-[#6B7280] hover:text-[#F4F6FF]",
@@ -1323,9 +1323,9 @@ export function CalendarPage() {
         className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
         style={{
           background: showAI
-            ? "linear-gradient(135deg, #8B5CF6, #00F0FF)"
-            : "linear-gradient(135deg, #00F0FF, #8B5CF6)",
-          boxShadow: "0 4px 20px rgba(0,240,255,0.3)",
+            ? "linear-gradient(135deg, #8B5CF6, #8B5CF6)"
+            : "linear-gradient(135deg, #8B5CF6, #8B5CF6)",
+          boxShadow: "0 4px 20px rgba(139,92,246,0.3)",
         }}
         aria-label={showAI ? "Close AI assistant" : "Open AI assistant"}
       >
@@ -1339,20 +1339,20 @@ export function CalendarPage() {
       {/* ── AI Assistant Panel ────────────────────────────────── */}
       {showAI && (
         <div
-          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(0,240,255,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
+          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
             bottom-0 left-0 right-0 h-[80vh]
             md:bottom-6 md:left-auto md:right-24 md:top-auto md:w-[400px] md:h-[560px]"
           style={{
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(0,240,255,0.08)",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(139,92,246,0.08)",
           }}
         >
           {/* Panel header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
-              style={{ background: "linear-gradient(135deg, #00F0FF20, #8B5CF620)" }}
+              style={{ background: "linear-gradient(135deg, #8B5CF620, #8B5CF620)" }}
             >
-              <Sparkles className="h-4 w-4 text-[var(--ag-cyan)]" />
+              <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-[#F4F6FF]">Calendar AI</h3>
@@ -1368,7 +1368,7 @@ export function CalendarPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(0,240,255,0.06)] shrink-0">
+          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(139,92,246,0.06)] shrink-0">
             {[
               { label: "Find free time", prompt: "Find me some free time slots this week for a 1-hour meeting" },
               { label: "Block focus time", prompt: "Block 2 hours of focus time tomorrow morning on my calendar" },
@@ -1380,9 +1380,9 @@ export function CalendarPage() {
                 disabled={aiLoading}
                 className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium border transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                 style={{
-                  background: "rgba(0,240,255,0.06)",
-                  borderColor: "rgba(0,240,255,0.15)",
-                  color: "#00F0FF",
+                  background: "rgba(139,92,246,0.06)",
+                  borderColor: "rgba(139,92,246,0.15)",
+                  color: "#8B5CF6",
                 }}
               >
                 {action.label}
@@ -1397,7 +1397,7 @@ export function CalendarPage() {
           >
             {aiLoading ? (
               <div className="flex items-center gap-2 text-[#8892A4] py-8 justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-cyan)]" />
+                <Loader2 className="h-4 w-4 animate-spin text-[#8B5CF6]" />
                 <span>Thinking...</span>
               </div>
             ) : aiResponse ? (
@@ -1406,9 +1406,9 @@ export function CalendarPage() {
               <div className="flex flex-col items-center justify-center h-full text-center py-8 gap-3">
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ background: "rgba(0,240,255,0.08)" }}
+                  style={{ background: "rgba(139,92,246,0.08)" }}
                 >
-                  <Calendar className="h-6 w-6 text-[var(--ag-cyan)]/60" />
+                  <Calendar className="h-6 w-6 text-[#8B5CF6]/60" />
                 </div>
                 <p className="text-[#8892A4] text-xs max-w-[240px]">
                   Ask me to find free slots, schedule meetings, or check what is coming up.
@@ -1426,7 +1426,7 @@ export function CalendarPage() {
               setAiInput("");
               void askCalendarAI(trimmed);
             }}
-            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
+            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
           >
             <input
               type="text"
@@ -1442,8 +1442,8 @@ export function CalendarPage() {
               className="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-150 disabled:opacity-30 hover:scale-105 active:scale-95"
               style={{
                 background: aiInput.trim()
-                  ? "linear-gradient(135deg, #00F0FF, #8B5CF6)"
-                  : "rgba(0,240,255,0.08)",
+                  ? "linear-gradient(135deg, #8B5CF6, #8B5CF6)"
+                  : "rgba(139,92,246,0.08)",
               }}
               aria-label="Send message"
             >

@@ -191,11 +191,11 @@ const menuGroups: MenuGroup[] = [
 // Bottom tabs for mobile — 6 zone icons (icon-only, no labels on mobile)
 type MobileTabId = PageType | 'more';
 const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard; color: string }[] = [
-  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: '#00F0FF' },
+  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: '#8B5CF6' },
   { id: 'office', label: 'Agent', icon: Bot, color: '#8B5CF6' },
   { id: 'creative-studio', label: 'Create', icon: Sparkles, color: '#F59E0B' },
   { id: 'reminders', label: 'Work', icon: Zap, color: '#ADFF2F' },
-  { id: 'inbox', label: 'Connect', icon: MessageSquare, color: '#00F0FF' },
+  { id: 'inbox', label: 'Connect', icon: MessageSquare, color: '#8B5CF6' },
   { id: 'settings', label: 'Control', icon: Settings, color: '#8B5CF680' },
 ];
 
@@ -932,14 +932,14 @@ export function DashboardApp() {
           className="h-14 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 sticky top-0 z-30"
           style={{
             background: 'rgba(6, 6, 11, 0.6)',
-            borderBottom: '1px solid rgba(0, 240, 255, 0.08)',
+            borderBottom: '1px solid rgba(139, 92, 246, 0.08)',
           }}
         >
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="md:hidden p-2 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open menu"
               data-testid="mobile-nav-toggle"
             >
@@ -948,7 +948,7 @@ export function DashboardApp() {
             {/* Desktop collapse toggle */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden md:flex p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors items-center justify-center"
+              className="hidden md:flex p-2 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors items-center justify-center"
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight
@@ -966,28 +966,28 @@ export function DashboardApp() {
             {/* Search trigger (mouse users) */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#06060B]/50 hover:bg-[#00F0FF]/5 transition-all text-[#6B7280] hover:text-[#8892A4] group"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#8B5CF6]/10 hover:border-[#8B5CF6]/30 bg-[#06060B]/50 hover:bg-[#8B5CF6]/5 transition-all text-[#6B7280] hover:text-[#8892A4] group"
               aria-label="Open search (Ctrl+K)"
             >
               <Search className="w-3.5 h-3.5" />
               <span className="text-xs">Search</span>
-              <kbd className="text-[10px] px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded font-mono group-hover:border-[#00F0FF]/20">
+              <kbd className="text-[10px] px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded font-mono group-hover:border-[#8B5CF6]/20">
                 {navigator.platform?.includes('Mac') ? '\u2318' : 'Ctrl'}K
               </kbd>
             </button>
             {/* Credits badge with shimmer */}
             <div
-              className="px-2 md:px-3 py-1.5 rounded-full border border-[#00F0FF]/20"
+              className="px-2 md:px-3 py-1.5 rounded-full border border-[#8B5CF6]/20"
               style={{
-                background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(173, 255, 47, 0.05))',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(173, 255, 47, 0.05))',
               }}
             >
-              <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
+              <span className="text-xs text-[#8B5CF6] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
             {/* Language toggle */}
             <button
               onClick={toggleLang}
-              className="px-2.5 py-1 text-xs font-medium rounded-md bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="px-2.5 py-1 text-xs font-medium rounded-md bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={isHindi ? 'Switch to English' : 'हिंदी में देखें'}
             >
               {isHindi ? 'EN' : 'हि'}
@@ -996,13 +996,13 @@ export function DashboardApp() {
             <div className="relative">
               <button
                 onClick={() => navigate('/dashboard/inbox')}
-                className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
+                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
                 aria-label="View inbox"
               >
                 <Inbox className="w-5 h-5 text-[#6B7280]" />
               </button>
               {inboxUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${inboxUnreadCount} unread inbox messages`}>
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#8B5CF6] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${inboxUnreadCount} unread inbox messages`}>
                   {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
                 </span>
               )}
@@ -1013,10 +1013,10 @@ export function DashboardApp() {
             {/* User avatar with hover glow */}
             <button
               onClick={() => navigate('/dashboard/settings')}
-              className="flex items-center p-1.5 rounded-xl hover:bg-[#00F0FF]/10 transition-all duration-300 min-w-[44px] min-h-[44px] justify-center group"
+              className="flex items-center p-1.5 rounded-xl hover:bg-[#8B5CF6]/10 transition-all duration-300 min-w-[44px] min-h-[44px] justify-center group"
               aria-label="User settings"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center flex-shrink-0 group-hover:shadow-[0_0_16px_rgba(0,240,255,0.3)] transition-shadow duration-300">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-[#8B5CF6] to-[#FF2D78] flex items-center justify-center flex-shrink-0 group-hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-shadow duration-300">
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.name || user.username || ''} className="w-full h-full object-cover" />
                 ) : (
@@ -1082,7 +1082,7 @@ export function DashboardApp() {
                   </span>
                 )}
                 {tab.id === 'inbox' && inboxUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#8B5CF6] text-[#06060B] text-[9px] font-bold flex items-center justify-center leading-none">
                     {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                   </span>
                 )}

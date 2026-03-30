@@ -37,7 +37,7 @@ const styleOptions = [
     name: 'Minimal',
     icon: MessageSquare,
     features: ['Reminders', 'Q&A', 'Quick facts'],
-    color: '#00F0FF',
+    color: '#8B5CF6',
   },
   {
     id: 'builder' as const,
@@ -63,7 +63,7 @@ const chatBubbleStyles = [
   { id: 'minimal', label: 'Minimal', class: 'rounded-lg' },
 ];
 
-const accentColors = ['#00F0FF', '#00FF88', '#FF2D78', '#61B5FF', '#FFB800', '#FF3366'];
+const accentColors = ['#8B5CF6', '#00FF88', '#FF2D78', '#61B5FF', '#FFB800', '#FF3366'];
 
 const specialties = [
   'React', 'TypeScript', 'Python', 'AI/ML', 'Design', 'DevOps',
@@ -91,7 +91,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
 
   // Step 3 - Appearance
   const [selectedAvatar, setSelectedAvatar] = useState('🤖');
-  const [selectedColor, setSelectedColor] = useState('#00F0FF');
+  const [selectedColor, setSelectedColor] = useState('#8B5CF6');
   const [selectedBubbleStyle, setSelectedBubbleStyle] = useState('modern');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -128,11 +128,11 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto glass-card-v2 border border-[#00F0FF]/30 rounded-2xl shadow-2xl shadow-[#00F0FF]/10">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto glass-card-v2 border border-[#8B5CF6]/30 rounded-2xl shadow-2xl shadow-[#8B5CF6]/10">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-4 border-b border-[#00F0FF]/20 bg-[#0C0C18]">
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-4 border-b border-[#8B5CF6]/20 bg-[#0C0C18]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#FF2D78] flex items-center justify-center">
               <Palette className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -142,7 +142,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
               <p className="text-xs text-[#6B7280]">Step {step} of 3</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors">
             <X className="w-5 h-5 text-[#6B7280]" />
           </button>
         </div>
@@ -155,14 +155,14 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     s <= step
-                      ? 'bg-[#00F0FF] text-white'
-                      : 'bg-[#06060B] text-[#6B7280] border border-[#00F0FF]/20'
+                      ? 'bg-[#8B5CF6] text-white'
+                      : 'bg-[#06060B] text-[#6B7280] border border-[#8B5CF6]/20'
                   }`}
                 >
                   {s < step ? <Check className="w-4 h-4" /> : s}
                 </div>
                 {s < 3 && (
-                  <div className={`flex-1 h-0.5 rounded ${s < step ? 'bg-[#00F0FF]' : 'bg-[#00F0FF]/20'}`} />
+                  <div className={`flex-1 h-0.5 rounded ${s < step ? 'bg-[#8B5CF6]' : 'bg-[#8B5CF6]/20'}`} />
                 )}
               </div>
             ))}
@@ -185,7 +185,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                 <Input
                   value={agentName}
                   onChange={(e) => setAgentName(e.target.value)}
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
                   placeholder="Give your agent a name..."
                 />
               </div>
@@ -200,8 +200,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedVoice(v.id)}
                       className={`p-3 rounded-xl border transition-all text-left ${
                         selectedVoice === v.id
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                          : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
+                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40'
                       }`}
                     >
                       <span className="text-lg">{v.emoji}</span>
@@ -222,8 +222,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedStyle(style.id)}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         selectedStyle === style.id
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                          : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
+                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -234,7 +234,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                           <style.icon className="w-4 h-4" style={{ color: style.color }} />
                         </div>
                         {selectedStyle === style.id && (
-                          <div className="w-5 h-5 rounded-full bg-[#00F0FF] flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-[#8B5CF6] flex items-center justify-center">
                             <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
@@ -278,11 +278,11 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setResponseSpeed(opt.id)}
                       className={`p-3 rounded-xl border transition-all text-center ${
                         responseSpeed === opt.id
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                          : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
+                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40'
                       }`}
                     >
-                      <opt.icon className="w-5 h-5 mx-auto mb-1 text-[#00F0FF]" />
+                      <opt.icon className="w-5 h-5 mx-auto mb-1 text-[#8B5CF6]" />
                       <div className="text-xs font-medium text-[#E8E8F0]">{opt.label}</div>
                     </button>
                   ))}
@@ -298,16 +298,16 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
               <div>
                 <label className="text-sm text-[#6B7280] mb-3 block">Upload Knowledge</label>
                 <div className="grid grid-cols-3 gap-3">
-                  <button className="p-4 rounded-xl border border-dashed border-[#00F0FF]/30 bg-[#06060B] hover:border-[#00F0FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <FileText className="w-6 h-6 text-[#00F0FF]" />
+                  <button className="p-4 rounded-xl border border-dashed border-[#8B5CF6]/30 bg-[#06060B] hover:border-[#8B5CF6]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <FileText className="w-6 h-6 text-[#8B5CF6]" />
                     <span className="text-xs text-[#6B7280]">Resume.pdf</span>
                   </button>
-                  <button className="p-4 rounded-xl border border-dashed border-[#00F0FF]/30 bg-[#06060B] hover:border-[#00F0FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <Github className="w-6 h-6 text-[#00F0FF]" />
+                  <button className="p-4 rounded-xl border border-dashed border-[#8B5CF6]/30 bg-[#06060B] hover:border-[#8B5CF6]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <Github className="w-6 h-6 text-[#8B5CF6]" />
                     <span className="text-xs text-[#6B7280]">GitHub Profile</span>
                   </button>
-                  <button className="p-4 rounded-xl border border-dashed border-[#00F0FF]/30 bg-[#06060B] hover:border-[#00F0FF]/50 transition-colors flex flex-col items-center gap-2 text-center">
-                    <Upload className="w-6 h-6 text-[#00F0FF]" />
+                  <button className="p-4 rounded-xl border border-dashed border-[#8B5CF6]/30 bg-[#06060B] hover:border-[#8B5CF6]/50 transition-colors flex flex-col items-center gap-2 text-center">
+                    <Upload className="w-6 h-6 text-[#8B5CF6]" />
                     <span className="text-xs text-[#6B7280]">Custom File</span>
                   </button>
                 </div>
@@ -323,8 +323,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => toggleSpecialty(s)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                         selectedSpecialties.includes(s)
-                          ? 'bg-[#00F0FF] text-white'
-                          : 'bg-[#06060B] border border-[#00F0FF]/20 text-[#6B7280] hover:border-[#00F0FF]/50'
+                          ? 'bg-[#8B5CF6] text-white'
+                          : 'bg-[#06060B] border border-[#8B5CF6]/20 text-[#6B7280] hover:border-[#8B5CF6]/50'
                       }`}
                     >
                       {s}
@@ -339,7 +339,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                 <Input
                   value={toneExample}
                   onChange={(e) => setToneExample(e.target.value)}
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0]"
+                  className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0]"
                   placeholder='e.g. "I explain complex things simply"'
                 />
               </div>
@@ -350,7 +350,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                 <Textarea
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
-                  className="bg-[#06060B] border-[#00F0FF]/30 text-[#E8E8F0] min-h-[100px] resize-none"
+                  className="bg-[#06060B] border-[#8B5CF6]/30 text-[#E8E8F0] min-h-[100px] resize-none"
                   placeholder="Instructions for how your agent should behave..."
                 />
               </div>
@@ -370,14 +370,14 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedAvatar(emoji)}
                       className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all ${
                         selectedAvatar === emoji
-                          ? 'bg-[#00F0FF]/20 border-2 border-[#00F0FF] scale-110'
-                          : 'bg-[#06060B] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40'
+                          ? 'bg-[#8B5CF6]/20 border-2 border-[#8B5CF6] scale-110'
+                          : 'bg-[#06060B] border border-[#8B5CF6]/20 hover:border-[#8B5CF6]/40'
                       }`}
                     >
                       {emoji}
                     </button>
                   ))}
-                  <button className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#06060B] border border-dashed border-[#00F0FF]/30 hover:border-[#00F0FF]/50 transition-colors">
+                  <button className="w-14 h-14 rounded-xl flex items-center justify-center bg-[#06060B] border border-dashed border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 transition-colors">
                     <Upload className="w-5 h-5 text-[#6B7280]" />
                   </button>
                 </div>
@@ -410,8 +410,8 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                       onClick={() => setSelectedBubbleStyle(style.id)}
                       className={`p-4 rounded-xl border transition-all text-center ${
                         selectedBubbleStyle === style.id
-                          ? 'border-[#00F0FF] bg-[#00F0FF]/10'
-                          : 'border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40'
+                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          : 'border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40'
                       }`}
                     >
                       <div
@@ -429,14 +429,14 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
               {/* Preview Toggle */}
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="w-full p-4 rounded-xl border border-[#00F0FF]/20 bg-[#06060B] hover:border-[#00F0FF]/40 transition-colors flex items-center justify-center gap-2"
+                className="w-full p-4 rounded-xl border border-[#8B5CF6]/20 bg-[#06060B] hover:border-[#8B5CF6]/40 transition-colors flex items-center justify-center gap-2"
               >
-                <Eye className="w-4 h-4 text-[#00F0FF]" />
+                <Eye className="w-4 h-4 text-[#8B5CF6]" />
                 <span className="text-sm text-[#6B7280]">{showPreview ? 'Hide Preview' : 'Preview Conversation'}</span>
               </button>
 
               {showPreview && (
-                <div className="p-4 rounded-xl bg-[#06060B] border border-[#00F0FF]/20 space-y-3">
+                <div className="p-4 rounded-xl bg-[#06060B] border border-[#8B5CF6]/20 space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xl">{selectedAvatar}</span>
                     <span className="font-medium text-sm text-[#E8E8F0]">{agentName || 'Agent'}</span>
@@ -449,7 +449,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
                     Hey there! I'm {agentName || 'your AI'}. I specialize in {selectedSpecialties.slice(0, 2).join(' and ') || 'helping you get things done'}. What can I do for you?
                   </div>
                   <div className="flex justify-end">
-                    <div className="max-w-[75%] px-4 py-2.5 text-sm bg-[#0C0C18] border border-[#00F0FF]/20 rounded-2xl text-[#E8E8F0]">
+                    <div className="max-w-[75%] px-4 py-2.5 text-sm bg-[#0C0C18] border border-[#8B5CF6]/20 rounded-2xl text-[#E8E8F0]">
                       Can you help me with my React project?
                     </div>
                   </div>
@@ -466,12 +466,12 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
         </div>
 
         {/* Footer nav */}
-        <div className="sticky bottom-0 p-6 pt-4 border-t border-[#00F0FF]/20 bg-[#0C0C18] flex items-center justify-between">
+        <div className="sticky bottom-0 p-6 pt-4 border-t border-[#8B5CF6]/20 bg-[#0C0C18] flex items-center justify-between">
           {step > 1 ? (
             <Button
               variant="outline"
               onClick={() => setStep((step - 1) as WizardStep)}
-              className="border-[#00F0FF]/30 text-[#6B7280]"
+              className="border-[#8B5CF6]/30 text-[#6B7280]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -483,7 +483,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
           {step < 3 ? (
             <Button
               onClick={() => setStep((step + 1) as WizardStep)}
-              className="bg-[#00F0FF] hover:bg-[#00D4B0]"
+              className="bg-[#8B5CF6] hover:bg-[#00D4B0]"
             >
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -492,7 +492,7 @@ export function AgentDesignWizard({ isOpen, onClose }: AgentDesignWizardProps) {
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-gradient-to-r from-[#00F0FF] to-[#FF2D78] hover:opacity-90"
+              className="bg-gradient-to-r from-[#8B5CF6] to-[#FF2D78] hover:opacity-90"
             >
               {isSaving ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

@@ -113,12 +113,12 @@ export function MediaGallery({
       {/* Header with filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-[#0C0C18] border border-[#8B5CF6]/15 rounded-lg p-0.5">
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all ${
                 filter === 'all'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                  ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-b-2 border-[#8B5CF6]'
                   : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
               }`}
             >
@@ -128,7 +128,7 @@ export function MediaGallery({
               onClick={() => setFilter('images')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all flex items-center gap-1 ${
                 filter === 'images'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                  ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-b-2 border-[#8B5CF6]'
                   : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
               }`}
             >
@@ -139,7 +139,7 @@ export function MediaGallery({
               onClick={() => setFilter('videos')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all flex items-center gap-1 ${
                 filter === 'videos'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
+                  ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-b-2 border-[#8B5CF6]'
                   : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
               }`}
             >
@@ -169,16 +169,16 @@ export function MediaGallery({
               placeholder="Search prompts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40"
+              className="w-full pl-10 pr-4 py-2 bg-[#0C0C18] border border-[#8B5CF6]/20 rounded-lg text-sm text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#8B5CF6]/40"
             />
           </div>
 
           {/* View mode toggle */}
-          <div className="flex items-center bg-[#0C0C18] border border-[#00F0FF]/20 rounded-lg p-1">
+          <div className="flex items-center bg-[#0C0C18] border border-[#8B5CF6]/20 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
+                viewMode === 'grid' ? 'bg-[#8B5CF6]/20 text-[#8B5CF6]' : 'text-[#6B7280]'
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function MediaGallery({
             <button
               onClick={() => setViewMode('masonry')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'masonry' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
+                viewMode === 'masonry' ? 'bg-[#8B5CF6]/20 text-[#8B5CF6]' : 'text-[#6B7280]'
               }`}
             >
               <Grid2X2 className="w-4 h-4" />
@@ -203,9 +203,9 @@ export function MediaGallery({
 
       {/* Gallery Grid */}
       {filteredItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-[#00F0FF]/15">
-          <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-[#00F0FF]/40" />
+        <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-[#8B5CF6]/15">
+          <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-4">
+            <Sparkles className="w-8 h-8 text-[#8B5CF6]/40" />
           </div>
           <h3 className="text-base font-medium text-[#E8E8F0] mb-2">No media found</h3>
           <p className="text-[#9CA3AF] text-sm max-w-xs">
@@ -225,7 +225,7 @@ export function MediaGallery({
                 setSelectedItem(item);
                 setSelectedIndex(index);
               }}
-              className="group relative aspect-square bg-[#0C0C18] border border-[#00F0FF]/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#00F0FF]/40 hover:shadow-[0_0_12px_rgba(0,240,255,0.1)] transition-all"
+              className="group relative aspect-square bg-[#0C0C18] border border-[#8B5CF6]/10 rounded-xl overflow-hidden cursor-pointer hover:border-[#8B5CF6]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all"
             >
               {item.type === 'image' ? (
                 <img
@@ -235,8 +235,8 @@ export function MediaGallery({
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00F0FF]/20 to-[#FF2D78]/20">
-                  <Video className="w-12 h-12 text-[#00F0FF]" />
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#8B5CF6]/20 to-[#FF2D78]/20">
+                  <Video className="w-12 h-12 text-[#8B5CF6]" />
                 </div>
               )}
               
@@ -246,7 +246,7 @@ export function MediaGallery({
                 <div className="absolute top-2 right-2 flex items-center gap-1.5">
                   <button
                     onClick={(e) => { e.stopPropagation(); onDownload?.(item); }}
-                    className="p-2 rounded-lg bg-[#00F0FF]/90 text-[#06060B] hover:bg-[#00F0FF] transition-colors"
+                    className="p-2 rounded-lg bg-[#8B5CF6]/90 text-[#06060B] hover:bg-[#8B5CF6] transition-colors"
                     aria-label="Download"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -308,7 +308,7 @@ export function MediaGallery({
         >
           <button
             onClick={() => setSelectedItem(null)}
-            className="absolute top-4 right-4 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors z-10"
+            className="absolute top-4 right-4 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#8B5CF6]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -318,13 +318,13 @@ export function MediaGallery({
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#0C0C18]/80 border border-[#00F0FF]/20 rounded-full text-[#E8E8F0] hover:bg-[#0C0C18] hover:border-[#00F0FF]/40 transition-colors z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#0C0C18]/80 border border-[#8B5CF6]/20 rounded-full text-[#E8E8F0] hover:bg-[#0C0C18] hover:border-[#8B5CF6]/40 transition-colors z-10"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#0C0C18]/80 border border-[#00F0FF]/20 rounded-full text-[#E8E8F0] hover:bg-[#0C0C18] hover:border-[#00F0FF]/40 transition-colors z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#0C0C18]/80 border border-[#8B5CF6]/20 rounded-full text-[#E8E8F0] hover:bg-[#0C0C18] hover:border-[#8B5CF6]/40 transition-colors z-10"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -340,19 +340,19 @@ export function MediaGallery({
               <img
                 src={selectedItem.url}
                 alt={selectedItem.prompt}
-                className="max-w-full max-h-[60vh] object-contain rounded-2xl border border-[#00F0FF]/20"
+                className="max-w-full max-h-[60vh] object-contain rounded-2xl border border-[#8B5CF6]/20"
               />
             ) : (
               <video
                 src={selectedItem.url}
                 controls
-                className="max-w-full max-h-[60vh] rounded-2xl border border-[#00F0FF]/20 bg-[#06060B]"
+                className="max-w-full max-h-[60vh] rounded-2xl border border-[#8B5CF6]/20 bg-[#06060B]"
                 style={{ colorScheme: 'dark' }}
               />
             )}
 
             {/* Info bar */}
-            <div className="w-full mt-4 p-4 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-xl">
+            <div className="w-full mt-4 p-4 bg-[#0C0C18] border border-[#8B5CF6]/15 rounded-xl">
               <p className="text-[#E8E8F0] text-sm mb-3">{selectedItem.prompt}</p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#9CA3AF]">
@@ -364,14 +364,14 @@ export function MediaGallery({
                     className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
                       selectedItem.isFavorite
                         ? 'bg-[#FF2D78]/15 text-[#FF2D78] border border-[#FF2D78]/20'
-                        : 'bg-[#06060B] border border-[#00F0FF]/15 text-[#9CA3AF] hover:text-[#FF2D78]'
+                        : 'bg-[#06060B] border border-[#8B5CF6]/15 text-[#9CA3AF] hover:text-[#FF2D78]'
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${selectedItem.isFavorite ? 'fill-current' : ''}`} />
                   </button>
                   <button
                     onClick={() => onDownload?.(selectedItem)}
-                    className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#00F0FF] text-[#06060B] font-medium text-sm hover:bg-[#00F0FF]/90 transition-colors"
+                    className="px-3 py-2 min-w-[44px] min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-[#8B5CF6] text-[#06060B] font-medium text-sm hover:bg-[#8B5CF6]/90 transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -391,7 +391,7 @@ export function MediaGallery({
           </div>
 
           {/* Counter */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-full text-sm text-[#E8E8F0]">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#0C0C18] border border-[#8B5CF6]/15 rounded-full text-sm text-[#E8E8F0]">
             {selectedIndex + 1} / {filteredItems.length}
           </div>
         </div>

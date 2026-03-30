@@ -32,7 +32,7 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string;
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Target }> = {
-  active:    { label: 'Active',    color: '#00F0FF', icon: Play },
+  active:    { label: 'Active',    color: '#8B5CF6', icon: Play },
   paused:    { label: 'Paused',    color: '#F59E0B', icon: Pause },
   completed: { label: 'Completed', color: '#10B981', icon: CheckCircle2 },
   failed:    { label: 'Failed',    color: '#EF4444', icon: AlertTriangle },
@@ -181,7 +181,7 @@ export function GoalsPage() {
           {stats && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Active', value: stats.active, color: '#00F0FF', icon: Play },
+                { label: 'Active', value: stats.active, color: '#8B5CF6', icon: Play },
                 { label: 'Completed', value: stats.completed, color: '#10B981', icon: CheckCircle2 },
                 { label: 'Total', value: stats.total, color: '#8B5CF6', icon: Target },
                 { label: 'Success Rate', value: `${Math.round(stats.completionRate || 0)}%`, color: '#F59E0B', icon: TrendingUp },
@@ -412,7 +412,7 @@ function GoalCard({
             {goal.status === 'paused' && (
               <button
                 onClick={() => onStatusChange('active')}
-                className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#00F0FF] border-[#00F0FF]/30"
+                className="gs-btn-ghost flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#8B5CF6] border-[#8B5CF6]/30"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Resume
               </button>
@@ -468,8 +468,8 @@ function StepRow({ step }: { step: GoalStepData }) {
     <div
       className="flex items-center gap-3 rounded-lg px-3 py-2"
       style={{
-        background: isActive ? '#00F0FF08' : 'rgba(255,255,255,0.02)',
-        borderLeft: `3px solid ${isComplete ? '#10B981' : isFailed ? '#EF4444' : isActive ? '#00F0FF' : '#333'}`,
+        background: isActive ? '#8B5CF608' : 'rgba(255,255,255,0.02)',
+        borderLeft: `3px solid ${isComplete ? '#10B981' : isFailed ? '#EF4444' : isActive ? '#8B5CF6' : '#333'}`,
       }}
     >
       <div className="flex-shrink-0">

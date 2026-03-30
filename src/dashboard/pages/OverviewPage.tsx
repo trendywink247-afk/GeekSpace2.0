@@ -189,7 +189,7 @@ function relativeTime(iso: string): string {
 function ActivitySparkline({
   data,
   labels,
-  color = '#00F0FF',
+  color = '#8B5CF6',
 }: {
   data: number[];
   labels?: string[];
@@ -354,13 +354,13 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
     <div
       role="banner"
       aria-label="iOS install guide"
-      className="flex items-center gap-3 rounded-xl border border-[var(--ag-border-glow)] bg-[var(--ag-cyan)]/5 px-4 py-3 text-sm"
+      className="flex items-center gap-3 rounded-xl border border-[var(--ag-border-glow)] bg-[#8B5CF6]/5 px-4 py-3 text-sm"
     >
       <span className="text-base leading-none select-none" aria-hidden>📱</span>
       <span className="flex-1 text-[var(--ag-text-secondary)]">
         <span className="font-medium text-[var(--ag-text-primary)]">Install Agentin:</span>{' '}
         Tap the{' '}
-        <span className="inline-flex items-center gap-0.5 font-medium text-[var(--ag-cyan)]">
+        <span className="inline-flex items-center gap-0.5 font-medium text-[#8B5CF6]">
           Share <span aria-label="share icon">⬆</span>
         </span>{' '}
         button → <span className="font-medium text-[var(--ag-text-primary)]">"Add to Home Screen"</span>
@@ -368,7 +368,7 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
       <button
         onClick={onDismiss}
         aria-label="Dismiss iOS install guide"
-        className="p-1 rounded-lg hover:bg-[var(--ag-cyan)]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
+        className="p-1 rounded-lg hover:bg-[#8B5CF6]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
       >
         <X className="w-4 h-4" />
       </button>
@@ -559,8 +559,8 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         ? `Next: ${new Date(nextReminder.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
         : 'No upcoming',
       icon: Bell,
-      color: '#00F0FF',
-      bgColor: 'rgba(0,240,255,0.08)',
+      color: '#8B5CF6',
+      bgColor: 'rgba(139,92,246,0.08)',
     },
     {
       key: 'messages',
@@ -587,7 +587,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // ---------------------------------------------------------------------------
 
   const quickActions = [
-    { label: 'New Reminder', icon: Bell, color: '#00F0FF', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
+    { label: 'New Reminder', icon: Bell, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.1)', page: 'reminders?openAdd=true' },
     { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => { void notifyStart('open-chat'); onOpenChat?.(); } },
     { label: 'Start Focus', icon: Timer, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
     { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
@@ -988,7 +988,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   </div>
                 ) : (
                   <>
-                    <ActivitySparkline data={activityData} labels={dayLabels} color="#00F0FF" />
+                    <ActivitySparkline data={activityData} labels={dayLabels} color="#8B5CF6" />
                     {/* Day labels */}
                     {dayLabels.length > 0 && (
                       <div className="flex justify-between mt-2 px-1">
@@ -1003,7 +1003,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[var(--ag-border-subtle)]">
                       <div>
                         <div className="text-xs text-[var(--ag-text-secondary)]">Total this week</div>
-                        <div className="text-lg font-bold text-[var(--ag-cyan)] font-mono">
+                        <div className="text-lg font-bold text-[#8B5CF6] font-mono">
                           {activityData.reduce((a, b) => a + b, 0)}
                         </div>
                       </div>
@@ -1085,10 +1085,10 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
-                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(0,240,255,0.08)',
+                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(139,92,246,0.08)',
                         }}
                       >
-                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? 'var(--ag-pink)' : 'var(--ag-cyan)' }} />
+                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? 'var(--ag-pink)' : '#8B5CF6' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[var(--ag-text-primary)] truncate">{rem.text}</p>
@@ -1166,7 +1166,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     </div>
                     <div className="h-1.5 rounded-full bg-[var(--ag-bg-elevated)] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[var(--ag-jarvis)] to-[var(--ag-cyan)] transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-[var(--ag-jarvis)] to-[#8B5CF6] transition-all duration-500"
                         style={{
                           width: `${(overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100}%`,
                         }}
@@ -1251,13 +1251,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     return (
                       <div
                         key={evt.id}
-                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[var(--ag-cyan)]/[0.04] border-l-2 border-l-[var(--ag-cyan)]' : ''}`}
+                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[#8B5CF6]/[0.04] border-l-2 border-l-[#8B5CF6]' : ''}`}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: isCurrent ? 'rgba(0,240,255,0.12)' : 'rgba(139,92,246,0.08)' }}
+                          style={{ background: isCurrent ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)' }}
                         >
-                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? 'var(--ag-cyan)' : 'var(--ag-violet)' }} />
+                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? '#8B5CF6' : 'var(--ag-violet)' }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-[var(--ag-text-primary)] truncate">{evt.title}</p>
@@ -1267,7 +1267,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                           </span>
                         </div>
                         {isCurrent && (
-                          <span className="text-xs font-medium text-[var(--ag-cyan)] bg-[var(--ag-cyan)]/10 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-medium text-[#8B5CF6] bg-[#8B5CF6]/10 px-2 py-0.5 rounded-full">
                             NOW
                           </span>
                         )}
@@ -1365,7 +1365,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       label: 'Add a memory',
                       desc: 'Teach your AI about you',
                       icon: Brain,
-                      color: '#00F0FF',
+                      color: '#8B5CF6',
                       done: false,
                       action: () => onNavigate?.('memory'),
                     },

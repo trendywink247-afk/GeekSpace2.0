@@ -248,7 +248,7 @@ export function BillingPage() {
           email: user?.email || '',
           name: user?.name || '',
         },
-        theme: { color: '#00F0FF' },
+        theme: { color: '#8B5CF6' },
       };
 
       const rzp = new (window as unknown as Record<string, unknown> & { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options);

@@ -42,14 +42,14 @@ export function VoiceButton({
         isListening
           ? 'bg-red-500/20 hover:bg-red-500/30 ring-1 ring-red-400/60'
           : isProcessing
-          ? 'bg-[#00F0FF]/10'
-          : 'hover:bg-[#00F0FF]/10',
+          ? 'bg-[#8B5CF6]/10'
+          : 'hover:bg-[#8B5CF6]/10',
         disabled || isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
         className,
       ].join(' ')}
     >
       {isProcessing ? (
-        <Loader2 className='w-4 h-4 text-[#00F0FF] animate-spin' />
+        <Loader2 className='w-4 h-4 text-[#8B5CF6] animate-spin' />
       ) : (
         <>
           <Mic

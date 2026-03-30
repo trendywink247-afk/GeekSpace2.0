@@ -1,7 +1,7 @@
 // ============================================================
 // ConnectPage — public connection invite accept flow (Phase 29.1)
 // Route: /connect/:token
-// Design tokens: weebo (#00F0FF)
+// Design tokens: weebo (#8B5CF6)
 // ============================================================
 
 import { useState, useEffect } from 'react';

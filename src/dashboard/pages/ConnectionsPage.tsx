@@ -73,7 +73,7 @@ const colorMap: Record<string, string> = {
   n8n: '#ff6d5a',
   manychat: '#0084ff',
   whatsapp: '#25d366',
-  'custom-webhook': '#00F0FF',
+  'custom-webhook': '#8B5CF6',
   email: '#00FF88',
   image: '#FF2D78',
 };
@@ -482,7 +482,7 @@ export function ConnectionsPage() {
   };
 
   const getIcon = (type: string) => iconMap[type] || Zap;
-  const getColor = (type: string) => colorMap[type] || '#00F0FF';
+  const getColor = (type: string) => colorMap[type] || '#8B5CF6';
 
   return (
     <PageShell maxWidth="6xl" className="animate-in fade-in duration-500">
@@ -518,7 +518,7 @@ export function ConnectionsPage() {
             </Button>
             <Button
               onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold min-h-[44px]"
+              className="bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-[#06061a] font-semibold min-h-[44px]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New
@@ -767,7 +767,7 @@ export function ConnectionsPage() {
             <SectionCard
               className={`group h-full ${
                 isTelegram
-                  ? '!border-[#00F0FF]/30 ring-1 ring-[#00F0FF]/10'
+                  ? '!border-[#8B5CF6]/30 ring-1 ring-[#8B5CF6]/10'
                   : connection.status === 'connected'
                   ? '!border-[#00FF88]/15'
                   : ''
@@ -777,7 +777,7 @@ export function ConnectionsPage() {
               {/* Telegram: Recommended badge */}
               {isTelegram && (
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
+                  <Badge className="bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
                     Recommended
                   </Badge>
                   <span className="text-[10px] text-[#9CA3AF]">Primary notification channel</span>
@@ -816,7 +816,7 @@ export function ConnectionsPage() {
                         )}
                         {/* 62.7: Ping latency badge */}
                         {connection.status === 'connected' && pingLatency[connection.type] != null && (
-                          <span className="text-xs text-[#00F0FF] font-mono">{pingLatency[connection.type]}ms</span>
+                          <span className="text-xs text-[#8B5CF6] font-mono">{pingLatency[connection.type]}ms</span>
                         )}
                       </div>
                     </div>
@@ -850,7 +850,7 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={connectingId === connection.type}
-                      className="bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 shadow-lg shadow-[#00F0FF]/10 shrink-0"
+                      className="bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-[#06061a] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 shadow-lg shadow-[#8B5CF6]/10 shrink-0"
                     >
                       {connectingId === connection.type ? (
                         <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting...</>
@@ -877,7 +877,7 @@ export function ConnectionsPage() {
                             <button
                               onClick={() => void handlePing(connection.type)}
                               disabled={pinging[connection.type]}
-                              className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00F0FF]/80 disabled:opacity-50 transition-colors min-h-[28px]"
+                              className="flex items-center gap-1 text-xs text-[#8B5CF6] hover:text-[#8B5CF6]/80 disabled:opacity-50 transition-colors min-h-[28px]"
                               title="Test latency"
                             >
                               {pinging[connection.type] ? (
@@ -935,7 +935,7 @@ export function ConnectionsPage() {
                             size="sm"
                             onClick={() => void handleTestConnection(connection.type)}
                             disabled={testing[connection.type]}
-                            className="border-[rgba(139,92,246,0.15)] text-[#00F0FF] hover:bg-[#00F0FF]/10 text-xs min-h-[44px]"
+                            className="border-[rgba(139,92,246,0.15)] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 text-xs min-h-[44px]"
                             data-testid={`test-connection-${connection.type}`}
                           >
                             {testing[connection.type] ? (
@@ -990,18 +990,18 @@ export function ConnectionsPage() {
                       <div className="mb-4">
                         {/* Divider */}
                         <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                          <div className="flex-1 h-px bg-[#8B5CF6]/15" />
                           <span className="text-xs text-[var(--ag-text-muted)] whitespace-nowrap">— or —</span>
-                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                          <div className="flex-1 h-px bg-[#8B5CF6]/15" />
                         </div>
 
                         {/* Expandable header */}
                         <button
                           onClick={() => setCustomBotExpanded(!customBotExpanded)}
-                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group/cbot"
+                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[#06060B] border border-[#8B5CF6]/20 hover:border-[#8B5CF6]/40 transition-all group/cbot"
                         >
                           <div className="flex items-center gap-2.5">
-                            <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
+                            <Bot className="w-4 h-4 text-[#8B5CF6]" />
                             <span className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Your Own Bot</span>
                             {customBotStatus === 'connected' && customBotInfo && (
                               <Badge className="bg-[#00FF88]/15 text-[#00FF88] border border-[#00FF88]/30 text-[10px] px-1.5 py-0">
@@ -1010,15 +1010,15 @@ export function ConnectionsPage() {
                             )}
                           </div>
                           {customBotExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
+                            <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[#8B5CF6] transition-colors" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
+                            <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[#8B5CF6] transition-colors" />
                           )}
                         </button>
 
                         {/* Expanded content */}
                         {customBotExpanded && (
-                          <div className="mt-3 p-4 rounded-lg bg-[#06060B] border border-[#00F0FF]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div className="mt-3 p-4 rounded-lg bg-[#06060B] border border-[#8B5CF6]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
                             {/* Already connected state */}
                             {customBotStatus === 'connected' && customBotInfo ? (
                               <div className="space-y-3">
@@ -1083,7 +1083,7 @@ export function ConnectionsPage() {
                                 <Button
                                   onClick={handleCustomBotConnect}
                                   disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
-                                  className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
+                                  className="w-full bg-[#8B5CF6] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
                                 >
                                   {customBotStatus === 'verifying' ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
@@ -1099,7 +1099,7 @@ export function ConnectionsPage() {
                                     href="https://t.me/BotFather"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[var(--ag-cyan)] hover:underline"
+                                    className="text-[#8B5CF6] hover:underline"
                                   >
                                     @BotFather
                                   </a>
@@ -1124,7 +1124,7 @@ export function ConnectionsPage() {
                           <span className="text-[#0088cc] font-medium">@{telegramUsername}</span>
                         )}
                         {connection.type === 'telegram' && connection.status === 'connected' && telegramLastPing && (
-                          <span className="text-[#00F0FF]">Last message: {timeAgo(telegramLastPing)}</span>
+                          <span className="text-[#8B5CF6]">Last message: {timeAgo(telegramLastPing)}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
@@ -1151,13 +1151,13 @@ export function ConnectionsPage() {
       {integrationEvents.length > 0 && (
         <SectionCard>
             <h4 className="text-sm font-medium text-[#F4F6FF] mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#00F0FF]" />
+              <Activity className="w-4 h-4 text-[#8B5CF6]" />
               Recent Integration Events
             </h4>
             <div className="space-y-2">
               {integrationEvents.slice(0, 5).map((ev) => (
                 <div key={ev.id} className="flex items-center gap-3 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-[#00F0FF] flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0" />
                   <span className="text-[#F4F6FF] flex-1 truncate">{ev.action}</span>
                   {ev.details && <span className="text-[#9CA3AF] truncate max-w-[120px]">{ev.details}</span>}
                   <span className="text-[#9CA3AF] flex-shrink-0">{timeAgo(ev.created_at)}</span>
@@ -1168,9 +1168,9 @@ export function ConnectionsPage() {
       )}
 
       {/* Privacy Note */}
-      <SectionCard className="!bg-gradient-to-r from-[#00F0FF]/5 to-transparent">
+      <SectionCard className="!bg-gradient-to-r from-[#8B5CF6]/5 to-transparent">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">Privacy First</h4>
               <p className="text-xs text-[#9CA3AF]">

@@ -117,7 +117,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
   if (!taskBoard) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
       </div>
     );
   }
@@ -136,8 +136,8 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
               onDrop={() => handleDrop(key)}
               className="rounded-lg p-2 transition-colors"
               style={{
-                background: dragOver === key ? 'rgba(0,240,255,0.04)' : 'transparent',
-                border: `1px solid ${dragOver === key ? accent : 'rgba(0,240,255,0.05)'}`,
+                background: dragOver === key ? 'rgba(139,92,246,0.04)' : 'transparent',
+                border: `1px solid ${dragOver === key ? accent : 'rgba(139,92,246,0.05)'}`,
                 minHeight: 100,
               }}
             >
@@ -167,10 +167,10 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
                       key={task.id}
                       draggable={key !== 'completed'}
                       onDragStart={() => handleDragStart(task.id, key)}
-                      className="rounded-lg p-2 cursor-grab active:cursor-grabbing transition-all hover:border-[#00F0FF]/20 min-h-[44px]"
+                      className="rounded-lg p-2 cursor-grab active:cursor-grabbing transition-all hover:border-[#8B5CF6]/20 min-h-[44px]"
                       style={{
                         background: C.card,
-                        border: `1px solid rgba(0,240,255,0.05)`,
+                        border: `1px solid rgba(139,92,246,0.05)`,
                         borderLeft: `3px solid ${color}`,
                         opacity: dragId === task.id ? 0.5 : 1,
                       }}
@@ -210,13 +210,13 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
       <form
         onSubmit={handleCreate}
         className="flex flex-wrap md:flex-nowrap items-center gap-2 rounded-lg p-2"
-        style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+        style={{ background: C.card, border: `1px solid rgba(139,92,246,0.05)` }}
       >
         <select
           value={formAgent}
           onChange={(e) => setFormAgent(e.target.value as CoreAgentId)}
           className="text-xs rounded px-2 py-1.5 outline-none"
-          style={{ background: C.elevated, color: C.text, border: `1px solid rgba(0,240,255,0.1)` }}
+          style={{ background: C.elevated, color: C.text, border: `1px solid rgba(139,92,246,0.1)` }}
         >
           {CORE_AGENTS.map((id) => (
             <option key={id} value={id}>{AGENT_META[id].emoji} {id}</option>
@@ -228,7 +228,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
           onChange={(e) => setFormTitle(e.target.value)}
           placeholder="Task title..."
           className="flex-1 text-xs rounded px-2 py-1.5 outline-none placeholder:text-[#4B5563]"
-          style={{ background: C.elevated, color: C.text, border: `1px solid rgba(0,240,255,0.1)` }}
+          style={{ background: C.elevated, color: C.text, border: `1px solid rgba(139,92,246,0.1)` }}
         />
         <button
           type="submit"

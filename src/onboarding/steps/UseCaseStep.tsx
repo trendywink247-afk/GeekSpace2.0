@@ -28,7 +28,7 @@ const USE_CASE_OPTIONS: UseCaseOption[] = [
     label: 'Productivity',
     description: 'Workflows, task management, and automation',
     icon: Timer,
-    color: '#00F0FF',
+    color: '#8B5CF6',
     focusArea: 'workflows',
   },
   {

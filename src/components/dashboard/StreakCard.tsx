@@ -57,7 +57,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
         </h2>
         <button
           onClick={() => onNavigate?.('focus')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#8B5CF6] transition-colors"
         >
           Details
           <ArrowRight className="w-3 h-3" />
@@ -91,7 +91,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     background: bestStreak > 0
-                      ? 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,240,255,0.1))'
+                      ? 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(139,92,246,0.1))'
                       : 'rgba(136,146,164,0.08)',
                   }}
                 >
@@ -117,7 +117,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                   <span className="text-xs text-[#8892A4]">
                     {completedCount}/{totalCount} habits today
                   </span>
-                  <span className="text-xs font-mono" style={{ color: progressPct === 100 ? '#00FF88' : '#00F0FF' }}>
+                  <span className="text-xs font-mono" style={{ color: progressPct === 100 ? '#00FF88' : '#8B5CF6' }}>
                     {progressPct}%
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                       width: `${progressPct}%`,
                       background: progressPct === 100
                         ? 'linear-gradient(90deg, #00FF88, #ADFF2F)'
-                        : 'linear-gradient(90deg, #00F0FF, #BF5FFF)',
+                        : 'linear-gradient(90deg, #8B5CF6, #BF5FFF)',
                     }}
                   />
                 </div>

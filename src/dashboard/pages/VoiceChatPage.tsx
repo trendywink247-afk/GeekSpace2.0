@@ -1,4 +1,4 @@
-// VoiceChatPage — owner: weebo (#00F0FF)
+// VoiceChatPage — owner: weebo (#8B5CF6)
 // Redesigned: gs-card, gs-btn-primary, gs-btn-ghost, gs-section-label, GsTabBar patterns
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';

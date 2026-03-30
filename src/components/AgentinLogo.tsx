@@ -25,7 +25,7 @@ export function AgentinLogo({ size = 32, className = '', animate = true }: Agent
     >
       <defs>
         <linearGradient id={`${uid}-left`} x1="7" y1="26" x2="16" y2="5" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#00F0FF" />
+          <stop offset="0%" stopColor="#8B5CF6" />
           <stop offset="100%" stopColor="#0088CC" />
         </linearGradient>
         <linearGradient id={`${uid}-right`} x1="25" y1="26" x2="16" y2="5" gradientUnits="userSpaceOnUse">
@@ -42,9 +42,9 @@ export function AgentinLogo({ size = 32, className = '', animate = true }: Agent
       <line x1="7" y1="26" x2="25" y2="26" stroke="#FFFFFF" strokeOpacity="0.15" strokeWidth="1.5" strokeLinecap="round" />
 
       {/* Bottom-left node */}
-      <circle cx="7" cy="26" r="2" fill="#00F0FF" opacity="0.7" />
+      <circle cx="7" cy="26" r="2" fill="#8B5CF6" opacity="0.7" />
       {/* Bottom-right node */}
-      <circle cx="25" cy="26" r="2" fill="#00F0FF" opacity="0.7" />
+      <circle cx="25" cy="26" r="2" fill="#8B5CF6" opacity="0.7" />
       {/* Top node — gold brain */}
       <circle
         cx="16"
@@ -65,7 +65,7 @@ export function AgentinLogo({ size = 32, className = '', animate = true }: Agent
 export const LOGO_SVG_STATIC = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
     <linearGradient id="al" x1="7" y1="26" x2="16" y2="5" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F0FF"/><stop offset="100%" stop-color="#0088CC"/>
+      <stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#0088CC"/>
     </linearGradient>
     <linearGradient id="ar" x1="25" y1="26" x2="16" y2="5" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFB800"/><stop offset="100%" stop-color="#FF8C00"/>
@@ -74,7 +74,7 @@ export const LOGO_SVG_STATIC = `<svg xmlns="http://www.w3.org/2000/svg" viewBox=
   <line x1="7" y1="26" x2="16" y2="5" stroke="url(#al)" stroke-width="2.5" stroke-linecap="round"/>
   <line x1="25" y1="26" x2="16" y2="5" stroke="url(#ar)" stroke-width="2.5" stroke-linecap="round"/>
   <line x1="7" y1="26" x2="25" y2="26" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="7" cy="26" r="2" fill="#00F0FF" opacity="0.7"/>
-  <circle cx="25" cy="26" r="2" fill="#00F0FF" opacity="0.7"/>
+  <circle cx="7" cy="26" r="2" fill="#8B5CF6" opacity="0.7"/>
+  <circle cx="25" cy="26" r="2" fill="#8B5CF6" opacity="0.7"/>
   <circle cx="16" cy="5" r="3" fill="#FFB800"/>
 </svg>`;

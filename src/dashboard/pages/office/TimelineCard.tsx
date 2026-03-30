@@ -24,14 +24,14 @@ const TYPE_CONFIG: Record<
   TimelineEntry['type'],
   { borderColor: string; icon: string; bgTint?: string }
 > = {
-  reply:       { borderColor: '#00F0FF', icon: '💬' },            // overridden by agentColor below
-  tool_call:   { borderColor: '#00F0FF', icon: '🔧' },
+  reply:       { borderColor: '#8B5CF6', icon: '💬' },            // overridden by agentColor below
+  tool_call:   { borderColor: '#8B5CF6', icon: '🔧' },
   insight:     { borderColor: '#F59E0B', icon: '💡', bgTint: 'rgba(245,158,11,0.04)' },
   reminder:    { borderColor: '#8B5CF6', icon: '⏰' },
   automation:  { borderColor: '#EC4899', icon: '⚡' },
-  multi_agent: { borderColor: '#00F0FF', icon: '🌐' },
+  multi_agent: { borderColor: '#8B5CF6', icon: '🌐' },
   habit:       { borderColor: '#ADFF2F', icon: '🔥' },
-  comm:        { borderColor: '#00F0FF', icon: '💬' },             // overridden by agentColor below
+  comm:        { borderColor: '#8B5CF6', icon: '💬' },             // overridden by agentColor below
 };
 
 // ---------------------------------------------------------------------------
