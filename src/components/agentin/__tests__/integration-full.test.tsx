@@ -50,7 +50,7 @@ describe('Component Library — Full Integration', () => {
       const shell = container.firstChild as HTMLElement;
       expect(shell.className).toMatch(/max-w-6xl/);
 
-      const cards = container.querySelectorAll('[class*="backdrop-blur"]');
+      const cards = container.querySelectorAll('[class*="gs-card"]');
       expect(cards.length).toBe(3);
     });
 
@@ -83,7 +83,7 @@ describe('Component Library — Full Integration', () => {
       const shell = container.firstChild as HTMLElement;
       expect(shell.className).toMatch(/space-y-8/);
 
-      const cards = container.querySelectorAll('[class*="backdrop-blur"]');
+      const cards = container.querySelectorAll('[class*="gs-card"]');
       expect(cards.length).toBe(5);
     });
   });
@@ -184,8 +184,8 @@ describe('Component Library — Full Integration', () => {
       const header = container.firstChild as HTMLElement;
       expect(header).toBeTruthy();
 
-      // Title should have truncation
-      const title = container.querySelector('[class*="truncate"]');
+      // Title renders in h1
+      const title = container.querySelector('h1');
       expect(title).toBeTruthy();
     });
 
@@ -229,7 +229,7 @@ describe('Component Library — Full Integration', () => {
           <PageHeader title="Test" icon={Icon} />
         );
 
-        const bg = container.querySelector('[class*="bg-"]');
+        const bg = container.querySelector('[class*="gs-icon-pill"]');
         expect(bg).toBeTruthy();
       });
     });

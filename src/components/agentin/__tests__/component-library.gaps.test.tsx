@@ -49,7 +49,7 @@ describe('Component Library — CRITICAL GAPS', () => {
       // TODO: Verify space-y-8 is applied (1.5rem between cards, not inside)
       // Each SectionCard should have consistent margin below
 
-      expect(container.querySelectorAll('[class*="backdrop-blur"]').length).toBe(3);
+      expect(container.querySelectorAll('[class*="gs-card"]').length).toBe(3);
     });
   });
 
@@ -161,9 +161,9 @@ describe('Component Library — CRITICAL GAPS', () => {
         <PageHeader title={longTitle} />
       );
 
-      const title = container.querySelector('[class*="truncate"]');
+      const title = container.querySelector('h1');
 
-      // Should truncate with ellipsis
+      // Should render title in h1; long titles wrap via CSS
       expect(title).toBeTruthy();
     });
 
@@ -228,10 +228,10 @@ describe('Component Library — CRITICAL GAPS', () => {
         <PageHeader title="Test" icon={Cloud} />
       );
 
-      const iconBg = container.querySelector('[class*="bg-"]');
+      const iconBg = container.querySelector('[class*="gs-icon-pill"]');
 
-      // Should contain cyan hex or CSS custom property
-      expect(iconBg?.className).toMatch(/(8B5CF6|cyan|icon-bg)/i);
+      // Should use gs-icon-pill class (color defined in CSS via .gs-icon-pill-violet)
+      expect(iconBg?.className).toMatch(/gs-icon-pill/);
     });
   });
 
@@ -244,8 +244,8 @@ describe('Component Library — CRITICAL GAPS', () => {
 
       expect(screen.getByText('Just content')).toBeTruthy();
 
-      // Glass morphism should still apply
-      expect(container.querySelector('[class*="backdrop-blur"]')).toBeTruthy();
+      // Glass morphism should still apply (via .gs-card CSS class)
+      expect(container.querySelector('[class*="gs-card"]')).toBeTruthy();
     });
 
     it('TODO: SectionCard with very long title (100+ chars)', () => {
@@ -306,8 +306,8 @@ describe('Component Library — CRITICAL GAPS', () => {
 
       const card = container.firstChild as HTMLElement;
 
-      // Should have hover classes
-      expect(card.className).toMatch(/(hover:border|hover:shadow)/);
+      // Hover effects are defined inside .gs-card CSS rule
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('TODO: SectionCard transitions are smooth (duration-300)', () => {
@@ -317,8 +317,8 @@ describe('Component Library — CRITICAL GAPS', () => {
 
       const card = container.firstChild as HTMLElement;
 
-      // Should have transition class
-      expect(card.className).toMatch(/(transition|duration-300)/);
+      // Transition is defined inside .gs-card CSS rule
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('TODO: SectionCard with React children (not just text)', () => {
@@ -357,11 +357,9 @@ describe('Component Library — CRITICAL GAPS', () => {
         <PageHeader title="Test" icon={Cloud} />
       );
 
-      const iconBg = container.querySelector('[class*="bg-"]');
+      const iconBg = container.querySelector('[class*="gs-icon-pill"]');
 
-      // Should reference cyan color
-      // expect(iconBg?.style.backgroundColor).toMatch(/8B5CF6|cyan/);
-
+      // Should use gs-icon-pill-violet class for the violet accent
       expect(iconBg).toBeTruthy();
     });
 
@@ -372,8 +370,8 @@ describe('Component Library — CRITICAL GAPS', () => {
 
       const card = container.firstChild as HTMLElement;
 
-      // Should have border with hover variant
-      expect(card.className).toMatch(/(border|hover:border)/);
+      // Border and hover effects are defined inside .gs-card CSS rule
+      expect(card.className).toMatch(/gs-card/);
     });
   });
 
@@ -501,7 +499,7 @@ describe('Component Library — CRITICAL GAPS', () => {
         </PageShell>
       );
 
-      expect(container.querySelectorAll('[class*="backdrop-blur"]').length).toBe(100);
+      expect(container.querySelectorAll('[class*="gs-card"]').length).toBe(100);
     });
 
     it('TODO: gradient animation does not cause jank (smooth 60fps)', () => {

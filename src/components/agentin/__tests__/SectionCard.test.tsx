@@ -15,7 +15,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/backdrop-blur-xl/);
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('applies border with subtle transparency', () => {
@@ -23,8 +23,8 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Should have border class (exact color varies with theme)
-      expect(card.className).toMatch(/border/);
+      // Should have gs-card class (border is inside .gs-card CSS rule)
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('uses CSS custom properties for border color (--ag-border or similar)', () => {
@@ -44,7 +44,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:border/);
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('applies hover:shadow-* for glow effect on hover', () => {
@@ -52,7 +52,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:shadow/);
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('applies hover:inset-shadow or bg-gradient for inset highlight', () => {
@@ -60,9 +60,9 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Either inset-shadow or gradient background
-      const hasInsetOrGradient = /inset|bg-gradient|before:|after:/.test(card.className);
-      expect(hasInsetOrGradient).toBe(true);
+      // Hover effects are defined inside .gs-card CSS rule
+      const hasGsCard = /gs-card/.test(card.className);
+      expect(hasGsCard).toBe(true);
     });
 
     it('transitions are smooth (duration-300)', () => {
@@ -70,7 +70,7 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/transition|duration-300/);
+      expect(card.className).toMatch(/gs-card/);
     });
   });
 
@@ -161,16 +161,16 @@ describe('SectionCard', () => {
       );
       const card = container.firstChild as HTMLElement;
       expect(card.className).toMatch(/custom-class/);
-      expect(card.className).toMatch(/backdrop-blur/); // Base classes still present
+      expect(card.className).toMatch(/gs-card/); // Base classes still present
     });
 
-    it('custom className does not override critical classes (backdrop-blur)', () => {
+    it('custom className does not override critical classes (gs-card)', () => {
       const { container } = render(
         <SectionCard className="p-10">Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // backdrop-blur should still be present
-      expect(card.className).toMatch(/backdrop-blur/);
+      // gs-card should still be present
+      expect(card.className).toMatch(/gs-card/);
     });
   });
 

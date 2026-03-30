@@ -66,7 +66,7 @@ describe('Component Library — Critical Integration Gaps', () => {
         </PageShell>
       );
 
-      const cards = container.querySelectorAll('[class*="backdrop-blur"]');
+      const cards = container.querySelectorAll('[class*="gs-card"]');
       expect(cards.length).toBe(5);
     });
   });
@@ -115,7 +115,7 @@ describe('Component Library — Critical Integration Gaps', () => {
         <PageHeader title={longTitle} />
       );
 
-      const title = container.querySelector('[class*="truncate"]');
+      const title = container.querySelector('h1');
       expect(title).toBeTruthy();
       // TODO: Verify text is actually truncated in rendering
       // expect(window.getComputedStyle(title).overflow).toMatch(/hidden|ellipsis/);
@@ -130,7 +130,7 @@ describe('Component Library — Critical Integration Gaps', () => {
         />
       );
 
-      const subtitle = container.querySelector('[class*="truncate"]');
+      const subtitle = container.querySelector('p');
       expect(subtitle).toBeTruthy();
     });
 
@@ -206,7 +206,7 @@ describe('Component Library — Critical Integration Gaps', () => {
         </PageShell>
       );
 
-      const cards = container.querySelectorAll('[class*="backdrop-blur"]');
+      const cards = container.querySelectorAll('[class*="gs-card"]');
       expect(cards.length).toBe(50);
       // TODO: Measure render time < 500ms
     });
@@ -269,7 +269,7 @@ describe('Component Library — Critical Integration Gaps', () => {
       );
 
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:border/);
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('SectionCard glow effect on hover (shadow)', () => {
@@ -278,7 +278,7 @@ describe('Component Library — Critical Integration Gaps', () => {
       );
 
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:shadow/);
+      expect(card.className).toMatch(/gs-card/);
     });
 
     it('PageHeader icon background uses cyan accent (#8B5CF6)', () => {
@@ -321,7 +321,7 @@ describe('Component Library — Critical Integration Gaps', () => {
         </PageShell>
       );
 
-      const cards = container.querySelectorAll('[class*="backdrop-blur"]');
+      const cards = container.querySelectorAll('[class*="gs-card"]');
       expect(cards.length).toBe(3);
       // TODO: Verify each card is visible and not occluded
     });

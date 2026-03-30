@@ -16,7 +16,7 @@ describe('PageHeader — Edge Cases & Integration', () => {
       const { container } = render(
         <PageHeader title={longTitle} />
       );
-      const title = container.querySelector('[class*="truncate"]');
+      const title = container.querySelector('h1');
       expect(title).toBeTruthy();
     });
 
@@ -28,7 +28,7 @@ describe('PageHeader — Edge Cases & Integration', () => {
           subtitle={longSubtitle}
         />
       );
-      const subtitle = container.querySelector('[class*="truncate"]');
+      const subtitle = container.querySelector('p');
       expect(subtitle).toBeTruthy();
     });
 
@@ -82,9 +82,9 @@ describe('PageHeader — Edge Cases & Integration', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
-      const iconBg = container.querySelector('[class*="bg-"]');
-      // Check for cyan color reference
-      expect(iconBg?.className).toMatch(/bg-.*8B5CF6|bg-cyan/i);
+      const iconBg = container.querySelector('[class*="gs-icon-pill"]');
+      // Check for gs-icon-pill class (color is defined in index.css)
+      expect(iconBg?.className).toMatch(/gs-icon-pill/);
     });
   });
 

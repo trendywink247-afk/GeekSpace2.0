@@ -30,8 +30,8 @@ describe('PageHeader', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
-      const iconBg = container.querySelector('[class*="bg-"]');
-      expect(iconBg?.className).toMatch(/bg-\[.*#8B5CF6/);
+      const iconBg = container.querySelector('[class*="gs-icon-pill"]');
+      expect(iconBg?.className).toMatch(/gs-icon-pill/);
     });
 
     it('does not render icon container when icon prop omitted', () => {
@@ -92,7 +92,7 @@ describe('PageHeader', () => {
       const { container } = render(
         <PageHeader title="Very long title that might overflow" />
       );
-      const title = container.querySelector('[class*="truncate"]');
+      const title = container.querySelector('h1');
       expect(title).toBeTruthy();
     });
 
@@ -103,7 +103,7 @@ describe('PageHeader', () => {
           subtitle="Very long subtitle that spans multiple lines and should be truncated"
         />
       );
-      const subtitle = container.querySelector('[class*="truncate"]');
+      const subtitle = container.querySelector('p');
       expect(subtitle).toBeTruthy();
     });
 

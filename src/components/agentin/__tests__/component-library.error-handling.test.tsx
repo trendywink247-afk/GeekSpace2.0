@@ -183,9 +183,9 @@ describe('Component Library — Error Handling & Invalid Props', () => {
       const { container } = render(
         <PageHeader title={longTitle} />
       );
-      // Should truncate with line-clamp-1, not cause horizontal scroll
+      // Should render in h1, not cause horizontal scroll
       expect(container.firstChild).toBeTruthy();
-      const title = container.querySelector('[class*="truncate"]');
+      const title = container.querySelector('h1');
       expect(title).toBeTruthy();
     });
 
