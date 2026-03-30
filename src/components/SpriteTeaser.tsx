@@ -199,6 +199,7 @@ export function SpriteTeaser() {
     });
     ro.observe(container);
 
+    const hueCache = hueRef.current;
     return () => {
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
@@ -206,7 +207,7 @@ export function SpriteTeaser() {
       // Cancel any in-flight image loads and clear refs
       Array.from(map.values()).forEach(img => { img.src = ''; });
       map.clear();
-      hueRef.current.clear();
+      hueCache.clear();
     };
   }, [spread, prefersReduced]);
 

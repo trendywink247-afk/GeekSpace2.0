@@ -11,8 +11,6 @@ import {
   ChevronDown, ChevronRight, Sparkles, Calendar, Trash2, RotateCcw,
   Loader2, Archive, TrendingUp,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { goalsService, type GoalData, type GoalStepData, type GoalEventData } from '@/services/api';
