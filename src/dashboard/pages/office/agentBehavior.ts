@@ -833,7 +833,7 @@ function tickGroupMeeting(
  */
 export function tickBehaviors(
   agents: CanvasAgent[],
-  _tick: number,
+  tick: number,
   theme?: 'day' | 'night',
 ): { updatedAgents: CanvasAgent[]; newBubbles: SpeechBubble[] } {
   const newBubbles: SpeechBubble[] = [];

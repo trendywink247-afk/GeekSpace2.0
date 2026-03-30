@@ -48,15 +48,15 @@ export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss
   const contextLine = (() => {
     // When actively working, show current tool or content
     if (agent.state !== 'idle' && agent.state !== 'done') {
-      if ((agent as Record<string, unknown>).lastTool) return `Using ${String((agent as Record<string, unknown>).lastTool).slice(0, 25)}...`;
-      if ((agent as Record<string, unknown>).lastContent) return String((agent as Record<string, unknown>).lastContent).slice(0, 40);
+      if (agent.lastTool) return `Using ${agent.lastTool.slice(0, 25)}...`;
+      if (agent.lastContent) return agent.lastContent.slice(0, 40);
       return null;
     }
     // When idle, show last action from timeline
     if (!officeData?.timeline) return null;
     const agentName = agent.name?.toLowerCase();
     const lastEntry = officeData.timeline.find(
-      t => ((t as Record<string, unknown>).agentId as string)?.toLowerCase() === agentName
+      t => ((t as unknown as Record<string, unknown>).agentId as string)?.toLowerCase() === agentName
         || t.action?.toLowerCase().includes(agentName ?? ''),
     );
     if (!lastEntry) return null;
