@@ -5,7 +5,7 @@
 //   recharts migration, heatmap mobile tap, API path fix, mobile 44px
 // ============================================================
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   TrendingUp,
@@ -96,10 +96,10 @@ interface AnalyticsData {
 const HEATMAP_EMPTY = '#0C0C18';
 const HEATMAP_COLORS = [
   HEATMAP_EMPTY,
-  'rgba(0,240,255,0.2)',
-  'rgba(0,240,255,0.5)',
-  'rgba(0,240,255,0.8)',
-  'rgba(0,240,255,1)',
+  'rgba(139,92,246,0.2)',
+  'rgba(139,92,246,0.5)',
+  'rgba(139,92,246,0.8)',
+  'rgba(139,92,246,1)',
 ];
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -193,7 +193,7 @@ function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
 
-function MiniSparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = '#8B5CF6' }: { data: number[]; color?: string }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const w = 60;
@@ -233,7 +233,7 @@ function OverviewCard({
   label,
   trend,
   sparkData,
-  color = '#00F0FF',
+  color = '#8B5CF6',
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   value: string | number;
@@ -472,7 +472,7 @@ interface AIInsight {
 const INSIGHT_BORDER_COLORS: Record<string, string> = {
   achievement: '#ADFF2F',
   warning: '#F59E0B',
-  tip: '#00F0FF',
+  tip: '#8B5CF6',
   positive: '#8B5CF6',
 };
 
@@ -898,7 +898,7 @@ export function AnalyticsPage() {
       0,
     );
     return [
-      { label: 'Chat', value: chat, color: '#00F0FF' },
+      { label: 'Chat', value: chat, color: '#8B5CF6' },
       { label: 'Reminders', value: reminders, color: '#ADFF2F' },
       { label: 'Habits', value: habits, color: '#8B5CF6' },
       { label: 'Focus', value: focus, color: '#FF2D78' },
@@ -934,7 +934,7 @@ export function AnalyticsPage() {
   }, [filteredSnapshots]);
 
   const PROVIDER_COLORS_MAP: Record<string, string> = {
-    OpenRouter: '#00F0FF',
+    OpenRouter: '#8B5CF6',
     PicoClaw: '#ADFF2F',
     Groq: '#8B5CF6',
     Together: '#FF2D78',
@@ -955,7 +955,7 @@ export function AnalyticsPage() {
   const delegationChartData = useMemo(() => {
     const AGENT_COLORS: Record<string, string> = {
       Weebo: '#ADFF2F',
-      Cal: '#00F0FF',
+      Cal: '#8B5CF6',
       Echo: '#8B5CF6',
       Forge: '#FF2D78',
       Aria: '#F59E0B',
@@ -1048,7 +1048,7 @@ export function AnalyticsPage() {
               sparkData={filteredSnapshots.map(
                 (d) => d.messagesReceived + d.agentCalls,
               )}
-              color="#00F0FF"
+              color="#8B5CF6"
             />
             <OverviewCard
               icon={CheckCircle2}
@@ -1091,7 +1091,9 @@ export function AnalyticsPage() {
       </section>
 
       {/* 2. Activity Heatmap */}
-      <SectionCard title="Activity Heatmap" subtitle="Last 16 weeks">
+      <div className="gs-card p-5">
+        <p className="gs-section-label mb-1">Activity Heatmap</p>
+        <p className="text-xs text-[#9CA3AF] mb-3">Last 16 weeks</p>
         {loading ? (
           <SkeletonHeatmap />
         ) : (
@@ -1100,10 +1102,11 @@ export function AnalyticsPage() {
             activityEntries={data.activityEntries}
           />
         )}
-      </SectionCard>
+      </div>
 
       {/* 3. AI-Generated Insights Panel */}
-      <SectionCard title="AI Insights">
+      <div className="gs-card p-5">
+        <p className="gs-section-label mb-3">AI Insights</p>
         <div className="flex items-center justify-between mb-4 -mt-1">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#10B981]" />
@@ -1144,7 +1147,7 @@ export function AnalyticsPage() {
             ))}
           </div>
         )}
-      </SectionCard>
+      </div>
 
       {/* 4. Agent Metrics Charts (recharts) */}
       {!loading && (
@@ -1155,7 +1158,9 @@ export function AnalyticsPage() {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Area: Response Latency */}
-            <SectionCard title="Response Latency" subtitle="Last 7 days">
+            <div className="gs-card p-5">
+              <p className="gs-section-label mb-1">Response Latency</p>
+              <p className="text-xs text-[#9CA3AF] mb-3">Last 7 days</p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={latencyChartData}>
@@ -1173,10 +1178,11 @@ export function AnalyticsPage() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </SectionCard>
+            </div>
 
             {/* Pie: LLM Provider Distribution */}
-            <SectionCard title="LLM Provider Distribution">
+            <div className="gs-card p-5">
+              <p className="gs-section-label mb-3">LLM Provider Distribution</p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1208,10 +1214,11 @@ export function AnalyticsPage() {
                   </div>
                 ))}
               </div>
-            </SectionCard>
+            </div>
 
             {/* Bar: Delegation Counts (full width) */}
-            <SectionCard title="Daily Delegation Counts by Agent" className="lg:col-span-2">
+            <div className="gs-card p-5 lg:col-span-2">
+              <p className="gs-section-label mb-3">Daily Delegation Counts by Agent</p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={delegationChartData}>
@@ -1227,23 +1234,26 @@ export function AnalyticsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </SectionCard>
+            </div>
           </div>
         </section>
       )}
 
       {/* 5. Usage by Feature (horizontal bar chart) */}
-      <SectionCard title="Usage by Feature">
+      <div className="gs-card p-5">
+        <p className="gs-section-label mb-3">Usage by Feature</p>
         {loading ? (
           <SkeletonBar />
         ) : (
           <UsageBarChart items={featureUsage} />
         )}
-      </SectionCard>
+      </div>
 
       {/* 6. Agent Breakdown */}
       {!loading && data.agents.length > 0 && (
-        <SectionCard title="Agent Usage" subtitle="Last 30 days">
+        <div className="gs-card p-5">
+          <p className="gs-section-label mb-1">Agent Usage</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Last 30 days</p>
           <div className="space-y-3">
             {data.agents.map((a) => {
               const maxCount = Math.max(
@@ -1253,7 +1263,7 @@ export function AnalyticsPage() {
               const agentColors: Record<string, string> = {
                 weebo: '#ADFF2F',
                 jarvis: '#8B5CF6',
-                edith: '#00F0FF',
+                edith: '#A78BFA',
                 pulse: '#10B981',
                 builtin: '#F59E0B',
               };
@@ -1279,7 +1289,7 @@ export function AnalyticsPage() {
               );
             })}
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* Footer */}

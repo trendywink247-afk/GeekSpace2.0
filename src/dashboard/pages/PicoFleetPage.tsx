@@ -18,9 +18,6 @@ import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { picoService } from '@/services/api';
 import type { PicoAgentFull, PicoCronJob } from '@/services/api';
 
-// ---- Design token constants ----
-const BORDER_SUBTLE = 'rgba(139,92,246,0.08)';
-
 // ---- Types ----
 
 interface PicoTask {
@@ -48,7 +45,7 @@ const AGENT_COLORS: Record<string, string> = {
 };
 
 function getAgentColor(personality: string): string {
-  return AGENT_COLORS[personality] || '#00F0FF';
+  return AGENT_COLORS[personality] || '#8B5CF6';
 }
 
 // ---- Constants ----
@@ -822,7 +819,7 @@ export function PicoFleetPage() {
                 </button>
                 <button
                   onClick={() => setShowEscalateDialog(false)}
-                  className="px-4 py-2 rounded-lg border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-muted)] text-sm min-h-[44px]"
+                  className="px-4 py-2 rounded-lg border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] text-sm min-h-[44px]"
                 >
                   Cancel
                 </button>
@@ -873,151 +870,145 @@ export function PicoFleetPage() {
           </div>
 
           {/* Task History */}
-          <Card className="border-[rgba(139,92,246,0.08)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[var(--ag-text-muted)]" />
-                Task History
-                <Badge variant="outline" className="ml-2 border-[rgba(139,92,246,0.08)] text-[var(--ag-text-muted)] text-xs">
-                  {tasks.length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {tasks.length === 0 ? (
-                <div className="text-center py-10">
-                  <AlertCircle className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
-                  <p className="text-[var(--ag-text-muted)] text-sm">No fleet agents yet. Create your first agent to get started.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {tasks.map((task) => {
-                    const isExpanded = expandedTaskId === task.id;
-                    return (
-                      <div key={task.id}>
-                        <button
-                          onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                          className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all min-h-[44px]"
-                        >
-                          <div className="flex items-center gap-3">
-                            <StatusIcon status={task.status} />
-                            <Badge
-                              variant="outline"
-                              className="text-xs shrink-0"
-                              style={{ borderColor: `${getStatusColor(task.status)}30`, color: getStatusColor(task.status) }}
+          <div className="gs-card p-4">
+            <p className="gs-section-label mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[#6B7280]" />
+              Task History
+              <Badge variant="outline" className="ml-2 border-[rgba(139,92,246,0.08)] text-[#9CA3AF] text-xs">
+                {tasks.length}
+              </Badge>
+            </p>
+            {tasks.length === 0 ? (
+              <div className="text-center py-10">
+                <AlertCircle className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
+                <p className="text-[#6B7280] text-sm">No fleet agents yet. Create your first agent to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map((task) => {
+                  const isExpanded = expandedTaskId === task.id;
+                  return (
+                    <div key={task.id}>
+                      <button
+                        onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                        className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-white/[0.02] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all min-h-[44px]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <StatusIcon status={task.status} />
+                          <Badge
+                            variant="outline"
+                            className="text-xs shrink-0"
+                            style={{ borderColor: `${getStatusColor(task.status)}30`, color: getStatusColor(task.status) }}
+                          >
+                            {task.task_type}
+                          </Badge>
+                          <span className="flex-1 text-sm text-[#F4F6FF] truncate">
+                            {task.description}
+                          </span>
+                          <span className="hidden sm:flex items-center gap-1.5 shrink-0">
+                            {(() => {
+                              const taskAgent = agents.find(a => a.name === task.agent_name);
+                              const agentColor = taskAgent ? getAgentColor(taskAgent.personality) : '#9CA3AF';
+                              return (
+                                <span
+                                  className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                                  style={{ backgroundColor: `${agentColor}20`, border: `1.5px solid ${agentColor}`, color: agentColor }}
+                                >
+                                  {taskAgent ? (taskAgent.personality === 'edith' ? 'E' : taskAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
+                                </span>
+                              );
+                            })()}
+                            <span className="text-xs text-[#6B7280]">{task.agent_name}</span>
+                          </span>
+                          <span className="text-xs text-[#6B7280] hidden md:block shrink-0 min-w-[70px] text-right">
+                            {formatTime(task.completed_at || task.started_at || task.created_at)}
+                          </span>
+                          {task.status === 'queued' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCancelTask(task.id); }}
+                              className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale rounded-xl flex items-center justify-center transition-colors"
+                              title="Cancel task"
+                              aria-label="Cancel task"
                             >
-                              {task.task_type}
-                            </Badge>
-                            <span className="flex-1 text-sm text-[var(--ag-text-primary)] truncate">
-                              {task.description}
-                            </span>
-                            <span className="hidden sm:flex items-center gap-1.5 shrink-0">
-                              {(() => {
-                                const taskAgent = agents.find(a => a.name === task.agent_name);
-                                const agentColor = taskAgent ? getAgentColor(taskAgent.personality) : '#9CA3AF';
-                                return (
-                                  <span
-                                    className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                                    style={{ backgroundColor: `${agentColor}20`, border: `1.5px solid ${agentColor}`, color: agentColor }}
-                                  >
-                                    {taskAgent ? (taskAgent.personality === 'edith' ? 'E' : taskAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
-                                  </span>
-                                );
-                              })()}
-                              <span className="text-xs text-[var(--ag-text-muted)]">{task.agent_name}</span>
-                            </span>
-                            <span className="text-xs text-[var(--ag-text-muted)] hidden md:block shrink-0 min-w-[70px] text-right">
-                              {formatTime(task.completed_at || task.started_at || task.created_at)}
-                            </span>
-                            {task.status === 'queued' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleCancelTask(task.id); }}
-                                className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 h-10 w-10 p-0 shrink-0 press-scale"
-                                title="Cancel task"
-                                aria-label="Cancel task"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] shrink-0" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] shrink-0" />
-                            )}
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="mt-1 ml-4 p-4 rounded-lg bg-[#06060B]/80 border border-[rgba(139,92,246,0.08)] animate-in slide-in-from-top-2 duration-200">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                              <div>
-                                <div className="text-xs text-[var(--ag-text-muted)]">Status</div>
-                                <div className="text-sm font-medium capitalize" style={{ color: getStatusColor(task.status) }}>
-                                  {task.status}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-[var(--ag-text-muted)]">Agent</div>
-                                <div className="text-sm text-[var(--ag-text-primary)] flex items-center gap-1.5">
-                                  {(() => {
-                                    const detailAgent = agents.find(a => a.name === task.agent_name);
-                                    const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#9CA3AF';
-                                    return (
-                                      <span
-                                        className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
-                                        style={{ backgroundColor: `${detailColor}20`, border: `1.5px solid ${detailColor}`, color: detailColor }}
-                                      >
-                                        {detailAgent ? (detailAgent.personality === 'edith' ? 'E' : detailAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
-                                      </span>
-                                    );
-                                  })()}
-                                  {task.agent_name}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-[var(--ag-text-muted)]">Started</div>
-                                <div className="text-sm text-[var(--ag-text-primary)]">{formatTime(task.started_at)}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-[var(--ag-text-muted)]">Completed</div>
-                                <div className="text-sm text-[var(--ag-text-primary)]">{formatTime(task.completed_at)}</div>
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-[#6B7280] shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-[#6B7280] shrink-0" />
+                          )}
+                        </div>
+                      </button>
+                      {isExpanded && (
+                        <div className="mt-1 ml-4 p-4 rounded-lg bg-white/[0.02] border border-[rgba(139,92,246,0.08)] animate-in slide-in-from-top-2 duration-200">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                            <div>
+                              <div className="text-xs text-[#6B7280]">Status</div>
+                              <div className="text-sm font-medium capitalize" style={{ color: getStatusColor(task.status) }}>
+                                {task.status}
                               </div>
                             </div>
-                            {task.result && (
-                              <div>
-                                <div className="text-xs text-[var(--ag-text-muted)] mb-1">Result</div>
-                                <pre className="text-sm text-[var(--ag-text-primary)] bg-[var(--ag-bg-surface)] p-3 rounded-lg border border-[rgba(139,92,246,0.08)] overflow-x-auto whitespace-pre-wrap font-mono text-xs">
-                                  {task.result}
-                                </pre>
+                            <div>
+                              <div className="text-xs text-[#6B7280]">Agent</div>
+                              <div className="text-sm text-[#F4F6FF] flex items-center gap-1.5">
+                                {(() => {
+                                  const detailAgent = agents.find(a => a.name === task.agent_name);
+                                  const detailColor = detailAgent ? getAgentColor(detailAgent.personality) : '#9CA3AF';
+                                  return (
+                                    <span
+                                      className="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] font-bold"
+                                      style={{ backgroundColor: `${detailColor}20`, border: `1.5px solid ${detailColor}`, color: detailColor }}
+                                    >
+                                      {detailAgent ? (detailAgent.personality === 'edith' ? 'E' : detailAgent.personality === 'jarvis' ? 'J' : 'W') : '?'}
+                                    </span>
+                                  );
+                                })()}
+                                {task.agent_name}
                               </div>
-                            )}
-                            {!task.result && task.status !== 'queued' && task.status !== 'running' && (
-                              <div className="text-xs text-[var(--ag-text-muted)] italic">No result data available.</div>
-                            )}
+                            </div>
+                            <div>
+                              <div className="text-xs text-[#6B7280]">Started</div>
+                              <div className="text-sm text-[#F4F6FF]">{formatTime(task.started_at)}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-[#6B7280]">Completed</div>
+                              <div className="text-sm text-[#F4F6FF]">{formatTime(task.completed_at)}</div>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                          {task.result && (
+                            <div>
+                              <div className="text-xs text-[#6B7280] mb-1">Result</div>
+                              <pre className="text-sm text-[#F4F6FF] bg-white/[0.02] p-3 rounded-lg border border-[rgba(139,92,246,0.08)] overflow-x-auto whitespace-pre-wrap font-mono text-xs">
+                                {task.result}
+                              </pre>
+                            </div>
+                          )}
+                          {!task.result && task.status !== 'queued' && task.status !== 'running' && (
+                            <div className="text-xs text-[#6B7280] italic">No result data available.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>}
 
         {/* ============= TAB 2: AGENT CONFIG ============= */}
-        <TabsContent value="config" className="mt-6 space-y-6">
+        {activeTab === 'config' && <div className="mt-6 space-y-6">
           {/* Agent selector */}
           <div className="flex items-center gap-4">
-            <label className="text-sm text-[var(--ag-text-muted)] shrink-0">Configure agent:</label>
+            <label className="text-sm text-[#6B7280] shrink-0">Configure agent:</label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-              <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[300px]">
+              <SelectTrigger className="bg-white/[0.02] border-[rgba(139,92,246,0.15)] text-[#F4F6FF] max-w-[300px]">
                 <SelectValue placeholder="Select an agent..." />
               </SelectTrigger>
-              <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
+              <SelectContent className="bg-[rgba(12,12,30,0.95)] border-[rgba(139,92,246,0.08)]">
                 {agents.map(a => (
-                  <SelectItem key={a.id} value={a.id} className="text-[var(--ag-text-primary)]">
+                  <SelectItem key={a.id} value={a.id} className="text-[#F4F6FF]">
                     <span className="inline-flex items-center gap-1.5">
                       <span
                         className="inline-flex w-5 h-5 rounded-full items-center justify-center text-[10px] font-bold"
@@ -1036,25 +1027,26 @@ export function PicoFleetPage() {
           {!selectedAgent ? (
             <div className="text-center py-16">
               <Bot className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-3" />
-              <p className="text-[var(--ag-text-muted)]">Select an agent above to configure.</p>
+              <p className="text-[#6B7280]">Select an agent above to configure.</p>
             </div>
           ) : (
             <>
               {/* Personality Picker */}
-              <SectionCard title="Personality" padding="lg">
+              <div className="gs-card p-5">
+                <p className="gs-section-label mb-3">Personality</p>
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
                     { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#8B5CF6' },
                     { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', letter: 'J', color: '#ADFF2F' },
-                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#8B5CF6' },
+                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#A78BFA' },
                   ].map(p => (
                     <button
                       key={p.id}
                       onClick={() => { setCfgPersonality(p.id); setConfigDirty(true); }}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         cfgPersonality === p.id
-                          ? `bg-[${p.color}]/10`
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          ? 'border-[#8B5CF6]'
+                          : 'border-[rgba(139,92,246,0.08)] bg-white/[0.02] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                       style={cfgPersonality === p.id ? { borderColor: p.color, backgroundColor: `${p.color}15` } : undefined}
                     >
@@ -1071,15 +1063,16 @@ export function PicoFleetPage() {
                           </div>
                         )}
                       </div>
-                      <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{p.name}</h3>
-                      <p className="text-sm text-[var(--ag-text-muted)]">{p.desc}</p>
+                      <h3 className="font-semibold text-[#F4F6FF] mb-1">{p.name}</h3>
+                      <p className="text-sm text-[#9CA3AF]">{p.desc}</p>
                     </button>
                   ))}
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Mode Picker */}
-              <SectionCard title="Mode" padding="lg">
+              <div className="gs-card p-5">
+                <p className="gs-section-label mb-3">Mode</p>
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
                     { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#8B5CF6' },
@@ -1091,8 +1084,8 @@ export function PicoFleetPage() {
                       onClick={() => { setCfgMode(m.id); setConfigDirty(true); }}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         cfgMode === m.id
-                          ? `border-[#8B5CF6] bg-[#8B5CF6]/10`
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          : 'border-[rgba(139,92,246,0.08)] bg-white/[0.02] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -1105,15 +1098,16 @@ export function PicoFleetPage() {
                           </div>
                         )}
                       </div>
-                      <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{m.name}</h3>
-                      <p className="text-sm text-[var(--ag-text-muted)]">{m.desc}</p>
+                      <h3 className="font-semibold text-[#F4F6FF] mb-1">{m.name}</h3>
+                      <p className="text-sm text-[#9CA3AF]">{m.desc}</p>
                     </button>
                   ))}
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Model Preference */}
-              <SectionCard title="Model Preference" padding="lg">
+              <div className="gs-card p-5">
+                <p className="gs-section-label mb-3">Model Preference</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: 'auto', label: 'Auto', desc: 'Best engine for each task' },
@@ -1130,15 +1124,16 @@ export function PicoFleetPage() {
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">{opt.label}</div>
-                      <div className="text-xs text-[var(--ag-text-muted)]">{opt.desc}</div>
+                      <div className="text-sm font-medium text-[#F4F6FF]">{opt.label}</div>
+                      <div className="text-xs text-[#9CA3AF]">{opt.desc}</div>
                     </button>
                   ))}
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Voice & Tone */}
-              <SectionCard title="Voice & Tone" padding="lg">
+              <div className="gs-card p-5">
+                <p className="gs-section-label mb-3">Voice &amp; Tone</p>
                 <div className="space-y-2">
                   {[
                     { id: 'professional', name: 'Professional', desc: 'Formal and polished' },
@@ -1151,12 +1146,12 @@ export function PicoFleetPage() {
                       className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
                         cfgVoice === v.id
                           ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          : 'border-[rgba(139,92,246,0.08)] bg-white/[0.02] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
                       <div className="text-left">
-                        <div className="font-medium text-[var(--ag-text-primary)]">{v.name}</div>
-                        <div className="text-sm text-[var(--ag-text-muted)]">{v.desc}</div>
+                        <div className="font-medium text-[#F4F6FF]">{v.name}</div>
+                        <div className="text-sm text-[#9CA3AF]">{v.desc}</div>
                       </div>
                       {cfgVoice === v.id && (
                         <div className="w-5 h-5 rounded-full bg-[#8B5CF6] flex items-center justify-center shrink-0">
@@ -1166,14 +1161,14 @@ export function PicoFleetPage() {
                     </button>
                   ))}
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Sliders — Creativity & Formality */}
-              <SectionCard padding="lg" className="space-y-6">
+              <div className="gs-card p-5 space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-creativity" className="text-sm text-[var(--ag-text-muted)]">Creativity</label>
-                    <span className="text-sm text-[var(--ag-text-primary)] font-mono">{cfgCreativity[0]}%</span>
+                    <label htmlFor="slider-creativity" className="text-sm text-[#9CA3AF]">Creativity</label>
+                    <span className="text-sm text-[#F4F6FF] font-mono">{cfgCreativity[0]}%</span>
                   </div>
                   <Slider
                     id="slider-creativity"
@@ -1183,15 +1178,15 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[var(--ag-text-muted)] mt-1">
+                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                     <span>Conservative</span>
                     <span>Creative</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="slider-formality" className="text-sm text-[var(--ag-text-muted)]">Formality</label>
-                    <span className="text-sm text-[var(--ag-text-primary)] font-mono">{cfgFormality[0]}%</span>
+                    <label htmlFor="slider-formality" className="text-sm text-[#9CA3AF]">Formality</label>
+                    <span className="text-sm text-[#F4F6FF] font-mono">{cfgFormality[0]}%</span>
                   </div>
                   <Slider
                     id="slider-formality"
@@ -1201,37 +1196,38 @@ export function PicoFleetPage() {
                     step={10}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-[var(--ag-text-muted)] mt-1">
+                  <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                     <span>Casual</span>
                     <span>Formal</span>
                   </div>
                 </div>
-              </SectionCard>
+              </div>
 
               {/* System Prompt & Custom Commands */}
-              <SectionCard padding="lg" className="space-y-4">
+              <div className="gs-card p-5 space-y-4">
                 <div>
-                  <label className="text-sm text-[var(--ag-text-muted)] block mb-2">System Prompt</label>
-                  <Textarea
+                  <label className="text-sm text-[#9CA3AF] block mb-2">System Prompt</label>
+                  <textarea
                     value={cfgSystemPrompt}
                     onChange={(e) => { setCfgSystemPrompt(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none"
+                    className="gs-input w-full min-h-[120px] resize-none rounded-xl"
                     placeholder="Custom instructions for this agent..."
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-[var(--ag-text-muted)] block mb-2">Custom Commands</label>
-                  <Textarea
+                  <label className="text-sm text-[#9CA3AF] block mb-2">Custom Commands</label>
+                  <textarea
                     value={cfgCustomCommands}
                     onChange={(e) => { setCfgCustomCommands(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[100px] resize-none"
+                    className="gs-input w-full min-h-[100px] resize-none rounded-xl"
                     placeholder="Tell this agent how to behave, what to prioritize..."
                   />
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Assigned Tools */}
-              <SectionCard title="Assigned Tools" padding="lg">
+              <div className="gs-card p-5">
+                <p className="gs-section-label mb-3">Assigned Tools</p>
                 <div className="grid grid-cols-2 gap-3">
                   {TOOL_OPTIONS.map(tool => {
                     const isActive = cfgAssignedTools.includes(tool.id);
@@ -1251,7 +1247,7 @@ export function PicoFleetPage() {
                         }`}
                       >
                         <tool.icon className="w-5 h-5" style={{ color: isActive ? tool.color : '#6B7280' }} />
-                        <span className={`text-sm font-medium ${isActive ? 'text-[var(--ag-text-primary)]' : 'text-[var(--ag-text-muted)]'}`}>
+                        <span className={`text-sm font-medium ${isActive ? 'text-[#F4F6FF]' : 'text-[#9CA3AF]'}`}>
                           {tool.label}
                         </span>
                         {isActive && (
@@ -1261,10 +1257,10 @@ export function PicoFleetPage() {
                     );
                   })}
                 </div>
-              </SectionCard>
+              </div>
 
               {/* Enable/Disable + Save */}
-              <SectionCard padding="lg">
+              <div className="gs-card p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Switch
@@ -1281,179 +1277,172 @@ export function PicoFleetPage() {
                       className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div>
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">
+                      <div className="text-sm font-medium text-[#F4F6FF]">
                         Agent {cfgEnabled ? 'Enabled' : 'Disabled'}
                       </div>
-                      <div className="text-xs text-[var(--ag-text-muted)]">
+                      <div className="text-xs text-[#9CA3AF]">
                         {cfgEnabled && agents.filter(a => a.enabled).length <= 1
                           ? 'Last active agent — cannot be disabled'
                           : cfgEnabled ? 'This agent will process tasks' : 'This agent is paused and will not process tasks'}
                       </div>
                     </div>
                   </div>
-                  <Button
+                  <button
                     onClick={handleSaveConfig}
                     disabled={!configDirty || savingConfig}
-                    className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[100px] min-h-[44px]"
+                    className="gs-btn-primary min-w-[100px] min-h-[44px] rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {savingConfig ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-4 h-4" />
                         Save
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
-              </SectionCard>
+              </div>
             </>
           )}
-        </TabsContent>
+        </div>}
 
         {/* ============= TAB 3: CRON JOBS ============= */}
-        <TabsContent value="cron" className="mt-6 space-y-6">
+        {activeTab === 'cron' && <div className="mt-6 space-y-6">
           {/* Create / Edit form */}
           {showCronForm ? (
-            <Card className="border-[rgba(139,92,246,0.15)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-[var(--ag-text-primary)]">
-                  {editingCronId ? 'Edit Cron Job' : 'New Cron Job'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
+            <div className="gs-card p-4 space-y-4">
+              <p className="gs-section-label mb-1">
+                {editingCronId ? 'Edit Cron Job' : 'New Cron Job'}
+              </p>
+              <div>
+                <label className="text-sm text-[#9CA3AF] block mb-1">Name</label>
+                <input
+                  value={cronName}
+                  onChange={e => setCronName(e.target.value)}
+                  placeholder="e.g., Daily standup reminder"
+                  className="gs-input w-full rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Name</label>
-                  <Input
-                    value={cronName}
-                    onChange={e => setCronName(e.target.value)}
-                    placeholder="e.g., Daily standup reminder"
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Task Type</label>
-                    <Select value={cronTaskType} onValueChange={setCronTaskType}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
-                        {TASK_TYPES.map(t => (
-                          <SelectItem key={t.value} value={t.value} className="text-[var(--ag-text-primary)]">{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Interval</label>
-                    <Select value={String(cronInterval)} onValueChange={v => setCronInterval(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
-                        {INTERVAL_OPTIONS.map(i => (
-                          <SelectItem key={i.value} value={String(i.value)} className="text-[var(--ag-text-primary)]">{i.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Agent Slot</label>
-                    <Select value={String(cronAgentSlot)} onValueChange={v => setCronAgentSlot(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
-                        {[2, 3, 4, 5, 6].map(s => {
-                          const a = agents.find(ag => ag.slot === s);
-                          return (
-                            <SelectItem key={s} value={String(s)} className="text-[var(--ag-text-primary)]">
-                              Slot {s}{a ? ` — ${a.name}` : ' (empty)'}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <label className="text-sm text-[#9CA3AF] block mb-1">Task Type</label>
+                  <Select value={cronTaskType} onValueChange={setCronTaskType}>
+                    <SelectTrigger className="bg-white/[0.02] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[rgba(12,12,30,0.95)] border-[rgba(139,92,246,0.08)]">
+                      {TASK_TYPES.map(t => (
+                        <SelectItem key={t.value} value={t.value} className="text-[#F4F6FF]">{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm text-[var(--ag-text-muted)]">Config (JSON)</label>
-                    {cronConfigError ? (
-                      <span className="text-xs text-[#FF6161] flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        {cronConfigError}
+                  <label className="text-sm text-[#9CA3AF] block mb-1">Interval</label>
+                  <Select value={String(cronInterval)} onValueChange={v => setCronInterval(Number(v))}>
+                    <SelectTrigger className="bg-white/[0.02] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[rgba(12,12,30,0.95)] border-[rgba(139,92,246,0.08)]">
+                      {INTERVAL_OPTIONS.map(i => (
+                        <SelectItem key={i.value} value={String(i.value)} className="text-[#F4F6FF]">{i.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm text-[#9CA3AF] block mb-1">Agent Slot</label>
+                  <Select value={String(cronAgentSlot)} onValueChange={v => setCronAgentSlot(Number(v))}>
+                    <SelectTrigger className="bg-white/[0.02] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[rgba(12,12,30,0.95)] border-[rgba(139,92,246,0.08)]">
+                      {[2, 3, 4, 5, 6].map(s => {
+                        const a = agents.find(ag => ag.slot === s);
+                        return (
+                          <SelectItem key={s} value={String(s)} className="text-[#F4F6FF]">
+                            Slot {s}{a ? ` — ${a.name}` : ' (empty)'}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm text-[#9CA3AF]">Config (JSON)</label>
+                  {cronConfigError ? (
+                    <span className="text-xs text-[#FF6161] flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {cronConfigError}
+                    </span>
+                  ) : (
+                    cronConfig.trim() && (
+                      <span className="text-xs text-[#00FF88] flex items-center gap-1">
+                        <Check className="w-3 h-3 shrink-0" />
+                        Valid JSON
                       </span>
-                    ) : (
-                      cronConfig.trim() && (
-                        <span className="text-xs text-[#00FF88] flex items-center gap-1">
-                          <Check className="w-3 h-3 shrink-0" />
-                          Valid JSON
-                        </span>
-                      )
-                    )}
-                  </div>
-                  <Textarea
-                    value={cronConfig}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCronConfig(val);
-                      if (!val.trim()) {
-                        setCronConfigError(null);
-                        return;
-                      }
-                      try {
-                        JSON.parse(val);
-                        setCronConfigError(null);
-                      } catch (err) {
-                        setCronConfigError(err instanceof Error ? err.message.replace('JSON.parse: ', '').slice(0, 60) : 'Invalid JSON');
-                      }
-                    }}
-                    className={[
-                      'bg-[#06060B] text-[var(--ag-text-primary)] font-mono text-xs min-h-[80px] resize-none transition-colors',
-                      cronConfigError
-                        ? 'border-[#FF6161]/60 focus-visible:border-[#FF6161] focus-visible:ring-[#FF6161]/20'
-                        : 'border-[rgba(139,92,246,0.15)]',
-                    ].join(' ')}
-                    placeholder='{"reminder_text": "Check server health"}'
-                  />
+                    )
+                  )}
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={resetCronForm}
-                    className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-muted)]"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveCronJob}
-                    disabled={!cronName.trim() || savingCron || !!cronConfigError}
-                    className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
-                    title={cronConfigError ? 'Fix JSON config before saving' : undefined}
-                  >
-                    {savingCron ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingCronId ? 'Update' : 'Create')}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <textarea
+                  value={cronConfig}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setCronConfig(val);
+                    if (!val.trim()) {
+                      setCronConfigError(null);
+                      return;
+                    }
+                    try {
+                      JSON.parse(val);
+                      setCronConfigError(null);
+                    } catch (err) {
+                      setCronConfigError(err instanceof Error ? err.message.replace('JSON.parse: ', '').slice(0, 60) : 'Invalid JSON');
+                    }
+                  }}
+                  className={[
+                    'gs-input w-full font-mono text-xs min-h-[80px] resize-none transition-colors rounded-xl',
+                    cronConfigError ? 'border-[#FF6161]/60' : '',
+                  ].join(' ')}
+                  placeholder='{"reminder_text": "Check server health"}'
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={resetCronForm}
+                  className="gs-btn-ghost px-4 rounded-xl min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCronJob}
+                  disabled={!cronName.trim() || savingCron || !!cronConfigError}
+                  className="gs-btn-primary min-h-[44px] px-4 rounded-xl disabled:opacity-50"
+                  title={cronConfigError ? 'Fix JSON config before saving' : undefined}
+                >
+                  {savingCron ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingCronId ? 'Update' : 'Create')}
+                </button>
+              </div>
+            </div>
           ) : (
-            <Button
+            <button
               onClick={() => setShowCronForm(true)}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+              className="gs-btn-primary min-h-[44px] px-4 rounded-xl flex items-center gap-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4" />
               New Cron Job
-            </Button>
+            </button>
           )}
 
           {/* Cron Jobs List */}
           {cronJobs.length === 0 && !showCronForm ? (
             <div className="text-center py-16">
               <Timer className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-3" />
-              <p className="text-[var(--ag-text-muted)] mb-2">No cron jobs yet.</p>
-              <p className="text-xs text-[var(--ag-text-muted)]">Create recurring tasks that run on a schedule.</p>
+              <p className="text-[#6B7280] mb-2">No cron jobs yet.</p>
+              <p className="text-xs text-[#6B7280]">Create recurring tasks that run on a schedule.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1462,71 +1451,65 @@ export function PicoFleetPage() {
                 const typeLabel = TASK_TYPES.find(t => t.value === job.task_type)?.label || job.task_type;
                 const slotAgent = agents.find(a => a.slot === job.agent_slot);
                 return (
-                  <Card key={job.id} className={`border-[rgba(139,92,246,0.08)] ${!job.enabled ? 'opacity-60' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-[var(--ag-text-primary)] truncate">{job.name}</span>
-                            <Badge
-                              variant="outline"
-                              className="text-xs shrink-0"
-                              style={{ borderColor: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
-                            >
-                              {typeLabel}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ag-text-muted)]">
-                            <span className="flex items-center gap-1">
-                              <Timer className="w-3 h-3" />
-                              Every {intervalLabel}
-                            </span>
-                            <span>
-                              Slot {job.agent_slot}{slotAgent ? ` (${slotAgent.name})` : ''}
-                            </span>
-                            <span>{job.run_count} runs</span>
-                            {job.last_run_at && (
-                              <span>Last: {formatTime(job.last_run_at)}</span>
-                            )}
-                            {job.next_run_at && (
-                              <span className="text-[#8B5CF6]">Next: {formatTime(job.next_run_at)}</span>
-                            )}
-                          </div>
+                  <div key={job.id} className={`gs-card p-4 ${!job.enabled ? 'opacity-60' : ''}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-[#F4F6FF] truncate">{job.name}</span>
+                          <Badge
+                            variant="outline"
+                            className="text-xs shrink-0"
+                            style={{ borderColor: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
+                          >
+                            {typeLabel}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Switch
-                            checked={!!job.enabled}
-                            onCheckedChange={() => handleToggleCron(job)}
-                            className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditCron(job)}
-                            aria-label={`Edit cron job ${job.name}`}
-                            className="text-[var(--ag-text-muted)] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteCron(job.id)}
-                            aria-label={`Delete cron job ${job.name}`}
-                            className="text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 min-h-[44px] min-w-[44px] p-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-[#9CA3AF]">
+                          <span className="flex items-center gap-1">
+                            <Timer className="w-3 h-3" />
+                            Every {intervalLabel}
+                          </span>
+                          <span>
+                            Slot {job.agent_slot}{slotAgent ? ` (${slotAgent.name})` : ''}
+                          </span>
+                          <span>{job.run_count} runs</span>
+                          {job.last_run_at && (
+                            <span>Last: {formatTime(job.last_run_at)}</span>
+                          )}
+                          {job.next_run_at && (
+                            <span className="text-[#8B5CF6]">Next: {formatTime(job.next_run_at)}</span>
+                          )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Switch
+                          checked={!!job.enabled}
+                          onCheckedChange={() => handleToggleCron(job)}
+                          className="data-[state=checked]:bg-[#00FF88] data-[state=unchecked]:bg-[#FF6161]/40"
+                        />
+                        <button
+                          onClick={() => handleEditCron(job)}
+                          aria-label={`Edit cron job ${job.name}`}
+                          className="text-[#6B7280] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0 rounded-xl flex items-center justify-center transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCron(job.id)}
+                          aria-label={`Delete cron job ${job.name}`}
+                          className="text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 min-h-[44px] min-w-[44px] p-0 rounded-xl flex items-center justify-center transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>}
+      </div>
     </PullToRefreshWrapper>
     </PageShell>
   );

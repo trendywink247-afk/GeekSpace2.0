@@ -2,7 +2,7 @@
 // Redesigned: gs-card, gs-btn-primary, gs-btn-ghost, gs-section-label, GsTabBar patterns
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
@@ -295,7 +295,7 @@ export function VoiceChatPage() {
 
             {/* Error glow */}
             {voiceState === 'error' && (
-              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-pink)]/10 animate-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[#FF2D78]/10 animate-pulse" />
             )}
 
             {/* Main orb — 80px with weebo dot */}

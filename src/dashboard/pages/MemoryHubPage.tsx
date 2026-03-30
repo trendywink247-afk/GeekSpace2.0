@@ -1,6 +1,6 @@
 // ============================================================
 // Memory Hub — Unified memory management: Browse, Graph, Stats
-// Owner agent: echo (#6366F1)
+// Owner agent: echo (#8B5CF6)
 // Redesigned: gs-card, gs-input, gs-btn-primary/ghost, gs-pill, GsTabBar
 // ============================================================
 
@@ -305,7 +305,7 @@ export function MemoryHubPage() {
   return (
     <PageShell>
     {/* Echo dot */}
-    <div className="absolute top-5 right-5 w-2 h-2 rounded-full bg-[#6366F1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="echo" />
+    <div className="absolute top-5 right-5 w-2 h-2 rounded-full bg-[#8B5CF6] shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="echo" />
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <PageHeader
@@ -367,8 +367,8 @@ export function MemoryHubPage() {
       {!isLoading && !loadError && !hasMemories && (
         <div className="text-center py-16 space-y-5">
           <div className="relative mx-auto w-20 h-20">
-            <div className="w-20 h-20 rounded-2xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center animate-pulse">
-              <Brain className="w-10 h-10 text-[#6366F1]/50" />
+            <div className="w-20 h-20 rounded-2xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center animate-pulse">
+              <Brain className="w-10 h-10 text-[#8B5CF6]/50" />
             </div>
             <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center">
               <Sparkles className="w-3 h-3 text-[#10B981]" />
@@ -435,7 +435,7 @@ export function MemoryHubPage() {
                 />
               </div>
               <Select value={quickAddCategory} onValueChange={setQuickAddCategory}>
-                <SelectTrigger className="w-full sm:w-[140px] bg-white/[0.03] border border-white/[0.06] text-[var(--ag-text-primary)] rounded-xl min-h-[44px]">
+                <SelectTrigger className="w-full sm:w-[140px] bg-white/[0.03] border border-white/[0.06] text-[#F4F6FF] rounded-xl min-h-[44px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -494,7 +494,7 @@ export function MemoryHubPage() {
           {/* Memory list */}
           {filteredMemories.length === 0 ? (
             <div className="text-center py-16">
-              <Brain className="w-16 h-16 text-[#6366F1]/20 mx-auto mb-4" />
+              <Brain className="w-16 h-16 text-[#8B5CF6]/20 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No matching memories</h3>
               <p className="text-[#9CA3AF] max-w-sm mx-auto">Try adjusting your search or category filter.</p>
             </div>
@@ -511,7 +511,7 @@ export function MemoryHubPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-xs text-[#9CA3AF]">
                           <CategoryIcon className="w-3.5 h-3.5" />
-                          <span className="font-mono text-[#6366F1]">{memory.key}</span>
+                          <span className="font-mono text-[#8B5CF6]">{memory.key}</span>
                         </div>
                         <Textarea
                           value={editValue}
