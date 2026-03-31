@@ -434,8 +434,10 @@ export default function OfficeStage({
   // ---- Refs for game loop (declared early so callbacks can reference them) ----
   const agentsRef = useRef(agents);
   const beamsRef = useRef(beams);
+  const bubblesRef = useRef(bubbles);
   useLayoutEffect(() => { agentsRef.current = agents; }, [agents]);
   useLayoutEffect(() => { beamsRef.current = beams; }, [beams]);
+  useLayoutEffect(() => { bubblesRef.current = bubbles; }, [bubbles]);
 
   // ---- Particle beams ----
 
@@ -453,19 +455,22 @@ export default function OfficeStage({
 
   // ---- Speech bubbles ----
 
-  const addBubble = useCallback((agentId: AgentId, text: string) => {
+  const addBubble = useCallback((agentId: AgentId, text: string, opts?: { interactive?: boolean }) => {
     const now = Date.now();
     // Snapshot the agent's current render position for the bubble
     const agent = agentsRef.current.find(a => a.id === agentId);
+    const isInteractive = opts?.interactive ?? (text.length > 60);
     const bubble: SpeechBubble = {
       id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
       agentId,
-      text: text.slice(0, 60),
+      text: isInteractive ? text.slice(0, 200) : text.slice(0, 60),
       color: AGENT_COLORS[agentId] || '#00F0FF',
       createdAt: now,
       expiresAt: now + SPEECH_BUBBLE_TTL,
       pixelX: agent?.renderX,
       pixelY: agent?.renderY,
+      interactive: isInteractive,
+      typewriter: !isInteractive,
     };
     setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
   }, []);
@@ -950,6 +955,7 @@ export default function OfficeStage({
       renderFrame(ctx, {
         agents: agentsRef.current,
         beams: beamsRef.current,
+        canvasBubbles: bubblesRef.current.filter(b => !b.interactive),
         tick, // tick counter for sprite animations
         selectedAgentId: selectedRef.current,
       }, undefined, undefined, effectStateRef.current, themeRef.current);

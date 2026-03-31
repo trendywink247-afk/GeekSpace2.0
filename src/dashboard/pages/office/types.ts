@@ -131,6 +131,10 @@ export interface SpeechBubble {
   pixelX?: number;
   /** Pixel Y to render the bubble at (tracks agent.renderY). */
   pixelY?: number;
+  /** true = DOM overlay (interactive, copyable), false/undefined = canvas-drawn */
+  interactive?: boolean;
+  /** true = character-by-character typewriter reveal on canvas */
+  typewriter?: boolean;
 }
 
 /** Animation state for an office door (currently unused but reserved for future use). */

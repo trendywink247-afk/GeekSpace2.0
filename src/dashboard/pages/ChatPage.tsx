@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
-  Send, Volume2, VolumeX, RotateCcw, Sparkles, Copy, Check, Square,
-  ThumbsUp, ThumbsDown, RefreshCw, Pencil, Pin, Search, Plus, Trash2,
-  ChevronDown, ChevronRight, X, PanelLeftClose, PanelLeft,
+  Send, Volume2, VolumeX, RotateCcw, Sparkles, Square,
+  Pin, Search, Plus, Trash2,
+  ChevronDown, X, PanelLeftClose, PanelLeft,
   Wifi, WifiOff, Clock, Star,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { Button } from '@/components/ui/button';
 import { agentService, memoryService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -15,6 +15,7 @@ import { useVoice } from '@/hooks/useVoice';
 import { useTTS } from '@/hooks/useTTS';
 import { VoiceButton } from '@/components/VoiceButton';
 import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/ToolStepIndicator';
+import { ChatMessageBubble, type ChatMessage, type ToolStep, type FeedbackValue } from '@/components/ChatMessageBubble';
 import type { AgentPersonality } from '@/types';
 import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
@@ -24,58 +25,9 @@ import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // ── Types ──
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'agent';
-  content: string;
-  timestamp: Date;
-  /** Tool execution steps parsed from the AI response */
-  toolSteps?: ToolStep[];
-  /** Agent mentioned via @mention autocomplete */
-  mentionedAgent?: MentionAgent;
-}
-
-interface ToolStep {
-  id: string;
-  tool: string;
-  label: string;
-  status: 'running' | 'done' | 'error';
-  result?: string;
-  durationMs?: number;
-}
-
-type FeedbackValue = 'up' | 'down' | null;
-
 type StreamHealth = 'connected' | 'slow' | 'disconnected';
 
 // ── Constants ──
-
-const LANG_COLORS: Record<string, { label: string; bg: string; text: string }> = {
-  javascript: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  js: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  typescript: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  ts: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  tsx: { label: 'TSX', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  jsx: { label: 'JSX', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  python: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
-  py: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
-  html: { label: 'HTML', bg: 'bg-orange-500/15', text: 'text-orange-400' },
-  css: { label: 'CSS', bg: 'bg-pink-500/15', text: 'text-pink-400' },
-  json: { label: 'JSON', bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  bash: { label: 'Bash', bg: 'bg-green-500/15', text: 'text-green-400' },
-  sh: { label: 'Shell', bg: 'bg-green-500/15', text: 'text-green-400' },
-  sql: { label: 'SQL', bg: 'bg-violet-500/15', text: 'text-violet-400' },
-  rust: { label: 'Rust', bg: 'bg-orange-600/15', text: 'text-orange-300' },
-  go: { label: 'Go', bg: 'bg-sky-500/15', text: 'text-sky-400' },
-  java: { label: 'Java', bg: 'bg-red-500/15', text: 'text-red-400' },
-  c: { label: 'C', bg: 'bg-gray-500/15', text: 'text-gray-400' },
-  cpp: { label: 'C++', bg: 'bg-gray-500/15', text: 'text-gray-400' },
-  yaml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
-  yml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
-  markdown: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
-  md: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
-  dockerfile: { label: 'Dockerfile', bg: 'bg-blue-600/15', text: 'text-blue-300' },
-};
 
 const TOOL_LABELS: Record<string, { running: string; done: string; icon: string }> = {
   web_search: { running: 'Searching the web...', done: 'Search complete', icon: 'search' },
@@ -228,108 +180,6 @@ function parseToolSteps(content: string): { cleanContent: string; steps: ToolSte
   return { cleanContent: cleanContent.trim(), steps };
 }
 
-// ── Components ──
-
-function CodeBlock({ code, lang }: { code: string; lang?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  const langKey = (lang || '').toLowerCase();
-  const langMeta = LANG_COLORS[langKey];
-  return (
-    <div className="relative my-2 rounded-lg overflow-hidden border" style={{ borderColor: 'var(--ag-border-default)' }}>
-      <div className="flex items-center justify-between px-3 py-1.5" style={{ background: 'var(--ag-bg-deep)' }}>
-        {langMeta ? (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase ${langMeta.bg} ${langMeta.text}`}>
-            {langMeta.label}
-          </span>
-        ) : (
-          <span className="text-xs text-[var(--ag-text-secondary)]">{lang || 'code'}</span>
-        )}
-        <button
-          onClick={handleCopy}
-          className={[
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50',
-            copied
-              ? 'text-[var(--ag-green)] bg-[var(--ag-green)]/10'
-              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-cyan)]/10',
-          ].join(' ')}
-          title="Copy code"
-          aria-label="Copy code"
-        >
-          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <pre className="p-3 overflow-x-auto text-xs leading-relaxed whitespace-pre font-mono" style={{ color: 'var(--ag-text-primary)', background: 'var(--ag-bg-deep)' }}><code>{code}</code></pre>
-    </div>
-  );
-}
-
-function renderMessageContent(content: string): React.ReactNode {
-  const parts: React.ReactNode[] = [];
-  const fenceRegex = /```(\w*)?\n?([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let keyIdx = 0;
-  while ((match = fenceRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</span>);
-    }
-    parts.push(<CodeBlock key={keyIdx++} lang={match[1] || ''} code={match[2] || ''} />);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < content.length) {
-    parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</span>);
-  }
-  return parts.length > 0 ? <>{parts}</> : content;
-}
-
-/** Collapsible tool execution step card */
-function ToolStepCard({ step }: { step: ToolStep }) {
-  const [expanded, setExpanded] = useState(false);
-  const isRunning = step.status === 'running';
-  const isDone = step.status === 'done';
-
-  return (
-    <div className='my-1.5'>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className='flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-colors text-xs'
-      >
-        {isRunning ? (
-          <RefreshCw className='w-3 h-3 text-[var(--ag-cyan)] animate-spin shrink-0' />
-        ) : isDone ? (
-          <Check className='w-3 h-3 text-[var(--ag-lime)] shrink-0' />
-        ) : (
-          <X className='w-3 h-3 text-[var(--ag-pink)] shrink-0' />
-        )}
-        <span className={isRunning ? 'text-[var(--ag-cyan)]' : isDone ? 'text-[var(--ag-text-secondary)]' : 'text-[var(--ag-pink)]'}>
-          {step.label}
-        </span>
-        {step.durationMs != null && (
-          <span className='text-[var(--ag-text-muted)] ml-auto mr-1 tabular-nums'>
-            {(step.durationMs / 1000).toFixed(1)}s
-          </span>
-        )}
-        {step.result && (
-          expanded
-            ? <ChevronDown className='w-3 h-3 text-[var(--ag-text-muted)] shrink-0' />
-            : <ChevronRight className='w-3 h-3 text-[var(--ag-text-muted)] shrink-0' />
-        )}
-      </button>
-      {expanded && step.result && (
-        <div className='mt-1 px-3 py-2 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-text-secondary)] whitespace-pre-wrap'>
-          {step.result}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /** Agent color from conversation title hash */
 const AGENT_COLORS = ['#00F0FF', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
 
@@ -447,8 +297,7 @@ export function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [voiceMode, setVoiceMode] = useState<boolean>(getVoiceMode);
   const [interimText, setInterimText] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -519,27 +368,10 @@ export function ChatPage() {
   });
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    virtuosoRef.current?.scrollToIndex({ index: 'LAST', behavior: 'smooth' });
     setShowScrollToBottom(false);
     setUnreadCount(0);
     userScrolledUpRef.current = false;
-  }, []);
-
-  // Track scroll position to show/hide scroll-to-bottom button
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const handleScroll = () => {
-      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-      const isScrolledUp = distanceFromBottom > 120;
-      setShowScrollToBottom(isScrolledUp);
-      userScrolledUpRef.current = isScrolledUp;
-      if (!isScrolledUp) {
-        setUnreadCount(0);
-      }
-    };
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Track unread count when scrolled up and new messages arrive
@@ -552,12 +384,12 @@ export function ChatPage() {
     prevMsgCountRef.current = messages.length;
   }, [messages.length]);
 
-  // Auto-scroll to bottom on new messages — only when user hasn't scrolled up
-  useEffect(() => {
-    if (!userScrolledUpRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  // Virtuoso atBottom tracking callback
+  const handleAtBottomStateChange = useCallback((atBottom: boolean) => {
+    setShowScrollToBottom(!atBottom);
+    userScrolledUpRef.current = !atBottom;
+    if (atBottom) setUnreadCount(0);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1340,9 +1172,9 @@ export function ChatPage() {
           </div>
         </div>
 
-        {/* Messages */}
-        <div ref={messagesContainerRef} className='flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide relative'>
-          {messages.length === 0 && (
+        {/* Messages — Virtualized */}
+        {messages.length === 0 ? (
+          <div className='flex-1 overflow-y-auto px-4 py-3 scrollbar-hide relative'>
             <div className='flex flex-col items-center justify-center h-full gap-4 text-center py-12'>
               {/* Hero avatar */}
               <div className='relative'>
@@ -1383,339 +1215,188 @@ export function ChatPage() {
                 ))}
               </div>
             </div>
-          )}
-          {messages.map((msg) => {
-            const showTimestamp = timestampVisible.has(msg.id);
-            const isStreaming = isStreamActive && msg.role === 'agent' && msg.id === messages[messages.length - 1]?.id;
-            const msgFeedback = feedback[msg.id] ?? null;
-            const isEditing = editingMsgId === msg.id;
+          </div>
+        ) : (
+          <Virtuoso
+            ref={virtuosoRef}
+            data={messages}
+            className='flex-1 scrollbar-hide'
+            style={{ overflowX: 'hidden' }}
+            followOutput='smooth'
+            alignToBottom
+            atBottomThreshold={120}
+            atBottomStateChange={handleAtBottomStateChange}
+            increaseViewportBy={{ top: 200, bottom: 200 }}
+            computeItemKey={(_index, msg) => msg.id}
+            itemContent={(_index, msg) => {
+              const showTimestamp = timestampVisible.has(msg.id);
+              const isStreaming = isStreamActive && msg.role === 'agent' && msg.id === messages[messages.length - 1]?.id;
+              const msgFeedback = feedback[msg.id] ?? null;
+              const isEditingMsg = editingMsgId === msg.id;
 
-            return (
-              <motion.div
-                key={msg.id}
-                id={`msg-${msg.id}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className={['flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
-              >
-                {/* Agent avatar */}
-                {msg.role === 'agent' && (
-                  <div className='relative shrink-0 self-start mt-0.5'>
-                    <div
-                      className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
-                      style={{ background: meta.color, boxShadow: isStreaming ? meta.glow : 'none' }}
-                    >
-                      {meta.initial}
-                    </div>
-                    {isStreaming && (
-                      <span
-                        className='absolute inset-0 rounded-full animate-ping'
-                        style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
-                      />
-                    )}
-                  </div>
-                )}
-                <div
-                  className={[
-                    'max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
-                    msg.role === 'user'
-                      ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-text-primary)] rounded-tr-sm'
-                      : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] rounded-tl-sm',
-                  ].join(' ')}
-                >
-                  {/* Editing mode for user messages */}
-                  {isEditing ? (
-                    <div className='space-y-2'>
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        className='w-full bg-[var(--ag-bg-deep)] border border-[var(--ag-border-default)] rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[var(--ag-cyan)]/40 min-h-[60px]'
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleConfirmEdit();
-                          }
-                          if (e.key === 'Escape') handleCancelEdit();
-                        }}
-                      />
-                      <div className='flex items-center gap-2 justify-end'>
-                        <button
-                          onClick={handleCancelEdit}
-                          className='px-2.5 py-1 rounded text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[28px]'
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleConfirmEdit}
-                          className='px-2.5 py-1 rounded text-xs bg-[var(--ag-cyan)]/20 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/30 min-h-[28px]'
-                        >
-                          Send
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Tool execution steps */}
-                      {msg.toolSteps && msg.toolSteps.length > 0 && (
-                        <div className='mb-2'>
-                          {msg.toolSteps.map((step) => (
-                            <ToolStepCard key={step.id} step={step} />
-                          ))}
-                        </div>
-                      )}
-                      {msg.role === 'agent' ? renderMessageContent(msg.content) : (
-                        <>
-                          {msg.mentionedAgent && (
-                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] mb-1'>
-                              <span>{msg.mentionedAgent.emoji}</span>
-                              <span>{msg.mentionedAgent.name}</span>
-                            </span>
-                          )}
-                          <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-                        </>
-                      )}
-                    </>
-                  )}
-
-                  {/* Footer: timestamp + action buttons */}
-                  {!isEditing && (
-                    <div className='flex items-center justify-between mt-1 gap-2'>
-                      {showTimestamp ? (
-                        <p className='text-[10px] text-[var(--ag-text-secondary)]/70' title={luxonFormatDateTime(msg.timestamp)}>
-                          {formatRelativeTime(msg.timestamp)}
-                        </p>
-                      ) : (
-                        <span />
-                      )}
-
-                      {/* Action buttons on AGENT messages */}
-                      {msg.role === 'agent' && msg.content && (
-                        <div className='flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 transition-opacity'>
-                          {/* Regenerate */}
-                          <button
-                            onClick={() => handleRegenerate(msg.id)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
-                            title='Regenerate response'
-                            aria-label='Regenerate response'
-                            disabled={isTyping}
-                          >
-                            <RefreshCw className='w-3 h-3' />
-                          </button>
-                          {/* Pin to notes */}
-                          <button
-                            onClick={() => handlePinToNotes(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
-                            title='Pin to notes'
-                            aria-label='Pin to notes'
-                          >
-                            <Pin className='w-3 h-3' />
-                          </button>
-                          {/* Thumbs up */}
-                          <button
-                            onClick={() => handleFeedback(msg.id, 'up')}
-                            className={[
-                              'p-1 rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center',
-                              msgFeedback === 'up' ? 'text-[var(--ag-lime)]' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-lime)]',
-                            ].join(' ')}
-                            title='Helpful'
-                            aria-label='Mark as helpful'
-                          >
-                            <ThumbsUp className='w-3 h-3' />
-                          </button>
-                          {/* Thumbs down */}
-                          <button
-                            onClick={() => handleFeedback(msg.id, 'down')}
-                            className={[
-                              'p-1 rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center',
-                              msgFeedback === 'down' ? 'text-[var(--ag-pink)]' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-pink)]',
-                            ].join(' ')}
-                            title='Not helpful'
-                            aria-label='Mark as not helpful'
-                          >
-                            <ThumbsDown className='w-3 h-3' />
-                          </button>
-                          {/* Copy */}
-                          <button
-                            onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
-                            title='Copy message'
-                            aria-label='Copy message'
-                          >
-                            {copiedMsgId === msg.id ? <Check className='w-3 h-3 text-[var(--ag-lime)]' /> : <Copy className='w-3 h-3' />}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Action buttons on USER messages */}
-                      {msg.role === 'user' && msg.content && (
-                        <div className='flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 transition-opacity'>
-                          {/* Edit */}
-                          <button
-                            onClick={() => handleStartEdit(msg.id)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
-                            title='Edit message'
-                            aria-label='Edit message'
-                            disabled={isTyping}
-                          >
-                            <Pencil className='w-3 h-3' />
-                          </button>
-                          {/* Copy */}
-                          <button
-                            onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className='p-1 rounded transition-colors text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] min-w-[28px] min-h-[28px] flex items-center justify-center'
-                            title='Copy message'
-                            aria-label='Copy message'
-                          >
-                            {copiedMsgId === msg.id ? <Check className='w-3 h-3 text-[var(--ag-lime)]' /> : <Copy className='w-3 h-3' />}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-
-          {/* Rating Nudge — show after 5+ agent messages, not dismissed, no rating yet */}
-          {(() => {
-            const agentMsgCount = messages.filter(m => m.role === 'agent').length;
-            if (agentMsgCount >= 5 && !ratingNudgeDismissed && sessionRating === null && !isTyping) {
               return (
-                <div className="mx-2 mb-2 p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <span className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">Rate this session:</span>
-                  <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onMouseEnter={() => setRatingHover(star)}
-                        onMouseLeave={() => setRatingHover(0)}
-                        onClick={() => {
-                          setSessionRating(star);
-                          const lastAgentMsg = [...messages].reverse().find(m => m.role === 'agent');
-                          if (lastAgentMsg) {
-                            agentService.rateConversation(lastAgentMsg.id, star).catch(() => {});
-                          }
-                          toast.success(`Rated ${star} star${star > 1 ? 's' : ''}`, { duration: 1500 });
-                        }}
-                        className="p-0.5 min-w-[28px] min-h-[28px] flex items-center justify-center transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={`w-4 h-4 transition-colors ${
-                            star <= (ratingHover || sessionRating || 0)
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-[#F4F6FF]/20'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setRatingNudgeDismissed(true)}
-                    className="ml-auto p-1 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-secondary)] transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                <div className='px-4 py-1.5'>
+                  <ChatMessageBubble
+                    msg={msg}
+                    isStreaming={isStreaming}
+                    showTimestamp={showTimestamp}
+                    msgFeedback={msgFeedback}
+                    isEditing={isEditingMsg}
+                    editText={editText}
+                    copiedMsgId={copiedMsgId}
+                    isTyping={isTyping}
+                    meta={meta}
+                    formatRelativeTime={formatRelativeTime}
+                    formatDateTime={luxonFormatDateTime}
+                    onRegenerate={handleRegenerate}
+                    onPinToNotes={handlePinToNotes}
+                    onCopyMessage={handleCopyMessage}
+                    onFeedback={handleFeedback}
+                    onStartEdit={handleStartEdit}
+                    onConfirmEdit={handleConfirmEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onEditTextChange={setEditText}
+                  />
                 </div>
               );
-            }
-            return null;
-          })()}
+            }}
+            components={{
+              Footer: () => (
+                <div className='px-4 py-1.5'>
+                  {/* Rating Nudge — show after 5+ agent messages */}
+                  {(() => {
+                    const agentMsgCount = messages.filter(m => m.role === 'agent').length;
+                    if (agentMsgCount >= 5 && !ratingNudgeDismissed && sessionRating === null && !isTyping) {
+                      return (
+                        <div className="mx-2 mb-2 p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <span className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">Rate this session:</span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onMouseEnter={() => setRatingHover(star)}
+                                onMouseLeave={() => setRatingHover(0)}
+                                onClick={() => {
+                                  setSessionRating(star);
+                                  const lastAgentMsg = [...messages].reverse().find(m => m.role === 'agent');
+                                  if (lastAgentMsg) {
+                                    agentService.rateConversation(lastAgentMsg.id, star).catch(() => {});
+                                  }
+                                  toast.success(`Rated ${star} star${star > 1 ? 's' : ''}`, { duration: 1500 });
+                                }}
+                                className="p-0.5 min-w-[28px] min-h-[28px] flex items-center justify-center transition-transform hover:scale-110"
+                              >
+                                <Star
+                                  className={`w-4 h-4 transition-colors ${
+                                    star <= (ratingHover || sessionRating || 0)
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-[#F4F6FF]/20'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => setRatingNudgeDismissed(true)}
+                            className="ml-auto p-1 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-secondary)] transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
-          {/* SSE Tool Step Indicator */}
-          {sseToolSteps.length > 0 && (
-            <div className='flex gap-2 justify-start'>
-              <div className='relative shrink-0 self-start mt-0.5'>
-                <div
-                  className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
-                  style={{ background: meta.color, boxShadow: sseActive ? meta.glow : 'none' }}
-                >
-                  {meta.initial}
-                </div>
-                {sseActive && (
-                  <span
-                    className='absolute inset-0 rounded-full animate-ping'
-                    style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
-                  />
-                )}
-              </div>
-              <div className='max-w-[80%] min-w-[240px]'>
-                <ToolStepIndicator steps={sseToolSteps} isActive={isTyping || isStreamActive} />
-              </div>
-            </div>
-          )}
+                  {/* SSE Tool Step Indicator */}
+                  {sseToolSteps.length > 0 && (
+                    <div className='flex gap-2 justify-start'>
+                      <div className='relative shrink-0 self-start mt-0.5'>
+                        <div
+                          className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
+                          style={{ background: meta.color, boxShadow: sseActive ? meta.glow : 'none' }}
+                        >
+                          {meta.initial}
+                        </div>
+                        {sseActive && (
+                          <span
+                            className='absolute inset-0 rounded-full animate-ping'
+                            style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
+                          />
+                        )}
+                      </div>
+                      <div className='max-w-[80%] min-w-[240px]'>
+                        <ToolStepIndicator steps={sseToolSteps} isActive={isTyping || isStreamActive} />
+                      </div>
+                    </div>
+                  )}
 
-          {isTyping && !isStreamActive && (
-            <div className='flex gap-2 justify-start'>
-              <div className='relative shrink-0 self-start mt-0.5'>
-                <div
-                  className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
-                  style={{ background: meta.color, boxShadow: meta.glow }}
-                >
-                  {meta.initial}
+                  {isTyping && !isStreamActive && (
+                    <div className='flex gap-2 justify-start'>
+                      <div className='relative shrink-0 self-start mt-0.5'>
+                        <div
+                          className='w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-black relative z-10'
+                          style={{ background: meta.color, boxShadow: meta.glow }}
+                        >
+                          {meta.initial}
+                        </div>
+                        <span
+                          className='absolute inset-0 rounded-full animate-ping'
+                          style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
+                        />
+                      </div>
+                      <div className='bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5'>
+                        <span className='text-xs text-[var(--ag-text-secondary)] mr-1'>{agentName} is typing</span>
+                        <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
+                        <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
+                        <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stop generating */}
+                  {isStreamActive && (
+                    <div className='flex justify-center py-1'>
+                      <button
+                        onClick={() => {
+                          abortControllerRef.current?.abort();
+                          abortControllerRef.current = null;
+                          setIsStreamActive(false);
+                          if (rafRef.current) {
+                            cancelAnimationFrame(rafRef.current);
+                            rafRef.current = 0;
+                          }
+                        }}
+                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-cyan)]/40 transition-all min-h-[36px]'
+                      >
+                        <Square className='w-3 h-3' />
+                        Stop generating
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Reconnecting indicator */}
+                  {streamHealth === 'disconnected' && !isStreamActive && isTyping && (
+                    <div className='flex justify-center py-2'>
+                      <div className='flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--ag-pink)]/10 border border-[var(--ag-pink)]/20 text-xs text-[var(--ag-pink)]'>
+                        <Wifi className='w-3 h-3 animate-pulse' />
+                        Reconnecting... (attempt {reconnectCountRef.current}/{RECONNECT_DELAYS.length})
+                      </div>
+                    </div>
+                  )}
+
+                  {interimText && (
+                    <div className='flex justify-end'>
+                      <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[var(--ag-cyan)]/5 text-[var(--ag-text-secondary)] border border-dashed border-[var(--ag-cyan)]/20 italic'>
+                        {interimText}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <span
-                  className='absolute inset-0 rounded-full animate-ping'
-                  style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
-                />
-              </div>
-              <div className='bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5'>
-                <span className='text-xs text-[var(--ag-text-secondary)] mr-1'>{agentName} is typing</span>
-                <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
-                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }}
-                />
-                <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
-                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }}
-                />
-                <span
-                  className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60'
-                  style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '400ms' }}
-                />
-              </div>
-            </div>
-          )}
-          {/* Stop generating */}
-          {isStreamActive && (
-            <div className='flex justify-center py-1'>
-              <button
-                onClick={() => {
-                  abortControllerRef.current?.abort();
-                  abortControllerRef.current = null;
-                  setIsStreamActive(false);
-                  if (rafRef.current) {
-                    cancelAnimationFrame(rafRef.current);
-                    rafRef.current = 0;
-                  }
-                }}
-                className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-cyan)]/40 transition-all min-h-[36px]'
-              >
-                <Square className='w-3 h-3' />
-                Stop generating
-              </button>
-            </div>
-          )}
-          {/* Reconnecting indicator */}
-          {streamHealth === 'disconnected' && !isStreamActive && isTyping && (
-            <div className='flex justify-center py-2'>
-              <div className='flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--ag-pink)]/10 border border-[var(--ag-pink)]/20 text-xs text-[var(--ag-pink)]'>
-                <Wifi className='w-3 h-3 animate-pulse' />
-                Reconnecting... (attempt {reconnectCountRef.current}/{RECONNECT_DELAYS.length})
-              </div>
-            </div>
-          )}
-          {interimText && (
-            <div className='flex justify-end'>
-              <div className='max-w-[80%] px-3 py-2 rounded-xl text-sm bg-[var(--ag-cyan)]/5 text-[var(--ag-text-secondary)] border border-dashed border-[var(--ag-cyan)]/20 italic'>
-                {interimText}
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+              ),
+            }}
+          />
+        )}
         {/* Scroll to bottom button */}
         {showScrollToBottom && (
           <div className='absolute bottom-20 right-4 z-10'>
