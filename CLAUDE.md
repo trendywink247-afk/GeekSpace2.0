@@ -170,7 +170,7 @@ Fallback chain in order:
 | **qdrant** | Vector DB for semantic memory (v1.13.2) | 6333 | 256M |
 | **browser** | Browser automation sidecar (Playwright) | 3010 | 1.5G |
 | **n8n** | Workflow automation (optional profile) | 5678 | — |
-| **uptime-kuma** | Status monitoring | 3003 | 128M |
+| **uptime-kuma** | Status monitoring | 3100 | 128M |
 | **staging** | Staging API instance | 3002 | — |
 
 Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama/Moonshot)
@@ -308,7 +308,6 @@ The project uses ESLint flat config (`eslint.config.js`) with strict React hooks
 | `react-hooks/purity` | error | Impure calls during render (e.g., `Date.now()`, `Math.random()`) |
 | `react-hooks/set-state-in-effect` | error | `setState` called synchronously inside `useEffect` |
 | `react-hooks/immutability` | error | Variables accessed before declaration in hooks |
-| `react-hooks/refs` | error | Reading/writing `.current` during render (must use `useLayoutEffect`) |
 
 **Common patterns to satisfy these rules:**
 - Move `Date.now()` into a function called from `useState(fn)` lazy initializer, not `useMemo`
