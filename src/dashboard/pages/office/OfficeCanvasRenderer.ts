@@ -9,7 +9,7 @@
 // The background is a single pixel-art image (864x800) that contains all
 // furniture, walls, and floor. No code-drawn furniture needed.
 
-import type { CanvasAgent, ParticleBeam } from './types';
+import type { CanvasAgent, ParticleBeam, SpeechBubble } from './types';
 import {
   CELL, COLS, ROWS, CANVAS_W, CANVAS_H,
   C,
@@ -64,6 +64,7 @@ export function loadOfficeAssets(): Promise<void> {
 interface RenderState {
   agents: CanvasAgent[];
   beams: ParticleBeam[];
+  canvasBubbles: SpeechBubble[];
   tick: number;
   selectedAgentId: string | null;
   showDebug?: boolean;
@@ -1197,8 +1198,122 @@ function drawEnvironmentalOverlays(ctx: CanvasRenderingContext2D, agents: Canvas
  * @param effectState - Zoom and spotlight state from `CanvasEffects`; skipped if omitted.
  * @param theme - `'day'` or `'night'`; affects ambient and agent glow intensity.
  */
+
+// ---------------------------------------------------------------------------
+// drawSpeechBubble — canvas-rendered speech bubble with word-wrap
+// ---------------------------------------------------------------------------
+
+const BUBBLE_MAX_W = 140;
+const BUBBLE_FONT = '9px monospace';
+const BUBBLE_LINE_H = 12;
+const BUBBLE_PAD_X = 6;
+const BUBBLE_PAD_Y = 4;
+const BUBBLE_REVEAL_MS = 500;
+
+/**
+ * Draw a speech bubble on the canvas above an agent.
+ * Supports typewriter reveal animation for non-interactive bubbles.
+ */
+export function drawSpeechBubble(
+  ctx: CanvasRenderingContext2D,
+  bubble: SpeechBubble,
+  agent: CanvasAgent,
+  now: number,
+): void {
+  const elapsed = now - bubble.createdAt;
+  const remaining = bubble.expiresAt - now;
+  if (remaining <= 0) return;
+
+  // Fade-in (150ms) and fade-out (300ms)
+  let alpha = 1;
+  if (elapsed < 150) alpha = elapsed / 150;
+  if (remaining < 300) alpha = Math.min(alpha, remaining / 300);
+
+  const cx = agent.renderX;
+  const spriteTop = agent.renderY - 64 + 16;
+  const baseY = spriteTop - 10;
+
+  ctx.save();
+  ctx.font = BUBBLE_FONT;
+  const textMaxW = BUBBLE_MAX_W - BUBBLE_PAD_X * 2 - 16; // 16px for dot + spacing
+
+  // Word-wrap using canvas measureText
+  const words = bubble.text.split(/(\s+)/);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine + word;
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > textMaxW && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = word.trimStart();
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  // Typewriter: limit visible characters
+  let visibleLines = lines;
+  if (bubble.typewriter && elapsed < BUBBLE_REVEAL_MS) {
+    const totalChars = lines.reduce((sum, l) => sum + l.length, 0);
+    const revealCount = Math.floor(totalChars * (elapsed / BUBBLE_REVEAL_MS));
+    let charsSoFar = 0;
+    visibleLines = [];
+    for (const line of lines) {
+      if (charsSoFar >= revealCount) break;
+      if (charsSoFar + line.length <= revealCount) {
+        visibleLines.push(line);
+        charsSoFar += line.length;
+      } else {
+        visibleLines.push(line.slice(0, revealCount - charsSoFar));
+        charsSoFar = revealCount;
+      }
+    }
+  }
+
+  const lineCount = visibleLines.length || 1;
+  const bubbleW = BUBBLE_MAX_W;
+  const bubbleH = lineCount * BUBBLE_LINE_H + BUBBLE_PAD_Y * 2;
+  const bubbleX = cx - bubbleW / 2;
+  const bubbleY = baseY - bubbleH;
+
+  ctx.globalAlpha = alpha;
+
+  // Background pill
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+  ctx.beginPath();
+  ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, 5);
+  ctx.fill();
+
+  // Border glow
+  ctx.strokeStyle = hexToRgba(bubble.color, 0.3);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, 5);
+  ctx.stroke();
+
+  // Agent color dot
+  ctx.fillStyle = bubble.color;
+  ctx.beginPath();
+  ctx.arc(bubbleX + 8, bubbleY + BUBBLE_PAD_Y + 5, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Text lines
+  ctx.fillStyle = '#F4F6FF';
+  ctx.textAlign = 'left';
+  const textStartX = bubbleX + 16;
+  for (let i = 0; i < visibleLines.length; i++) {
+    ctx.fillText(visibleLines[i], textStartX, bubbleY + BUBBLE_PAD_Y + (i + 1) * BUBBLE_LINE_H - 2);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState, theme?: 'day' | 'night'): void {
-  const { agents, beams, tick, selectedAgentId } = state;
+  const { agents, beams, canvasBubbles, tick, selectedAgentId } = state;
   const activeTheme = theme ?? 'night';
 
   // 1. Background (pixel art image or solid fallback)
@@ -1271,6 +1386,15 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   // 6. Restore zoom transform
   if (hasZoom) {
     ctx.restore();
+  }
+
+  // 6b. Canvas speech bubbles (above agents, below foreground)
+  if (canvasBubbles.length > 0) {
+    const now = Date.now();
+    for (const bubble of canvasBubbles) {
+      const agent = agents.find(a => a.id === bubble.agentId);
+      if (agent) drawSpeechBubble(ctx, bubble, agent, now);
+    }
   }
 
   // 7. Foreground layer disabled — was causing agent head/body clipping
