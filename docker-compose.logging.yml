@@ -53,7 +53,7 @@ services:
       - SETGID
       - DAC_OVERRIDE
     ports:
-      - "127.0.0.1:3200:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -151,7 +151,71 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
+
+  # ---- Prometheus (Metrics Collection) ----
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: geekspace-prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - geekspace-net
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
         max-file: "3"
+
+  # ---- Node Exporter (System Metrics for Dashboard 1860) ----
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: geekspace-node-exporter
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - geekspace-net
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 
 volumes:
   loki-data:
@@ -159,6 +223,8 @@ volumes:
   grafana-data:
     driver: local
   tempo-data:
+    driver: local
+  prometheus-data:
     driver: local
 
 networks:
