@@ -7,6 +7,7 @@ import type { ComponentType } from 'react';
  * This catches the import error, reloads the page once, and gives up if it
  * still fails (to avoid infinite reload loops).
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): React.LazyExoticComponent<T> {

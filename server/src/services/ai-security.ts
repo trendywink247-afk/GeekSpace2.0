@@ -145,7 +145,7 @@ const PII_PATTERNS = [
   { type: 'phone', pattern: /\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/g },
   { type: 'ssn', pattern: /\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/g },
   { type: 'credit_card', pattern: /\b(?:\d{4}[-.\s]?){3}\d{4}\b/g },
-  { type: 'api_key', pattern: /\b(?:sk-|pk-|api[_-]?key|token)[:\s]?["']?[a-zA-Z0-9_\-]{20,}["']?/gi },
+  { type: 'api_key', pattern: /\b(?:sk-|pk-|api[_-]?key|token)[:\s]?["']?[a-zA-Z0-9_-]{20,}["']?/gi },
 ];
 
 // Encoding obfuscation patterns

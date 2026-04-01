@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useEffect } from 'react';
 import { confirmAction } from '@/utils/alerts';
 
 /**
@@ -15,7 +15,11 @@ import { confirmAction } from '@/utils/alerts';
  */
 export function useLogoutBlocker(onConfirmLogout: () => void): void {
   const logoutRef = useRef(onConfirmLogout);
-  logoutRef.current = onConfirmLogout;
+  
+  // Update ref in useEffect to avoid "cannot update ref during render" error
+  useEffect(() => {
+    logoutRef.current = onConfirmLogout;
+  }, [onConfirmLogout]);
 
   const showConfirm = useCallback(async () => {
     const confirmed = await confirmAction(
@@ -43,5 +47,5 @@ export function useLogoutBlocker(onConfirmLogout: () => void): void {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [showConfirm]); // Runs once on DashboardApp mount; cleaned up on unmount
+  }, [showConfirm]);
 }
