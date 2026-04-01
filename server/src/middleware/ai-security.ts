@@ -18,6 +18,7 @@ import { logger } from '../logger.js';
 declare module 'express-serve-static-core' {
   interface Request {
     securityCheck?: SecurityCheckResult;
+    userId?: string;
   }
 }
 
@@ -49,7 +50,7 @@ export async function aiSecurityInputMiddleware(
     switch (result.action) {
       case 'block':
         logger.warn('AI Security: Blocking request due to security violations', {
-          userId: (req as any).user?.id || 'anonymous',
+          userId: req.userId || 'anonymous',
           violations: result.violations.map(v => v.type),
           score: result.score,
         });
@@ -65,7 +66,7 @@ export async function aiSecurityInputMiddleware(
         // Replace the message with sanitized version
         if (result.sanitized) {
           logger.info('AI Security: Sanitized input message', {
-            userId: (req as any).user?.id || 'anonymous',
+            userId: req.userId || 'anonymous',
             violations: result.violations.map(v => v.type),
           });
           
@@ -79,7 +80,7 @@ export async function aiSecurityInputMiddleware(
       case 'log-only':
         // Just log, don't block (default safe mode)
         logger.warn('AI Security: Violations detected (log-only mode)', {
-          userId: (req as any).user?.id || 'anonymous',
+          userId: req.userId || 'anonymous',
           violations: result.violations.map(v => ({ type: v.type, severity: v.severity })),
           score: result.score,
         });
