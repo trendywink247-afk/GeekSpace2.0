@@ -44,7 +44,7 @@ export interface SecurityCheckResult {
   score: number; // 0-1, higher = more suspicious
   violations: SecurityViolation[];
   sanitized?: string;
-  action: 'allow' | 'block' | 'sanitize';
+  action: 'allow' | 'block' | 'sanitize' | 'log-only';
 }
 
 export interface SecurityViolation {
@@ -161,7 +161,7 @@ const OBFUSCATION_PATTERNS = [
     description: 'Unicode escape sequences',
   },
   {
-    pattern: /\x[0-9a-fA-F]{2}/g, // Hex escapes
+    pattern: /\\x[0-9a-fA-F]{2}/g, // Hex escapes
     severity: 'low' as const,
     description: 'Hex escape sequences',
   },
@@ -288,13 +288,13 @@ export class AISecurityService {
 
     // Log violations
     if (violations.length > 0 && this.config.logAllViolations) {
-      logger.warn('AI Security: Input validation violations', {
+      logger.warn({
         score,
         action,
         violationCount: violations.length,
         violationTypes: violations.map(v => v.type),
         sample: input.substring(0, 100).replace(/\n/g, ' '),
-      });
+      }, 'AI Security: Input validation violations');
     }
 
     return result;
@@ -376,7 +376,7 @@ export class AISecurityService {
         case 'encoding':
           // Remove common obfuscation
           sanitized = sanitized.replace(/\\u[0-9a-fA-F]{4}/g, '');
-          sanitized = sanitized.replace(/\x[0-9a-fA-F]{2}/g, '');
+          sanitized = sanitized.replace(/\\x[0-9a-fA-F]{2}/g, '');
           break;
         case 'prompt_injection':
         case 'jailbreak':
@@ -419,7 +419,7 @@ export class AISecurityService {
    */
   updateConfig(config: Partial<SecurityConfig>): void {
     this.config = { ...this.config, ...config };
-    logger.info('AI Security config updated', { mode: this.config.mode, enabled: this.config.enabled });
+    logger.info({ mode: this.config.mode, enabled: this.config.enabled }, 'AI Security config updated');
   }
 }
 
