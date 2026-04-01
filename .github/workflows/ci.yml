@@ -145,9 +145,6 @@ jobs:
     concurrency:
       group: deploy-server
       cancel-in-progress: false
-    environment:
-      name: staging
-      url: https://staging.agentin.chat
     steps:
       - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1
