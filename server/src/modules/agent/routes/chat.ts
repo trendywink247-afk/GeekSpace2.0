@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema } from '../../../middleware/validate.js';
+import { aiSecurityMiddleware } from '../../../middleware/ai-security.js';
 import { db } from '../../../db/index.js';
 import { routeChat, classifyIntent, computeCreditCost, deductSubscriptionCredits, pickProvider, type ChatMessage, type Provider } from '../services/llm.js';
 import { edithChat } from '../../../services/edith.js';
@@ -344,7 +345,7 @@ Rules:
 //
 // Auto-fallback: if Ollama is down, routes to cloud only when user has credits
 
-router.post('/chat', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
+router.post('/chat', requireAuth, aiSecurityMiddleware, validateBody(chatSchema), async (req: AuthRequest, res) => {
   // Override the global 30s timeout for AI chat — allow up to 120s
   res.setTimeout(120000);
   let { message } = req.body as { message: string; channel?: string; context?: string };

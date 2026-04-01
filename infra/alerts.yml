@@ -1,0 +1,102 @@
+groups:
+  - name: geekspace-alerts
+    interval: 30s
+    rules:
+      # High CPU usage alert
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: node-exporter
+        annotations:
+          summary: "High CPU usage detected on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 5 minutes. Current value: {{ $value }}%"
+
+      # High memory usage alert
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: node-exporter
+        annotations:
+          summary: "High memory usage detected on {{ $labels.instance }}"
+          description: "Memory usage is above 85% for more than 5 minutes. Current value: {{ $value }}%"
+
+      # Low disk space alert
+      - alert: LowDiskSpace
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: critical
+          service: node-exporter
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}:{{ $labels.device }}"
+          description: "Disk usage is above 80% (less than 20% free). Current usage: {{ $value }}%"
+
+      # Container down/unhealthy alert
+      - alert: ContainerDown
+        expr: up{job=~"cadvisor|geekspace-app|geekspace-staging"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "Container is down: {{ $labels.job }}"
+          description: "Container {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+
+      # Node exporter down alert
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Node Exporter is down"
+          description: "Node Exporter on {{ $labels.instance }} has been down for more than 1 minute"
+
+      # Prometheus down alert
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus on {{ $labels.instance }} has been down for more than 1 minute"
+
+      # SSL certificate expiry alert (if cert_exporter is used)
+      - alert: SSLCertificateExpiringSoon
+        expr: (ssl_certificate_expiry_seconds - time()) / 86400 < 7
+        for: 1h
+        labels:
+          severity: warning
+          service: ssl
+        annotations:
+          summary: "SSL certificate expiring soon: {{ $labels.domain }}"
+          description: "SSL certificate for {{ $labels.domain }} expires in less than 7 days ({{ $value | humanizeDuration }})"
+
+      # Docker container high CPU usage
+      - alert: DockerContainerHighCPU
+        expr: (rate(container_cpu_usage_seconds_total{container!=""}[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high CPU usage: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using more than 80% CPU for 5 minutes"
+
+      # Docker container high memory usage
+      - alert: DockerContainerHighMemory
+        expr: (container_memory_usage_bytes{container!=""} / container_spec_memory_limit_bytes{container!=""}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high memory usage: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using more than 85% of its memory limit"

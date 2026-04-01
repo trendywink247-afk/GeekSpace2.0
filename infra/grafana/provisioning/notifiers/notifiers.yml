@@ -1,0 +1,11 @@
+notifiers:
+  - name: 'Telegram Alerts'
+    type: telegram
+    uid: telegram-alerts
+    org_id: 1
+    is_default: true
+    settings:
+      bottoken: ''
+      chatid: ''
+      message: '{{ template "default.message" . }}'
+      parse_mode: 'HTML'
