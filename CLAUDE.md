@@ -58,63 +58,6 @@ Plus standalone routers: directory, webhooks, pico, artifacts preview.
 
 **UI libraries:** Radix UI (20+ components), Framer Motion, Recharts, Chart.js, Three.js + React Three Fiber, BlockNote (rich text editor), React Hook Form + Zod validation, Sonner (toasts), SweetAlert2, Vaul (drawer)
 
-### Design System CSS Classes (`src/index.css`)
-
-Utility classes defined in global CSS (not Tailwind — used as plain class names):
-- `.gs-card` — Standard card (glassmorphism, border, hover glow)
-- `.gs-btn-primary`, `.gs-btn-ghost` — Button variants
-- `.gs-input` — Styled input field
-- `.gs-tab-bar` — Tab navigation bar
-- `.gs-pill` — Filter pill / tag
-- `.gs-icon-pill`, `.gs-icon-pill-violet` — Icon pill variants
-- `.gs-compact` — Compact layout modifier
-- `.glass-card`, `.glass-card-v2` — Glassmorphism cards (blur + border)
-- `.text-gradient`, `.text-gradient-violet`, `.text-gradient-lime` — Text gradients
-- `.neon-border` — Animated multi-color border
-- `.glow-accent` — Cyan glow shadow
-
-**Agent brand color CSS vars:** `--ag-weebo`, `--ag-edith`, `--ag-jarvis`, `--ag-aria`, `--ag-forge`, `--ag-pulse`, `--ag-echo`, `--ag-cal`, `--ag-nova`
-
-### Agent Office (Pixel-Art Canvas Simulation)
-
-`src/dashboard/pages/office/` — Full pixel-art office with 9 animated agents on a 27×25 grid (864×800px, 32px tiles) rendered on HTML5 Canvas at ~30fps.
-
-**Core files:**
-- `OfficeStage.tsx` — Canvas container, SSE event processing, agent state machine, render loop
-- `OfficeCanvasRenderer.ts` — Pure canvas renderer (sprites, beams, bubbles, environmental overlays)
-- `agentBehavior.ts` — Idle behavior FSM (wandering, socializing, resting, group meetings, avoidance)
-- `types.ts` — `AgentId`, `CanvasAgent`, `SSEEvent`, `ParticleBeam`, `SpeechBubble`
-- `constants.ts` — Grid dims, collision map, agent colors/meta, desk positions, design tokens
-- `navigation.ts` — BFS pathfinding, walkability validation (single source of truth)
-- `roomZones.ts` — Room definitions (patio, pantry, lounge, workspace, meeting_room)
-- `smartObjects.ts` — Interactive furniture with interaction points and occupancy
-- `occupancy.ts` — Reserved point tracking (`reservePoint`, `releasePoint`)
-- `perception.ts` — Agent perception (nearby agents, objects, rooms)
-- `collisionLoader.ts` — Pixel-accurate collision mask from webp alpha channel
-- `useOfficeData.ts` — SSE hook subscribing to `/api/agent-state/stream`
-
-**Agent hierarchy (3 core + 6 specialists):**
-
-| Agent | Role | Color | Type | Parent |
-|-------|------|-------|------|--------|
-| weebo | Creative Assistant | #00F0FF | core | — |
-| edith | Strategic Engine | #8B5CF6 | core | — |
-| jarvis | Operations | #ADFF2F | core | — |
-| aria | Creative Director | #FF6B9D | specialist | weebo |
-| echo | Coach | #6366F1 | specialist | weebo |
-| forge | Tech Lead | #F59E0B | specialist | edith |
-| pulse | Data Analyst | #10B981 | specialist | edith |
-| cal | Scheduler | #84CC16 | specialist | jarvis |
-| nova | Researcher | #EC4899 | specialist | jarvis |
-
-**Sprite sheets:** 16×32 frames, 3 rows (down/up/right), 7 columns (walk×3, type×2, read×2). No additional sprite frames exist — all visual effects beyond sprites must be code-rendered on canvas.
-
-**Key constraints:**
-- All interaction points must be on walkable tiles (verify against `COLLISION_MAP`)
-- Agent facing directions must face toward furniture (not away)
-- Room zone bounds can overlap — `getRoomAt()` returns first match, so more specific zones must come first in ROOMS array
-- Specialists are dormant until activated by delegation from their parent core agent
-
 ## Agentic Experience (v3.3)
 
 The agent module (`server/src/modules/agent/`) is the core. Key subsystems:
@@ -170,7 +113,7 @@ Fallback chain in order:
 | **qdrant** | Vector DB for semantic memory (v1.13.2) | 6333 | 256M |
 | **browser** | Browser automation sidecar (Playwright) | 3010 | 1.5G |
 | **n8n** | Workflow automation (optional profile) | 5678 | — |
-| **uptime-kuma** | Status monitoring | 3100 | 128M |
+| **uptime-kuma** | Status monitoring | 3003 | 128M |
 | **staging** | Staging API instance | 3002 | — |
 
 Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama/Moonshot)
@@ -275,45 +218,6 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 - `server/src/modules/agent/services/delegation-pipeline.ts` — Agent-to-agent delegation
 - `server/src/modules/agent/services/message-router.ts` — Unified channel message handling
 - `server/src/modules/agent/services/proactive-goals.ts` — Background goal scheduler
-- `src/dashboard/pages/office/OfficeStage.tsx` — Agent Office canvas container + SSE processing
-- `src/dashboard/pages/office/OfficeCanvasRenderer.ts` — Canvas renderer (sprites, effects, overlays)
-- `src/dashboard/pages/office/agentBehavior.ts` — Agent idle behavior FSM
-- `src/dashboard/pages/office/constants.ts` — Grid, collision map, agent config, desk positions
-- `src/dashboard/pages/office/navigation.ts` — BFS pathfinding + walkability (single source of truth)
-- `.github/workflows/ci.yml` — CI/CD pipeline (lint, typecheck, build, test, deploy)
-- `eslint.config.js` — ESLint flat config with strict React hooks rules
-
-## CI/CD Pipeline (`.github/workflows/ci.yml`)
-
-| Job | Trigger | What it does |
-|-----|---------|-------------|
-| **Static Checks** | PRs + push to main | ESLint (`--max-warnings=0`), typecheck (root + server), Vite build, server build, OpenAPI validation |
-| **Unit Tests** | After Static Checks | Server tests + frontend tests |
-| **Deploy Staging** | Push to main (auto) | Docker build + deploy to `staging.agentin.chat:3002` |
-| **Deploy Production** | Manual dispatch only | Docker build, health check, rollback on failure, sync Caddy assets |
-| **Summary** | Always | Aggregates check results for branch protection |
-
-**Key CI rules:**
-- Zero-warning ESLint policy — `--max-warnings=0` on changed files only
-- Node 22 LTS
-- Concurrency: one CI run per branch (cancel in progress)
-- Staging auto-deploys from main; production requires manual `workflow_dispatch`
-
-### ESLint Strict React Hooks Rules
-
-The project uses ESLint flat config (`eslint.config.js`) with strict React hooks enforcement:
-
-| Rule | Level | What it catches |
-|------|-------|----------------|
-| `react-hooks/purity` | error | Impure calls during render (e.g., `Date.now()`, `Math.random()`) |
-| `react-hooks/set-state-in-effect` | error | `setState` called synchronously inside `useEffect` |
-| `react-hooks/immutability` | error | Variables accessed before declaration in hooks |
-
-**Common patterns to satisfy these rules:**
-- Move `Date.now()` into a function called from `useState(fn)` lazy initializer, not `useMemo`
-- Sync refs via `useLayoutEffect(() => { ref.current = value; }, [value])` instead of `ref.current = value` in render
-- Declare `useCallback` functions before any `useEffect` that references them
-- Compute derived state outside the component in pure functions, pass to `useState(fn)`
 
 ## TypeScript
 
@@ -396,8 +300,3 @@ Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram.
 - **Staging Redis**: `STAGING_REDIS_PASSWORD` must be set in `.env.staging` (no default fallback)
 - **Vite proxy**: Frontend dev server proxies `/api` to `:3001` — backend must be running
 - **Chunk size**: Vite warns on chunks >600KB — keep imports lean
-- **ESLint zero-warning CI**: GitHub Actions runs `eslint --max-warnings=0` on changed files — even warnings fail CI
-- **React hooks strict mode**: No `Date.now()` in render/useMemo, no ref.current reads/writes in render, no setState in useEffect body — see ESLint rules section above
-- **Vercel vs GitHub Actions**: Vercel only runs `tsc -b && vite build` (no lint). GitHub Actions runs lint + typecheck + build + tests — code can pass Vercel but fail Actions
-- **Office collision map**: All agent desk positions and smart object interaction points must be on walkable tiles in `COLLISION_MAP`. Use `isWalkable()` from `navigation.ts` to verify
-- **Room zone ordering**: `getRoomAt()` returns first matching room. More specific zones (e.g., pantry) must come before overlapping broader zones (e.g., patio) in the ROOMS array
