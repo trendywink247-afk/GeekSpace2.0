@@ -49,9 +49,7 @@ export async function aiSecurityInputMiddleware(
     switch (result.action) {
       case 'block':
         logger.warn('AI Security: Blocking request due to security violations', {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      userId: (req as any).user?.id || 'anonymous',
+          userId: (req as any).user?.id || 'anonymous',
           violations: result.violations.map(v => v.type),
           score: result.score,
         });
@@ -67,9 +65,7 @@ export async function aiSecurityInputMiddleware(
         // Replace the message with sanitized version
         if (result.sanitized) {
           logger.info('AI Security: Sanitized input message', {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      userId: (req as any).user?.id || 'anonymous',
+            userId: (req as any).user?.id || 'anonymous',
             violations: result.violations.map(v => v.type),
           });
           
@@ -83,9 +79,7 @@ export async function aiSecurityInputMiddleware(
       case 'log-only':
         // Just log, don't block (default safe mode)
         logger.warn('AI Security: Violations detected (log-only mode)', {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      userId: (req as any).user?.id || 'anonymous',
+          userId: (req as any).user?.id || 'anonymous',
           violations: result.violations.map(v => ({ type: v.type, severity: v.severity })),
           score: result.score,
         });
@@ -117,6 +111,7 @@ export function createOutputFilterMiddleware(
   res: Response,
   originalJson: typeof res.json
 ): typeof res.json {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function(body: any): Response {
     try {
       // Check if this is a chat response with content
