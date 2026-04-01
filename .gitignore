@@ -121,3 +121,4 @@ bridge/
 
 # Turborepo
 .turbo
+.a0proj/
