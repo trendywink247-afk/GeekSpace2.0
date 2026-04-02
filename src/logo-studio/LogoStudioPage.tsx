@@ -19,7 +19,6 @@ import {
   AnimatedBackground,
   GlassCard,
   PageWrapper,
-  StaggeredList,
   SectionHeader,
   StatusBadge,
 } from '@/components/agentin';
@@ -40,11 +39,10 @@ export function LogoStudioPage() {
   const [showChat, setShowChat] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [fading, setFading] = useState(false);
-  const [favorites, setFavorites] = useState<FavoriteConcept[]>([]);
-
-  useEffect(() => {
-    try { const s = localStorage.getItem(FAVORITES_KEY); if (s) setFavorites(JSON.parse(s)); } catch {}
-  }, []);
+  const [favorites, setFavorites] = useState<FavoriteConcept[]>(() => {
+    try { const s = localStorage.getItem(FAVORITES_KEY); if (s) return JSON.parse(s); } catch {}
+    return [];
+  });
   useEffect(() => {
     try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)); } catch {}
   }, [favorites]);

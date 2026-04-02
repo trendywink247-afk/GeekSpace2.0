@@ -7,7 +7,6 @@ import {
   PageWrapper,
   StaggeredList,
   LoadingState,
-  SectionHeader,
 } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 

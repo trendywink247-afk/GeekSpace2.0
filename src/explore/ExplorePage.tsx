@@ -5,12 +5,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Sparkles, MapPin, Bot, ArrowLeft, Eye, Users, Loader2 } from 'lucide-react';
+import { Search, Sparkles, Bot, ArrowLeft, Eye, Users } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AgentToAgentChat } from '@/components/AgentToAgentChat';
 import {
   AnimatedBackground,

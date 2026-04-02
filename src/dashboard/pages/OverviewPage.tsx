@@ -36,7 +36,7 @@ import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
 import { GoalsSummaryCard } from '@/components/dashboard/GoalsSummaryCard';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
-import { DashboardPageWrapper, DashboardCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useAuthStore } from '@/stores/authStore';
