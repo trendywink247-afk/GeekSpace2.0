@@ -551,6 +551,10 @@ export interface DirectoryProfile {
   location?: string;
   skills: string[];
   agentEnabled: boolean;
+  id?: string | number;
+  isOnline?: boolean;
+  bio?: string;
+  viewCount?: number;
 }
 
 // ----- Terminal Command (client-side) ------------------------

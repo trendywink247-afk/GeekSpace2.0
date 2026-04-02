@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { PageShell } from '@/components/agentin/PageShell';
 import { PageHeader } from '@/components/agentin/PageHeader';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';

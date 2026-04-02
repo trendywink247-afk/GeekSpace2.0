@@ -185,7 +185,7 @@ export function ExplorePage() {
               <StaggeredList staggerDelay={0.05} className="contents">
                 {profiles.map((profile, idx) => (
                   <ProfileCard
-                    key={profile.id}
+                    key={profile.username}
                     profile={profile}
                     gradient={avatarGradients[idx % avatarGradients.length]}
                     onAgentChat={(e) => handleAgentChat(e, profile)}

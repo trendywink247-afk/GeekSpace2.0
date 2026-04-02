@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import api from "@/services/api";
-import { PageShell, PageHeader, SectionCard } from "@/components/agentin";
+import { PageShell, PageHeader, SectionCard, DashboardPageWrapper } from "@/components/agentin";
 import { useAgentCanvas } from "@/hooks/useAgentCanvas";
 
 // ---- Types ---------------------------------------------------------------

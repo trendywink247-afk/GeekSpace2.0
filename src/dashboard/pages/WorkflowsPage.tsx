@@ -6,7 +6,7 @@ import {
   Zap, Bot, Clock, CheckCircle, XCircle, Loader2, Settings, GitBranch,
   ArrowDown,
 } from "lucide-react";
-import { PageShell, PageHeader, SectionCard } from "@/components/agentin";
+import { PageShell, PageHeader, SectionCard, DashboardPageWrapper } from "@/components/agentin";
 import { useAgentCanvas } from "@/hooks/useAgentCanvas";
 import { BlurFade } from "@/components/magicui/blur-fade";
 import { Badge } from "@/components/ui/badge";

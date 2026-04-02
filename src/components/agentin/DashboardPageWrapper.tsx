@@ -28,7 +28,7 @@ const pageVariants = {
     scale: 1,
     transition: {
       duration: 0.4,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
       staggerChildren: 0.05,
       delayChildren: 0.1,
     }
@@ -46,7 +46,7 @@ const cardVariants = {
   animate: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
+    transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] as const }
   }
 };
 
