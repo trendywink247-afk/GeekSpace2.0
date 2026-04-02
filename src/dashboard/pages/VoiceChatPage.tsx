@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
@@ -194,6 +195,7 @@ export function VoiceChatPage() {
   })();
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="4xl">
       <div className="flex flex-col h-[100dvh] md:h-full min-h-0">
       {/* -- Header -- */}
@@ -542,5 +544,6 @@ export function VoiceChatPage() {
       `}</style>
       </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

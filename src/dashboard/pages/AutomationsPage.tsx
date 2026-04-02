@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Zap,
@@ -607,6 +608,7 @@ export function AutomationsPage() {
   // ---------------------------------------------------------------------------
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div data-testid="automations-page" className="space-y-5 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
       {/* Dry-run result toast */}
@@ -1429,5 +1431,6 @@ export function AutomationsPage() {
       </SectionCard>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

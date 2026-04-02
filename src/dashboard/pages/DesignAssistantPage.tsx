@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { agentService } from '@/services/api';
 import api from '@/services/api';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
@@ -374,6 +375,7 @@ export function DesignAssistantPage() {
   const liveColors = parseHexColors(currentResponse);
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="5xl">
       {/* ---- Header — Edith ownership ---- */}
       <PageHeader
@@ -747,5 +749,6 @@ export function DesignAssistantPage() {
         </BlurFade>
       )}
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

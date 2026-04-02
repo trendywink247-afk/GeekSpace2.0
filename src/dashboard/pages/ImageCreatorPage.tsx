@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { PageShell, PageHeader } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,
@@ -310,6 +311,7 @@ export function ImageCreatorPage() {
   }, [images, galleryFilter, dateFrom, dateTo]);
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="6xl">
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Toast */}
@@ -1130,5 +1132,6 @@ export function ImageCreatorPage() {
       )}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

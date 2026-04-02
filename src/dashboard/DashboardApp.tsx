@@ -1064,32 +1064,50 @@ export function DashboardApp() {
               onClick={() => {
                 navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
               }}
-              className="flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[44px] rounded-lg transition-colors"
+              className={`
+                flex flex-col items-center justify-center gap-1.5 
+                min-w-[52px] min-h-[52px] rounded-xl transition-all duration-200
+                active:scale-95
+                ${isActive 
+                  ? 'bg-white/[0.05]' 
+                  : 'hover:bg-white/[0.03] active:bg-white/[0.05]'
+                }
+              `}
               style={{ color: isActive ? tab.color : 'var(--ag-text-muted, #6B7280)' }}
             >
-              {/* Active dot indicator above icon */}
+              {/* Active indicator bar */}
               <div
-                className={`h-[3px] w-[3px] rounded-full transition-all ${isActive ? '' : 'opacity-0'}`}
-                style={isActive ? { background: tab.color, boxShadow: `0 0 6px ${tab.color}` } : undefined}
+                className={`h-[2px] rounded-full transition-all duration-200 ${isActive ? 'w-4' : 'w-0'}`}
+                style={isActive ? { background: tab.color, boxShadow: `0 0 8px ${tab.color}` } : undefined}
               />
               <div className="relative">
-                <tab.icon className={`w-5 h-5 ${isActive ? `drop-shadow-[0_0_6px_${tab.color}]` : ''}`} />
+                <tab.icon 
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isActive 
+                      ? `drop-shadow-[0_0_8px_${tab.color}] scale-110` 
+                      : 'opacity-70'
+                  }`} 
+                />
                 {tab.id === 'reminders' && dueReminderCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FF2D78] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-[#FF2D78] text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#FF2D78]/30">
                     {dueReminderCount > 9 ? '9+' : dueReminderCount}
                   </span>
                 )}
                 {tab.id === 'inbox' && inboxUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#00F0FF]/30">
                     {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
                   </span>
                 )}
                 {tab.id === 'office' && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#8B5CF6] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-[#8B5CF6] text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg shadow-[#8B5CF6]/30">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </div>
+              {/* Label - visible on larger phones */}
+              <span className={`text-[10px] font-medium transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-0 sm:opacity-60'}`}>
+                {t(tab.label)}
+              </span>
             </button>
           );
         })}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
   User, Code2, FolderGit2, Award, Share2, Bot, Wand2, Lightbulb, CheckCircle2,
@@ -422,6 +423,7 @@ export function PortfolioPage() {
   const completionPct = Math.round((completedCount / completionItems.length) * 100);
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="5xl">
     <div data-testid="portfolio-page" className="space-y-6 animate-in fade-in duration-500">
       {/* Header with Nova dot */}
@@ -1557,5 +1559,6 @@ export function PortfolioPage() {
       )}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

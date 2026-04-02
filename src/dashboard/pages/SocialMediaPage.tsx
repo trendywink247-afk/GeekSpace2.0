@@ -2,6 +2,7 @@
 // Revamped: design tokens, SectionCard, PageHeader, aria ownership, useAgentCanvas
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -1505,6 +1506,7 @@ export function SocialMediaPage() {
   void notifyFail;
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="4xl">
       <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
         <PageHeader
@@ -1545,5 +1547,6 @@ export function SocialMediaPage() {
         </Tabs>
       </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

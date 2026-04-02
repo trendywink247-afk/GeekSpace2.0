@@ -622,6 +622,7 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
   };
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col">
       {/* Header — uses shared PageHeader with Jarvis branding */}
@@ -785,5 +786,6 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
       </div>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

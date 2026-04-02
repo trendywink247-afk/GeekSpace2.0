@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import {
   Target, Plus, Brain, Play, CheckCircle2, Clock, Pause, AlertTriangle,
   ChevronDown, ChevronRight, Sparkles, Calendar, Trash2, RotateCcw,
@@ -155,6 +156,7 @@ export function GoalsPage() {
   const filteredGoals = goals;
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
       <PullToRefreshWrapper onRefresh={loadGoals}>
         <PageHeader
@@ -259,6 +261,7 @@ export function GoalsPage() {
         }}
       />
     </PageShell>
+    </DashboardPageWrapper>
   );
 }
 

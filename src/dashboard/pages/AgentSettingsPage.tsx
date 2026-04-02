@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
@@ -277,6 +278,7 @@ export function AgentSettingsPage() {
   const isTelegramConnected = telegramStatus === 'connected' || telegramInt?.status === 'connected';
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="4xl">
       {/* Toast notification */}
       {saveToast && (
@@ -941,5 +943,6 @@ export function AgentSettingsPage() {
         </TabsContent>
       </Tabs>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

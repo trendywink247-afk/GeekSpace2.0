@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -742,6 +743,7 @@ export function FocusPage() {
   }
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div className="max-w-2xl mx-auto space-y-6 pb-24 md:pb-6">
       {showCelebration && <CelebrationPulse />}
@@ -1251,5 +1253,6 @@ export function FocusPage() {
       </Dialog>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

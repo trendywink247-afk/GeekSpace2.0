@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   MessageSquare, Code, Zap, Brain, Globe, Mic, ImageIcon, Film,
@@ -795,6 +796,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
   );
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="6xl">
     <div className="space-y-6 pb-24 md:pb-8">
 
@@ -976,5 +978,6 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
       </SectionCard>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

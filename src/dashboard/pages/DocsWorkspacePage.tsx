@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { FileText, Plus, Search, Pin, Clock, Archive, Folder,
@@ -199,6 +200,7 @@ export function DocsWorkspacePage() {
   }
 
   return (
+    <DashboardPageWrapper>
     <PageShell className="!p-0 !pb-0">
     <div className="flex h-full min-h-[calc(100vh-64px)]">
       {/* Left sidebar — hidden on mobile */}
@@ -481,6 +483,7 @@ export function DocsWorkspacePage() {
       </Dialog>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }
 

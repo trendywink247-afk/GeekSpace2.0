@@ -33,3 +33,39 @@ export { SectionCard } from './SectionCard';
  * @component
  */
 export { PublicPageShell } from './PublicPageShell';
+
+// ════════════════════════════════════════════════════════════
+// DESIGN SYSTEM — Unified Visual Language (v2.0)
+// ════════════════════════════════════════════════════════════
+
+export {
+  // Animation variants
+  fadeInUp,
+  fadeIn,
+  scaleIn,
+  staggerContainer,
+  cardHover,
+  pageTransition,
+  // Components
+  AnimatedBackground,
+  GlassCard,
+  PageWrapper,
+  StaggeredList,
+  LoadingState,
+  EmptyState,
+  SectionHeader,
+  StatusBadge,
+  ResponsiveGrid,
+} from './DesignSystem';
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD — Page Enhancement Components
+// ════════════════════════════════════════════════════════════
+
+export {
+  DashboardPageWrapper,
+  DashboardCard,
+  DashboardGrid,
+  DashboardSectionHeader,
+  PullToRefreshIndicator,
+} from './DashboardPageWrapper';

@@ -6,6 +6,7 @@
 // ============================================================
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   TrendingUp,
@@ -974,6 +975,7 @@ export function AnalyticsPage() {
   // ── Render ────────────────────────────────────────────────────
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="5xl">
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Header with Pulse ownership dot (#10B981) */}
@@ -1288,5 +1290,6 @@ export function AnalyticsPage() {
       </p>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

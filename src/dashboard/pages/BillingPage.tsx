@@ -18,6 +18,7 @@ import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
@@ -428,6 +429,7 @@ export function BillingPage() {
   };
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="6xl">
     <div data-testid="billing-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* Toast */}
@@ -846,5 +848,6 @@ export function BillingPage() {
       </SectionCard>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

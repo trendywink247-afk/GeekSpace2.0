@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   User,
@@ -557,6 +558,7 @@ export function SettingsPage() {
   };
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* 57.9: Agent config save-confirmation toast */}
@@ -2022,5 +2024,6 @@ export function SettingsPage() {
       )}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

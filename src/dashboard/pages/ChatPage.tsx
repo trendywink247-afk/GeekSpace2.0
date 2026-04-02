@@ -21,6 +21,7 @@ import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
 import { PageShell } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // ── Types ──
@@ -1023,6 +1024,7 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
     <div className='flex h-[calc(100dvh-184px)] md:h-[calc(100vh-130px)]'>
       {/* ── Conversation Sidebar ── */}
@@ -1566,5 +1568,6 @@ export function ChatPage() {
       </div>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import {
   DollarSign,
   MessageSquare,
@@ -290,6 +291,7 @@ export function UsageAnalyticsPage() {
   }
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden animate-in fade-in duration-500">
@@ -831,5 +833,6 @@ export function UsageAnalyticsPage() {
     </div>
     </PullToRefreshWrapper>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

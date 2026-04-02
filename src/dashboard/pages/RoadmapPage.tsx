@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Rocket,
@@ -483,6 +484,7 @@ export function RoadmapPage() {
   };
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div className="space-y-6">
       {/* Header — PageHeader + Nova dot */}
@@ -1107,5 +1109,6 @@ export function RoadmapPage() {
       </Dialog>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

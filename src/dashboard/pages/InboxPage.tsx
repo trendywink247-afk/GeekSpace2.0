@@ -2,6 +2,7 @@
 // Owner: Aria (#FF6B9D) -- design tokens: #06061a bg, rgba(12,12,30,0.6) surface
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Send, Archive, Trash2, AlertCircle,
@@ -607,6 +608,7 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
   const wrapperProps = shell ? { maxWidth: '3xl' as const } : {};
 
   return (
+    <DashboardPageWrapper>
     <Wrapper {...wrapperProps}>
     <div className="space-y-6 pb-24 md:pb-6">
       {/* Page header -- Aria ownership dot */}
@@ -754,5 +756,6 @@ export function InboxPage({ shell = true }: { shell?: boolean } = {}) {
       )}
     </div>
     </Wrapper>
+    </DashboardPageWrapper>
   );
 }

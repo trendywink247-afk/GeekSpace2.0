@@ -15,6 +15,7 @@ import type { UserImage, UserVideo } from '@/services/api';
 import type { Template, TemplateCategory } from '@/types';
 import { MediaGallery, type MediaItem } from '@/components/MediaGallery';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // ---- Style presets for image generation ----
@@ -350,6 +351,7 @@ export function CreativeStudioPage() {
   ];
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
       {/* Header with edith ownership dot (#8B5CF6) */}
       <PageHeader
@@ -921,5 +923,6 @@ export function CreativeStudioPage() {
         </div>
       )}
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, Search, Trash2, Clock, RefreshCw,
@@ -305,6 +306,7 @@ export function MemoryHubPage() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     {/* Echo dot */}
     <div className="absolute top-5 right-5 w-2 h-2 rounded-full bg-[#6366F1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="echo" />
@@ -743,5 +745,6 @@ export function MemoryHubPage() {
       </Dialog>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

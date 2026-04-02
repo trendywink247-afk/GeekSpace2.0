@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -611,6 +612,7 @@ export function PlannerPage() {
   const currentHourFraction = now.getHours() + now.getMinutes() / 60;
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div className="space-y-6">
       {/* Header with jarvis ownership dot */}
@@ -1018,5 +1020,6 @@ export function PlannerPage() {
       </div>}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

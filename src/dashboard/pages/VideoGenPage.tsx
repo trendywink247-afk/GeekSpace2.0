@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
@@ -475,6 +476,7 @@ export function VideoGenPage() {
   const isProviderBroken = !selectedModel || BROKEN_VIDEO_PROVIDERS.some(p => selectedModel === p || selectedModel.includes(p));
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Toast */}
@@ -1434,5 +1436,6 @@ export function VideoGenPage() {
       )}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

@@ -683,6 +683,7 @@ export function WorkflowsPage() {
   const spinCls = refreshing ? "animate-spin" : "";
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
       {/* Header with Jarvis ownership dot */}
       <PageHeader
@@ -828,5 +829,6 @@ export function WorkflowsPage() {
         </SectionCard>
       </BlurFade>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

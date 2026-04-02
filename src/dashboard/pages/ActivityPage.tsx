@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download, Flame, Calendar, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -467,6 +468,7 @@ export function ActivityPage() {
   };
 
   return (
+    <DashboardPageWrapper>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <PageShell>
     <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
@@ -726,5 +728,6 @@ export function ActivityPage() {
     </div>
     </PageShell>
     </PullToRefreshWrapper>
+    </DashboardPageWrapper>
   );
 }

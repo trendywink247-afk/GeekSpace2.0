@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Mail, RefreshCw, Link, Unlink, Send, X, ChevronDown, ChevronUp,
@@ -505,6 +506,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
 
   if (!status?.connected) {
     return (
+      <DashboardPageWrapper>
       <PageShell maxWidth="5xl">
         <PageHeader
           icon={Mail}
@@ -561,6 +563,7 @@ export function GmailPage({ shell = true }: { shell?: boolean } = {}) {
           </div>
         </SectionCard>
       </PageShell>
+      </DashboardPageWrapper>
     );
   }
 

@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Inbox, Mail } from 'lucide-react';
 import { PageShell, PageHeader } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { InboxPage } from './InboxPage';
 import { GmailPage } from './GmailPage';
@@ -25,6 +26,7 @@ export function ConnectInboxPage() {
   useAgentCanvas({ agent: 'aria', page: 'connect-inbox' });
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
       {/* Page header with aria dot */}
       <PageHeader
@@ -80,5 +82,6 @@ export function ConnectInboxPage() {
         </div>
       </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

@@ -1,6 +1,14 @@
 import { useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { PageShell } from '@/components/agentin';
+import { ArrowLeft, Sparkles, Shield, Image } from 'lucide-react';
+import {
+  AnimatedBackground,
+  GlassCard,
+  PageWrapper,
+  StaggeredList,
+  LoadingState,
+  SectionHeader,
+} from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 /* ---------- lazy tool imports ---------- */
@@ -32,7 +40,7 @@ interface ToolDef {
   title: string;
   description: string;
   icon: React.ReactNode;
-  gradient: string;
+  glow: 'violet' | 'cyan' | 'gold' | 'rose';
 }
 
 const TOOLS: ToolDef[] = [
@@ -40,7 +48,7 @@ const TOOLS: ToolDef[] = [
     id: 'compress',
     title: 'Compress',
     description: 'Reduce file size without visible quality loss',
-    gradient: 'from-violet-500 to-purple-600',
+    glow: 'violet',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 14h4v4H4zM14 4h4v4h-4z" />
@@ -53,7 +61,7 @@ const TOOLS: ToolDef[] = [
     id: 'resize',
     title: 'Resize',
     description: 'Scale images to exact dimensions',
-    gradient: 'from-emerald-500 to-teal-600',
+    glow: 'cyan',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
@@ -64,7 +72,7 @@ const TOOLS: ToolDef[] = [
     id: 'crop',
     title: 'Crop',
     description: 'Trim and reframe your images precisely',
-    gradient: 'from-amber-500 to-orange-600',
+    glow: 'gold',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 2v4H2M18 22v-4h4M6 6h12a2 2 0 012 2v8M18 18H6a2 2 0 01-2-2V8" />
@@ -75,7 +83,7 @@ const TOOLS: ToolDef[] = [
     id: 'remove-bg',
     title: 'Remove Background',
     description: 'Erase backgrounds with AI, right in your browser',
-    gradient: 'from-rose-500 to-pink-600',
+    glow: 'rose',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -88,7 +96,7 @@ const TOOLS: ToolDef[] = [
     id: 'convert',
     title: 'Convert',
     description: 'Switch between PNG, JPEG, WebP and more',
-    gradient: 'from-violet-400 to-indigo-600',
+    glow: 'violet',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 1l4 4-4 4" />
@@ -102,7 +110,7 @@ const TOOLS: ToolDef[] = [
     id: 'rotate-flip',
     title: 'Rotate & Flip',
     description: 'Rotate, flip and straighten images',
-    gradient: 'from-fuchsia-500 to-violet-600',
+    glow: 'violet',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 12a9 9 0 11-6.219-8.56" />
@@ -114,7 +122,7 @@ const TOOLS: ToolDef[] = [
     id: 'watermark',
     title: 'Watermark',
     description: 'Add text or image watermarks to protect your work',
-    gradient: 'from-emerald-500 to-teal-600',
+    glow: 'cyan',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -134,19 +142,10 @@ const TOOL_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentT
   watermark: WatermarkTool,
 };
 
-/* ---------- loading fallback ---------- */
-function ToolLoadingFallback() {
-  return (
-    <div className="flex items-center justify-center py-32">
-      <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-    </div>
-  );
-}
-
 /* ---------- main page ---------- */
 export function ImageToolsPage() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const { notifyStart, notifyDone, notifyFail: _notifyFail } = useAgentCanvas({ agent: 'forge', page: 'image-tools' });
+  const { notifyStart, notifyDone } = useAgentCanvas({ agent: 'forge', page: 'image-tools' });
 
   const ActiveComponent = activeTool ? TOOL_COMPONENTS[activeTool] : null;
 
@@ -163,118 +162,139 @@ export function ImageToolsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: 'var(--ag-bg-base, #06061a)' }}>
-      {/* animations */}
-      <style>{`
-        @keyframes it-card-in{from{opacity:0;transform:translateY(16px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-      `}</style>
-
-      {/* sticky header */}
-      <header
-        className="relative sticky top-0 z-40 border-b border-[var(--ag-border-subtle)]"
-        style={{ background: 'rgba(6,6,26,0.8)', backdropFilter: 'blur(20px) saturate(180%)' }}
-      >
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 w-full">
+    <AnimatedBackground variant="aurora" intensity="low">
+      {/* Glass Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#06061a]/80 backdrop-blur-xl border-b border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="flex items-center gap-1.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors text-xs"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl
+                bg-white/[0.03] border border-white/[0.06] hover:bg-[#8B5CF6]/10 transition-all"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="hidden sm:inline">Back to Agentin</span>
+              <ArrowLeft className="w-5 h-5 text-[#9CA3AF]" />
             </Link>
             <div className="flex items-center gap-2">
-              <img src="/logo-agentin.webp" alt="Agentin" className="w-6 h-6 object-contain" />
+              <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
+                <Image className="w-5 h-5 text-[#8B5CF6]" />
+              </div>
               <div>
-                <h1 className="text-base font-semibold text-[var(--ag-text-primary)] leading-tight">Image Tools</h1>
-                <p className="text-[10px] text-[var(--ag-text-muted)] leading-tight">Powered by Agentin</p>
+                <h1 className="font-bold text-lg text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                  Image Tools
+                </h1>
+                <p className="text-[10px] text-[#64748B]">Powered by Agentin</p>
               </div>
             </div>
-            <span className="bg-[var(--ag-green)]/10 text-[var(--ag-green)] border border-[var(--ag-green)]/20 rounded-full px-3 py-0.5 text-[11px] whitespace-nowrap w-fit">
-              100% Free &amp; Private
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">
+              <Sparkles className="w-3 h-3" />
+              100% Free & Private
             </span>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--ag-violet)]/20 to-transparent" />
-      </header>
+      </nav>
 
-      {/* content — PageShell provides aurora orbs + dot grid */}
-      <PageShell maxWidth="6xl" spacing={6}>
-        <main className="relative z-10">
+      {/* Content */}
+      <PageWrapper className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
           {activeTool && ActiveComponent ? (
-            <Suspense fallback={<ToolLoadingFallback />}>
+            <Suspense fallback={<LoadingState message="Loading tool..." />}>
               <ActiveComponent onBack={handleBack} />
             </Suspense>
           ) : (
             <>
-              {/* hero text */}
+              {/* Hero */}
               <div className="text-center mb-10">
-                <h2 className="text-3xl sm:text-4xl font-bold text-[var(--ag-text-primary)] tracking-tight">
+                <h2 
+                  className="text-3xl sm:text-4xl font-bold text-[#F4F6FF] tracking-tight"
+                  style={{ fontFamily: 'Syne, sans-serif' }}
+                >
                   Image Tools
                 </h2>
-                <p className="mt-3 text-sm sm:text-base text-[var(--ag-text-secondary)] max-w-lg mx-auto leading-relaxed">
+                <p className="mt-3 text-sm sm:text-base text-[#9CA3AF] max-w-lg mx-auto leading-relaxed">
                   Free tools that run in your browser. Your files never leave your device.
                 </p>
               </div>
 
-              {/* tool grid */}
+              {/* Tool Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {TOOLS.map((tool, i) => (
-                  <button
-                    key={tool.id}
-                    onClick={() => handleSelectTool(tool.id)}
-                    className="group relative text-left rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-5 min-h-[44px] transition-all duration-200 hover:border-[var(--ag-border-default)] hover:bg-[var(--ag-bg-surface-hover)] cursor-pointer overflow-hidden"
-                    style={{ animation: `it-card-in 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
-                  >
-                    {/* icon */}
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--ag-forge)]/10 border border-[var(--ag-border-subtle)] text-[var(--ag-forge)] group-hover:text-[var(--ag-forge)] transition-colors mb-4">
-                      {tool.icon}
-                    </div>
-
-                    {/* text */}
-                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1">{tool.title}</h3>
-                    <p className="text-xs text-[var(--ag-text-secondary)] leading-relaxed">{tool.description}</p>
-
-                    {/* gradient accent bar */}
-                    <div className={`absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r ${tool.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-                    {/* arrow */}
-                    <div className="absolute top-5 right-5 text-[var(--ag-text-muted)] group-hover:text-[var(--ag-text-secondary)] transition-colors">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
-                ))}
+                <StaggeredList staggerDelay={0.05} className="contents">
+                  {TOOLS.map((tool) => (
+                    <ToolCard
+                      key={tool.id}
+                      tool={tool}
+                      onClick={() => handleSelectTool(tool.id)}
+                    />
+                  ))}
+                </StaggeredList>
               </div>
 
-              {/* privacy footer note */}
+              {/* Privacy Footer */}
               <div className="mt-10 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] text-xs text-[var(--ag-text-muted)]">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0110 0v4" />
-                  </svg>
-                  All processing happens locally in your browser
-                </div>
+                <GlassCard className="inline-flex" hover={false} padding="sm">
+                  <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    All processing happens locally in your browser
+                  </div>
+                </GlassCard>
               </div>
 
-              {/* Soft registration suggestion */}
+              {/* CTA */}
               <div className="mt-6 text-center">
-                <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]">
-                  <p className="text-sm text-[var(--ag-text-secondary)]">Want to save your work and unlock more tools?</p>
-                  <Link to="/login?signup=1" className="text-sm font-medium min-h-[44px] flex items-center text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors">
-                    Create a free account &rarr;
+                <GlassCard className="inline-flex flex-col items-center gap-3" hover={false}>
+                  <p className="text-sm text-[#9CA3AF]">Want to save your work and unlock more tools?</p>
+                  <Link 
+                    to="/login?signup=1" 
+                    className="text-sm font-medium text-[#8B5CF6] hover:text-[#7C3AED] transition-colors flex items-center gap-1"
+                  >
+                    Create a free account →
                   </Link>
-                  <p className="text-[10px] text-[var(--ag-text-muted)]">No ads. No tracking. Ever.</p>
-                </div>
+                  <p className="text-[10px] text-[#64748B]">No ads. No tracking. Ever.</p>
+                </GlassCard>
               </div>
             </>
           )}
-        </main>
-      </PageShell>
-    </div>
+        </div>
+      </PageWrapper>
+    </AnimatedBackground>
+  );
+}
+
+/* ---------- Tool Card Component ---------- */
+interface ToolCardProps {
+  tool: ToolDef;
+  onClick: () => void;
+}
+
+function ToolCard({ tool, onClick }: ToolCardProps) {
+  return (
+    <GlassCard onClick={onClick} glow={tool.glow} className="group text-left h-full">
+      <div className="flex flex-col h-full">
+        {/* Icon */}
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[#8B5CF6] mb-4">
+          {tool.icon}
+        </div>
+
+        {/* Text */}
+        <h3 className="text-sm font-semibold text-[#F4F6FF] mb-1">{tool.title}</h3>
+        <p className="text-xs text-[#9CA3AF] leading-relaxed flex-1">{tool.description}</p>
+
+        {/* Arrow */}
+        <div className="flex justify-end mt-4">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="1.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="text-[#64748B] group-hover:text-[#F4F6FF] transition-colors"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </GlassCard>
   );
 }

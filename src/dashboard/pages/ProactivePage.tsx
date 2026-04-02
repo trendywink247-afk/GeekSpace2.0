@@ -563,6 +563,7 @@ export function ProactivePage() {
   // ---- Render ---
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="7xl">
       {/* ---- Page Header with Jarvis ownership dot ---- */}
       <PageHeader
@@ -746,6 +747,7 @@ export function ProactivePage() {
         />
       </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }
 

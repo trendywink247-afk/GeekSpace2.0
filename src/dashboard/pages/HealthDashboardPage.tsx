@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
@@ -281,6 +282,7 @@ export function HealthDashboardPage() {
   const totalCount = Object.keys(snapshot.components).length;
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <div data-testid="health-page" className="space-y-6">
 
@@ -471,5 +473,6 @@ export function HealthDashboardPage() {
       </div>
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

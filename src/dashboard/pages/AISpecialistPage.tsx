@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { JsonFormatterPage } from './tools/JsonFormatterPage';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
@@ -513,6 +514,7 @@ export function AISpecialistPage() {
   // Specialists tab (main view)
   // -----------------------------------------------------------------------
   return (
+    <DashboardPageWrapper>
     <PageShell className="w-full max-w-full overflow-x-hidden">
       {/* Header with Echo agent dot */}
       <PageHeader
@@ -622,5 +624,6 @@ export function AISpecialistPage() {
         </BlurFade>
       </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

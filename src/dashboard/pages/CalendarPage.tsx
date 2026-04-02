@@ -2,6 +2,7 @@
 // Revamped: design tokens, SectionCard, PageHeader, cal ownership, useAgentCanvas
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -583,6 +584,7 @@ export function CalendarPage() {
   const monthLabel = DateTime.local(viewYear, viewMonth + 1, 1).toLocaleString({ month: 'long', year: 'numeric' });
 
   return (
+    <DashboardPageWrapper>
     <PageShell maxWidth="6xl">
     <div className="space-y-6 pb-24 md:pb-6">
       {/* Header -- Cal ownership */}
@@ -1474,5 +1476,6 @@ export function CalendarPage() {
       )}
     </div>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

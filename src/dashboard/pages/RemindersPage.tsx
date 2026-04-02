@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -710,6 +711,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
   const handlePullRefresh = async () => { await loadReminders(); };
 
   return (
+    <DashboardPageWrapper>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <PageShell>
     <div className="space-y-6 pb-24 md:pb-6" data-testid="reminders-page">
@@ -2174,5 +2176,6 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
     </div>
     </PageShell>
     </PullToRefreshWrapper>
+    </DashboardPageWrapper>
   );
 }

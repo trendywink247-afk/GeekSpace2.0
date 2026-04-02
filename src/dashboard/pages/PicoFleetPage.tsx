@@ -2,6 +2,7 @@
 // useAgentCanvas (jarvis), Jarvis ownership dot (#ADFF2F), mobile 44px QA
 import { useState, useEffect, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Zap, Plus, Trash2, Clock, CheckCircle, XCircle, AlertCircle,
@@ -508,6 +509,7 @@ export function PicoFleetPage() {
   }
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
     <PullToRefreshWrapper onRefresh={() => loadData()} className="space-y-6 animate-in fade-in duration-500">
       {/* Toast */}
@@ -1544,5 +1546,6 @@ export function PicoFleetPage() {
       </Tabs>
     </PullToRefreshWrapper>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }

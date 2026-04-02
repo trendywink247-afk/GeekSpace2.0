@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Code, LayoutTemplate, Wand2, Wrench, Send, Loader2, Eye,
@@ -398,6 +399,7 @@ export function WebsiteBuilderPage() {
   );
 
   return (
+    <DashboardPageWrapper>
     <PageShell>
       {/* ---- Header ---- */}
       <PageHeader
@@ -1114,5 +1116,6 @@ export function WebsiteBuilderPage() {
         </TabsContent>
       </Tabs>
     </PageShell>
+    </DashboardPageWrapper>
   );
 }
