@@ -828,7 +828,7 @@ describe('Sandbox Routes', () => {
       await new Promise<void>((resolve) => server.once('listening', resolve));
       try {
         const addr = server.address() as { port: number };
-        const http = require('http') as typeof import('http');
+        const http = await import('http');
         const token = signToken(USER_PAID);
         const ct = await new Promise<string>((resolve, reject) => {
           const req = http.request(
@@ -869,7 +869,7 @@ describe('Sandbox Routes', () => {
       await new Promise<void>((resolve) => server.once('listening', resolve));
       try {
         const addr = server.address() as { port: number };
-        const http = require('http') as typeof import('http');
+        const http = await import('http');
         const token = signToken(USER_PAID);
         const ct = await new Promise<string>((resolve, reject) => {
           const req = http.request(
