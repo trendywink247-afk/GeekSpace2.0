@@ -18,6 +18,7 @@ import { logger } from '../logger.js';
 declare module 'express-serve-static-core' {
   interface Request {
     securityCheck?: SecurityCheckResult;
+    userId?: string;
   }
 }
 
@@ -48,11 +49,11 @@ export async function aiSecurityInputMiddleware(
     // Handle based on action
     switch (result.action) {
       case 'block':
-        logger.warn('AI Security: Blocking request due to security violations', {
-          userId: (req as any).user?.id || 'anonymous',
+        logger.warn({
+          userId: req.userId || 'anonymous',
           violations: result.violations.map(v => v.type),
           score: result.score,
-        });
+        }, 'AI Security: Blocking request due to security violations');
         
         res.status(400).json({
           error: 'Security violation detected',
@@ -64,10 +65,10 @@ export async function aiSecurityInputMiddleware(
       case 'sanitize':
         // Replace the message with sanitized version
         if (result.sanitized) {
-          logger.info('AI Security: Sanitized input message', {
-            userId: (req as any).user?.id || 'anonymous',
+          logger.info({
+            userId: req.userId || 'anonymous',
             violations: result.violations.map(v => v.type),
-          });
+          }, 'AI Security: Sanitized input message');
           
           // Update the request body with sanitized content
           if (req.body.message) req.body.message = result.sanitized;
@@ -78,11 +79,11 @@ export async function aiSecurityInputMiddleware(
 
       case 'log-only':
         // Just log, don't block (default safe mode)
-        logger.warn('AI Security: Violations detected (log-only mode)', {
-          userId: (req as any).user?.id || 'anonymous',
+        logger.warn({
+          userId: req.userId || 'anonymous',
           violations: result.violations.map(v => ({ type: v.type, severity: v.severity })),
           score: result.score,
-        });
+        }, 'AI Security: Violations detected (log-only mode)');
         break;
 
       case 'allow':
@@ -94,7 +95,7 @@ export async function aiSecurityInputMiddleware(
     next();
   } catch (error) {
     // Fail open - if security check fails, log and continue
-    logger.error('AI Security: Middleware error, allowing request', { error });
+    logger.error({ err: error }, 'AI Security: Middleware error, allowing request');
     next();
   }
 }
@@ -121,11 +122,11 @@ export function createOutputFilterMiddleware(
         const result = filterOutputSecurity(content);
         
         if (!result.safe || result.redactions.length > 0) {
-          logger.warn('AI Security: Filtered output', {
+          logger.warn({
             redactions: result.redactions,
             originalLength: content.length,
             filteredLength: result.filtered.length,
-          });
+          }, 'AI Security: Filtered output');
           
           // Replace the content with filtered version
           if (body.reply) body.reply = result.filtered;
@@ -136,7 +137,7 @@ export function createOutputFilterMiddleware(
       }
     } catch (error) {
       // Fail open - log and continue with original response
-      logger.error('AI Security: Output filter error', { error });
+      logger.error({ err: error }, 'AI Security: Output filter error');
     }
     
     return originalJson(body);
