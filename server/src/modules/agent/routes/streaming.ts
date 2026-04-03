@@ -90,12 +90,27 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       streamDelegation = routeDelegation(userId, userPlan, message);
       if (streamDelegation) {
         const currentAgent = (agentConfig?.personality as string) || 'weebo';
+        const currentP = getPersonality(currentAgent);
         const delegatedPersonality = getPersonality(streamDelegation.agent);
         const overrideConfig = { ...(agentConfig || {}), personality: streamDelegation.agent, name: delegatedPersonality.name };
         systemPrompt = buildSystemPrompt(overrideConfig, user, userId, undefined, undefined, userCredits);
         personalityId = streamDelegation.agent;
         emitDelegation(userId, currentAgent, streamDelegation.agent, streamDelegation.reason);
         emitCommSent(userId, currentAgent, streamDelegation.agent, `Handling "${message.slice(0, 60)}…" — ${streamDelegation.reason}`);
+
+        // Visible handoff: announce delegation to the user
+        try {
+          res.write(`data: ${JSON.stringify({
+            text: `Handing this to ${delegatedPersonality.name} — ${streamDelegation.reason}`,
+            done: false, newBubble: true,
+            agentId: currentAgent, agentName: currentP.name, agentEmoji: currentP.emoji,
+          })}\n\n`);
+          // Next chunks will come from the delegated agent
+          res.write(`data: ${JSON.stringify({
+            text: '', done: false, newBubble: true,
+            agentId: streamDelegation.agent, agentName: delegatedPersonality.name, agentEmoji: delegatedPersonality.emoji,
+          })}\n\n`);
+        } catch { /* client disconnected */ }
       }
     }
 
@@ -108,15 +123,23 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
     const { isLaunchModeRequest, runMultiAgentOrchestration } = await import('../services/multi-agent-orchestrator.js');
     if (isLaunchModeRequest(message)) {
       const write = (data: unknown) => { try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch { /* disconnected */ } };
-      write({ step: { type: 'thinking', content: 'Assembling your agent council...', iteration: 0 }, done: false });
+
+      // Announce lead agent is assembling the team
+      const leadP = getPersonality(personalityId);
+      write({ text: 'Assembling specialists for this task...', done: false, newBubble: true, agentId: personalityId, agentName: leadP.name, agentEmoji: leadP.emoji });
       logActivity(String(userId), 'Agent council', 'Launch mode activated', 'sparkles');
 
       const orchResult = await runMultiAgentOrchestration(message, String(userId), userCredits);
       if (orchResult.success) {
         for (const ar of orchResult.agentResults) {
-          write({ text: `**${ar.role}** (${ar.agent.charAt(0).toUpperCase() + ar.agent.slice(1)}):\n${ar.text}\n\n---\n\n`, done: false });
-          logActivity(String(userId), `${ar.agent} responded`, ar.text.slice(0, 60), 'bot');
+          const agentP = getPersonality(ar.agent);
+          write({ text: ar.text, done: false, newBubble: true, agentId: ar.agent, agentName: `${agentP.name} — ${ar.role}`, agentEmoji: agentP.emoji });
+          logConversation(userId, 'assistant', ar.text, 'multi-agent', 'council', undefined, ar.agent);
+          logActivity(String(userId), `${agentP.name} responded`, ar.text.slice(0, 60), 'bot');
         }
+        // Lead agent synthesis
+        const duration = orchResult.agentResults.length;
+        write({ text: `All done! ${duration} specialists collaborated on your request.`, done: false, newBubble: true, agentId: personalityId, agentName: leadP.name, agentEmoji: leadP.emoji });
       } else {
         write({ text: orchResult.text, done: false });
       }

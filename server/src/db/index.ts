@@ -2435,3 +2435,6 @@ try {
     CREATE INDEX IF NOT EXISTS idx_delegation_log_status ON delegation_log(user_id, status);
   `);
 } catch { /* table already exists */ }
+
+// Phase: Multi-agent transparent delegation — track which personality generated each message
+try { db.exec(`ALTER TABLE conversation_log ADD COLUMN agent_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }

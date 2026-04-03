@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--figma-color-text, #333);
+    background: var(--figma-color-bg, #fff);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--figma-color-text-secondary, #888); margin-bottom: 16px; font-size: 12px; }
+
+  .drop-zone {
+    border: 2px dashed var(--figma-color-border, #ccc);
+    border-radius: 12px;
+    padding: 32px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 200px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--figma-color-bg-brand, #18A0FB);
+    background: var(--figma-color-bg-hover, #f5f5f5);
+  }
+  .drop-zone.has-files {
+    border-style: solid;
+    border-color: var(--figma-color-bg-brand, #18A0FB);
+  }
+  .drop-zone svg { width: 40px; height: 40px; opacity: 0.4; }
+  .drop-zone p { font-size: 13px; }
+  .drop-zone .hint { font-size: 11px; color: var(--figma-color-text-secondary, #888); }
+
+  .file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: left;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .file-list .file-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .file-item:nth-child(odd) { background: var(--figma-color-bg-hover, #f9f9f9); }
+  .file-item .vp {
+    background: var(--figma-color-bg-brand, #18A0FB);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+    font-size: 12px;
+  }
+  .stats .stat {
+    background: var(--figma-color-bg-hover, #f5f5f5);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+  .stats .stat span { color: var(--figma-color-text-secondary, #888); font-weight: 400; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  button {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--figma-color-bg-brand, #18A0FB);
+    color: white;
+  }
+  .btn-secondary {
+    background: var(--figma-color-bg-hover, #eee);
+    color: var(--figma-color-text, #333);
+  }
+  .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+  .progress {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .progress.success { background: #e6f9e6; color: #1a7a1a; }
+  .progress.error { background: #fde8e8; color: #c53030; }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<h2>GeekSpace UI Import</h2>
+<p class="subtitle">Import screenshots from <code>ui-captures/</code> into Figma frames</p>
+
+<div class="drop-zone" id="dropZone" onclick="fileInput.click()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+  <p>Drop screenshots here or click to browse</p>
+  <span class="hint">Select all PNGs from ui-captures/ (or its subfolders)</span>
+</div>
+
+<input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp"
+       webkitdirectory />
+
+<div class="stats" id="stats" style="display:none">
+  <div class="stat" id="statTotal"></div>
+  <div class="stat" id="statDesktop"></div>
+  <div class="stat" id="statTablet"></div>
+  <div class="stat" id="statMobile"></div>
+</div>
+
+<div class="file-list" id="fileList"></div>
+
+<div class="actions">
+  <button class="btn-secondary" onclick="parent.postMessage({pluginMessage:{type:'cancel'}}, '*')">Cancel</button>
+  <button class="btn-primary" id="importBtn" disabled onclick="doImport()">Import into Figma</button>
+</div>
+
+<div class="progress" id="progress" style="display:none"></div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const statsEl = document.getElementById('stats');
+const importBtn = document.getElementById('importBtn');
+const progressEl = document.getElementById('progress');
+
+let pendingFiles = []; // { name, viewport, bytes }
+
+// Parse viewport from file path: "desktop/landing.png" → "desktop"
+function parseFile(file) {
+  const parts = file.webkitRelativePath
+    ? file.webkitRelativePath.split('/')
+    : file.name.split('/');
+
+  let viewport = 'desktop';
+  let name = file.name.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+
+  // Try to detect viewport from path
+  for (const vp of ['desktop', 'tablet', 'mobile']) {
+    if (parts.some(p => p.toLowerCase() === vp)) {
+      viewport = vp;
+      break;
+    }
+  }
+
+  // If filename contains viewport prefix, extract it
+  const vpMatch = name.match(/^(desktop|tablet|mobile)[_-](.*)/i);
+  if (vpMatch) {
+    viewport = vpMatch[1].toLowerCase();
+    name = vpMatch[2];
+  }
+
+  return { name, viewport };
+}
+
+async function handleFiles(fileListInput) {
+  pendingFiles = [];
+  const items = Array.from(fileListInput).filter(f =>
+    /\.(png|jpg|jpeg|webp)$/i.test(f.name) && !f.name.startsWith('.')
+  );
+
+  // Skip manifest.json and non-images
+  for (const file of items) {
+    const { name, viewport } = parseFile(file);
+    const arrayBuffer = await file.arrayBuffer();
+    pendingFiles.push({
+      name,
+      viewport,
+      bytes: Array.from(new Uint8Array(arrayBuffer)),
+    });
+  }
+
+  updateUI();
+}
+
+function updateUI() {
+  const byVp = { desktop: 0, tablet: 0, mobile: 0 };
+  pendingFiles.forEach(f => byVp[f.viewport] = (byVp[f.viewport] || 0) + 1);
+
+  if (pendingFiles.length === 0) {
+    statsEl.style.display = 'none';
+    fileList.innerHTML = '';
+    importBtn.disabled = true;
+    dropZone.classList.remove('has-files');
+    return;
+  }
+
+  dropZone.classList.add('has-files');
+  statsEl.style.display = 'flex';
+  document.getElementById('statTotal').innerHTML = `${pendingFiles.length} <span>total</span>`;
+  document.getElementById('statDesktop').innerHTML = `${byVp.desktop} <span>desktop</span>`;
+  document.getElementById('statTablet').innerHTML = `${byVp.tablet} <span>tablet</span>`;
+  document.getElementById('statMobile').innerHTML = `${byVp.mobile} <span>mobile</span>`;
+
+  fileList.innerHTML = pendingFiles
+    .sort((a, b) => a.viewport.localeCompare(b.viewport) || a.name.localeCompare(b.name))
+    .map(f => `<div class="file-item"><span>${f.name}</span><span class="vp">${f.viewport}</span></div>`)
+    .join('');
+
+  importBtn.disabled = false;
+}
+
+function doImport() {
+  importBtn.disabled = true;
+  importBtn.textContent = 'Importing...';
+  progressEl.style.display = 'block';
+  progressEl.className = 'progress';
+  progressEl.textContent = `Sending ${pendingFiles.length} screenshots to Figma...`;
+
+  parent.postMessage({
+    pluginMessage: { type: 'import', files: pendingFiles }
+  }, '*');
+}
+
+// Drag & drop
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+// File input (directory picker)
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+// Messages from plugin code
+window.onmessage = (e) => {
+  const msg = e.data.pluginMessage;
+  if (!msg) return;
+  if (msg.type === 'done') {
+    progressEl.className = 'progress success';
+    progressEl.textContent = `Done! ${msg.count} frames created. Check the new pages in your file.`;
+    importBtn.textContent = 'Import into Figma';
+  }
+  if (msg.type === 'error') {
+    progressEl.className = 'progress error';
+    progressEl.textContent = `Error: ${msg.message}`;
+    importBtn.disabled = false;
+    importBtn.textContent = 'Retry Import';
+  }
+};
+</script>
+
+</body>
+</html>

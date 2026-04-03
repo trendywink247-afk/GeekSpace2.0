@@ -68,6 +68,7 @@ server/data/*.db*
 
 # Debug / temp artifacts
 tmp-screenshots/
+ui-captures/
 .landing-reference.txt
 .superpowers/
 ruflo.config.json

@@ -622,15 +622,16 @@ export function ChatPage() {
       setStreamHealth('connected');
       reconnectCountRef.current = 0;
 
-      // RAF flush loop
-      const targetMsgId = retryCount === 0 ? assistantMsgId : messages[messages.length - 1]?.id || assistantMsgId;
+      // RAF flush loop — activeMsgId tracks which bubble we're streaming into
+      let activeMsgId = retryCount === 0 ? assistantMsgId : messages[messages.length - 1]?.id || assistantMsgId;
       const flushBuffer = () => {
         const buffered = streamBufferRef.current;
         if (buffered) {
+          const currentTarget = activeMsgId;
           const { cleanContent, steps } = parseToolSteps(buffered);
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === targetMsgId ? { ...m, content: cleanContent, toolSteps: steps.length > 0 ? steps : m.toolSteps } : m,
+              m.id === currentTarget ? { ...m, content: cleanContent, toolSteps: steps.length > 0 ? steps : m.toolSteps } : m,
             ),
           );
         }
@@ -653,8 +654,33 @@ export function ChatPage() {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           try {
-            const parsed = JSON.parse(data) as { text?: string; done?: boolean };
+            const parsed = JSON.parse(data) as { text?: string; done?: boolean; newBubble?: boolean; agentId?: string; agentName?: string; agentEmoji?: string };
             if (parsed.done) continue;
+
+            // Multi-agent: newBubble starts a new message bubble for a different agent
+            if (parsed.newBubble) {
+              // Flush current buffer to current message first
+              const flushed = streamBufferRef.current;
+              if (flushed) {
+                const currentTarget = activeMsgId;
+                const { cleanContent, steps } = parseToolSteps(flushed);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === currentTarget ? { ...m, content: cleanContent, toolSteps: steps.length > 0 ? steps : m.toolSteps } : m,
+                  ),
+                );
+              }
+
+              // Create new bubble for this agent
+              const newMsgId = `a-${Date.now()}-${parsed.agentId || 'agent'}`;
+              setMessages((prev) => [
+                ...prev.filter((m) => m.id !== activeMsgId || m.content), // remove empty placeholder
+                { id: newMsgId, role: 'agent' as const, content: '', timestamp: new Date(), agentId: parsed.agentId, agentName: parsed.agentName, agentEmoji: parsed.agentEmoji },
+              ]);
+              activeMsgId = newMsgId;
+              streamBufferRef.current = '';
+            }
+
             const chunk = parsed.text ?? '';
             if (chunk) {
               streamBufferRef.current += chunk;
@@ -674,10 +700,11 @@ export function ChatPage() {
       // Final flush
       const finalContent = streamBufferRef.current;
       if (finalContent) {
+        const finalTarget = activeMsgId;
         const { cleanContent, steps } = parseToolSteps(finalContent);
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === targetMsgId ? { ...m, content: cleanContent, toolSteps: steps.length > 0 ? steps : m.toolSteps } : m,
+            m.id === finalTarget ? { ...m, content: cleanContent, toolSteps: steps.length > 0 ? steps : m.toolSteps } : m,
           ),
         );
       }
@@ -1247,7 +1274,7 @@ export function ChatPage() {
                     editText={editText}
                     copiedMsgId={copiedMsgId}
                     isTyping={isTyping}
-                    meta={meta}
+                    meta={msg.agentId && personalityMeta[msg.agentId as AgentPersonality] ? personalityMeta[msg.agentId as AgentPersonality] : meta}
                     formatRelativeTime={formatRelativeTime}
                     formatDateTime={luxonFormatDateTime}
                     onRegenerate={handleRegenerate}

@@ -15,6 +15,10 @@ export interface ChatMessage {
   timestamp: Date;
   toolSteps?: ToolStep[];
   mentionedAgent?: MentionAgent;
+  /** Multi-agent delegation: which personality generated this message */
+  agentId?: string;
+  agentName?: string;
+  agentEmoji?: string;
 }
 
 export interface ToolStep {
@@ -269,6 +273,13 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
           </div>
         ) : (
           <>
+            {/* Multi-agent: show which personality is speaking */}
+            {msg.agentName && msg.role === 'agent' && (
+              <div className='flex items-center gap-1.5 mb-1.5 -mt-0.5'>
+                <span className='text-[11px] font-semibold' style={{ color: meta.color }}>{msg.agentEmoji || meta.initial}</span>
+                <span className='text-[11px] font-semibold' style={{ color: meta.color }}>{msg.agentName}</span>
+              </div>
+            )}
             {/* Tool execution steps */}
             {msg.toolSteps && msg.toolSteps.length > 0 && (
               <div className='mb-2'>

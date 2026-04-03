@@ -1,4 +1,6 @@
-# GeekSpace 2.0 — Claude Code Instructions
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Architecture
 
@@ -262,9 +264,46 @@ Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram.
 | E2E tests | `npx playwright test` |
 | Docker build | `docker compose build` |
 | Docker run | `docker compose up -d` |
+| Single test file | `cd server && npx vitest run src/modules/agent/__tests__/foo.test.ts` |
+| Single test name | `cd server && npx vitest run -t "test name"` |
+| DB migration | `cd server && npm run migrate` |
 | Focus module | `./scripts/focus-module.sh <module>` |
 | Health check | `./scripts/health-check.sh` |
 | Smoke test (dev) | `./scripts/smoke-dev.sh` |
+
+## CI/CD & Deployment
+
+### GitHub Actions (`.github/workflows/`)
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | Push/PR to main, manual dispatch | Lint changed files → typecheck → build → unit tests → deploy |
+| `deploy.yml` | Manual dispatch (commit SHA) | Emergency rollback to specific commit |
+| `lint-full.yml` | Nightly 3 AM UTC, manual | Full repo lint (non-blocking, tracks lint debt) |
+
+### Pipeline Flow (`ci.yml`)
+
+1. **Static Checks** — lint changed files only (`--max-warnings=0`), typecheck root + server, build frontend + server, validate OpenAPI spec, audit deps
+2. **Unit Tests** — server tests, then frontend tests (needs static checks)
+3. **Deploy Staging** — auto on merge to main. SSHs to VPS, pulls main, rebuilds `staging` container, health-checks `:3002`
+4. **Deploy Production** — manual dispatch only (`deploy_target: production`). Builds with `GIT_SHA`, tags previous image for rollback, deploys `geekspace` container, syncs static files to `/srv/` for Caddy, health-checks `:3001`, auto-rollback on failure
+5. **Promote Branches** — after successful prod deploy, force-pushes main → `staging` and `live-production` branches
+
+### Branch Model
+
+- `main` — development trunk, auto-deploys to staging on merge
+- `staging` — tracking branch, force-pushed from main after prod deploy
+- `live-production` — tracking branch, force-pushed from main after prod deploy
+- PRs target `main`. CI runs lint + typecheck + tests as required status check.
+
+### Deployment URLs
+
+| Environment | URL | Port |
+|-------------|-----|------|
+| Production | https://ai.agentin.chat | 3001 |
+| Staging | https://staging.agentin.chat | 3002 |
+
+Static assets served directly by Caddy from `/srv/`. API requests reverse-proxied to the container.
 
 ## Key Environment Variables
 
@@ -300,3 +339,6 @@ Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram.
 - **Staging Redis**: `STAGING_REDIS_PASSWORD` must be set in `.env.staging` (no default fallback)
 - **Vite proxy**: Frontend dev server proxies `/api` to `:3001` — backend must be running
 - **Chunk size**: Vite warns on chunks >600KB — keep imports lean
+- **DB migrations**: Run `cd server && npm run migrate` after schema changes in `server/src/db/index.ts`
+- **CI lint scope**: CI only lints changed files (not full repo). Full lint runs nightly and is non-blocking
+- **Deploy branches**: Never delete `staging` or `live-production` — they're force-pushed tracking branches used by CI

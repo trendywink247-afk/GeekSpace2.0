@@ -12,6 +12,7 @@
     "e2e": "playwright test",
     "test:e2e": "playwright test",
     "e2e:report": "playwright show-report playwright-report",
+    "capture-ui": "node scripts/capture-ui.mjs",
     "brand-guard": "node ops/brand_guard.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
