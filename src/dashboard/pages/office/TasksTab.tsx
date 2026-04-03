@@ -122,10 +122,23 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
     );
   }
 
+  // Task count summary
+  const pendingCount = (board.pending ?? []).length;
+  const runningCount = (board.running ?? []).length;
+  const completedCount = (board.completed ?? []).length;
+
   return (
     <div className="flex flex-col gap-3 p-3">
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Summary counts */}
+      <div className="flex items-center gap-3 text-[10px] px-1">
+        <span style={{ color: '#F59E0B' }}>{pendingCount} pending</span>
+        <span className="text-[#4B5563]">&middot;</span>
+        <span style={{ color: C.cyan }}>{runningCount} running</span>
+        <span className="text-[#4B5563]">&middot;</span>
+        <span style={{ color: C.green }}>{completedCount} done</span>
+      </div>
+      {/* Kanban Board — horizontal scroll on mobile, grid on desktop */}
+      <div className="flex overflow-x-auto gap-3 md:grid md:grid-cols-3 md:overflow-visible pb-2 md:pb-0 snap-x snap-mandatory">
         {COLUMNS.map(({ key, label, accent }) => {
           const tasks = board[key] ?? [];
           return (
@@ -134,7 +147,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
               onDragOver={(e) => handleDragOver(e, key)}
               onDragLeave={handleDragLeave}
               onDrop={() => handleDrop(key)}
-              className="rounded-lg p-2 transition-colors"
+              className="rounded-lg p-2 transition-colors min-w-[220px] flex-shrink-0 md:min-w-0 md:flex-shrink snap-center"
               style={{
                 background: dragOver === key ? 'rgba(0,240,255,0.04)' : 'transparent',
                 border: `1px solid ${dragOver === key ? accent : 'rgba(0,240,255,0.05)'}`,
@@ -209,7 +222,7 @@ export default function TasksTab({ onCreateTask, taskBoard }: Props) {
       {/* Create Form */}
       <form
         onSubmit={handleCreate}
-        className="flex flex-wrap md:flex-nowrap items-center gap-2 rounded-lg p-2"
+        className="flex flex-nowrap items-center gap-1.5 rounded-lg p-2"
         style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
       >
         <select

@@ -1,6 +1,9 @@
 // src/dashboard/pages/office/MetricsTab.tsx
-import { AGENT_COLORS, AGENT_META, C, CORE_AGENTS } from './constants';
-import type { AgentId, CoreAgentId } from './types';
+import { AGENT_COLORS, AGENT_META, C } from './constants';
+import type { AgentId } from './types';
+
+/** All 9 agent IDs for the activity breakdown. */
+const ALL_AGENTS: AgentId[] = ['weebo', 'edith', 'jarvis', 'aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
 interface TaskStats {
   total: number;
@@ -49,12 +52,10 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
     { label: 'Pending', value: taskStats?.pending ?? 0, icon: '\u23F3', accent: '#F59E0B' },
   ];
 
-  // Derive per-agent breakdown from commStats.byAgent (available from unified poll)
-  const agentBreakdown: Record<CoreAgentId, number> = { weebo: 0, edith: 0, jarvis: 0 };
-  if (commStats?.byAgent) {
-    for (const id of CORE_AGENTS) {
-      agentBreakdown[id] = commStats.byAgent[id] ?? 0;
-    }
+  // Derive per-agent breakdown from commStats.byAgent — all 9 agents
+  const agentBreakdown: Record<string, number> = {};
+  for (const id of ALL_AGENTS) {
+    agentBreakdown[id] = commStats?.byAgent?.[id] ?? 0;
   }
   const maxAgent = Math.max(...Object.values(agentBreakdown), 1);
 
@@ -65,14 +66,14 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
         {counters.map((c) => (
           <div
             key={c.label}
-            className="rounded-lg p-3 text-center"
+            className="rounded-lg p-2 md:p-3 text-center"
             style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
           >
-            <span className="text-lg block mb-1">{c.icon}</span>
-            <span className="text-xl font-bold block" style={{ color: c.accent }}>
+            <span className="text-base md:text-lg block mb-0.5">{c.icon}</span>
+            <span className="text-lg md:text-xl font-bold block" style={{ color: c.accent }}>
               {c.value}
             </span>
-            <span className="text-[10px]" style={{ color: C.muted }}>{c.label}</span>
+            <span className="text-[9px] md:text-[10px]" style={{ color: C.muted }}>{c.label}</span>
           </div>
         ))}
       </div>
@@ -124,12 +125,12 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
         style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
       >
         <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Activity by Agent</h3>
-        <div className="flex flex-col gap-2.5">
-          {CORE_AGENTS.map((id) => {
+        <div className="flex flex-col gap-1.5 md:gap-2.5">
+          {ALL_AGENTS.map((id) => {
             const count = agentBreakdown[id];
             const pct = maxAgent > 0 ? (count / maxAgent) * 100 : 0;
-            const color = AGENT_COLORS[id as AgentId];
-            const meta = AGENT_META[id as AgentId];
+            const color = AGENT_COLORS[id];
+            const meta = AGENT_META[id];
 
             return (
               <div key={id} className="flex items-center gap-2">
@@ -152,39 +153,38 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
         </div>
       </div>
 
-      {/* Comms by Type */}
-      <div
-        className="rounded-lg p-3"
-        style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
-      >
-        <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Communication Types</h3>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(commStats?.byType ?? {}).map(([type, count]) => {
-            const typeColors: Record<string, string> = {
-              info: C.cyan,
-              delegation: '#FFB800',
-              alert: '#EF4444',
-              request: C.purple,
-              response: C.green,
-            };
-            const color = typeColors[type] ?? C.muted;
+      {/* Comms by Type — only shown when there's data */}
+      {Object.keys(commStats?.byType ?? {}).length > 0 && (
+        <div
+          className="rounded-lg p-3"
+          style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+        >
+          <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Communication Types</h3>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(commStats?.byType ?? {}).map(([type, count]) => {
+              const typeColors: Record<string, string> = {
+                info: C.cyan,
+                delegation: '#FFB800',
+                alert: '#EF4444',
+                request: C.purple,
+                response: C.green,
+              };
+              const color = typeColors[type] ?? C.muted;
 
-            return (
-              <div
-                key={type}
-                className="rounded-lg px-3 py-2 text-center"
-                style={{ background: `${color}10`, border: `1px solid ${color}20` }}
-              >
-                <span className="text-sm font-bold block" style={{ color }}>{count}</span>
-                <span className="text-[9px] capitalize" style={{ color: C.muted }}>{type}</span>
-              </div>
-            );
-          })}
-          {Object.keys(commStats?.byType ?? {}).length === 0 && (
-            <p className="text-[10px]" style={{ color: C.dim }}>No data yet</p>
-          )}
+              return (
+                <div
+                  key={type}
+                  className="rounded-lg px-3 py-2 text-center"
+                  style={{ background: `${color}10`, border: `1px solid ${color}20` }}
+                >
+                  <span className="text-sm font-bold block" style={{ color }}>{count}</span>
+                  <span className="text-[9px] capitalize" style={{ color: C.muted }}>{type}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

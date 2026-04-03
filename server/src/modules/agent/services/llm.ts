@@ -5,7 +5,7 @@
 // automation intent:     OpenRouter-free first (Qwen3 235B MoE >> qwen3:8b for tool calling)
 //
 // ALL users — sequential waterfall:
-//   Tier 1:   Ollama qwen3:8b / qwen3:14b ($0, local, intent-based model + /think|/no_think)
+//   Tier 1:   Ollama qwen3:8b (simple) / gemma4:e4b (complex) ($0, local, intent-based model routing)
 //   Tier 1.5: OpenRouter-free            ($0, dynamic model rotation — Qwen3 235B, Llama 3.3 70B, etc.)
 //              — Ollama fallback + automation-intent primary
 //   Tier 2:   Groq Llama 3.3 70B        ($0, free quota, 43,200 req/day × 3 keys)
@@ -364,11 +364,21 @@ function selectOllamaModel(intent?: Intent): string {
   return config.ollamaModel;
 }
 
-function applyThinkingMode(messages: ChatMessage[], intent?: Intent): ChatMessage[] {
+function isGemmaModel(model: string): boolean {
+  return model.startsWith('gemma');
+}
+
+function shouldUseThinking(intent?: Intent): boolean {
+  return intent === 'complex' || intent === 'planning' || intent === 'coding' || intent === 'automation';
+}
+
+function applyThinkingMode(messages: ChatMessage[], intent?: Intent, model?: string): ChatMessage[] {
   if (!config.ollamaThinkingEnabled) return messages;
-  const useThinking = intent === 'complex' || intent === 'planning' || intent === 'coding' || intent === 'automation';
+  // Gemma models use API-level 'think' param — don't modify messages
+  if (model && isGemmaModel(model)) return messages;
+  // Qwen-style: prepend /think or /no_think tag to last user message
+  const useThinking = shouldUseThinking(intent);
   const tag = useThinking ? '/think' : '/no_think';
-  // Prepend thinking tag to the last user message
   const result = [...messages];
   for (let i = result.length - 1; i >= 0; i--) {
     if (result[i].role === 'user') {
@@ -379,13 +389,23 @@ function applyThinkingMode(messages: ChatMessage[], intent?: Intent): ChatMessag
   return result;
 }
 
+/** Build Ollama-specific body fields for thinking control */
+function buildThinkingBody(model: string, intent?: Intent): Record<string, unknown> {
+  if (!config.ollamaThinkingEnabled) return {};
+  if (isGemmaModel(model)) {
+    // Gemma 4 uses API-level think param
+    return { think: shouldUseThinking(intent) };
+  }
+  return {};
+}
+
 export async function streamOllama(
   messages: ChatMessage[],
   onChunk: (text: string) => void,
   intent?: Intent,
 ): Promise<{ tokensIn: number; tokensOut: number }> {
   const model = selectOllamaModel(intent);
-  const finalMessages = applyThinkingMode(messages, intent);
+  const finalMessages = applyThinkingMode(messages, intent, model);
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -393,8 +413,9 @@ export async function streamOllama(
       model,
       messages: finalMessages,
       stream: true,
-      keep_alive: '5m',
+      keep_alive: '24h',
       options: { temperature: 0.7, num_predict: config.ollamaMaxTokens },
+      ...buildThinkingBody(model, intent),
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
   });
@@ -441,7 +462,7 @@ export async function streamOllama(
 async function callOllama(messages: ChatMessage[], intent?: Intent): Promise<{ content: string; tokensIn: number; tokensOut: number; model: string }> {
   const start = Date.now();
   const model = selectOllamaModel(intent);
-  const finalMessages = applyThinkingMode(messages, intent);
+  const finalMessages = applyThinkingMode(messages, intent, model);
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -449,13 +470,14 @@ async function callOllama(messages: ChatMessage[], intent?: Intent): Promise<{ c
       model,
       messages: finalMessages,
       stream: false,
-      keep_alive: '5m',
+      keep_alive: '24h',
       options: {
         temperature: 0.7,
         num_predict: config.ollamaMaxTokens,
         top_p: 0.9,
         repeat_penalty: 1.1,
       },
+      ...buildThinkingBody(model, intent),
     }),
     signal: AbortSignal.timeout(config.ollamaTimeout),
   });
@@ -1469,7 +1491,7 @@ async function _pingOllama(): Promise<void> {
     const res = await fetch(`${config.ollamaBaseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: config.ollamaModel, prompt: 'hi', stream: false, keep_alive: '5m', options: { num_predict: 1 } }),
+      body: JSON.stringify({ model: config.ollamaModel, prompt: 'hi', stream: false, keep_alive: '24h', options: { num_predict: 1 } }),
       signal: AbortSignal.timeout(60000),
     });
     if (res.ok) logger.debug({ model: config.ollamaModel }, 'Ollama keepalive ping OK — model warm');
@@ -1480,10 +1502,9 @@ async function _pingOllama(): Promise<void> {
 }
 
 export function startOllamaKeepalive(): void {
-  // Disabled: pinging every 2min defeats OLLAMA_KEEP_ALIVE=5m (model never unloads).
-  // Model loads on first request (~2-3s cold start) and auto-unloads after 5min idle.
-  // This saves ~5.5GB RAM when the LLM is not in active use.
-  logger.info({ model: config.ollamaModel }, 'Ollama keepalive disabled — model loads on demand, unloads after 5m idle');
+  // With OLLAMA_KEEP_ALIVE=24h on server, models stay loaded for 24h after last request.
+  // No ping needed — first request warms the model, subsequent requests are fast.
+  logger.info({ model: config.ollamaModel, complexModel: config.ollamaComplexModel }, 'Ollama keepalive: models stay loaded 24h after last use');
 }
 
 // ---- Smart Provider Picker (used by chat routes) ----

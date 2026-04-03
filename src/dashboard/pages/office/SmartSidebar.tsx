@@ -121,12 +121,14 @@ interface SmartSidebarProps {
   officeData: OfficeData | null;
   sseEvents: SSEEvent[];
   onCreateTask?: (agentId: string, title: string) => void;
+  /** When true (mobile), hide the bottom chat input since SpotlightHUD is showing */
+  spotlightActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: SmartSidebarProps) {
+export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spotlightActive }: SmartSidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('timeline');
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -314,9 +316,9 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask }: Sm
         {activeTab === 'goals' && <GoalsTab />}
       </div>
 
-      {/* ── Chat input (always visible) — glassmorphism ──────────── */}
+      {/* ── Chat input — hidden on mobile when SpotlightHUD is active ── */}
       <div
-        className="flex items-center gap-2 px-3 py-2.5 flex-shrink-0 pb-4 md:pb-2.5"
+        className={`flex items-center gap-2 px-3 py-2.5 flex-shrink-0 pb-4 md:pb-2.5 ${spotlightActive ? 'hidden sm:flex' : ''}`}
         style={{
           background: 'rgba(6,6,26,0.7)',
           backdropFilter: 'blur(12px)',

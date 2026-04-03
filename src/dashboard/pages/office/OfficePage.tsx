@@ -571,6 +571,7 @@ export function OfficePage() {
             }}
             onDismiss={() => setSelectedAgentId(null)}
             officeData={officeData}
+            mobileBottomOffset={isMobile}
           />
         )}
         </div>{/* end scale wrapper */}
@@ -581,7 +582,7 @@ export function OfficePage() {
         <div
           className="fixed bottom-0 left-0 right-0 z-30 flex flex-col"
           style={{
-            height: sidebarExpanded ? '60vh' : '44px',
+            height: sidebarExpanded ? '60vh' : '56px',
             transition: 'height 0.3s ease',
             background: 'var(--ag-bg-surface, #0A0A14)',
             borderTop: '1px solid var(--ag-border-default, rgba(139,92,246,0.15))',
@@ -590,12 +591,21 @@ export function OfficePage() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Drag handle bar */}
+          {/* Drag handle + preview */}
           <div
-            className="flex items-center justify-center flex-shrink-0 cursor-pointer"
+            className="flex items-center flex-shrink-0 cursor-pointer px-4 gap-3"
             onClick={() => setSidebarExpanded(!sidebarExpanded)}
           >
-            <div className="w-12 h-1 bg-[#6B7280] rounded-full mx-auto my-2" />
+            <div className="flex-1 flex flex-col items-center">
+              <div className="w-10 h-1 bg-[#6B7280] rounded-full mt-2 mb-1" />
+              {!sidebarExpanded && (
+                <span className="text-[10px] text-[#6B7280] truncate max-w-[250px]">
+                  {sseEvents.length > 0
+                    ? `${sseEvents[sseEvents.length - 1]?.agentName ?? 'Agent'}: ${sseEvents[sseEvents.length - 1]?.content?.slice(0, 40) ?? sseEvents[sseEvents.length - 1]?.state ?? '...'}`
+                    : 'Swipe up for timeline, tasks & stats'}
+                </span>
+              )}
+            </div>
           </div>
           {/* Sidebar content */}
           <div className={`flex-1 min-h-0 ${sidebarExpanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
@@ -603,6 +613,7 @@ export function OfficePage() {
               officeData={officeData}
               sseEvents={sseEvents}
               onCreateTask={handleCreateTask}
+              spotlightActive={!!selectedAgentId}
             />
           </div>
         </div>
