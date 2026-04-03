@@ -149,13 +149,36 @@ const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
 import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
 import { SMART_OBJECTS } from './smartObjects';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
-import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive } from './agentBehavior';
+import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive, trackAgentTool } from './agentBehavior';
 import {
-  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath,
+  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath, getWalkableNeighbors,
 } from './navigation';
 import { loadSpriteSheets } from './sprites';
 import { selectAnimationTier, trackToolCall, clearRequest, isFirstVisit, markVisited } from './AnimationTierSelector';
 import { createEffectState, startTierEffect, clearEffects, tickEffects, type CanvasEffectState } from './CanvasEffects';
+
+// ---------------------------------------------------------------------------
+// Launch mode huddle — when isMultiAgent is true, agents gather at the meeting table
+// ---------------------------------------------------------------------------
+
+const MEETING_TABLE_SEATS = [
+  { x: 17, y: 15, facing: 'right' as const },
+  { x: 17, y: 17, facing: 'right' as const },
+  { x: 24, y: 15, facing: 'left' as const },
+  { x: 24, y: 17, facing: 'left' as const },
+  { x: 21, y: 14, facing: 'down' as const },
+  { x: 21, y: 19, facing: 'up' as const },
+];
+
+/** Tracks active launch mode huddle: which agents are gathered and their assigned seats */
+interface LaunchHuddle {
+  agents: Set<AgentId>;
+  seatAssignments: Map<AgentId, { x: number; y: number; facing: 'down' | 'up' | 'left' | 'right' }>;
+  leadAgent: AgentId;
+  startedAt: number;
+}
+
+let activeLaunchHuddle: LaunchHuddle | null = null;
 
 // ---------------------------------------------------------------------------
 // rAF game loop timing — behavior/BFS runs at ~5fps via accumulator,
@@ -566,8 +589,44 @@ export default function OfficeStage({
                   expiresAt: Date.now() + SPEECH_BUBBLE_TTL,
                 }]);
               }
+
+              // Launch mode huddle: gather agents at meeting table
+              if (evt.isMultiAgent) {
+                if (!activeLaunchHuddle) {
+                  // Start a new huddle with this agent as lead
+                  activeLaunchHuddle = {
+                    agents: new Set([agentId]),
+                    seatAssignments: new Map(),
+                    leadAgent: agentId,
+                    startedAt: Date.now(),
+                  };
+                  // Lead gets the 'present' seat (head of table)
+                  activeLaunchHuddle.seatAssignments.set(agentId, MEETING_TABLE_SEATS[4]); // x:21,y:14 — head
+                  const seat = MEETING_TABLE_SEATS[4];
+                  agent.targetX = seat.x;
+                  agent.targetY = seat.y;
+                  agent.path = findFullPath(agent.x, agent.y, seat.x, seat.y);
+                  agent.pathIndex = 0;
+                  cancelIdleBehavior(agentId);
+                } else if (!activeLaunchHuddle.agents.has(agentId)) {
+                  // Add this agent to the existing huddle
+                  activeLaunchHuddle.agents.add(agentId);
+                  const usedSeats = new Set([...activeLaunchHuddle.seatAssignments.values()].map(s => `${s.x},${s.y}`));
+                  const freeSeat = MEETING_TABLE_SEATS.find(s => !usedSeats.has(`${s.x},${s.y}`));
+                  if (freeSeat) {
+                    activeLaunchHuddle.seatAssignments.set(agentId, freeSeat);
+                    agent.targetX = freeSeat.x;
+                    agent.targetY = freeSeat.y;
+                    agent.path = findFullPath(agent.x, agent.y, freeSeat.x, freeSeat.y);
+                    agent.pathIndex = 0;
+                    cancelIdleBehavior(agentId);
+                  }
+                }
+              }
             }
             if (evt.state === 'tool_call') {
+              // Track tool for context-aware post-work destinations
+              if (evt.tool) trackAgentTool(agentId, evt.tool);
               const toolCount = trackToolCall(evt.requestId);
               // Fire tier effect on tool calls (at least tier 2 for visibility)
               let tier = selectAnimationTier({
@@ -654,17 +713,38 @@ export default function OfficeStage({
               addBubble(agentId, `${targetName}: ${taskSnippet}`);
             }
             if (targetId && SPECIALIST_AGENTS.includes(targetId as SpecialistId)) {
-              // Route specialist toward THEIR DESK for focused work
+              // Physical delegation walk: specialist teleports near delegator, then walks to their desk
               const specIdx = next.findIndex(a => a.id === targetId);
               if (specIdx !== -1) {
                 const spec = { ...next[specIdx] };
                 spec.state = 'task_started';
                 spec.path = [];
                 spec.pathIndex = 0;
+
+                // Phase 1: Teleport specialist to a walkable tile adjacent to delegator
+                const delegatorNeighbors = getWalkableNeighbors(agent.x, agent.y);
+                if (delegatorNeighbors.length > 0) {
+                  // Pick a neighbor not occupied by another agent
+                  const freeNeighbor = delegatorNeighbors.find(n =>
+                    !next.some(a => a.id !== targetId && a.x === n.x && a.y === n.y)
+                  ) || delegatorNeighbors[0];
+                  spec.x = freeNeighbor.x;
+                  spec.y = freeNeighbor.y;
+                  spec.renderX = freeNeighbor.x * CELL + CELL / 2;
+                  spec.renderY = freeNeighbor.y * CELL + CELL / 2;
+                }
+
+                // Phase 2: Set target to their own desk — they'll walk there visibly
                 const desk = getAgentDesk(targetId as AgentId);
                 const validTarget = validateTarget(desk.x, desk.y, spec.x, spec.y);
                 spec.targetX = validTarget.x;
                 spec.targetY = validTarget.y;
+                // Pre-compute the full walk path so movement is smooth
+                const walkPath = findFullPath(spec.x, spec.y, validTarget.x, validTarget.y);
+                if (walkPath.length > 0) {
+                  spec.path = walkPath;
+                  spec.pathIndex = 0;
+                }
                 next[specIdx] = spec;
                 // Reaction bubble with task context instead of generic phrase
                 const taskContext = evt.content ? evt.content.slice(0, 25) : null;
@@ -742,6 +822,25 @@ export default function OfficeStage({
               // Clear effects after the cinematic plays out
               const clearDelay = tier === 3 ? 2000 : tier === 2 ? 1000 : 300;
               setTimeout(() => clearEffects(effectStateRef.current), clearDelay);
+            }
+
+            // Launch huddle dispersal: when an agent finishes, remove from huddle
+            // When all agents are done, clear the huddle and send everyone back to desks
+            if (activeLaunchHuddle && activeLaunchHuddle.agents.has(agentId)) {
+              activeLaunchHuddle.agents.delete(agentId);
+              activeLaunchHuddle.seatAssignments.delete(agentId);
+              // Bounce effect for completion
+              agent.fx = { ...agent.fx, bounceStart: Date.now() };
+              // Route back to desk
+              const desk = getAgentDesk(agentId);
+              const deskTarget = validateTarget(desk.x, desk.y, agent.x, agent.y);
+              agent.targetX = deskTarget.x;
+              agent.targetY = deskTarget.y;
+              agent.path = findFullPath(agent.x, agent.y, deskTarget.x, deskTarget.y);
+              agent.pathIndex = 0;
+              if (activeLaunchHuddle.agents.size === 0) {
+                activeLaunchHuddle = null;
+              }
             }
 
             // After 3s, reset to idle — behavior system will pick next destination

@@ -331,8 +331,8 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
   {
     const isActive = agent.state !== 'idle' && agent.state !== 'done';
     const pulseT = Math.sin(Date.now() / 1000 + cx * 0.01) * 0.5 + 0.5;
-    let glowAlpha = isActive ? 0.12 + pulseT * 0.18 : 0.04;
-    let glowRadius = isActive ? CELL * 2.5 : CELL * 1.5;
+    let glowAlpha = isActive ? 0.18 + pulseT * 0.22 : 0.04;
+    let glowRadius = isActive ? CELL * 3 : CELL * 1.5;
 
     // Delegation glow pulse: 3 bright pulses over 1.5s
     if (agent.fx?.glowStart) {
@@ -341,8 +341,8 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
       if (elapsed < duration) {
         const t = elapsed / duration;
         const pulse = Math.sin(t * Math.PI * 3) * (1 - t);
-        glowAlpha += Math.max(0, pulse * 0.25);
-        glowRadius = CELL * 3.5;
+        glowAlpha += Math.max(0, pulse * 0.3);
+        glowRadius = CELL * 4;
       } else {
         agent.fx.glowStart = undefined;
       }
@@ -356,6 +356,22 @@ export function drawAgent(ctx: CanvasRenderingContext2D, agent: CanvasAgent, tic
     ctx.beginPath();
     ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2);
     ctx.fill();
+
+    // Expanding ripple rings for active agents (thinking/tool_call/typing/responding)
+    if (isActive && (agent.state === 'thinking' || agent.state === 'tool_call' || agent.state === 'typing' || agent.state === 'responding')) {
+      const now = Date.now();
+      const ringPeriod = 1500; // 1.5s per ring cycle
+      for (let ringIdx = 0; ringIdx < 2; ringIdx++) {
+        const ringPhase = ((now + ringIdx * 750) % ringPeriod) / ringPeriod; // stagger 2 rings
+        const ringRadius = CELL + ringPhase * CELL * 2.5;
+        const ringAlpha = (1 - ringPhase) * 0.25;
+        ctx.strokeStyle = hexToRgba(agent.color, ringAlpha);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
   }
 
   // Selection ring
@@ -751,9 +767,9 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
   // Draw glow line along bezier
   ctx.save();
   ctx.shadowColor = beam.color;
-  ctx.shadowBlur = 8;
-  ctx.strokeStyle = hexToRgba(beam.color, 0.15 * fadeOut);
-  ctx.lineWidth = 3;
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = hexToRgba(beam.color, 0.2 * fadeOut);
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.quadraticCurveTo(cpx, cpy, x2, y2);
@@ -762,7 +778,7 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
   ctx.restore();
 
   // Animated particles along the bezier curve
-  const numParticles = 12;
+  const numParticles = 18;
   const flowSpeed = Date.now() / 600;
   for (let i = 0; i < numParticles; i++) {
     const t = ((i / numParticles) + flowSpeed) % 1;
@@ -771,13 +787,32 @@ export function drawParticleBeam(ctx: CanvasRenderingContext2D, beam: ParticleBe
     const px = u * u * x1 + 2 * u * t * cpx + t * t * x2;
     const py = u * u * y1 + 2 * u * t * cpy + t * t * y2;
     const edgeFade = Math.min(t, 1 - t) * 4;
-    const alpha = Math.min(edgeFade, 0.8) * fadeOut;
-    const size = 1.5 + edgeFade * 0.5;
+    const alpha = Math.min(edgeFade, 0.85) * fadeOut;
+    const size = 2 + edgeFade * 1;
     ctx.fillStyle = hexToRgba(beam.color, alpha);
     ctx.beginPath();
     ctx.arc(px, py, size, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  // Energy orb — bright glowing sphere traveling along the beam (one per beam)
+  const orbT = (Date.now() % 800) / 800; // 800ms cycle
+  const orbU = 1 - orbT;
+  const orbX = orbU * orbU * x1 + 2 * orbU * orbT * cpx + orbT * orbT * x2;
+  const orbY = orbU * orbU * y1 + 2 * orbU * orbT * cpy + orbT * orbT * y2;
+  const orbAlpha = Math.min(orbT, 1 - orbT) * 4 * fadeOut;
+  ctx.save();
+  ctx.shadowColor = beam.color;
+  ctx.shadowBlur = 12;
+  const orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, 5);
+  orbGrad.addColorStop(0, hexToRgba(beam.color, Math.min(orbAlpha, 0.9)));
+  orbGrad.addColorStop(0.5, hexToRgba(beam.color, Math.min(orbAlpha * 0.5, 0.4)));
+  orbGrad.addColorStop(1, hexToRgba(beam.color, 0));
+  ctx.fillStyle = orbGrad;
+  ctx.beginPath();
+  ctx.arc(orbX, orbY, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 // ---------------------------------------------------------------------------
@@ -1339,17 +1374,36 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
       a.x >= 16 && a.x <= 25 && a.y >= 12 && a.y <= 19 &&
       a.state !== 'idle' && a.state !== 'done'
     );
-    if (meetingAgents.length > 0) {
+    // Also count agents physically present in meeting area (group-meeting behavior)
+    const gatheringAgents = agents.filter(a =>
+      a.x >= 16 && a.x <= 25 && a.y >= 12 && a.y <= 19
+    );
+    const meetingCount = Math.max(meetingAgents.length, gatheringAgents.length);
+    if (meetingCount > 0) {
       ctx.save();
       const gradient = ctx.createRadialGradient(
         21 * CELL, 16 * CELL, 0,
         21 * CELL, 16 * CELL, 5 * CELL,
       );
-      const glowColor = meetingAgents.length >= 2 ? '0, 240, 255' : '139, 92, 246';
-      gradient.addColorStop(0, `rgba(${glowColor}, 0.08)`);
+      const glowColor = meetingCount >= 2 ? '0, 240, 255' : '139, 92, 246';
+      // Stronger glow with more agents (0.08 base → up to 0.25 with 4+ agents)
+      const glowIntensity = Math.min(0.08 + meetingCount * 0.04, 0.25);
+      gradient.addColorStop(0, `rgba(${glowColor}, ${glowIntensity})`);
       gradient.addColorStop(1, `rgba(${glowColor}, 0)`);
       ctx.fillStyle = gradient;
       ctx.fillRect(16 * CELL, 12 * CELL, 10 * CELL, 8 * CELL);
+
+      // Pulsing energy ring around meeting table when 3+ agents gathered
+      if (meetingCount >= 3) {
+        const ringPhase = (Date.now() % 2000) / 2000;
+        const ringRadius = 3 * CELL + ringPhase * 2 * CELL;
+        const ringAlpha = (1 - ringPhase) * 0.15;
+        ctx.strokeStyle = `rgba(${glowColor}, ${ringAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(21 * CELL, 16 * CELL, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.restore();
     }
   }

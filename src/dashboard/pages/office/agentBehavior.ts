@@ -240,6 +240,65 @@ const ROOM_AFFINITY: Record<string, Record<string, number>> = {
   pulse: { workspace: 3, meeting_room: 3, lounge: 1, pantry: 1, patio: 1, stairs_transition: 1, utility_corridor: 1 },
 };
 
+// ── Personality-driven activity routines ─────────────────────────────────────
+// Each agent has a preferred cycle of smart objects they visit when wandering.
+// 70% of the time they follow their routine, 30% they pick randomly (personality-weighted).
+// This makes each agent feel like they have daily habits and preferred spots.
+
+const AGENT_ROUTINES: Record<string, string[]> = {
+  weebo: ['coffee-counter', 'couch', 'lounge-rug', 'patio-seating-left'],               // creative breaks
+  edith: ['desk-cluster-right', 'meeting-table', 'whiteboard', 'desk-cluster-left'],     // strategic work cycle
+  jarvis: ['meeting-table', 'meeting-tv', 'coffee-counter', 'desk-cluster-left'],        // ops rounds
+  aria:  ['whiteboard', 'lounge-rug', 'patio-seating-right', 'lounge-bookshelf'],        // design inspiration
+  forge: ['desk-cluster-left', 'desk-cluster-right', 'meeting-table', 'coffee-counter'], // deep focus
+  pulse: ['meeting-tv', 'lounge-bookshelf', 'bookshelf', 'desk-cluster-right'],          // data analysis
+  echo:  ['couch', 'patio-seating-left', 'corridor-plant', 'lounge-table'],              // wellness rounds
+  cal:   ['meeting-table', 'whiteboard', 'meeting-tv', 'coffee-counter'],                // scheduling rounds
+  nova:  ['bookshelf', 'lounge-bookshelf', 'patio-seating-right', 'meeting-tv'],         // research cycle
+};
+
+// Track each agent's position in their routine cycle
+const routineIndex = new Map<AgentId, number>();
+
+/**
+ * Gets the next routine destination for an agent. Returns the smart object ID
+ * from their routine cycle, advancing the index. Returns null 30% of the time
+ * to allow personality-weighted random selection for variety.
+ */
+function getRoutineDestination(agentId: AgentId): string | null {
+  if (Math.random() < 0.30) return null; // 30% chance: skip routine, pick random
+  const routine = AGENT_ROUTINES[agentId];
+  if (!routine || routine.length === 0) return null;
+  const idx = routineIndex.get(agentId) ?? 0;
+  const objectId = routine[idx % routine.length];
+  routineIndex.set(agentId, (idx + 1) % routine.length);
+  return objectId;
+}
+
+// ── Context-aware post-work destinations ────────────────────────────────────
+// After finishing a task, agents walk to a location that matches what they just did.
+// Maps tool names to smart object IDs for contextual movement.
+
+const TOOL_DESTINATION_MAP: Record<string, string> = {
+  web_search: 'bookshelf',
+  tavily_search: 'bookshelf',
+  search_web: 'bookshelf',
+  send_email: 'meeting-tv',
+  send_telegram: 'meeting-tv',
+  gmail_send: 'meeting-tv',
+  generate_image: 'whiteboard',
+  create_artifact: 'whiteboard',
+  deploy_artifact: 'meeting-tv',
+};
+
+/** Stored last tool used by each agent for post-work destination selection */
+const lastToolUsed = new Map<AgentId, string>();
+
+/** Track tool usage for contextual post-work destinations */
+export function trackAgentTool(agentId: AgentId, tool: string): void {
+  lastToolUsed.set(agentId, tool);
+}
+
 // ── Object type → visual pose mapping ────────────────────────────────────────
 // Determines how the sprite is visually offset at furniture.
 // sit = deep into chair, lean = slight tilt at counter, stand = normal at whiteboards
@@ -323,15 +382,15 @@ export function notifyAgentActive(): void {
 // ── Personality-staggered sitting durations ──────────────────────────────────
 // Each agent sits for different durations based on personality
 const PERSONALITY_SIT_DURATION: Record<string, { min: number; max: number }> = {
-  edith:  { min: 35, max: 60 },  // focused, sits longest
-  jarvis: { min: 25, max: 40 },  // balanced
-  weebo:  { min: 15, max: 25 },  // energetic, wanders sooner
-  aria:   { min: 18, max: 30 },  // creative, moderate
-  forge:  { min: 28, max: 45 },  // deliberate
-  pulse:  { min: 22, max: 35 },  // analytical
-  echo:   { min: 20, max: 32 },  // reflective
-  cal:    { min: 24, max: 38 },  // balanced
-  nova:   { min: 12, max: 20 },  // restless, wanders most
+  edith:  { min: 20, max: 35 },  // focused, sits longest
+  jarvis: { min: 15, max: 25 },  // balanced
+  weebo:  { min: 8, max: 15 },   // energetic, wanders sooner
+  aria:   { min: 10, max: 18 },  // creative, moderate
+  forge:  { min: 18, max: 28 },  // deliberate
+  pulse:  { min: 14, max: 22 },  // analytical
+  echo:   { min: 12, max: 20 },  // reflective
+  cal:    { min: 15, max: 24 },  // balanced
+  nova:   { min: 6, max: 12 },   // restless, wanders most
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -428,6 +487,26 @@ function chooseDestination(
 ): (InteractionPoint & { objectId: string; distance: number }) | null {
   const pts = p.availableInteractionPoints;
   if (pts.length === 0) return null;
+
+  // Rule 0: Personality routine — follow habitual cycle (70% of the time)
+  const routineObjectId = getRoutineDestination(p.agent.id);
+  if (routineObjectId) {
+    const routinePts = pts.filter((ip) => ip.objectId === routineObjectId);
+    if (routinePts.length > 0) return pickRandom(routinePts);
+  }
+
+  // Rule 0b: Context-aware post-work destination (if agent just finished a task)
+  const lastTool = lastToolUsed.get(p.agent.id);
+  if (lastTool && p.recentlyWorked) {
+    const destObjectId = TOOL_DESTINATION_MAP[lastTool];
+    if (destObjectId) {
+      const contextPts = pts.filter((ip) => ip.objectId === destObjectId);
+      if (contextPts.length > 0) {
+        lastToolUsed.delete(p.agent.id); // consume once
+        return pickRandom(contextPts);
+      }
+    }
+  }
 
   // Rule 1: If recently worked, 60% chance pantry/lounge/patio break
   if (p.recentlyWorked && Math.random() < 0.6) {
@@ -841,7 +920,7 @@ export function tickBehaviors(
   const isNight = theme === 'night';
 
   // Cap concurrent wanderers — allow enough motion to feel alive
-  const maxMovers = isNight ? 4 : 6;
+  const maxMovers = isNight ? 5 : 8;
   let activeMovers = agents.filter((a) => {
     const bs = behaviorStates.get(a.id);
     return bs && (bs.mode === 'wandering' || bs.mode === 'socializing' || bs.mode === 'group-meeting');
@@ -1030,7 +1109,7 @@ export function tickBehaviors(
             }
           }
 
-          const wanderChance = isNight ? 0.50 : 0.88;
+          const wanderChance = isNight ? 0.65 : 0.94;
           const roll = Math.random();
           if (roll < wanderChance) {
             // ALWAYS pick a smart object interaction point -- personality-weighted
@@ -1126,8 +1205,8 @@ export function tickBehaviors(
             releasePoint(agent.id);
             bState.wanderCount = (bState.wanderCount || 0) + 1;
 
-            // After 2-3 spots, return to sitting (purposeful cycle)
-            const maxSpots = 2 + (Math.random() < 0.4 ? 1 : 0);
+            // After 3-4 spots, return to sitting (purposeful cycle)
+            const maxSpots = 3 + (Math.random() < 0.4 ? 1 : 0);
             if (bState.wanderCount >= maxSpots) {
               bState.mode = 'sitting';
               bState.targetPoint = null;
