@@ -27,7 +27,7 @@ import { cacheGet, cacheSet, cacheDel } from '../../../services/cache.js';
 import { sendTelegramNotification, escapeTelegramHtml } from '../../../services/telegram.js';
 import { detectNamedAgent } from '../services/message-router.js';
 import { logActivity } from '../../../services/activity-log.js';
-import { emitThinking, emitDone } from '../services/agent-state-bus.js';
+import { emitThinking, emitResponding, emitDone } from '../services/agent-state-bus.js';
 import { routeDelegation } from '../../../services/delegation.js';
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
 import { buildSystemPrompt } from './chat.js';
@@ -149,12 +149,13 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       return;
     }
 
-    // For complex/coding/planning intents, use ReAct loop with visible thinking steps
-    if (intent === 'coding' || intent === 'planning' || intent === 'complex') {
+    // For complex/coding/planning/automation intents, use ReAct loop with visible thinking steps
+    if (intent === 'coding' || intent === 'planning' || intent === 'complex' || intent === 'automation') {
       const result = await runReactLoop(
         [...history, { role: 'user', content: message }],
         {
           systemPrompt, agentName, userCredits, userId,
+          agentId: personalityId,
           onStep: (step) => {
             try { res.write(`data: ${JSON.stringify({ step, done: false })}\n\n`); } catch { /* client disconnected */ }
           },
@@ -169,7 +170,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
         VALUES (?, ?, ?, ?, ?, ?, ?, 'web', 'ai.chat.stream')`).run(
         uuid(), userId, result.provider, result.model, result.tokensIn, result.tokensOut, result.creditCost,
       );
-      logConversation(userId, 'assistant', result.text, result.provider, result.model);
+      logConversation(userId, 'assistant', result.text, result.provider, result.model, undefined, personalityId);
       res.write(`data: ${JSON.stringify({
         text: '', done: true, provider: result.provider, model: result.model,
         tier, creditsUsed: result.creditCost,
@@ -181,12 +182,13 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
 
       if (ollamaDown) {
         // Skip Ollama entirely — go straight to cloud
+        emitResponding(String(userId), personalityId, 'Composing response...');
         const result = await routeChat(
           [...history, { role: 'user', content: message }],
           { systemPrompt, agentName, userCredits, userId, forceProvider: 'openrouter-free' as Provider },
         );
         res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
-        logConversation(userId, 'assistant', result.reply, result.provider, result.model);
+        logConversation(userId, 'assistant', result.reply, result.provider, result.model, undefined, personalityId);
         res.write(`data: ${JSON.stringify({
           text: '', done: true, provider: result.provider, model: result.model,
           tier: 'local', creditsUsed: result.creditCost,
@@ -201,8 +203,13 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
 
       const start = Date.now();
       let fullReply = '';
+      let emittedResponding = false;
 
       const { tokensIn, tokensOut } = await streamOllama(fullMessages, (chunk) => {
+        if (!emittedResponding) {
+          emitResponding(String(userId), personalityId, 'Writing response...');
+          emittedResponding = true;
+        }
         fullReply += chunk;
         res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
       }, intent);
@@ -212,6 +219,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       // If streaming produced empty content, fall back to non-streaming call
       if (!fullReply.trim()) {
         logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
+        emitResponding(String(userId), personalityId, 'Composing response...');
         const result = await routeChat(
           [...history, { role: 'user', content: message }],
           { systemPrompt, agentName, userCredits, userId },
@@ -227,7 +235,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
           VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
           uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
         );
-        logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel);
+        logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel, undefined, personalityId);
 
         // Send final event
         res.write(`data: ${JSON.stringify({
@@ -244,6 +252,8 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
       const fallbackHistory = getConversationContext(userId);
+      const fallbackPersonality = (agentConfig?.personality as string) || personalityId;
+      emitResponding(String(userId), fallbackPersonality, 'Composing response...');
       const result = await routeChat(
         [...fallbackHistory, { role: 'user', content: message }],
         { systemPrompt: buildSystemPrompt(agentConfig, user, userId, undefined, undefined, (user?.credits as number) || 0), agentName: (agentConfig?.name as string) || 'Geek', userCredits: (user?.credits as number) || 0, userId, forceProvider: 'openrouter-free' as Provider },

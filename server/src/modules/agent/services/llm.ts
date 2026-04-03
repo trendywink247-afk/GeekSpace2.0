@@ -222,6 +222,13 @@ function recordRoutingTrace(trace: RoutingTrace): void {
 const COMPLEX_KEYWORDS = [
   'explain', 'analyze', 'compare', 'design', 'architect', 'strategy',
   'pros and cons', 'trade-off', 'deep dive', 'in detail', 'comprehensive',
+  'summarize', 'write', 'create', 'build', 'draft',
+];
+
+// Research keywords trigger complex routing at 1-match threshold (they always need tools)
+const RESEARCH_KEYWORDS = [
+  'research', 'search', 'find out', 'look up', 'investigate', 'look into',
+  'what is happening', 'latest news', 'recent news', 'find me',
 ];
 const CODING_KEYWORDS = [
   'code', 'function', 'class', 'debug', 'error', 'bug', 'implement',
@@ -277,10 +284,12 @@ export function classifyIntent(message: string, userId?: string): Intent {
   const planningScore = matchCount(PLANNING_KEYWORDS);
   const automationScore = matchCount(AUTOMATION_KEYWORDS);
   const complexScore = matchCount(COMPLEX_KEYWORDS);
+  const researchScore = matchCount(RESEARCH_KEYWORDS);
 
   let intent: Intent;
   if (codingScore >= 2) intent = 'coding';
   else if (automationScore >= 1) intent = 'automation';
+  else if (researchScore >= 1) intent = 'complex'; // research always needs ReAct + tools
   else if (planningScore >= 2) intent = 'planning';
   else if (complexScore >= 2 || wordCount > 40) intent = 'complex';
   else intent = 'simple';

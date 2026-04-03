@@ -54,7 +54,7 @@ import { addInboxMessage } from '../../../services/inbox.js';
 import { checkContentSafety } from '../../../services/content-filter.js';
 import { isLaunchModeRequest, runMultiAgentOrchestration } from './multi-agent-orchestrator.js';
 import { isResearchRequest, runResearchJob } from '../../../services/research-job.js';
-import { emitThinking, emitDone, emitDelegation, emitCommSent, emitCommReceived, emitTaskStarted, emitTaskCompleted } from './agent-state-bus.js';
+import { emitThinking, emitResponding, emitDone, emitDelegation, emitCommSent, emitCommReceived, emitTaskStarted, emitTaskCompleted } from './agent-state-bus.js';
 import { routeDelegation } from '../../../services/delegation.js';
 import { cacheDel } from '../../../services/cache.js';
 import { getTodayFestival } from '../../../services/festival-calendar.js';
@@ -1575,6 +1575,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     : trimConversationHistory(history, 3000) as ChatMessage[];
 
   // 7. Route through bridge (PicoClaw for simple, Kimi for complex) or fallback to routeChat
+  emitResponding(userId, effectivePersonalityId, `${resolvedAgentName} is composing a response...`);
   let replyText: string;
   let provider: string;
   let model: string;
@@ -1832,7 +1833,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     const messages: ChatMessage[] = [...trimmedHistory, { role: 'user', content: llmUserText }];
     const reactResult = shouldUseDeepReasoning(msg.text)
       ? await runDeepReasoning(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId as any, userCredits, userId, forceProvider: 'groq', enableDelegation: true }) // eslint-disable-line @typescript-eslint/no-explicit-any
-      : await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, userCredits, userId, forceProvider: 'groq' });
+      : await runReactLoop(messages, { systemPrompt, agentName: resolvedAgentName, agentId: effectivePersonalityId, userCredits, userId, forceProvider: 'groq' });
     replyText = reactResult.text;
     provider = reactResult.provider;
     model = reactResult.model;
@@ -1983,7 +1984,7 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   deductSubscriptionCredits(userId, creditCost);
 
   // 10. Log assistant response (clean text without action blocks)
-  logConversation(userId, 'assistant', finalReply, requestId, provider, model);
+  logConversation(userId, 'assistant', finalReply, requestId, provider, model, effectivePersonalityId);
   logActivity(userId, `${resolvedAgentName} replied`, finalReply.slice(0, 80), agentIcon);
   emitDone(userId, effectivePersonalityId, `${resolvedAgentName} finished`);
 
