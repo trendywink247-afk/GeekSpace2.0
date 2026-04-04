@@ -3,7 +3,7 @@
 //
 // Public invite registration page. URL: /invite?code=XXXX
 // Pre-fills invite code from query param. On success -> /onboarding
-// Design tokens: weebo (#00F0FF)
+// Design tokens: weebo (#A78BFA)
 // ============================================================
 
 import { useState } from 'react';
@@ -96,7 +96,7 @@ export function InvitePage() {
               <div>
                 <label className="text-sm text-[var(--ag-text-muted,#9CA3AF)] mb-1.5 block">Invite Code</label>
                 <div className="relative">
-                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#00F0FF)]" />
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-cyan,#A78BFA)]" />
                   <Input
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
@@ -119,7 +119,7 @@ export function InvitePage() {
 
               <Button
                 type="submit"
-                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="w-full min-h-[44px] bg-[var(--ag-cyan,#A78BFA)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
                 data-testid="invite-code-submit"
               >
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
@@ -127,7 +127,7 @@ export function InvitePage() {
 
               <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 Don't have an invite?{' '}
-                <a href="mailto:hello@agentin.chat" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">
+                <a href="mailto:hello@agentin.chat" className="text-[var(--ag-cyan,#A78BFA)] hover:underline">
                   Request access
                 </a>
               </p>
@@ -220,7 +220,7 @@ export function InvitePage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full min-h-[44px] bg-[var(--ag-cyan,#00F0FF)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
+                className="w-full min-h-[44px] bg-[var(--ag-cyan,#A78BFA)] hover:bg-[#00D4B0] text-[#06061a] font-semibold"
                 data-testid="invite-register-submit"
               >
                 {isLoading ? (
@@ -232,9 +232,9 @@ export function InvitePage() {
 
               <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)]">
                 By joining, you agree to our{' '}
-                <Link to="/terms" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Terms</Link>
+                <Link to="/terms" className="text-[var(--ag-cyan,#A78BFA)] hover:underline">Terms</Link>
                 {' '}and{' '}
-                <Link to="/privacy" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Privacy Policy</Link>.
+                <Link to="/privacy" className="text-[var(--ag-cyan,#A78BFA)] hover:underline">Privacy Policy</Link>.
               </p>
             </form>
           )}
@@ -242,7 +242,7 @@ export function InvitePage() {
 
         <p className="text-center text-xs text-[var(--ag-text-muted,#9CA3AF)] mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-[var(--ag-cyan,#00F0FF)] hover:underline">Sign in</Link>
+          <Link to="/login" className="text-[var(--ag-cyan,#A78BFA)] hover:underline">Sign in</Link>
         </p>
       </div>
     </PublicPageShell>

@@ -9,25 +9,25 @@
   /* Borders */
   --ag-border-subtle: rgba(139, 92, 246, 0.08);
   --ag-border-default: rgba(139, 92, 246, 0.15);
-  --ag-border-glow: rgba(0, 240, 255, 0.2);
-  --ag-border-active: rgba(0, 240, 255, 0.4);
+  --ag-border-glow: rgba(139, 92, 246, 0.2);
+  --ag-border-active: rgba(139, 92, 246, 0.4);
 
   /* Text */
   --ag-text-primary: #F4F6FF;
   --ag-text-secondary: #9CA3AF;
   --ag-text-muted: #6B7280;
-  --ag-text-accent: #00F0FF;
+  --ag-text-accent: #A78BFA;
 
   /* Accents */
   --ag-violet: #8B5CF6;
-  --ag-cyan: #00F0FF;
+  --ag-cyan: #A78BFA;
   --ag-green: #10B981;
   --ag-amber: #F59E0B;
   --ag-pink: #FF2D78;
   --ag-lime: #ADFF2F;
 
   /* Agent Colors */
-  --ag-weebo: #00F0FF;
+  --ag-weebo: #A78BFA;
   --ag-edith: #8B5CF6;
   --ag-jarvis: #ADFF2F;
   --ag-aria: #FF6B9D;
@@ -38,8 +38,8 @@
   --ag-nova: #EC4899;
 
   /* Effects */
-  --ag-glow-sm: 0 0 10px rgba(0, 240, 255, 0.1);
-  --ag-glow-md: 0 0 20px rgba(0, 240, 255, 0.15);
+  --ag-glow-sm: 0 0 10px rgba(139, 92, 246, 0.1);
+  --ag-glow-md: 0 0 20px rgba(139, 92, 246, 0.15);
   --ag-glow-lg: 0 0 40px rgba(139, 92, 246, 0.2);
   --ag-noise-opacity: 0.025;
 
@@ -60,9 +60,9 @@
   --ag-glass-blur: 16px;
 
   /* Active/focus states */
-  --ag-focus-ring: 0 0 0 2px rgba(0, 240, 255, 0.3);
-  --ag-active-bg: rgba(0, 240, 255, 0.08);
-  --ag-active-border: rgba(0, 240, 255, 0.25);
+  --ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.3);
+  --ag-active-bg: rgba(139, 92, 246, 0.08);
+  --ag-active-border: rgba(139, 92, 246, 0.25);
 
   /* Gradients */
   --ag-gradient-aurora: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.06) 0%, transparent 50%),
@@ -70,8 +70,8 @@
     radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.03) 0%, transparent 50%);
 
   /* Scrollbar */
-  --ag-scrollbar-thumb: rgba(0, 240, 255, 0.15);
-  --ag-scrollbar-thumb-hover: rgba(0, 240, 255, 0.3);
+  --ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
+  --ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
 }
 
 /* ─── Light Mode ─── */

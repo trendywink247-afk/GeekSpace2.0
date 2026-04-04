@@ -104,7 +104,7 @@ export function IncomingRequests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#A78BFA] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -127,7 +127,7 @@ export function IncomingRequests() {
         <h3 className="font-semibold text-[#E8E8F0]">
           Incoming Requests ({requests.length})
         </h3>
-        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#00F0FF]/30">
+        <Button variant="outline" size="sm" onClick={loadRequests} className="border-[#A78BFA]/30">
           Refresh
         </Button>
       </div>
@@ -140,11 +140,11 @@ export function IncomingRequests() {
       )}
 
       {requests.map((request) => (
-        <Card key={request.id} className="glass-card-v2 border-[#00F0FF]/20">
+        <Card key={request.id} className="glass-card-v2 border-[#A78BFA]/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[#00F0FF]/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#A78BFA]/20 flex items-center justify-center flex-shrink-0">
                 {request.fromUser?.avatar ? (
                   <img
                     src={request.fromUser.avatar}

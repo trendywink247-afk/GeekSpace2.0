@@ -224,7 +224,7 @@ export function SpriteTeaser() {
           style={{
             background: 'linear-gradient(145deg, rgba(12,12,24,0.7), rgba(8,8,18,0.85))',
             borderColor: 'rgba(255,255,255,0.06)',
-            boxShadow: '0 0 40px rgba(0,240,255,0.03)',
+            boxShadow: '0 0 40px rgba(139,92,246,0.03)',
           }}
         >
           <canvas

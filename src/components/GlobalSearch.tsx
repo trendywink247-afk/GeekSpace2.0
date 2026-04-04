@@ -125,11 +125,11 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg mx-4 bg-[#0D0D1A] border border-[#00F0FF]/30 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg mx-4 bg-[#0D0D1A] border border-[#A78BFA]/30 rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Input row */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#00F0FF]/10">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#A78BFA]/10">
           <Search className="w-5 h-5 text-[var(--ag-text-muted)] flex-shrink-0" />
           <input
             ref={inputRef}
@@ -147,7 +147,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
         {/* Spinner */}
         {loading && (
           <div className="flex justify-center py-5">
-            <div className="w-5 h-5 border-2 border-[#00F0FF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#A78BFA] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
@@ -162,7 +162,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
                 onMouseEnter={() => setSelectedIndex(idx)}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                   idx === selectedIndex
-                    ? 'bg-[#00F0FF]/10 border-l-2 border-[#00F0FF]'
+                    ? 'bg-[#A78BFA]/10 border-l-2 border-[#A78BFA]'
                     : 'hover:bg-[#1A1A2E] border-l-2 border-transparent'
                 }`}
               >

@@ -73,7 +73,7 @@ const colorMap: Record<string, string> = {
   n8n: '#ff6d5a',
   manychat: '#0084ff',
   whatsapp: '#25d366',
-  'custom-webhook': '#00F0FF',
+  'custom-webhook': '#A78BFA',
   email: '#00FF88',
   image: '#FF2D78',
 };
@@ -482,7 +482,7 @@ export function ConnectionsPage() {
   };
 
   const getIcon = (type: string) => iconMap[type] || Zap;
-  const getColor = (type: string) => colorMap[type] || '#00F0FF';
+  const getColor = (type: string) => colorMap[type] || '#A78BFA';
 
   return (
     <PageShell maxWidth="6xl" className="animate-in fade-in duration-500">
@@ -518,7 +518,7 @@ export function ConnectionsPage() {
             </Button>
             <Button
               onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold min-h-[44px]"
+              className="bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold min-h-[44px]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New
@@ -545,7 +545,7 @@ export function ConnectionsPage() {
         <BlurFade delay={0.15}>
         <SectionCard padding="sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[#A78BFA]/10 flex items-center justify-center">
                 <Activity className="w-5 h-5 text-[var(--ag-cyan)]" />
               </div>
               <div>
@@ -747,7 +747,7 @@ export function ConnectionsPage() {
                   ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
                   : opt === 'disconnected'
                   ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
-                  : 'bg-[#00F0FF]/15 border-[var(--ag-cyan)]/50 text-[var(--ag-cyan)]'
+                  : 'bg-[#A78BFA]/15 border-[var(--ag-cyan)]/50 text-[var(--ag-cyan)]'
                 : 'border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
@@ -777,7 +777,7 @@ export function ConnectionsPage() {
             <SectionCard
               className={`group h-full ${
                 isTelegram
-                  ? '!border-[var(--ag-cyan)]/30 ring-1 ring-[#00F0FF]/10'
+                  ? '!border-[var(--ag-cyan)]/30 ring-1 ring-[#A78BFA]/10'
                   : connection.status === 'connected'
                   ? '!border-[#00FF88]/15'
                   : ''
@@ -787,7 +787,7 @@ export function ConnectionsPage() {
               {/* Telegram: Recommended badge */}
               {isTelegram && (
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
+                  <Badge className="bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
                     Recommended
                   </Badge>
                   <span className="text-[10px] text-[var(--ag-text-secondary)]">Primary notification channel</span>
@@ -860,7 +860,7 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={connectingId === connection.type}
-                      className="bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 shadow-lg shadow-[#00F0FF]/10 shrink-0"
+                      className="bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 shadow-lg shadow-[#A78BFA]/10 shrink-0"
                     >
                       {connectingId === connection.type ? (
                         <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting...</>
@@ -945,7 +945,7 @@ export function ConnectionsPage() {
                             size="sm"
                             onClick={() => void handleTestConnection(connection.type)}
                             disabled={testing[connection.type]}
-                            className="border-[rgba(139,92,246,0.15)] text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 text-xs min-h-[44px]"
+                            className="border-[rgba(139,92,246,0.15)] text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 text-xs min-h-[44px]"
                             data-testid={`test-connection-${connection.type}`}
                           >
                             {testing[connection.type] ? (
@@ -1000,9 +1000,9 @@ export function ConnectionsPage() {
                       <div className="mb-4">
                         {/* Divider */}
                         <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                          <div className="flex-1 h-px bg-[#A78BFA]/15" />
                           <span className="text-xs text-[var(--ag-text-muted)] whitespace-nowrap">— or —</span>
-                          <div className="flex-1 h-px bg-[#00F0FF]/15" />
+                          <div className="flex-1 h-px bg-[#A78BFA]/15" />
                         </div>
 
                         {/* Expandable header */}
@@ -1093,7 +1093,7 @@ export function ConnectionsPage() {
                                 <Button
                                   onClick={handleCustomBotConnect}
                                   disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
-                                  className="w-full bg-[#00F0FF] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
+                                  className="w-full bg-[#A78BFA] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
                                 >
                                   {customBotStatus === 'verifying' ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
@@ -1167,7 +1167,7 @@ export function ConnectionsPage() {
             <div className="space-y-2">
               {integrationEvents.slice(0, 5).map((ev) => (
                 <div key={ev.id} className="flex items-center gap-3 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-[#00F0FF] flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#A78BFA] flex-shrink-0" />
                   <span className="text-[var(--ag-text-primary)] flex-1 truncate">{ev.action}</span>
                   {ev.details && <span className="text-[var(--ag-text-secondary)] truncate max-w-[120px]">{ev.details}</span>}
                   <span className="text-[var(--ag-text-secondary)] flex-shrink-0">{timeAgo(ev.created_at)}</span>
@@ -1178,7 +1178,7 @@ export function ConnectionsPage() {
       )}
 
       {/* Privacy Note */}
-      <SectionCard className="!bg-gradient-to-r from-[#00F0FF]/5 to-transparent">
+      <SectionCard className="!bg-gradient-to-r from-[#A78BFA]/5 to-transparent">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
             <div>

@@ -73,7 +73,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
           {!loading && unreadCount > 0 && (
             <span
               className="inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1"
-              style={{ background: '#00F0FF', color: '#05050A' }}
+              style={{ background: '#A78BFA', color: '#05050A' }}
             >
               {unreadCount}
             </span>
@@ -88,12 +88,12 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
         </button>
       </div>
       <Card
-        className="border-[#00F0FF]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
+        className="border-[#A78BFA]/10 bg-[#0C0C18] rounded-2xl overflow-hidden"
         style={{ background: '#0C0C18' }}
       >
         <CardContent className="p-0">
           {loading ? (
-            <div className="divide-y divide-[#00F0FF]/5">
+            <div className="divide-y divide-[#A78BFA]/5">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="p-4 flex items-start gap-3">
                   <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -106,16 +106,16 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
             </div>
           ) : messages.length > 0 ? (
             <>
-              <div className="divide-y divide-[#00F0FF]/5">
+              <div className="divide-y divide-[#A78BFA]/5">
                 {messages.map((msg) => {
-                  const agentColors = ['#00F0FF', '#BF5FFF', '#00FF88'];
+                  const agentColors = ['#A78BFA', '#BF5FFF', '#00FF88'];
                   const colorIdx = msg.id.charCodeAt(0) % agentColors.length;
                   const color = agentColors[colorIdx];
                   return (
                     <button
                       key={msg.id}
                       onClick={() => onOpenChat?.()}
-                      className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#00F0FF]/[0.03] transition-colors group"
+                      className="w-full p-4 flex items-start gap-3 text-left hover:bg-[#A78BFA]/[0.03] transition-colors group"
                     >
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
@@ -140,17 +140,17 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                       {/* Unread dot */}
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
-                        style={{ background: '#00F0FF' }}
+                        style={{ background: '#A78BFA' }}
                       />
                     </button>
                   );
                 })}
               </div>
-              <div className="p-3 border-t border-[#00F0FF]/5">
+              <div className="p-3 border-t border-[#A78BFA]/5">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 text-xs"
+                  className="w-full text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 text-xs"
                   onClick={() => onNavigate?.('inbox')}
                 >
                   <Inbox className="w-3.5 h-3.5 mr-1.5" />
@@ -162,7 +162,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
             <div className="p-8 text-center">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'rgba(0,240,255,0.08)' }}
+                style={{ background: 'rgba(139,92,246,0.08)' }}
               >
                 <MessageSquare className="w-6 h-6 text-[var(--ag-cyan)]/30" />
               </div>
@@ -175,7 +175,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
+                className="text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10"
                 onClick={() => onOpenChat?.()}
               >
                 <MessageSquare className="w-3.5 h-3.5 mr-1" />

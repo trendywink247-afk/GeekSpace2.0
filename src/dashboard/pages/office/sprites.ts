@@ -139,11 +139,11 @@ interface Palette {
  * ```typescript
  * const palette = AGENT_PALETTES['weebo'];
  * // palette.shirt === '#00D4E0' (cyan)
- * // palette.accent === '#00F0FF' (bright cyan)
+ * // palette.accent === '#A78BFA' (bright cyan)
  * ```
  */
 export const AGENT_PALETTES: Record<string, Palette> = {
-  weebo:  { skin: '#FFCC99', shirt: '#00D4E0', pants: '#006870', hair: '#80E8F0', shoes: '#004850', accent: '#00F0FF' },
+  weebo:  { skin: '#FFCC99', shirt: '#00D4E0', pants: '#006870', hair: '#80E8F0', shoes: '#004850', accent: '#A78BFA' },
   edith:  { skin: '#FFCC99', shirt: '#7C3AED', pants: '#3B1F6E', hair: '#2D1B4E', shoes: '#1A0F2E', accent: '#8B5CF6' },
   jarvis: { skin: '#FFCC99', shirt: '#7ACC2A', pants: '#3D6615', hair: '#2A4410', shoes: '#1A2A0A', accent: '#ADFF2F' },
   aria:   { skin: '#DEB887', shirt: '#FF5A85', pants: '#8B2040', hair: '#8B4513', shoes: '#4A2010', accent: '#FF6B9D' },

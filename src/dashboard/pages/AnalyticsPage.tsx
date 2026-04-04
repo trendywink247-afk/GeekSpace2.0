@@ -97,10 +97,10 @@ interface AnalyticsData {
 const HEATMAP_EMPTY = '#0C0C18';
 const HEATMAP_COLORS = [
   HEATMAP_EMPTY,
-  'rgba(0,240,255,0.2)',
-  'rgba(0,240,255,0.5)',
-  'rgba(0,240,255,0.8)',
-  'rgba(0,240,255,1)',
+  'rgba(139,92,246,0.2)',
+  'rgba(139,92,246,0.5)',
+  'rgba(139,92,246,0.8)',
+  'rgba(139,92,246,1)',
 ];
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -194,7 +194,7 @@ function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
 
-function MiniSparkline({ data, color = '#00F0FF' }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = '#A78BFA' }: { data: number[]; color?: string }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const w = 60;
@@ -234,7 +234,7 @@ function OverviewCard({
   label,
   trend,
   sparkData,
-  color = '#00F0FF',
+  color = '#A78BFA',
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   value: string | number;
@@ -473,7 +473,7 @@ interface AIInsight {
 const INSIGHT_BORDER_COLORS: Record<string, string> = {
   achievement: '#ADFF2F',
   warning: '#F59E0B',
-  tip: '#00F0FF',
+  tip: '#A78BFA',
   positive: '#8B5CF6',
 };
 
@@ -935,7 +935,7 @@ export function AnalyticsPage() {
   }, [filteredSnapshots]);
 
   const PROVIDER_COLORS_MAP: Record<string, string> = {
-    OpenRouter: '#00F0FF',
+    OpenRouter: '#A78BFA',
     PicoClaw: '#ADFF2F',
     Groq: '#8B5CF6',
     Together: '#FF2D78',
@@ -956,7 +956,7 @@ export function AnalyticsPage() {
   const delegationChartData = useMemo(() => {
     const AGENT_COLORS: Record<string, string> = {
       Weebo: '#ADFF2F',
-      Cal: '#00F0FF',
+      Cal: '#A78BFA',
       Echo: '#8B5CF6',
       Forge: '#FF2D78',
       Aria: '#F59E0B',
@@ -1050,7 +1050,7 @@ export function AnalyticsPage() {
               sparkData={filteredSnapshots.map(
                 (d) => d.messagesReceived + d.agentCalls,
               )}
-              color="#00F0FF"
+              color="#A78BFA"
             />
             <OverviewCard
               icon={CheckCircle2}
@@ -1255,7 +1255,7 @@ export function AnalyticsPage() {
               const agentColors: Record<string, string> = {
                 weebo: '#ADFF2F',
                 jarvis: '#8B5CF6',
-                edith: '#00F0FF',
+                edith: '#A78BFA',
                 pulse: '#10B981',
                 builtin: '#F59E0B',
               };

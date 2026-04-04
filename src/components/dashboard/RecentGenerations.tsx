@@ -114,7 +114,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
                       style={{
                         background: gen.type === 'image'
                           ? 'rgba(191,95,255,0.8)'
-                          : 'rgba(0,240,255,0.8)',
+                          : 'rgba(139,92,246,0.8)',
                         color: '#fff',
                       }}
                     >
@@ -134,7 +134,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
             <div className="py-8 text-center">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'linear-gradient(135deg, rgba(191,95,255,0.12), rgba(0,240,255,0.08))' }}
+                style={{ background: 'linear-gradient(135deg, rgba(191,95,255,0.12), rgba(139,92,246,0.08))' }}
               >
                 <Sparkles className="w-6 h-6 text-[#BF5FFF]" />
               </div>

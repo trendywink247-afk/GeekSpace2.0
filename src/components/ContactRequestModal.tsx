@@ -92,15 +92,15 @@ export function ContactRequestModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card-v2 border border-[#00F0FF]/20 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="glass-card-v2 border border-[#A78BFA]/20 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/10">
+        <div className="flex items-center justify-between p-4 border-b border-[#A78BFA]/10">
           <h3 className="text-lg font-semibold text-[#E8E8F0]">
             Contact {toUserName}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
+            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-white hover:bg-[#A78BFA]/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,7 +111,7 @@ export function ContactRequestModal({
           {step === 'form' && (
             <>
               {/* Info banner */}
-              <div className="p-3 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20">
+              <div className="p-3 rounded-xl bg-[#A78BFA]/10 border border-[#A78BFA]/20">
                 <p className="text-sm text-[var(--ag-text-muted)]">
                   {toUserName} will review your request and can accept or decline. 
                   If accepted, you'll be able to chat directly.
@@ -129,7 +129,7 @@ export function ContactRequestModal({
                         value={fromName}
                         onChange={(e) => setFromName(e.target.value)}
                         placeholder="John Doe"
-                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#A78BFA]/20"
                       />
                     </div>
                   </div>
@@ -142,7 +142,7 @@ export function ContactRequestModal({
                         value={fromPhone}
                         onChange={(e) => setFromPhone(e.target.value)}
                         placeholder="+1 234 567 8900"
-                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#A78BFA]/20"
                       />
                     </div>
                     <p className="text-xs text-[var(--ag-text-muted)] mt-1">
@@ -158,7 +158,7 @@ export function ContactRequestModal({
                         value={fromEmail}
                         onChange={(e) => setFromEmail(e.target.value)}
                         placeholder="john@example.com"
-                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#A78BFA]/20"
                       />
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export function ContactRequestModal({
                     onChange={(e) => setIntention(e.target.value)}
                     placeholder="e.g., Collaboration opportunity, question about your portfolio..."
                     rows={3}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#A78BFA]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#A78BFA]/40 resize-none"
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export function ContactRequestModal({
                   onChange={(e) => setInitialMessage(e.target.value)}
                   placeholder="Add more details..."
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#A78BFA]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#A78BFA]/40 resize-none"
                 />
               </div>
 
@@ -218,7 +218,7 @@ export function ContactRequestModal({
                 <p className="text-xs text-[var(--ag-text-muted)] mb-1">Request ID</p>
                 <p className="text-sm text-[#E8E8F0] font-mono">{requestId}</p>
               </div>
-              <Button onClick={onClose} className="mt-6 bg-[#00F0FF] hover:bg-[#00D4B0]">
+              <Button onClick={onClose} className="mt-6 bg-[#A78BFA] hover:bg-[#00D4B0]">
                 Got it
               </Button>
             </div>
@@ -231,7 +231,7 @@ export function ContactRequestModal({
               </div>
               <h4 className="text-lg font-semibold text-[#E8E8F0] mb-2">Something went wrong</h4>
               <p className="text-[var(--ag-text-muted)] mb-4">{error}</p>
-              <Button onClick={() => setStep('form')} variant="outline" className="border-[#00F0FF]/30">
+              <Button onClick={() => setStep('form')} variant="outline" className="border-[#A78BFA]/30">
                 Try Again
               </Button>
             </div>
@@ -240,18 +240,18 @@ export function ContactRequestModal({
 
         {/* Footer */}
         {step === 'form' && (
-          <div className="flex gap-3 p-4 border-t border-[#00F0FF]/10">
+          <div className="flex gap-3 p-4 border-t border-[#A78BFA]/10">
             <Button
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-[#00F0FF]/30 text-[var(--ag-text-muted)]"
+              className="flex-1 border-[#A78BFA]/30 text-[var(--ag-text-muted)]"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!isFormValid()}
-              className="flex-1 bg-[#00F0FF] hover:bg-[#00D4B0] disabled:opacity-50"
+              className="flex-1 bg-[#A78BFA] hover:bg-[#00D4B0] disabled:opacity-50"
             >
               <Send className="w-4 h-4 mr-2" />
               Send Request

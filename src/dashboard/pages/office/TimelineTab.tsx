@@ -65,7 +65,7 @@ function eventBadge(state: AgentStateType, targetAgent?: string): BadgeStyle {
     case 'done':
       return { bg: `${C.dim}20`, text: C.dim };
     default:
-      return { bg: 'rgba(0,240,255,0.08)', text: C.muted };
+      return { bg: 'rgba(139,92,246,0.08)', text: C.muted };
   }
 }
 
@@ -159,9 +159,9 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
           <div key={`${ev.timestamp}-${ev.agentId}-${ev.state}-${i}`}>
             {showSeparator && (
               <div className="flex items-center gap-2 py-1.5 my-0.5">
-                <div className="flex-1 h-px" style={{ background: 'rgba(0,240,255,0.06)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(139,92,246,0.06)' }} />
                 <span className="text-[9px] font-mono" style={{ color: C.dim }}>{min}</span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(0,240,255,0.06)' }} />
+                <div className="flex-1 h-px" style={{ background: 'rgba(139,92,246,0.06)' }} />
               </div>
             )}
 

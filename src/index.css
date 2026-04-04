@@ -1,4 +1,5 @@
 @import './styles/agentin-tokens.css';
+@import './styles/dashboard-polish.css';
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
@@ -223,7 +224,7 @@
 
   /* ─── Glow Effects ─── */
   .glow-accent {
-    box-shadow: 0 0 40px rgba(0, 240, 255, 0.15), 0 0 80px rgba(0, 240, 255, 0.05);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), 0 0 80px rgba(139, 92, 246, 0.05);
   }
 
   /* ─── Glassmorphism ─── */
@@ -231,13 +232,13 @@
     background: rgba(12, 12, 24, 0.75);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 240, 255, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.15);
   }
   .glass-card-v2 {
     background: linear-gradient(135deg, rgba(12, 12, 24, 0.8), rgba(16, 16, 30, 0.6));
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
     backdrop-filter: blur(24px) saturate(1.4);
-    border: 1px solid rgba(0, 240, 255, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.12);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
@@ -288,8 +289,8 @@
   /* ─── Grid Distort Background ─── */
   .grid-distort {
     background-image:
-      linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
     background-size: 50px 50px;
     transform: perspective(500px) rotateX(35deg);
     transform-origin: center top;
@@ -319,8 +320,8 @@
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 240, 255, 0.015) 2px,
-      rgba(0, 240, 255, 0.015) 4px
+      rgba(139, 92, 246, 0.015) 2px,
+      rgba(139, 92, 246, 0.015) 4px
     );
     pointer-events: none;
     z-index: 2;
@@ -330,10 +331,10 @@
   .holographic {
     background: linear-gradient(
       135deg,
-      rgba(0, 240, 255, 0.05) 0%,
+      rgba(139, 92, 246, 0.05) 0%,
       rgba(139, 92, 246, 0.05) 25%,
       rgba(255, 45, 120, 0.05) 50%,
-      rgba(0, 240, 255, 0.05) 75%,
+      rgba(139, 92, 246, 0.05) 75%,
       rgba(139, 92, 246, 0.05) 100%
     );
     background-size: 400% 400%;
@@ -346,7 +347,7 @@
 
   /* ─── Neural Line ─── */
   .neural-line {
-    background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
   }
 
   /* ─── Plasma Border ─── */
@@ -469,8 +470,8 @@
   /* ─── Cyber Grid ─── */
   .cyber-grid {
     background-image:
-      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
     background-size: 60px 60px;
   }
 
@@ -501,7 +502,7 @@
     font-weight: 500;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(0, 240, 255, 0.7);
+    color: rgba(139, 92, 246, 0.7);
   }
 
   /* ─── Safe Areas ─── */
@@ -538,7 +539,7 @@
 
 /* Agentin gradient text — use as className="ag-gradient-text" */
 .ag-gradient-text {
-  background: linear-gradient(135deg, #00F0FF, #8B5CF6);
+  background: linear-gradient(135deg, #A78BFA, #8B5CF6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -788,16 +789,16 @@ html.light .light-only {
   background: var(--agentin-black);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(139, 92, 246, 0.3);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.5);
+  background: rgba(139, 92, 246, 0.5);
 }
 
 /* ─── Selection ─── */
 ::selection {
-  background: rgba(0, 240, 255, 0.25);
+  background: rgba(139, 92, 246, 0.25);
   color: #E8E8F0;
 }
 
@@ -835,7 +836,7 @@ html.light .light-only {
 /* ─── Aurora Background Effect (static radial gradients) ─── */
 .aurora-bg {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0,240,255,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.03) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 80%, rgba(255,45,120,0.02) 0%, transparent 50%);
 }
@@ -869,7 +870,7 @@ html.light .light-only {
 
 /* ─── Neon Glow Hover Effect ─── */
 .glow-hover:hover {
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.25), 0 0 40px rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.1);
 }
 
 /* ─── Corner Brackets Decoration ─── */
@@ -882,7 +883,7 @@ html.light .light-only {
   position: absolute;
   width: 12px;
   height: 12px;
-  border-color: rgba(0, 240, 255, 0.3);
+  border-color: rgba(139, 92, 246, 0.3);
   transition: border-color 0.3s, opacity 0.3s;
   opacity: 0;
   pointer-events: none;
@@ -891,7 +892,7 @@ html.light .light-only {
 .corner-brackets:hover::before,
 .corner-brackets:hover::after {
   opacity: 1;
-  border-color: rgba(0, 240, 255, 0.6);
+  border-color: rgba(139, 92, 246, 0.6);
 }
 .corner-brackets::before {
   top: -1px;
@@ -986,7 +987,7 @@ html, body {
 }
 
 .touch-highlight {
-  -webkit-tap-highlight-color: rgba(0, 240, 255, 0.08);
+  -webkit-tap-highlight-color: rgba(139, 92, 246, 0.08);
 }
 
 .font-heading {
@@ -1035,9 +1036,9 @@ html, body {
   background: linear-gradient(
     90deg,
     rgba(107, 114, 128, 1) 0%,
-    rgba(0, 240, 255, 0.7) 25%,
+    rgba(139, 92, 246, 0.7) 25%,
     rgba(107, 114, 128, 1) 50%,
-    rgba(0, 240, 255, 0.7) 75%,
+    rgba(139, 92, 246, 0.7) 75%,
     rgba(107, 114, 128, 1) 100%
   );
   background-size: 200% auto;
@@ -1081,7 +1082,7 @@ html, body {
 }
 .gradient-mesh {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 50%, rgba(255, 45, 120, 0.06) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
   background-size: 200% 200%, 200% 200%, 200% 200%;
@@ -1168,7 +1169,7 @@ html, body {
 /* Aurora mesh gradient background */
 .aurora-mesh {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 40%),
     radial-gradient(ellipse at 50% 80%, rgba(255, 45, 120, 0.05) 0%, transparent 50%);
 }
@@ -1226,7 +1227,7 @@ html, body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 240, 255, 0.06), transparent 40%);
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(139, 92, 246, 0.06), transparent 40%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;

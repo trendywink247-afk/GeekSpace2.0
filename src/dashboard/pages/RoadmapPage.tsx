@@ -454,7 +454,7 @@ export function RoadmapPage() {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'accepted': return '#00FF88';
-      case 'triaged': return '#00F0FF';
+      case 'triaged': return '#A78BFA';
       case 'rejected': return '#FF2D78';
       case 'shipped_main': return '#BF5FFF';
       case 'shipped_prod': return '#F59E0B';

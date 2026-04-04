@@ -61,7 +61,7 @@ export function SmartSuggestions({ onNavigate }: SmartSuggestionsProps) {
     // 3. Feature discovery (rotate daily)
     const discoveryFeatures = [
       { id: 'discover-creative', label: 'Try Creative Studio', page: 'creative-studio', icon: ImageIcon, agentColor: '#FF6B9D' },
-      { id: 'discover-voice', label: 'Try Voice Chat', page: 'voice', icon: Mic, agentColor: '#00F0FF' },
+      { id: 'discover-voice', label: 'Try Voice Chat', page: 'voice', icon: Mic, agentColor: '#A78BFA' },
       { id: 'discover-docs', label: 'Try Docs Workspace', page: 'docs', icon: FileText, agentColor: '#10B981' },
       { id: 'discover-focus', label: 'Track your habits', page: 'focus', icon: Target, agentColor: '#F59E0B' },
     ];

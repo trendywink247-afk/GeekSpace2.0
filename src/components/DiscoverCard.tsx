@@ -36,7 +36,7 @@ export function DiscoverCard({ onNavigate, onOpenChat: _onOpenChat }: DiscoverCa
   if (dismissed || (!loading && recs.length === 0)) return null;
 
   return (
-    <div className="rounded-xl bg-[#0C0C18] border border-[#00F0FF]/10 p-4">
+    <div className="rounded-xl bg-[#0C0C18] border border-[#A78BFA]/10 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-[#8B5CF6]/10">
@@ -66,7 +66,7 @@ export function DiscoverCard({ onNavigate, onOpenChat: _onOpenChat }: DiscoverCa
               onClick={() => {
                 if (onNavigate) onNavigate(rec.ctaPath);
               }}
-              className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-[#00F0FF]/5 transition-colors group text-left"
+              className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-[#A78BFA]/5 transition-colors group text-left"
             >
               <span className="text-base shrink-0">{getFeatureEmoji(rec.feature)}</span>
               <div className="flex-1 min-w-0">

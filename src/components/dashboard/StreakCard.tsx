@@ -91,7 +91,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     background: bestStreak > 0
-                      ? 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,240,255,0.1))'
+                      ? 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(139,92,246,0.1))'
                       : 'rgba(136,146,164,0.08)',
                   }}
                 >
@@ -117,7 +117,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                   <span className="text-xs text-[#8892A4]">
                     {completedCount}/{totalCount} habits today
                   </span>
-                  <span className="text-xs font-mono" style={{ color: progressPct === 100 ? '#00FF88' : '#00F0FF' }}>
+                  <span className="text-xs font-mono" style={{ color: progressPct === 100 ? '#00FF88' : '#A78BFA' }}>
                     {progressPct}%
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                       width: `${progressPct}%`,
                       background: progressPct === 100
                         ? 'linear-gradient(90deg, #00FF88, #ADFF2F)'
-                        : 'linear-gradient(90deg, #00F0FF, #BF5FFF)',
+                        : 'linear-gradient(90deg, #A78BFA, #BF5FFF)',
                     }}
                   />
                 </div>

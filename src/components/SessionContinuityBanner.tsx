@@ -78,7 +78,7 @@ export function SessionContinuityBanner({ onResume, onDismiss }: SessionContinui
         <div
           className="relative rounded-2xl border backdrop-blur-xl overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.06), rgba(0,240,255,0.04))',
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.06), rgba(139,92,246,0.04))',
             borderColor: 'var(--ag-border-default)',
           }}
         >
@@ -96,7 +96,7 @@ export function SessionContinuityBanner({ onResume, onDismiss }: SessionContinui
             <div className="flex items-center gap-2 mb-2">
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(0,240,255,0.12)' }}
+                style={{ background: 'rgba(139,92,246,0.12)' }}
               >
                 <Sparkles className="w-3.5 h-3.5 text-[var(--ag-cyan)]" />
               </div>

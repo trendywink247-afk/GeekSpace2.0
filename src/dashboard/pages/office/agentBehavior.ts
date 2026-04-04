@@ -413,7 +413,7 @@ function makeBubble(agentId: AgentId, text: string): SpeechBubble {
     id: `social-${now}-${Math.random().toString(36).slice(2, 5)}`,
     agentId,
     text,
-    color: AGENT_COLORS[agentId] || '#00F0FF',
+    color: AGENT_COLORS[agentId] || '#A78BFA',
     createdAt: now,
     expiresAt: now + 3000,
   };
@@ -1747,7 +1747,7 @@ export function tickDeliveries(
         beams.push({
           fromAgentId: delivery.fromAgentId,
           toAgentId: delivery.toAgentId,
-          color: AGENT_COLORS[delivery.fromAgentId] || '#00F0FF',
+          color: AGENT_COLORS[delivery.fromAgentId] || '#A78BFA',
         });
 
         // A says: "Hey [B.name], done with X — your turn"

@@ -56,7 +56,7 @@ export function MiniChatLog({ messages }: Props) {
         <span>
           Agent Comms
           {collapsed && messages.length > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-[10px] font-bold">
+            <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#A78BFA]/20 text-[#A78BFA] text-[10px] font-bold">
               {messages.length}
             </span>
           )}

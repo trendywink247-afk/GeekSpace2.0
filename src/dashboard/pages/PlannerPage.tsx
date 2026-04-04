@@ -68,7 +68,7 @@ const DURATION_OPTIONS = [
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  reminder: '#00F0FF',
+  reminder: '#A78BFA',
   habit: '#22C55E',
   custom: '#8B5CF6',
 };
@@ -76,7 +76,7 @@ const TYPE_COLORS: Record<string, string> = {
 const PRIORITY_COLORS: Record<string, string> = {
   urgent: '#EF4444',
   high: '#F97316',
-  normal: '#00F0FF',
+  normal: '#A78BFA',
   low: '#6B7280',
 };
 
@@ -166,7 +166,7 @@ function BacklogCard({
   item: BacklogItem;
   onDragStart: (item: BacklogItem) => void;
 }) {
-  const borderColor = item.type === 'reminder' ? '#00F0FF' : '#22C55E';
+  const borderColor = item.type === 'reminder' ? '#A78BFA' : '#22C55E';
   const priorityColor = item.priority ? PRIORITY_COLORS[item.priority] || '#6B7280' : undefined;
 
   return (
@@ -634,7 +634,7 @@ export function PlannerPage() {
                 onClick={() => setViewMode('day')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
                   viewMode === 'day'
-                    ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)]'
+                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
               >
@@ -644,7 +644,7 @@ export function PlannerPage() {
                 onClick={() => setViewMode('week')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
                   viewMode === 'week'
-                    ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)]'
+                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
               >
@@ -704,7 +704,7 @@ export function PlannerPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+              className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 min-h-[44px] sm:min-h-0 sm:h-7"
               onClick={goToday}
             >
               This Week
@@ -724,7 +724,7 @@ export function PlannerPage() {
                       key={dateKey(d)}
                       onClick={() => { setCurrentDate(d); setViewMode('day'); }}
                       className={`p-2 text-center transition-colors min-h-[44px] ${
-                        isDateToday ? 'bg-[#00F0FF]/[0.05]' : 'hover:bg-white/[0.02]'
+                        isDateToday ? 'bg-[#A78BFA]/[0.05]' : 'hover:bg-white/[0.02]'
                       }`}
                     >
                       <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-secondary)]'}`}>
@@ -754,7 +754,7 @@ export function PlannerPage() {
                         <div
                           key={dk2}
                           className={`p-0.5 min-h-[48px] border-r border-white/[0.03] transition-colors ${
-                            isCurrent ? 'bg-[#00F0FF]/[0.03]' : ''
+                            isCurrent ? 'bg-[#A78BFA]/[0.03]' : ''
                           } ${isDateToday ? 'bg-white/[0.01]' : ''}`}
                           onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
                           onDrop={e => {
@@ -823,7 +823,7 @@ export function PlannerPage() {
                 <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Backlog</span>
                 <Badge
                   variant="outline"
-                  className="text-xs border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] bg-[#00F0FF]/10"
+                  className="text-xs border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] bg-[#A78BFA]/10"
                 >
                   {backlogItems.length}
                 </Badge>
@@ -833,7 +833,7 @@ export function PlannerPage() {
             <div className="p-2 space-y-1.5 max-h-[40vh] lg:max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
               {backlogItems.length === 0 && !habitsLoading ? (
                 <div className="py-8 text-center">
-                  <div className="w-10 h-10 rounded-full bg-[#00F0FF]/5 border border-[var(--ag-cyan)]/10 flex items-center justify-center mx-auto mb-3">
+                  <div className="w-10 h-10 rounded-full bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/10 flex items-center justify-center mx-auto mb-3">
                     <CalendarCheck className="w-5 h-5 text-[var(--ag-cyan)]/40" />
                   </div>
                   <p className="text-xs text-[var(--ag-text-secondary)]">
@@ -845,7 +845,7 @@ export function PlannerPage() {
                 </div>
               ) : habitsLoading ? (
                 <div className="py-8 text-center">
-                  <div className="w-5 h-5 border-2 border-[var(--ag-cyan)]/30 border-t-[#00F0FF] rounded-full animate-spin mx-auto" />
+                  <div className="w-5 h-5 border-2 border-[var(--ag-cyan)]/30 border-t-[#A78BFA] rounded-full animate-spin mx-auto" />
                   <p className="text-xs text-[var(--ag-text-secondary)] mt-2">Loading...</p>
                 </div>
               ) : (
@@ -862,7 +862,7 @@ export function PlannerPage() {
             <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
               <div className="flex items-center gap-3 text-[10px] text-[var(--ag-text-secondary)]">
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#00F0FF]" />
+                  <span className="w-2 h-2 rounded-full bg-[#A78BFA]" />
                   Reminders
                 </span>
                 <span className="flex items-center gap-1">
@@ -911,7 +911,7 @@ export function PlannerPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 min-h-[44px] sm:min-h-0 sm:h-7"
+                  className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 min-h-[44px] sm:min-h-0 sm:h-7"
                   onClick={goToday}
                 >
                   Today
@@ -931,8 +931,8 @@ export function PlannerPage() {
                     key={hour}
                     className={`
                       flex border-b border-white/[0.03] min-h-[64px] transition-colors duration-150
-                      ${isCurrentHour ? 'bg-[#00F0FF]/[0.03]' : ''}
-                      ${isDrop ? 'bg-[#00F0FF]/[0.06]' : ''}
+                      ${isCurrentHour ? 'bg-[#A78BFA]/[0.03]' : ''}
+                      ${isDrop ? 'bg-[#A78BFA]/[0.06]' : ''}
                     `}
                     onDragOver={e => handleDragOver(e, hour)}
                     onDragLeave={handleDragLeave}
@@ -943,7 +943,7 @@ export function PlannerPage() {
                       w-16 sm:w-20 flex-shrink-0 py-2 px-2 sm:px-3 text-right
                       border-r transition-colors duration-150
                       ${isCurrentHour
-                        ? 'border-r-2 border-r-[#00F0FF] text-[var(--ag-cyan)]'
+                        ? 'border-r-2 border-r-[#A78BFA] text-[var(--ag-cyan)]'
                         : 'border-r-white/5 text-[var(--ag-text-secondary)]'}
                     `}>
                       <span className="font-mono text-xs sm:text-sm">
@@ -954,7 +954,7 @@ export function PlannerPage() {
                     {/* Drop zone / blocks area */}
                     <div className={`
                       flex-1 py-1.5 px-2 sm:px-3 relative min-h-[64px]
-                      ${isDrop ? 'ring-1 ring-inset ring-[#00F0FF]/30 rounded-r-lg' : ''}
+                      ${isDrop ? 'ring-1 ring-inset ring-[#A78BFA]/30 rounded-r-lg' : ''}
                     `}>
                       {slotBlocks.map(block => (
                         <TimeBlockCard

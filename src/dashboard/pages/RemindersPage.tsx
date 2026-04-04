@@ -43,7 +43,7 @@ import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
-  personal: '#00F0FF',
+  personal: '#A78BFA',
   work: '#00FF88',
   health: '#FF2D78',
   other: '#FFB800',
@@ -51,7 +51,7 @@ const categoryColors: Record<string, string> = {
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
   low:    { label: 'Low',    color: 'var(--ag-text-muted)', bg: '#6B728020' },
-  normal: { label: 'Normal', color: 'var(--ag-cyan)', bg: '#00F0FF20' },
+  normal: { label: 'Normal', color: 'var(--ag-cyan)', bg: '#A78BFA20' },
   high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
   urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
 };

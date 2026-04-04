@@ -504,14 +504,14 @@ export function VideoGenPage() {
                   href={previewVideo.video_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                   aria-label="Download video"
                 >
                   <Download className="w-4 h-4" />
                 </a>
                 <button
                   onClick={() => setPreviewVideo(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                   aria-label="Close preview"
                 >
                   <X className="w-4 h-4" />
@@ -523,7 +523,7 @@ export function VideoGenPage() {
                 src={previewVideo.video_url}
                 controls
                 autoPlay
-                className="w-full rounded-2xl border border-[var(--ag-cyan)]/20 bg-[var(--ag-bg-base)] shadow-[0_0_30px_rgba(0,240,255,0.08)]"
+                className="w-full rounded-2xl border border-[var(--ag-cyan)]/20 bg-[var(--ag-bg-base)] shadow-[0_0_30px_rgba(139,92,246,0.08)]"
                 style={{ colorScheme: 'dark' }}
               />
             ) : (
@@ -628,7 +628,7 @@ export function VideoGenPage() {
                       <button
                         key={agent.id}
                         onClick={() => { setAssignedAgent(agent); setShowAgentPicker(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#00F0FF]/5 transition-colors text-left ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#A78BFA]/5 transition-colors text-left ${
                           isAssigned ? 'bg-[#8B5CF6]/5' : ''
                         }`}
                       >
@@ -741,7 +741,7 @@ export function VideoGenPage() {
                       m.tier === 'auto' ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]' :
                       m.tier === 'free' ? 'bg-[#00FF88]/10 text-[#00FF88]' :
                       m.tier === 'premium' ? 'bg-[#FFB800]/10 text-[#FFB800]' :
-                      'bg-[#00F0FF]/10 text-[var(--ag-cyan)]'
+                      'bg-[#A78BFA]/10 text-[var(--ag-cyan)]'
                     }`}>
                       {m.cost}
                     </span>
@@ -760,7 +760,7 @@ export function VideoGenPage() {
                 onClick={() => setDuration(preset.val)}
                 className={`px-3 py-2 min-h-[44px] rounded-lg text-xs transition-all ${
                   duration === preset.val
-                    ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40 shadow-[0_0_8px_rgba(0,240,255,0.2)]'
+                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
                     : 'bg-[var(--ag-bg-base)] text-[var(--ag-text-secondary,#9CA3AF)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                 }`}
               >
@@ -785,7 +785,7 @@ export function VideoGenPage() {
             {videoCount >= maxVideos ? (
               <span className="px-2.5 py-1 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/20 text-[#FF6161] font-medium">Video limit reached ({maxVideos}/{maxVideos})</span>
             ) : (
-              <span className="px-2.5 py-1 rounded-lg bg-[#00F0FF]/10 border border-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]">
+              <span className="px-2.5 py-1 rounded-lg bg-[#A78BFA]/10 border border-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]">
                 <strong>{maxVideos - videoCount}</strong> credits remaining &middot; {duration}s &middot; 1280x720
               </span>
             )}
@@ -847,11 +847,11 @@ export function VideoGenPage() {
             <div className="flex items-center rounded-lg border border-[var(--ag-cyan)]/15 bg-[var(--ag-bg-surface)] p-0.5 gap-0.5">
               <button
                 onClick={() => setGallerySort('newest')}
-                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'newest' ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
+                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'newest' ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
               >Newest</button>
               <button
                 onClick={() => setGallerySort('status')}
-                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'status' ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
+                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'status' ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
               >Status</button>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
@@ -934,7 +934,7 @@ export function VideoGenPage() {
                       {/* Copy ID */}
                       <button
                         onClick={() => handleCopyId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                         aria-label={`Copy ID: ${vid.id}`}
                       >
                         {copiedId === vid.id ? (
@@ -946,7 +946,7 @@ export function VideoGenPage() {
                       {/* Delete */}
                       <button
                         onClick={() => setDeleteConfirmId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                         aria-label="Delete video"
                         data-testid={`delete-video-${vid.id}`}
                       >
@@ -1193,7 +1193,7 @@ export function VideoGenPage() {
                         </button>
                         {stitching && (
                           <div className="flex-1 h-1.5 rounded-full bg-[var(--ag-bg-surface)] overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#00F0FF] animate-pulse rounded-full" style={{ width: '60%' }} />
+                            <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] animate-pulse rounded-full" style={{ width: '60%' }} />
                           </div>
                         )}
                       </div>
@@ -1222,7 +1222,7 @@ export function VideoGenPage() {
                       <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                         Clip {previewClip.index + 1} — {directorJob.packet?.shotlist?.[previewClip.index]?.prompt ?? 'Director Mode clip'}
                       </p>
-                      <button onClick={() => setPreviewClip(null)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50" aria-label="Close clip preview">
+                      <button onClick={() => setPreviewClip(null)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50" aria-label="Close clip preview">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1307,7 +1307,7 @@ export function VideoGenPage() {
                   {/* 64.13: Re-use idea button */}
                   <button
                     onClick={() => setDirectorIdea(job.idea)}
-                    className="flex-shrink-0 p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-violet)]/50 hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                    className="flex-shrink-0 p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-violet)]/50 hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                     aria-label="Use this idea again"
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -1354,7 +1354,7 @@ export function VideoGenPage() {
                         model.tier === 'auto' ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]' :
                         model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
                         model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
-                        'bg-[#00F0FF]/15 text-[var(--ag-cyan)]'
+                        'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
                       }`}>
                         {model.cost}
                       </span>

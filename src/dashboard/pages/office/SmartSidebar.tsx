@@ -350,7 +350,7 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spot
           className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0"
           style={{
             background: chatInput.trim()
-              ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,240,255,0.2))'
+              ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(139,92,246,0.2))'
               : 'rgba(139,92,246,0.08)',
             color: chatInput.trim() ? '#E8E8F0' : '#4B5563',
             border: chatInput.trim()

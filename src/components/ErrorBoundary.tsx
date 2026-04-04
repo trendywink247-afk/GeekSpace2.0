@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 sessionStorage.removeItem('error-boundary-reloaded');
                 window.location.reload();
               }}
-              className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[var(--ag-cyan)] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[var(--ag-cyan)] border border-[#A78BFA]/30 hover:bg-[#A78BFA]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
             >
               Reload page
             </button>

@@ -554,7 +554,7 @@ export function SettingsPage() {
     anthropic: '#d4a574',
     qwen: '#6366f1',
     openrouter: '#ef4444',
-    custom: '#00F0FF',
+    custom: '#A78BFA',
   };
 
   return (
@@ -563,7 +563,7 @@ export function SettingsPage() {
     <div data-testid="settings-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
       {/* 57.9: Agent config save-confirmation toast */}
       {savedToast && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00F0FF]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
+        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="settings-saved-toast">
           <Save className="w-4 h-4" />
           Settings saved
         </div>
@@ -628,8 +628,8 @@ export function SettingsPage() {
         badge={
           <>
             <span className="relative flex h-2.5 w-2.5" title="Weebo active">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A78BFA] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#A78BFA]" />
             </span>
             {hasUnsavedChanges && !isSaving && (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
@@ -683,7 +683,7 @@ export function SettingsPage() {
             }}
             className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               activeTab === id
-                ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40'
+                ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40'
                 : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-transparent hover:border-[rgba(139,92,246,0.15)]'
             }`}
           >
@@ -704,7 +704,7 @@ export function SettingsPage() {
                   {profile.avatar ? (
                     <img src={profile.avatar} alt={profile.name} className="w-24 h-24 mx-auto rounded-full bg-[var(--ag-bg-surface)] object-cover" />
                   ) : (
-                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#00F0FF] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-[#A78BFA] to-[#FF2D78] flex items-center justify-center text-3xl font-bold">
                       {(profile.name || user?.email?.split('@')[0] || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
                   )}
@@ -715,7 +715,7 @@ export function SettingsPage() {
                       const url = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&backgroundColor=7B61FF,0f0b1e`;
                       setProfile({ ...profile, avatar: url });
                     }}
-                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#00F0FF] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
+                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#A78BFA] flex items-center justify-center hover:bg-[#00D4B0] transition-colors press-scale"
                     title="Generate new pixel avatar"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
@@ -776,8 +776,8 @@ export function SettingsPage() {
                       variant="outline"
                       className="mt-3"
                       style={{
-                        borderColor: isPremium ? 'rgba(0,240,255,0.4)' : 'rgba(0,255,136,0.3)',
-                        color: isPremium ? '#00F0FF' : '#00FF88',
+                        borderColor: isPremium ? 'rgba(139,92,246,0.4)' : 'rgba(0,255,136,0.3)',
+                        color: isPremium ? '#A78BFA' : '#00FF88',
                       }}
                     >
                       {label}
@@ -848,7 +848,7 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-[#A78BFA]/10 flex items-center justify-center">
                       <item.icon className="w-5 h-5 text-[var(--ag-cyan)]" />
                     </div>
                     <div>
@@ -996,7 +996,7 @@ export function SettingsPage() {
                     s.id === [...sessions].sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())[0].id;
                   return (
                     <div key={s.id} className={`flex items-center justify-between p-3 rounded-xl  border transition-all ${
-                      isCurrent ? 'border-[var(--ag-cyan)]/50 ring-1 ring-[#00F0FF]/20' : 'border-[var(--ag-cyan)]/20'
+                      isCurrent ? 'border-[var(--ag-cyan)]/50 ring-1 ring-[#A78BFA]/20' : 'border-[var(--ag-cyan)]/20'
                     }`}>
                       <div className="flex items-center gap-3">
                         <Monitor className={`w-5 h-5 flex-shrink-0 ${isCurrent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
@@ -1006,8 +1006,8 @@ export function SettingsPage() {
                               {s.user_agent.slice(0, 40) || 'Unknown browser'}
                             </span>
                             {isCurrent && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00F0FF]/15 text-[var(--ag-cyan)] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#A78BFA]/15 text-[var(--ag-cyan)] text-[10px] font-semibold uppercase tracking-wider flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA] animate-pulse" />
                                 Current
                               </span>
                             )}
@@ -1079,7 +1079,7 @@ export function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#00F0FF]/5 border border-[var(--ag-cyan)]/20">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/20">
                 <Shield className="w-4 h-4 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[var(--ag-text-muted)]">
                   Your export includes your profile, conversation history, memories, active sessions, and preferences.
@@ -1090,7 +1090,7 @@ export function SettingsPage() {
                 variant="outline"
                 onClick={() => void handleGDPRExport()}
                 disabled={isExportingGDPR}
-                className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
+                className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10"
                 data-testid="gdpr-export-btn"
               >
                 {isExportingGDPR ? (
@@ -1124,7 +1124,7 @@ export function SettingsPage() {
                   disabled={modelSaving}
                   className={`w-full text-left p-3 rounded-xl border transition-all ${
                     preferredModel === opt.value
-                      ? 'bg-[#00F0FF]/10 border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
+                      ? 'bg-[#A78BFA]/10 border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
                       : ' border-[var(--ag-cyan)]/20 text-[var(--ag-text-primary)] hover:border-[var(--ag-cyan)]/50'
                   }`}
                 >
@@ -1220,7 +1220,7 @@ export function SettingsPage() {
                     'bg-[#F97316]',
                     'bg-[#EAB308]',
                     'bg-[#22C55E]',
-                    'bg-[#00F0FF]',
+                    'bg-[#A78BFA]',
                   ];
                   return (
                     <div className="mt-2 space-y-1">
@@ -1463,7 +1463,7 @@ export function SettingsPage() {
                       />
                       <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
                         onClick={() => handleRotateKey(key.id)}
-                        className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 border border-[var(--ag-cyan)]/30">
+                        className="bg-[#A78BFA]/10 text-[var(--ag-cyan)] hover:bg-[#A78BFA]/20 border border-[var(--ag-cyan)]/30">
                         {isRotating ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
                       </Button>
                     </div>
@@ -1482,7 +1482,7 @@ export function SettingsPage() {
                           onClick={() => setNewKeyProvider(p)}
                           className={`px-3 py-2 min-h-[44px] rounded-lg text-sm capitalize transition-all ${
                             newKeyProvider === p
-                              ? 'bg-[#00F0FF]/20 border border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
+                              ? 'bg-[#A78BFA]/20 border border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
                               : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)]'
                           }`}
                         >
@@ -1532,7 +1532,7 @@ export function SettingsPage() {
                       onClick={() => setMemoryFilter(cat)}
                       className={`px-3 py-2 min-h-[44px] rounded-lg text-xs capitalize transition-all ${
                         memoryFilter === cat
-                          ? 'bg-[#00F0FF]/20 border border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
+                          ? 'bg-[#A78BFA]/20 border border-[var(--ag-cyan)] text-[var(--ag-cyan)]'
                           : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)]'
                       }`}
                     >
@@ -1558,10 +1558,10 @@ export function SettingsPage() {
                   <div key={memory.id} className="flex items-start justify-between p-4 rounded-xl border border-[var(--ag-cyan)]/20 group hover:border-[var(--ag-cyan)]/40 transition-all">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center mt-0.5" style={{
-                        backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#00F0FF15'
+                        backgroundColor: memory.category === 'fact' ? '#00FF8815' : '#A78BFA15'
                       }}>
                         <Tag className="w-4 h-4" style={{
-                          color: memory.category === 'fact' ? '#00FF88' : '#00F0FF'
+                          color: memory.category === 'fact' ? '#00FF88' : '#A78BFA'
                         }} />
                       </div>
                       <div className="flex-1">
@@ -1667,7 +1667,7 @@ export function SettingsPage() {
             )}
           </Card>
 
-          <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[var(--ag-cyan)]/20">
+          <Card className="bg-gradient-to-r from-[#A78BFA]/10 to-transparent border-[var(--ag-cyan)]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Brain className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
@@ -1694,7 +1694,7 @@ export function SettingsPage() {
                   size="sm"
                   onClick={handleExportConversations}
                   disabled={isExportingConversations}
-                  className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
+                  className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10"
                 >
                   {isExportingConversations ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1756,7 +1756,7 @@ export function SettingsPage() {
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-[#A78BFA]/10 flex items-center justify-center">
                       <item.icon className="w-5 h-5 text-[var(--ag-cyan)]" />
                     </div>
                     <div>
@@ -1783,7 +1783,7 @@ export function SettingsPage() {
               ))}
             </div>
           </SectionCard>
-          <Card className="bg-gradient-to-r from-[#00F0FF]/10 to-transparent border-[var(--ag-cyan)]/20">
+          <Card className="bg-gradient-to-r from-[#A78BFA]/10 to-transparent border-[var(--ag-cyan)]/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
@@ -1836,7 +1836,7 @@ export function SettingsPage() {
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         themeMode === id
-                          ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] shadow-inner'
+                          ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] shadow-inner'
                           : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
                       }`}
                     >
@@ -1852,7 +1852,7 @@ export function SettingsPage() {
                 <div
                   className="mt-3 rounded-xl border overflow-hidden transition-all duration-500"
                   style={{
-                    borderColor: themeMode === 'light' ? '#e5e7eb' : 'rgba(0,240,255,0.15)',
+                    borderColor: themeMode === 'light' ? '#e5e7eb' : 'rgba(139,92,246,0.15)',
                     background: themeMode === 'light' ? '#ffffff' : '#0C0C18',
                   }}
                 >
@@ -1985,7 +1985,7 @@ export function SettingsPage() {
                   <label className="text-sm font-medium text-[var(--ag-text-primary)]">Speech Rate</label>
                   <span className="text-xs text-[var(--ag-text-muted)]">{voiceSettings.rate.toFixed(1)}x</span>
                 </div>
-                <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#00F0FF]" />
+                <input type="range" min="0.5" max="2" step="0.1" value={voiceSettings.rate} onChange={(e) => saveVoiceSettings({ rate: parseFloat(e.target.value) })} className="w-full accent-[#A78BFA]" />
                 <div className="flex justify-between text-xs text-[var(--ag-text-muted)]"><span>0.5x slow</span><span>1x normal</span><span>2x fast</span></div>
               </div>
               <div className="space-y-2">
@@ -1998,13 +1998,13 @@ export function SettingsPage() {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10">
+                <Button variant="outline" size="sm" onClick={handleTestVoice} disabled={ttsSample} className="border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10">
                   {ttsSample ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Volume2 className="w-4 h-4 mr-2" />}
                   {ttsSample ? "Speaking..." : "Test Voice"}
                 </Button>
                 <p className="text-xs text-[var(--ag-text-muted)]">Plays a sample phrase with your current settings.</p>
               </div>
-              <div className="rounded-lg bg-[#00F0FF]/5 border border-[var(--ag-cyan)]/15 px-4 py-3 flex items-start gap-3">
+              <div className="rounded-lg bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/15 px-4 py-3 flex items-start gap-3">
                 <Mic className="w-4 h-4 text-[var(--ag-cyan)] mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-[var(--ag-text-primary)] font-medium">Keyboard Shortcut</p>

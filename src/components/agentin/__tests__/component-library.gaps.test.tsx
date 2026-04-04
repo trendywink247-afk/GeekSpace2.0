@@ -352,7 +352,7 @@ describe('Component Library — CRITICAL GAPS', () => {
       expect(container.firstChild).toBeTruthy();
     });
 
-    it('TODO: PageHeader icon uses cyan (#00F0FF)', () => {
+    it('TODO: PageHeader icon uses cyan (#A78BFA)', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );

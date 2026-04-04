@@ -206,7 +206,7 @@ describe('Agentin Components — WCAG 2.1 AA Accessibility', () => {
       // Should have opacity or secondary color for visual hierarchy
     });
 
-    it('icon background (cyan #00F0FF) contrasts with dark background', () => {
+    it('icon background (cyan #A78BFA) contrasts with dark background', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );

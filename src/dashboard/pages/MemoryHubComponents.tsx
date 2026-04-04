@@ -36,7 +36,7 @@ export const CATEGORY_OPTIONS = [
 ] as const;
 
 export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  manual: { bg: 'bg-[#00F0FF]/10', text: 'text-[var(--ag-cyan)]', label: 'Manual' },
+  manual: { bg: 'bg-[#A78BFA]/10', text: 'text-[var(--ag-cyan)]', label: 'Manual' },
   chat: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
   extracted: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
   inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[var(--ag-violet)]', label: 'Inferred' },
@@ -45,7 +45,7 @@ export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: st
 };
 
 export const GRAPH_COLORS: Record<string, string> = {
-  personal: '#00F0FF',
+  personal: '#A78BFA',
   work: '#FFB800',
   preference: '#FF2D78',
   goal: '#ADFF2F',

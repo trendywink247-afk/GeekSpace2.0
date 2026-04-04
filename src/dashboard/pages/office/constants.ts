@@ -40,7 +40,7 @@ export const CANVAS_H = ROWS * CELL; // 800
  * Each agent gets a unique hex color that defines their visual identity.
  *
  * Color scheme:
- * - weebo: cyan (#00F0FF) — creative, high-energy
+ * - weebo: cyan (#A78BFA) — creative, high-energy
  * - edith: purple (#8B5CF6) — strategic, calm
  * - jarvis: lime (#ADFF2F) — operational, bright
  * - aria: pink (#FF6B9D) — creative, warm
@@ -53,7 +53,7 @@ export const CANVAS_H = ROWS * CELL; // 800
  * @constant {Record<AgentId, string>}
  */
 export const AGENT_COLORS: Record<AgentId, string> = {
-  weebo: '#00F0FF', edith: '#8B5CF6', jarvis: '#ADFF2F',
+  weebo: '#A78BFA', edith: '#8B5CF6', jarvis: '#ADFF2F',
   aria: '#FF6B9D', forge: '#F59E0B', pulse: '#10B981',
   echo: '#6366F1', cal: '#84CC16', nova: '#EC4899',
 };
@@ -163,7 +163,7 @@ export const C = {
   bg: '#06061a',
   card: '#0C0C18',
   elevated: '#12121F',
-  cyan: '#00F0FF',
+  cyan: '#A78BFA',
   green: '#ADFF2F',
   pink: '#FF2D78',
   purple: '#8B5CF6',

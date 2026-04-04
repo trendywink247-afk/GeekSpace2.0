@@ -76,7 +76,7 @@ export function PublicPageShell({ children, title, icon: Icon, maxWidth = '4xl',
           </Link>
           {title && (
             <div className="flex items-center gap-2 ml-2">
-              {Icon && <Icon className="w-4 h-4 text-[var(--ag-cyan,#00F0FF)]" />}
+              {Icon && <Icon className="w-4 h-4 text-[var(--ag-cyan,#A78BFA)]" />}
               <span className="font-heading font-semibold text-[var(--ag-text-primary,#F4F6FF)]">{title}</span>
             </div>
           )}

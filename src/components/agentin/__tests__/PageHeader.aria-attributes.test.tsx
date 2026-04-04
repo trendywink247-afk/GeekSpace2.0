@@ -211,7 +211,7 @@ describe('PageHeader — ARIA Attributes & Semantic HTML', () => {
       // Subtitle color should meet WCAG AA (4.5:1 for normal text)
     });
 
-    it('icon background (cyan #00F0FF) contrasts with icon stroke', () => {
+    it('icon background (cyan #A78BFA) contrasts with icon stroke', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );

@@ -730,7 +730,7 @@ export function AutomationsPage() {
             const isExpanded = expandedRunHistory === auto.id;
 
             const triggerBorderColor: Record<string, string> = {
-              time: '#00F0FF',
+              time: '#A78BFA',
               keyword: '#00FF88',
               webhook: '#8B5CF6',
               manual: '#6B7280',

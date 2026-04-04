@@ -52,7 +52,7 @@ const AGENT_CAPABILITIES: Record<string, { label: string; tools: string[]; icon:
 };
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: 'var(--ag-weebo, #00F0FF)',
+  weebo: 'var(--ag-weebo, #A78BFA)',
   edith: 'var(--ag-edith, #8B5CF6)',
   jarvis: 'var(--ag-jarvis, #ADFF2F)',
   aria: 'var(--ag-aria, #FF6B9D)',

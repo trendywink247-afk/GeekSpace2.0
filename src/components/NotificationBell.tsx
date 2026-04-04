@@ -147,7 +147,7 @@ export function NotificationBell() {
                 <div
                   key={n.id}
                   className="flex items-start gap-3 px-4 py-3 border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer"
-                  style={{ background: n.read ? 'transparent' : 'rgba(0,240,255,0.03)' }}
+                  style={{ background: n.read ? 'transparent' : 'rgba(139,92,246,0.03)' }}
                   onClick={() => handleMarkRead(n.id)}
                 >
                   <span className="text-lg flex-shrink-0 mt-0.5">{typeIcons[n.type] || '🔔'}</span>

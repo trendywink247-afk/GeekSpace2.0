@@ -48,13 +48,13 @@ interface PicoTask {
 // ---- Agent Colors (Design System) ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: '#00F0FF',
+  weebo: '#A78BFA',
   edith: '#8B5CF6',
   jarvis: '#ADFF2F',
 };
 
 function getAgentColor(personality: string): string {
-  return AGENT_COLORS[personality] || '#00F0FF';
+  return AGENT_COLORS[personality] || '#A78BFA';
 }
 
 // ---- Constants ----
@@ -96,7 +96,7 @@ const statusColors: Record<string, string> = {
   cancelled: '#6B7280',
   disabled: '#FF6161',
   failed: '#FF6161',
-  queued: '#00F0FF',
+  queued: '#A78BFA',
   running: '#FFB800',
   paused: '#FFB800',
 };

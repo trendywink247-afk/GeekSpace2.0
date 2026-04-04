@@ -78,7 +78,7 @@ describe('PageHeader — Edge Cases & Integration', () => {
       });
     });
 
-    it('icon background is cyan (#00F0FF) accent color', () => {
+    it('icon background is cyan (#A78BFA) accent color', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );

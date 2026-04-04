@@ -124,11 +124,11 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
         ref={refs.setFloating} // eslint-disable-line react-hooks/refs
         style={floatingStyles}
         {...getFloatingProps()}
-        className="w-64 max-h-56 overflow-y-auto rounded-lg bg-[#0C0C18] border border-[#00F0FF]/10 shadow-xl shadow-black/40 z-50 scrollbar-hide"
+        className="w-64 max-h-56 overflow-y-auto rounded-lg bg-[#0C0C18] border border-[#A78BFA]/10 shadow-xl shadow-black/40 z-50 scrollbar-hide"
         role="listbox"
         aria-label="Mention an agent"
       >
-        <div className="px-2.5 py-1.5 border-b border-[#00F0FF]/5">
+        <div className="px-2.5 py-1.5 border-b border-[#A78BFA]/5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4B5563]">
             Mention an agent
           </span>
@@ -145,8 +145,8 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
               className={[
                 'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors text-sm',
                 i === selectedIndex
-                  ? 'bg-[#00F0FF]/10 text-[#E8E8F0]'
-                  : 'text-[var(--ag-text-secondary)] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]',
+                  ? 'bg-[#A78BFA]/10 text-[#E8E8F0]'
+                  : 'text-[var(--ag-text-secondary)] hover:bg-[#A78BFA]/5 hover:text-[#E8E8F0]',
               ].join(' ')}
             >
               <span className="text-base leading-none shrink-0">{agent.emoji}</span>
@@ -154,7 +154,7 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
                 <div className="flex items-center gap-1.5">
                   <span className="font-medium text-xs">{agent.name}</span>
                   {agent.isCore && (
-                    <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#00F0FF]/10 text-[var(--ag-cyan)]/70">
+                    <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#A78BFA]/10 text-[var(--ag-cyan)]/70">
                       core
                     </span>
                   )}

@@ -121,7 +121,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={onToggleCollapse}
-          className="w-14 h-14 rounded-full bg-[#00F0FF] hover:bg-[#00D4B0] shadow-lg shadow-[#00F0FF]/30"
+          className="w-14 h-14 rounded-full bg-[#A78BFA] hover:bg-[#00D4B0] shadow-lg shadow-[#A78BFA]/30"
         >
           <Plus className="w-6 h-6" />
         </Button>
@@ -130,10 +130,10 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
   }
 
   return (
-    <div className="glass-card-v2 border border-[#00F0FF]/20 rounded-2xl p-4">
+    <div className="glass-card-v2 border border-[#A78BFA]/20 rounded-2xl p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/20 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[#A78BFA]/20 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-[var(--ag-cyan)]" />
           </div>
           <h3 className="font-semibold text-[#E8E8F0]">Quick Actions</h3>
@@ -162,7 +162,7 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
             key={action.id}
             onClick={() => handleQuickAction(action.id, action.onClick)}
             disabled={isGenerating === action.id}
-            className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/40 transition-all min-h-[80px]"
+            className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[#A78BFA]/10 hover:border-[#A78BFA]/40 transition-all min-h-[80px]"
           >
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
@@ -186,10 +186,10 @@ export function QuickActionsWidget({ collapsed = false, onToggleCollapse }: Quic
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-[#00F0FF]/10">
+      <div className="mt-3 pt-3 border-t border-[#A78BFA]/10">
         <button
           onClick={() => navigate('/dashboard/agent')}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#A78BFA]/10 hover:bg-[#A78BFA]/20 text-[var(--ag-cyan)] text-sm font-medium transition-colors"
         >
           <Bot className="w-4 h-4" />
           Chat with Agent

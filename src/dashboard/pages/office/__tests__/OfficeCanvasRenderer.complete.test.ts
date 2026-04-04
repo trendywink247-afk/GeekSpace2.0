@@ -249,8 +249,8 @@ describe('OfficeCanvasRenderer — Complete Coverage', () => {
       const fillStyleSpy = vi.spyOn(ctx, 'fillStyle', 'set');
       // drawBeams(ctx, mockBeams, mockAgents);
 
-      // Beam from weebo should use AGENT_COLORS['weebo'] (#00F0FF)
-      // expect(fillStyleSpy).toHaveBeenCalledWith(expect.stringContaining('#00F0FF') || expect.stringContaining('rgba'));
+      // Beam from weebo should use AGENT_COLORS['weebo'] (#A78BFA)
+      // expect(fillStyleSpy).toHaveBeenCalledWith(expect.stringContaining('#A78BFA') || expect.stringContaining('rgba'));
     });
 
     it('skips beams with unknown agent IDs', () => {

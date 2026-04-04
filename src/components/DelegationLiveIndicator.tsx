@@ -12,7 +12,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { AgentCapabilityBadge } from './AgentCapabilityBadge';
 
 const AGENT_META: Record<string, { emoji: string; name: string; color: string }> = {
-  weebo: { emoji: '✨', name: 'Weebo', color: 'var(--ag-weebo, #00F0FF)' },
+  weebo: { emoji: '✨', name: 'Weebo', color: 'var(--ag-weebo, #A78BFA)' },
   edith: { emoji: '🔷', name: 'Edith', color: 'var(--ag-edith, #8B5CF6)' },
   jarvis: { emoji: '🤖', name: 'Jarvis', color: 'var(--ag-jarvis, #ADFF2F)' },
   aria: { emoji: '🎨', name: 'Aria', color: 'var(--ag-aria, #FF6B9D)' },

@@ -84,9 +84,9 @@ export function GoalsTab() {
             onClick={() => navigate('/dashboard/goals')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background: 'rgba(0,240,255,0.1)',
+              background: 'rgba(139,92,246,0.1)',
               color: 'var(--ag-cyan)',
-              border: '1px solid rgba(0,240,255,0.2)',
+              border: '1px solid rgba(139,92,246,0.2)',
             }}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -97,7 +97,7 @@ export function GoalsTab() {
         goals.map((goal) => {
           const agentId = (goal.assigned_agent || 'weebo') as AgentId;
           const meta = AGENT_META[agentId] ?? AGENT_META.weebo;
-          const color = AGENT_COLORS[agentId] ?? '#00F0FF';
+          const color = AGENT_COLORS[agentId] ?? '#A78BFA';
           const goalSteps = steps[goal.id] ?? [];
           const completedSteps = goalSteps.filter(s => s.status === 'completed' || s.status === 'skipped').length;
           const totalSteps = goalSteps.length;
@@ -160,8 +160,8 @@ export function GoalsTab() {
           onClick={() => navigate('/dashboard/goals')}
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium transition-all duration-200 hover:scale-[1.01]"
           style={{
-            background: 'rgba(0,240,255,0.06)',
-            border: '1px dashed rgba(0,240,255,0.2)',
+            background: 'rgba(139,92,246,0.06)',
+            border: '1px dashed rgba(139,92,246,0.2)',
             color: 'var(--ag-cyan)',
           }}
         >

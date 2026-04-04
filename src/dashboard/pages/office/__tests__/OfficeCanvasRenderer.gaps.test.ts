@@ -330,7 +330,7 @@ describe('OfficeCanvasRenderer — Rendering Pipeline', () => {
 
     it('particle color gradates by life (0=transparent, 1=bright cyan)', () => {
       // TODO: Verify fillStyle alpha blended with particle.life
-      // life=1 → bright cyan (#00F0FF)
+      // life=1 → bright cyan (#A78BFA)
       // life=0.5 → medium cyan with 50% alpha
       // life=0 → nearly invisible
 

@@ -542,8 +542,8 @@ export function ImageCreatorPage() {
                 desc: 'Upload an image as reference and describe the changes you want.',
                 icon: Upload,
                 activeColor: 'var(--ag-cyan)',
-                activeBg: 'rgba(0,240,255,0.05)',
-                activeBorder: 'rgba(0,240,255,0.4)',
+                activeBg: 'rgba(139,92,246,0.05)',
+                activeBorder: 'rgba(139,92,246,0.4)',
               },
             ].map(card => {
               const Icon = card.icon;
@@ -562,7 +562,7 @@ export function ImageCreatorPage() {
                     borderColor: isActive ? card.activeBorder : undefined,
                   }}
                 >
-                  {isActive && <BorderBeam size={150} duration={10} colorFrom="#8B5CF6" colorTo="#00F0FF" />}
+                  {isActive && <BorderBeam size={150} duration={10} colorFrom="#8B5CF6" colorTo="#A78BFA" />}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: isActive ? `${card.activeColor}30` : 'var(--ag-bg-elevated)' }}>
@@ -584,8 +584,8 @@ export function ImageCreatorPage() {
             <div
               className="relative rounded-2xl border overflow-hidden p-6"
               style={{
-                borderColor: mode === 'imagine' ? 'rgba(139,92,246,0.2)' : 'rgba(0,240,255,0.2)',
-                background: mode === 'imagine' ? 'rgba(139,92,246,0.03)' : 'rgba(0,240,255,0.03)',
+                borderColor: mode === 'imagine' ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.2)',
+                background: mode === 'imagine' ? 'rgba(139,92,246,0.03)' : 'rgba(139,92,246,0.03)',
               }}
             >
               {/* Reference image upload (edit mode) */}
@@ -782,7 +782,7 @@ export function ImageCreatorPage() {
                   </div>
                   {genPhase === 'generating' && (
                     <div className="w-full h-1 rounded-full bg-[var(--ag-bg-deep)] overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#00F0FF] rounded-full animate-pulse" style={{ width: '60%' }} />
+                      <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] rounded-full animate-pulse" style={{ width: '60%' }} />
                     </div>
                   )}
                 </div>

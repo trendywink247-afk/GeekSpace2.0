@@ -35,7 +35,7 @@ interface LiveAgentFeedProps {
 // ---------------------------------------------------------------------------
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: '#00F0FF',
+  weebo: '#A78BFA',
   edith: '#8B5CF6',
   jarvis: '#ADFF2F',
   nova: '#F59E0B',
@@ -279,16 +279,16 @@ export function LiveAgentFeed({ onNavigate }: LiveAgentFeedProps) {
             handleClick();
           }
         }}
-        className="flex items-center justify-center gap-2 rounded-2xl border px-5 py-4 cursor-pointer transition-all hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/5"
+        className="flex items-center justify-center gap-2 rounded-2xl border px-5 py-4 cursor-pointer transition-all hover:border-[#A78BFA]/30 hover:bg-[#A78BFA]/5"
         style={{
           background: 'rgba(12,12,24,0.6)',
-          borderColor: 'rgba(0,240,255,0.12)',
+          borderColor: 'rgba(139,92,246,0.12)',
           backdropFilter: 'blur(12px)',
         }}
       >
         <span
           className="inline-block w-2 h-2 rounded-full animate-pulse"
-          style={{ background: '#00F0FF', boxShadow: '0 0 6px rgba(0,240,255,0.5)' }}
+          style={{ background: '#A78BFA', boxShadow: '0 0 6px rgba(139,92,246,0.5)' }}
         />
         <span className="text-sm text-[#8892A4]">Agents are standing by</span>
       </div>
@@ -308,7 +308,7 @@ export function LiveAgentFeed({ onNavigate }: LiveAgentFeedProps) {
       <div className="flex gap-3 min-w-0">
         <AnimatePresence mode="popLayout">
           {events.map((evt) => {
-            const color = AGENT_COLORS[evt.agentId.toLowerCase()] ?? '#00F0FF';
+            const color = AGENT_COLORS[evt.agentId.toLowerCase()] ?? '#A78BFA';
             const action = stateToAction(evt.state, evt.tool, evt.targetAgent);
             const timeAgo = relativeSeconds(evt.receivedAt, now);
 
@@ -329,10 +329,10 @@ export function LiveAgentFeed({ onNavigate }: LiveAgentFeedProps) {
                     handleClick();
                   }
                 }}
-                className="flex-shrink-0 flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 cursor-pointer transition-colors hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/5 w-[220px] md:w-auto md:min-w-[200px] md:max-w-[240px]"
+                className="flex-shrink-0 flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 cursor-pointer transition-colors hover:border-[#A78BFA]/30 hover:bg-[#A78BFA]/5 w-[220px] md:w-auto md:min-w-[200px] md:max-w-[240px]"
                 style={{
                   background: 'rgba(12,12,24,0.6)',
-                  borderColor: 'rgba(0,240,255,0.12)',
+                  borderColor: 'rgba(139,92,246,0.12)',
                   backdropFilter: 'blur(12px)',
                 }}
               >

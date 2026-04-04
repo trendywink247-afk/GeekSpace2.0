@@ -42,8 +42,8 @@ export function VoiceButton({
         isListening
           ? 'bg-red-500/20 hover:bg-red-500/30 ring-1 ring-red-400/60'
           : isProcessing
-          ? 'bg-[#00F0FF]/10'
-          : 'hover:bg-[#00F0FF]/10',
+          ? 'bg-[#A78BFA]/10'
+          : 'hover:bg-[#A78BFA]/10',
         disabled || isProcessing ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
         className,
       ].join(' ')}

@@ -104,7 +104,7 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
       {/* Aurora gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-1/3 -left-1/4 w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)' }} />
-        <div className="absolute -bottom-1/4 -right-1/4 w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,240,255,0.05) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-1/4 -right-1/4 w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)' }} />
       </div>
 
       <motion.h2
@@ -162,7 +162,7 @@ function FirstVisitOverlay({ onDismiss }: { onDismiss: () => void }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         style={{
-          background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,240,255,0.2))',
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(139,92,246,0.2))',
           color: '#F4F6FF',
           border: '1px solid rgba(139,92,246,0.4)',
           boxShadow: '0 0 30px rgba(139,92,246,0.2)',
@@ -397,7 +397,7 @@ export function OfficePage() {
           <div
             className="absolute bottom-0 left-0 right-0 h-px"
             style={{
-              background: 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(0,240,255,0.3) 50%, rgba(16,185,129,0.3) 100%)',
+              background: 'linear-gradient(90deg, rgba(139,92,246,0.3) 0%, rgba(139,92,246,0.3) 50%, rgba(16,185,129,0.3) 100%)',
               backgroundSize: '200% 100%',
               animation: 'headerGradientShift 6s ease infinite',
             }}

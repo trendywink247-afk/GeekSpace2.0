@@ -1,4 +1,4 @@
-// CapabilitiesPage — owner: weebo (#00F0FF)
+// CapabilitiesPage — owner: weebo (#A78BFA)
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 
 import { useState } from 'react';
@@ -48,7 +48,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Brain,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Multi-Model Intelligence',
     description: 'Your agent automatically routes to the right AI brain — free Llama for quick answers, Kimi K2 for deep technical work — based on complexity and your credit balance.',
     examples: ['Explain CRDT data structures', 'Debug this TypeScript error', 'Design a URL shortener system'],
@@ -60,7 +60,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Mic,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Voice Notes',
     description: 'Send a voice message on Telegram and get a spoken audio reply back. Full Whisper transcription → agent reasoning → TTS pipeline.',
     examples: ["Voice: What's on my agenda?", 'Voice: Remind me at 5pm to ship the PR', 'Voice: Summarize what I built this week'],
@@ -73,7 +73,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Globe,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Live Web Research',
     description: 'Hand your agent any URL — job posting, article, competitor page — and get an instant structured summary with key insights extracted.',
     examples: ['Summarize this Hacker News thread: [URL]', 'What are the pricing tiers on this page?', 'Extract tech stack mentions from this blog'],
@@ -85,7 +85,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Layers,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Context-Aware Conversations',
     description: 'Your agent remembers conversation history across sessions, extracting facts automatically — your stack, preferences, schedule — and weaving them into every reply.',
     examples: ['Remember I prefer TypeScript over Python', 'What did we discuss last week?', 'Keep in mind my deadline is March 15th'],
@@ -97,7 +97,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Globe,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Hinglish & Indian Languages',
     description: 'Talk to your agent in Hinglish, Hindi, or Tanglish. It understands "kal subah 8 baje remind karo" as naturally as English. Built for Indian users first.',
     examples: ['kal subah 8 baje remind karo gym ke liye', 'swiggy pe 350 rupay kharcha hua', 'mujhe ek tweet likhne mein help karo'],
@@ -109,7 +109,7 @@ const capabilities: Capability[] = [
     category: 'chat',
     icon: Telescope,
     color: 'var(--ag-cyan)',
-    glow: 'rgba(0,240,255,0.12)',
+    glow: 'rgba(139,92,246,0.12)',
     title: 'Agent-as-Researcher',
     description: 'Ask for deep research and your agent launches an async investigation — searching the web, synthesizing findings, and delivering a structured report via Telegram when done.',
     examples: ['Research best budget phones under 15000 in India', 'Compare React vs Vue for a solo dev', 'Find top 5 AI tools for content creators 2024'],
@@ -512,7 +512,7 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20',
+    Core: 'bg-[#A78BFA]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20',
     Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
     New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
   };
@@ -647,9 +647,9 @@ function PipelineVisualizer() {
       {/* Pipeline */}
       <div>
         {/* Example message */}
-        <div className="mb-6 p-3 rounded-xl bg-[#00F0FF]/5 border border-[var(--ag-cyan)]/15 text-center">
+        <div className="mb-6 p-3 rounded-xl bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/15 text-center">
           <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">You type: </span>
-          <span className="text-sm text-[var(--ag-cyan,#00F0FF)] font-mono">"build me a hello world page"</span>
+          <span className="text-sm text-[var(--ag-cyan,#A78BFA)] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -807,8 +807,8 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         subtitle={`${capabilities.length} powers across chat, creation, automation, and intelligence`}
         badge={
           <span className="relative flex h-2.5 w-2.5" title="Weebo online">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-50" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A78BFA] opacity-50" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#A78BFA]" />
           </span>
         }
       />
@@ -826,7 +826,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           className="absolute inset-0 opacity-60"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse at 15% 50%, rgba(0,240,255,0.08) 0%, transparent 55%),
+              radial-gradient(ellipse at 15% 50%, rgba(139,92,246,0.08) 0%, transparent 55%),
               radial-gradient(ellipse at 85% 20%, rgba(191,95,255,0.10) 0%, transparent 55%),
               radial-gradient(ellipse at 60% 85%, rgba(0,255,136,0.06) 0%, transparent 50%)
             `,
@@ -836,7 +836,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `linear-gradient(rgba(0,240,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,1) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(139,92,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,1) 1px, transparent 1px)`,
             backgroundSize: '40px 40px',
           }}
         />
@@ -844,7 +844,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div className="relative z-10">
           {/* Eyebrow */}
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-5 h-5 rounded-full bg-[#00F0FF]/15 border border-[var(--ag-cyan)]/25 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/25 flex items-center justify-center">
               <Sparkles className="w-2.5 h-2.5 text-[var(--ag-cyan)]" />
             </div>
             <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
@@ -854,7 +854,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             Your Agent Can Do{' '}
             <span
               className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #00F0FF, #BF5FFF, #00FF88, #F59E0B)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #A78BFA, #BF5FFF, #00FF88, #F59E0B)' }}
             >
               Everything
             </span>
@@ -949,7 +949,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(0,240,255,0.15) 0%, transparent 60%)',
+            backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 60%)',
           }}
         />
         <div className="relative z-10">

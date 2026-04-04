@@ -781,7 +781,7 @@ export function CreativeStudioPage() {
               <span className="px-2 py-1 rounded bg-[#8B5CF6]/10 text-[var(--ag-violet)] text-xs">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs">
+              <span className="px-2 py-1 rounded bg-[#A78BFA]/10 text-[var(--ag-cyan)] text-xs">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>

@@ -23,7 +23,7 @@ interface AgentStatusStripProps {
 }
 
 const AGENT_META: Record<string, { emoji: string; color: string; glow: string }> = {
-  weebo: { emoji: '\u2728', color: 'var(--ag-cyan)', glow: 'shadow-[0_0_8px_rgba(0,240,255,0.3)]' },
+  weebo: { emoji: '\u2728', color: 'var(--ag-cyan)', glow: 'shadow-[0_0_8px_rgba(139,92,246,0.3)]' },
   edith: { emoji: '\uD83D\uDD37', color: 'var(--ag-violet)', glow: 'shadow-[0_0_8px_rgba(139,92,246,0.3)]' },
   jarvis: { emoji: '\uD83E\uDD16', color: '#ADFF2F', glow: 'shadow-[0_0_8px_rgba(173,255,47,0.3)]' },
   aria: { emoji: '\uD83C\uDFA8', color: '#FF6B9D', glow: 'shadow-[0_0_8px_rgba(255,107,157,0.3)]' },

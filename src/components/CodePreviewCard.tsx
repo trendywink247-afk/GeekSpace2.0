@@ -63,10 +63,10 @@ export function CodePreviewCard({ artifactId, title, html, css, js }: CodePrevie
   return (
     <div
       data-artifact-id={artifactId}
-      className="border border-[#00F0FF]/30 bg-[var(--ag-bg-deep)] rounded-xl overflow-hidden"
+      className="border border-[#A78BFA]/30 bg-[var(--ag-bg-deep)] rounded-xl overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#00F0FF]/20">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#A78BFA]/20">
         <div className="flex items-center gap-2 min-w-0">
           <Code className="size-4 shrink-0 text-[var(--ag-cyan)]" />
           <span className="text-sm font-medium text-[#E8E8F0] truncate">
@@ -79,7 +79,7 @@ export function CodePreviewCard({ artifactId, title, html, css, js }: CodePrevie
             variant="ghost"
             size="sm"
             onClick={() => setShowPreview((prev) => !prev)}
-            className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10"
+            className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-[#A78BFA]/10"
           >
             {showPreview ? (
               <EyeOff className="size-4" />
@@ -93,7 +93,7 @@ export function CodePreviewCard({ artifactId, title, html, css, js }: CodePrevie
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-[#00F0FF]/10"
+            className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-[#A78BFA]/10"
           >
             <Download className="size-4" />
             <span className="text-xs">Download</span>

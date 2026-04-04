@@ -33,7 +33,7 @@ const tierBadge: Record<string, { bg: string; text: string; label: string }> = {
 // ----- Agent colours (deterministic from name) ----------------
 
 const AGENT_COLORS = [
-  '#00F0FF', '#8B5CF6', '#FFB800', '#00FF88', '#FF2D78',
+  '#A78BFA', '#8B5CF6', '#FFB800', '#00FF88', '#FF2D78',
   '#FF6B6B', '#36D399', '#F472B6', '#A78BFA',
 ];
 
@@ -70,7 +70,7 @@ export function SkillCard({
     <button
       type="button"
       onClick={() => onClick(skill)}
-      className="w-full text-left rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-[#00F0FF]/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+      className="w-full text-left rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-[#A78BFA]/30 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
     >
       {/* Top: icon + name + tier */}
       <div className="flex items-start gap-3 mb-2">
@@ -132,7 +132,7 @@ export function SkillCard({
               e.stopPropagation();
               onInstall(skill.id);
             }}
-            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors duration-150 disabled:opacity-50 min-h-[32px]"
+            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-[#A78BFA]/10 text-[#A78BFA] hover:bg-[#A78BFA]/20 transition-colors duration-150 disabled:opacity-50 min-h-[32px]"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Install'}
           </button>

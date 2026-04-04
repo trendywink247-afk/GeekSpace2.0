@@ -533,14 +533,14 @@ export function WebsiteBuilderPage() {
               }}
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'dev'
-                  ? 'border-[var(--ag-cyan)]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
-                  : 'border-[rgba(139,92,246,0.08)] hover:border-[var(--ag-cyan)]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[rgba(12,12,30,0.6)]'
+                  ? 'border-[var(--ag-cyan)]/40 bg-[#A78BFA]/5 shadow-[0_0_20px_rgba(139,92,246,0.08)]'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[var(--ag-cyan)]/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
               style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
+                  builderMode === 'dev' ? 'bg-[#A78BFA]/20' : 'bg-[#A78BFA]/10'
                 }`}>
                   <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-secondary)]'}`} />
                 </div>
@@ -907,7 +907,7 @@ export function WebsiteBuilderPage() {
                                   )}
                                   <span className="text-xs text-[var(--ag-text-primary)] truncate flex-1">{task.description}</span>
                                   <span className="text-xs capitalize shrink-0"
-                                    style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
+                                    style={{ color: task.status === 'running' ? '#FFB800' : '#A78BFA' }}>
                                     {task.status}
                                   </span>
                                 </div>

@@ -144,7 +144,7 @@ export function SkillDetailModal({
               type="button"
               disabled={actionLoading}
               onClick={() => onInstall(skill.id)}
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors duration-150 disabled:opacity-50 min-h-[44px]"
+              className="flex-1 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-[#A78BFA]/10 text-[#A78BFA] hover:bg-[#A78BFA]/20 transition-colors duration-150 disabled:opacity-50 min-h-[44px]"
             >
               {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Install'}
             </button>

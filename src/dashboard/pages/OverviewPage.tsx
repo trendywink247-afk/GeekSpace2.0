@@ -193,7 +193,7 @@ function relativeTime(iso: string): string {
 function ActivitySparkline({
   data,
   labels,
-  color = '#00F0FF',
+  color = '#A78BFA',
 }: {
   data: number[];
   labels?: string[];
@@ -564,7 +564,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         : 'No upcoming',
       icon: Bell,
       color: 'var(--ag-cyan)',
-      bgColor: 'rgba(0,240,255,0.08)',
+      bgColor: 'rgba(139,92,246,0.08)',
     },
     {
       key: 'messages',
@@ -591,7 +591,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // ---------------------------------------------------------------------------
 
   const quickActions = [
-    { label: 'New Reminder', icon: Bell, color: 'var(--ag-cyan)', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
+    { label: 'New Reminder', icon: Bell, color: 'var(--ag-cyan)', bgColor: 'rgba(139,92,246,0.1)', page: 'reminders?openAdd=true' },
     { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => { void notifyStart('open-chat'); onOpenChat?.(); } },
     { label: 'Start Focus', icon: Timer, color: 'var(--ag-violet)', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
     { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
@@ -932,7 +932,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   <div className="divide-y divide-[var(--ag-border-subtle)]">
                     {conversations.map((convo) => {
                       // Pick agent color by content hash for visual variety
-                      const agentColors = ['#00F0FF', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
+                      const agentColors = ['#A78BFA', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
                       const colorIdx = convo.id.charCodeAt(0) % agentColors.length;
                       const agentColor = agentColors[colorIdx];
                       return (
@@ -1024,7 +1024,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   </div>
                 ) : (
                   <>
-                    <ActivitySparkline data={activityData} labels={dayLabels} color="#00F0FF" />
+                    <ActivitySparkline data={activityData} labels={dayLabels} color="#A78BFA" />
                     {/* Day labels */}
                     {dayLabels.length > 0 && (
                       <div className="flex justify-between mt-2 px-1">
@@ -1126,7 +1126,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
-                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(0,240,255,0.08)',
+                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(139,92,246,0.08)',
                         }}
                       >
                         <Bell className="w-4 h-4" style={{ color: rem.overdue ? 'var(--ag-pink)' : 'var(--ag-cyan)' }} />
@@ -1304,7 +1304,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: isCurrent ? 'rgba(0,240,255,0.12)' : 'rgba(139,92,246,0.08)' }}
+                          style={{ background: isCurrent ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)' }}
                         >
                           <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? 'var(--ag-cyan)' : 'var(--ag-violet)' }} />
                         </div>
@@ -1379,7 +1379,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="flex items-start gap-3 mb-4">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
+                    style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(173,255,47,0.1))' }}
                   >
                     <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
                   </div>
@@ -1477,7 +1477,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="flex items-start gap-4 mb-5">
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(173,255,47,0.1))' }}
+                    style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(173,255,47,0.1))' }}
                   >
                     <Sparkles className="w-6 h-6 text-[var(--ag-cyan)]" />
                   </div>
@@ -1510,7 +1510,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   <button
                     onClick={() => onNavigate?.('reminders?openAdd=true')}
                     className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-border-default)] transition-all hover:border-[var(--ag-border-glow)] hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(0,240,255,0.06)' }}
+                    style={{ background: 'rgba(139,92,246,0.06)' }}
                   >
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-cyan)]/10 flex-shrink-0">
                       <Bell className="w-4 h-4 text-[var(--ag-cyan)]" />

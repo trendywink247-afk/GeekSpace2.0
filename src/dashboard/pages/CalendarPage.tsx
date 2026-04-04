@@ -606,7 +606,7 @@ export function CalendarPage() {
             <Button
               size="sm"
               onClick={() => setShowAddDialog(true)}
-              className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[var(--ag-cyan,#00F0FF)] border border-[var(--ag-cyan)]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="gap-1.5 min-h-[44px] bg-[#A78BFA]/10 text-[var(--ag-cyan,#A78BFA)] border border-[var(--ag-cyan)]/20 hover:bg-[#A78BFA]/20 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Event</span>
@@ -617,7 +617,7 @@ export function CalendarPage() {
               onClick={() => void fetchData(true)}
               disabled={refreshing}
               aria-label="Refresh"
-              className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
             </Button>
@@ -674,7 +674,7 @@ export function CalendarPage() {
                   size="sm"
                   onClick={() => void handleSync()}
                   disabled={syncing}
-                  className="gap-1.5 min-h-[44px] border-[rgba(139,92,246,0.15)] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="gap-1.5 min-h-[44px] border-[rgba(139,92,246,0.15)] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                 >
                   <RefreshCw
                     className={
@@ -688,7 +688,7 @@ export function CalendarPage() {
                   size="sm"
                   onClick={() => void handleDisconnect()}
                   disabled={disconnecting}
-                  className="gap-1.5 text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="gap-1.5 text-red-400 hover:text-red-300 border-red-500/30 hover:border-red-500/50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                 >
                   <Unlink className="h-3.5 w-3.5" />
                   {disconnecting ? "Disconnecting..." : "Disconnect"}
@@ -711,7 +711,7 @@ export function CalendarPage() {
               <Button
                 size="sm"
                 onClick={handleConnect}
-                className="gap-1.5 shrink-0 min-h-[44px] bg-[#00F0FF] hover:bg-[#00F0FF]/80 text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                className="gap-1.5 shrink-0 min-h-[44px] bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
               >
                 <Link2 className="h-3.5 w-3.5" />
                 Connect Google Calendar
@@ -736,7 +736,7 @@ export function CalendarPage() {
                   size="icon"
                   onClick={goToPrevMonth}
                   aria-label="Previous month"
-                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                 >
                   <ChevronLeft className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                 </Button>
@@ -761,7 +761,7 @@ export function CalendarPage() {
                   size="icon"
                   onClick={goToNextMonth}
                   aria-label="Next month"
-                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+                  className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
                 >
                   <ChevronRight className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                 </Button>
@@ -801,9 +801,9 @@ export function CalendarPage() {
                           ? "text-[var(--ag-text-primary)]"
                           : "text-[var(--ag-text-muted)]/40",
                         isToday ? "ring-1 ring-inset ring-[#84CC16] bg-[#84CC16]/5" : "",
-                        isSelected && !isToday ? "bg-[#00F0FF]/10" : "",
+                        isSelected && !isToday ? "bg-[#A78BFA]/10" : "",
                         isSelected && isToday ? "bg-[#84CC16]/15 ring-2 ring-[#84CC16]" : "",
-                        "hover:bg-[#00F0FF]/8 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                        "hover:bg-[#A78BFA]/8 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
                       ].join(" ")}
                     >
                       <span
@@ -819,7 +819,7 @@ export function CalendarPage() {
                       {(hasEvents || hasReminders) && (
                         <div className="flex items-center gap-0.5 mt-1">
                           {hasEvents && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
                           )}
                           {hasReminders && (
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -834,7 +834,7 @@ export function CalendarPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-3 text-xs text-[var(--ag-text-muted)]">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
                   Events
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -912,7 +912,7 @@ export function CalendarPage() {
                             onClick={() =>
                               setExpandedEventId(isExpanded ? null : ev.id)
                             }
-                            className="w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 text-left hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.8)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none"
+                            className="w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 text-left hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.8)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none"
                           >
                             <div
                               className={`rounded-full ${catBg} p-1.5 mt-0.5 shrink-0`}
@@ -1184,7 +1184,7 @@ export function CalendarPage() {
             <button
               onClick={() => setAddMode("natural")}
               className={[
-                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
                 addMode === "natural"
                   ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
                   : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
@@ -1195,7 +1195,7 @@ export function CalendarPage() {
             <button
               onClick={() => setAddMode("manual")}
               className={[
-                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
+                "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
                 addMode === "manual"
                   ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
                   : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
@@ -1330,7 +1330,7 @@ export function CalendarPage() {
                   ? !nlInput.trim()
                   : !manualTitle.trim() || !manualDate
               }
-              className="min-h-[44px] bg-[#00F0FF] text-black hover:bg-[#00F0FF]/90"
+              className="min-h-[44px] bg-[#A78BFA] text-black hover:bg-[#A78BFA]/90"
             >
               <Plus className="h-4 w-4 mr-1.5" />
               Add Event
@@ -1345,9 +1345,9 @@ export function CalendarPage() {
         className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
         style={{
           background: showAI
-            ? "linear-gradient(135deg, #8B5CF6, #00F0FF)"
-            : "linear-gradient(135deg, #00F0FF, #8B5CF6)",
-          boxShadow: "0 4px 20px rgba(0,240,255,0.3)",
+            ? "linear-gradient(135deg, #8B5CF6, #A78BFA)"
+            : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+          boxShadow: "0 4px 20px rgba(139,92,246,0.3)",
         }}
         aria-label={showAI ? "Close AI assistant" : "Open AI assistant"}
       >
@@ -1361,18 +1361,18 @@ export function CalendarPage() {
       {/* ── AI Assistant Panel ────────────────────────────────── */}
       {showAI && (
         <div
-          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(0,240,255,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
+          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
             bottom-0 left-0 right-0 h-[80vh]
             md:bottom-6 md:left-auto md:right-24 md:top-auto md:w-[400px] md:h-[560px]"
           style={{
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(0,240,255,0.08)",
+            boxShadow: "0 -8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(139,92,246,0.08)",
           }}
         >
           {/* Panel header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
-              style={{ background: "linear-gradient(135deg, #00F0FF20, #8B5CF620)" }}
+              style={{ background: "linear-gradient(135deg, #A78BFA20, #8B5CF620)" }}
             >
               <Sparkles className="h-4 w-4 text-[var(--ag-cyan)]" />
             </div>
@@ -1390,7 +1390,7 @@ export function CalendarPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(0,240,255,0.06)] shrink-0">
+          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(139,92,246,0.06)] shrink-0">
             {[
               { label: "Find free time", prompt: "Find me some free time slots this week for a 1-hour meeting" },
               { label: "Block focus time", prompt: "Block 2 hours of focus time tomorrow morning on my calendar" },
@@ -1402,9 +1402,9 @@ export function CalendarPage() {
                 disabled={aiLoading}
                 className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium border transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                 style={{
-                  background: "rgba(0,240,255,0.06)",
-                  borderColor: "rgba(0,240,255,0.15)",
-                  color: "#00F0FF",
+                  background: "rgba(139,92,246,0.06)",
+                  borderColor: "rgba(139,92,246,0.15)",
+                  color: "#A78BFA",
                 }}
               >
                 {action.label}
@@ -1428,7 +1428,7 @@ export function CalendarPage() {
               <div className="flex flex-col items-center justify-center h-full text-center py-8 gap-3">
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ background: "rgba(0,240,255,0.08)" }}
+                  style={{ background: "rgba(139,92,246,0.08)" }}
                 >
                   <Calendar className="h-6 w-6 text-[var(--ag-cyan)]/60" />
                 </div>
@@ -1448,7 +1448,7 @@ export function CalendarPage() {
               setAiInput("");
               void askCalendarAI(trimmed);
             }}
-            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(0,240,255,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
+            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
           >
             <input
               type="text"
@@ -1456,7 +1456,7 @@ export function CalendarPage() {
               onChange={(e) => setAiInput(e.target.value)}
               placeholder="Ask about your calendar..."
               disabled={aiLoading}
-              className="flex-1 bg-[#12121F] border border-[rgba(0,240,255,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none focus:border-[var(--ag-cyan)]/40 transition-colors disabled:opacity-50"
+              className="flex-1 bg-[#12121F] border border-[rgba(139,92,246,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none focus:border-[var(--ag-cyan)]/40 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
@@ -1464,8 +1464,8 @@ export function CalendarPage() {
               className="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-150 disabled:opacity-30 hover:scale-105 active:scale-95"
               style={{
                 background: aiInput.trim()
-                  ? "linear-gradient(135deg, #00F0FF, #8B5CF6)"
-                  : "rgba(0,240,255,0.08)",
+                  ? "linear-gradient(135deg, #A78BFA, #8B5CF6)"
+                  : "rgba(139,92,246,0.08)",
               }}
               aria-label="Send message"
             >

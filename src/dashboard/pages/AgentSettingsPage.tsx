@@ -283,7 +283,7 @@ export function AgentSettingsPage() {
       {/* Toast notification */}
       {saveToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="px-4 py-2.5 rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.15)] shadow-lg shadow-[#00F0FF]/10 text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
+          <div className="px-4 py-2.5 rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.15)] shadow-lg shadow-[#A78BFA]/10 text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
             {saveToast.includes('Saved') || saveToast.includes('Switched') || saveToast.includes('Cleared') ? (
               <Check className="w-4 h-4 text-[#ADFF2F]" />
             ) : (
@@ -301,8 +301,8 @@ export function AgentSettingsPage() {
         subtitle={`Configure ${currentAgent.name} — personality, memory, tools & channels`}
         badge={
           <span className="relative flex h-3 w-3" title="Owned by Weebo">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F0FF] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00F0FF]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A78BFA] opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#A78BFA]" />
           </span>
         }
       />
@@ -343,7 +343,7 @@ export function AgentSettingsPage() {
                 <button
                   key={a.id}
                   onClick={() => handleAgentSwitch(a.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
+                  className={`relative flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 ${
                     isActive
                       ? 'text-white'
                       : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/[0.03]'
@@ -385,7 +385,7 @@ export function AgentSettingsPage() {
               value={tab.value}
               className={`flex-1 sm:flex-none rounded-none border-b-2 border-transparent px-4 sm:px-6 py-3 min-h-[44px] text-sm font-medium transition-all duration-200 bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:bg-transparent ${
                 activeTab === tab.value
-                  ? '!border-b-[#00F0FF] !text-[var(--ag-cyan)]'
+                  ? '!border-b-[#A78BFA] !text-[var(--ag-cyan)]'
                   : '!text-[var(--ag-text-secondary)] hover:!text-[var(--ag-text-primary)]'
               }`}
             >
@@ -458,7 +458,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Creativity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
                     {['Precise', 'Focused', 'Balanced', 'Creative', 'Exploratory'][creativityStep]}
                   </span>
                 </div>
@@ -467,7 +467,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Factual</span>
@@ -479,7 +479,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Tone</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
                     {TONE_LABELS[toneStep]}
                   </span>
                 </div>
@@ -488,7 +488,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setTone(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Casual</span>
@@ -500,7 +500,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Verbosity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
                     {VERBOSITY_LABELS[verbosityStep]}
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Terse</span>
@@ -521,7 +521,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Humor</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
                     {HUMOR_LABELS[humorStep]}
                   </span>
                 </div>
@@ -530,7 +530,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setHumor(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Serious</span>
@@ -542,7 +542,7 @@ export function AgentSettingsPage() {
               <div className="md:col-span-2 md:max-w-[calc(50%-1rem)]">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Empathy</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#00F0FF]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
                     {EMPATHY_LABELS[empathyStep]}
                   </span>
                 </div>
@@ -551,7 +551,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setEmpathy(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:bg-[#00F0FF] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Direct</span>
@@ -644,18 +644,18 @@ export function AgentSettingsPage() {
                     onClick={() => { isDirty.current = true; setAutonomyLevel(level.id); }}
                     className={`w-full flex items-start gap-3 p-4 min-h-[44px] rounded-xl border text-left transition-all duration-200 ${
                       isActive
-                        ? 'border-[var(--ag-cyan)]/40 bg-[#00F0FF]/5'
+                        ? 'border-[var(--ag-cyan)]/40 bg-[#A78BFA]/5'
                         : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                     }`}
                   >
                     <div className={`w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                       isActive ? 'border-[var(--ag-cyan)]' : 'border-[#9CA3AF]/50'
                     }`}>
-                      {isActive && <div className="w-2 h-2 rounded-full bg-[#00F0FF]" />}
+                      {isActive && <div className="w-2 h-2 rounded-full bg-[#A78BFA]" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <level.icon className="w-4 h-4" style={{ color: isActive ? '#00F0FF' : '#9CA3AF' }} />
+                        <level.icon className="w-4 h-4" style={{ color: isActive ? '#A78BFA' : '#9CA3AF' }} />
                         <span className={`text-sm font-medium ${isActive ? 'text-[var(--ag-text-primary)]' : 'text-[var(--ag-text-secondary)]'}`}>
                           {level.label}
                         </span>
@@ -746,7 +746,7 @@ export function AgentSettingsPage() {
               <Switch
                 checked={memoryEnabled}
                 onCheckedChange={setMemoryEnabled}
-                className={`${memoryEnabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                className={`${memoryEnabled ? '!bg-[#A78BFA]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#A78BFA] data-[state=unchecked]:!bg-[#1A1A2E]`}
               />
             </div>
 
@@ -825,7 +825,7 @@ export function AgentSettingsPage() {
                     key={tool.id}
                     className={`flex items-center justify-between p-4 min-h-[44px] rounded-xl border transition-all duration-200 ${
                       enabled
-                        ? 'border-[var(--ag-cyan)]/20 bg-[#00F0FF]/5'
+                        ? 'border-[var(--ag-cyan)]/20 bg-[#A78BFA]/5'
                         : 'border-[rgba(139,92,246,0.08)]'
                     }`}
                   >
@@ -833,12 +833,12 @@ export function AgentSettingsPage() {
                       <div
                         className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200"
                         style={{
-                          backgroundColor: enabled ? 'rgba(0,240,255,0.1)' : 'rgba(139,92,246,0.05)',
+                          backgroundColor: enabled ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.05)',
                         }}
                       >
                         <tool.icon
                           className="w-4 h-4 transition-colors duration-200"
-                          style={{ color: enabled ? '#00F0FF' : '#9CA3AF' }}
+                          style={{ color: enabled ? '#A78BFA' : '#9CA3AF' }}
                         />
                       </div>
                       <div>
@@ -851,7 +851,7 @@ export function AgentSettingsPage() {
                     <Switch
                       checked={enabled}
                       onCheckedChange={() => toggleTool(tool.id)}
-                      className={`${enabled ? '!bg-[#00F0FF]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#00F0FF] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                      className={`${enabled ? '!bg-[#A78BFA]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#A78BFA] data-[state=unchecked]:!bg-[#1A1A2E]`}
                     />
                   </div>
                 );
@@ -909,7 +909,7 @@ export function AgentSettingsPage() {
               {/* Web Chat */}
               <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#00F0FF]/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#A78BFA]/10 flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-[var(--ag-cyan)]" />
                   </div>
                   <div>

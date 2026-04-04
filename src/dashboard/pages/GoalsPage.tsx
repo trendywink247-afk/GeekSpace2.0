@@ -438,8 +438,8 @@ function StepRow({ step }: { step: GoalStepData }) {
     <div
       className="flex items-center gap-3 rounded-lg px-3 py-2"
       style={{
-        background: isActive ? '#00F0FF08' : 'rgba(255,255,255,0.02)',
-        borderLeft: `3px solid ${isComplete ? '#10B981' : isFailed ? '#EF4444' : isActive ? '#00F0FF' : '#333'}`,
+        background: isActive ? '#A78BFA08' : 'rgba(255,255,255,0.02)',
+        borderLeft: `3px solid ${isComplete ? '#10B981' : isFailed ? '#EF4444' : isActive ? '#A78BFA' : '#333'}`,
       }}
     >
       <div className="flex-shrink-0">

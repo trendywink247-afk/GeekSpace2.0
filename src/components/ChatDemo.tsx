@@ -66,12 +66,12 @@ export function ChatDemo() {
   return (
     <section id="chat-demo" className="relative py-24 md:py-32 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(ellipse, #00F0FF 0%, #8B5CF6 50%, transparent 70%)' }} />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(ellipse, #A78BFA 0%, #8B5CF6 50%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6">
         <motion.div initial={reduced ? undefined : { opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.7, ease: ease4 }} className="text-center mb-10">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20 mb-4">Try It Now</span>
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-[#A78BFA]/10 text-[var(--ag-cyan)] border border-[#A78BFA]/20 mb-4">Try It Now</span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
             Ask Your AI Team <span className="text-gradient-violet">Anything</span>
           </h2>
@@ -79,7 +79,7 @@ export function ChatDemo() {
         </motion.div>
 
         <motion.div initial={reduced ? undefined : { opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ delay: 0.15, duration: 0.7, ease: ease4 }}
-          className="rounded-2xl border overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(12,12,24,0.9), rgba(8,8,18,0.95))', borderColor: 'rgba(0,240,255,0.12)' }}>
+          className="rounded-2xl border overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(12,12,24,0.9), rgba(8,8,18,0.95))', borderColor: 'rgba(139,92,246,0.12)' }}>
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.06]">
             <span className="w-3 h-3 rounded-full bg-[#FF5F57]" /><span className="w-3 h-3 rounded-full bg-[#FEBC2E]" /><span className="w-3 h-3 rounded-full bg-[#28C840]" />
@@ -91,7 +91,7 @@ export function ChatDemo() {
             {/* Welcome */}
             {msgs.length === 0 && (
               <div className="flex items-start gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: '#00F0FF22', color: 'var(--ag-cyan)' }}>W</div>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: '#A78BFA22', color: 'var(--ag-cyan)' }}>W</div>
                 <div><div className="text-xs font-bold mb-1" style={{ color: 'var(--ag-cyan)' }}>Weebo</div><p className="text-sm text-[#C8C8D8] leading-relaxed">Hi! Click any question below to see your AI team work.</p></div>
               </div>
             )}

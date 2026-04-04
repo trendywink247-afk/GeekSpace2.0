@@ -1,4 +1,4 @@
-// VoiceChatPage — owner: weebo (#00F0FF)
+// VoiceChatPage — owner: weebo (#A78BFA)
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -304,20 +304,20 @@ export function VoiceChatPage() {
               className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300"
               style={{
                 background: voiceState === 'recording'
-                  ? 'radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(12,12,24,1) 80%)'
+                  ? 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(12,12,24,1) 80%)'
                   : voiceState === 'speaking'
-                    ? 'radial-gradient(circle, rgba(0,240,255,0.12) 0%, rgba(12,12,24,1) 80%)'
+                    ? 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(12,12,24,1) 80%)'
                     : 'radial-gradient(circle, rgba(12,12,24,0.8) 0%, rgba(12,12,24,1) 80%)',
                 border: `2px solid ${
                   voiceState === 'recording' ? 'var(--ag-cyan)'
                   : voiceState === 'speaking' ? 'var(--ag-weebo)'
                   : voiceState === 'error' ? 'var(--ag-pink)'
-                  : 'rgba(0,240,255,0.2)'
+                  : 'rgba(139,92,246,0.2)'
                 }`,
                 boxShadow: voiceState === 'recording'
-                  ? '0 0 32px rgba(0,240,255,0.35)'
+                  ? '0 0 32px rgba(139,92,246,0.35)'
                   : voiceState === 'speaking'
-                    ? '0 0 24px rgba(0,240,255,0.25)'
+                    ? '0 0 24px rgba(139,92,246,0.25)'
                     : voiceState === 'error'
                       ? '0 0 20px rgba(255,45,120,0.25)'
                       : 'none',
@@ -327,12 +327,12 @@ export function VoiceChatPage() {
               {voiceState === 'processing' ? (
                 <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
               ) : (
-                /* Weebo dot — #00F0FF */
+                /* Weebo dot — #A78BFA */
                 <span
                   className="w-4 h-4 rounded-full"
                   style={{
                     backgroundColor: 'var(--ag-weebo)',
-                    boxShadow: '0 0 12px rgba(0,240,255,0.5)',
+                    boxShadow: '0 0 12px rgba(139,92,246,0.5)',
                   }}
                   aria-label="Weebo agent"
                 />
@@ -377,7 +377,7 @@ export function VoiceChatPage() {
             className="text-sm font-medium transition-colors"
             style={{
               color: voiceState === 'recording' ? 'var(--ag-cyan)'
-                : voiceState === 'processing' ? 'rgba(0,240,255,0.7)'
+                : voiceState === 'processing' ? 'rgba(139,92,246,0.7)'
                 : voiceState === 'speaking' ? 'var(--ag-weebo)'
                 : voiceState === 'error' ? 'var(--ag-pink)'
                 : 'var(--ag-text-secondary)',

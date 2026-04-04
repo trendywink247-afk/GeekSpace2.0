@@ -69,7 +69,7 @@ export function DigestModal({ officeData }: Props) {
       .map(([id, count]) => ({
         id: id as AgentId,
         meta: AGENT_META[id as AgentId] ?? AGENT_META.weebo,
-        color: AGENT_COLORS[id as AgentId] ?? '#00F0FF',
+        color: AGENT_COLORS[id as AgentId] ?? '#A78BFA',
         count,
       }));
   })();
@@ -133,7 +133,7 @@ export function DigestModal({ officeData }: Props) {
               <div className="flex gap-3">
                 <div
                   className="flex-1 rounded-xl p-3 text-center"
-                  style={{ background: 'rgba(0,240,255,0.06)', border: '1px solid rgba(0,240,255,0.1)' }}
+                  style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.1)' }}
                 >
                   <div className="text-xl font-bold text-[var(--ag-cyan)]">{messagesToday}</div>
                   <div className="text-[10px] text-[var(--ag-text-secondary)]">Messages</div>
@@ -189,9 +189,9 @@ export function DigestModal({ officeData }: Props) {
                 onClick={() => setShow(false)}
                 className="w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.01]"
                 style={{
-                  background: 'rgba(0,240,255,0.1)',
+                  background: 'rgba(139,92,246,0.1)',
                   color: 'var(--ag-cyan)',
-                  border: '1px solid rgba(0,240,255,0.2)',
+                  border: '1px solid rgba(139,92,246,0.2)',
                 }}
               >
                 Got it

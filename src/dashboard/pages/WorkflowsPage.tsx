@@ -59,7 +59,7 @@ interface WorkflowRun {
 // ---- Constants ----
 
 const AGENT_COLORS: Record<string, string> = {
-  weebo: "#00F0FF",
+  weebo: "#A78BFA",
   jarvis: "#ADFF2F",
   edith: "#8B5CF6",
   weebofleet: "#F59E0B",
@@ -124,7 +124,7 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
         const statusColor = runStep
           ? runStep.status === "done" ? "#00FF88"
             : runStep.status === "error" ? "#FF6161"
-            : runStep.status === "running" ? "#00F0FF"
+            : runStep.status === "running" ? "#A78BFA"
             : "#6B7280"
           : color;
 
@@ -198,9 +198,9 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
               {/* Running animation dots */}
               {runStep?.status === "running" && (
                 <div className="flex gap-1 mt-2">
-                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#00F0FF", animationDelay: "0ms" }} />
-                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#00F0FF", animationDelay: "150ms" }} />
-                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#00F0FF", animationDelay: "300ms" }} />
+                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#A78BFA", animationDelay: "0ms" }} />
+                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#A78BFA", animationDelay: "150ms" }} />
+                  <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "#A78BFA", animationDelay: "300ms" }} />
                 </div>
               )}
             </div>

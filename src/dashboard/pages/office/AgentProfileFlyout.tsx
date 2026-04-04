@@ -41,7 +41,7 @@ interface Props {
 const STATE_DOT_COLORS: Record<string, string> = {
   idle: '#4B5563',
   thinking: '#F59E0B',
-  typing: '#00F0FF',
+  typing: '#A78BFA',
   tool_call: '#8B5CF6',
   responding: '#ADFF2F',
   done: '#10B981',
@@ -114,7 +114,7 @@ function AgentTooltip({ label, children }: { label: string; children: React.Reac
             ref={setFloat}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#00F0FF]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"
+            className="px-2 py-1 rounded-md bg-[#1A1A2E] border border-[#A78BFA]/10 text-[10px] text-[#E8E8F0] shadow-lg shadow-black/40 z-[60] pointer-events-none max-w-[200px]"
           >
             {label}
           </div>
@@ -497,7 +497,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                         style={{
                           background: '#12121F',
                           color: '#F4F6FF',
-                          border: '1px solid rgba(0,240,255,0.1)',
+                          border: '1px solid rgba(139,92,246,0.1)',
                         }}
                       >
                         {(Object.entries(TASK_TYPE_LABELS) as [TaskType, string][]).map(([key, label]) => (
@@ -522,7 +522,7 @@ export function AgentProfileFlyout({ agentId, onClose, onNavigateToChat, onTaskA
                         style={{
                           background: '#12121F',
                           color: '#F4F6FF',
-                          border: '1px solid rgba(0,240,255,0.1)',
+                          border: '1px solid rgba(139,92,246,0.1)',
                         }}
                       />
                     </label>

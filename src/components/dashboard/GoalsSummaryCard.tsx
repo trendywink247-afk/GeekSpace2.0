@@ -88,7 +88,7 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
                 <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2.5" />
                 <circle
                   cx="16" cy="16" r="13" fill="none"
-                  stroke="#00F0FF"
+                  stroke="#A78BFA"
                   strokeWidth="2.5"
                   strokeDasharray={`${(goal.progress / 100) * 81.7} 81.7`}
                   strokeLinecap="round"

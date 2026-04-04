@@ -61,7 +61,7 @@ export function SandboxPanel({
   const navigate = useNavigate();
   const dot = STATUS_DOT[status];
   const memPct = Math.min((memoryUsedMb / memoryTotalMb) * 100, 100);
-  const memColor = memPct > 85 ? '#EF4444' : memPct > 60 ? '#FFB800' : '#00F0FF';
+  const memColor = memPct > 85 ? '#EF4444' : memPct > 60 ? '#FFB800' : '#A78BFA';
 
   return (
     <div
@@ -69,7 +69,7 @@ export function SandboxPanel({
       style={{
         background: 'linear-gradient(135deg, rgba(12,12,24,0.8), rgba(16,16,30,0.6))',
         backdropFilter: 'blur(24px) saturate(1.4)',
-        border: '1px solid rgba(0,240,255,0.1)',
+        border: '1px solid rgba(139,92,246,0.1)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
       }}
     >
@@ -135,12 +135,12 @@ export function SandboxPanel({
           onClick={() => navigate('/sandbox')}
           className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-all"
           style={{
-            background: 'rgba(0,240,255,0.08)',
-            color: '#00F0FF',
-            border: '1px solid rgba(0,240,255,0.18)',
+            background: 'rgba(139,92,246,0.08)',
+            color: '#A78BFA',
+            border: '1px solid rgba(139,92,246,0.18)',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,240,255,0.16)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,240,255,0.08)'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.16)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139,92,246,0.08)'; }}
         >
           <Terminal className="w-3 h-3" />
           Open Terminal
@@ -172,13 +172,13 @@ export function SandboxPanel({
             {recentFiles.slice(0, 4).map(file => (
               <div key={file.name} className="flex items-center gap-2 py-1 px-2 rounded-lg group cursor-pointer transition-colors"
                 style={{ background: 'rgba(0,0,0,0)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,240,255,0.04)'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(139,92,246,0.04)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,0,0,0)'; }}
               >
                 <FileText className="w-3 h-3 flex-shrink-0" style={{ color: '#4B5563' }} />
                 <span className="text-[11px] flex-1 truncate" style={{ color: '#8892A4' }}>{file.name}</span>
                 <span className="text-[9px] flex-shrink-0" style={{ color: '#4B5563' }}>{file.updatedAgo}</span>
-                <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: '#00F0FF' }} />
+                <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: '#A78BFA' }} />
               </div>
             ))}
           </div>

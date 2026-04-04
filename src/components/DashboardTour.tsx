@@ -134,8 +134,8 @@ export function DashboardTour({ onNavigate, onOpenChat }: DashboardTourProps) {
         className="rounded-2xl overflow-hidden shadow-2xl"
         style={{
           background: 'linear-gradient(180deg, rgba(12,12,24,0.97) 0%, rgba(8,8,16,0.99) 100%)',
-          border: '1px solid rgba(0, 240, 255, 0.15)',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,240,255,0.04)',
+          border: '1px solid rgba(139, 92, 246, 0.15)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(139,92,246,0.04)',
         }}
       >
         {/* Progress bar */}

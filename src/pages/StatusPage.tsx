@@ -96,7 +96,7 @@ export function StatusPage() {
             variant="outline"
             onClick={fetchHealth}
             disabled={checking}
-            className="min-h-[44px] border-[var(--ag-border-default,rgba(139,92,246,0.15))] hover:bg-[var(--ag-active-bg,rgba(0,240,255,0.08))]"
+            className="min-h-[44px] border-[var(--ag-border-default,rgba(139,92,246,0.15))] hover:bg-[var(--ag-active-bg,rgba(139,92,246,0.08))]"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${checking ? 'animate-spin' : ''}`} />
             Refresh

@@ -125,10 +125,10 @@ function StepCard({ step }: { step: ToolStep }) {
         'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all',
         'bg-[#0C0C18]/50 border',
         isActive
-          ? 'border-[#00F0FF]/15'
+          ? 'border-[#A78BFA]/15'
           : isError
             ? 'border-[#FF2D78]/15'
-            : 'border-[#00F0FF]/5',
+            : 'border-[#A78BFA]/5',
         isActive ? '' : 'opacity-70',
       ].join(' ')}
     >

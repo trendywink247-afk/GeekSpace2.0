@@ -282,12 +282,12 @@ describe('PageShell — Complete Feature Coverage', () => {
 describe('PageHeader — Complete Feature Coverage', () => {
   // ─── Icon styling and positioning ────────────────────────────────────
   describe('Icon styling (40×40px, rounded-xl, cyan bg)', () => {
-    it('icon background is cyan (#00F0FF)', () => {
+    it('icon background is cyan (#A78BFA)', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
       const iconContainer = container.querySelector('[class*="w-10"][class*="h-10"]');
-      expect(iconContainer?.className).toMatch(/(bg-\[#00F0FF\]|bg-cyan|bg-\[.*#00F0FF)/);
+      expect(iconContainer?.className).toMatch(/(bg-\[#A78BFA\]|bg-cyan|bg-\[.*#A78BFA)/);
     });
 
     it('icon size is exactly 40×40px (w-10 h-10)', () => {

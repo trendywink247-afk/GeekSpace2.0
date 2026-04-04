@@ -281,12 +281,12 @@ describe('Component Library — Critical Integration Gaps', () => {
       expect(card.className).toMatch(/hover:shadow/);
     });
 
-    it('PageHeader icon background uses cyan accent (#00F0FF)', () => {
+    it('PageHeader icon background uses cyan accent (#A78BFA)', () => {
       const { container } = render(
         <PageHeader title="Test" icon={Cloud} />
       );
 
-      // TODO: Verify computed style contains #00F0FF or cyan RGB value
+      // TODO: Verify computed style contains #A78BFA or cyan RGB value
       // const style = window.getComputedStyle(iconBg);
       // expect(style.backgroundColor).toMatch(/00f0ff|0, 240, 255/i);
 

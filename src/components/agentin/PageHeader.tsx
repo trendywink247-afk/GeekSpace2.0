@@ -19,8 +19,8 @@ export function PageHeader({ icon: Icon, title, subtitle, badge, actions, classN
       <div className="flex items-center gap-3 min-w-0">
         {Icon && (
           <BlurFade delay={0}>
-            <div className="w-10 h-10 rounded-xl bg-[var(--ag-cyan,#00F0FF)]/10 flex items-center justify-center shrink-0">
-              <Icon className="w-5 h-5 text-[var(--ag-cyan,#00F0FF)]" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--ag-cyan,#A78BFA)]/10 flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5 text-[var(--ag-cyan,#A78BFA)]" />
             </div>
           </BlurFade>
         )}

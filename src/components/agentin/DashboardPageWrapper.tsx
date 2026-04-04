@@ -143,7 +143,7 @@ export function DashboardCard({
 
   const glowStyles = {
     none: {},
-    cyan: { boxShadow: '0 0 30px rgba(0, 240, 255, 0.08)' },
+    cyan: { boxShadow: '0 0 30px rgba(139, 92, 246, 0.08)' },
     violet: { boxShadow: '0 0 30px rgba(139, 92, 246, 0.1)' },
     gold: { boxShadow: '0 0 30px rgba(255, 184, 0, 0.08)' },
     rose: { boxShadow: '0 0 30px rgba(255, 45, 120, 0.08)' },
@@ -157,7 +157,7 @@ export function DashboardCard({
       className={`
         relative rounded-2xl overflow-hidden
         bg-[rgba(30,30,50,0.6)] backdrop-blur-xl
-        border border-[rgba(0,240,255,0.08)]
+        border border-[rgba(139,92,246,0.08)]
         ${paddingClasses[padding]}
         ${hover ? 'cursor-pointer' : ''}
         ${className}
@@ -292,7 +292,7 @@ export function PullToRefreshIndicator({
         opacity: progress 
       }}
     >
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(6,6,26,0.9)] backdrop-blur-xl border border-[rgba(0,240,255,0.2)]">
+      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(6,6,26,0.9)] backdrop-blur-xl border border-[rgba(139,92,246,0.2)]">
         <motion.div
           animate={{ rotate: isReady ? 180 : progress * 360 }}
           transition={{ duration: 0.2 }}

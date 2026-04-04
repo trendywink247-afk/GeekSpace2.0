@@ -43,7 +43,7 @@ const STATE_LABELS: Record<string, string> = {
 };
 
 export function SpotlightHUD({ agent, taskCount, onChat, onAssignTask, onDismiss, officeData, mobileBottomOffset }: Props) {
-  const color = AGENT_COLORS[agent.id] ?? '#00F0FF';
+  const color = AGENT_COLORS[agent.id] ?? '#A78BFA';
   const stateLabel = STATE_LABELS[agent.state] ?? agent.state;
 
   // Compute last action context from timeline or current work

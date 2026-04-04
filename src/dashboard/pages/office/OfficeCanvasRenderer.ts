@@ -155,7 +155,7 @@ interface AmbientParticle {
 }
 
 let ambientParticles: AmbientParticle[] = [];
-const AMBIENT_COLORS = ['#8B5CF6', '#00F0FF', '#F59E0B', '#10B981'];
+const AMBIENT_COLORS = ['#8B5CF6', '#A78BFA', '#F59E0B', '#10B981'];
 
 /** Initialize ambient floating particles (call once) */
 export function initAmbientParticles(count: number): void {
@@ -734,7 +734,7 @@ export function drawStateIndicator(ctx: CanvasRenderingContext2D, agent: CanvasA
  *   id: 'beam-comm-1',
  *   fromAgentId: 'weebo',
  *   toAgentId: 'edith',
- *   color: '#00F0FF',
+ *   color: '#A78BFA',
  *   createdAt: Date.now(),
  *   duration: 2000,  // Visible for 2 seconds
  * };
@@ -962,7 +962,7 @@ export function drawAmbientEffects(ctx: CanvasRenderingContext2D, tick: number, 
   // Ambient floor grid pulse — very subtle breathing grid lines
   {
     const gridAlpha = 0.015 + 0.015 * Math.sin(Date.now() / 2000);
-    ctx.strokeStyle = `rgba(0, 240, 255, ${gridAlpha})`;
+    ctx.strokeStyle = `rgba(139, 92, 246, ${gridAlpha})`;
     ctx.lineWidth = 0.5;
     // Only draw every 4th line for subtlety
     for (let c = 0; c <= COLS; c += 4) {
@@ -1186,7 +1186,7 @@ function drawWhiteboardScribbles(ctx: CanvasRenderingContext2D, agents: CanvasAg
   const wbX = 19 * CELL;
   const wbY = 13 * CELL;
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.12)';
   ctx.lineWidth = 1;
 
   for (let i = 0; i < 3; i++) {
@@ -1462,7 +1462,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   if (effectState) {
     const particleAlphaMultiplier = activeTheme === 'day' ? 0.5 : 1.0;
     for (const p of effectState.particles) {
-      ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha * particleAlphaMultiplier})`;
+      ctx.fillStyle = `rgba(139, 92, 246, ${p.alpha * particleAlphaMultiplier})`;
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
       ctx.fill();

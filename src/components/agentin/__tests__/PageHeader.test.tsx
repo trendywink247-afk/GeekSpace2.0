@@ -31,7 +31,7 @@ describe('PageHeader', () => {
         <PageHeader title="Test" icon={Cloud} />
       );
       const iconBg = container.querySelector('[class*="bg-"]');
-      expect(iconBg?.className).toMatch(/bg-\[.*#00F0FF/);
+      expect(iconBg?.className).toMatch(/bg-\[.*#A78BFA/);
     });
 
     it('does not render icon container when icon prop omitted', () => {

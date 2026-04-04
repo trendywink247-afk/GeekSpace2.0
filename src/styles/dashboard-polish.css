@@ -1,0 +1,191 @@
+/* ============================================================
+   Dashboard Polish — Premium design overrides
+   Matches landing/login aesthetic: glassmorphism, depth, violet
+   ============================================================ */
+
+/* ── Sidebar Glass Effect ── */
+.gs-sidebar,
+[class*="md:flex-col"][class*="border-r"] {
+  background: rgba(6, 6, 26, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right-color: rgba(139, 92, 246, 0.08) !important;
+}
+
+.light .gs-sidebar,
+.light [class*="md:flex-col"][class*="border-r"] {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-right-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+/* ── Bottom Navigation (Mobile) ── */
+nav[class*="fixed"][class*="bottom-0"],
+[class*="bottom-0"][class*="border-t"] {
+  background: rgba(6, 6, 26, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-top-color: rgba(139, 92, 246, 0.06) !important;
+}
+
+.light nav[class*="fixed"][class*="bottom-0"],
+.light [class*="bottom-0"][class*="border-t"] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-top-color: rgba(139, 92, 246, 0.08) !important;
+}
+
+/* ── Cards — Glassmorphism ── */
+[class*="rounded-xl"][class*="border"][class*="bg-[var(--ag-bg-surface)]"],
+[class*="rounded-2xl"][class*="border"][class*="backdrop-blur"] {
+  border-color: rgba(139, 92, 246, 0.08);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+}
+
+[class*="rounded-xl"][class*="border"][class*="bg-[var(--ag-bg-surface)]"]:hover,
+[class*="rounded-2xl"][class*="border"][class*="backdrop-blur"]:hover {
+  border-color: rgba(139, 92, 246, 0.15);
+  box-shadow: 
+    0 4px 16px rgba(139, 92, 246, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ── Top Header Bar ── */
+header,
+[class*="sticky"][class*="top-0"][class*="z-"] {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* ── Page Headings — Use Syne Font ── */
+h1[class*="font-bold"],
+h1[class*="font-heading"],
+h2[class*="font-bold"],
+[class*="text-2xl"][class*="font-bold"],
+[class*="text-3xl"][class*="font-bold"] {
+  font-family: 'Syne', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ── Buttons — Violet primary instead of cyan ── */
+button[class*="bg-[var(--ag-cyan)]"],
+[class*="bg-[#A78BFA]"] {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  color: white !important;
+}
+
+button[class*="bg-[var(--ag-cyan)]"]:hover,
+[class*="bg-[#A78BFA]"]:hover {
+  background: linear-gradient(135deg, #7C3AED, #6D28D9) !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* ── Input Fields — Consistent styling ── */
+input[class*="border"],
+textarea[class*="border"],
+select[class*="border"] {
+  border-color: rgba(139, 92, 246, 0.12) !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[class*="border"]:focus,
+textarea[class*="border"]:focus,
+select[class*="border"]:focus {
+  border-color: rgba(139, 92, 246, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+  outline: none;
+}
+
+.light input[class*="border"],
+.light textarea[class*="border"] {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+/* ── Empty States — More presence ── */
+[class*="text-center"][class*="py-8"],
+[class*="text-center"][class*="py-12"] {
+  opacity: 0.9;
+}
+
+/* ── Badges/Pills — Violet tint ── */
+[class*="rounded-full"][class*="text-xs"][class*="px-2"] {
+  border-color: rgba(139, 92, 246, 0.15);
+}
+
+/* ── Active Nav Items ── */
+[class*="bg-[#A78BFA]"][class*="rounded"] {
+  background: rgba(139, 92, 246, 0.12) !important;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+/* ── Tour Modal — Less intrusive ── */
+[class*="Step 1 of"],
+[class*="step-indicator"] {
+  /* Don't override, but the tour should be dismissible */
+}
+
+/* ── Notification Count Badge ── */
+[class*="bg-[#EF4444]"],
+[class*="bg-red-500"] {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED) !important;
+}
+
+/* ── Tab Active State ── */
+[role="tab"][aria-selected="true"],
+[class*="border-b-2"][class*="border-[var(--ag-cyan)]"] {
+  border-color: #8B5CF6 !important;
+  color: var(--ag-text-primary) !important;
+}
+
+/* ── Gradient Orb (bottom-right floating button) ── */
+[class*="fixed"][class*="bottom-"][class*="right-"][class*="rounded-full"][class*="shadow"] {
+  background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* ── Selection highlight ── */
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: inherit;
+}
+
+/* ── Focus visible (accessibility) ── */
+:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* ── Smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Min touch target (mobile a11y) ── */
+@media (max-width: 768px) {
+  button, a, [role="button"], [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

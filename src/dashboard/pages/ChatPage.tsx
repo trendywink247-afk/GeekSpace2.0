@@ -185,7 +185,7 @@ function parseToolSteps(content: string): { cleanContent: string; steps: ToolSte
 }
 
 /** Agent color from conversation title hash */
-const AGENT_COLORS = ['#00F0FF', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
+const AGENT_COLORS = ['#A78BFA', '#8B5CF6', '#ADFF2F', '#FF6B9D', '#F59E0B', '#10B981', '#6366F1', '#84CC16', '#EC4899'];
 
 function getAgentColor(id: string): string {
   const hash = id.charCodeAt(0) + (id.charCodeAt(1) || 0);
@@ -1056,7 +1056,7 @@ export function ChatPage() {
   const personalityMeta: Record<AgentPersonality, { emoji: string; color: string; glow: string; initial: string }> = {
     edith: { emoji: 'E', color: 'var(--ag-violet)', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
     jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
-    weebo: { emoji: 'W', color: 'var(--ag-cyan)', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
+    weebo: { emoji: 'W', color: 'var(--ag-cyan)', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'W' },
     aria: { emoji: 'A', color: '#FF6B9D', glow: '0 0 12px rgba(255,107,157,0.4)', initial: 'A' },
     forge: { emoji: 'F', color: '#F59E0B', glow: '0 0 12px rgba(245,158,11,0.4)', initial: 'F' },
     pulse: { emoji: 'P', color: '#10B981', glow: '0 0 12px rgba(16,185,129,0.4)', initial: 'P' },

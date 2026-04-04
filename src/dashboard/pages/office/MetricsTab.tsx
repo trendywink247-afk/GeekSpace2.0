@@ -40,7 +40,7 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
   if (!taskStats && !commStats) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-[#A78BFA]/30 border-t-[#A78BFA] rounded-full animate-spin" />
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
           <div
             key={c.label}
             className="rounded-lg p-2 md:p-3 text-center"
-            style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+            style={{ background: C.card, border: `1px solid rgba(139,92,246,0.05)` }}
           >
             <span className="text-base md:text-lg block mb-0.5">{c.icon}</span>
             <span className="text-lg md:text-xl font-bold block" style={{ color: c.accent }}>
@@ -82,7 +82,7 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
       {delegationStatus && (
         <div
           className="rounded-lg p-3"
-          style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+          style={{ background: C.card, border: `1px solid rgba(139,92,246,0.05)` }}
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium" style={{ color: C.text }}>Delegations Today</h3>
@@ -122,7 +122,7 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
       {/* Activity by Agent -- Bar Chart */}
       <div
         className="rounded-lg p-3"
-        style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+        style={{ background: C.card, border: `1px solid rgba(139,92,246,0.05)` }}
       >
         <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Activity by Agent</h3>
         <div className="flex flex-col gap-1.5 md:gap-2.5">
@@ -157,7 +157,7 @@ export default function MetricsTab({ taskStats, commStats, delegationStatus }: {
       {Object.keys(commStats?.byType ?? {}).length > 0 && (
         <div
           className="rounded-lg p-3"
-          style={{ background: C.card, border: `1px solid rgba(0,240,255,0.05)` }}
+          style={{ background: C.card, border: `1px solid rgba(139,92,246,0.05)` }}
         >
           <h3 className="text-xs font-medium mb-3" style={{ color: C.text }}>Communication Types</h3>
           <div className="flex flex-wrap gap-2">
