@@ -210,10 +210,10 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
     vi.mocked(isOverDailyBudget).mockReturnValue(false);
   });
 
-  it('Step 1: routes to openrouter-free first (cloud-first waterfall)', async () => {
+  it('Step 1: routes to ollama first (local-first waterfall)', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(ollamaOkResponse)   // Ollama health check
-      .mockResolvedValueOnce(openrouterOk())      // Cloud-first: OpenRouter-free
+      .mockResolvedValueOnce(ollamaOkResponse)   // Ollama chat response
     );
 
     const response = await routeChat(
@@ -221,9 +221,9 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    expect(response.provider).toBe('openrouter-free');
+    expect(response.provider).toBe('ollama');
     const traces = getRoutingTraces();
-    expect(traces[traces.length - 1].routeDecision).toBe('openrouter-free');
+    expect(traces[traces.length - 1].routeDecision).toBe('ollama');
   });
 
   it('Step 2: falls back to openrouter-free (T1.5) when Ollama unavailable', async () => {
@@ -338,8 +338,8 @@ describe('Daily Token Budget Enforcement (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    // When budget exceeded, routing may use builtin or openrouter-free (both free)
-    expect(['builtin', 'openrouter-free']).toContain(response.provider);
+    // When budget exceeded, routing degrades to free providers (ollama, openrouter-free, builtin)
+    expect(['builtin', 'openrouter-free', 'ollama']).toContain(response.provider);
   });
 });
 
