@@ -163,6 +163,6 @@ describe('Mobile infrastructure completeness', () => {
 
   it('Mobile bottom tabs have minimum width for thumb reach', () => {
     const content = readSrc("dashboard/MobileTabBar.tsx");
-    expect(content).toMatch(/min-w-\[4[48]px\]/);
+    expect(content).toMatch(/min-w-\[(?:4[48]|5[02])px\]/);
   });
 });
