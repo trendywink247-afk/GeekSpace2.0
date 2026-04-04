@@ -232,7 +232,7 @@ export function DashboardApp() {
     if (validPages.includes(segment as PageType)) {
       setCurrentPage(segment as PageType);
     }
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // Close mobile sidebar when page changes
   useEffect(() => {
