@@ -139,7 +139,7 @@ function StepCard({ step }: { step: ToolStep }) {
       <span
         className={[
           'flex-1 min-w-0 truncate',
-          isActive ? 'text-[#E8E8F0]' : isError ? 'text-[#FF2D78]' : 'text-[#9CA3AF]',
+          isActive ? 'text-[#E8E8F0]' : isError ? 'text-[#FF2D78]' : 'text-[var(--ag-text-secondary)]',
         ].join(' ')}
       >
         {step.content}
@@ -153,7 +153,7 @@ function StepCard({ step }: { step: ToolStep }) {
           </span>
         )}
         {isActive && (
-          <Loader2 className="w-3 h-3 text-[#00F0FF] animate-spin" />
+          <Loader2 className="w-3 h-3 text-[var(--ag-cyan)] animate-spin" />
         )}
         {step.status === 'done' && (
           <Check className="w-3 h-3 text-[#ADFF2F]" />

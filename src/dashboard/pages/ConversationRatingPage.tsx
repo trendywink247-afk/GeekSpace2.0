@@ -113,7 +113,7 @@ export function ConversationRatingPage() {
         subtitle={`${total} conversations — rate quality to improve your AI`}
         badge={
           total > 0 ? (
-            <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+            <Badge className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20 text-xs">
               {total}
             </Badge>
           ) : undefined
@@ -154,12 +154,12 @@ export function ConversationRatingPage() {
                   <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mb-1">{formatDate(conv.createdAt)}</p>
                   {conv.userMessage && (
                     <div className="mb-2">
-                      <span className="text-xs font-medium text-[#00F0FF] uppercase tracking-wide">You</span>
+                      <span className="text-xs font-medium text-[var(--ag-cyan)] uppercase tracking-wide">You</span>
                       <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
                     </div>
                   )}
                   <div>
-                    <span className="text-xs font-medium text-[#8B5CF6] uppercase tracking-wide">Agent</span>
+                    <span className="text-xs font-medium text-[var(--ag-violet)] uppercase tracking-wide">Agent</span>
                     <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
                   </div>
                 </div>
@@ -172,7 +172,7 @@ export function ConversationRatingPage() {
                     </Badge>
                   )}
                   {conv.qualityScore !== null && (
-                    <Badge className="bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/20 text-xs">
+                    <Badge className="bg-[#00F0FF]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20 text-xs">
                       {conv.qualityScore}/5
                     </Badge>
                   )}

@@ -765,7 +765,7 @@ export function FocusPage() {
             onClick={toggleFocusMode}
             className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 ${
               settings?.focus_mode_active
-                ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[#00F0FF]/20'
+                ? 'bg-[#00F0FF]/10 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/20'
                 : 'text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
             }`}
             aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
@@ -917,7 +917,7 @@ export function FocusPage() {
                           focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
                           min-h-[44px]
                           ${durInput === d.value
-                            ? 'bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)]'
+                            ? 'bg-[#00F0FF]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
                             : 'border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
                           }
                         `}
@@ -1136,7 +1136,7 @@ export function FocusPage() {
                       focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
                       min-h-[44px]
                       ${durInput === d.value
-                        ? 'bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)]'
+                        ? 'bg-[#00F0FF]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
                         : 'bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)]'
                       }
                     `}
@@ -1222,7 +1222,7 @@ export function FocusPage() {
                       focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none
                       min-h-[44px]
                       ${newHabitFreq === f.value
-                        ? 'bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[var(--ag-cyan)] font-medium'
+                        ? 'bg-[#00F0FF]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] font-medium'
                         : 'bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)]'
                       }
                     `}

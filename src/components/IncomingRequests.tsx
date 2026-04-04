@@ -112,9 +112,9 @@ export function IncomingRequests() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-8">
-        <MessageSquare className="w-12 h-12 text-[#00F0FF]/30 mx-auto mb-3" />
-        <p className="text-[#6B7280]">No pending contact requests</p>
-        <p className="text-xs text-[#6B7280]/70 mt-1">
+        <MessageSquare className="w-12 h-12 text-[var(--ag-cyan)]/30 mx-auto mb-3" />
+        <p className="text-[var(--ag-text-muted)]">No pending contact requests</p>
+        <p className="text-xs text-[var(--ag-text-muted)]/70 mt-1">
           When someone wants to reach you, they'll appear here
         </p>
       </div>
@@ -152,7 +152,7 @@ export function IncomingRequests() {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <User className="w-5 h-5 text-[#00F0FF]" />
+                  <User className="w-5 h-5 text-[var(--ag-cyan)]" />
                 )}
               </div>
 
@@ -160,22 +160,22 @@ export function IncomingRequests() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-[#E8E8F0]">{request.fromName}</span>
-                  <span className="text-xs text-[#6B7280]">via {request.source}</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">via {request.source}</span>
                 </div>
 
                 {request.intention && (
-                  <p className="text-sm text-[#6B7280] mb-2 line-clamp-2">
+                  <p className="text-sm text-[var(--ag-text-muted)] mb-2 line-clamp-2">
                     {request.intention}
                   </p>
                 )}
 
                 {request.initialMessage && (
-                  <div className="p-2 rounded-lg bg-[#06060B] text-sm text-[#6B7280] mb-3 line-clamp-2">
+                  <div className="p-2 rounded-lg bg-[var(--ag-bg-deep)] text-sm text-[var(--ag-text-muted)] mb-3 line-clamp-2">
                     "{request.initialMessage}"
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-[#6B7280] mb-3">
+                <div className="flex items-center gap-2 text-xs text-[var(--ag-text-muted)] mb-3">
                   <Clock className="w-3.5 h-3.5" />
                   Expires {new Date(request.expiresAt).toLocaleDateString()}
                   {request.channelNotified !== 'none' && (

@@ -100,7 +100,7 @@ export function ContactRequestModal({
           </h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[#6B7280] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
+            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-white hover:bg-[#00F0FF]/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -112,7 +112,7 @@ export function ContactRequestModal({
             <>
               {/* Info banner */}
               <div className="p-3 rounded-xl bg-[#00F0FF]/10 border border-[#00F0FF]/20">
-                <p className="text-sm text-[#6B7280]">
+                <p className="text-sm text-[var(--ag-text-muted)]">
                   {toUserName} will review your request and can accept or decline. 
                   If accepted, you'll be able to chat directly.
                 </p>
@@ -122,43 +122,43 @@ export function ContactRequestModal({
               {!isAuthenticated && (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1.5 block">Your Name *</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block">Your Name *</label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
                       <Input
                         value={fromName}
                         onChange={(e) => setFromName(e.target.value)}
                         placeholder="John Doe"
-                        className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1.5 block">Phone Number *</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block">Phone Number *</label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
                       <Input
                         value={fromPhone}
                         onChange={(e) => setFromPhone(e.target.value)}
                         placeholder="+1 234 567 8900"
-                        className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
                       />
                     </div>
-                    <p className="text-xs text-[#6B7280] mt-1">
+                    <p className="text-xs text-[var(--ag-text-muted)] mt-1">
                       Required so {toUserName} can reach you if needed
                     </p>
                   </div>
 
                   <div>
-                    <label className="text-sm text-[#6B7280] mb-1.5 block">Email (optional)</label>
+                    <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block">Email (optional)</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
                       <Input
                         value={fromEmail}
                         onChange={(e) => setFromEmail(e.target.value)}
                         placeholder="john@example.com"
-                        className="pl-10 bg-[#06060B] border-[#00F0FF]/20"
+                        className="pl-10 bg-[var(--ag-bg-deep)] border-[#00F0FF]/20"
                       />
                     </div>
                   </div>
@@ -167,28 +167,28 @@ export function ContactRequestModal({
 
               {/* Intention */}
               <div>
-                <label className="text-sm text-[#6B7280] mb-1.5 block">What do you want to discuss? *</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block">What do you want to discuss? *</label>
                 <div className="relative">
-                  <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-[#6B7280]" />
+                  <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-[var(--ag-text-muted)]" />
                   <textarea
                     value={intention}
                     onChange={(e) => setIntention(e.target.value)}
                     placeholder="e.g., Collaboration opportunity, question about your portfolio..."
                     rows={3}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
                   />
                 </div>
               </div>
 
               {/* Initial message */}
               <div>
-                <label className="text-sm text-[#6B7280] mb-1.5 block">Your message (optional)</label>
+                <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block">Your message (optional)</label>
                 <textarea
                   value={initialMessage}
                   onChange={(e) => setInitialMessage(e.target.value)}
                   placeholder="Add more details..."
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 text-[#E8E8F0] placeholder-[#6B7280] focus:outline-none focus:border-[#00F0FF]/40 resize-none"
                 />
               </div>
 
@@ -202,8 +202,8 @@ export function ContactRequestModal({
 
           {step === 'submitting' && (
             <div className="py-12 text-center">
-              <Loader2 className="w-12 h-12 text-[#00F0FF] animate-spin mx-auto mb-4" />
-              <p className="text-[#6B7280]">Sending request...</p>
+              <Loader2 className="w-12 h-12 text-[var(--ag-cyan)] animate-spin mx-auto mb-4" />
+              <p className="text-[var(--ag-text-muted)]">Sending request...</p>
             </div>
           )}
 
@@ -211,11 +211,11 @@ export function ContactRequestModal({
             <div className="py-8 text-center">
               <Clock className="w-16 h-16 text-[#FFB800] mx-auto mb-4" />
               <h4 className="text-lg font-semibold text-[#E8E8F0] mb-2">Request Sent!</h4>
-              <p className="text-[#6B7280] mb-4">
+              <p className="text-[var(--ag-text-muted)] mb-4">
                 Waiting for {toUserName} to accept. You'll be notified when they respond.
               </p>
-              <div className="p-3 rounded-lg bg-[#06060B] text-left">
-                <p className="text-xs text-[#6B7280] mb-1">Request ID</p>
+              <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] text-left">
+                <p className="text-xs text-[var(--ag-text-muted)] mb-1">Request ID</p>
                 <p className="text-sm text-[#E8E8F0] font-mono">{requestId}</p>
               </div>
               <Button onClick={onClose} className="mt-6 bg-[#00F0FF] hover:bg-[#00D4B0]">
@@ -230,7 +230,7 @@ export function ContactRequestModal({
                 <X className="w-8 h-8 text-[#FF3366]" />
               </div>
               <h4 className="text-lg font-semibold text-[#E8E8F0] mb-2">Something went wrong</h4>
-              <p className="text-[#6B7280] mb-4">{error}</p>
+              <p className="text-[var(--ag-text-muted)] mb-4">{error}</p>
               <Button onClick={() => setStep('form')} variant="outline" className="border-[#00F0FF]/30">
                 Try Again
               </Button>
@@ -244,7 +244,7 @@ export function ContactRequestModal({
             <Button
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-[#00F0FF]/30 text-[#6B7280]"
+              className="flex-1 border-[#00F0FF]/30 text-[var(--ag-text-muted)]"
             >
               Cancel
             </Button>

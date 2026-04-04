@@ -841,7 +841,7 @@ function ConfigPanel({
           <SectionCard>
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
-                <Moon className="h-4 w-4 text-[#8B5CF6]" />
+                <Moon className="h-4 w-4 text-[var(--ag-violet)]" />
                 <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Quiet Hours</p>
               </div>
               <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
@@ -974,12 +974,12 @@ function ConfigPanel({
           <SectionCard>
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-[#8B5CF6]" />
+                <Clock className="h-4 w-4 text-[var(--ag-violet)]" />
                 <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">
-                  <Sunrise className="h-3.5 w-3.5 mt-0.5 text-[#8B5CF6] shrink-0" />
+                  <Sunrise className="h-3.5 w-3.5 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">8:00 AM -- Daily Briefing</p>
                     <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Tasks, habits, and calendar</p>
@@ -993,7 +993,7 @@ function ConfigPanel({
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <Moon className="h-3.5 w-3.5 mt-0.5 text-[#8B5CF6] shrink-0" />
+                  <Moon className="h-3.5 w-3.5 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">9:00 PM -- Habit Nudge</p>
                     <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Gentle reminder if habits are at risk</p>

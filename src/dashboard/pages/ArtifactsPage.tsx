@@ -271,7 +271,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         title="My Projects"
         subtitle={`${artifacts.length} ${artifacts.length === 1 ? 'project' : 'projects'} created with Agentin`}
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/30 text-[var(--ag-violet)]">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B5CF6]" />
@@ -295,13 +295,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search projects..."
-              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-transparent border border-[rgba(139,92,246,0.08)] rounded-lg text-[#F4F6FF] text-sm placeholder:text-[#6B7280] focus:border-[rgba(139,92,246,0.3)] focus:outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-transparent border border-[rgba(139,92,246,0.08)] rounded-lg text-[var(--ag-text-primary)] text-sm placeholder:text-[var(--ag-text-muted)] focus:border-[rgba(139,92,246,0.3)] focus:outline-none transition-colors"
             />
           </div>
 
@@ -313,8 +313,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                   typeFilter === type
-                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] shadow-sm'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] shadow-sm'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
               >
                 {type === 'all' ? 'All' : type === 'code' ? 'Code' : 'Template'}
@@ -328,8 +328,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
               showFilters
-                ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
+                : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -340,8 +340,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         {/* Expanded sort options */}
         {showFilters && (
           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[rgba(139,92,246,0.08)]">
-            <Calendar className="w-4 h-4 text-[#9CA3AF] shrink-0" />
-            <span className="text-xs text-[#9CA3AF] shrink-0">Sort by:</span>
+            <Calendar className="w-4 h-4 text-[var(--ag-text-secondary)] shrink-0" />
+            <span className="text-xs text-[var(--ag-text-secondary)] shrink-0">Sort by:</span>
             {([
               { value: 'newest' as SortOption, label: 'Newest first' },
               { value: 'oldest' as SortOption, label: 'Oldest first' },
@@ -352,8 +352,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 onClick={() => setSortBy(opt.value)}
                 className={`px-3 py-1.5 min-h-[36px] rounded-md text-xs font-medium transition-all ${
                   sortBy === opt.value
-                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
               >
                 {opt.label}
@@ -373,10 +373,10 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         <SectionCard className="!border-[rgba(139,92,246,0.15)]">
           <div className="text-center py-16">
             <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-8 h-8 text-[#8B5CF6]/50" />
+              <Folder className="w-8 h-8 text-[var(--ag-violet)]/50" />
             </div>
-            <h3 className="text-lg font-medium text-[#F4F6FF] mb-2">No projects yet</h3>
-            <p className="text-[#9CA3AF] text-sm mb-6 max-w-xs mx-auto">
+            <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">No projects yet</h3>
+            <p className="text-[var(--ag-text-secondary)] text-sm mb-6 max-w-xs mx-auto">
               Create your first website from a template or ask your AI agent to build one for you
             </p>
             <button
@@ -391,14 +391,14 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         /* Empty state — filters yielded no results */
         <SectionCard>
           <div className="text-center py-12">
-            <Search className="w-10 h-10 text-[#9CA3AF]/40 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-[#F4F6FF] mb-1">No matching projects</h3>
-            <p className="text-[#9CA3AF] text-sm">
+            <Search className="w-10 h-10 text-[var(--ag-text-secondary)]/40 mx-auto mb-3" />
+            <h3 className="text-base font-medium text-[var(--ag-text-primary)] mb-1">No matching projects</h3>
+            <p className="text-[var(--ag-text-secondary)] text-sm">
               Try adjusting your search or filter criteria
             </p>
             <button
               onClick={() => { setSearchQuery(''); setTypeFilter('all'); }}
-              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[#8B5CF6] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
             >
               Clear filters
             </button>
@@ -415,7 +415,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               {/* Preview thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[#0C0C1E] to-[#111128] relative cursor-pointer" onClick={() => handleOpenPreview(artifact)}>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Code className="w-12 h-12 text-[#8B5CF6]/20" />
+                  <Code className="w-12 h-12 text-[var(--ag-violet)]/20" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-[#06061a] via-transparent to-transparent" />
 
@@ -424,15 +424,15 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider ${
                     artifact.type === 'template'
                       ? 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20'
-                      : 'bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20'
+                      : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20'
                   }`}>
                     {artifact.type}
                   </span>
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[#F4F6FF] font-medium truncate">{artifact.title}</h3>
-                  <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mt-1">
+                  <h3 className="text-[var(--ag-text-primary)] font-medium truncate">{artifact.title}</h3>
+                  <div className="flex items-center gap-3 text-xs text-[var(--ag-text-secondary)] mt-1">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {formatExpiry(artifact.expiresAt)}
@@ -452,7 +452,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg transition-colors text-sm font-medium ${
                     previewArtifact?.id === artifact.id
                       ? 'bg-[#8B5CF6] text-white'
-                      : 'bg-[#8B5CF6]/10 text-[#8B5CF6] hover:bg-[#8B5CF6]/20'
+                      : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20'
                   }`}
                 >
                   <Monitor className="w-4 h-4" />
@@ -461,7 +461,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                   title="Copy URL"
                   aria-label="Copy URL"
                 >
@@ -470,7 +470,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleEdit(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                   title="Edit"
                   aria-label="Edit project"
                 >
@@ -479,7 +479,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleExportZip(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                   title="Download ZIP"
                   aria-label="Download ZIP"
                 >
@@ -499,7 +499,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                 <button
                   onClick={() => handleDomainSetup(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                   title="Custom Domain"
                   aria-label="Custom Domain"
                 >
@@ -511,7 +511,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                     setSelectedArtifact(artifact);
                     setShowDeleteConfirm(true);
                   }}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Delete"
                   aria-label="Delete project"
                 >
@@ -529,17 +529,17 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
       {previewArtifact && (
         <div className="hidden md:flex w-1/2 flex-col border border-[rgba(139,92,246,0.08)] rounded-xl overflow-hidden bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
           <div className="flex items-center gap-2 px-4 py-2 border-b border-[rgba(139,92,246,0.08)] shrink-0">
-            <span className="text-sm text-[#9CA3AF] truncate flex-1">{previewArtifact.title}</span>
+            <span className="text-sm text-[var(--ag-text-secondary)] truncate flex-1">{previewArtifact.title}</span>
             <button
               onClick={() => setPreviewDevice('desktop')}
-              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'desktop' ? 'text-[#8B5CF6] bg-[#8B5CF6]/10' : 'text-[#9CA3AF] hover:text-[#F4F6FF]'}`}
+              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'desktop' ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
               aria-label="Desktop preview"
             >
               <Monitor className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPreviewDevice('mobile')}
-              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'mobile' ? 'text-[#8B5CF6] bg-[#8B5CF6]/10' : 'text-[#9CA3AF] hover:text-[#F4F6FF]'}`}
+              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'mobile' ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
               aria-label="Mobile preview"
             >
               <Smartphone className="w-4 h-4" />
@@ -548,21 +548,21 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               href={previewArtifact.previewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[#9CA3AF] hover:text-[#8B5CF6] rounded"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] rounded"
               aria-label="Open in new tab"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
             <button
               onClick={() => setPreviewArtifact(null)}
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] rounded"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] rounded"
               aria-label="Close preview"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className={`flex-1 flex items-center justify-center ${
-            previewDevice === 'mobile' ? 'p-8 bg-[#06061a]' : 'p-0'
+            previewDevice === 'mobile' ? 'p-8 bg-[var(--ag-bg-base)]' : 'p-0'
           }`}>
             <iframe
               src={previewArtifact.previewUrl}
@@ -581,52 +581,52 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="rounded-xl border border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.95)] backdrop-blur-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)]">
-              <h2 className="text-lg font-medium text-[#F4F6FF]">Edit Project</h2>
+              <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Edit Project</h2>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                 aria-label="Close edit modal"
               >
-                <X className="w-5 h-5 text-[#9CA3AF]" />
+                <X className="w-5 h-5 text-[var(--ag-text-secondary)]" />
               </button>
             </div>
 
             <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
               <div>
-                <label className="block text-sm text-[#9CA3AF] mb-2">Title</label>
+                <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">Title</label>
                 <input
                   type="text"
                   value={editForm.title}
                   onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2.5 min-h-[44px] bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-lg text-[#F4F6FF] focus:border-[#8B5CF6] outline-none transition-colors"
+                  className="w-full px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-[#9CA3AF] mb-2">HTML</label>
+                  <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">HTML</label>
                   <textarea
                     value={editForm.html}
                     onChange={e => setEditForm(prev => ({ ...prev, html: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#8B5CF6] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#9CA3AF] mb-2">CSS</label>
+                  <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">CSS</label>
                   <textarea
                     value={editForm.css}
                     onChange={e => setEditForm(prev => ({ ...prev, css: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#8B5CF6] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#9CA3AF] mb-2">JavaScript</label>
+                  <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">JavaScript</label>
                   <textarea
                     value={editForm.js}
                     onChange={e => setEditForm(prev => ({ ...prev, js: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-lg text-[#F4F6FF] font-mono text-xs focus:border-[#8B5CF6] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
               </div>
@@ -635,7 +635,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             <div className="flex justify-end gap-3 p-4 border-t border-[rgba(139,92,246,0.08)]">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2.5 min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors rounded-lg"
+                className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
               >
                 Cancel
               </button>
@@ -655,41 +655,41 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="rounded-xl border border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.95)] backdrop-blur-xl w-full max-w-md">
             <div className="flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)]">
-              <h2 className="text-lg font-medium text-[#F4F6FF]">Custom Domain</h2>
+              <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Custom Domain</h2>
               <button
                 onClick={() => setShowDomainModal(false)}
                 className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
                 aria-label="Close domain modal"
               >
-                <X className="w-5 h-5 text-[#9CA3AF]" />
+                <X className="w-5 h-5 text-[var(--ag-text-secondary)]" />
               </button>
             </div>
 
             <div className="p-4 space-y-4">
               {domainInfo ? (
                 <div className="p-4 bg-[#8B5CF6]/10 rounded-lg border border-[rgba(139,92,246,0.15)]">
-                  <p className="text-sm text-[#9CA3AF] mb-1">Your custom domain:</p>
+                  <p className="text-sm text-[var(--ag-text-secondary)] mb-1">Your custom domain:</p>
                   <a
                     href={`https://${domainInfo.fullDomain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#8B5CF6] font-medium hover:underline"
+                    className="text-[var(--ag-violet)] font-medium hover:underline"
                   >
                     {domainInfo.fullDomain}
                   </a>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm text-[#9CA3AF] mb-3">Choose a subdomain for your project:</p>
+                  <p className="text-sm text-[var(--ag-text-secondary)] mb-3">Choose a subdomain for your project:</p>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={domainInput}
                       onChange={e => setDomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                       placeholder="my-project"
-                      className="flex-1 px-3 py-2.5 min-h-[44px] bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-lg text-[#F4F6FF] focus:border-[#8B5CF6] outline-none transition-colors"
+                      className="flex-1 px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
                     />
-                    <span className="px-3 py-2.5 min-h-[44px] flex items-center text-[#9CA3AF]">.agentin.chat</span>
+                    <span className="px-3 py-2.5 min-h-[44px] flex items-center text-[var(--ag-text-secondary)]">.agentin.chat</span>
                   </div>
                   <button
                     onClick={handleSaveDomain}
@@ -712,16 +712,16 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-500" />
-                <h2 className="text-lg font-medium text-[#F4F6FF]">Delete Project?</h2>
+                <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Delete Project?</h2>
               </div>
-              <p className="text-[#9CA3AF] mb-6">
+              <p className="text-[var(--ag-text-secondary)] mb-6">
                 Are you sure you want to delete &ldquo;{selectedArtifact.title}&rdquo;? This action cannot be undone.
               </p>
 
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2.5 min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors rounded-lg"
+                  className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
                 >
                   Cancel
                 </button>

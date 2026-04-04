@@ -252,15 +252,15 @@ export function HealthDashboardPage() {
       <PageShell>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
-          <p className="text-sm text-[#9CA3AF]">Connecting to health service...</p>
+          <p className="text-sm text-[var(--ag-text-secondary)]">Connecting to health service...</p>
           {error && (
             <div className="text-center space-y-3">
-              <p className="text-sm text-[#9CA3AF]">{error}</p>
+              <p className="text-sm text-[var(--ag-text-secondary)]">{error}</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRetry}
-                className="border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[rgba(139,92,246,0.05)] min-h-[44px] min-w-[44px] text-[#F4F6FF]"
+                className="border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[rgba(139,92,246,0.05)] min-h-[44px] min-w-[44px] text-[var(--ag-text-primary)]"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
@@ -316,7 +316,7 @@ export function HealthDashboardPage() {
               {connected ? 'SSE' : 'REST'}
             </span>
             {/* Timestamp */}
-            <span className="text-xs text-[#9CA3AF] hidden sm:inline">
+            <span className="text-xs text-[var(--ag-text-secondary)] hidden sm:inline">
               {new Date(snapshot.timestamp).toLocaleTimeString()}
             </span>
             {/* Retry / Refresh */}
@@ -326,7 +326,7 @@ export function HealthDashboardPage() {
               onClick={handleRetry}
               disabled={refreshing}
               aria-label="Refresh health data"
-              className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -337,19 +337,19 @@ export function HealthDashboardPage() {
       {/* ---- Stats Row ---- */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Requests', value: snapshot.metrics.totalRequests.toLocaleString(), icon: Activity, color: '#8B5CF6' },
+          { label: 'Requests', value: snapshot.metrics.totalRequests.toLocaleString(), icon: Activity, color: 'var(--ag-violet)' },
           { label: 'Errors', value: snapshot.metrics.totalErrors.toLocaleString(), icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#EF4444' : '#10B981' },
           { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? '#F59E0B' : '#10B981' },
-          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute.toString(), icon: Zap, color: '#8B5CF6' },
+          { label: 'Req/min', value: snapshot.metrics.requestsPerMinute.toString(), icon: Zap, color: 'var(--ag-violet)' },
           { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#10B981' },
         ].map((stat, i) => (
           <BlurFade key={stat.label} delay={0.05 * i}>
             <SectionCard padding="sm">
               <div className="flex items-center gap-2 mb-1">
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                <span className="text-xs text-[#9CA3AF]">{stat.label}</span>
+                <span className="text-xs text-[var(--ag-text-secondary)]">{stat.label}</span>
               </div>
-              <p className="text-2xl md:text-xl font-bold text-[#F4F6FF]">{stat.value}</p>
+              <p className="text-2xl md:text-xl font-bold text-[var(--ag-text-primary)]">{stat.value}</p>
             </SectionCard>
           </BlurFade>
         ))}
@@ -357,10 +357,10 @@ export function HealthDashboardPage() {
 
       {/* ---- Component Status Grid ---- */}
       <div>
-        <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+        <h2 className="text-base font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
           <Server className="w-5 h-5 text-[#10B981]" />
           Components
-          <span className="text-xs text-[#9CA3AF] font-normal ml-1">
+          <span className="text-xs text-[var(--ag-text-secondary)] font-normal ml-1">
             {healthyCount}/{totalCount} healthy
           </span>
         </h2>
@@ -380,7 +380,7 @@ export function HealthDashboardPage() {
                       <Icon className="w-4 h-4" style={{ color }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[#F4F6FF] truncate">
+                      <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">
                         {componentLabels[key] || key}
                       </p>
                       <p className="text-xs flex items-center gap-1.5" style={{ color }}>
@@ -403,7 +403,7 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BlurFade delay={0.1}>
           <SectionCard>
-            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4" />
               Error Rate (5-min window)
             </h3>
@@ -411,7 +411,7 @@ export function HealthDashboardPage() {
               <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? '#F59E0B' : '#10B981' }}>
                 {errorRate}%
               </span>
-              <span className="text-sm text-[#9CA3AF] mb-1">
+              <span className="text-sm text-[var(--ag-text-secondary)] mb-1">
                 {snapshot.metrics.totalErrors} / {snapshot.metrics.totalRequests} requests
               </span>
             </div>
@@ -419,13 +419,13 @@ export function HealthDashboardPage() {
         </BlurFade>
         <BlurFade delay={0.15}>
           <SectionCard>
-            <h3 className="text-sm text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
               <Cpu className="w-4 h-4" />
               Memory Usage
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[#8B5CF6]">{snapshot.system.memoryMb} MB</span>
-              <span className="text-sm text-[#9CA3AF] mb-1">heap used</span>
+              <span className="text-3xl font-bold text-[var(--ag-violet)]">{snapshot.system.memoryMb} MB</span>
+              <span className="text-sm text-[var(--ag-text-secondary)] mb-1">heap used</span>
             </div>
           </SectionCard>
         </BlurFade>
@@ -435,7 +435,7 @@ export function HealthDashboardPage() {
       {(snapshot.topEndpoints ?? []).length > 0 && (
         <BlurFade delay={0.2}>
           <div>
-            <h2 className="text-base font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#F59E0B]" />
               Hot Endpoints (5-min window)
             </h2>
@@ -444,17 +444,17 @@ export function HealthDashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[rgba(139,92,246,0.08)]">
-                      <th className="text-left text-[#9CA3AF] font-medium px-4 py-3">Endpoint</th>
-                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Hits</th>
-                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Errors</th>
-                      <th className="text-right text-[#9CA3AF] font-medium px-4 py-3">Avg Latency</th>
+                      <th className="text-left text-[var(--ag-text-secondary)] font-medium px-4 py-3">Endpoint</th>
+                      <th className="text-right text-[var(--ag-text-secondary)] font-medium px-4 py-3">Hits</th>
+                      <th className="text-right text-[var(--ag-text-secondary)] font-medium px-4 py-3">Errors</th>
+                      <th className="text-right text-[var(--ag-text-secondary)] font-medium px-4 py-3">Avg Latency</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(snapshot.topEndpoints ?? []).map((ep) => (
                       <tr key={ep.path} className="border-b border-[rgba(139,92,246,0.04)] hover:bg-[rgba(139,92,246,0.04)] transition-colors">
-                        <td className="px-4 py-2.5 font-mono text-[#F4F6FF] text-xs whitespace-nowrap">{ep.path}</td>
-                        <td className="px-4 py-2.5 text-right text-[#F4F6FF]">{ep.count}</td>
+                        <td className="px-4 py-2.5 font-mono text-[var(--ag-text-primary)] text-xs whitespace-nowrap">{ep.path}</td>
+                        <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)]">{ep.count}</td>
                         <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#EF4444' : '#10B981' }}>{ep.errors}</td>
                         <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#F59E0B' : '#9CA3AF' }}>{ep.avgMs}ms</td>
                       </tr>
@@ -468,7 +468,7 @@ export function HealthDashboardPage() {
       )}
 
       {/* ---- Footer ---- */}
-      <div className="text-center text-xs text-[#6B7280] py-2">
+      <div className="text-center text-xs text-[var(--ag-text-muted)] py-2">
         {snapshot.metrics.activeConnections} active stream{snapshot.metrics.activeConnections !== 1 ? 's' : ''} · Window resets every 5 min
       </div>
     </div>

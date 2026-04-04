@@ -146,7 +146,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   style={{ fontFamily: 'Syne, sans-serif' }}
                 >
                   <span className="text-[#E8E8F0]">Agent</span>
-                  <span className="text-[#8B5CF6]">in</span>
+                  <span className="text-[var(--ag-violet)]">in</span>
                 </span>
               </a>
 
@@ -267,7 +267,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                     style={{ fontFamily: 'Syne, sans-serif' }}
                   >
                     <span className="text-[#E8E8F0]">Agent</span>
-                    <span className="text-[#8B5CF6]">in</span>
+                    <span className="text-[var(--ag-violet)]">in</span>
                   </span>
                 </a>
                 <button

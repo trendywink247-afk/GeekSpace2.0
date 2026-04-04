@@ -25,7 +25,7 @@ const PERSONALITIES: PersonalityOption[] = [
 ];
 
 const AUTONOMY_LEVELS = [
-  { value: 'manual', label: 'Manual', icon: Shield, description: 'I approve every action', color: '#6B7280' },
+  { value: 'manual', label: 'Manual', icon: Shield, description: 'I approve every action', color: 'var(--ag-text-muted)' },
   { value: 'suggest', label: 'Suggest', icon: Brain, description: 'Suggest actions, I decide', color: '#3B82F6' },
   { value: 'semi_auto', label: 'Semi-Auto', icon: Zap, description: 'Auto for small tasks, ask for big ones', color: '#F59E0B' },
   { value: 'full_auto', label: 'Full Auto', icon: Wand2, description: 'Handle everything autonomously', color: '#10B981' },
@@ -100,12 +100,12 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00F0FF]" />
+            <Sparkles className="w-4 h-4 text-[var(--ag-cyan)]" />
             <span className="text-sm font-semibold text-[#E8E8F0]">
               Set up Agentin · Step {step} of {TOTAL_STEPS}
             </span>
           </div>
-          <button onClick={onSkip} className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors" aria-label="Skip setup">
+          <button onClick={onSkip} className="p-1.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-white/5 transition-colors" aria-label="Skip setup">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -122,15 +122,15 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-5">
               <div className="text-center">
                 <div className="text-4xl mb-3">🤖</div>
-                <h2 className="text-xl font-bold text-[#F4F6FF]">Meet Agentin</h2>
-                <p className="text-sm text-[#6B7280] mt-2 max-w-sm mx-auto">
+                <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">Meet Agentin</h2>
+                <p className="text-sm text-[var(--ag-text-muted)] mt-2 max-w-sm mx-auto">
                   Your personal AI that plans goals, delegates tasks to specialist agents, and works proactively in the background.
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { icon: Target, label: 'Goals & Planning', color: '#00F0FF' },
-                  { icon: Zap, label: 'Auto Delegation', color: '#8B5CF6' },
+                  { icon: Target, label: 'Goals & Planning', color: 'var(--ag-cyan)' },
+                  { icon: Zap, label: 'Auto Delegation', color: 'var(--ag-violet)' },
                   { icon: Bell, label: 'Smart Alerts', color: '#F59E0B' },
                 ].map(f => (
                   <div key={f.label} className="flex flex-col items-center gap-2 p-3 rounded-xl" style={{ background: `${f.color}08`, border: `1px solid ${f.color}15` }}>
@@ -154,7 +154,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[#E8E8F0]">Choose a personality</h2>
-                <p className="text-sm text-[#6B7280] mt-1">How should your AI communicate?</p>
+                <p className="text-sm text-[var(--ag-text-muted)] mt-1">How should your AI communicate?</p>
               </div>
               <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto">
                 {PERSONALITIES.map(p => (
@@ -170,9 +170,9 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{p.emoji}</span>
                       <span className="text-sm font-semibold text-[#E8E8F0]">{p.label}</span>
-                      {personality === p.id && <CheckCircle2 className="w-3.5 h-3.5 text-[#00F0FF] ml-auto" />}
+                      {personality === p.id && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--ag-cyan)] ml-auto" />}
                     </div>
-                    <span className="text-[10px] text-[#6B7280]">{p.tagline} — {p.description}</span>
+                    <span className="text-[10px] text-[var(--ag-text-muted)]">{p.tagline} — {p.description}</span>
                   </button>
                 ))}
               </div>
@@ -185,7 +185,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[#E8E8F0]">Set your first goal</h2>
-                <p className="text-sm text-[#6B7280] mt-1">What do you want to achieve? AI will plan the steps for you.</p>
+                <p className="text-sm text-[var(--ag-text-muted)] mt-1">What do you want to achieve? AI will plan the steps for you.</p>
               </div>
               {!goalCreated ? (
                 <>
@@ -214,7 +214,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                     <span className="text-xs text-gray-400">Let AI plan this automatically</span>
                   </label>
                   <div className="flex gap-2">
-                    <button onClick={() => setStep(2)} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors">
+                    <button onClick={() => setStep(2)} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors">
                       <ArrowLeft className="w-4 h-4 inline mr-1" />Back
                     </button>
                     {goalTitle.trim() ? (
@@ -222,7 +222,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                         <Target className="w-4 h-4 inline mr-1" /> Create Goal
                       </button>
                     ) : (
-                      <button onClick={() => setStep(4)} className="flex-[2] py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors">
+                      <button onClick={() => setStep(4)} className="flex-[2] py-3 rounded-xl border border-white/10 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors">
                         Skip for now <ArrowRight className="w-4 h-4 inline ml-1" />
                       </button>
                     )}
@@ -246,7 +246,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-[#E8E8F0]">How autonomous should your agent be?</h2>
-                <p className="text-sm text-[#6B7280] mt-1">You can change this anytime in settings.</p>
+                <p className="text-sm text-[var(--ag-text-muted)] mt-1">You can change this anytime in settings.</p>
               </div>
               <div className="space-y-2">
                 {AUTONOMY_LEVELS.map(level => (
@@ -264,7 +264,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-semibold text-[#E8E8F0]">{level.label}</div>
-                      <div className="text-xs text-[#6B7280]">{level.description}</div>
+                      <div className="text-xs text-[var(--ag-text-muted)]">{level.description}</div>
                     </div>
                     {autonomy === level.value && <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: level.color }} />}
                   </button>
@@ -279,8 +279,8 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
             <div className="space-y-5">
               <div className="text-center">
                 <div className="text-4xl mb-3">🎉</div>
-                <h2 className="text-xl font-bold text-[#F4F6FF]">You're all set!</h2>
-                <p className="text-sm text-[#6B7280] mt-2">
+                <h2 className="text-xl font-bold text-[var(--ag-text-primary)]">You're all set!</h2>
+                <p className="text-sm text-[var(--ag-text-muted)] mt-2">
                   Your agent is ready. Connect Telegram for on-the-go access, or dive straight in.
                 </p>
               </div>
@@ -291,7 +291,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                   </div>
                   <div>
                     <span className="text-sm font-semibold text-[#E8E8F0]">@agentinchatbot</span>
-                    <p className="text-xs text-[#6B7280]">Chat with your agent on Telegram</p>
+                    <p className="text-xs text-[var(--ag-text-muted)]">Chat with your agent on Telegram</p>
                   </div>
                 </div>
                 <a
@@ -312,7 +312,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
                 >
                   {saving ? 'Saving...' : (<><PartyPopper className="w-4 h-4" /> Start Using Agentin</>)}
                 </button>
-                <button onClick={() => setStep(4)} className="text-xs text-[#6B7280] hover:text-[#E8E8F0] transition-colors py-1">
+                <button onClick={() => setStep(4)} className="text-xs text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors py-1">
                   <ArrowLeft className="w-3 h-3 inline mr-1" />Back
                 </button>
               </div>
@@ -329,7 +329,7 @@ export function AgentSetupWizard({ onComplete, onSkip }: AgentSetupWizardProps) 
 function NavButtons({ back, next }: { back: () => void; next: () => void }) {
   return (
     <div className="flex gap-2">
-      <button onClick={back} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-white/20 transition-colors">
+      <button onClick={back} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:border-white/20 transition-colors">
         <ArrowLeft className="w-4 h-4 inline mr-1" />Back
       </button>
       <button onClick={next} className="flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-black transition-colors" style={{ background: 'linear-gradient(135deg, #00F0FF, #8B5CF6)' }}>

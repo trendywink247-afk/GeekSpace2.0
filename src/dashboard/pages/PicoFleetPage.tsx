@@ -81,7 +81,7 @@ const INTERVAL_OPTIONS = [
 
 const TOOL_OPTIONS = [
   { id: 'recipes' as const, label: 'Recipes', short: 'RCP', icon: ChefHat, color: '#00FF88' },
-  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: '#00F0FF' },
+  { id: 'image-gen' as const, label: 'Image Gen', short: 'IMG', icon: Image, color: 'var(--ag-cyan)' },
   { id: 'video-gen' as const, label: 'Video Gen', short: 'VID', icon: Video, color: '#FFB800' },
   { id: 'website-builder' as const, label: 'Website Builder', short: 'WEB', icon: Globe, color: '#A855F7' },
   { id: 'social-media' as const, label: 'Social Media', short: 'SOC', icon: Share2, color: '#FF2D78' },
@@ -553,7 +553,7 @@ export function PicoFleetPage() {
             onClick={() => loadData()}
             disabled={refreshing}
             aria-label="Refresh fleet"
-            className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -563,15 +563,15 @@ export function PicoFleetPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-[var(--ag-bg-surface)] border" style={{ borderColor: BORDER_SUBTLE }}>
-          <TabsTrigger value="fleet" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+          <TabsTrigger value="fleet" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 min-h-[44px]">
             <Zap className="w-4 h-4" />
             Fleet
           </TabsTrigger>
-          <TabsTrigger value="config" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+          <TabsTrigger value="config" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 min-h-[44px]">
             <Settings2 className="w-4 h-4" />
             Agent Config
           </TabsTrigger>
-          <TabsTrigger value="cron" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 min-h-[44px]">
+          <TabsTrigger value="cron" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 min-h-[44px]">
             <Timer className="w-4 h-4" />
             Cron Jobs
           </TabsTrigger>
@@ -652,11 +652,11 @@ export function PicoFleetPage() {
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)]">
+                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)]">
                           <div className="text-xs text-[var(--ag-text-muted)] mb-1">Completed</div>
                           <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                         </div>
-                        <div className="p-3 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)]">
+                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)]">
                           <div className="text-xs text-[var(--ag-text-muted)] mb-1">Failed</div>
                           <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                         </div>
@@ -671,7 +671,7 @@ export function PicoFleetPage() {
                           size="sm"
                           onClick={() => { setSelectedAgentId(agent.id); setActiveTab('config'); }}
                           aria-label={`Configure ${agent.name}`}
-                          className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] px-3"
+                          className="text-xs text-[var(--ag-violet)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px] px-3"
                         >
                           <Settings2 className="w-3 h-3 mr-1" />
                           Config
@@ -685,9 +685,9 @@ export function PicoFleetPage() {
               // Empty slot — show create button or inline form
               if (creatingSlot === slotNum) {
                 const personalities = [
-                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: '#00F0FF' },
+                  { id: 'weebo' as const, letter: 'W', label: 'Weebo', color: 'var(--ag-cyan)' },
                   { id: 'jarvis' as const, letter: 'J', label: 'Jarvis', color: '#ADFF2F' },
-                  { id: 'edith' as const, letter: 'E', label: 'Edith', color: '#8B5CF6' },
+                  { id: 'edith' as const, letter: 'E', label: 'Edith', color: 'var(--ag-violet)' },
                 ];
                 return (
                   <Card key={slotNum} className="border-[rgba(139,92,246,0.15)] border-dashed">
@@ -722,7 +722,7 @@ export function PicoFleetPage() {
                         value={newAgentName}
                         onChange={(e) => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[200px]"
+                        className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[200px]"
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateAgent()}
                         autoFocus
                       />
@@ -757,7 +757,7 @@ export function PicoFleetPage() {
                 >
                   <CardContent className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]">
                     <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center group-hover:bg-[#8B5CF6]/10 transition-colors">
-                      <Plus className="w-6 h-6 text-[#8B5CF6]" />
+                      <Plus className="w-6 h-6 text-[var(--ag-violet)]" />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium text-[var(--ag-text-primary)]">Deploy Agent</p>
@@ -773,7 +773,7 @@ export function PicoFleetPage() {
           <Card className="border-[rgba(139,92,246,0.08)]">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-[var(--ag-text-primary)] flex items-center gap-2">
-                <Send className="w-4 h-4 text-[#8B5CF6]" />
+                <Send className="w-4 h-4 text-[var(--ag-violet)]" />
                 Quick Task
               </CardTitle>
             </CardHeader>
@@ -783,7 +783,7 @@ export function PicoFleetPage() {
                   value={taskInput}
                   onChange={(e) => setTaskInput(e.target.value)}
                   placeholder="Describe a task in natural language..."
-                  className="flex-1 bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="flex-1 bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                   onKeyDown={(e) => e.key === 'Enter' && !planning && handlePlanTask()}
                   disabled={planning}
                 />
@@ -864,7 +864,7 @@ export function PicoFleetPage() {
                   {recentTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
+                      className="flex items-center gap-3 p-3 sm:p-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
                     >
                       <span
                         className="w-2 h-2 rounded-full shrink-0"
@@ -903,7 +903,7 @@ export function PicoFleetPage() {
             <CardContent className="pt-0">
               {tasks.length === 0 ? (
                 <div className="text-center py-10">
-                  <AlertCircle className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
+                  <AlertCircle className="w-10 h-10 text-[var(--ag-violet)]/30 mx-auto mb-3" />
                   <p className="text-[var(--ag-text-muted)] text-sm">No fleet agents yet. Create your first agent to get started.</p>
                 </div>
               ) : (
@@ -914,7 +914,7 @@ export function PicoFleetPage() {
                       <div key={task.id}>
                         <button
                           onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                          className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[#06060B] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all min-h-[44px]"
+                          className="w-full text-left p-3 sm:p-3 py-4 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all min-h-[44px]"
                         >
                           <div className="flex items-center gap-3">
                             <StatusIcon status={task.status} />
@@ -966,7 +966,7 @@ export function PicoFleetPage() {
                           </div>
                         </button>
                         {isExpanded && (
-                          <div className="mt-1 ml-4 p-4 rounded-lg bg-[#06060B]/80 border border-[rgba(139,92,246,0.08)] animate-in slide-in-from-top-2 duration-200">
+                          <div className="mt-1 ml-4 p-4 rounded-lg bg-[var(--ag-bg-deep)]/80 border border-[rgba(139,92,246,0.08)] animate-in slide-in-from-top-2 duration-200">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                               <div>
                                 <div className="text-xs text-[var(--ag-text-muted)]">Status</div>
@@ -1029,7 +1029,7 @@ export function PicoFleetPage() {
           <div className="flex items-center gap-4">
             <label className="text-sm text-[var(--ag-text-muted)] shrink-0">Configure agent:</label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-              <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[300px]">
+              <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] max-w-[300px]">
                 <SelectValue placeholder="Select an agent..." />
               </SelectTrigger>
               <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
@@ -1052,7 +1052,7 @@ export function PicoFleetPage() {
 
           {!selectedAgent ? (
             <div className="text-center py-16">
-              <Bot className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-3" />
+              <Bot className="w-12 h-12 text-[var(--ag-violet)]/30 mx-auto mb-3" />
               <p className="text-[var(--ag-text-muted)]">Select an agent above to configure.</p>
             </div>
           ) : (
@@ -1061,9 +1061,9 @@ export function PicoFleetPage() {
               <SectionCard title="Personality" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: '#00F0FF' },
+                    { id: 'weebo', name: 'Weebo', desc: 'Enthusiastic helper, excited to assist', letter: 'W', color: 'var(--ag-cyan)' },
                     { id: 'jarvis', name: 'Jarvis', desc: 'Professional butler, polished and reliable', letter: 'J', color: '#ADFF2F' },
-                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: '#8B5CF6' },
+                    { id: 'edith', name: 'Edith', desc: 'Sharp CTO, direct and efficient', letter: 'E', color: 'var(--ag-violet)' },
                   ].map(p => (
                     <button
                       key={p.id}
@@ -1071,7 +1071,7 @@ export function PicoFleetPage() {
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         cfgPersonality === p.id
                           ? `bg-[${p.color}]/10`
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          : 'border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-deep)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                       style={cfgPersonality === p.id ? { borderColor: p.color, backgroundColor: `${p.color}15` } : undefined}
                     >
@@ -1099,7 +1099,7 @@ export function PicoFleetPage() {
               <SectionCard title="Mode" padding="lg">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: '#00F0FF' },
+                    { id: 'minimal', name: 'Minimal', desc: 'Simple responses, reminders & Q&A', color: 'var(--ag-cyan)' },
                     { id: 'builder', name: 'Builder', desc: 'Code gen, portfolio updates, full toolset', color: '#00FF88' },
                     { id: 'operator', name: 'Operator', desc: 'Full automation, API calls, workflows', color: '#FFB800' },
                   ].map(m => (
@@ -1108,8 +1108,8 @@ export function PicoFleetPage() {
                       onClick={() => { setCfgMode(m.id); setConfigDirty(true); }}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         cfgMode === m.id
-                          ? `border-[#8B5CF6] bg-[#8B5CF6]/10`
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          ? `border-[var(--ag-violet)] bg-[#8B5CF6]/10`
+                          : 'border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-deep)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -1143,7 +1143,7 @@ export function PicoFleetPage() {
                       onClick={() => { setCfgModelPref(opt.value); setConfigDirty(true); }}
                       className={`p-3 rounded-xl border text-left transition-all ${
                         cfgModelPref === opt.value
-                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                          ? 'border-[var(--ag-violet)] bg-[#8B5CF6]/10'
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
@@ -1167,8 +1167,8 @@ export function PicoFleetPage() {
                       onClick={() => { setCfgVoice(v.id); setConfigDirty(true); }}
                       className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${
                         cfgVoice === v.id
-                          ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
-                          : 'border-[rgba(139,92,246,0.08)] bg-[#06060B] hover:border-[rgba(139,92,246,0.15)]'
+                          ? 'border-[var(--ag-violet)] bg-[#8B5CF6]/10'
+                          : 'border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-deep)] hover:border-[rgba(139,92,246,0.15)]'
                       }`}
                     >
                       <div className="text-left">
@@ -1232,7 +1232,7 @@ export function PicoFleetPage() {
                   <Textarea
                     value={cfgSystemPrompt}
                     onChange={(e) => { setCfgSystemPrompt(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none"
+                    className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none"
                     placeholder="Custom instructions for this agent..."
                   />
                 </div>
@@ -1241,7 +1241,7 @@ export function PicoFleetPage() {
                   <Textarea
                     value={cfgCustomCommands}
                     onChange={(e) => { setCfgCustomCommands(e.target.value); setConfigDirty(true); }}
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[100px] resize-none"
+                    className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[100px] resize-none"
                     placeholder="Tell this agent how to behave, what to prioritize..."
                   />
                 </div>
@@ -1263,7 +1263,7 @@ export function PicoFleetPage() {
                         }}
                         className={`p-3 rounded-xl border transition-all flex items-center gap-3 ${
                           isActive
-                            ? 'border-[#8B5CF6] bg-[#8B5CF6]/10'
+                            ? 'border-[var(--ag-violet)] bg-[#8B5CF6]/10'
                             : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                         }`}
                       >
@@ -1272,7 +1272,7 @@ export function PicoFleetPage() {
                           {tool.label}
                         </span>
                         {isActive && (
-                          <Check className="w-4 h-4 text-[#8B5CF6] ml-auto" />
+                          <Check className="w-4 h-4 text-[var(--ag-violet)] ml-auto" />
                         )}
                       </button>
                     );
@@ -1345,14 +1345,14 @@ export function PicoFleetPage() {
                     value={cronName}
                     onChange={e => setCronName(e.target.value)}
                     placeholder="e.g., Daily standup reminder"
-                    className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                    className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Task Type</label>
                     <Select value={cronTaskType} onValueChange={setCronTaskType}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
+                      <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
@@ -1365,7 +1365,7 @@ export function PicoFleetPage() {
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Interval</label>
                     <Select value={String(cronInterval)} onValueChange={v => setCronInterval(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
+                      <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
@@ -1378,7 +1378,7 @@ export function PicoFleetPage() {
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] block mb-1">Agent Slot</label>
                     <Select value={String(cronAgentSlot)} onValueChange={v => setCronAgentSlot(Number(v))}>
-                      <SelectTrigger className="bg-[#06060B] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
+                      <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)]">
@@ -1428,7 +1428,7 @@ export function PicoFleetPage() {
                       }
                     }}
                     className={[
-                      'bg-[#06060B] text-[var(--ag-text-primary)] font-mono text-xs min-h-[80px] resize-none transition-colors',
+                      'bg-[var(--ag-bg-deep)] text-[var(--ag-text-primary)] font-mono text-xs min-h-[80px] resize-none transition-colors',
                       cronConfigError
                         ? 'border-[#FF6161]/60 focus-visible:border-[#FF6161] focus-visible:ring-[#FF6161]/20'
                         : 'border-[rgba(139,92,246,0.15)]',
@@ -1468,7 +1468,7 @@ export function PicoFleetPage() {
           {/* Cron Jobs List */}
           {cronJobs.length === 0 && !showCronForm ? (
             <div className="text-center py-16">
-              <Timer className="w-12 h-12 text-[#8B5CF6]/30 mx-auto mb-3" />
+              <Timer className="w-12 h-12 text-[var(--ag-violet)]/30 mx-auto mb-3" />
               <p className="text-[var(--ag-text-muted)] mb-2">No cron jobs yet.</p>
               <p className="text-xs text-[var(--ag-text-muted)]">Create recurring tasks that run on a schedule.</p>
             </div>
@@ -1488,7 +1488,7 @@ export function PicoFleetPage() {
                             <Badge
                               variant="outline"
                               className="text-xs shrink-0"
-                              style={{ borderColor: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
+                              style={{ borderColor: 'rgba(139,92,246,0.15)', color: 'var(--ag-violet)' }}
                             >
                               {typeLabel}
                             </Badge>
@@ -1506,7 +1506,7 @@ export function PicoFleetPage() {
                               <span>Last: {formatTime(job.last_run_at)}</span>
                             )}
                             {job.next_run_at && (
-                              <span className="text-[#8B5CF6]">Next: {formatTime(job.next_run_at)}</span>
+                              <span className="text-[var(--ag-violet)]">Next: {formatTime(job.next_run_at)}</span>
                             )}
                           </div>
                         </div>
@@ -1521,7 +1521,7 @@ export function PicoFleetPage() {
                             size="sm"
                             onClick={() => handleEditCron(job)}
                             aria-label={`Edit cron job ${job.name}`}
-                            className="text-[var(--ag-text-muted)] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
+                            className="text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px] p-0"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>

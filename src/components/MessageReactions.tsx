@@ -71,13 +71,13 @@ export function MessageReactions({
             className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all ${
               isActive
                 ? 'bg-[#00F0FF]/20 border border-[#00F0FF]/40'
-                : 'bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
+                : 'bg-[var(--ag-bg-deep)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30'
             }`}
             title={reaction.label}
           >
             <span>{reaction.emoji}</span>
-            {count > 0 && <span className="text-[#6B7280]">{count}</span>}
-            {showLabels && <span className="text-[#6B7280] hidden sm:inline">{reaction.label}</span>}
+            {count > 0 && <span className="text-[var(--ag-text-muted)]">{count}</span>}
+            {showLabels && <span className="text-[var(--ag-text-muted)] hidden sm:inline">{reaction.label}</span>}
           </button>
         );
       })}
@@ -86,7 +86,7 @@ export function MessageReactions({
       <div className="relative">
         <button
           onClick={() => setShowAll(!showAll)}
-          className="p-1.5 rounded-full bg-[#06060B] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 text-[#6B7280] transition-all"
+          className="p-1.5 rounded-full bg-[var(--ag-bg-deep)] border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 text-[var(--ag-text-muted)] transition-all"
         >
           <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
@@ -103,7 +103,7 @@ export function MessageReactions({
                   handleCopy(content || messageId);
                   setShowAll(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--ag-text-muted)] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
               >
                 {copied ? '✓ Copied!' : '📋 Copy'}
               </button>
@@ -112,7 +112,7 @@ export function MessageReactions({
                   handleReact('share');
                   setShowAll(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#6B7280] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--ag-text-muted)] hover:bg-[#00F0FF]/10 hover:text-[#E8E8F0] transition-colors"
               >
                 🔗 Share
               </button>
@@ -171,7 +171,7 @@ export function ReactionSummary({ reactions }: ReactionSummaryProps) {
         {(reactions.save || 0) > 0 && <span className="text-sm">⭐</span>}
       </div>
       {total > 0 && (
-        <span className="text-xs text-[#6B7280]">{total}</span>
+        <span className="text-xs text-[var(--ag-text-muted)]">{total}</span>
       )}
     </div>
   );

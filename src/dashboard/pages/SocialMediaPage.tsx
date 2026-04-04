@@ -107,7 +107,7 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
           className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === t.value
               ? 'bg-[#FF6B9D]/20 text-[#FF6B9D] border border-[#FF6B9D]/40 shadow-[0_0_8px_rgba(255,107,157,0.15)]'
-              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
+              : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
           }`}
         >
           {t.label}
@@ -129,7 +129,7 @@ function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: 
           className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
             selected === p.value
               ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
-              : 'bg-[#06060B] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
+              : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
           }`}
           style={selected === p.value ? { background: `${p.color}20`, color: p.color, borderColor: `${p.color}60` } : undefined}
         >
@@ -177,7 +177,7 @@ function HashtagSuggestions({ text }: { text: string }) {
   if (hashtags.length === 0) return null;
 
   return (
-    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
+    <div className="mt-3 p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center gap-1.5 mb-2">
         <Hash className="w-3.5 h-3.5 text-[#FF6B9D]" />
         <span className="text-xs font-medium text-[var(--ag-text-muted)]">Suggested Hashtags</span>
@@ -294,7 +294,7 @@ function ThreadComposer({ text, onCopy }: { text: string; onCopy: (content: stri
   const fullThread = numbered.join('\n\n');
 
   return (
-    <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)]">
+    <div className="mt-3 p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
           <Scissors className="w-3.5 h-3.5 text-[#FF6B9D]" />
@@ -501,7 +501,7 @@ function StatsSummary({ accounts, items }: { accounts: SocialAccount[]; items: C
     { label: 'Active Accounts', value: activeAccounts, icon: Users, color: '#00FF88' },
     { label: 'Total Posts', value: totalPosts, icon: Megaphone, color: ARIA },
     { label: 'This Week', value: postsThisWeek, icon: TrendingUp, color: '#FFB800' },
-    { label: 'Scheduled', value: scheduledCount, icon: Clock, color: '#8B5CF6' },
+    { label: 'Scheduled', value: scheduledCount, icon: Clock, color: 'var(--ag-violet)' },
   ];
 
   return (
@@ -644,7 +644,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Platform</label>
                 <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -653,14 +653,14 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               </div>
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Account Name</label>
-                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="My Business Account" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
               </div>
             </div>
 
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Posting Method</label>
               <Select value={postingMethod} onValueChange={setPostingMethod}>
-                <SelectTrigger className="bg-[#06060B] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="webhook">Webhook</SelectItem>
                   <SelectItem value="api">Direct API</SelectItem>
@@ -671,7 +671,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
             {postingMethod === 'webhook' && (
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Webhook URL</label>
-                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                <Input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-webhook.example.com/post" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
               </div>
             )}
 
@@ -679,11 +679,11 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Page ID</label>
-                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                  <Input value={pageId} onChange={(e) => setPageId(e.target.value)} placeholder="Page/Account ID" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
                 </div>
                 <div>
                   <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Access Token</label>
-                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+                  <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Long-lived access token" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
                 </div>
               </div>
             )}
@@ -1082,7 +1082,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
               </div>
 
               {/* AI Generate section */}
-              <div className="p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-2">
+              <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] space-y-2">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Sparkles className="w-3.5 h-3.5 text-[#FF6B9D]" />
                   <span className="text-xs font-medium text-[var(--ag-text-muted)]">AI Generate</span>
@@ -1122,7 +1122,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
                   value={composerText}
                   onChange={(e) => setComposerText(e.target.value)}
                   placeholder={`Write your ${composerTone} post for ${PLATFORMS.find((p) => p.value === composerPlatform)?.label}, or use AI Generate above...`}
-                  className="bg-[#06060B] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#FF6B9D]/30"
+                  className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)] text-sm min-h-[100px] focus:border-[#FF6B9D]/30"
                   disabled={aiGenerating}
                 />
                 <CharacterCounter count={composerText.length} platform={composerPlatform} />
@@ -1169,11 +1169,11 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
           <div className="space-y-3">
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Topic</label>
-              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g., AI tools for developers" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
             </div>
             <div>
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Niche</label>
-              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[#06060B] border-[var(--ag-border-subtle)]" />
+              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
             </div>
             <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
               {generating ? (
@@ -1247,7 +1247,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
 
         {/* Activate form */}
         {showActivate && (
-          <div className="mt-3 p-3 rounded-lg bg-[#06060B] border border-[var(--ag-border-subtle)] space-y-3">
+          <div className="mt-3 p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Start Date</label>
@@ -1282,7 +1282,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
           <h3 className="text-sm font-semibold text-[#FF6B9D] mb-3">Day {dayNum}</h3>
           <div className="space-y-3">
             {dayItems.map((item) => (
-              <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[#06060B] border-[var(--ag-border-subtle)]' : 'bg-[#06060B]/50 border-[var(--ag-border-subtle)]/50 opacity-60'}`}>
+              <div key={item.id} className={`p-3 rounded-lg border transition-colors ${item.enabled ? 'bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]' : 'bg-[var(--ag-bg-deep)]/50 border-[var(--ag-border-subtle)]/50 opacity-60'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-[var(--ag-text-muted)]">Slot {item.slot}</span>

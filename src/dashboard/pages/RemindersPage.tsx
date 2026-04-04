@@ -50,8 +50,8 @@ const categoryColors: Record<string, string> = {
 };
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-  low:    { label: 'Low',    color: '#6B7280', bg: '#6B728020' },
-  normal: { label: 'Normal', color: '#00F0FF', bg: '#00F0FF20' },
+  low:    { label: 'Low',    color: 'var(--ag-text-muted)', bg: '#6B728020' },
+  normal: { label: 'Normal', color: 'var(--ag-cyan)', bg: '#00F0FF20' },
   high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
   urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
 };

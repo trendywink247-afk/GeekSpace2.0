@@ -377,7 +377,7 @@ export function ImageCreatorPage() {
               </div>
               <button
                 onClick={() => handleCopyId(previewImage.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-xs text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors"
               >
                 {copiedId === previewImage.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copiedId === previewImage.id ? 'Copied!' : previewImage.id}
@@ -393,7 +393,7 @@ export function ImageCreatorPage() {
         title="Image Creator"
         subtitle={`Generate and manage AI images \u00b7 ${imageCount}/${maxImages} saved`}
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/30 text-[var(--ag-violet)]">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B5CF6]" />
@@ -404,8 +404,8 @@ export function ImageCreatorPage() {
         actions={
           <div className="flex items-center gap-3">
             {/* Credits badge */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[#8B5CF6]/20">
-              <Zap className="w-4 h-4 text-[#8B5CF6]" />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-violet)]/20">
+              <Zap className="w-4 h-4 text-[var(--ag-violet)]" />
               <div className="text-right">
                 <div className="text-sm font-semibold text-[var(--ag-text-primary)]">{maxImages - imageCount}</div>
                 <div className="text-[10px] text-[var(--ag-text-secondary)] leading-none">remaining</div>
@@ -432,7 +432,7 @@ export function ImageCreatorPage() {
             ) : (
               <button
                 onClick={() => setShowAgentPicker(!showAgentPicker)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[var(--ag-border-default)] hover:border-[#8B5CF6]/40 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[var(--ag-border-default)] hover:border-[var(--ag-violet)]/40 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors text-sm"
               >
                 <Bot className="w-4 h-4" />
                 {agentLoading ? 'Loading...' : 'Assign Agent'}
@@ -504,14 +504,14 @@ export function ImageCreatorPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
               activeTab === tab.id
-                ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 shadow-sm'
+                ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30 shadow-sm'
                 : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
             {tab.id === 'gallery' && images.length > 0 && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6]">
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[var(--ag-violet)]">
                 {images.length}
               </span>
             )}
@@ -553,7 +553,7 @@ export function ImageCreatorPage() {
                   key={card.id}
                   onClick={() => setMode(card.id)}
                   className={`relative p-6 rounded-2xl border text-left transition-all group cursor-pointer overflow-hidden ${
-                    isActive ? 'border-[#8B5CF6]/40' : 'border-[var(--ag-border-default)] hover:border-[#8B5CF6]/30'
+                    isActive ? 'border-[var(--ag-violet)]/40' : 'border-[var(--ag-border-default)] hover:border-[var(--ag-violet)]/30'
                   }`}
                   style={{
                     background: isActive ? card.activeBg : 'var(--ag-bg-surface)',
@@ -607,7 +607,7 @@ export function ImageCreatorPage() {
                     ) : (
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-24 h-24 rounded-xl border-2 border-dashed border-[var(--ag-border-default)] hover:border-[#8B5CF6]/40 flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                        className="w-24 h-24 rounded-xl border-2 border-dashed border-[var(--ag-border-default)] hover:border-[var(--ag-violet)]/40 flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                         aria-label="Upload reference image"
                       >
                         <Upload className="w-5 h-5 text-[var(--ag-text-secondary)]" />
@@ -628,9 +628,9 @@ export function ImageCreatorPage() {
                 <div className="relative">
                   <button
                     onClick={() => setShowModelPicker(!showModelPicker)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-default)] text-sm text-[var(--ag-text-primary)] hover:border-[#8B5CF6]/40 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-default)] text-sm text-[var(--ag-text-primary)] hover:border-[var(--ag-violet)]/40 transition-colors"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-[#8B5CF6]" />
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--ag-violet)]" />
                     {currentModel?.name || 'Select Model'}
                     {currentModel?.tier === 'auto' ? (
                       <span className="text-xs text-[var(--ag-violet)] ml-1">Auto</span>
@@ -663,7 +663,7 @@ export function ImageCreatorPage() {
                           }`}>
                             {m.cost}
                           </span>
-                          {selectedModel === m.id && <Check className="w-4 h-4 text-[#8B5CF6] shrink-0" />}
+                          {selectedModel === m.id && <Check className="w-4 h-4 text-[var(--ag-violet)] shrink-0" />}
                         </button>
                       ))}
                     </div>
@@ -679,8 +679,8 @@ export function ImageCreatorPage() {
                         onClick={() => { setWidth(preset.w); setHeight(preset.h); }}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] ${
                           width === preset.w && height === preset.h
-                            ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
-                            : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[#8B5CF6]/30'
+                            ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
+                            : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30'
                         }`}
                       >
                         {preset.label}
@@ -695,7 +695,7 @@ export function ImageCreatorPage() {
                 <div className="mb-4">
                   <button
                     onClick={() => setShowPromptBuilder(!showPromptBuilder)}
-                    className="flex items-center gap-2 text-xs text-[#8B5CF6]/80 hover:text-[#8B5CF6] transition-colors mb-3"
+                    className="flex items-center gap-2 text-xs text-[var(--ag-violet)]/80 hover:text-[var(--ag-violet)] transition-colors mb-3"
                   >
                     <Palette className="w-3.5 h-3.5" />
                     {showPromptBuilder ? 'Hide' : 'Show'} Prompt Builder
@@ -703,7 +703,7 @@ export function ImageCreatorPage() {
                   </button>
 
                   {showPromptBuilder && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[var(--ag-bg-deep)] border border-[#8B5CF6]/15">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[var(--ag-bg-deep)] border border-[var(--ag-violet)]/15">
                       {[
                         { label: 'Style', value: promptStyle, onChange: setPromptStyle, options: STYLE_OPTIONS },
                         { label: 'Lighting', value: promptLighting, onChange: setPromptLighting, options: LIGHTING_OPTIONS },
@@ -714,7 +714,7 @@ export function ImageCreatorPage() {
                           <select
                             value={value}
                             onChange={(e) => onChange(e.target.value)}
-                            className="w-full bg-[var(--ag-bg-surface)] border border-[#8B5CF6]/20 rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] outline-none focus:border-[#8B5CF6]/50 appearance-none cursor-pointer"
+                            className="w-full bg-[var(--ag-bg-surface)] border border-[var(--ag-violet)]/20 rounded-lg px-3 py-2 text-sm text-[var(--ag-text-primary)] outline-none focus:border-[var(--ag-violet)]/50 appearance-none cursor-pointer"
                           >
                             <option value="">Select {label.toLowerCase()}...</option>
                             {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -734,7 +734,7 @@ export function ImageCreatorPage() {
                 rows={3}
                 className={`w-full bg-[var(--ag-bg-deep)] border rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none outline-none text-sm ${
                   mode === 'imagine'
-                    ? 'border-[#8B5CF6]/20 focus:border-[#8B5CF6]/50'
+                    ? 'border-[var(--ag-violet)]/20 focus:border-[var(--ag-violet)]/50'
                     : 'border-[var(--ag-border-glow)] focus:border-[var(--ag-border-active)]'
                 }`}
               />
@@ -744,7 +744,7 @@ export function ImageCreatorPage() {
                 <div className="flex items-center gap-3 mt-2">
                   <button
                     onClick={handleEnhancePrompt}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-xs text-[#8B5CF6] hover:bg-[#8B5CF6]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/20 text-xs text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20 transition-colors"
                   >
                     <Sparkles className="w-3 h-3" />
                     Enhance Prompt
@@ -769,7 +769,7 @@ export function ImageCreatorPage() {
                         <div key={step} className="flex items-center gap-2">
                           {i > 0 && <div className={`w-8 h-0.5 rounded-full ${isPast ? 'bg-[#8B5CF6]' : 'bg-[#1A1A2E]'}`} />}
                           <div className={`flex items-center gap-1 text-xs font-medium transition-all ${
-                            isFailed ? 'text-[#FF6161]' : isActive ? 'text-[#8B5CF6]' : isPast ? 'text-[#8B5CF6]/60' : 'text-[var(--ag-text-secondary)]/40'
+                            isFailed ? 'text-[#FF6161]' : isActive ? 'text-[var(--ag-violet)]' : isPast ? 'text-[var(--ag-violet)]/60' : 'text-[var(--ag-text-secondary)]/40'
                           }`}>
                             {isActive && genPhase !== 'done' && <Loader2 className="w-3 h-3 animate-spin" />}
                             {isPast && <Check className="w-3 h-3" />}
@@ -794,7 +794,7 @@ export function ImageCreatorPage() {
                   {imageCount >= maxImages ? (
                     <span className="px-2.5 py-1 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/20 text-[#FF6161] font-medium">Image limit reached ({maxImages}/{maxImages})</span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/15 text-[#8B5CF6]">
+                    <span className="px-2.5 py-1 rounded-lg bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/15 text-[var(--ag-violet)]">
                       <strong>{maxImages - imageCount}</strong> credits remaining &middot; {width}x{height}
                     </span>
                   )}
@@ -819,12 +819,12 @@ export function ImageCreatorPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-[#8B5CF6]" />
+                  <ImageIcon className="w-4 h-4 text-[var(--ag-violet)]" />
                   Recent Generations
                 </h2>
                 <button
                   onClick={() => setActiveTab('gallery')}
-                  className="text-xs text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors"
+                  className="text-xs text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors"
                 >
                   View all in Gallery
                 </button>
@@ -838,7 +838,7 @@ export function ImageCreatorPage() {
                   {images.slice(0, 5).map(img => (
                     <div
                       key={img.id}
-                      className="group relative rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[#8B5CF6]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all bg-[var(--ag-bg-surface)]"
+                      className="group relative rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-violet)]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all bg-[var(--ag-bg-surface)]"
                     >
                       <div className="aspect-square cursor-pointer relative" onClick={() => setPreviewImage(img)}>
                         <img src={img.image_url} alt={img.prompt} className="w-full h-full object-cover" loading="lazy" />
@@ -881,9 +881,9 @@ export function ImageCreatorPage() {
 
           {/* Empty state for generate tab */}
           {!mode && images.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#8B5CF6]/20 p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--ag-violet)]/20 p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-8 h-8 text-[#8B5CF6]/40" />
+                <ImageIcon className="w-8 h-8 text-[var(--ag-violet)]/40" />
               </div>
               <p className="text-[var(--ag-text-primary)] text-sm font-medium mb-1">No images yet</p>
               <p className="text-[var(--ag-text-secondary)] text-xs max-w-xs mx-auto">
@@ -900,7 +900,7 @@ export function ImageCreatorPage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-[#8B5CF6]/5 transition-colors text-left"
               >
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+                  <Sparkles className="w-4 h-4 text-[var(--ag-violet)]" />
                   <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Available Image Models</span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-[var(--ag-text-secondary)] transition-transform ${showModelsPanel ? 'rotate-180' : ''}`} />
@@ -926,7 +926,7 @@ export function ImageCreatorPage() {
                               model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
                               'bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]'
                             }`}>{model.cost}</span>
-                            {isDefault && <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30">Default</span>}
+                            {isDefault && <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30">Default</span>}
                           </div>
                           <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{model.description}</div>
                         </div>
@@ -935,8 +935,8 @@ export function ImageCreatorPage() {
                           disabled={isSaving || isDefault}
                           className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
                             isDefault
-                              ? 'text-[#8B5CF6] cursor-default'
-                              : 'text-[var(--ag-text-secondary)] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 border border-[var(--ag-border-subtle)]'
+                              ? 'text-[var(--ag-violet)] cursor-default'
+                              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 border border-[var(--ag-border-subtle)]'
                           }`}
                         >
                           {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : isDefault ? 'Default' : 'Set Default'}
@@ -963,7 +963,7 @@ export function ImageCreatorPage() {
                   onClick={() => setGalleryFilter(f)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all min-h-[44px] ${
                     galleryFilter === f
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
+                      ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30'
                       : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                   }`}
                 >
@@ -977,7 +977,7 @@ export function ImageCreatorPage() {
                 onClick={() => setShowDateFilter(!showDateFilter)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
                   showDateFilter || dateFrom || dateTo
-                    ? 'bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#8B5CF6]'
+                    ? 'bg-[#8B5CF6]/10 border-[var(--ag-violet)]/30 text-[var(--ag-violet)]'
                     : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                 }`}
               >
@@ -987,7 +987,7 @@ export function ImageCreatorPage() {
               <button
                 onClick={() => void loadGallery()}
                 disabled={galleryLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[#8B5CF6] hover:bg-[#8B5CF6]/10 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${galleryLoading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -1008,7 +1008,7 @@ export function ImageCreatorPage() {
                     type="date"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] outline-none focus:border-[#8B5CF6]/40"
+                    className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] outline-none focus:border-[var(--ag-violet)]/40"
                   />
                 </div>
               ))}
@@ -1029,9 +1029,9 @@ export function ImageCreatorPage() {
 
           {/* Empty state */}
           {!galleryLoading && filteredImages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[#8B5CF6]/15">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[var(--ag-violet)]/15">
               <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-1">
-                <ImageIcon className="w-8 h-8 text-[#8B5CF6]/40" />
+                <ImageIcon className="w-8 h-8 text-[var(--ag-violet)]/40" />
               </div>
               <p className="text-[var(--ag-text-primary)] text-sm font-medium">No images yet</p>
               <p className="text-[var(--ag-text-secondary)] text-xs max-w-xs">
@@ -1039,7 +1039,7 @@ export function ImageCreatorPage() {
               </p>
               <button
                 onClick={() => setActiveTab('generate')}
-                className="mt-2 px-4 py-2 rounded-xl bg-[#8B5CF6]/15 text-[#8B5CF6] text-sm font-medium hover:bg-[#8B5CF6]/25 transition-colors border border-[#8B5CF6]/30 min-h-[44px]"
+                className="mt-2 px-4 py-2 rounded-xl bg-[#8B5CF6]/15 text-[var(--ag-violet)] text-sm font-medium hover:bg-[#8B5CF6]/25 transition-colors border border-[var(--ag-violet)]/30 min-h-[44px]"
               >
                 Start Generating
               </button>
@@ -1052,7 +1052,7 @@ export function ImageCreatorPage() {
               {filteredImages.map((img) => (
                 <div
                   key={img.id}
-                  className="group relative rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-deep)] hover:border-[#8B5CF6]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all cursor-pointer mb-4"
+                  className="group relative rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-deep)] hover:border-[var(--ag-violet)]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all cursor-pointer mb-4"
                   style={{ breakInside: 'avoid' }}
                   onClick={() => setPreviewImage(img)}
                 >
@@ -1117,7 +1117,7 @@ export function ImageCreatorPage() {
                       download
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[#8B5CF6] hover:text-[#8B5CF6]/80 transition-colors flex-shrink-0"
+                      className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                       aria-label="Download image"
                     >

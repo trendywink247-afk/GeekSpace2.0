@@ -383,7 +383,7 @@ export function DesignAssistantPage() {
         title="Design Assistant"
         subtitle="AI-powered design suggestions, color palettes, and brand kits"
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 text-[#8B5CF6]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/30 text-[var(--ag-violet)]">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B5CF6]" />

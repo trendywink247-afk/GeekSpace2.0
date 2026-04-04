@@ -44,7 +44,7 @@ const MAX_ASSIGNED = 4;
 
 const statusMeta: Record<string, { color: string; label: string }> = {
   active: { color: '#00FF88', label: 'Active' },
-  idle: { color: '#6B7280', label: 'Idle' },
+  idle: { color: 'var(--ag-text-muted)', label: 'Idle' },
   disabled: { color: '#FF6161', label: 'Offline' },
 };
 
@@ -365,7 +365,7 @@ export function WebsiteBuilderPage() {
           onClick={() => setDeviceMode(mode)}
           className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
             deviceMode === mode
-              ? 'text-[#8B5CF6] bg-[#8B5CF6]/10'
+              ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10'
               : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
           }`}
           aria-label={`Preview ${label}`}
@@ -380,7 +380,7 @@ export function WebsiteBuilderPage() {
   // ---- Preview iframe component ----
   const PreviewFrame = ({ className = '' }: { className?: string }) => (
     <div className={`flex items-start justify-center overflow-auto ${
-      deviceMode !== 'desktop' ? 'p-4 md:p-8 bg-[#06061a]' : 'p-0'
+      deviceMode !== 'desktop' ? 'p-4 md:p-8 bg-[var(--ag-bg-base)]' : 'p-0'
     } ${className}`}>
       <iframe
         ref={previewRef}
@@ -418,7 +418,7 @@ export function WebsiteBuilderPage() {
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
           toast.type === 'success'
-            ? 'bg-[#8B5CF6]/10 text-[#8B5CF6] border border-[#8B5CF6]/20'
+            ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20'
             : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>
           {toast.text}
@@ -428,19 +428,19 @@ export function WebsiteBuilderPage() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="overflow-x-auto scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
           <TabsList className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] flex w-max min-w-full">
-            <TabsTrigger value="projects" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Code className="w-4 h-4" />
               My Projects
             </TabsTrigger>
-            <TabsTrigger value="templates" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            <TabsTrigger value="templates" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <LayoutTemplate className="w-4 h-4" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="builder" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            <TabsTrigger value="builder" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Wrench className="w-4 h-4" />
               Builder
             </TabsTrigger>
-            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[#8B5CF6] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
+            <TabsTrigger value="weebos" className="data-[state=active]:bg-[#8B5CF6]/10 data-[state=active]:text-[var(--ag-violet)] gap-2 flex-shrink-0 whitespace-nowrap min-h-[44px]">
               <Bot className="w-4 h-4" />
               Weebos
             </TabsTrigger>
@@ -460,20 +460,20 @@ export function WebsiteBuilderPage() {
         <TabsContent value="builder" className="mt-6">
           {/* Project selector */}
           <SectionCard padding="md" className="mb-6">
-            <label className="text-sm text-[#9CA3AF] mb-2 block">Working on:</label>
+            <label className="text-sm text-[var(--ag-text-secondary)] mb-2 block">Working on:</label>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedProject(null)}
                 className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px] ${
                   !selectedProject
-                    ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
-                    : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                    ? 'bg-[#8B5CF6]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                    : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                 }`}
               >
                 New Project
               </button>
               {projectsLoading ? (
-                <div className="flex items-center gap-2 text-[#9CA3AF] text-sm px-3">
+                <div className="flex items-center gap-2 text-[var(--ag-text-secondary)] text-sm px-3">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading...
                 </div>
@@ -484,8 +484,8 @@ export function WebsiteBuilderPage() {
                     onClick={() => loadProjectForDev(p)}
                     className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate max-w-[200px] min-h-[44px] ${
                       selectedProject?.id === p.id
-                        ? 'bg-[#8B5CF6]/20 text-[#8B5CF6] border border-[#8B5CF6]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
-                        : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                        ? 'bg-[#8B5CF6]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                        : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
                     }`}
                   >
                     {p.title}
@@ -502,8 +502,8 @@ export function WebsiteBuilderPage() {
               onClick={() => setBuilderMode('imagine')}
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'imagine'
-                  ? 'border-[#8B5CF6]/40 bg-[#8B5CF6]/5 shadow-[0_0_20px_rgba(139,92,246,0.08)]'
-                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#8B5CF6]/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.06)] bg-[rgba(12,12,30,0.6)]'
+                  ? 'border-[var(--ag-violet)]/40 bg-[#8B5CF6]/5 shadow-[0_0_20px_rgba(139,92,246,0.08)]'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[var(--ag-violet)]/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
               style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
@@ -511,14 +511,14 @@ export function WebsiteBuilderPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'imagine' ? 'bg-[#8B5CF6]/20' : 'bg-[#8B5CF6]/10'
                 }`}>
-                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[#8B5CF6]' : 'text-[#9CA3AF]'}`} />
+                  <Wand2 className={`w-5 h-5 ${builderMode === 'imagine' ? 'text-[var(--ag-violet)]' : 'text-[var(--ag-text-secondary)]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[#F4F6FF] font-semibold">Imagine & Add</h3>
-                  <p className="text-xs text-[#9CA3AF]">Let AI build it for you</p>
+                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Imagine & Add</h3>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">Let AI build it for you</p>
                 </div>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
+              <p className="text-sm text-[var(--ag-text-secondary)]">
                 Describe what you want and the agent will create or update your project.
               </p>
             </button>
@@ -533,8 +533,8 @@ export function WebsiteBuilderPage() {
               }}
               className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
                 builderMode === 'dev'
-                  ? 'border-[#00F0FF]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
-                  : 'border-[rgba(139,92,246,0.08)] hover:border-[#00F0FF]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[rgba(12,12,30,0.6)]'
+                  ? 'border-[var(--ag-cyan)]/40 bg-[#00F0FF]/5 shadow-[0_0_20px_rgba(0,240,255,0.08)]'
+                  : 'border-[rgba(139,92,246,0.08)] hover:border-[var(--ag-cyan)]/30 hover:shadow-[0_0_15px_rgba(0,240,255,0.06)] bg-[rgba(12,12,30,0.6)]'
               }`}
               style={{ backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             >
@@ -542,14 +542,14 @@ export function WebsiteBuilderPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   builderMode === 'dev' ? 'bg-[#00F0FF]/20' : 'bg-[#00F0FF]/10'
                 }`}>
-                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[#00F0FF]' : 'text-[#9CA3AF]'}`} />
+                  <Terminal className={`w-5 h-5 ${builderMode === 'dev' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-secondary)]'}`} />
                 </div>
                 <div>
-                  <h3 className="text-[#F4F6FF] font-semibold">Feelin&apos; to be a Dev</h3>
-                  <p className="text-xs text-[#9CA3AF]">I&apos;ll input on it myself</p>
+                  <h3 className="text-[var(--ag-text-primary)] font-semibold">Feelin&apos; to be a Dev</h3>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">I&apos;ll input on it myself</p>
                 </div>
               </div>
-              <p className="text-sm text-[#9CA3AF]">
+              <p className="text-sm text-[var(--ag-text-secondary)]">
                 Write HTML, CSS, and JavaScript directly. Full control over your code.
               </p>
             </button>
@@ -559,12 +559,12 @@ export function WebsiteBuilderPage() {
           {builderMode === 'imagine' && (
             <SectionCard padding="lg">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
-                <h3 className="text-[#F4F6FF] font-semibold">
+                <Sparkles className="w-5 h-5 text-[var(--ag-violet)]" />
+                <h3 className="text-[var(--ag-text-primary)] font-semibold">
                   {selectedProject ? `Update "${selectedProject.title}"` : 'Create Something New'}
                 </h3>
               </div>
-              <p className="text-sm text-[#9CA3AF] mb-4">
+              <p className="text-sm text-[var(--ag-text-secondary)] mb-4">
                 {selectedProject
                   ? 'Describe changes you want — the agent will update your existing project.'
                   : 'Describe what you want to build — the agent will create a new project for you.'}
@@ -577,7 +577,7 @@ export function WebsiteBuilderPage() {
                     ? 'e.g. "Add a contact form section with a dark theme..."'
                     : 'e.g. "A modern landing page for a SaaS product with pricing cards..."'}
                   rows={3}
-                  className="flex-1 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-3 text-[#F4F6FF] placeholder-[#6B7280]/50 resize-none focus:border-[#8B5CF6]/50 outline-none text-sm"
+                  className="flex-1 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none focus:border-[var(--ag-violet)]/50 outline-none text-sm"
                 />
               </div>
               <div className="flex justify-end mt-3">
@@ -608,7 +608,7 @@ export function WebsiteBuilderPage() {
               {/* Title input — only shown for new projects */}
               {!selectedProject && (
                 <SectionCard padding="md">
-                  <p className="text-sm text-[#9CA3AF]">
+                  <p className="text-sm text-[var(--ag-text-secondary)]">
                     Starting fresh? Give your project a name and start coding below. Or select an existing project above to edit it.
                   </p>
                   <input
@@ -616,7 +616,7 @@ export function WebsiteBuilderPage() {
                     value={devTitle}
                     onChange={(e) => setDevTitle(e.target.value)}
                     placeholder="Project name (e.g. Hello World)"
-                    className="w-full mt-3 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none min-h-[44px]"
+                    className="w-full mt-3 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[var(--ag-violet)]/50 outline-none min-h-[44px]"
                   />
                 </SectionCard>
               )}
@@ -628,42 +628,42 @@ export function WebsiteBuilderPage() {
                   <div className="space-y-4">
                     {/* HTML */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-xs rounded font-mono">HTML</span>
                       </label>
                       <textarea
                         value={devHtml}
                         onChange={(e) => setDevHtml(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                        className="w-full h-48 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="<div>Your HTML here...</div>"
                       />
                     </div>
 
                     {/* CSS */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#3B82F6]/20 text-[#3B82F6] text-xs rounded font-mono">CSS</span>
                       </label>
                       <textarea
                         value={devCss}
                         onChange={(e) => setDevCss(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                        className="w-full h-48 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="body { color: white; }"
                       />
                     </div>
 
                     {/* JavaScript */}
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                         <span className="px-1.5 py-0.5 bg-[#FFD700]/20 text-[#FFD700] text-xs rounded font-mono">JS</span>
                       </label>
                       <textarea
                         value={devJs}
                         onChange={(e) => setDevJs(e.target.value)}
                         spellCheck={false}
-                        className="w-full h-48 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                        className="w-full h-48 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                         placeholder="console.log('Hello world');"
                       />
                     </div>
@@ -673,13 +673,13 @@ export function WebsiteBuilderPage() {
                   <div className="rounded-2xl border border-[rgba(139,92,246,0.15)] overflow-hidden flex flex-col min-h-[500px]">
                     <div className="flex items-center justify-between px-4 py-2 bg-[rgba(12,12,30,0.6)] border-b border-[rgba(139,92,246,0.08)]">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
+                        <span className="text-xs text-[var(--ag-text-secondary)] font-mono">Preview</span>
                         <DeviceBar />
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => refreshPreview()}
-                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                           aria-label="Refresh preview"
                           title="Refresh"
                         >
@@ -687,7 +687,7 @@ export function WebsiteBuilderPage() {
                         </button>
                         <button
                           onClick={() => setSplitView(false)}
-                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                           aria-label="Exit split view"
                           title="Exit split view"
                         >
@@ -703,42 +703,42 @@ export function WebsiteBuilderPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {/* HTML */}
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                       <span className="px-1.5 py-0.5 bg-[#FF6B35]/20 text-[#FF6B35] text-xs rounded font-mono">HTML</span>
                     </label>
                     <textarea
                       value={devHtml}
                       onChange={(e) => setDevHtml(e.target.value)}
                       spellCheck={false}
-                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      className="w-full h-64 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                       placeholder="<div>Your HTML here...</div>"
                     />
                   </div>
 
                   {/* CSS */}
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                       <span className="px-1.5 py-0.5 bg-[#3B82F6]/20 text-[#3B82F6] text-xs rounded font-mono">CSS</span>
                     </label>
                     <textarea
                       value={devCss}
                       onChange={(e) => setDevCss(e.target.value)}
                       spellCheck={false}
-                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      className="w-full h-64 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                       placeholder="body { color: white; }"
                     />
                   </div>
 
                   {/* JavaScript */}
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
+                    <label className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
                       <span className="px-1.5 py-0.5 bg-[#FFD700]/20 text-[#FFD700] text-xs rounded font-mono">JS</span>
                     </label>
                     <textarea
                       value={devJs}
                       onChange={(e) => setDevJs(e.target.value)}
                       spellCheck={false}
-                      className="w-full h-64 bg-[#06061a] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[#F4F6FF] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
+                      className="w-full h-64 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] font-mono text-xs resize-none focus:border-[rgba(139,92,246,0.15)] outline-none leading-relaxed"
                       placeholder="console.log('Hello world');"
                     />
                   </div>
@@ -772,7 +772,7 @@ export function WebsiteBuilderPage() {
                       setTimeout(refreshPreview, 50);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
                 >
                   <Eye className="w-4 h-4" />
                   {showPreview ? 'Hide Preview' : 'Preview'}
@@ -780,7 +780,7 @@ export function WebsiteBuilderPage() {
                 {showPreview && (
                   <button
                     onClick={() => setSplitView(!splitView)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[rgba(139,92,246,0.3)] transition-colors text-sm min-h-[44px]"
                     title={splitView ? 'Stack view' : 'Split view'}
                   >
                     <PanelLeft className="w-4 h-4" />
@@ -794,12 +794,12 @@ export function WebsiteBuilderPage() {
                 <div className="rounded-2xl border border-[rgba(139,92,246,0.15)] overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-2 bg-[rgba(12,12,30,0.6)] border-b border-[rgba(139,92,246,0.08)]">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-[#9CA3AF] font-mono">Preview</span>
+                      <span className="text-xs text-[var(--ag-text-secondary)] font-mono">Preview</span>
                       <DeviceBar />
                     </div>
                     <button
                       onClick={() => setShowPreview(false)}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded-lg transition-colors"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 rounded-lg transition-colors"
                       aria-label="Close preview"
                     >
                       <X className="w-4 h-4" />
@@ -816,29 +816,29 @@ export function WebsiteBuilderPage() {
         <TabsContent value="weebos" className="mt-6 space-y-6">
           {fleetLoading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[var(--ag-violet)] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <>
               {/* Assigned agents */}
               <SectionCard padding="lg">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[#F4F6FF] flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-[#8B5CF6]" />
+                  <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-[var(--ag-violet)]" />
                     Assigned Weebos
-                    <span className="text-xs text-[#9CA3AF] font-normal ml-1">
+                    <span className="text-xs text-[var(--ag-text-secondary)] font-normal ml-1">
                       {assignedAgents.length}/{MAX_ASSIGNED} max
                     </span>
                   </h3>
                 </div>
 
                 {assignedAgents.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[#8B5CF6]/20 p-10 text-center bg-[#8B5CF6]/[0.02]">
+                  <div className="rounded-2xl border border-dashed border-[var(--ag-violet)]/20 p-10 text-center bg-[#8B5CF6]/[0.02]">
                     <div className="w-14 h-14 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
-                      <Bot className="w-7 h-7 text-[#8B5CF6]/50" />
+                      <Bot className="w-7 h-7 text-[var(--ag-violet)]/50" />
                     </div>
-                    <p className="text-[#F4F6FF] font-medium text-sm mb-1">No agents assigned yet</p>
-                    <p className="text-[#9CA3AF] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
+                    <p className="text-[var(--ag-text-primary)] font-medium text-sm mb-1">No agents assigned yet</p>
+                    <p className="text-[var(--ag-text-secondary)] text-xs max-w-xs mx-auto">Assign agents from your fleet below, or deploy a new one to start automating website tasks.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -849,15 +849,15 @@ export function WebsiteBuilderPage() {
                       return (
                         <div
                           key={agent.id}
-                          className="rounded-2xl border border-[rgba(139,92,246,0.15)] p-5 transition-all hover:border-[#8B5CF6]/40"
+                          className="rounded-2xl border border-[rgba(139,92,246,0.15)] p-5 transition-all hover:border-[var(--ag-violet)]/40"
                           style={{ background: 'rgba(139, 92, 246, 0.03)' }}
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <span className="text-xl">{personality}</span>
                               <div>
-                                <div className="font-semibold text-[#F4F6FF] text-sm">{agent.name}</div>
-                                <div className="text-xs text-[#9CA3AF] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
+                                <div className="font-semibold text-[var(--ag-text-primary)] text-sm">{agent.name}</div>
+                                <div className="text-xs text-[var(--ag-text-secondary)] capitalize">Slot {agent.slot} &middot; {agent.personality}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -874,7 +874,7 @@ export function WebsiteBuilderPage() {
                               {/* Unassign */}
                               <button
                                 onClick={() => toggleAssign(agent.slot)}
-                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
                                 aria-label={`Unassign ${agent.name} from Builder`}
                               >
                                 <X className="w-4 h-4" />
@@ -884,12 +884,12 @@ export function WebsiteBuilderPage() {
 
                           {/* Stats row */}
                           <div className="flex gap-3 mb-3">
-                            <div className="flex-1 p-2.5 rounded-lg bg-[#06061a] border border-[#00FF88]/10">
-                              <div className="text-xs text-[#9CA3AF]">Completed</div>
+                            <div className="flex-1 p-2.5 rounded-lg bg-[var(--ag-bg-base)] border border-[#00FF88]/10">
+                              <div className="text-xs text-[var(--ag-text-secondary)]">Completed</div>
                               <div className="text-lg font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
                             </div>
-                            <div className="flex-1 p-2.5 rounded-lg bg-[#06061a] border border-[#FF6161]/10">
-                              <div className="text-xs text-[#9CA3AF]">Failed</div>
+                            <div className="flex-1 p-2.5 rounded-lg bg-[var(--ag-bg-base)] border border-[#FF6161]/10">
+                              <div className="text-xs text-[var(--ag-text-secondary)]">Failed</div>
                               <div className="text-lg font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
                             </div>
                           </div>
@@ -897,15 +897,15 @@ export function WebsiteBuilderPage() {
                           {/* Current work progress */}
                           {agentTasks.length > 0 ? (
                             <div className="space-y-2">
-                              <div className="text-xs text-[#9CA3AF] font-medium">Current Work</div>
+                              <div className="text-xs text-[var(--ag-text-secondary)] font-medium">Current Work</div>
                               {agentTasks.slice(0, 2).map(task => (
-                                <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
+                                <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
                                   {task.status === 'running' ? (
                                     <Loader2 className="w-3.5 h-3.5 text-[#FFB800] animate-spin shrink-0" />
                                   ) : (
-                                    <Clock className="w-3.5 h-3.5 text-[#00F0FF] shrink-0" />
+                                    <Clock className="w-3.5 h-3.5 text-[var(--ag-cyan)] shrink-0" />
                                   )}
-                                  <span className="text-xs text-[#F4F6FF] truncate flex-1">{task.description}</span>
+                                  <span className="text-xs text-[var(--ag-text-primary)] truncate flex-1">{task.description}</span>
                                   <span className="text-xs capitalize shrink-0"
                                     style={{ color: task.status === 'running' ? '#FFB800' : '#00F0FF' }}>
                                     {task.status}
@@ -914,13 +914,13 @@ export function WebsiteBuilderPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
-                              <CheckCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                              <span className="text-xs text-[#9CA3AF]">No active tasks — ready for work</span>
+                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+                              <CheckCircle className="w-3.5 h-3.5 text-[var(--ag-text-secondary)]" />
+                              <span className="text-xs text-[var(--ag-text-secondary)]">No active tasks — ready for work</span>
                             </div>
                           )}
 
-                          <div className="mt-2 text-xs text-[#9CA3AF] flex items-center gap-1">
+                          <div className="mt-2 text-xs text-[var(--ag-text-secondary)] flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             Created {formatTimeAgo(agent.created_at)}
                           </div>
@@ -935,15 +935,15 @@ export function WebsiteBuilderPage() {
               {assignedAgents.length > 0 && (
                 <SectionCard padding="lg">
                   <div className="flex items-center gap-2 mb-3">
-                    <Send className="w-4 h-4 text-[#8B5CF6]" />
-                    <h3 className="text-sm font-semibold text-[#F4F6FF]">Assign Task</h3>
+                    <Send className="w-4 h-4 text-[var(--ag-violet)]" />
+                    <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Assign Task</h3>
                   </div>
                   <div className="flex gap-3">
                     <input
                       value={taskInput}
                       onChange={e => setTaskInput(e.target.value)}
                       placeholder="Describe a website task for your agents..."
-                      className="flex-1 bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none min-h-[44px]"
+                      className="flex-1 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[var(--ag-violet)]/50 outline-none min-h-[44px]"
                       onKeyDown={e => e.key === 'Enter' && !planningTask && handleAssignTask()}
                       disabled={planningTask}
                     />
@@ -962,7 +962,7 @@ export function WebsiteBuilderPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mt-2">
+                  <p className="text-xs text-[var(--ag-text-secondary)] mt-2">
                     The planner will break your request into tasks and assign them to available agents.
                   </p>
                 </SectionCard>
@@ -971,8 +971,8 @@ export function WebsiteBuilderPage() {
               {/* Assign from fleet */}
               {unassignedAgents.length > 0 && assignedSlots.size < MAX_ASSIGNED && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-[#8B5CF6]" />
+                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-[var(--ag-violet)]" />
                     Assign from Fleet
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -983,18 +983,18 @@ export function WebsiteBuilderPage() {
                         <button
                           key={agent.id}
                           onClick={() => toggleAssign(agent.slot)}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 transition-all text-left cursor-pointer group min-h-[44px]"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] hover:border-[var(--ag-violet)]/40 hover:bg-[#8B5CF6]/5 transition-all text-left cursor-pointer group min-h-[44px]"
                         >
                           <span className="text-lg">{personality}</span>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-[#F4F6FF] truncate">{agent.name}</div>
-                            <div className="text-xs text-[#9CA3AF]">Slot {agent.slot}</div>
+                            <div className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{agent.name}</div>
+                            <div className="text-xs text-[var(--ag-text-secondary)]">Slot {agent.slot}</div>
                           </div>
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
                             style={{ background: `${color}15`, color }}>
                             {statusMeta[agent.status]?.label ?? agent.status}
                           </div>
-                          <Plus className="w-4 h-4 text-[#8B5CF6] opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <Plus className="w-4 h-4 text-[var(--ag-violet)] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       );
                     })}
@@ -1005,19 +1005,19 @@ export function WebsiteBuilderPage() {
               {/* Deploy new agent */}
               {emptySlots.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+                  <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[var(--ag-violet)]" />
                     Deploy New Agent
                   </h3>
 
                   {creatingSlot !== null ? (
                     <SectionCard padding="lg" className="max-w-md">
-                      <p className="text-sm text-[#9CA3AF] mb-3">Choose personality for Slot {creatingSlot}</p>
+                      <p className="text-sm text-[var(--ag-text-secondary)] mb-3">Choose personality for Slot {creatingSlot}</p>
                       <div className="flex gap-2 mb-3">
                         {([
                           { id: 'weebo' as const, emoji: '🤖', label: 'Weebo', color: '#00FF88' },
-                          { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: '#00F0FF' },
-                          { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: '#8B5CF6' },
+                          { id: 'jarvis' as const, emoji: '🎩', label: 'Jarvis', color: 'var(--ag-cyan)' },
+                          { id: 'edith' as const, emoji: '⚡', label: 'Edith', color: 'var(--ag-violet)' },
                         ]).map(p => (
                           <button
                             key={p.id}
@@ -1037,14 +1037,14 @@ export function WebsiteBuilderPage() {
                         value={newAgentName}
                         onChange={e => setNewAgentName(e.target.value)}
                         placeholder="Agent name..."
-                        className="w-full bg-[#06061a] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[#F4F6FF] placeholder-[#6B7280]/50 text-sm focus:border-[#8B5CF6]/50 outline-none mb-3 min-h-[44px]"
+                        className="w-full bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-2.5 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 text-sm focus:border-[var(--ag-violet)]/50 outline-none mb-3 min-h-[44px]"
                         onKeyDown={e => e.key === 'Enter' && handleDeployAgent()}
                         autoFocus
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
-                          className="px-4 py-2 rounded-xl border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] text-sm hover:text-[#F4F6FF] transition-colors min-h-[44px]"
+                          className="px-4 py-2 rounded-xl border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] text-sm hover:text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
                         >
                           Cancel
                         </button>
@@ -1063,10 +1063,10 @@ export function WebsiteBuilderPage() {
                         <button
                           key={slot}
                           onClick={() => setCreatingSlot(slot)}
-                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[rgba(139,92,246,0.15)] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 transition-all cursor-pointer group min-h-[44px]"
+                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[rgba(139,92,246,0.15)] hover:border-[var(--ag-violet)]/40 hover:bg-[#8B5CF6]/5 transition-all cursor-pointer group min-h-[44px]"
                         >
-                          <Plus className="w-5 h-5 text-[#8B5CF6] group-hover:text-[#8B5CF6]" />
-                          <span className="text-sm text-[#9CA3AF] group-hover:text-[#F4F6FF]">Slot {slot}</span>
+                          <Plus className="w-5 h-5 text-[var(--ag-violet)] group-hover:text-[var(--ag-violet)]" />
+                          <span className="text-sm text-[var(--ag-text-secondary)] group-hover:text-[var(--ag-text-primary)]">Slot {slot}</span>
                         </button>
                       ))}
                     </div>
@@ -1078,20 +1078,20 @@ export function WebsiteBuilderPage() {
               {assignedAgents.length > 0 && (
                 <div className="pt-4 border-t border-[rgba(139,92,246,0.08)]">
                   <details className="group">
-                    <summary className="text-xs text-[#9CA3AF] cursor-pointer hover:text-[#F4F6FF] transition-colors flex items-center gap-1">
+                    <summary className="text-xs text-[var(--ag-text-secondary)] cursor-pointer hover:text-[var(--ag-text-primary)] transition-colors flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       Manage assigned agents
                     </summary>
                     <div className="mt-3 space-y-2">
                       {assignedAgents.map(agent => (
-                        <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
-                          <span className="text-sm text-[#F4F6FF]">
+                        <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+                          <span className="text-sm text-[var(--ag-text-primary)]">
                             {agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'} {agent.name} (Slot {agent.slot})
                           </span>
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleAssign(agent.slot)}
-                              className="px-3 py-1 rounded-lg text-xs text-[#9CA3AF] border border-[rgba(139,92,246,0.08)] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px] flex items-center"
+                              className="px-3 py-1 rounded-lg text-xs text-[var(--ag-text-secondary)] border border-[rgba(139,92,246,0.08)] hover:text-[var(--ag-text-primary)] hover:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px] flex items-center"
                             >
                               Unassign
                             </button>

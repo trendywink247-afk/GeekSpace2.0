@@ -449,7 +449,7 @@ export function PortfolioPage() {
               </div>
             )}
             {portfolioStats !== null && (
-              <span className="text-xs text-[#9CA3AF] hidden sm:inline-flex items-center gap-1">
+              <span className="text-xs text-[var(--ag-text-secondary)] hidden sm:inline-flex items-center gap-1">
                 <Eye className="w-3 h-3 text-[#EC4899]" />
                 {portfolioStats.totalViews} views
                 {lastViewedAt && (
@@ -477,7 +477,7 @@ export function PortfolioPage() {
                   href={`/portfolio/${user.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#8B5CF6] border border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 min-h-[44px]"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 min-h-[44px]"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View Live
@@ -510,12 +510,12 @@ export function PortfolioPage() {
       {completionPct < 100 && (
         <SectionCard>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-[#F4F6FF]">
+            <span className="text-sm font-semibold text-[var(--ag-text-primary)]">
               Profile {completionPct}% complete
             </span>
-            <span className="text-xs text-[#9CA3AF]">{completedCount}/{completionItems.length} fields</span>
+            <span className="text-xs text-[var(--ag-text-secondary)]">{completedCount}/{completionItems.length} fields</span>
           </div>
-          <div className="w-full bg-[#06061a] rounded-full h-2 mb-3">
+          <div className="w-full bg-[var(--ag-bg-base)] rounded-full h-2 mb-3">
             <div
               className="h-2 rounded-full transition-all duration-500"
               style={{
@@ -553,9 +553,9 @@ export function PortfolioPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Link className="w-4 h-4 text-[#EC4899]" />
-                <span className="text-sm font-semibold text-[#F4F6FF]">Share Your Portfolio</span>
+                <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Share Your Portfolio</span>
               </div>
-              <p className="text-xs text-[#9CA3AF] truncate">
+              <p className="text-xs text-[var(--ag-text-secondary)] truncate">
                 {`${window.location.origin}/portfolio/${user.username}`}
               </p>
             </div>
@@ -575,7 +575,7 @@ export function PortfolioPage() {
                 href={`/portfolio/${user.username}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[44px] text-[#8B5CF6] border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[#8B5CF6]/10"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-colors min-h-[44px] text-[var(--ag-violet)] border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[#8B5CF6]/10"
               >
                 <ExternalLink className="w-4 h-4" />
                 View Live
@@ -666,7 +666,7 @@ export function PortfolioPage() {
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="Full-Stack Developer & AI Enthusiast"
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                 />
               </div>
               <div>
@@ -689,23 +689,23 @@ export function PortfolioPage() {
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                   placeholder="Tell visitors about yourself..."
-                  className="w-full p-3 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                  className="w-full p-3 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[120px] resize-none focus:outline-none focus:border-[var(--ag-violet)]"
                 />
               </div>
               {/* 59.9: SEO meta description */}
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-1.5 block flex items-center gap-1.5">
                   SEO Meta Description
-                  <span className="text-xs text-[#4B5563]">(shown in Google search results, max 160 chars)</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">(shown in Google search results, max 160 chars)</span>
                 </label>
                 <textarea
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value.slice(0, 160))}
                   placeholder="A brief description of your portfolio for search engines..."
                   data-testid="meta-description-input"
-                  className="w-full p-3 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[60px] resize-none focus:outline-none focus:border-[#8B5CF6] text-sm"
+                  className="w-full p-3 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[60px] resize-none focus:outline-none focus:border-[var(--ag-violet)] text-sm"
                 />
-                <p className="text-xs text-[#4B5563] mt-1 text-right">{metaDescription.length}/160</p>
+                <p className="text-xs text-[var(--ag-text-muted)] mt-1 text-right">{metaDescription.length}/160</p>
               </div>
               <div>
                 <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Avatar URL</label>
@@ -713,7 +713,7 @@ export function PortfolioPage() {
                   value={avatar}
                   onChange={(e) => setAvatar(e.target.value)}
                   placeholder="https://example.com/avatar.jpg or initials"
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                 />
               </div>
               <div>
@@ -735,7 +735,7 @@ export function PortfolioPage() {
                       }`}
                     >
                       {/* Visual preview thumbnail */}
-                      <div className={`w-full h-16 rounded-lg overflow-hidden border ${layout === opt.id ? 'border-[rgba(139,92,246,0.15)]' : 'border-[rgba(139,92,246,0.08)]'} bg-[#06061a] flex flex-col gap-1 p-2`}>
+                      <div className={`w-full h-16 rounded-lg overflow-hidden border ${layout === opt.id ? 'border-[rgba(139,92,246,0.15)]' : 'border-[rgba(139,92,246,0.08)]'} bg-[var(--ag-bg-base)] flex flex-col gap-1 p-2`}>
                         {opt.id === 'minimal' && (
                           <>
                             {/* Minimal: centered avatar + text lines */}
@@ -802,7 +802,7 @@ export function PortfolioPage() {
                       key={opt.id}
                       className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#6B7280]/20 text-[var(--ag-text-muted)]/50 opacity-60 cursor-not-allowed"
                     >
-                      <div className="w-full h-12 rounded-lg bg-[#06061a] border border-[#6B7280]/10 flex items-center justify-center">
+                      <div className="w-full h-12 rounded-lg bg-[var(--ag-bg-base)] border border-[#6B7280]/10 flex items-center justify-center">
                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ag-text-muted)]/40">Soon</span>
                       </div>
                       <div className="text-center">
@@ -861,7 +861,7 @@ export function PortfolioPage() {
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   placeholder="e.g. TypeScript, React, Docker..."
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                 />
                 <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
                   <Plus className="w-4 h-4 mr-2" />Add
@@ -871,7 +871,7 @@ export function PortfolioPage() {
               {skills.length === 0 ? (
                 <div className="text-center py-8">
                   <Code2 className="w-10 h-10 text-[#EC4899]/30 mx-auto mb-3" />
-                  <p className="text-[#9CA3AF]">No skills added yet</p>
+                  <p className="text-[var(--ag-text-secondary)]">No skills added yet</p>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -906,7 +906,7 @@ export function PortfolioPage() {
               {/* Inline project form */}
               {editingProject && (
                 <div className="grid md:grid-cols-[1fr_280px] gap-4">
-                <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] space-y-3">
+                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Name *</label>
@@ -943,7 +943,7 @@ export function PortfolioPage() {
                       value={editingProject.description}
                       onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                       placeholder="What does this project do?"
-                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[var(--ag-violet)]"
                     />
                   </div>
                   <div>
@@ -987,7 +987,7 @@ export function PortfolioPage() {
                 {/* 55.3: Inline live preview */}
                 <div className="hidden md:flex flex-col gap-2">
                   <p className="text-xs text-[var(--ag-text-muted)] font-medium">Live Preview</p>
-                  <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[#06061a] overflow-hidden">
+                  <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-base)] overflow-hidden">
                     {editingProject.imageUrl && (
                       <img
                         src={editingProject.imageUrl}
@@ -1043,7 +1043,7 @@ export function PortfolioPage() {
                     setDraggedIndex(null);
                   }}
                   onDragEnd={() => setDraggedIndex(null)}
-                  className={`p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)] group hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-200 press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                  className={`p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] group hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-200 press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -1102,7 +1102,7 @@ export function PortfolioPage() {
             <div className="space-y-4">
               {/* Inline milestone form */}
               {editingMilestone && (
-                <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] space-y-3">
+                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Title *</label>
@@ -1129,7 +1129,7 @@ export function PortfolioPage() {
                       value={editingMilestone.description}
                       onChange={(e) => setEditingMilestone({ ...editingMilestone, description: e.target.value })}
                       placeholder="What happened and why it matters"
-                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                      className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[80px] resize-none focus:outline-none focus:border-[var(--ag-violet)]"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -1206,12 +1206,12 @@ export function PortfolioPage() {
                 { key: 'email' as const, label: 'Email', placeholder: 'you@example.com' },
               ]).map((field) => (
                 <div key={field.key}>
-                  <label className="text-sm text-[#9CA3AF] mb-2 block">{field.label}</label>
+                  <label className="text-sm text-[var(--ag-text-secondary)] mb-2 block">{field.label}</label>
                   <Input
                     value={social[field.key] || ''}
                     onChange={(e) => setSocial({ ...social, [field.key]: e.target.value })}
                     placeholder={field.placeholder}
-                    className="bg-[#06061a] border-[rgba(139,92,246,0.15)] text-[#F4F6FF]"
+                    className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                   />
                 </div>
               ))}
@@ -1227,7 +1227,7 @@ export function PortfolioPage() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. Make my bio more professional, add a React project, rewrite my headline to focus on AI engineering..."
-                className="w-full p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] min-h-[140px] resize-none focus:outline-none focus:border-[#8B5CF6]"
+                className="w-full p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] min-h-[140px] resize-none focus:outline-none focus:border-[var(--ag-violet)]"
               />
               <Button
                 onClick={handleAiEdit}
@@ -1240,7 +1240,7 @@ export function PortfolioPage() {
                   <><Sparkles className="w-4 h-4 mr-2" />Apply AI Edit</>
                 )}
               </Button>
-              <p className="text-xs text-[#9CA3AF] text-center">
+              <p className="text-xs text-[var(--ag-text-secondary)] text-center">
                 Changes are applied locally -- review them in the other tabs, then click Save Changes to persist.
               </p>
             </div>
@@ -1261,20 +1261,20 @@ export function PortfolioPage() {
                     disabled={personalitySaving}
                     className={`flex-1 min-w-[100px] flex flex-col items-center gap-2 px-4 py-4 rounded-xl border transition-all focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                       portfolioPersonality === p.id
-                        ? 'border-[#8B5CF6]/60 bg-[#8B5CF6]/10'
-                        : 'border-[#8B5CF6]/20 bg-[#06061a] hover:border-[#8B5CF6]/40'
+                        ? 'border-[var(--ag-violet)]/60 bg-[#8B5CF6]/10'
+                        : 'border-[var(--ag-violet)]/20 bg-[var(--ag-bg-base)] hover:border-[var(--ag-violet)]/40'
                     }`}
                   >
                     <span className="text-2xl">{p.emoji}</span>
                     <span className="text-sm font-medium text-[var(--ag-text-primary)]">{p.label}</span>
                     <span className="text-xs text-[var(--ag-text-muted)]">{p.desc}</span>
                     {portfolioPersonality === p.id && !personalitySaving && (
-                      <span className="text-xs text-[#8B5CF6]">
+                      <span className="text-xs text-[var(--ag-violet)]">
                         {personalitySaved ? 'Saved!' : 'Active'}
                       </span>
                     )}
                     {personalitySaving && portfolioPersonality === p.id && (
-                      <Loader2 className="w-3 h-3 animate-spin text-[#8B5CF6]" />
+                      <Loader2 className="w-3 h-3 animate-spin text-[var(--ag-violet)]" />
                     )}
                   </button>
                 ))}
@@ -1306,7 +1306,7 @@ export function PortfolioPage() {
                   {suggestions.map((suggestion) => (
                     <div
                       key={suggestion.id}
-                      className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all"
+                      className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -1338,7 +1338,7 @@ export function PortfolioPage() {
                   ))}
                 </div>
               )}
-              <p className="text-xs text-[#9CA3AF] text-center pt-4">
+              <p className="text-xs text-[var(--ag-text-secondary)] text-center pt-4">
                 Suggestions are based on memories from your agent conversations. Review before applying.
               </p>
             </div>
@@ -1351,17 +1351,17 @@ export function PortfolioPage() {
               <div className="flex items-center gap-2 flex-wrap justify-end mb-4">
                   {/* 66.6: Date range filter for export */}
                   <input type="date" value={analyticsFrom} onChange={(e) => setAnalyticsFrom(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] h-8 min-h-[44px]"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] h-8 min-h-[44px]"
                     aria-label="Analytics export from date" />
-                  <span className="text-xs text-[#9CA3AF]">--</span>
+                  <span className="text-xs text-[var(--ag-text-secondary)]">--</span>
                   <input type="date" value={analyticsTo} onChange={(e) => setAnalyticsTo(e.target.value)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-[#06061a] border border-[rgba(139,92,246,0.15)] text-[#F4F6FF] h-8 min-h-[44px]"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] h-8 min-h-[44px]"
                     aria-label="Analytics export to date" />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleExportCsv}
-                    className="border-[rgba(139,92,246,0.15)] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 shrink-0 min-h-[44px]"
+                    className="border-[rgba(139,92,246,0.15)] text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 shrink-0 min-h-[44px]"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export CSV
@@ -1370,7 +1370,7 @@ export function PortfolioPage() {
             <div className="space-y-6">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
+                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-[#EC4899]" />
                     <span className="text-xs text-[var(--ag-text-muted)]">Total Views</span>
@@ -1380,7 +1380,7 @@ export function PortfolioPage() {
                   </div>
                   <div className="text-xs text-[var(--ag-text-muted)]">all time</div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
+                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-[#00FF88]" />
                     <span className="text-xs text-[var(--ag-text-muted)]">Views This Week</span>
@@ -1423,7 +1423,7 @@ export function PortfolioPage() {
                       <YAxis hide allowDecimals={false} />
                       <Tooltip
                         contentStyle={{ background: '#0C0C18', border: '1px solid rgba(139,92,246,0.15)', borderRadius: 8 }}
-                        labelStyle={{ color: '#6B7280', fontSize: 11 }}
+                        labelStyle={{ color: 'var(--ag-text-muted)', fontSize: 11 }}
                         itemStyle={{ color: '#EC4899' }}
                       />
                       <Bar dataKey="count" fill="#EC4899" radius={[3, 3, 0, 0]} name="Views" />
@@ -1454,7 +1454,7 @@ export function PortfolioPage() {
                     href={`/portfolio/${user.username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-[#8B5CF6] hover:text-[#7C3AED] transition-colors min-h-[44px]"
+                    className="flex items-center gap-2 text-sm text-[var(--ag-violet)] hover:text-[#7C3AED] transition-colors min-h-[44px]"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Open in new tab
@@ -1463,7 +1463,7 @@ export function PortfolioPage() {
               )}
               {user?.username ? (
                 <div className="relative w-full rounded-b-xl overflow-hidden border-t border-[rgba(139,92,246,0.08)] shadow-[0_0_20px_rgba(0,240,255,0.06)]">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-[#06061a] border-b border-[rgba(139,92,246,0.08)]">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[var(--ag-bg-base)] border-b border-[rgba(139,92,246,0.08)]">
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-[#FF6161]/40" />
                       <div className="w-3 h-3 rounded-full bg-[#FFB800]/40" />
@@ -1533,10 +1533,10 @@ export function PortfolioPage() {
           <div className="glass-card-v2 border border-[rgba(139,92,246,0.15)] rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-[#EC4899]" />
-              <h3 className="text-lg font-semibold text-[#F4F6FF]">Generated {generateTarget.field}</h3>
+              <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Generated {generateTarget.field}</h3>
             </div>
-            <div className="p-4 rounded-xl bg-[#06061a] border border-[rgba(139,92,246,0.08)]">
-              <p className="text-[#F4F6FF] whitespace-pre-wrap">{generatedPreview}</p>
+            <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+              <p className="text-[var(--ag-text-primary)] whitespace-pre-wrap">{generatedPreview}</p>
             </div>
             <div className="flex gap-3">
               <Button

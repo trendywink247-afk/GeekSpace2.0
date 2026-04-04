@@ -475,7 +475,7 @@ export function ConnectionsPage() {
         return (
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#9CA3AF]" />
-            <span className="text-xs text-[#9CA3AF]">Not connected</span>
+            <span className="text-xs text-[var(--ag-text-secondary)]">Not connected</span>
           </span>
         );
     }
@@ -511,7 +511,7 @@ export function ConnectionsPage() {
               onClick={handleGenerateInvite}
               disabled={inviteLoading}
               variant="outline"
-              className="border-[rgba(139,92,246,0.15)] text-[#8B5CF6] hover:bg-[#8B5CF6]/10 min-h-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px]"
             >
               {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
               Invite
@@ -536,8 +536,8 @@ export function ConnectionsPage() {
                 <Plug className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{connectedCount}</div>
-                <div className="text-xs text-[#9CA3AF]">Connected</div>
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{connectedCount}</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">Connected</div>
               </div>
             </div>
         </SectionCard>
@@ -546,11 +546,11 @@ export function ConnectionsPage() {
         <SectionCard padding="sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#00F0FF]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[#00F0FF]" />
+                <Activity className="w-5 h-5 text-[var(--ag-cyan)]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{totalRequests}</div>
-                <div className="text-xs text-[#9CA3AF]">Requests Today</div>
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{totalRequests}</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">Requests Today</div>
               </div>
             </div>
         </SectionCard>
@@ -562,8 +562,8 @@ export function ConnectionsPage() {
                 <RefreshCw className="w-5 h-5 text-[#FFB800]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">{avgHealth}%</div>
-                <div className="text-xs text-[#9CA3AF]">Avg Health</div>
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{avgHealth}%</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">Avg Health</div>
               </div>
             </div>
         </SectionCard>
@@ -575,8 +575,8 @@ export function ConnectionsPage() {
                 <Shield className="w-5 h-5 text-[#EC4899]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">100%</div>
-                <div className="text-xs text-[#9CA3AF]">Secure</div>
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">100%</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">Secure</div>
               </div>
             </div>
         </SectionCard>
@@ -585,25 +585,25 @@ export function ConnectionsPage() {
 
       {/* Invite Link Card (27.3) */}
       {inviteUrl && (
-        <SectionCard className="!border-[#8B5CF6]/20 relative">
+        <SectionCard className="!border-[var(--ag-violet)]/20 relative">
             <button
               onClick={() => setInviteUrl(null)}
-              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#F4F6FF] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Dismiss invite card"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/20 flex items-center justify-center">
-                <Link className="w-5 h-5 text-[#8B5CF6]" />
+                <Link className="w-5 h-5 text-[var(--ag-violet)]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Invite Link Generated</h3>
-                <p className="text-xs text-[#9CA3AF]">Valid for 7 days -- share with anyone to connect</p>
+                <h3 className="font-semibold text-[var(--ag-text-primary)]">Invite Link Generated</h3>
+                <p className="text-xs text-[var(--ag-text-secondary)]">Valid for 7 days -- share with anyone to connect</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-[#06061a] rounded-lg px-3 py-2 text-xs text-[#9CA3AF] font-mono truncate border border-[rgba(139,92,246,0.08)]">
+              <div className="flex-1 bg-[var(--ag-bg-base)] rounded-lg px-3 py-2 text-xs text-[var(--ag-text-secondary)] font-mono truncate border border-[rgba(139,92,246,0.08)]">
                 {inviteUrl}
               </div>
               <Button
@@ -620,7 +620,7 @@ export function ConnectionsPage() {
       {/* Telegram Link Wizard */}
       {telegramDialog && (
         <SectionCard className="!border-[#0088cc]/30 relative" padding="lg">
-            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#F4F6FF] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close Telegram dialog">
+            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close Telegram dialog">
               <X className="w-5 h-5" />
             </button>
 
@@ -629,23 +629,23 @@ export function ConnectionsPage() {
                 <Send className="w-5 h-5 text-[#0088cc]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Connect Telegram</h3>
-                <p className="text-xs text-[#9CA3AF]">Chat with your agent on Telegram</p>
+                <h3 className="font-semibold text-[var(--ag-text-primary)]">Connect Telegram</h3>
+                <p className="text-xs text-[var(--ag-text-secondary)]">Chat with your agent on Telegram</p>
               </div>
             </div>
 
             {telegramStep === 'generating' && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
-                <p className="text-sm text-[#9CA3AF]">Setting up your connection...</p>
+                <p className="text-sm text-[var(--ag-text-secondary)]">Setting up your connection...</p>
               </div>
             )}
 
             {telegramStep === 'open-bot' && telegramLink?.deepLink && (
               <div className="space-y-4">
-                <div className="bg-[#06061a] rounded-lg p-4 border border-[rgba(139,92,246,0.08)]">
-                  <p className="text-sm text-[#F4F6FF] font-medium mb-2">Step 1: Open Telegram</p>
-                  <p className="text-xs text-[#9CA3AF]">Click below to open our bot, then send the start command.</p>
+                <div className="bg-[var(--ag-bg-base)] rounded-lg p-4 border border-[rgba(139,92,246,0.08)]">
+                  <p className="text-sm text-[var(--ag-text-primary)] font-medium mb-2">Step 1: Open Telegram</p>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">Click below to open our bot, then send the start command.</p>
                 </div>
                 <a href={telegramLink.deepLink} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium min-h-[44px]">
@@ -659,7 +659,7 @@ export function ConnectionsPage() {
             {telegramStep === 'success' && (
               <div className="flex flex-col items-center gap-4 py-6">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
-                <p className="text-sm text-[#F4F6FF] font-medium">Telegram connected!</p>
+                <p className="text-sm text-[var(--ag-text-primary)] font-medium">Telegram connected!</p>
                 <Button className="bg-[#00FF88] hover:bg-[#00FF88]/80 text-[#06061a] min-h-[44px]" onClick={closeTelegramDialog}>
                   Done
                 </Button>
@@ -669,18 +669,18 @@ export function ConnectionsPage() {
             {telegramStep === 'error' && (
               <div className="text-center py-6">
                 <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Connection failed</p>
-                <p className="text-xs text-[#9CA3AF] mt-1">{telegramLink?.message}</p>
+                <p className="text-sm text-[var(--ag-text-primary)]">Connection failed</p>
+                <p className="text-xs text-[var(--ag-text-secondary)] mt-1">{telegramLink?.message}</p>
               </div>
             )}
 
             {telegramStep === 'timeout' && (
               <div className="text-center py-6">
                 <AlertTriangle className="w-12 h-12 text-[#F59E0B] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Still waiting -- try clicking the bot link again</p>
-                <p className="text-xs text-[#9CA3AF] mt-1">No response received after 30 attempts (~2.5 min)</p>
+                <p className="text-sm text-[var(--ag-text-primary)]">Still waiting -- try clicking the bot link again</p>
+                <p className="text-xs text-[var(--ag-text-secondary)] mt-1">No response received after 30 attempts (~2.5 min)</p>
                 <Button
-                  className="mt-4 bg-[rgba(12,12,30,0.6)] hover:bg-[rgba(139,92,246,0.15)] text-[#F4F6FF] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
+                  className="mt-4 bg-[rgba(12,12,30,0.6)] hover:bg-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
                   onClick={() => { setTelegramPollAttempts(0); setPolling(true); setTelegramStep('open-bot'); }}
                 >
                   Retry
@@ -694,7 +694,7 @@ export function ConnectionsPage() {
       {/* Email Dialog */}
       {emailDialog && (
         <SectionCard className="!border-[#00FF88]/30 relative" padding="lg">
-            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#F4F6FF] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close email dialog">
+            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close email dialog">
               <X className="w-5 h-5" />
             </button>
 
@@ -703,15 +703,15 @@ export function ConnectionsPage() {
                 <Mail className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#F4F6FF]">Email Notifications</h3>
-                <p className="text-xs text-[#9CA3AF]">Get reminders and briefings via email</p>
+                <h3 className="font-semibold text-[var(--ag-text-primary)]">Email Notifications</h3>
+                <p className="text-xs text-[var(--ag-text-secondary)]">Get reminders and briefings via email</p>
               </div>
             </div>
 
             {emailSaved ? (
               <div className="text-center py-4">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F6FF]">Email notifications enabled!</p>
+                <p className="text-sm text-[var(--ag-text-primary)]">Email notifications enabled!</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -720,7 +720,7 @@ export function ConnectionsPage() {
                   placeholder="you@example.com"
                   value={emailAddress}
                   onChange={(e) => setEmailAddress(e.target.value)}
-                  className="bg-[#06061a] border-[rgba(139,92,246,0.08)] text-[#F4F6FF]"
+                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary)]"
                 />
                 <Button
                   className="w-full bg-[#00FF88] hover:bg-[#00FF88]/80 text-[#06061a] min-h-[44px]"
@@ -747,8 +747,8 @@ export function ConnectionsPage() {
                   ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
                   : opt === 'disconnected'
                   ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
-                  : 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
-                : 'border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:border-[rgba(139,92,246,0.15)] hover:text-[#F4F6FF]'
+                  : 'bg-[#00F0FF]/15 border-[var(--ag-cyan)]/50 text-[var(--ag-cyan)]'
+                : 'border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary)]'
             }`}
           >
             {opt === 'all' ? `All (${integrations.length})` : opt === 'connected' ? `Connected (${connectedCount})` : `Disconnected (${integrations.length - connectedCount})`}
@@ -760,10 +760,10 @@ export function ConnectionsPage() {
       <div id="integration-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* 46.3: Empty state when no integrations are available */}
         {filteredIntegrations.length === 0 && (
-          <div className="md:col-span-2 text-center py-12 text-[#9CA3AF]">
-            <Plug className="w-12 h-12 mx-auto mb-4 text-[#9CA3AF]/40" />
-            <p className="text-lg font-medium mb-2 text-[#F4F6FF]">{statusFilter === 'all' ? 'No integrations connected yet' : `No ${statusFilter} integrations`}</p>
-            <p className="text-sm text-[#9CA3AF]">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
+          <div className="md:col-span-2 text-center py-12 text-[var(--ag-text-secondary)]">
+            <Plug className="w-12 h-12 mx-auto mb-4 text-[var(--ag-text-secondary)]/40" />
+            <p className="text-lg font-medium mb-2 text-[var(--ag-text-primary)]">{statusFilter === 'all' ? 'No integrations connected yet' : `No ${statusFilter} integrations`}</p>
+            <p className="text-sm text-[var(--ag-text-secondary)]">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
           </div>
         )}
         {filteredIntegrations.map((connection, idx) => {
@@ -777,7 +777,7 @@ export function ConnectionsPage() {
             <SectionCard
               className={`group h-full ${
                 isTelegram
-                  ? '!border-[#00F0FF]/30 ring-1 ring-[#00F0FF]/10'
+                  ? '!border-[var(--ag-cyan)]/30 ring-1 ring-[#00F0FF]/10'
                   : connection.status === 'connected'
                   ? '!border-[#00FF88]/15'
                   : ''
@@ -787,10 +787,10 @@ export function ConnectionsPage() {
               {/* Telegram: Recommended badge */}
               {isTelegram && (
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-[#00F0FF]/15 text-[#00F0FF] border border-[#00F0FF]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
+                  <Badge className="bg-[#00F0FF]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
                     Recommended
                   </Badge>
-                  <span className="text-[10px] text-[#9CA3AF]">Primary notification channel</span>
+                  <span className="text-[10px] text-[var(--ag-text-secondary)]">Primary notification channel</span>
                 </div>
               )}
                 <div
@@ -805,10 +805,10 @@ export function ConnectionsPage() {
                       <Icon className="w-6 h-6" style={{ color }} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-[#F4F6FF]">{connection.name}</h3>
+                      <h3 className="font-semibold text-[var(--ag-text-primary)]">{connection.name}</h3>
                       {/* 42.5: Last sync timestamp */}
                       {connection.status === 'connected' && connection.lastSync && (
-                        <p className="text-[11px] text-[#9CA3AF] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
+                        <p className="text-[11px] text-[var(--ag-text-secondary)] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
                       )}
                       {/* Status dot indicator with health-aware pulse */}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -826,7 +826,7 @@ export function ConnectionsPage() {
                         )}
                         {/* 62.7: Ping latency badge */}
                         {connection.status === 'connected' && pingLatency[connection.type] != null && (
-                          <span className="text-xs text-[#00F0FF] font-mono">{pingLatency[connection.type]}ms</span>
+                          <span className="text-xs text-[var(--ag-cyan)] font-mono">{pingLatency[connection.type]}ms</span>
                         )}
                       </div>
                     </div>
@@ -837,7 +837,7 @@ export function ConnectionsPage() {
                       variant="outline"
                       size={isMobile ? 'default' : 'sm'}
                       onClick={(e) => { e.stopPropagation(); /* managed via switch still, but show subtle button */ }}
-                      className="border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] hover:border-[rgba(139,92,246,0.3)] min-h-[44px] shrink-0"
+                      className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[rgba(139,92,246,0.3)] min-h-[44px] shrink-0"
                     >
                       Manage
                     </Button>
@@ -849,7 +849,7 @@ export function ConnectionsPage() {
                       <Button
                         size="sm"
                         disabled
-                        className="bg-[#9CA3AF]/20 text-[#9CA3AF] cursor-not-allowed opacity-60 min-h-[44px]"
+                        className="bg-[#9CA3AF]/20 text-[var(--ag-text-secondary)] cursor-not-allowed opacity-60 min-h-[44px]"
                       >
                         <Plug className="w-3.5 h-3.5 mr-1.5" />
                         Connect
@@ -873,21 +873,21 @@ export function ConnectionsPage() {
 
                 {isExpanded && (
                   <>
-                    <p className="text-sm text-[#9CA3AF] mb-4">
+                    <p className="text-sm text-[var(--ag-text-secondary)] mb-4">
                       {connection.description}
                     </p>
 
                     {connection.status === 'connected' && (
                       <div className="mb-4">
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-[#9CA3AF]">Health</span>
+                          <span className="text-[var(--ag-text-secondary)]">Health</span>
                           <div className="flex items-center gap-3">
-                            <span className="text-[#F4F6FF]">{connection.health}%</span>
+                            <span className="text-[var(--ag-text-primary)]">{connection.health}%</span>
                             {/* 62.7: Ping button */}
                             <button
                               onClick={() => void handlePing(connection.type)}
                               disabled={pinging[connection.type]}
-                              className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00F0FF]/80 disabled:opacity-50 transition-colors min-h-[28px]"
+                              className="flex items-center gap-1 text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)]/80 disabled:opacity-50 transition-colors min-h-[28px]"
                               title="Test latency"
                             >
                               {pinging[connection.type] ? (
@@ -898,7 +898,7 @@ export function ConnectionsPage() {
                             </button>
                           </div>
                         </div>
-                        <div className="h-1.5 bg-[#06061a] rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--ag-bg-base)] rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
@@ -912,7 +912,7 @@ export function ConnectionsPage() {
 
                     <div className="flex flex-wrap gap-2 mb-4">
                       {connection.features.map((feature, i) => (
-                        <Badge key={i} variant="outline" className="border-[rgba(139,92,246,0.08)] text-[#9CA3AF] text-xs">
+                        <Badge key={i} variant="outline" className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] text-xs">
                           {feature}
                         </Badge>
                       ))}
@@ -922,7 +922,7 @@ export function ConnectionsPage() {
                     {connection.type === 'whatsapp' && connection.status !== 'connected' && (
                       <div className="mb-4 p-3 rounded-xl bg-[#F59E0B]/5 border border-[#F59E0B]/20">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs text-[#9CA3AF]">
+                          <p className="text-xs text-[var(--ag-text-secondary)]">
                             WhatsApp integration is under development. We'll let you know when it's ready.
                           </p>
                           <button
@@ -945,7 +945,7 @@ export function ConnectionsPage() {
                             size="sm"
                             onClick={() => void handleTestConnection(connection.type)}
                             disabled={testing[connection.type]}
-                            className="border-[rgba(139,92,246,0.15)] text-[#00F0FF] hover:bg-[#00F0FF]/10 text-xs min-h-[44px]"
+                            className="border-[rgba(139,92,246,0.15)] text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 text-xs min-h-[44px]"
                             data-testid={`test-connection-${connection.type}`}
                           >
                             {testing[connection.type] ? (
@@ -964,7 +964,7 @@ export function ConnectionsPage() {
                                 <WifiOff className="w-3 h-3" />
                               )}
                               {testResult[connection.type]!.message}
-                              <span className="text-[#9CA3AF] font-normal ml-1">at {testResult[connection.type]!.at}</span>
+                              <span className="text-[var(--ag-text-secondary)] font-normal ml-1">at {testResult[connection.type]!.at}</span>
                             </span>
                           )}
                         </div>
@@ -979,8 +979,8 @@ export function ConnectionsPage() {
                             <Send className="w-5 h-5 text-[#0088cc]" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#F4F6FF]">@{telegramUsername}</p>
-                            <p className="text-xs text-[#9CA3AF]">Open in Telegram to chat with your agent</p>
+                            <p className="text-sm font-medium text-[var(--ag-text-primary)]">@{telegramUsername}</p>
+                            <p className="text-xs text-[var(--ag-text-secondary)]">Open in Telegram to chat with your agent</p>
                           </div>
                           <a
                             href={`https://t.me/${telegramUsername}`}
@@ -1008,7 +1008,7 @@ export function ConnectionsPage() {
                         {/* Expandable header */}
                         <button
                           onClick={() => setCustomBotExpanded(!customBotExpanded)}
-                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[#06060B] border border-[#00F0FF]/20 hover:border-[#00F0FF]/40 transition-all group/cbot"
+                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-cyan)]/20 hover:border-[var(--ag-cyan)]/40 transition-all group/cbot"
                         >
                           <div className="flex items-center gap-2.5">
                             <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
@@ -1028,7 +1028,7 @@ export function ConnectionsPage() {
 
                         {/* Expanded content */}
                         {customBotExpanded && (
-                          <div className="mt-3 p-4 rounded-lg bg-[#06060B] border border-[#00F0FF]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div className="mt-3 p-4 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-cyan)]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
                             {/* Already connected state */}
                             {customBotStatus === 'connected' && customBotInfo ? (
                               <div className="space-y-3">
@@ -1077,7 +1077,7 @@ export function ConnectionsPage() {
                                         setCustomBotError(null);
                                       }
                                     }}
-                                    className="bg-[#0C0C18] border-[#00F0FF]/20 text-[var(--ag-text-primary)] font-mono text-sm placeholder:text-[#8888AA]/50 min-h-[44px]"
+                                    className="bg-[#0C0C18] border-[var(--ag-cyan)]/20 text-[var(--ag-text-primary)] font-mono text-sm placeholder:text-[#8888AA]/50 min-h-[44px]"
                                   />
                                 </div>
 
@@ -1134,7 +1134,7 @@ export function ConnectionsPage() {
                           <span className="text-[#0088cc] font-medium">@{telegramUsername}</span>
                         )}
                         {connection.type === 'telegram' && connection.status === 'connected' && telegramLastPing && (
-                          <span className="text-[#00F0FF]">Last message: {timeAgo(telegramLastPing)}</span>
+                          <span className="text-[var(--ag-cyan)]">Last message: {timeAgo(telegramLastPing)}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
@@ -1160,17 +1160,17 @@ export function ConnectionsPage() {
       {/* 66.4: Integration event log */}
       {integrationEvents.length > 0 && (
         <SectionCard>
-            <h4 className="text-sm font-medium text-[#F4F6FF] mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#00F0FF]" />
+            <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[var(--ag-cyan)]" />
               Recent Integration Events
             </h4>
             <div className="space-y-2">
               {integrationEvents.slice(0, 5).map((ev) => (
                 <div key={ev.id} className="flex items-center gap-3 text-xs">
                   <div className="w-2 h-2 rounded-full bg-[#00F0FF] flex-shrink-0" />
-                  <span className="text-[#F4F6FF] flex-1 truncate">{ev.action}</span>
-                  {ev.details && <span className="text-[#9CA3AF] truncate max-w-[120px]">{ev.details}</span>}
-                  <span className="text-[#9CA3AF] flex-shrink-0">{timeAgo(ev.created_at)}</span>
+                  <span className="text-[var(--ag-text-primary)] flex-1 truncate">{ev.action}</span>
+                  {ev.details && <span className="text-[var(--ag-text-secondary)] truncate max-w-[120px]">{ev.details}</span>}
+                  <span className="text-[var(--ag-text-secondary)] flex-shrink-0">{timeAgo(ev.created_at)}</span>
                 </div>
               ))}
             </div>
@@ -1180,10 +1180,10 @@ export function ConnectionsPage() {
       {/* Privacy Note */}
       <SectionCard className="!bg-gradient-to-r from-[#00F0FF]/5 to-transparent">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[#00F0FF] flex-shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-[#F4F6FF] mb-1">Privacy First</h4>
-              <p className="text-xs text-[#9CA3AF]">
+              <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Privacy First</h4>
+              <p className="text-xs text-[var(--ag-text-secondary)]">
                 Your data is encrypted and never shared. You can disconnect any service at any time.
               </p>
             </div>

@@ -575,11 +575,11 @@ export function LogoShowcase() {
         return (
           <div key={logo.label} className="flex flex-col items-center gap-3">
             {/* Large preview (64px) */}
-            <div className="w-20 h-20 rounded-2xl bg-[#06061a] border border-white/10 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-2xl bg-[var(--ag-bg-base)] border border-white/10 flex items-center justify-center">
               <Logo size={64} />
             </div>
             {/* Small preview (24px) — nav size */}
-            <div className="w-10 h-10 rounded-lg bg-[#06061a] border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-[var(--ag-bg-base)] border border-white/10 flex items-center justify-center">
               <Logo size={24} />
             </div>
             <span className="text-xs text-white/60 font-medium">

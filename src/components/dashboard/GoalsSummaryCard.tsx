@@ -42,17 +42,17 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
     <SectionCard>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-[#00F0FF]" />
+          <Target className="w-4 h-4 text-[var(--ag-cyan)]" />
           <span className="text-sm font-semibold text-[#E8E8F0]">Goals</span>
           {stats && stats.active > 0 && (
-            <span className="text-xs text-[#6B7280]">
+            <span className="text-xs text-[var(--ag-text-muted)]">
               {stats.active} active · {Math.round(stats.completionRate || 0)}% success
             </span>
           )}
         </div>
         <button
           onClick={() => onNavigate?.('goals')}
-          className="flex items-center gap-1 text-xs text-[#00F0FF] hover:text-[#00D4E0] transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--ag-cyan)] hover:text-[#00D4E0] transition-colors"
         >
           View all <ArrowRight className="w-3 h-3" />
         </button>
@@ -61,11 +61,11 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
       {goals.length === 0 ? (
         <div className="flex items-center gap-4 rounded-xl border border-dashed border-white/10 p-4">
           <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-[#8B5CF6]" />
+            <Sparkles className="w-5 h-5 text-[var(--ag-violet)]" />
           </div>
           <div className="flex-1">
             <p className="text-sm text-[#E8E8F0] font-medium">Set your first goal</p>
-            <p className="text-xs text-[#6B7280]">AI will plan the steps and help you achieve it</p>
+            <p className="text-xs text-[var(--ag-text-muted)]">AI will plan the steps and help you achieve it</p>
           </div>
           <button
             onClick={() => onNavigate?.('goals')}
@@ -97,9 +97,9 @@ export function GoalsSummaryCard({ onNavigate }: Props) {
               </svg>
               <div className="flex-1 min-w-0">
                 <span className="text-sm text-[#E8E8F0] truncate block">{goal.title}</span>
-                <span className="text-xs text-[#6B7280]">{goal.progress}% complete</span>
+                <span className="text-xs text-[var(--ag-text-muted)]">{goal.progress}% complete</span>
               </div>
-              <TrendingUp className="w-3.5 h-3.5 text-[#00F0FF] flex-shrink-0" />
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--ag-cyan)] flex-shrink-0" />
             </div>
           ))}
         </div>

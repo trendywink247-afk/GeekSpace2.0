@@ -61,11 +61,11 @@ interface CommandPaletteProps {
 type PaletteTab = 'commands' | 'search';
 
 const DATA_TYPE_ICONS: Record<string, React.ReactNode> = {
-  note:         <FileText      className="w-4 h-4 text-[#00F0FF]" />,
+  note:         <FileText      className="w-4 h-4 text-[var(--ag-cyan)]" />,
   reminder:     <Bell          className="w-4 h-4 text-[#FFB800]" />,
   habit:        <Target        className="w-4 h-4 text-[#00FF88]" />,
   memory:       <Brain         className="w-4 h-4 text-[#BF5FFF]" />,
-  conversation: <MessageSquare className="w-4 h-4 text-[#8B5CF6]" />,
+  conversation: <MessageSquare className="w-4 h-4 text-[var(--ag-violet)]" />,
 };
 
 const DATA_TYPE_LABELS: Record<string, string> = {
@@ -514,8 +514,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             onClick={() => { setTab('commands'); setSearch(''); }}
             className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors ${
               tab === 'commands'
-                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                ? 'text-[var(--ag-cyan)] border-b-2 border-[#00F0FF]'
+                : 'text-[var(--ag-text-muted)] hover:text-[#E8E8F0]'
             }`}
           >
             <Command className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />
@@ -525,8 +525,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             onClick={() => { setTab('search'); setSearch(''); setDataResults([]); }}
             className={`flex-1 py-2.5 text-xs font-medium tracking-wide transition-colors flex items-center justify-center gap-1.5 ${
               tab === 'search'
-                ? 'text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                : 'text-[#6B7280] hover:text-[#E8E8F0]'
+                ? 'text-[var(--ag-cyan)] border-b-2 border-[#00F0FF]'
+                : 'text-[var(--ag-text-muted)] hover:text-[#E8E8F0]'
             }`}
           >
             <Search className="w-3 h-3" />
@@ -536,7 +536,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         {/* Header input */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-[#00F0FF]/10">
-          <Sparkles className="w-5 h-5 text-[#00F0FF]/50 flex-shrink-0" />
+          <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]/50 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -544,15 +544,15 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-[#F4F6FF] placeholder-[#4B5563] outline-none text-lg"
+            className="flex-1 bg-transparent text-[var(--ag-text-primary)] placeholder-[#4B5563] outline-none text-lg"
           />
           <div className="hidden sm:flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 text-[10px] bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280] font-mono">
+            <kbd className="px-1.5 py-0.5 text-[10px] bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[var(--ag-text-muted)] font-mono">
               TAB
             </kbd>
             <span className="text-[10px] text-[#4B5563]">switch</span>
           </div>
-          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280] font-mono">
+          <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[var(--ag-text-muted)] font-mono">
             ESC
           </kbd>
         </div>
@@ -561,7 +561,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {tab === 'commands' && (
           <div ref={listRef} className="max-h-[55vh] overflow-y-auto p-2">
             {flatCommands.length === 0 ? (
-              <div className="p-8 text-center text-[#6B7280]">
+              <div className="p-8 text-center text-[var(--ag-text-muted)]">
                 <Command className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>No commands found</p>
                 <p className="text-sm mt-1">Try a different search</p>
@@ -598,22 +598,22 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150 ${
-                          isSelected ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'bg-[#06060B] text-[#6B7280]'
+                          isSelected ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)]'
                         }`}>
                           {cmd.icon}
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <div className={`font-medium text-sm ${isSelected ? 'text-[#F4F6FF]' : 'text-[#8892A4]'}`}>
+                          <div className={`font-medium text-sm ${isSelected ? 'text-[var(--ag-text-primary)]' : 'text-[#8892A4]'}`}>
                             {cmd.title}
                           </div>
                           {cmd.subtitle && (
-                            <div className="text-xs text-[#6B7280]/70 truncate">{cmd.subtitle}</div>
+                            <div className="text-xs text-[var(--ag-text-muted)]/70 truncate">{cmd.subtitle}</div>
                           )}
                         </div>
                         {cmd.shortcut && (
                           <div className="flex items-center gap-1 flex-shrink-0">
                             {cmd.shortcut.split(' ').map((key, i) => (
-                              <kbd key={i} className="min-w-[22px] text-center px-1.5 py-0.5 text-[10px] font-mono bg-[#06060B] border border-[#1A1A2E] rounded text-[#6B7280]">
+                              <kbd key={i} className="min-w-[22px] text-center px-1.5 py-0.5 text-[10px] font-mono bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[var(--ag-text-muted)]">
                                 {key}
                               </kbd>
                             ))}
@@ -686,16 +686,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                             }`}
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-150 ${
-                              isSelected ? 'bg-[#00F0FF]/20' : 'bg-[#06060B]'
+                              isSelected ? 'bg-[#00F0FF]/20' : 'bg-[var(--ag-bg-deep)]'
                             }`}>
-                              {DATA_TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[#6B7280]" />}
+                              {DATA_TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[var(--ag-text-muted)]" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm truncate font-medium ${isSelected ? 'text-[#F4F6FF]' : 'text-[#E8E8F0]'}`}>
+                              <p className={`text-sm truncate font-medium ${isSelected ? 'text-[var(--ag-text-primary)]' : 'text-[#E8E8F0]'}`}>
                                 {r.title}
                               </p>
                               {r.snippet && r.snippet !== r.title && (
-                                <p className="text-xs text-[#6B7280] truncate mt-0.5">
+                                <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">
                                   {r.snippet.slice(0, 100)}
                                 </p>
                               )}
@@ -717,7 +717,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
             {/* Empty state after search */}
             {!dataLoading && search.trim().length >= 2 && dataResults.length === 0 && (
-              <div className="p-8 text-center text-[#6B7280]">
+              <div className="p-8 text-center text-[var(--ag-text-muted)]">
                 <Search className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p>No results for &ldquo;{search}&rdquo;</p>
                 <p className="text-sm mt-2 text-[#4B5563]">Try different keywords or check spelling</p>
@@ -731,11 +731,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   Search notes, reminders, memories, and more...
                 </p>
                 <div className="flex justify-center gap-4 text-xs text-[#4B5563] mb-5">
-                  <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#00F0FF]" /> Notes</span>
+                  <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[var(--ag-cyan)]" /> Notes</span>
                   <span className="flex items-center gap-1"><Bell className="w-3 h-3 text-[#FFB800]" /> Reminders</span>
                   <span className="flex items-center gap-1"><Target className="w-3 h-3 text-[#00FF88]" /> Habits</span>
                   <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-[#BF5FFF]" /> Memories</span>
-                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-[#8B5CF6]" /> Chats</span>
+                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-[var(--ag-violet)]" /> Chats</span>
                 </div>
 
                 {/* Recent searches */}
@@ -764,17 +764,17 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Footer — unified keyboard hints */}
         <div className="flex items-center justify-center gap-3 sm:gap-5 px-4 py-2.5 border-t border-[#00F0FF]/10 text-[11px] text-[#4B5563]">
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">&uarr;&darr;</kbd>
+            <kbd className="px-1.5 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px] font-mono text-[var(--ag-text-muted)]">&uarr;&darr;</kbd>
             Navigate
           </span>
           <span className="text-[#1A1A2E]" aria-hidden="true">&middot;</span>
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">&crarr;</kbd>
+            <kbd className="px-1.5 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px] font-mono text-[var(--ag-text-muted)]">&crarr;</kbd>
             {tab === 'commands' ? 'Select' : 'Open'}
           </span>
           <span className="text-[#1A1A2E]" aria-hidden="true">&middot;</span>
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px] font-mono text-[#6B7280]">Esc</kbd>
+            <kbd className="px-1.5 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px] font-mono text-[var(--ag-text-muted)]">Esc</kbd>
             Close
           </span>
         </div>

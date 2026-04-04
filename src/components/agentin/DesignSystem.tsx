@@ -80,7 +80,7 @@ export function AnimatedBackground({
   return (
     <div className={`relative min-h-screen overflow-hidden ${className}`}>
       {/* Base background */}
-      <div className="absolute inset-0 bg-[#06061a]" />
+      <div className="absolute inset-0 bg-[var(--ag-bg-base)]" />
 
       {/* Aurora gradients */}
       {variant === 'aurora' && (
@@ -296,9 +296,9 @@ export function LoadingState({ message = 'Loading...', className = '' }: Loading
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       >
-        <Loader2 className="w-8 h-8 text-[#8B5CF6]" />
+        <Loader2 className="w-8 h-8 text-[var(--ag-violet)]" />
       </motion.div>
-      <p className="mt-4 text-[#9CA3AF] text-sm">{message}</p>
+      <p className="mt-4 text-[var(--ag-text-secondary)] text-sm">{message}</p>
     </div>
   );
 }
@@ -329,9 +329,9 @@ export function EmptyState({
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-[#F4F6FF] mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-2">{title}</h3>
       {description && (
-        <p className="text-[#9CA3AF] text-sm max-w-sm mx-auto mb-4">{description}</p>
+        <p className="text-[var(--ag-text-secondary)] text-sm max-w-sm mx-auto mb-4">{description}</p>
       )}
       {action}
     </GlassCard>
@@ -353,10 +353,10 @@ export function SectionHeader({ title, subtitle, action, className = '' }: Secti
   return (
     <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 ${className}`}>
       <div>
-        <h2 className="text-xl md:text-2xl font-bold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+        <h2 className="text-xl md:text-2xl font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
           {title}
         </h2>
-        {subtitle && <p className="text-[#9CA3AF] text-sm mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-[var(--ag-text-secondary)] text-sm mt-1">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>

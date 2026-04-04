@@ -146,7 +146,7 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
                 'flex items-center gap-2.5 w-full px-2.5 py-2 text-left transition-colors text-sm',
                 i === selectedIndex
                   ? 'bg-[#00F0FF]/10 text-[#E8E8F0]'
-                  : 'text-[#9CA3AF] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]',
+                  : 'text-[var(--ag-text-secondary)] hover:bg-[#00F0FF]/5 hover:text-[#E8E8F0]',
               ].join(' ')}
             >
               <span className="text-base leading-none shrink-0">{agent.emoji}</span>
@@ -154,7 +154,7 @@ export function AgentMentionPopup({ query, onSelect, onClose, visible, anchorRef
                 <div className="flex items-center gap-1.5">
                   <span className="font-medium text-xs">{agent.name}</span>
                   {agent.isCore && (
-                    <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#00F0FF]/10 text-[#00F0FF]/70">
+                    <span className="px-1 py-px rounded text-[8px] font-semibold uppercase tracking-wider bg-[#00F0FF]/10 text-[var(--ag-cyan)]/70">
                       core
                     </span>
                   )}

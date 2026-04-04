@@ -24,7 +24,7 @@ export function PWAInstallPrompt() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-[#E8E8F0]">Install Agentin</h3>
-                <p className="text-sm text-[#9CA3AF] mt-0.5">
+                <p className="text-sm text-[var(--ag-text-secondary)] mt-0.5">
                   {isMobile 
                     ? 'Add to home screen for quick access' 
                     : 'Install as app for better experience'}
@@ -33,7 +33,7 @@ export function PWAInstallPrompt() {
               <button
                 onClick={dismiss}
                 aria-label="Dismiss install prompt"
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[#6B7280] hover:text-white hover:bg-[#8B5CF6]/10 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-white hover:bg-[#8B5CF6]/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -49,7 +49,7 @@ export function PWAInstallPrompt() {
               </button>
               <button
                 onClick={dismiss}
-                className="px-4 py-2.5 rounded-xl text-[#6B7280] hover:text-white transition-colors"
+                className="px-4 py-2.5 rounded-xl text-[var(--ag-text-muted)] hover:text-white transition-colors"
               >
                 Later
               </button>
@@ -115,11 +115,11 @@ export function PWASettings() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-[#8B5CF6]" />
+              <Smartphone className="w-5 h-5 text-[var(--ag-violet)]" />
             </div>
             <div>
               <h4 className="font-medium text-[#E8E8F0]">App Installation</h4>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 {pwa.isStandalone 
                   ? 'Running as installed app' 
                   : pwa.isInstalled 
@@ -145,7 +145,7 @@ export function PWASettings() {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-[#E8E8F0]">Push Notifications</h4>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 {pwa.pushPermission === 'granted' 
                   ? 'Notifications enabled'
                   : pwa.pushPermission === 'denied'
@@ -173,7 +173,7 @@ export function PWASettings() {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-medium text-[#E8E8F0]">Offline Support</h4>
-            <p className="text-sm text-[#6B7280]">
+            <p className="text-sm text-[var(--ag-text-muted)]">
               {pwa.isOffline 
                 ? 'Currently offline - changes will sync when online'
                 : 'Online - all features available'}
@@ -187,7 +187,7 @@ export function PWASettings() {
       {pwa.pushPermission === 'granted' && (
         <button
           onClick={pwa.sendTestNotification}
-          className="w-full px-4 py-3 rounded-xl bg-[#06060B] border border-[#8B5CF6]/20 text-[#6B7280] hover:text-white transition-colors"
+          className="w-full px-4 py-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[#8B5CF6]/20 text-[var(--ag-text-muted)] hover:text-white transition-colors"
         >
           Send Test Notification
         </button>

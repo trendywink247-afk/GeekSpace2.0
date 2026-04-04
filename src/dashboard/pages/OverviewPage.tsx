@@ -563,7 +563,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         ? `Next: ${new Date(nextReminder.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
         : 'No upcoming',
       icon: Bell,
-      color: '#00F0FF',
+      color: 'var(--ag-cyan)',
       bgColor: 'rgba(0,240,255,0.08)',
     },
     {
@@ -572,7 +572,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
       value: String(messagesToday),
       sub: 'messages today',
       icon: MessageSquare,
-      color: '#8B5CF6',
+      color: 'var(--ag-violet)',
       bgColor: 'rgba(139,92,246,0.08)',
     },
     {
@@ -591,9 +591,9 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   // ---------------------------------------------------------------------------
 
   const quickActions = [
-    { label: 'New Reminder', icon: Bell, color: '#00F0FF', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
+    { label: 'New Reminder', icon: Bell, color: 'var(--ag-cyan)', bgColor: 'rgba(0,240,255,0.1)', page: 'reminders?openAdd=true' },
     { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => { void notifyStart('open-chat'); onOpenChat?.(); } },
-    { label: 'Start Focus', icon: Timer, color: '#8B5CF6', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
+    { label: 'Start Focus', icon: Timer, color: 'var(--ag-violet)', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
     { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
     { label: 'New Note', icon: FileText, color: '#FFB800', bgColor: 'rgba(255,184,0,0.1)', page: 'docs' },
   ];
@@ -1400,7 +1400,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       label: 'Connect Telegram',
                       desc: 'Chat with your AI on the go',
                       icon: Link2,
-                      color: '#8B5CF6',
+                      color: 'var(--ag-violet)',
                       done: false,
                       action: () => onNavigate?.('connections'),
                     },
@@ -1424,7 +1424,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                       label: 'Add a memory',
                       desc: 'Teach your AI about you',
                       icon: Brain,
-                      color: '#00F0FF',
+                      color: 'var(--ag-cyan)',
                       done: false,
                       action: () => onNavigate?.('memory'),
                     },

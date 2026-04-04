@@ -36,10 +36,10 @@ export const CATEGORY_OPTIONS = [
 ] as const;
 
 export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  manual: { bg: 'bg-[#00F0FF]/10', text: 'text-[#00F0FF]', label: 'Manual' },
+  manual: { bg: 'bg-[#00F0FF]/10', text: 'text-[var(--ag-cyan)]', label: 'Manual' },
   chat: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
   extracted: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
-  inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[#8B5CF6]', label: 'Inferred' },
+  inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[var(--ag-violet)]', label: 'Inferred' },
   telegram: { bg: 'bg-[#FFB800]/10', text: 'text-[#FFB800]', label: 'Telegram' },
   'portfolio-chat': { bg: 'bg-[#FF2D78]/10', text: 'text-[#FF2D78]', label: 'Portfolio' },
 };
@@ -81,7 +81,7 @@ export function formatRelativeDate(dateStr: string): string {
 }
 
 export function getSourceStyle(source: string) {
-  return SOURCE_STYLES[source] ?? { bg: 'bg-[#8892A4]/10', text: 'text-[#8892A4]', label: source };
+  return SOURCE_STYLES[source] ?? { bg: 'bg-[#8892A4]/10', text: 'text-[var(--ag-text-secondary)]', label: source };
 }
 
 export function getCategoryIcon(category: string) {
@@ -146,7 +146,7 @@ export function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) 
 
   return (
     <div className="space-y-2">
-      <div className="flex h-2 rounded-full overflow-hidden bg-[#06060B]">
+      <div className="flex h-2 rounded-full overflow-hidden bg-[var(--ag-bg-deep)]">
         {breakdown.map(({ category, pct }) => (
           <div
             key={category}
@@ -160,7 +160,7 @@ export function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) 
           <div key={category} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }} />
             <span className="capitalize">{category}</span>
-            <span className="text-[#F4F6FF] font-medium">{count}</span>
+            <span className="text-[var(--ag-text-primary)] font-medium">{count}</span>
             <span>({pct}%)</span>
           </div>
         ))}
@@ -217,7 +217,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
       <div className="lg:w-72 space-y-2">
         {hovered ? (
           <>
-            <h3 className="text-sm font-medium text-[#F4F6FF]">
+            <h3 className="text-sm font-medium text-[var(--ag-text-primary)]">
               {nodes.find(n => n.id === hovered)?.label} ({hovMems.length})
             </h3>
             <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
@@ -225,7 +225,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
                 <div key={m.id} className="p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
                   <span className="text-[#6366F1] font-mono">{m.key}</span>
                   <span className="text-[var(--ag-text-secondary)] mx-1">=</span>
-                  <span className="text-[#F4F6FF]">{m.value}</span>
+                  <span className="text-[var(--ag-text-primary)]">{m.value}</span>
                 </div>
               ))}
             </div>

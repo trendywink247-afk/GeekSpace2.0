@@ -378,8 +378,8 @@ export function CreativeStudioPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
                   isActive
-                    ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] shadow-sm'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF] hover:bg-white/5'
+                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] shadow-sm'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -396,8 +396,8 @@ export function CreativeStudioPage() {
           {/* Prompt card */}
           <SectionCard>
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
-                <Wand2 className="w-4 h-4 text-[#8B5CF6]" />
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                <Wand2 className="w-4 h-4 text-[var(--ag-violet)]" />
                 Generate Image
               </div>
 
@@ -407,21 +407,21 @@ export function CreativeStudioPage() {
                 onChange={e => setImgPrompt(e.target.value)}
                 placeholder="Describe the image you want to create..."
                 rows={3}
-                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[#F4F6FF] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
+                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[var(--ag-text-primary)] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleImageGenerate(); }}
               />
 
               {/* Style selector */}
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-[#9CA3AF] flex items-center">Style:</span>
+                <span className="text-xs text-[var(--ag-text-secondary)] flex items-center">Style:</span>
                 {STYLE_OPTIONS.map(style => (
                   <button
                     key={style}
                     onClick={() => setImgStyle(imgStyle === style ? '' : style)}
                     className={`px-2.5 py-1.5 rounded-lg text-xs transition-all min-h-[32px] ${
                       imgStyle === style
-                        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[rgba(139,92,246,0.15)]'
-                        : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-transparent hover:text-[#F4F6FF]'
+                        ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)]'
+                        : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)]'
                     }`}
                   >
                     {style}
@@ -447,10 +447,10 @@ export function CreativeStudioPage() {
           {/* Recent images grid */}
           <SectionCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F6FF]">Recent Images</h3>
+              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Recent Images</h3>
               <button
                 onClick={loadImages}
-                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -458,12 +458,12 @@ export function CreativeStudioPage() {
 
             {imgLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
+                <Loader2 className="w-6 h-6 text-[var(--ag-violet)] animate-spin" />
               </div>
             ) : images.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[rgba(139,92,246,0.15)]">
-                <ImageIcon className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
-                <p className="text-sm text-[#9CA3AF]">No images yet. Generate your first one above!</p>
+                <ImageIcon className="w-10 h-10 text-[var(--ag-violet)]/30 mb-3" />
+                <p className="text-sm text-[var(--ag-text-secondary)]">No images yet. Generate your first one above!</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -494,7 +494,7 @@ export function CreativeStudioPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            className="p-2 rounded-lg bg-[#8B5CF6]/20 text-[#8B5CF6] hover:bg-[#8B5CF6]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg bg-[#8B5CF6]/20 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Download className="w-3.5 h-3.5" />
                           </a>
@@ -516,8 +516,8 @@ export function CreativeStudioPage() {
           <SectionCard>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-[#F4F6FF]">
-                  <Film className="w-4 h-4 text-[#8B5CF6]" />
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                  <Film className="w-4 h-4 text-[var(--ag-violet)]" />
                   Generate Video
                 </div>
                 {/* Director mode toggle */}
@@ -525,8 +525,8 @@ export function CreativeStudioPage() {
                   onClick={() => setDirectorMode(!directorMode)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
                     directorMode
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[rgba(139,92,246,0.15)]'
-                      : 'bg-[rgba(12,12,30,0.6)] text-[#9CA3AF] border border-transparent hover:text-[#F4F6FF]'
+                      ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)]'
+                      : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)]'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -543,12 +543,12 @@ export function CreativeStudioPage() {
                   : "Describe the video you want to create..."
                 }
                 rows={3}
-                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[#F4F6FF] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
+                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[var(--ag-text-primary)] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleVideoGenerate(); }}
               />
 
               {directorMode && (
-                <p className="text-xs text-[#8B5CF6]/70 flex items-center gap-1">
+                <p className="text-xs text-[var(--ag-violet)]/70 flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   Director Mode generates a multi-shot storyboard and stitches clips together automatically.
                 </p>
@@ -572,10 +572,10 @@ export function CreativeStudioPage() {
           {/* Recent videos grid */}
           <SectionCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F6FF]">Recent Videos</h3>
+              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Recent Videos</h3>
               <button
                 onClick={loadVideos}
-                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -583,12 +583,12 @@ export function CreativeStudioPage() {
 
             {vidLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
+                <Loader2 className="w-6 h-6 text-[var(--ag-violet)] animate-spin" />
               </div>
             ) : videos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[rgba(139,92,246,0.15)]">
-                <Film className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
-                <p className="text-sm text-[#9CA3AF]">No videos yet. Generate your first one above!</p>
+                <Film className="w-10 h-10 text-[var(--ag-violet)]/30 mb-3" />
+                <p className="text-sm text-[var(--ag-text-secondary)]">No videos yet. Generate your first one above!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -600,8 +600,8 @@ export function CreativeStudioPage() {
                     <div className="aspect-video relative">
                       {vid.status === 'processing' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[rgba(12,12,30,0.6)]">
-                          <Loader2 className="w-8 h-8 text-[#8B5CF6] animate-spin mb-2" />
-                          <span className="text-xs text-[#9CA3AF]">Processing...</span>
+                          <Loader2 className="w-8 h-8 text-[var(--ag-violet)] animate-spin mb-2" />
+                          <span className="text-xs text-[var(--ag-text-secondary)]">Processing...</span>
                         </div>
                       ) : (
                         <video
@@ -622,16 +622,16 @@ export function CreativeStudioPage() {
                       )}
                     </div>
                     <div className="p-3">
-                      <p className="text-xs text-[#9CA3AF] line-clamp-2 mb-2">{vid.prompt}</p>
+                      <p className="text-xs text-[var(--ag-text-secondary)] line-clamp-2 mb-2">{vid.prompt}</p>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
                           <Clock className="w-3 h-3" />
                           {new Date(vid.created_at).toLocaleDateString()}
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleVideoDelete(vid.id)}
-                            className="p-2 rounded-lg text-[#6B7280] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -640,7 +640,7 @@ export function CreativeStudioPage() {
                               href={vid.video_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-2 rounded-lg text-[#6B7280] hover:text-[#8B5CF6] hover:bg-[#8B5CF6]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                             >
                               <Download className="w-3.5 h-3.5" />
                             </a>
@@ -668,7 +668,7 @@ export function CreativeStudioPage() {
                   value={tplSearch}
                   onChange={e => setTplSearch(e.target.value)}
                   placeholder="Search templates..."
-                  className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg pl-4 pr-4 py-2.5 text-sm text-[#F4F6FF] placeholder-[#6B7280] focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px]"
+                  className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg pl-4 pr-4 py-2.5 text-sm text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors min-h-[44px]"
                 />
               </div>
               <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
@@ -676,8 +676,8 @@ export function CreativeStudioPage() {
                   onClick={() => setTplCategory('all')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-h-[44px] ${
                     tplCategory === 'all'
-                      ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                      : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
+                      ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
+                      : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                   }`}
                 >
                   All
@@ -688,8 +688,8 @@ export function CreativeStudioPage() {
                     onClick={() => setTplCategory(cat.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-h-[44px] ${
                       tplCategory === cat.id
-                        ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]'
-                        : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
+                        ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
+                        : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                     }`}
                   >
                     {cat.name}
@@ -703,13 +703,13 @@ export function CreativeStudioPage() {
           <div>
             {tplLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
+                <Loader2 className="w-6 h-6 text-[var(--ag-violet)] animate-spin" />
               </div>
             ) : templates.length === 0 ? (
               <SectionCard>
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <LayoutTemplate className="w-10 h-10 text-[#8B5CF6]/30 mb-3" />
-                  <p className="text-sm text-[#9CA3AF]">
+                  <LayoutTemplate className="w-10 h-10 text-[var(--ag-violet)]/30 mb-3" />
+                  <p className="text-sm text-[var(--ag-text-secondary)]">
                     {tplSearch ? 'No templates match your search.' : 'No templates available yet.'}
                   </p>
                 </div>
@@ -729,7 +729,7 @@ export function CreativeStudioPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <LayoutTemplate className="w-10 h-10 text-[#8B5CF6]/20" />
+                          <LayoutTemplate className="w-10 h-10 text-[var(--ag-violet)]/20" />
                         </div>
                       )}
                       {tpl.isOfficial && (
@@ -741,18 +741,18 @@ export function CreativeStudioPage() {
                     {/* Info */}
                     <div className="p-4 space-y-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-[#F4F6FF] truncate">{tpl.name}</h3>
-                        <p className="text-xs text-[#9CA3AF] line-clamp-2 mt-1">{tpl.description}</p>
+                        <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] truncate">{tpl.name}</h3>
+                        <p className="text-xs text-[var(--ag-text-secondary)] line-clamp-2 mt-1">{tpl.description}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-[#6B7280] uppercase tracking-wider">{tpl.category}</span>
+                        <span className="text-[10px] text-[var(--ag-text-muted)] uppercase tracking-wider">{tpl.category}</span>
                         <button
                           onClick={() => handleTemplateClone(tpl)}
                           disabled={cloningId === tpl.id}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
                             clonedId === tpl.id
                               ? 'bg-[#10B981]/15 text-[#10B981]'
-                              : 'bg-[#8B5CF6]/15 text-[#8B5CF6] hover:bg-[#8B5CF6]/25'
+                              : 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/25'
                           } disabled:opacity-50`}
                         >
                           {cloningId === tpl.id ? (
@@ -777,17 +777,17 @@ export function CreativeStudioPage() {
       {activeTab === 'gallery' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-              <span className="px-2 py-1 rounded bg-[#8B5CF6]/10 text-[#8B5CF6] text-xs">
+            <div className="flex items-center gap-2 text-sm text-[var(--ag-text-secondary)]">
+              <span className="px-2 py-1 rounded bg-[#8B5CF6]/10 text-[var(--ag-violet)] text-xs">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded bg-[#00F0FF]/10 text-[#00F0FF] text-xs">
+              <span className="px-2 py-1 rounded bg-[#00F0FF]/10 text-[var(--ag-cyan)] text-xs">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>
             <button
               onClick={loadGallery}
-              className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[#9CA3AF] hover:text-[#8B5CF6] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -795,16 +795,16 @@ export function CreativeStudioPage() {
 
           {galleryLoading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 text-[#8B5CF6] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[var(--ag-violet)] animate-spin" />
             </div>
           ) : galleryItems.length === 0 ? (
             <SectionCard>
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-[#8B5CF6]/40" />
+                  <Sparkles className="w-8 h-8 text-[var(--ag-violet)]/40" />
                 </div>
-                <h3 className="text-base font-medium text-[#F4F6FF] mb-2">No media yet</h3>
-                <p className="text-[#9CA3AF] text-sm max-w-xs mb-6">
+                <h3 className="text-base font-medium text-[var(--ag-text-primary)] mb-2">No media yet</h3>
+                <p className="text-[var(--ag-text-secondary)] text-sm max-w-xs mb-6">
                   Generate your first image or video using the tabs above.
                 </p>
                 <button
@@ -834,7 +834,7 @@ export function CreativeStudioPage() {
         >
           <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-[#9CA3AF] truncate flex-1 mr-4">{previewImage.prompt}</p>
+              <p className="text-sm text-[var(--ag-text-secondary)] truncate flex-1 mr-4">{previewImage.prompt}</p>
               <div className="flex items-center gap-2">
                 <a
                   href={previewImage.image_url}
@@ -846,7 +846,7 @@ export function CreativeStudioPage() {
                 </a>
                 <button
                   onClick={() => setPreviewImage(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -858,7 +858,7 @@ export function CreativeStudioPage() {
               className="w-full rounded-2xl border border-[rgba(139,92,246,0.15)]"
               loading="lazy"
             />
-            <div className="flex items-center gap-3 mt-3 text-xs text-[#9CA3AF]">
+            <div className="flex items-center gap-3 mt-3 text-xs text-[var(--ag-text-secondary)]">
               {previewImage.width && previewImage.height && (
                 <span>{previewImage.width}x{previewImage.height}</span>
               )}
@@ -877,7 +877,7 @@ export function CreativeStudioPage() {
         >
           <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-[#9CA3AF] truncate flex-1 mr-4">{previewVideo.prompt}</p>
+              <p className="text-sm text-[var(--ag-text-secondary)] truncate flex-1 mr-4">{previewVideo.prompt}</p>
               <div className="flex items-center gap-2">
                 <a
                   href={previewVideo.video_url}
@@ -889,7 +889,7 @@ export function CreativeStudioPage() {
                 </a>
                 <button
                   onClick={() => setPreviewVideo(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF] transition-colors"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -901,7 +901,7 @@ export function CreativeStudioPage() {
               autoPlay
               className="w-full rounded-2xl border border-[rgba(139,92,246,0.15)]"
             />
-            <div className="flex items-center gap-3 mt-3 text-xs text-[#9CA3AF]">
+            <div className="flex items-center gap-3 mt-3 text-xs text-[var(--ag-text-secondary)]">
               {previewVideo.width && previewVideo.height && (
                 <span>{previewVideo.width}x{previewVideo.height}</span>
               )}

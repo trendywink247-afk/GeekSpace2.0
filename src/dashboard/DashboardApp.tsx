@@ -192,11 +192,11 @@ const menuGroups: MenuGroup[] = [
 // Bottom tabs for mobile — 6 zone icons (icon-only, no labels on mobile)
 type MobileTabId = PageType | 'more';
 const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard; color: string }[] = [
-  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: '#00F0FF' },
-  { id: 'office', label: 'Agent', icon: Bot, color: '#8B5CF6' },
+  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: 'var(--ag-cyan)' },
+  { id: 'office', label: 'Agent', icon: Bot, color: 'var(--ag-violet)' },
   { id: 'creative-studio', label: 'Create', icon: Sparkles, color: '#F59E0B' },
   { id: 'reminders', label: 'Work', icon: Zap, color: '#ADFF2F' },
-  { id: 'inbox', label: 'Connect', icon: MessageSquare, color: '#00F0FF' },
+  { id: 'inbox', label: 'Connect', icon: MessageSquare, color: 'var(--ag-cyan)' },
   { id: 'settings', label: 'Control', icon: Settings, color: '#8B5CF680' },
 ];
 
@@ -559,7 +559,7 @@ export function DashboardApp() {
           </span>
           {!sidebarCollapsed && (
             <span className="font-bold text-lg transition-all duration-300" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-[#E8E8F0]">Agent</span><span style={{ color: '#8B5CF6', textShadow: '0 0 20px rgba(139,92,246,0.4)' }} className="group-hover:[text-shadow:0_0_30px_rgba(139,92,246,0.6)] transition-all duration-300">in</span>
+              <span className="text-[#E8E8F0]">Agent</span><span style={{ color: 'var(--ag-violet)', textShadow: '0 0 20px rgba(139,92,246,0.4)' }} className="group-hover:[text-shadow:0_0_30px_rgba(139,92,246,0.6)] transition-all duration-300">in</span>
             </span>
           )}
         </button>
@@ -569,7 +569,7 @@ export function DashboardApp() {
           className="md:hidden p-2 rounded-lg hover:bg-[#00F0FF]/10"
           aria-label="Close navigation menu"
         >
-          <X className="w-5 h-5 text-[#6B7280]" />
+          <X className="w-5 h-5 text-[var(--ag-text-muted)]" />
         </button>
       </div>
 
@@ -738,7 +738,7 @@ export function DashboardApp() {
               <Palette className="w-4 h-4 text-[#FF2D78] group-hover:scale-110 transition-transform" />
               <span className="text-xs font-medium text-[#E8E8F0]">Design Assistant</span>
             </div>
-            <p className="text-[10px] text-[#6B7280] mt-1 text-left">
+            <p className="text-[10px] text-[var(--ag-text-muted)] mt-1 text-left">
               {personalityEmojis[(agent.personality as AgentPersonality) || 'jarvis'] || '🟣'} {agent.name} &middot; {agent.mode} &middot; {agent.voice}
             </p>
           </button>
@@ -750,10 +750,10 @@ export function DashboardApp() {
         <div className="mx-3 mt-3 mb-3 p-3 rounded-xl" style={{ background: 'var(--ag-bg-elevated, rgba(30, 30, 50, 0.7))', border: '1px solid var(--ag-border-default, rgba(139, 92, 246, 0.15))' }}>
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-[#ADFF2F]" />
-            <span className="text-xs text-[#6B7280]">This month</span>
+            <span className="text-xs text-[var(--ag-text-muted)]">This month</span>
           </div>
           <div className="text-lg font-bold text-[#E8E8F0] font-mono">${usage.totalCostUSD.toFixed(2)}</div>
-          <div className="text-xs text-[#6B7280]">
+          <div className="text-xs text-[var(--ag-text-muted)]">
             Forecast: <span className="text-[#FFD700]">${usage.forecastUSD.toFixed(2)}</span>
           </div>
           <div className="mt-2 h-1.5 bg-[#0C0C18] rounded-full overflow-hidden">
@@ -779,7 +779,7 @@ export function DashboardApp() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate" style={{ color: 'var(--ag-text-primary, #F4F6FF)' }}>{user?.name?.split(' ')[0] || 'User'}</span>
-                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20 flex-shrink-0">
+                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[#8B5CF6]/20 flex-shrink-0">
                   {user?.plan === 'pro' ? 'Pro' : 'Free'}
                 </span>
               </div>
@@ -823,7 +823,7 @@ export function DashboardApp() {
   );
 
   return (
-    <div className={`min-h-dvh bg-[#06061a] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
+    <div className={`min-h-dvh bg-[var(--ag-bg-base)] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
       {/* ---- Live SSE Notification Toasts ---- */}
       <LiveNotificationToast onNavigate={(url) => navigate(url)} />
       {/* ---- Session idle warning ---- */}
@@ -864,11 +864,11 @@ export function DashboardApp() {
       {showWelcome && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-welcome-in">
           <div className="flex items-center gap-3 px-5 py-3 rounded-xl glass-card-v2 shadow-2xl shadow-[#00F0FF]/10">
-            <Hexagon className="w-5 h-5 text-[#00F0FF] shrink-0" />
+            <Hexagon className="w-5 h-5 text-[var(--ag-cyan)] shrink-0" />
             <span className="text-sm text-[#E8E8F0] font-medium">
               Welcome to Agentin! Your AI command center is ready.
             </span>
-            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[#6B7280] hover:text-[#E8E8F0]" aria-label="Dismiss welcome message">
+            <button onClick={() => setShowWelcome(false)} className="ml-2 text-[var(--ag-text-muted)] hover:text-[#E8E8F0]" aria-label="Dismiss welcome message">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -944,7 +944,7 @@ export function DashboardApp() {
               aria-label="Open menu"
               data-testid="mobile-nav-toggle"
             >
-              <Menu className="w-5 h-5 text-[#6B7280]" />
+              <Menu className="w-5 h-5 text-[var(--ag-text-muted)]" />
             </button>
             {/* Desktop collapse toggle */}
             <button
@@ -953,12 +953,12 @@ export function DashboardApp() {
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <ChevronRight
-                className={`w-5 h-5 text-[#6B7280] transition-transform duration-300 ${
+                className={`w-5 h-5 text-[var(--ag-text-muted)] transition-transform duration-300 ${
                   sidebarCollapsed ? '' : 'rotate-180'
                 }`}
               />
             </button>
-            <div className="text-sm text-[#6B7280] hidden sm:block">
+            <div className="text-sm text-[var(--ag-text-muted)] hidden sm:block">
               Welcome, <span className="text-[#E8E8F0] font-medium">{user?.name?.split(' ')[0] || 'there'}</span>
             </div>
           </div>
@@ -967,7 +967,7 @@ export function DashboardApp() {
             {/* Search trigger (mouse users) */}
             <button
               onClick={() => setCommandPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#06060B]/50 hover:bg-[#00F0FF]/5 transition-all text-[#6B7280] hover:text-[#8892A4] group"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#00F0FF]/10 hover:border-[#00F0FF]/30 bg-[#06060B]/50 hover:bg-[#00F0FF]/5 transition-all text-[var(--ag-text-muted)] hover:text-[#8892A4] group"
               aria-label="Open search (Ctrl+K)"
             >
               <Search className="w-3.5 h-3.5" />
@@ -983,12 +983,12 @@ export function DashboardApp() {
                 background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(173, 255, 47, 0.05))',
               }}
             >
-              <span className="text-xs text-[#00F0FF] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
+              <span className="text-xs text-[var(--ag-cyan)] font-mono">{(user?.credits ?? 0).toLocaleString()}<span className="hidden sm:inline"> credits</span></span>
             </div>
             {/* Language toggle */}
             <button
               onClick={toggleLang}
-              className="px-2.5 py-1 text-xs font-medium rounded-md bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="px-2.5 py-1 text-xs font-medium rounded-md bg-[#00F0FF]/10 text-[var(--ag-cyan)] hover:bg-[#00F0FF]/20 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               title={isHindi ? 'Switch to English' : 'हिंदी में देखें'}
             >
               {isHindi ? 'EN' : 'हि'}
@@ -1000,7 +1000,7 @@ export function DashboardApp() {
                 className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center relative"
                 aria-label="View inbox"
               >
-                <Inbox className="w-5 h-5 text-[#6B7280]" />
+                <Inbox className="w-5 h-5 text-[var(--ag-text-muted)]" />
               </button>
               {inboxUnreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#00F0FF] text-[#06060B] text-[10px] font-bold flex items-center justify-center px-1 pointer-events-none" aria-label={`${inboxUnreadCount} unread inbox messages`}>

@@ -46,7 +46,7 @@ const SOURCE_LABELS: Record<string, string> = {
 const SOURCE_BADGE_CLASSES: Record<string, string> = {
   telegram: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
   whatsapp: 'bg-green-500/15 text-green-400 border-green-500/25',
-  system: 'bg-[#8892A4]/15 text-[#8892A4] border-[#8892A4]/25',
+  system: 'bg-[#8892A4]/15 text-[var(--ag-text-secondary)] border-[#8892A4]/25',
 };
 
 const PRIORITY_BORDER: Record<string, string> = {
@@ -58,7 +58,7 @@ const PRIORITY_BORDER: Record<string, string> = {
 const PRIORITY_BADGE_CLASSES: Record<string, string> = {
   urgent: 'bg-red-500/15 text-red-400 border-red-500/30',
   high: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  normal: 'bg-[#8892A4]/10 text-[#8892A4] border-[#8892A4]/20',
+  normal: 'bg-[#8892A4]/10 text-[var(--ag-text-secondary)] border-[#8892A4]/20',
 };
 
 const FILTERS = ['all', 'unread', 'urgent', 'telegram', 'whatsapp', 'system'] as const;
@@ -223,15 +223,15 @@ function MessageCard({
 
           {/* AI Suggested Reply */}
           {msg.suggested_reply && (
-            <div className="bg-[#8B5CF6]/8 border border-[#8B5CF6]/20 rounded-lg p-3">
+            <div className="bg-[#8B5CF6]/8 border border-[var(--ag-violet)]/20 rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Sparkles className="w-3 h-3 text-[#8B5CF6]" />
-                <p className="text-xs text-[#8B5CF6] font-medium">AI Suggested Reply</p>
+                <Sparkles className="w-3 h-3 text-[var(--ag-violet)]" />
+                <p className="text-xs text-[var(--ag-violet)] font-medium">AI Suggested Reply</p>
               </div>
               <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70">{msg.suggested_reply}</p>
               <button
                 onClick={onUseSuggestion}
-                className="mt-2 text-xs text-[#8B5CF6] hover:text-[#a78bfa] transition-colors font-medium min-h-[44px] flex items-center"
+                className="mt-2 text-xs text-[var(--ag-violet)] hover:text-[#a78bfa] transition-colors font-medium min-h-[44px] flex items-center"
               >
                 Use this reply
               </button>
@@ -336,7 +336,7 @@ function MessageCard({
           <TooltipTrigger asChild>
             <button
               onClick={() => {/* snooze handler -- future */}}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[#8B5CF6] transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-violet)] transition-colors"
               aria-label="Snooze"
             >
               <Clock className="w-3.5 h-3.5" />

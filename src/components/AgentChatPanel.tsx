@@ -48,17 +48,17 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   return (
     <div className="relative my-2 rounded-lg overflow-hidden border border-[#00F0FF]/20">
       <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
-        <span className="text-[10px] text-[#6B7280]">{lang || 'code'}</span>
+        <span className="text-[10px] text-[var(--ag-text-muted)]">{lang || 'code'}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] text-[#6B7280] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors"
           title="Copy code"
         >
           {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[#06060B] leading-relaxed whitespace-pre">
+      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[var(--ag-bg-deep)] leading-relaxed whitespace-pre">
         <code>{code}</code>
       </pre>
     </div>
@@ -78,7 +78,7 @@ function renderMessageContent(content: string): React.ReactNode {
           // Inline code
           if (!match && !codeStr.includes('\n')) {
             return (
-              <code className="px-1.5 py-0.5 rounded bg-[#1A1A2E] text-[#00F0FF] text-xs font-mono" {...props}>
+              <code className="px-1.5 py-0.5 rounded bg-[#1A1A2E] text-[var(--ag-cyan)] text-xs font-mono" {...props}>
                 {children}
               </code>
             );
@@ -92,12 +92,12 @@ function renderMessageContent(content: string): React.ReactNode {
         },
         // Bold
         strong({ children }) {
-          return <strong className="font-semibold text-[#F4F6FF]">{children}</strong>;
+          return <strong className="font-semibold text-[var(--ag-text-primary)]">{children}</strong>;
         },
         // Links
         a({ href, children }) {
           return (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] hover:underline">
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--ag-cyan)] hover:underline">
               {children}
             </a>
           );
@@ -114,18 +114,18 @@ function renderMessageContent(content: string): React.ReactNode {
         },
         // Headings
         h1({ children }) {
-          return <h1 className="text-lg font-bold text-[#F4F6FF] mb-2 mt-3">{children}</h1>;
+          return <h1 className="text-lg font-bold text-[var(--ag-text-primary)] mb-2 mt-3">{children}</h1>;
         },
         h2({ children }) {
-          return <h2 className="text-base font-bold text-[#F4F6FF] mb-1.5 mt-2">{children}</h2>;
+          return <h2 className="text-base font-bold text-[var(--ag-text-primary)] mb-1.5 mt-2">{children}</h2>;
         },
         h3({ children }) {
-          return <h3 className="text-sm font-semibold text-[#F4F6FF] mb-1 mt-2">{children}</h3>;
+          return <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1 mt-2">{children}</h3>;
         },
         // Blockquote
         blockquote({ children }) {
           return (
-            <blockquote className="border-l-2 border-[#00F0FF]/30 pl-3 my-2 text-[#9CA3AF] italic">
+            <blockquote className="border-l-2 border-[#00F0FF]/30 pl-3 my-2 text-[var(--ag-text-secondary)] italic">
               {children}
             </blockquote>
           );
@@ -155,7 +155,7 @@ function renderMessageContent(content: string): React.ReactNode {
               type="checkbox"
               checked={checked}
               readOnly
-              className="mr-1.5 rounded border-gray-600 text-[#00F0FF]"
+              className="mr-1.5 rounded border-gray-600 text-[var(--ag-cyan)]"
               {...props}
             />
           );
@@ -1076,7 +1076,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[#06060B] safe-area-pt"
+          className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[var(--ag-bg-deep)] safe-area-pt"
           onTouchStart={handleHeaderTouchStart}
           onTouchEnd={handleHeaderTouchEnd}
         >
@@ -1103,7 +1103,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 <div className="text-xs text-[#00FF88] flex items-center gap-1 flex-wrap">
                   <Sparkles className="w-3 h-3" /> Online
                   {creditsRemaining !== null && (
-                    <span className="ml-1 text-[#6B7280]">· ⚡ {creditsRemaining} credits</span>
+                    <span className="ml-1 text-[var(--ag-text-muted)]">· ⚡ {creditsRemaining} credits</span>
                   )}
                   {/* 42.6: Conversation turns indicator */}
                   {(() => {
@@ -1136,7 +1136,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 title="Reset chat"
                 aria-label="Reset chat"
               >
-                <RotateCcw className="w-4 h-4 text-[#6B7280]" />
+                <RotateCcw className="w-4 h-4 text-[var(--ag-text-muted)]" />
               </button>
             )}
             <button
@@ -1146,7 +1146,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               title="Export all conversations (JSON)"
               aria-label="Download chat history"
             >
-              <Download className={`w-4 h-4 ${isExporting ? 'text-[#00F0FF] animate-pulse' : 'text-[#6B7280]'}`} />
+              <Download className={`w-4 h-4 ${isExporting ? 'text-[var(--ag-cyan)] animate-pulse' : 'text-[var(--ag-text-muted)]'}`} />
             </button>
             {/* 62.3: Export current chat as markdown */}
             {messages.filter((m) => !m.isStreaming && m.id !== 'greeting' && m.role !== 'system').length > 0 && (
@@ -1155,12 +1155,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 title="Export this chat (Markdown)"
               >
-                <span className="text-xs text-[#6B7280] font-mono">MD</span>
+                <span className="text-xs text-[var(--ag-text-muted)] font-mono">MD</span>
               </button>
             )}
             <button
               onClick={() => { setSearchOpen(v => !v); setSearchTerm(''); }}
-              className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${searchOpen ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'hover:bg-[#00F0FF]/10 text-[#6B7280]'}`}
+              className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${searchOpen ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'hover:bg-[#00F0FF]/10 text-[var(--ag-text-muted)]'}`}
               title="Search messages"
               aria-label="Toggle search"
             >
@@ -1171,7 +1171,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               className="p-2.5 rounded-lg hover:bg-[#00F0FF]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Close chat panel"
             >
-              <X className="w-5 h-5 text-[#6B7280]" />
+              <X className="w-5 h-5 text-[var(--ag-text-muted)]" />
             </button>
           </div>
         </div>
@@ -1209,8 +1209,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   onClick={() => { void updateAgent({ personality: key }); }}
                   className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
                     isActive
-                      ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[#00F0FF]'
-                      : 'border-[#1A1A2E] text-[#6B7280] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
+                      ? 'bg-[#00F0FF]/15 border-[#00F0FF]/50 text-[var(--ag-cyan)]'
+                      : 'border-[#1A1A2E] text-[var(--ag-text-muted)] hover:border-[#00F0FF]/20 hover:text-[#E8E8F0]'
                   }`}
                   title={`Switch to ${meta.name}`}
                 >
@@ -1235,10 +1235,10 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
 
         {/* Search bar — sticky at top of messages area */}
         {searchOpen && (
-          <div className="sticky top-0 z-10 px-4 py-2 border-b border-[#00F0FF]/10 bg-[#06060B]">
+          <div className="sticky top-0 z-10 px-4 py-2 border-b border-[#00F0FF]/10 bg-[var(--ag-bg-deep)]">
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--ag-text-muted)]" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -1258,11 +1258,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 {searchTerm && (() => {
                   const matchCount = messages.filter(m => m.content.toLowerCase().includes(searchTerm.toLowerCase())).length;
                   return matchCount > 0 ? (
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#00F0FF]">
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--ag-cyan)]">
                       {Math.min(searchMatchIndex + 1, matchCount)} of {matchCount}
                     </span>
                   ) : (
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#6B7280]">
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--ag-text-muted)]">
                       0 results
                     </span>
                   );
@@ -1270,7 +1270,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               </div>
               <button
                 onClick={() => { setSearchOpen(false); setSearchTerm(''); }}
-                className="p-1 rounded text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                className="p-1 rounded text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors"
                 title="Close search (Esc)"
               >
                 <X className="w-3.5 h-3.5" />
@@ -1293,7 +1293,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               </div>
               {/* 55.7: Quick-start suggestions */}
               <div className="mt-6 px-2">
-                <p className="text-[11px] text-[#6B7280] mb-3 text-center">Try asking…</p>
+                <p className="text-[11px] text-[var(--ag-text-muted)] mb-3 text-center">Try asking…</p>
                 <div className="grid grid-cols-1 gap-2">
                   {[
                     'Summarize my reminders for today',
@@ -1304,7 +1304,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     <button
                       key={suggestion}
                       onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}
-                      className="text-left text-xs px-3 py-2 rounded-lg border border-[#00F0FF]/15 bg-[#00F0FF]/5 text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-all"
+                      className="text-left text-xs px-3 py-2 rounded-lg border border-[#00F0FF]/15 bg-[#00F0FF]/5 text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:border-[#00F0FF]/30 hover:bg-[#00F0FF]/10 transition-all"
                     >
                       {suggestion}
                     </button>
@@ -1323,7 +1323,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               style={{ animation: 'page-enter 0.2s ease-out' }}
             >
               {msg.role === 'system' ? (
-                <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[#6B7280]">
+                <div className="px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[10px] text-[var(--ag-text-muted)]">
                   {msg.content}
                 </div>
               ) : (
@@ -1339,7 +1339,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed overflow-x-auto ${
                       msg.role === 'user'
                         ? 'bg-[#00F0FF] text-white rounded-br-md'
-                        : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
+                        : 'bg-[var(--ag-bg-deep)] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
                     }`}
                   >
                     {/* Thinking steps (collapsible when not streaming) */}
@@ -1353,7 +1353,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                             <div key={i} className="flex items-start gap-1.5 text-[11px]">
                               <span className="shrink-0">{s.type === 'thinking' ? '🧠' : s.type === 'tool_call' ? '🔧' : s.type === 'tool_result' ? '📊' : '✍️'}</span>
                               <span className="text-[#8892A4]">
-                                {s.tool && <span className="text-[#00F0FF] mr-1">[{s.tool}]</span>}
+                                {s.tool && <span className="text-[var(--ag-cyan)] mr-1">[{s.tool}]</span>}
                                 {s.content}
                               </span>
                             </div>
@@ -1401,7 +1401,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         : msg.content)}
                     {msg.isStreaming && <span className="inline-block w-1.5 h-4 bg-[#00F0FF] ml-0.5 animate-pulse rounded-sm" />}
                     {msg.provider && !msg.isStreaming && (
-                      <span className="block mt-1.5 text-[10px] text-[#6B7280]/60 flex items-center gap-1">
+                      <span className="block mt-1.5 text-[10px] text-[var(--ag-text-muted)]/60 flex items-center gap-1">
                         <Zap className="w-2.5 h-2.5" /> {providerLabels[msg.provider!] ?? msg.provider}
                         {msg.model && formatModelName(msg.model) && (
                           <span className="text-[#555]">· via {formatModelName(msg.model)}</span>
@@ -1437,7 +1437,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-[#00FF88]">{receipt.text}</p>
                               {receipt.details && (
-                                <p className="text-xs text-[#6B7280] truncate">{receipt.details}</p>
+                                <p className="text-xs text-[var(--ag-text-muted)] truncate">{receipt.details}</p>
                               )}
                             </div>
                           </a>
@@ -1458,7 +1458,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           download
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 mt-1.5 text-xs text-[#00F0FF]/70 hover:text-[#00F0FF] transition-colors"
+                          className="flex items-center gap-1 mt-1.5 text-xs text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] transition-colors"
                         >
                           <Download className="w-3 h-3" /> Download
                         </a>
@@ -1468,7 +1468,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     {msg.isStreaming && msg.content.startsWith('🎨') && (
                       <div className="flex items-center gap-2 mt-2">
                         <Loader2 className="w-4 h-4 animate-spin text-[#A78BFA]" />
-                        <span className="text-xs text-[#6B7280]">This may take 10–20s…</span>
+                        <span className="text-xs text-[var(--ag-text-muted)]">This may take 10–20s…</span>
                       </div>
                     )}
                     {/* Message Reactions for agent messages */}
@@ -1494,8 +1494,8 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                           onClick={() => handleTTS(msg.id, msg.content)}
                           className={`p-1 rounded transition-colors ${
                             ttsPlayingId === msg.id
-                              ? 'text-[#00F0FF] bg-[#00F0FF]/15'
-                              : 'text-[#6B7280]/50 hover:text-[#6B7280] hover:bg-[#00F0FF]/5'
+                              ? 'text-[var(--ag-cyan)] bg-[#00F0FF]/15'
+                              : 'text-[var(--ag-text-muted)]/50 hover:text-[var(--ag-text-muted)] hover:bg-[#00F0FF]/5'
                           }`}
                           title={ttsPlayingId === msg.id ? 'Stop playback' : 'Listen to this message'}
                           data-testid="tts-button"
@@ -1513,7 +1513,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       <div className="flex justify-end mt-2">
                         <button
                           onClick={() => sendMessage(msg.retryContent)}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] text-xs transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[var(--ag-cyan)] text-xs transition-colors"
                           title="Retry"
                         >
                           <RotateCcw className="w-3 h-3" /> Retry
@@ -1526,7 +1526,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         {/* 61.4: Save to memory */}
                         <button
                           onClick={() => void handleSaveToMemory(msg.id, msg.content)}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#BF5FFF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[var(--ag-text-muted)] hover:text-[#BF5FFF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
                           title="Save to agent memory"
                           data-testid={`save-memory-btn-${msg.id}`}
                         >
@@ -1537,7 +1537,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                         </button>
                         <button
                           onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[#6B7280] hover:text-[#00F0FF] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] text-[10px] transition-colors opacity-0 group-hover:opacity-100"
                           title="Reply to this message"
                           data-testid={`reply-btn-${msg.id}`}
                         >
@@ -1565,7 +1565,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                               }
                             }}
                             className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] transition-colors opacity-0 group-hover:opacity-100 ${
-                              reportedIds.has(msg.id) ? 'text-[#FF6161]' : 'text-[#6B7280] hover:text-[#FF6161]'
+                              reportedIds.has(msg.id) ? 'text-[#FF6161]' : 'text-[var(--ag-text-muted)] hover:text-[#FF6161]'
                             }`}
                             title="Flag this response"
                             data-testid={`report-btn-${msg.id}`}
@@ -1590,7 +1590,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               }`}>
                 {avatarEmoji}
               </div>
-              <div className="bg-[#06060B] border border-[#00F0FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
+              <div className="bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 px-4 py-3 rounded-2xl rounded-bl-md">
                 <div className="flex gap-1.5">
                   {[0, 1, 2].map((i) => (
                     <div
@@ -1617,7 +1617,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                     rafRef.current = 0;
                   }
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1A1A2E] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-all min-h-[36px]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1A1A2E] border border-[#00F0FF]/20 text-[var(--ag-text-secondary)] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-all min-h-[36px]"
               >
                 <Square className="w-3 h-3" />
                 Stop generating
@@ -1628,12 +1628,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
           {/* Suggested prompts (show when only greeting) */}
           {messages.length <= 1 && !isTyping && !premiumSession && !agentOwner && (
             <div className="space-y-2 pt-2">
-              <p className="text-xs text-[#6B7280] uppercase tracking-wider">Suggestions</p>
+              <p className="text-xs text-[var(--ag-text-muted)] uppercase tracking-wider">Suggestions</p>
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
-                  className="block w-full text-left px-4 py-2.5 min-h-[44px] rounded-xl bg-[#06060B] border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors"
+                  className="block w-full text-left px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:border-[#00F0FF]/40 transition-colors"
                 >
                   {prompt}
                 </button>
@@ -1646,13 +1646,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <div className="mx-4 mb-2">
               <div className="rounded-xl border border-[#00F0FF]/20 bg-[#00F0FF]/5 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#00F0FF]">💡 Try these commands</span>
+                  <span className="text-xs font-semibold text-[var(--ag-cyan)]">💡 Try these commands</span>
                   <button
                     onClick={() => {
                       localStorage.setItem(`tip-shown-${user?.id}`, '1');
                       setTipDismissed(true);
                     }}
-                    className="text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                    className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors"
                     aria-label="Dismiss tip"
                   >
                     <X className="w-3 h-3" />
@@ -1660,7 +1660,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 </div>
                 <ul className="space-y-1">
                   {USE_CASE_TIPS[agent.use_case].map((tip) => (
-                    <li key={tip} className="text-xs text-[#6B7280]">
+                    <li key={tip} className="text-xs text-[var(--ag-text-muted)]">
                       <button
                         onClick={() => setInput(tip)}
                         className="hover:text-[#E8E8F0] text-left transition-colors"
@@ -1681,7 +1681,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             <button
               onClick={scrollToBottom}
               className="sticky bottom-4 ml-auto mr-2 flex items-center justify-center w-11 h-11 rounded-full shadow-lg transition-all relative"
-              style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: '#00F0FF' }}
+              style={{ background: 'rgba(0,240,255,0.15)', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--ag-cyan)' }}
               aria-label="Scroll to bottom"
             >
               <ArrowDown className="w-4 h-4" />
@@ -1706,7 +1706,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 value={deployTask}
                 onChange={(e) => setDeployTask(e.target.value)}
                 placeholder="Describe the task for the specialist..."
-                className="w-full h-24 px-3 py-2 bg-[#06060B] border border-[#00F0FF]/30 rounded-xl text-sm text-[#E8E8F0] placeholder-[#6B7280]/50 resize-none focus:outline-none focus:border-[#00F0FF]/60"
+                className="w-full h-24 px-3 py-2 bg-[var(--ag-bg-deep)] border border-[#00F0FF]/30 rounded-xl text-sm text-[#E8E8F0] placeholder-[#6B7280]/50 resize-none focus:outline-none focus:border-[#00F0FF]/60"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -1715,11 +1715,11 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                   }
                 }}
               />
-              <p className="text-[11px] text-[#6B7280]/60">Costs 100 credits to deploy. Uses premium reasoning engine.</p>
+              <p className="text-[11px] text-[var(--ag-text-muted)]/60">Costs 100 credits to deploy. Uses premium reasoning engine.</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShowDeployDialog(false); setDeployTask(''); }}
-                  className="flex-1 px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1745,12 +1745,12 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[#E8E8F0]">You're out of credits</h3>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-[var(--ag-text-muted)]">
                     {planLabel} plan{planPrice !== null ? ` · $${planPrice.toFixed(2)}/mo` : ''}
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-[#6B7280]">
+              <p className="text-sm text-[var(--ag-text-muted)]">
                 {creditsTotal !== null && creditsRemaining !== null
                   ? `You've used ${(creditsTotal - creditsRemaining).toLocaleString()} / ${creditsTotal.toLocaleString()} credits this cycle.`
                   : "Your monthly credits are used up."}
@@ -1759,7 +1759,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowUpgradePrompt(false)}
-                  className="flex-1 px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-sm text-[#6B7280] hover:text-[#E8E8F0] transition-colors"
+                  className="flex-1 px-4 py-2 rounded-xl border border-[#00F0FF]/20 text-sm text-[var(--ag-text-muted)] hover:text-[#E8E8F0] transition-colors"
                 >
                   Dismiss
                 </button>
@@ -1777,16 +1777,16 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         {/* 82.7: AI safety footer — dismissable per session */}
         {!safetyDismissed && (
           <div
-            className="px-4 py-1.5 flex items-center justify-between gap-2 border-t border-[#00F0FF]/5 bg-[#06060B]/80"
+            className="px-4 py-1.5 flex items-center justify-between gap-2 border-t border-[#00F0FF]/5 bg-[var(--ag-bg-deep)]/80"
             data-testid="ai-safety-banner"
           >
-            <span className="text-[10px] text-[#6B7280]/70">AI can make mistakes — always verify important information.</span>
+            <span className="text-[10px] text-[var(--ag-text-muted)]/70">AI can make mistakes — always verify important information.</span>
             <button
               onClick={() => {
                 sessionStorage.setItem('ai-disclaimer-dismissed', '1');
                 setSafetyDismissed(true);
               }}
-              className="text-[#6B7280]/50 hover:text-[#6B7280] flex-shrink-0 transition-colors"
+              className="text-[var(--ag-text-muted)]/50 hover:text-[var(--ag-text-muted)] flex-shrink-0 transition-colors"
               aria-label="Dismiss AI safety notice"
               data-testid="dismiss-safety-banner"
             >
@@ -1796,13 +1796,13 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] safe-area-pb">
+        <div className="p-4 border-t border-[#00F0FF]/20 bg-[var(--ag-bg-deep)] safe-area-pb">
           {/* 60.6: reply-to context banner */}
           {replyTo && (
             <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-[#00F0FF]/5 border border-[#00F0FF]/20" data-testid="reply-to-banner">
-              <span className="text-[10px] text-[#00F0FF] flex-shrink-0">↩ Replying to</span>
-              <span className="text-[11px] text-[#9CA3AF] truncate flex-1">{replyTo.content.slice(0, 60)}{replyTo.content.length > 60 ? '…' : ''}</span>
-              <button onClick={() => setReplyTo(null)} className="text-[#6B7280] hover:text-[#E8E8F0] text-xs flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss reply">✕</button>
+              <span className="text-[10px] text-[var(--ag-cyan)] flex-shrink-0">↩ Replying to</span>
+              <span className="text-[11px] text-[var(--ag-text-secondary)] truncate flex-1">{replyTo.content.slice(0, 60)}{replyTo.content.length > 60 ? '…' : ''}</span>
+              <button onClick={() => setReplyTo(null)} className="text-[var(--ag-text-muted)] hover:text-[#E8E8F0] text-xs flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss reply">✕</button>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -1849,9 +1849,9 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 data-testid="voice-record-button"
               >
                 {voiceRecordState === 'uploading' || voiceRecordState === 'transcribing' ? (
-                  <Loader2 className="w-4 h-4 text-[#00F0FF] animate-spin" />
+                  <Loader2 className="w-4 h-4 text-[var(--ag-cyan)] animate-spin" />
                 ) : (
-                  <Mic className={`w-4 h-4 ${voiceRecordState === 'recording' ? 'text-red-400 animate-pulse' : 'text-[#6B7280]'}`} />
+                  <Mic className={`w-4 h-4 ${voiceRecordState === 'recording' ? 'text-red-400 animate-pulse' : 'text-[var(--ag-text-muted)]'}`} />
                 )}
                 {voiceRecordState === 'recording' && (
                   <span className="absolute -top-1 -right-1 text-[9px] bg-red-500 text-white rounded px-0.5 leading-4 min-w-[14px] text-center">
@@ -1865,7 +1865,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                 className={`p-2.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${isListening ? 'bg-[#00F0FF]/20 hover:bg-[#00F0FF]/30' : 'hover:bg-[#00F0FF]/10'}`}
                 title={isListening ? 'Stop listening' : 'Voice input'}
               >
-                <Mic className={`w-4 h-4 ${isListening ? 'text-[#00F0FF]' : 'text-[#6B7280]'}`} />
+                <Mic className={`w-4 h-4 ${isListening ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
               </button>
             ) : null}
             {/* 80.7: Voice error/cap toast */}
@@ -1894,7 +1894,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
             </Button>
           </div>
           <div className="flex items-center justify-between mt-2">
-            <p className="text-[10px] text-[#6B7280]/50">
+            <p className="text-[10px] text-[var(--ag-text-muted)]/50">
               {premiumSession
                 ? `${premiumSession.codename} · Premium Engine · ${premiumSession.messagesCount} messages`
                 : <>Powered by Agentin &middot; {agent.primaryModel}</>
@@ -1909,7 +1909,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       ? 'text-[#EF4444] bg-[#EF4444]/10'
                       : chatRateLimitRemaining < 10
                       ? 'text-[#F59E0B] bg-[#F59E0B]/10'
-                      : 'text-[#6B7280]/50'
+                      : 'text-[var(--ag-text-muted)]/50'
                   }`}
                   title={`${chatRateLimitRemaining}/60 requests remaining${chatRateLimitResetAt && chatRateLimitResetAt > Date.now() ? ` · resets in ${Math.ceil((chatRateLimitResetAt - Date.now()) / 60000)}m` : ''}`}
                 >
@@ -1923,7 +1923,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
                       ? 'text-[#FF6161] bg-[#FF6161]/10'
                       : messages.length > 20
                       ? 'text-[#F59E0B] bg-[#F59E0B]/10'
-                      : 'text-[#6B7280]/50'
+                      : 'text-[var(--ag-text-muted)]/50'
                   }`}
                   title={messages.length > 50 ? 'Older messages may be truncated' : messages.length > 20 ? 'Context window filling up' : undefined}
                 >

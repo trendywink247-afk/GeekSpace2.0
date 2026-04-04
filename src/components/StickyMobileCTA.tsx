@@ -44,7 +44,7 @@ export function StickyMobileCTA({ onGetStarted }: StickyMobileCTAProps) {
           style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
         >
           {/* Backdrop */}
-          <div className="bg-[#06061a]/90 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3">
+          <div className="bg-[var(--ag-bg-base)]/90 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3">
             <button
               onClick={onGetStarted}
               aria-label="Get started for free"

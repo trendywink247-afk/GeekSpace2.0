@@ -3,13 +3,13 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 /* ── Agent config ── */
 const AGENTS = [
-  { id: 'weebo', name: 'Weebo', sheet: 0, color: '#00F0FF' },
-  { id: 'edith', name: 'Edith', sheet: 1, color: '#8B5CF6' },
+  { id: 'weebo', name: 'Weebo', sheet: 0, color: 'var(--ag-cyan)' },
+  { id: 'edith', name: 'Edith', sheet: 1, color: 'var(--ag-violet)' },
   { id: 'jarvis', name: 'Jarvis', sheet: 2, color: '#ADFF2F' },
   { id: 'aria', name: 'Aria', sheet: 3, color: '#FF2D78' },
   { id: 'forge', name: 'Forge', sheet: 4, color: '#FFB800' },
-  { id: 'pulse', name: 'Pulse', sheet: 5, color: '#00F0FF' },
-  { id: 'echo', name: 'Echo', sheet: 0, hueShift: 120, color: '#8B5CF6' },
+  { id: 'pulse', name: 'Pulse', sheet: 5, color: 'var(--ag-cyan)' },
+  { id: 'echo', name: 'Echo', sheet: 0, hueShift: 120, color: 'var(--ag-violet)' },
   { id: 'cal', name: 'Cal', sheet: 2, hueShift: 90, color: '#ADFF2F' },
   { id: 'nova', name: 'Nova', sheet: 3, hueShift: 180, color: '#FF2D78' },
 ] as const;

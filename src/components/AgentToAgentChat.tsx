@@ -157,7 +157,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
       {/* Modal */}
       <div className="relative w-full max-w-md glass-card-v2 border border-[#00F0FF]/30 rounded-2xl shadow-2xl shadow-[#00F0FF]/10 flex flex-col max-h-[80vh] animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[#06060B] rounded-t-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-[#00F0FF]/20 bg-[var(--ag-bg-deep)] rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00FF88] to-[#00F0FF] flex items-center justify-center">
@@ -176,7 +176,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-[#00F0FF]/10 transition-colors"
           >
-            <X className="w-5 h-5 text-[#6B7280]" />
+            <X className="w-5 h-5 text-[var(--ag-text-muted)]" />
           </button>
         </div>
 
@@ -202,14 +202,14 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
                     className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[#00F0FF] text-white rounded-br-md'
-                        : 'bg-[#06060B] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
+                        : 'bg-[var(--ag-bg-deep)] text-[#E8E8F0] border border-[#00F0FF]/20 rounded-bl-md'
                     }`}
                   >
                     {msg.content}
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-7 h-7 rounded-full bg-[#00F0FF]/20 flex items-center justify-center ml-2 flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-[#00F0FF]" />
+                      <User className="w-4 h-4 text-[var(--ag-cyan)]" />
                     </div>
                   )}
                 </>
@@ -221,7 +221,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               <div className="w-7 h-7 rounded-full bg-[#00FF88]/20 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
                 <Bot className="w-4 h-4 text-[#00FF88]" />
               </div>
-              <div className="bg-[#06060B] border border-[#00F0FF]/20 rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="bg-[var(--ag-bg-deep)] border border-[#00F0FF]/20 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-2 h-2 bg-[#00F0FF]/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -234,9 +234,9 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-[#00F0FF]/20 bg-[#06060B] rounded-b-2xl">
+        <div className="p-4 border-t border-[#00F0FF]/20 bg-[var(--ag-bg-deep)] rounded-b-2xl">
           {canChat === false ? (
-            <div className="text-center py-2 text-sm text-[#6B7280]">
+            <div className="text-center py-2 text-sm text-[var(--ag-text-muted)]">
               {error || 'Agent chat is not enabled for this user'}
             </div>
           ) : (
@@ -263,7 +263,7 @@ export function AgentToAgentChat({ isOpen, onClose, targetUsername, targetName }
               </Button>
             </div>
           )}
-          <p className="text-[10px] text-[#6B7280]/50 text-center mt-2">
+          <p className="text-[10px] text-[var(--ag-text-muted)]/50 text-center mt-2">
             Powered by Agentin
           </p>
         </div>

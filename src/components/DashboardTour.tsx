@@ -25,7 +25,7 @@ interface TourStep {
 const tourSteps: TourStep[] = [
   {
     icon: Sparkles,
-    color: '#00F0FF',
+    color: 'var(--ag-cyan)',
     title: 'Welcome to your AI command center',
     description: 'Your agent can chat, build websites, set reminders, automate tasks, and represent you 24/7 on your portfolio. Here\'s a quick tour.',
     tip: 'This tour only shows once — but you can always visit "What Can I Do?" in the sidebar.',
@@ -172,7 +172,7 @@ export function DashboardTour({ onNavigate, onOpenChat }: DashboardTourProps) {
           </div>
           <button
             onClick={dismiss}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#E8E8F0] hover:bg-white/8 transition-all"
+            className="p-1.5 rounded-lg text-[var(--ag-text-muted)] hover:text-[#E8E8F0] hover:bg-white/8 transition-all"
             aria-label="Close tour"
           >
             <X className="w-3.5 h-3.5" />
@@ -227,7 +227,7 @@ export function DashboardTour({ onNavigate, onOpenChat }: DashboardTourProps) {
               {step > 0 && (
                 <button
                   onClick={() => setStep(s => s - 1)}
-                  className="flex-none px-3 py-2 rounded-xl text-xs text-[#6B7280] border border-white/8 hover:border-white/20 hover:text-[#E8E8F0] transition-all"
+                  className="flex-none px-3 py-2 rounded-xl text-xs text-[var(--ag-text-muted)] border border-white/8 hover:border-white/20 hover:text-[#E8E8F0] transition-all"
                 >
                   Back
                 </button>

@@ -249,7 +249,7 @@ export function BillingPage() {
           email: user?.email || '',
           name: user?.name || '',
         },
-        theme: { color: '#00F0FF' },
+        theme: { color: 'var(--ag-cyan)' },
       };
 
       const rzp = new (window as unknown as Record<string, unknown> & { Razorpay: new (opts: typeof options) => { open: () => void } }).Razorpay(options);
@@ -301,7 +301,7 @@ export function BillingPage() {
         key={plan.id}
         className={`relative overflow-hidden rounded-xl border bg-[rgba(12,12,30,0.6)] backdrop-blur-xl transition-all ${
           isCurrent
-            ? 'border-[#8B5CF6] ring-1 ring-[#8B5CF6]/30'
+            ? 'border-[var(--ag-violet)] ring-1 ring-[#8B5CF6]/30'
             : isHighlighted
               ? `border-[${NOVA}] ring-1 ring-[${NOVA}]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]`
               : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
@@ -326,7 +326,7 @@ export function BillingPage() {
             className="absolute top-0 left-0 right-0 px-3 py-1 text-xs font-bold text-center"
             style={{
               backgroundColor: 'rgba(139,92,246,0.15)',
-              color: '#8B5CF6',
+              color: 'var(--ag-violet)',
               borderBottom: '1px solid rgba(139,92,246,0.3)',
             }}
           >
@@ -335,9 +335,9 @@ export function BillingPage() {
         )}
         <div className="pb-3 pt-6 px-5">
           <div className="flex items-center justify-between">
-            <span className="capitalize text-[#F4F6FF] font-semibold">{plan.id}</span>
+            <span className="capitalize text-[var(--ag-text-primary)] font-semibold">{plan.id}</span>
             {isCurrent && (
-              <Badge className="bg-[#8B5CF6]/20 text-[#8B5CF6] border-[#8B5CF6]/30">
+              <Badge className="bg-[#8B5CF6]/20 text-[var(--ag-violet)] border-[var(--ag-violet)]/30">
                 Current
               </Badge>
             )}
@@ -346,42 +346,42 @@ export function BillingPage() {
         <div className="px-5 pb-5 space-y-4">
           {/* Price with slashed old price */}
           <div className="flex items-baseline flex-wrap gap-2">
-            <span className={`${isMobile ? 'text-4xl' : 'text-3xl'} font-bold text-[#F4F6FF]`}>{price(plan)}</span>
+            <span className={`${isMobile ? 'text-4xl' : 'text-3xl'} font-bold text-[var(--ag-text-primary)]`}>{price(plan)}</span>
             {display.oldPrice > 0 && (
-              <span className="text-sm text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
+              <span className="text-sm text-[var(--ag-text-secondary)] line-through">{oldPrice(plan)}</span>
             )}
             {plan.priceUsd > 0 && (
-              <span className="text-sm text-[#9CA3AF]">/ {plan.intervalLabel}</span>
+              <span className="text-sm text-[var(--ag-text-secondary)]">/ {plan.intervalLabel}</span>
             )}
           </div>
-          <div className="text-sm text-[#9CA3AF]">{plan.description}</div>
+          <div className="text-sm text-[var(--ag-text-secondary)]">{plan.description}</div>
 
           {/* Features */}
           <div className="space-y-2 py-2 border-t border-[rgba(139,92,246,0.08)]">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9CA3AF]">Agent Slots</span>
-              <span className="text-[#F4F6FF] font-medium">{display.agentSlots}</span>
+              <span className="text-[var(--ag-text-secondary)]">Agent Slots</span>
+              <span className="text-[var(--ag-text-primary)] font-medium">{display.agentSlots}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9CA3AF]">Token Budget</span>
-              <span className="text-[#F4F6FF] font-medium">{display.tokenBudget}</span>
+              <span className="text-[var(--ag-text-secondary)]">Token Budget</span>
+              <span className="text-[var(--ag-text-primary)] font-medium">{display.tokenBudget}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#9CA3AF]">Kimi Access</span>
+              <span className="text-[var(--ag-text-secondary)]">Kimi Access</span>
               {display.hasKimi ? (
                 <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
               ) : (
-                <span className="text-[#9CA3AF]">{'\u2014'}</span>
+                <span className="text-[var(--ag-text-secondary)]">{'\u2014'}</span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-[#F4F6FF]">
-            <Zap className="w-4 h-4 text-[#8B5CF6]" />
+          <div className="flex items-center gap-2 text-sm text-[var(--ag-text-primary)]">
+            <Zap className="w-4 h-4 text-[var(--ag-violet)]" />
             {formatCredits(plan.credits)} credits
           </div>
           {isCurrent ? (
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-[#8B5CF6]/10 text-sm text-[#8B5CF6]">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-[#8B5CF6]/10 text-sm text-[var(--ag-violet)]">
               <Check className="w-4 h-4" />
               Active plan
             </div>
@@ -399,7 +399,7 @@ export function BillingPage() {
                 )}
                 Pay &#8377;{plan.priceInr.toLocaleString()} with Razorpay
               </Button>
-              <p className="text-xs text-[#9CA3AF] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
+              <p className="text-xs text-[var(--ag-text-secondary)] text-center mt-1.5">UPI, Cards, Net Banking accepted</p>
             </div>
           ) : (
             <Button
@@ -418,7 +418,7 @@ export function BillingPage() {
           {subscription?.plan === 'free' && plan.id === 'free' && (
             <button
               onClick={handleDayPass}
-              className="w-full mt-2 py-2 px-3 rounded-lg border border-[rgba(139,92,246,0.15)] text-[#8B5CF6] text-xs hover:bg-[#8B5CF6]/10 transition-colors min-h-[44px]"
+              className="w-full mt-2 py-2 px-3 rounded-lg border border-[rgba(139,92,246,0.15)] text-[var(--ag-violet)] text-xs hover:bg-[#8B5CF6]/10 transition-colors min-h-[44px]"
             >
               Try Weebo for $1/day {'\u2192'}
             </button>
@@ -467,7 +467,7 @@ export function BillingPage() {
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
                   currency === c
                     ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[#9CA3AF] hover:text-[#F4F6FF]'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
                 }`}
               >
                 {c === 'USD' ? '$ USD' : '\u20B9 INR'}
@@ -480,25 +480,25 @@ export function BillingPage() {
       {/* Payment Gateway Section — Stripe (USD) or Razorpay (INR) based on currency */}
       <SectionCard>
         <div className="flex items-center gap-3 mb-4">
-          <Star className="w-5 h-5 text-[#8B5CF6]" />
+          <Star className="w-5 h-5 text-[var(--ag-violet)]" />
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-[#F4F6FF]">Premium Subscription</h2>
-            <p className="text-sm text-[#9CA3AF]">
+            <h2 className="text-base font-semibold text-[var(--ag-text-primary)]">Premium Subscription</h2>
+            <p className="text-sm text-[var(--ag-text-secondary)]">
               {showStripe && 'Basic ($1.19/mo) and Pro ($3.59/mo) via Stripe'}
               {showRazorpay && 'Basic (\u20B999/mo) and Pro (\u20B9299/mo) via Razorpay'}
             </p>
           </div>
           {stripeStatus?.isPaid && (
-            <Badge className="bg-[#8B5CF6]/20 text-[#8B5CF6] border-[#8B5CF6]/30 ml-auto">{stripeStatus.label} Active</Badge>
+            <Badge className="bg-[#8B5CF6]/20 text-[var(--ag-violet)] border-[var(--ag-violet)]/30 ml-auto">{stripeStatus.label} Active</Badge>
           )}
         </div>
 
         {/* Gateway indicator */}
-        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[rgba(139,92,246,0.05)] border border-[rgba(139,92,246,0.08)] text-xs text-[#9CA3AF]">
-          <Lock className="w-3.5 h-3.5 text-[#8B5CF6] flex-shrink-0" />
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[rgba(139,92,246,0.05)] border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary)]">
+          <Lock className="w-3.5 h-3.5 text-[var(--ag-violet)] flex-shrink-0" />
           <span>
             Payments processed securely via{' '}
-            <span className="text-[#F4F6FF] font-medium">
+            <span className="text-[var(--ag-text-primary)] font-medium">
               {showStripe ? 'Stripe' : 'Razorpay'}
             </span>
           </span>
@@ -554,8 +554,8 @@ export function BillingPage() {
           </div>
 
         {!stripeStatus?.isPaid && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#8B5CF6]/5 border border-[rgba(139,92,246,0.15)] text-sm text-[#9CA3AF]" data-testid="upgrade-to-unlock">
-            <Lock className="w-4 h-4 text-[#8B5CF6] flex-shrink-0" />
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#8B5CF6]/5 border border-[rgba(139,92,246,0.15)] text-sm text-[var(--ag-text-secondary)]" data-testid="upgrade-to-unlock">
+            <Lock className="w-4 h-4 text-[var(--ag-violet)] flex-shrink-0" />
             <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
           </div>
         )}
@@ -568,11 +568,11 @@ export function BillingPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-2">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-[#8B5CF6]" />
+                  <CreditCard className="w-6 h-6 text-[var(--ag-violet)]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#F4F6FF] capitalize">{subscription.plan} Plan</h2>
-                  <p className="text-sm text-[#9CA3AF]">
+                  <h2 className="text-xl font-bold text-[var(--ag-text-primary)] capitalize">{subscription.plan} Plan</h2>
+                  <p className="text-sm text-[var(--ag-text-secondary)]">
                     {subscription.price_usd > 0
                       ? `${currency === 'INR' ? `\u20B9${subscription.price_inr.toLocaleString()}` : `$${subscription.price_usd}`} / ${plans.find(p => p.id === subscription.plan)?.intervalLabel || 'cycle'}`
                       : 'Free forever'}
@@ -596,41 +596,41 @@ export function BillingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-2">
               <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-[#8B5CF6]" />
-                  <span className="text-xs text-[#9CA3AF]">Credits Remaining</span>
+                  <Zap className="w-4 h-4 text-[var(--ag-violet)]" />
+                  <span className="text-xs text-[var(--ag-text-secondary)]">Credits Remaining</span>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
                   {formatCredits(subscription.credits_remaining)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">of {formatCredits(subscription.monthly_credits)}</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
               <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[#FFB800]" />
-                  <span className="text-xs text-[#9CA3AF]">Credits Used</span>
+                  <span className="text-xs text-[var(--ag-text-secondary)]">Credits Used</span>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
                   {formatCredits(subscription.credits_used_this_cycle)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">this cycle</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">this cycle</div>
               </div>
               <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-[#10B981]" />
-                  <span className="text-xs text-[#9CA3AF]">Cycle Ends</span>
+                  <span className="text-xs text-[var(--ag-text-secondary)]">Cycle Ends</span>
                 </div>
-                <div className="text-2xl font-bold text-[#F4F6FF]">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
                   {formatDate(subscription.billing_cycle_end)}
                 </div>
-                <div className="text-xs text-[#9CA3AF]">{subscription.billing_interval_days} day cycle</div>
+                <div className="text-xs text-[var(--ag-text-secondary)]">{subscription.billing_interval_days} day cycle</div>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="mt-6 px-2 pb-2">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-[#9CA3AF]">Credit usage</span>
-                <span className="text-xs text-[#9CA3AF] font-mono">{usedPercent.toFixed(1)}%</span>
+                <span className="text-xs text-[var(--ag-text-secondary)]">Credit usage</span>
+                <span className="text-xs text-[var(--ag-text-secondary)] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
               <div className="h-3 sm:h-2 rounded-full bg-[rgba(139,92,246,0.08)] overflow-hidden">
                 <div
@@ -647,7 +647,7 @@ export function BillingPage() {
 
       {/* Plan Cards Grid */}
       <div>
-        <h2 className="text-xl font-bold text-[#F4F6FF] mb-4 font-heading">
+        <h2 className="text-xl font-bold text-[var(--ag-text-primary)] mb-4 font-heading">
           Available Plans
         </h2>
         {isMobile ? (
@@ -671,13 +671,13 @@ export function BillingPage() {
           <table className="w-full min-w-[500px]">
             <thead>
               <tr className="border-b border-[rgba(139,92,246,0.15)]">
-                <th className="text-left py-3 px-2 text-sm font-medium text-[#9CA3AF]">Feature</th>
+                <th className="text-left py-3 px-2 text-sm font-medium text-[var(--ag-text-secondary)]">Feature</th>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
                     <th key={plan.id} className="text-center py-3 px-2 text-sm font-medium">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-[#F4F6FF] capitalize">{plan.id}</span>
+                        <span className="text-[var(--ag-text-primary)] capitalize">{plan.id}</span>
                         {display?.badge && (
                           <span
                             className="text-xs px-1.5 py-0.5 rounded"
@@ -697,29 +697,29 @@ export function BillingPage() {
             </thead>
             <tbody>
               <tr className="border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.3)]">
-                <td className="py-3 px-2 text-sm text-[#9CA3AF]">Agent Slots</td>
+                <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Agent Slots</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
-                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                       {display?.agentSlots || 1}
                     </td>
                   );
                 })}
               </tr>
               <tr className="border-b border-[rgba(139,92,246,0.08)]">
-                <td className="py-3 px-2 text-sm text-[#9CA3AF]">Token Budget</td>
+                <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Token Budget</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
-                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                    <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                       {display?.tokenBudget || '50K'}
                     </td>
                   );
                 })}
               </tr>
               <tr className="border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.3)]">
-                <td className="py-3 px-2 text-sm text-[#9CA3AF]">Kimi Access</td>
+                <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Kimi Access</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
@@ -727,30 +727,30 @@ export function BillingPage() {
                       {display?.hasKimi ? (
                         <CheckCircle2 className="w-5 h-5 text-[#10B981] mx-auto" />
                       ) : (
-                        <span className="text-[#9CA3AF]">{'\u2014'}</span>
+                        <span className="text-[var(--ag-text-secondary)]">{'\u2014'}</span>
                       )}
                     </td>
                   );
                 })}
               </tr>
               <tr className="border-b border-[rgba(139,92,246,0.08)]">
-                <td className="py-3 px-2 text-sm text-[#9CA3AF]">Credits / Cycle</td>
+                <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Credits / Cycle</td>
                 {plans.map((plan) => (
-                  <td key={plan.id} className="text-center py-3 px-2 text-sm text-[#F4F6FF]">
+                  <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
                     {formatCredits(plan.credits)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="py-3 px-2 text-sm text-[#9CA3AF]">Price</td>
+                <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Price</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
                     <td key={plan.id} className="text-center py-3 px-2">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-sm font-bold text-[#F4F6FF]">{price(plan)}</span>
+                        <span className="text-sm font-bold text-[var(--ag-text-primary)]">{price(plan)}</span>
                         {display?.oldPrice > 0 && (
-                          <span className="text-xs text-[#9CA3AF] line-through">{oldPrice(plan)}</span>
+                          <span className="text-xs text-[var(--ag-text-secondary)] line-through">{oldPrice(plan)}</span>
                         )}
                       </div>
                     </td>
@@ -766,17 +766,17 @@ export function BillingPage() {
       <SectionCard title="Usage History" subtitle="Last 30 days of daily usage">
         {usage.length === 0 ? (
           <div className="text-center py-8">
-            <TrendingUp className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
-            <p className="text-[#9CA3AF]">No usage data yet</p>
-            <p className="text-sm text-[#9CA3AF]">Start chatting and usage will appear here</p>
+            <TrendingUp className="w-10 h-10 text-[var(--ag-violet)]/30 mx-auto mb-3" />
+            <p className="text-[var(--ag-text-secondary)]">No usage data yet</p>
+            <p className="text-sm text-[var(--ag-text-secondary)]">Start chatting and usage will appear here</p>
           </div>
         ) : (
           <MobileTable<DailyUsage>
             columns={[
-              { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[#F4F6FF]">{formatDate(row.day)}</span> },
-              { key: 'calls', label: 'Calls', render: (row) => <span className="text-[#9CA3AF] font-mono">{row.calls}</span> },
-              { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[#9CA3AF] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
-              { key: 'cost', label: 'Cost', render: (row) => <span className="text-[#F4F6FF] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
+              { key: 'day', label: 'Date', primary: true, render: (row) => <span className="text-[var(--ag-text-primary)]">{formatDate(row.day)}</span> },
+              { key: 'calls', label: 'Calls', render: (row) => <span className="text-[var(--ag-text-secondary)] font-mono">{row.calls}</span> },
+              { key: 'tokens', label: 'Tokens', render: (row) => <span className="text-[var(--ag-text-secondary)] font-mono">{(row.total_tokens ?? 0).toLocaleString()}</span> },
+              { key: 'cost', label: 'Cost', render: (row) => <span className="text-[var(--ag-text-primary)] font-mono">${(row.total_cost ?? 0).toFixed(4)}</span> },
             ]}
             data={usage}
             keyExtractor={(row) => row.day}
@@ -790,9 +790,9 @@ export function BillingPage() {
       <SectionCard title="Credit History" subtitle="Last 20 AI requests with cost breakdown">
         {events.length === 0 ? (
           <div className="text-center py-8">
-            <Zap className="w-10 h-10 text-[#8B5CF6]/30 mx-auto mb-3" />
-            <p className="text-[#9CA3AF]">No credit events yet</p>
-            <p className="text-sm text-[#9CA3AF]">Credit usage will appear here after your first AI request</p>
+            <Zap className="w-10 h-10 text-[var(--ag-violet)]/30 mx-auto mb-3" />
+            <p className="text-[var(--ag-text-secondary)]">No credit events yet</p>
+            <p className="text-sm text-[var(--ag-text-secondary)]">Credit usage will appear here after your first AI request</p>
           </div>
         ) : (
           <MobileTable<UsageEvent>
@@ -802,7 +802,7 @@ export function BillingPage() {
                 label: 'Date',
                 primary: true,
                 render: (row) => (
-                  <span className="text-[#F4F6FF] text-xs whitespace-nowrap">
+                  <span className="text-[var(--ag-text-primary)] text-xs whitespace-nowrap">
                     {formatDate((row as unknown as Record<string, string>).created_at || row.createdAt)}
                   </span>
                 ),
@@ -810,13 +810,13 @@ export function BillingPage() {
               {
                 key: 'channel',
                 label: 'Channel',
-                render: (row) => <span className="text-[#9CA3AF] capitalize">{row.channel || '\u2014'}</span>,
+                render: (row) => <span className="text-[var(--ag-text-secondary)] capitalize">{row.channel || '\u2014'}</span>,
               },
               {
                 key: 'model',
                 label: 'Model',
                 render: (row) => (
-                  <span className="text-[#9CA3AF] font-mono text-xs truncate max-w-[100px] block">
+                  <span className="text-[var(--ag-text-secondary)] font-mono text-xs truncate max-w-[100px] block">
                     {row.model || row.provider || '\u2014'}
                   </span>
                 ),
@@ -827,7 +827,7 @@ export function BillingPage() {
                 render: (row) => {
                   const tokensIn = (row as unknown as Record<string, number>).tokens_in ?? row.tokensIn ?? 0;
                   const tokensOut = (row as unknown as Record<string, number>).tokens_out ?? row.tokensOut ?? 0;
-                  return <span className="text-[#9CA3AF] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
+                  return <span className="text-[var(--ag-text-secondary)] font-mono">{(tokensIn + tokensOut).toLocaleString()}</span>;
                 },
               },
               {
@@ -835,7 +835,7 @@ export function BillingPage() {
                 label: 'Cost',
                 render: (row) => {
                   const cost = (row as unknown as Record<string, number>).cost_usd ?? row.costUSD ?? 0;
-                  return <span className="text-[#F4F6FF] font-mono">${cost.toFixed(4)}</span>;
+                  return <span className="text-[var(--ag-text-primary)] font-mono">${cost.toFixed(4)}</span>;
                 },
               },
             ]}

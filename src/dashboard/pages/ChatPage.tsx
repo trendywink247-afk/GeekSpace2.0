@@ -1054,9 +1054,9 @@ export function ChatPage() {
   }, [input, autoResize]);
 
   const personalityMeta: Record<AgentPersonality, { emoji: string; color: string; glow: string; initial: string }> = {
-    edith: { emoji: 'E', color: '#8B5CF6', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
+    edith: { emoji: 'E', color: 'var(--ag-violet)', glow: '0 0 12px rgba(139,92,246,0.4)', initial: 'E' },
     jarvis: { emoji: 'J', color: '#ADFF2F', glow: '0 0 12px rgba(173,255,47,0.4)', initial: 'J' },
-    weebo: { emoji: 'W', color: '#00F0FF', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
+    weebo: { emoji: 'W', color: 'var(--ag-cyan)', glow: '0 0 12px rgba(0,240,255,0.4)', initial: 'W' },
     aria: { emoji: 'A', color: '#FF6B9D', glow: '0 0 12px rgba(255,107,157,0.4)', initial: 'A' },
     forge: { emoji: 'F', color: '#F59E0B', glow: '0 0 12px rgba(245,158,11,0.4)', initial: 'F' },
     pulse: { emoji: 'P', color: '#10B981', glow: '0 0 12px rgba(16,185,129,0.4)', initial: 'P' },
@@ -1341,7 +1341,7 @@ export function ChatPage() {
                                   className={`w-4 h-4 transition-colors ${
                                     star <= (ratingHover || sessionRating || 0)
                                       ? 'fill-yellow-400 text-yellow-400'
-                                      : 'text-[#F4F6FF]/20'
+                                      : 'text-[var(--ag-text-primary)]/20'
                                   }`}
                                 />
                               </button>
@@ -1482,8 +1482,8 @@ export function ChatPage() {
           <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
             {[
               { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
-              { id: 'weebo', name: 'Weebo', emoji: '✨', color: '#00F0FF' },
-              { id: 'edith', name: 'Edith', emoji: '⚡', color: '#8B5CF6' },
+              { id: 'weebo', name: 'Weebo', emoji: '✨', color: 'var(--ag-cyan)' },
+              { id: 'edith', name: 'Edith', emoji: '⚡', color: 'var(--ag-violet)' },
               { id: 'jarvis', name: 'Jarvis', emoji: '🎩', color: '#ADFF2F' },
               { id: 'aria', name: 'Aria', emoji: '🎨', color: '#FF6B9D' },
               { id: 'forge', name: 'Forge', emoji: '🔧', color: '#F59E0B' },

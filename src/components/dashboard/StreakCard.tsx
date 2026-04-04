@@ -57,7 +57,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
         </h2>
         <button
           onClick={() => onNavigate?.('focus')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[var(--ag-cyan)] transition-colors"
         >
           Details
           <ArrowRight className="w-3 h-3" />
@@ -155,7 +155,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
                         <div className="w-2 h-2 rounded-full bg-[#8892A4]/30" />
                       )}
                     </div>
-                    <span className={habit.loggedToday ? 'text-[#00FF88]' : 'text-[#F4F6FF]'}>
+                    <span className={habit.loggedToday ? 'text-[#00FF88]' : 'text-[var(--ag-text-primary)]'}>
                       {habit.name}
                     </span>
                     {habit.streak > 0 && (
@@ -175,7 +175,7 @@ export function StreakCard({ onNavigate }: StreakCardProps) {
               >
                 <Target className="w-6 h-6 text-[#00FF88]/40" />
               </div>
-              <p className="text-sm font-medium text-[#F4F6FF] mb-1">
+              <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">
                 No habits yet
               </p>
               <p className="text-xs text-[#8892A4] mb-3">

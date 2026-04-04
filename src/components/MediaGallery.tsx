@@ -118,8 +118,8 @@ export function MediaGallery({
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all ${
                 filter === 'all'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-b-2 border-[#00F0FF]'
+                  : 'text-[var(--ag-text-secondary)] hover:text-[#E8E8F0]'
               }`}
             >
               All
@@ -128,8 +128,8 @@ export function MediaGallery({
               onClick={() => setFilter('images')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all flex items-center gap-1 ${
                 filter === 'images'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-b-2 border-[#00F0FF]'
+                  : 'text-[var(--ag-text-secondary)] hover:text-[#E8E8F0]'
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5" />
@@ -139,8 +139,8 @@ export function MediaGallery({
               onClick={() => setFilter('videos')}
               className={`px-3 py-1.5 rounded-md text-sm transition-all flex items-center gap-1 ${
                 filter === 'videos'
-                  ? 'bg-[#00F0FF]/15 text-[#00F0FF] border-b-2 border-[#00F0FF]'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  ? 'bg-[#00F0FF]/15 text-[var(--ag-cyan)] border-b-2 border-[#00F0FF]'
+                  : 'text-[var(--ag-text-secondary)] hover:text-[#E8E8F0]'
               }`}
             >
               <Video className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export function MediaGallery({
               className={`px-3 py-1.5 rounded-md text-sm transition-all flex items-center gap-1 ${
                 filter === 'favorites'
                   ? 'bg-[#FF2D78]/15 text-[#FF2D78] border-b-2 border-[#FF2D78]'
-                  : 'text-[#9CA3AF] hover:text-[#E8E8F0]'
+                  : 'text-[var(--ag-text-secondary)] hover:text-[#E8E8F0]'
               }`}
             >
               <Heart className="w-3.5 h-3.5" />
@@ -163,7 +163,7 @@ export function MediaGallery({
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {/* Search */}
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
             <input
               type="text"
               placeholder="Search prompts..."
@@ -178,7 +178,7 @@ export function MediaGallery({
             <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
+                viewMode === 'grid' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function MediaGallery({
             <button
               onClick={() => setViewMode('masonry')}
               className={`p-1.5 rounded transition-colors ${
-                viewMode === 'masonry' ? 'bg-[#00F0FF]/20 text-[#00F0FF]' : 'text-[#6B7280]'
+                viewMode === 'masonry' ? 'bg-[#00F0FF]/20 text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'
               }`}
             >
               <Grid2X2 className="w-4 h-4" />
@@ -196,7 +196,7 @@ export function MediaGallery({
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-4 text-sm text-[#6B7280]">
+      <div className="flex items-center gap-4 text-sm text-[var(--ag-text-muted)]">
         <span>{filteredItems.length} items</span>
         {searchQuery && <span>filtered by "{searchQuery}"</span>}
       </div>
@@ -205,10 +205,10 @@ export function MediaGallery({
       {filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-[#00F0FF]/15">
           <div className="w-16 h-16 rounded-2xl bg-[#00F0FF]/10 flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-[#00F0FF]/40" />
+            <Sparkles className="w-8 h-8 text-[var(--ag-cyan)]/40" />
           </div>
           <h3 className="text-base font-medium text-[#E8E8F0] mb-2">No media found</h3>
-          <p className="text-[#9CA3AF] text-sm max-w-xs">
+          <p className="text-[var(--ag-text-secondary)] text-sm max-w-xs">
             {searchQuery ? `No results for "${searchQuery}". Try a different search.` : 'Generate your first image or video using the agent chat.'}
           </p>
         </div>
@@ -236,7 +236,7 @@ export function MediaGallery({
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00F0FF]/20 to-[#FF2D78]/20">
-                  <Video className="w-12 h-12 text-[#00F0FF]" />
+                  <Video className="w-12 h-12 text-[var(--ag-cyan)]" />
                 </div>
               )}
               
@@ -308,7 +308,7 @@ export function MediaGallery({
         >
           <button
             onClick={() => setSelectedItem(null)}
-            className="absolute top-4 right-4 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[#9CA3AF] hover:text-[#E8E8F0] transition-colors z-10"
+            className="absolute top-4 right-4 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#0C0C18] border border-[#00F0FF]/20 text-[var(--ag-text-secondary)] hover:text-[#E8E8F0] transition-colors z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -346,7 +346,7 @@ export function MediaGallery({
               <video
                 src={selectedItem.url}
                 controls
-                className="max-w-full max-h-[60vh] rounded-2xl border border-[#00F0FF]/20 bg-[#06060B]"
+                className="max-w-full max-h-[60vh] rounded-2xl border border-[#00F0FF]/20 bg-[var(--ag-bg-deep)]"
                 style={{ colorScheme: 'dark' }}
               />
             )}
@@ -355,7 +355,7 @@ export function MediaGallery({
             <div className="w-full mt-4 p-4 bg-[#0C0C18] border border-[#00F0FF]/15 rounded-xl">
               <p className="text-[#E8E8F0] text-sm mb-3">{selectedItem.prompt}</p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#9CA3AF]">
+                <span className="text-xs text-[var(--ag-text-secondary)]">
                   {formatDate(selectedItem.createdAt)}
                 </span>
                 <div className="flex items-center gap-2">
@@ -364,7 +364,7 @@ export function MediaGallery({
                     className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
                       selectedItem.isFavorite
                         ? 'bg-[#FF2D78]/15 text-[#FF2D78] border border-[#FF2D78]/20'
-                        : 'bg-[#06060B] border border-[#00F0FF]/15 text-[#9CA3AF] hover:text-[#FF2D78]'
+                        : 'bg-[var(--ag-bg-deep)] border border-[#00F0FF]/15 text-[var(--ag-text-secondary)] hover:text-[#FF2D78]'
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${selectedItem.isFavorite ? 'fill-current' : ''}`} />
@@ -381,7 +381,7 @@ export function MediaGallery({
                       onDelete?.(selectedItem.id);
                       setSelectedItem(null);
                     }}
-                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#06060B] border border-[#FF6161]/20 text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-deep)] border border-[#FF6161]/20 text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

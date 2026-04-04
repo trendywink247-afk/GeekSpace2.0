@@ -17,11 +17,11 @@ export interface SearchResult {
 }
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
-  note:         <FileText      className="w-4 h-4 text-[#00F0FF]" />,
+  note:         <FileText      className="w-4 h-4 text-[var(--ag-cyan)]" />,
   reminder:     <Bell          className="w-4 h-4 text-[#FFB800]" />,
   habit:        <Target        className="w-4 h-4 text-[#00FF88]" />,
   memory:       <Brain         className="w-4 h-4 text-[#BF5FFF]" />,
-  conversation: <MessageSquare className="w-4 h-4 text-[#8B5CF6]" />,
+  conversation: <MessageSquare className="w-4 h-4 text-[var(--ag-violet)]" />,
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -130,7 +130,7 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
       >
         {/* Input row */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[#00F0FF]/10">
-          <Search className="w-5 h-5 text-[#6B7280] flex-shrink-0" />
+          <Search className="w-5 h-5 text-[var(--ag-text-muted)] flex-shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -167,12 +167,12 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
                 }`}
               >
                 <div className="flex-shrink-0">
-                  {TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[#6B7280]" />}
+                  {TYPE_ICONS[r.type] ?? <Search className="w-4 h-4 text-[var(--ag-text-muted)]" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[#E8E8F0] truncate font-medium">{r.title}</p>
                   {r.snippet && r.snippet !== r.title && (
-                    <p className="text-xs text-[#6B7280] truncate mt-0.5">
+                    <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">
                       {r.snippet.slice(0, 100)}
                     </p>
                   )}
@@ -199,11 +199,11 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
               Type 2+ characters to search across all your data
             </p>
             <div className="flex justify-center gap-4 text-xs text-[#4B5563]">
-              <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[#00F0FF]" /> Notes</span>
+              <span className="flex items-center gap-1"><FileText className="w-3 h-3 text-[var(--ag-cyan)]" /> Notes</span>
               <span className="flex items-center gap-1"><Bell className="w-3 h-3 text-[#FFB800]" /> Reminders</span>
               <span className="flex items-center gap-1"><Target className="w-3 h-3 text-[#00FF88]" /> Habits</span>
               <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-[#BF5FFF]" /> Memories</span>
-              <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-[#8B5CF6]" /> Chats</span>
+              <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3 text-[var(--ag-violet)]" /> Chats</span>
             </div>
           </div>
         )}
@@ -212,16 +212,16 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#1A1A2E] text-xs text-[#4B5563]">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&uarr;&darr;</kbd>
+              <kbd className="px-1 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px]">&uarr;&darr;</kbd>
               navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">&crarr;</kbd>
+              <kbd className="px-1 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px]">&crarr;</kbd>
               open
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-[#06060B] border border-[#1A1A2E] rounded text-[10px]">ESC</kbd>
+            <kbd className="px-1 py-0.5 bg-[var(--ag-bg-deep)] border border-[#1A1A2E] rounded text-[10px]">ESC</kbd>
             close
           </div>
         </div>

@@ -606,7 +606,7 @@ export function CalendarPage() {
             <Button
               size="sm"
               onClick={() => setShowAddDialog(true)}
-              className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[var(--ag-cyan,#00F0FF)] border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
+              className="gap-1.5 min-h-[44px] bg-[#00F0FF]/10 text-[var(--ag-cyan,#00F0FF)] border border-[var(--ag-cyan)]/20 hover:bg-[#00F0FF]/20 focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Event</span>
@@ -644,8 +644,8 @@ export function CalendarPage() {
                 <Calendar className="h-5 w-5 text-amber-400" />
               </div>
               <div>
-                <p className="font-medium text-[#F4F6FF]">Google Calendar Not Configured</p>
-                <p className="text-xs text-[#9CA3AF]">
+                <p className="font-medium text-[var(--ag-text-primary)]">Google Calendar Not Configured</p>
+                <p className="text-xs text-[var(--ag-text-secondary)]">
                   Contact your administrator to enable Google Calendar integration.
                 </p>
               </div>
@@ -657,8 +657,8 @@ export function CalendarPage() {
                   <CheckCircle className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#F4F6FF]">Connected</p>
-                  <p className="text-xs text-[#9CA3AF]">
+                  <p className="font-medium text-[var(--ag-text-primary)]">Connected</p>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">
                     {status.email ?? "Google account linked"}
                     {status.lastSync ? (
                       <span className="ml-2">
@@ -699,11 +699,11 @@ export function CalendarPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-[#F4F6FF]/5 p-2">
-                  <Calendar className="h-5 w-5 text-[#6B7280]" />
+                  <Calendar className="h-5 w-5 text-[var(--ag-text-muted)]" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#F4F6FF]">Not Connected</p>
-                  <p className="text-xs text-[#9CA3AF]">
+                  <p className="font-medium text-[var(--ag-text-primary)]">Not Connected</p>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">
                     Connect your Google account to see upcoming events.
                   </p>
                 </div>
@@ -738,10 +738,10 @@ export function CalendarPage() {
                   aria-label="Previous month"
                   className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
-                  <ChevronLeft className="h-5 w-5 text-[#9CA3AF]" />
+                  <ChevronLeft className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                 </Button>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#F4F6FF]">{monthLabel}</h2>
+                  <h2 className="text-lg font-semibold text-[var(--ag-text-primary)]">{monthLabel}</h2>
                   {!(
                     viewYear === today.getFullYear() &&
                     viewMonth === today.getMonth()
@@ -750,7 +750,7 @@ export function CalendarPage() {
                       variant="outline"
                       size="sm"
                       onClick={goToToday}
-                      className="text-xs min-h-[44px] px-3 border-[rgba(139,92,246,0.15)] text-[#9CA3AF] hover:text-[#F4F6FF]"
+                      className="text-xs min-h-[44px] px-3 border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
                     >
                       Today
                     </Button>
@@ -763,7 +763,7 @@ export function CalendarPage() {
                   aria-label="Next month"
                   className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50"
                 >
-                  <ChevronRight className="h-5 w-5 text-[#9CA3AF]" />
+                  <ChevronRight className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                 </Button>
               </div>
 
@@ -772,7 +772,7 @@ export function CalendarPage() {
                 {DAY_NAMES.map((d) => (
                   <div
                     key={d}
-                    className="text-center text-xs font-medium text-[#6B7280] py-2"
+                    className="text-center text-xs font-medium text-[var(--ag-text-muted)] py-2"
                   >
                     {d}
                   </div>
@@ -798,8 +798,8 @@ export function CalendarPage() {
                       className={[
                         "relative flex flex-col items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[56px] bg-[rgba(12,12,30,0.6)] transition-colors",
                         cell.isCurrentMonth
-                          ? "text-[#F4F6FF]"
-                          : "text-[#6B7280]/40",
+                          ? "text-[var(--ag-text-primary)]"
+                          : "text-[var(--ag-text-muted)]/40",
                         isToday ? "ring-1 ring-inset ring-[#84CC16] bg-[#84CC16]/5" : "",
                         isSelected && !isToday ? "bg-[#00F0FF]/10" : "",
                         isSelected && isToday ? "bg-[#84CC16]/15 ring-2 ring-[#84CC16]" : "",
@@ -832,7 +832,7 @@ export function CalendarPage() {
               </div>
 
               {/* Legend */}
-              <div className="flex items-center gap-4 mt-3 text-xs text-[#6B7280]">
+              <div className="flex items-center gap-4 mt-3 text-xs text-[var(--ag-text-muted)]">
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF]" />
                   Events
@@ -853,24 +853,24 @@ export function CalendarPage() {
           <BlurFade delay={0.2}>
           <SectionCard>
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-4 w-4 text-[#00F0FF]" />
-                <h2 className="text-base font-semibold text-[#F4F6FF]">
+                <Clock className="h-4 w-4 text-[var(--ag-cyan)]" />
+                <h2 className="text-base font-semibold text-[var(--ag-text-primary)]">
                 {isSameDay(selectedDate, today)
                   ? "Today"
                   : DateTime.fromJSDate(selectedDate).toLocaleString({ weekday: 'long', month: 'short', day: 'numeric' })}
                 </h2>
                 {(selectedDayEvents.length > 0 ||
                   selectedDayReminders.length > 0) && (
-                  <Badge variant="secondary" className="ml-1 text-xs bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/30">
+                  <Badge variant="secondary" className="ml-1 text-xs bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/30">
                     {selectedDayEvents.length + selectedDayReminders.length}
                   </Badge>
                 )}
               </div>
               {selectedDayEvents.length === 0 &&
               selectedDayReminders.length === 0 ? (
-                <div className="py-6 text-center text-[#6B7280]">
+                <div className="py-6 text-center text-[var(--ag-text-muted)]">
                   <Calendar className="mx-auto h-8 w-8 mb-2 opacity-30" />
-                  <p className="text-sm text-[#9CA3AF]">No events or reminders for this day.</p>
+                  <p className="text-sm text-[var(--ag-text-secondary)]">No events or reminders for this day.</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -923,7 +923,7 @@ export function CalendarPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium leading-snug truncate text-[#F4F6FF]">
+                                <p className="text-sm font-medium leading-snug truncate text-[var(--ag-text-primary)]">
                                   {ev.title}
                                 </p>
                                 {ev.isLocal && (
@@ -934,7 +934,7 @@ export function CalendarPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-[#9CA3AF] mt-0.5">
+                              <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
                                 {formatTime(ev.start_time)}
                                 {ev.end_time
                                   ? " \u2013 " + formatTime(ev.end_time)
@@ -950,7 +950,7 @@ export function CalendarPage() {
                           {isExpanded && (
                             <div className="ml-9 mt-1 mb-2 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.4)] p-3 space-y-2 text-sm">
                               <div className="flex items-center gap-2">
-                                <span className="text-[#6B7280]">
+                                <span className="text-[var(--ag-text-muted)]">
                                   Time:
                                 </span>
                                 <span>
@@ -962,7 +962,7 @@ export function CalendarPage() {
                               </div>
                               {ev.end_time && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[#6B7280]">
+                                  <span className="text-[var(--ag-text-muted)]">
                                     Duration:
                                   </span>
                                   <span>
@@ -977,7 +977,7 @@ export function CalendarPage() {
                               )}
                               {ev.category && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[#6B7280]">
+                                  <span className="text-[var(--ag-text-muted)]">
                                     Category:
                                   </span>
                                   <span
@@ -1018,10 +1018,10 @@ export function CalendarPage() {
                         <Bell className="h-3.5 w-3.5 text-amber-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium leading-snug truncate text-[#F4F6FF]">
+                        <p className="text-sm font-medium leading-snug truncate text-[var(--ag-text-primary)]">
                           {r.text}
                         </p>
-                        <p className="text-xs text-[#9CA3AF] mt-0.5">
+                        <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
                           {r.datetime
                             ? formatTime(new Date(r.datetime).getTime())
                             : "All day"}
@@ -1053,9 +1053,9 @@ export function CalendarPage() {
                   ))}
                 </div>
               ) : upcomingEvents.length === 0 ? (
-                <div className="py-6 text-center text-[#6B7280]">
+                <div className="py-6 text-center text-[var(--ag-text-muted)]">
                   <Calendar className="mx-auto h-6 w-6 mb-2 opacity-30" />
-                  <p className="text-sm text-[#9CA3AF]">No upcoming events.</p>
+                  <p className="text-sm text-[var(--ag-text-secondary)]">No upcoming events.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1084,15 +1084,15 @@ export function CalendarPage() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium leading-snug truncate text-[#F4F6FF]">
+                          <p className="text-sm font-medium leading-snug truncate text-[var(--ag-text-primary)]">
                             {ev.title}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-[#9CA3AF]">
+                            <p className="text-xs text-[var(--ag-text-secondary)]">
                               {DateTime.fromMillis(ms).toLocaleString({ month: 'short', day: 'numeric' })}{" "}
                               {formatTime(ms)}
                             </p>
-                            <span className="text-xs text-[#00F0FF] font-medium">
+                            <span className="text-xs text-[var(--ag-cyan)] font-medium">
                               {relativeCountdown(ms)}
                             </span>
                           </div>
@@ -1114,48 +1114,48 @@ export function CalendarPage() {
             <SectionCard title="How It Works">
                 <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#F4F6FF]">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Connect your Google account
                     </p>
-                    <p className="text-xs text-[#9CA3AF]">
+                    <p className="text-xs text-[var(--ag-text-secondary)]">
                       Click &quot;Connect Google Calendar&quot; above to
                       authorise read-only access via OAuth.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#F4F6FF]">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Events are pulled automatically
                     </p>
-                    <p className="text-xs text-[#9CA3AF]">
+                    <p className="text-xs text-[var(--ag-text-secondary)]">
                       Weebo syncs your upcoming events so they appear in your
                       dashboard.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#F4F6FF]">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Context-aware responses
                     </p>
-                    <p className="text-xs text-[#9CA3AF]">
+                    <p className="text-xs text-[var(--ag-text-secondary)]">
                       Weebo uses your calendar context to give smarter
                       briefings and reminders.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[#00F0FF] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#F4F6FF]">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       You stay in control
                     </p>
-                    <p className="text-xs text-[#9CA3AF]">
+                    <p className="text-xs text-[var(--ag-text-secondary)]">
                       Disconnect at any time. Only read access is requested --
                       Weebo never modifies your calendar.
                     </p>
@@ -1186,8 +1186,8 @@ export function CalendarPage() {
               className={[
                 "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
                 addMode === "natural"
-                  ? "bg-[rgba(12,12,30,0.6)] text-[#F4F6FF] shadow-sm"
-                  : "text-[#6B7280] hover:text-[#F4F6FF]",
+                  ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
+                  : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
               ].join(" ")}
             >
               Natural Language
@@ -1197,8 +1197,8 @@ export function CalendarPage() {
               className={[
                 "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#00F0FF]/50 focus-visible:outline-none",
                 addMode === "manual"
-                  ? "bg-[rgba(12,12,30,0.6)] text-[#F4F6FF] shadow-sm"
-                  : "text-[#6B7280] hover:text-[#F4F6FF]",
+                  ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
+                  : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
               ].join(" ")}
             >
               Manual
@@ -1222,7 +1222,7 @@ export function CalendarPage() {
                   }}
                   autoFocus
                 />
-                <p className="text-xs text-[#6B7280]">
+                <p className="text-xs text-[var(--ag-text-muted)]">
                   Supports: &quot;tomorrow&quot;, &quot;today&quot;, &quot;next
                   Monday&quot;, &quot;at 2pm&quot;, &quot;for 30 min&quot;
                 </p>
@@ -1377,15 +1377,15 @@ export function CalendarPage() {
               <Sparkles className="h-4 w-4 text-[var(--ag-cyan)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-[#F4F6FF]">Calendar AI</h3>
-              <p className="text-xs text-[#8892A4] truncate">Ask about your schedule</p>
+              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Calendar AI</h3>
+              <p className="text-xs text-[var(--ag-text-secondary)] truncate">Ask about your schedule</p>
             </div>
             <button
               onClick={() => setShowAI(false)}
               className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/5 transition-colors"
               aria-label="Close AI panel"
             >
-              <X className="h-4 w-4 text-[#8892A4]" />
+              <X className="h-4 w-4 text-[var(--ag-text-secondary)]" />
             </button>
           </div>
 
@@ -1418,12 +1418,12 @@ export function CalendarPage() {
             className="flex-1 overflow-y-auto px-4 py-3 text-sm leading-relaxed"
           >
             {aiLoading ? (
-              <div className="flex items-center gap-2 text-[#8892A4] py-8 justify-center">
+              <div className="flex items-center gap-2 text-[var(--ag-text-secondary)] py-8 justify-center">
                 <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-cyan)]" />
                 <span>Thinking...</span>
               </div>
             ) : aiResponse ? (
-              <div className="text-[#F4F6FF] whitespace-pre-wrap">{aiResponse}</div>
+              <div className="text-[var(--ag-text-primary)] whitespace-pre-wrap">{aiResponse}</div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center py-8 gap-3">
                 <div
@@ -1432,7 +1432,7 @@ export function CalendarPage() {
                 >
                   <Calendar className="h-6 w-6 text-[var(--ag-cyan)]/60" />
                 </div>
-                <p className="text-[#8892A4] text-xs max-w-[240px]">
+                <p className="text-[var(--ag-text-secondary)] text-xs max-w-[240px]">
                   Ask me to find free slots, schedule meetings, or check what is coming up.
                 </p>
               </div>
@@ -1456,7 +1456,7 @@ export function CalendarPage() {
               onChange={(e) => setAiInput(e.target.value)}
               placeholder="Ask about your calendar..."
               disabled={aiLoading}
-              className="flex-1 bg-[#12121F] border border-[rgba(0,240,255,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[#F4F6FF] placeholder:text-[#8892A4]/60 outline-none focus:border-[#00F0FF]/40 transition-colors disabled:opacity-50"
+              className="flex-1 bg-[#12121F] border border-[rgba(0,240,255,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none focus:border-[var(--ag-cyan)]/40 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"

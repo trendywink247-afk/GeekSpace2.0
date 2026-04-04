@@ -67,7 +67,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
         </h2>
         <button
           onClick={() => onNavigate?.('gallery')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[var(--ag-cyan)] transition-colors"
         >
           View all
           <ArrowRight className="w-3 h-3" />
@@ -121,7 +121,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
                       {gen.type === 'image' ? 'Image' : 'Text'}
                     </span>
                   </div>
-                  <p className="text-xs text-[#F4F6FF] mt-2 truncate group-hover:text-[#BF5FFF] transition-colors">
+                  <p className="text-xs text-[var(--ag-text-primary)] mt-2 truncate group-hover:text-[#BF5FFF] transition-colors">
                     {gen.title.length > 40 ? gen.title.slice(0, 37) + '...' : gen.title}
                   </p>
                   <p className="text-[10px] text-[#8892A4] mt-0.5">
@@ -138,7 +138,7 @@ export function RecentGenerations({ onNavigate }: RecentGenerationsProps) {
               >
                 <Sparkles className="w-6 h-6 text-[#BF5FFF]" />
               </div>
-              <p className="text-sm font-medium text-[#F4F6FF] mb-1">
+              <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">
                 No creations yet
               </p>
               <p className="text-xs text-[#8892A4] mb-3">

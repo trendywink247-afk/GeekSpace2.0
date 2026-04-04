@@ -189,7 +189,7 @@ function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
   if (trend === 'down') {
     return <TrendingDown className="w-4 h-4 text-[#FF2D78]" />;
   }
-  return <ArrowUpRight className="w-4 h-4 text-[#9CA3AF] opacity-40" />;
+  return <ArrowUpRight className="w-4 h-4 text-[var(--ag-text-secondary)] opacity-40" />;
 }
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
@@ -255,8 +255,8 @@ function OverviewCard({
         <TrendArrow trend={trend} />
       </div>
       <div>
-        <div className="text-2xl font-bold text-[#F4F6FF] tracking-tight">{value}</div>
-        <div className="text-xs text-[#9CA3AF] mt-0.5">{label}</div>
+        <div className="text-2xl font-bold text-[var(--ag-text-primary)] tracking-tight">{value}</div>
+        <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{label}</div>
       </div>
       {sparkData.length >= 2 && (
         <div className="mt-auto">
@@ -393,7 +393,7 @@ function ActivityHeatmap({
     <div className="relative">
       {tooltip && (
         <div
-          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[#F4F6FF] pointer-events-none whitespace-nowrap"
+          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] pointer-events-none whitespace-nowrap"
           style={{
             top: tooltip.y - 28,
             left: tooltip.x,
@@ -447,7 +447,7 @@ function ActivityHeatmap({
         </svg>
       </div>
       {/* Legend */}
-      <div className="flex items-center gap-2 mt-2 text-xs text-[#9CA3AF]">
+      <div className="flex items-center gap-2 mt-2 text-xs text-[var(--ag-text-secondary)]">
         <span>Less</span>
         {HEATMAP_COLORS.map((color, i) => (
           <div
@@ -483,7 +483,7 @@ function InsightCard({ text }: { text: string }) {
   return (
     <div className="border-l-2 border-[#ADFF2F] pl-4 py-2 flex items-start gap-2.5">
       <Lightbulb className="w-4 h-4 text-[#ADFF2F] mt-0.5 flex-shrink-0" />
-      <span className="text-sm text-[#F4F6FF]">{text}</span>
+      <span className="text-sm text-[var(--ag-text-primary)]">{text}</span>
     </div>
   );
 }
@@ -496,7 +496,7 @@ function AIInsightCard({ insight }: { insight: AIInsight }) {
       style={{ borderColor }}
     >
       <span className="text-base mt-0.5 flex-shrink-0 leading-none">{insight.icon}</span>
-      <span className="text-sm text-[#F4F6FF]">{insight.text}</span>
+      <span className="text-sm text-[var(--ag-text-primary)]">{insight.text}</span>
     </div>
   );
 }
@@ -531,7 +531,7 @@ function UsageBarChart({
         const barWidth = (item.value / maxVal) * 100;
         return (
           <div key={item.label} className="flex items-center gap-3">
-            <span className="text-xs text-[#9CA3AF] w-20 text-right flex-shrink-0">
+            <span className="text-xs text-[var(--ag-text-secondary)] w-20 text-right flex-shrink-0">
               {item.label}
             </span>
             <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden relative">
@@ -544,7 +544,7 @@ function UsageBarChart({
                 }}
               />
             </div>
-            <span className="text-xs text-[#F4F6FF] w-12 text-right font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--ag-text-primary)] w-12 text-right font-medium flex-shrink-0">
               {pct}%
             </span>
           </div>
@@ -577,8 +577,8 @@ function PeriodTabs({
           onClick={() => onChange(tab.key)}
           className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
             value === tab.key
-              ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30'
-              : 'text-[#9CA3AF] hover:text-[#F4F6FF] border border-transparent'
+              ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30'
+              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-transparent'
           }`}
         >
           {tab.label}
@@ -899,9 +899,9 @@ export function AnalyticsPage() {
       0,
     );
     return [
-      { label: 'Chat', value: chat, color: '#00F0FF' },
+      { label: 'Chat', value: chat, color: 'var(--ag-cyan)' },
       { label: 'Reminders', value: reminders, color: '#ADFF2F' },
-      { label: 'Habits', value: habits, color: '#8B5CF6' },
+      { label: 'Habits', value: habits, color: 'var(--ag-violet)' },
       { label: 'Focus', value: focus, color: '#FF2D78' },
     ];
   }, [filteredSnapshots]);
@@ -915,8 +915,8 @@ export function AnalyticsPage() {
       borderRadius: '8px',
       fontSize: '12px',
     },
-    itemStyle: { color: '#F4F6FF' },
-    labelStyle: { color: '#9CA3AF' },
+    itemStyle: { color: 'var(--ag-text-primary)' },
+    labelStyle: { color: 'var(--ag-text-secondary)' },
   };
 
   const latencyChartData = useMemo(() => {
@@ -998,7 +998,7 @@ export function AnalyticsPage() {
             <button
               onClick={handleExportCSV}
               disabled={exporting || loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
               aria-label="Export analytics as CSV"
               title="Export as CSV"
             >
@@ -1008,7 +1008,7 @@ export function AnalyticsPage() {
             <button
               onClick={load}
               disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
               aria-label="Refresh analytics"
             >
               <RefreshCw
@@ -1109,12 +1109,12 @@ export function AnalyticsPage() {
         <div className="flex items-center justify-between mb-4 -mt-1">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs text-[#9CA3AF]">Powered by Pulse</span>
+            <span className="text-xs text-[var(--ag-text-secondary)]">Powered by Pulse</span>
           </div>
           <button
             onClick={() => void loadAiInsights(true)}
             disabled={aiInsightsLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[#9CA3AF] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
             title="Regenerate insights"
           >
             <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
@@ -1151,7 +1151,7 @@ export function AnalyticsPage() {
       {/* 4. Agent Metrics Charts (recharts) */}
       {!loading && (
         <section>
-          <h2 className="text-sm font-semibold text-[#F4F6FF] mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#10B981]" />
             Agent Metrics
           </h2>
@@ -1204,7 +1204,7 @@ export function AnalyticsPage() {
               {/* Legend */}
               <div className="flex flex-wrap justify-center gap-3 mt-2">
                 {providerPieData.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROVIDER_COLORS_MAP[entry.name] }} />
                     {entry.name}
                   </div>
@@ -1261,7 +1261,7 @@ export function AnalyticsPage() {
               };
               return (
                 <div key={a.agent} className="flex items-center gap-3">
-                  <span className="text-xs text-[#F4F6FF] w-16 capitalize flex-shrink-0">
+                  <span className="text-xs text-[var(--ag-text-primary)] w-16 capitalize flex-shrink-0">
                     {a.agent}
                   </span>
                   <div className="flex-1 h-2 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden">
@@ -1274,7 +1274,7 @@ export function AnalyticsPage() {
                       }}
                     />
                   </div>
-                  <span className="text-xs text-[#9CA3AF] w-8 text-right flex-shrink-0">
+                  <span className="text-xs text-[var(--ag-text-secondary)] w-8 text-right flex-shrink-0">
                     {a.count}
                   </span>
                 </div>
@@ -1285,7 +1285,7 @@ export function AnalyticsPage() {
       )}
 
       {/* Footer */}
-      <p className="text-xs text-[#9CA3AF] text-center pb-4">
+      <p className="text-xs text-[var(--ag-text-secondary)] text-center pb-4">
         Insights update in real time as you use Agentin
       </p>
     </div>

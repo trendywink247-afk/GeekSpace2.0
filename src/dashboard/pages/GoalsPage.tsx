@@ -23,8 +23,8 @@ import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 // ---- Constants ----
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
-  general:   { label: 'General',   color: '#9CA3AF', bg: '#9CA3AF20', emoji: '🎯' },
-  career:    { label: 'Career',    color: '#8B5CF6', bg: '#8B5CF620', emoji: '💼' },
+  general:   { label: 'General',   color: 'var(--ag-text-secondary)', bg: '#9CA3AF20', emoji: '🎯' },
+  career:    { label: 'Career',    color: 'var(--ag-violet)', bg: '#8B5CF620', emoji: '💼' },
   health:    { label: 'Health',    color: '#10B981', bg: '#10B98120', emoji: '🏃' },
   finance:   { label: 'Finance',   color: '#F59E0B', bg: '#F59E0B20', emoji: '💰' },
   learning:  { label: 'Learning',  color: '#3B82F6', bg: '#3B82F620', emoji: '📚' },
@@ -34,11 +34,11 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string;
 };
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Target }> = {
-  active:    { label: 'Active',    color: '#00F0FF', icon: Play },
+  active:    { label: 'Active',    color: 'var(--ag-cyan)', icon: Play },
   paused:    { label: 'Paused',    color: '#F59E0B', icon: Pause },
   completed: { label: 'Completed', color: '#10B981', icon: CheckCircle2 },
   failed:    { label: 'Failed',    color: '#EF4444', icon: AlertTriangle },
-  archived:  { label: 'Archived',  color: '#6B7280', icon: Archive },
+  archived:  { label: 'Archived',  color: 'var(--ag-text-muted)', icon: Archive },
 };
 
 const effortBadge: Record<string, { label: string; color: string }> = {
@@ -178,9 +178,9 @@ export function GoalsPage() {
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {[
-              { label: 'Active', value: stats.active, color: '#00F0FF', icon: Play },
+              { label: 'Active', value: stats.active, color: 'var(--ag-cyan)', icon: Play },
               { label: 'Completed', value: stats.completed, color: '#10B981', icon: CheckCircle2 },
-              { label: 'Total', value: stats.total, color: '#8B5CF6', icon: Target },
+              { label: 'Total', value: stats.total, color: 'var(--ag-violet)', icon: Target },
               { label: 'Success Rate', value: `${Math.round(stats.completionRate || 0)}%`, color: '#F59E0B', icon: TrendingUp },
             ].map(s => (
               <div

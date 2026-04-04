@@ -175,7 +175,7 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
                     </code>
                   </div>
                   {step.prompt_template && (
-                    <p className="text-xs text-[#9CA3AF] mt-1 line-clamp-1 font-mono">
+                    <p className="text-xs text-[var(--ag-text-secondary)] mt-1 line-clamp-1 font-mono">
                       {step.prompt_template}
                     </p>
                   )}
@@ -185,7 +185,7 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
               {/* Run output */}
               {runStep?.output && (
                 <div
-                  className="mt-2 rounded-lg p-2 text-sm text-[#F4F6FF] whitespace-pre-wrap line-clamp-6"
+                  className="mt-2 rounded-lg p-2 text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap line-clamp-6"
                   style={{ background: "rgba(12,12,30,0.8)" }}
                 >
                   {runStep.output}
@@ -278,23 +278,23 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[#F4F6FF]">Name</label>
+            <label className="text-sm font-medium text-[var(--ag-text-primary)]">Name</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Daily Standup Summary" />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[#F4F6FF]">Description</label>
+            <label className="text-sm font-medium text-[var(--ag-text-primary)]">Description</label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this workflow do?" />
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-[#F4F6FF]">Steps</label>
+              <label className="text-sm font-medium text-[var(--ag-text-primary)]">Steps</label>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={addStep}
-                className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF]"
+                className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
               >
                 <Plus className="h-3 w-3 mr-1" />Add Step
               </Button>
@@ -333,11 +333,11 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-xs text-[#9CA3AF]">Agent</label>
+                      <label className="text-xs text-[var(--ag-text-secondary)]">Agent</label>
                       <select
                         value={step.agent}
                         onChange={(e) => updateStep(idx, "agent", e.target.value)}
-                        className="w-full mt-1 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-2 py-2 text-sm text-[#F4F6FF] min-h-[44px] focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                        className="w-full mt-1 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-2 py-2 text-sm text-[var(--ag-text-primary)] min-h-[44px] focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
                       >
                         <option value="weebo">Weebo</option>
                         <option value="jarvis">Jarvis</option>
@@ -346,7 +346,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-[#9CA3AF]">Output Key</label>
+                      <label className="text-xs text-[var(--ag-text-secondary)]">Output Key</label>
                       <Input
                         value={step.output_key}
                         onChange={(e) => updateStep(idx, "output_key", e.target.value)}
@@ -357,7 +357,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#9CA3AF]">
+                    <label className="text-xs text-[var(--ag-text-secondary)]">
                       Prompt Template &mdash; use {"{{user_input}}"} and {"{{previous_output}}"}
                     </label>
                     <textarea
@@ -365,7 +365,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       onChange={(e) => updateStep(idx, "prompt_template", e.target.value)}
                       placeholder={"Summarize the following: {{user_input}}"}
                       rows={3}
-                      className="mt-1 w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-3 py-2 text-sm text-[#F4F6FF] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                      className="mt-1 w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
                     />
                   </div>
                 </div>
@@ -377,7 +377,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
             <Button
               variant="ghost"
               onClick={onCancel}
-              className="min-h-[44px] text-[#9CA3AF] hover:text-[#F4F6FF]"
+              className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
             >
               Cancel
             </Button>
@@ -518,17 +518,17 @@ function WorkflowCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-[#F4F6FF] truncate">{workflow.name}</span>
+            <span className="font-medium text-[var(--ag-text-primary)] truncate">{workflow.name}</span>
             {!workflow.enabled && (
-              <Badge className="bg-[#6B7280]/15 text-[#9CA3AF] border-[#6B7280]/30 text-xs">
+              <Badge className="bg-[#6B7280]/15 text-[var(--ag-text-secondary)] border-[#6B7280]/30 text-xs">
                 Disabled
               </Badge>
             )}
           </div>
           {workflow.description && (
-            <p className="text-xs text-[#9CA3AF] mt-0.5 line-clamp-2">{workflow.description}</p>
+            <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5 line-clamp-2">{workflow.description}</p>
           )}
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-[#9CA3AF]">
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-[var(--ag-text-secondary)]">
             <span className="flex items-center gap-1">
               <GitBranch className="h-3 w-3" />
               {workflow.steps.length} step{workflow.steps.length !== 1 ? "s" : ""}
@@ -543,7 +543,7 @@ function WorkflowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse workflow" : "Expand workflow"}
           >
@@ -599,7 +599,7 @@ function WorkflowCard({
           {lastRun && !running && (
             <SectionCard padding="sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-[#F4F6FF]">Latest Run</span>
+                <span className="text-xs font-medium text-[var(--ag-text-primary)]">Latest Run</span>
                 <RunStatusBadge status={lastRun.status} />
               </div>
               {lastRun.error && <p className="text-xs text-[#FF6161] mb-2">{lastRun.error}</p>}
@@ -612,9 +612,9 @@ function WorkflowCard({
                 <div className="space-y-2">
                   {Object.entries(lastRun.context).map(([key, value]) => (
                     <div key={key} className="space-y-1">
-                      <span className="text-xs text-[#9CA3AF] font-mono">{key}</span>
+                      <span className="text-xs text-[var(--ag-text-secondary)] font-mono">{key}</span>
                       <p
-                        className="text-xs rounded-lg p-2 whitespace-pre-wrap line-clamp-4 text-[#F4F6FF]"
+                        className="text-xs rounded-lg p-2 whitespace-pre-wrap line-clamp-4 text-[var(--ag-text-primary)]"
                         style={{ background: "rgba(12,12,30,0.6)" }}
                       >
                         {value}
@@ -704,7 +704,7 @@ export function WorkflowsPage() {
               onClick={() => void fetchWorkflows(true)}
               disabled={refreshing}
               aria-label="Refresh workflows"
-              className="min-h-[44px] min-w-[44px] text-[#9CA3AF] hover:text-[#F4F6FF] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
             </Button>
@@ -730,18 +730,18 @@ export function WorkflowsPage() {
       {/* How it works */}
       <BlurFade delay={0.15}>
         <SectionCard title="How It Works" subtitle="Multi-agent workflow orchestration">
-          <div className="space-y-2.5 text-sm text-[#9CA3AF]">
+          <div className="space-y-2.5 text-sm text-[var(--ag-text-secondary)]">
             <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">1.</span>
+              <span className="text-[var(--ag-violet)] font-bold mt-0.5 shrink-0">1.</span>
               <span>Each workflow is a chain of agent steps &mdash; Weebo, Jarvis, or Edith.</span>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">2.</span>
-              <span>Each step&apos;s output is passed to the next using <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{previous_output}}"}</code> or <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{output_key}}"}</code>.</span>
+              <span className="text-[var(--ag-violet)] font-bold mt-0.5 shrink-0">2.</span>
+              <span>Each step&apos;s output is passed to the next using <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[var(--ag-violet)]">{"{{previous_output}}"}</code> or <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[var(--ag-violet)]">{"{{output_key}}"}</code>.</span>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="text-[#8B5CF6] font-bold mt-0.5 shrink-0">3.</span>
-              <span>Use <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[#8B5CF6]">{"{{user_input}}"}</code> anywhere to inject your input when running.</span>
+              <span className="text-[var(--ag-violet)] font-bold mt-0.5 shrink-0">3.</span>
+              <span>Use <code className="text-[11px] px-1.5 py-0.5 rounded bg-[rgba(139,92,246,0.1)] text-[var(--ag-violet)]">{"{{user_input}}"}</code> anywhere to inject your input when running.</span>
             </div>
           </div>
         </SectionCard>
@@ -775,8 +775,8 @@ export function WorkflowsPage() {
             >
               <GitBranch className="h-8 w-8" style={{ color: `${JARVIS}4d` }} />
             </div>
-            <p className="text-[#F4F6FF] font-medium mb-1">No workflows yet</p>
-            <p className="text-sm text-[#9CA3AF] mt-1 max-w-xs mx-auto">
+            <p className="text-[var(--ag-text-primary)] font-medium mb-1">No workflows yet</p>
+            <p className="text-sm text-[var(--ag-text-secondary)] mt-1 max-w-xs mx-auto">
               Create your first multi-agent workflow to chain Weebo, Jarvis, and Edith together.
             </p>
             <Button
@@ -806,7 +806,7 @@ export function WorkflowsPage() {
       {/* Agent legend */}
       <BlurFade delay={0.25}>
         <SectionCard>
-          <p className="text-xs font-medium text-[#9CA3AF] mb-3">Agent Guide</p>
+          <p className="text-xs font-medium text-[var(--ag-text-secondary)] mb-3">Agent Guide</p>
           <div className="grid grid-cols-2 gap-3 text-xs">
             {Object.entries(AGENT_LABELS).map(([key, label]) => {
               const color = AGENT_COLORS[key] ?? "#6B7280";
@@ -821,7 +821,7 @@ export function WorkflowsPage() {
                 <div key={key} className="flex items-center gap-2">
                   <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
                   <span className="font-medium" style={{ color }}>{label}</span>
-                  <span className="text-[#9CA3AF]">&mdash; {descriptions[key]}</span>
+                  <span className="text-[var(--ag-text-secondary)]">&mdash; {descriptions[key]}</span>
                 </div>
               );
             })}

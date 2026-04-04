@@ -81,7 +81,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
         </div>
         <button
           onClick={() => onNavigate?.('inbox')}
-          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[#00F0FF] transition-colors"
+          className="flex items-center gap-1 text-xs text-[#8892A4] hover:text-[var(--ag-cyan)] transition-colors"
         >
           Open Inbox
           <ArrowRight className="w-3 h-3" />
@@ -128,7 +128,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                         A
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[#F4F6FF] truncate group-hover:text-[#00F0FF] transition-colors leading-snug">
+                        <p className="text-sm text-[var(--ag-text-primary)] truncate group-hover:text-[var(--ag-cyan)] transition-colors leading-snug">
                           {msg.content.length > 70
                             ? msg.content.slice(0, 67) + '...'
                             : msg.content}
@@ -150,7 +150,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full text-[#00F0FF] hover:bg-[#00F0FF]/10 text-xs"
+                  className="w-full text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10 text-xs"
                   onClick={() => onNavigate?.('inbox')}
                 >
                   <Inbox className="w-3.5 h-3.5 mr-1.5" />
@@ -164,9 +164,9 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
                 style={{ background: 'rgba(0,240,255,0.08)' }}
               >
-                <MessageSquare className="w-6 h-6 text-[#00F0FF]/30" />
+                <MessageSquare className="w-6 h-6 text-[var(--ag-cyan)]/30" />
               </div>
-              <p className="text-sm font-medium text-[#F4F6FF] mb-1">
+              <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">
                 Inbox is clear
               </p>
               <p className="text-xs text-[#8892A4] mb-3">
@@ -175,7 +175,7 @@ export function InboxCard({ onNavigate, onOpenChat }: InboxCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-[#00F0FF] hover:bg-[#00F0FF]/10"
+                className="text-[var(--ag-cyan)] hover:bg-[#00F0FF]/10"
                 onClick={() => onOpenChat?.()}
               >
                 <MessageSquare className="w-3.5 h-3.5 mr-1" />

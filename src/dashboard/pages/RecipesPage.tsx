@@ -185,7 +185,7 @@ export function RecipesPage() {
           ) : (
             <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
           )}
-          <span className="text-sm text-[#F4F6FF] font-medium">{toast.message}</span>
+          <span className="text-sm text-[var(--ag-text-primary)] font-medium">{toast.message}</span>
         </div>
       )}
 
@@ -213,8 +213,8 @@ export function RecipesPage() {
             >
               <BookOpen className="w-8 h-8" style={{ color: `${ECHO}4d` }} />
             </div>
-            <p className="text-[#F4F6FF] font-medium mb-1">No recipes available yet</p>
-            <p className="text-sm text-[#9CA3AF]">
+            <p className="text-[var(--ag-text-primary)] font-medium mb-1">No recipes available yet</p>
+            <p className="text-sm text-[var(--ag-text-secondary)]">
               Discover pre-built automation recipes to supercharge your workflow
             </p>
           </SectionCard>
@@ -281,13 +281,13 @@ export function RecipesPage() {
                   </div>
 
                   {/* Name + Description */}
-                  <h3 className="font-semibold text-[#F4F6FF] mb-1">{recipe.name}</h3>
-                  <p className="text-sm text-[#9CA3AF] mb-4 flex-1">{recipe.description}</p>
+                  <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{recipe.name}</h3>
+                  <p className="text-sm text-[var(--ag-text-secondary)] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
                   {recipe.requiredIntegrations.length > 0 && (
                     <div className="mb-4 flex flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-[#9CA3AF]">Requires:</span>
+                      <span className="text-xs text-[var(--ag-text-secondary)]">Requires:</span>
                       {recipe.requiredIntegrations.map((int) => (
                         <span
                           key={int}

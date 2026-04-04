@@ -25,7 +25,7 @@ export function VoiceButton({
         title='Voice not available in this browser'
         className={`p-2.5 rounded-lg opacity-40 cursor-not-allowed ${className}`}
       >
-        <Mic className='w-4 h-4 text-[#6B7280]' />
+        <Mic className='w-4 h-4 text-[var(--ag-text-muted)]' />
       </button>
     );
   }
@@ -49,13 +49,13 @@ export function VoiceButton({
       ].join(' ')}
     >
       {isProcessing ? (
-        <Loader2 className='w-4 h-4 text-[#00F0FF] animate-spin' />
+        <Loader2 className='w-4 h-4 text-[var(--ag-cyan)] animate-spin' />
       ) : (
         <>
           <Mic
             className={[
               'w-4 h-4 transition-colors',
-              isListening ? 'text-red-400 animate-pulse' : 'text-[#6B7280]',
+              isListening ? 'text-red-400 animate-pulse' : 'text-[var(--ag-text-muted)]',
             ].join(' ')}
           />
           {isListening && (

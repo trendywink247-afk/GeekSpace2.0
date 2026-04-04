@@ -71,9 +71,9 @@ export function DashboardPageWrapper({
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         >
-          <Loader2 className="w-8 h-8 text-[#00F0FF]" />
+          <Loader2 className="w-8 h-8 text-[var(--ag-cyan)]" />
         </motion.div>
-        <p className="mt-4 text-[#6B7280] text-sm">{loadingMessage}</p>
+        <p className="mt-4 text-[var(--ag-text-muted)] text-sm">{loadingMessage}</p>
       </div>
     );
   }
@@ -86,8 +86,23 @@ export function DashboardPageWrapper({
           animate="animate"
           exit="exit"
           variants={pageVariants}
-          className={className}
+          className={`relative ${className}`}
         >
+          {/* Aurora gradient background — matches landing/login */}
+          <div
+            className="fixed inset-0 pointer-events-none -z-10"
+            style={{ background: 'var(--ag-gradient-aurora)' }}
+          />
+          {/* Noise texture overlay — matches landing/login */}
+          <div
+            className="fixed inset-0 pointer-events-none -z-10"
+            style={{
+              opacity: 'var(--ag-noise-opacity, 0.025)' as unknown as number,
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+              backgroundRepeat: 'repeat',
+              backgroundSize: '256px 256px',
+            }}
+          />
           {children}
         </motion.div>
       )}
@@ -154,12 +169,12 @@ export function DashboardCard({
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1 min-w-0">
             {title && (
-              <h3 className="text-base font-semibold text-[#F4F6FF]" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <h3 className="text-base font-semibold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="text-sm text-[#6B7280] mt-0.5">{subtitle}</p>
+              <p className="text-sm text-[var(--ag-text-muted)] mt-0.5">{subtitle}</p>
             )}
           </div>
           {action && <div className="flex-shrink-0">{action}</div>}
@@ -238,13 +253,13 @@ export function DashboardSectionHeader({
     >
       <div>
         <h2 
-          className="text-xl md:text-2xl font-bold text-[#F4F6FF]" 
+          className="text-xl md:text-2xl font-bold text-[var(--ag-text-primary)]" 
           style={{ fontFamily: 'Syne, sans-serif' }}
         >
           {title}
         </h2>
         {subtitle && (
-          <p className="text-sm text-[#6B7280] mt-1">{subtitle}</p>
+          <p className="text-sm text-[var(--ag-text-muted)] mt-1">{subtitle}</p>
         )}
       </div>
       {action && <div>{action}</div>}
@@ -282,9 +297,9 @@ export function PullToRefreshIndicator({
           animate={{ rotate: isReady ? 180 : progress * 360 }}
           transition={{ duration: 0.2 }}
         >
-          <Loader2 className="w-4 h-4 text-[#00F0FF]" />
+          <Loader2 className="w-4 h-4 text-[var(--ag-cyan)]" />
         </motion.div>
-        <span className="text-xs text-[#00F0FF]">
+        <span className="text-xs text-[var(--ag-cyan)]">
           {isReady ? 'Release to refresh' : 'Pull to refresh'}
         </span>
       </div>
