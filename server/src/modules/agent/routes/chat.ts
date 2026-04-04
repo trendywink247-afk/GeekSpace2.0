@@ -12,7 +12,7 @@ import { config } from '../../../config.js';
 import { OPENCLAW_IDENTITY } from '../../../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality } from '../../../prompts/personalities.js';
 import { checkKeywordTriggers } from '../../../services/automations-engine.js';
-import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, formatMemoryContext, extractMemoriesFromConversation } from '../../../services/memory.js';
+import { logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, extractMemoriesFromConversation } from '../../../services/memory.js';
 import { buildCognitiveContext } from '../../memory/services/cognitive-memory.js';
 import { touchSession } from '../../memory/services/session-summary.js';
 import { filterToolsBlock } from '../services/agent-tools-map.js';
@@ -113,10 +113,8 @@ export function buildSystemPrompt(
   const customPrompt = (agentConfig?.system_prompt as string) || '';
   const userName = (user?.name as string) || 'there';
 
-  // Load full PicoContext (superset of buildMemoryContext)
+  // Load full PicoContext
   const picoCtx = loadPicoContext(userId);
-  // Keep buildMemoryContext for any additional AI-extracted memory context
-  const memoryBlock = buildMemoryContext(userId, userMessage);
 
   // For the website builder channel, use a code-generation-focused closing instruction
   // instead of the brevity instruction — otherwise the LLM skips generate_code actions
