@@ -76,9 +76,9 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
       expect(src).toContain('memoryBlock');
     });
 
-    it('buildMemoryContext is called in agent.ts for web chat', () => {
+    it('cognitive memory is used in agent chat.ts for web chat', () => {
       const src = readFile('server/src/modules/agent/routes/chat.ts');
-      expect(src).toContain('buildMemoryContext(userId, userMessage)');
+      expect(src).toContain('buildCognitiveContext');
     });
   });
 
