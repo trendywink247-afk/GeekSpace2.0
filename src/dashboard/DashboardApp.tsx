@@ -43,7 +43,6 @@ const personalityEmojis: Record<AgentPersonality, string> = {
 };
 
 // ---- Lazy loaded pages for code splitting (with chunk-load retry) ----
-const OverviewPage = lazyRetry(() => import('./pages/OverviewPage').then(m => ({ default: m.OverviewPage })));
 const ConnectionsPage = lazyRetry(() => import('./pages/ConnectionsPage').then(m => ({ default: m.ConnectionsPage })));
 const AgentSettingsPage = lazyRetry(() => import('./pages/AgentSettingsPage').then(m => ({ default: m.AgentSettingsPage })));
 const RemindersPage = lazyRetry(() => import('./pages/RemindersPage').then(m => ({ default: m.RemindersPage })));
@@ -154,7 +153,7 @@ const menuGroups: MenuGroup[] = [
 type MobileTabId = PageType | 'more';
 const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard; color: string }[] = [
   { id: 'office', label: 'Home', icon: LayoutDashboard, color: 'var(--ag-cyan)' },
-  { id: 'office', label: 'Agent', icon: Bot, color: 'var(--ag-violet)' },
+  { id: 'chat', label: 'Chat', icon: MessageSquare, color: 'var(--ag-violet)' },
   { id: 'creative-studio', label: 'Create', icon: Sparkles, color: '#F59E0B' },
   { id: 'reminders', label: 'Work', icon: Zap, color: '#ADFF2F' },
   { id: 'inbox', label: 'Connect', icon: MessageSquare, color: 'var(--ag-cyan)' },
@@ -482,7 +481,20 @@ export function DashboardApp() {
       case 'creative-studio':
         return <CreativeStudioPage />;
       default:
-        return <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+            <div className="text-6xl mb-4">🔍</div>
+            <h1 className="text-2xl font-bold text-[var(--ag-text-primary)] mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>Page Not Found</h1>
+            <p className="text-[var(--ag-text-muted)] mb-6">The page you're looking for doesn't exist.</p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-6 py-3 rounded-xl text-white font-semibold min-h-[44px] transition-all active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)' }}
+            >
+              Go Home
+            </button>
+          </div>
+        );
     }
   };
 

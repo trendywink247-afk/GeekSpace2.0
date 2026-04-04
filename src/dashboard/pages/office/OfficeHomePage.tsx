@@ -27,6 +27,7 @@ import { GoalsTab } from './GoalsTab';
 import { DigestModal } from './DigestModal';
 import { generateSuggestions } from './proactiveSuggestions';
 import { BlurFade } from '@/components/magicui/blur-fade';
+import { DashboardPageWrapper } from '@/components/agentin/DashboardPageWrapper';
 
 // ---------------------------------------------------------------------------
 // Atmospheric background layer (matches AuthPageBackground, uses absolute)
@@ -839,10 +840,11 @@ export function OfficeHomePage() {
   }, [navigate]);
 
   return (
-    <div
-      className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
-      style={{ background: 'var(--ag-bg-deep)' }}
-    >
+    <DashboardPageWrapper>
+      <div
+        className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
+        style={{ background: 'var(--ag-bg-deep)' }}
+      >
       {/* Atmospheric background layer */}
       <AtmosphericBackground />
 
@@ -1152,6 +1154,7 @@ export function OfficeHomePage() {
 
       {/* "What did I miss?" digest modal */}
       <DigestModal officeData={officeData} />
-    </div>
+      </div>
+    </DashboardPageWrapper>
   );
 }
