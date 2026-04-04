@@ -51,7 +51,7 @@ describe('Phase 75 — Production Hardening + E2E', () => {
     const chatButton = readFileSync(resolve(ROOT, 'src/components/AgentChatButton.tsx'), 'utf-8');
     expect(chatButton).toContain('data-testid="agent-chat-fab"');
 
-    const dashboard = readFileSync(resolve(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+    const dashboard = readFileSync(resolve(ROOT, 'src/dashboard/DashboardSidebar.tsx'), 'utf-8');
     expect(dashboard).toContain('data-testid="dashboard-logout-button"');
   });
 });

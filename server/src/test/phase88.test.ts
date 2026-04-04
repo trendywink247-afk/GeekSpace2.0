@@ -100,18 +100,18 @@ describe('88.5 Pull-to-refresh on key scrollable pages', () => {
 
 describe('88.6 Bottom nav does not obscure content', () => {
   it('Main content area has pb-24 md:pb-0 to clear bottom nav', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc("dashboard/DashboardApp.tsx");
     expect(content).toContain('pb-24 md:pb-0');
   });
 
   it('Bottom nav is fixed-positioned', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc("dashboard/MobileTabBar.tsx");
     expect(content).toContain('fixed');
     expect(content).toContain('bottom-');
   });
 
   it('Floating action button clears bottom nav on mobile', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc("dashboard/DashboardApp.tsx");
     expect(content).toContain('bottom-24 md:bottom-8');
   });
 });
@@ -145,7 +145,7 @@ describe('Mobile infrastructure completeness', () => {
   });
 
   it('DashboardApp has safe area handling for notch devices', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc("dashboard/MobileTabBar.tsx");
     // Either classic safe-area-pb class OR env(safe-area-inset-bottom) inline approach
     const hasSafeArea = content.includes('safe-area-pb') || content.includes('safe-area-inset-bottom');
     expect(hasSafeArea).toBe(true);
@@ -162,7 +162,7 @@ describe('Mobile infrastructure completeness', () => {
   });
 
   it('Mobile bottom tabs have minimum width for thumb reach', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc("dashboard/MobileTabBar.tsx");
     expect(content).toMatch(/min-w-\[4[48]px\]/);
   });
 });

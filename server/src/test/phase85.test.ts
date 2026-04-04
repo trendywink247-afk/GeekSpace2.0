@@ -239,7 +239,7 @@ describe('D3: Safe area insets for bottom fixed elements', () => {
   });
 
   it('DashboardApp mobile tab bar handles safe area for notch/home-indicator', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
+    const content = readSrc('dashboard/MobileTabBar.tsx');
     // Either the classic safe-area-pb class OR the modern env(safe-area-inset-bottom) inline approach
     const hasSafeArea = content.includes('safe-area-pb') || content.includes('safe-area-inset-bottom');
     expect(hasSafeArea).toBe(true);

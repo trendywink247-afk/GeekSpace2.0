@@ -32,9 +32,8 @@ export function MobileTabBar({
 }: MobileTabBarProps) {
   return (
     <nav
-      className="md:hidden fixed left-0 right-0 h-[60px] backdrop-blur-xl z-30 flex items-center justify-around px-1"
+      className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] backdrop-blur-xl z-30 flex items-center justify-around px-1"
       style={{
-        bottom: 0,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         background: 'rgba(6, 6, 26, 0.9)',
         backdropFilter: 'blur(24px)',
