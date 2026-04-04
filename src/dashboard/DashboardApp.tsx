@@ -22,6 +22,7 @@ import { AgentinLogo } from '@/components/AgentinLogo';
 import { AgentSetupWizard } from '@/components/OnboardingWizard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { NotificationBell } from '@/components/NotificationBell';
+import { LiveNotificationToast } from '@/components/LiveNotificationToast';
 import { lazyRetry } from '@/utils/lazyRetry';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -823,6 +824,8 @@ export function DashboardApp() {
 
   return (
     <div className={`min-h-dvh bg-[#06061a] flex flex-col md:flex-row${compactMode ? ' gs-compact' : ''}`} style={{ background: background || undefined }}>
+      {/* ---- Live SSE Notification Toasts ---- */}
+      <LiveNotificationToast onNavigate={(url) => navigate(url)} />
       {/* ---- Session idle warning ---- */}
       {showIdleWarning && (
         <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-3 bg-[#FFD700]/10 border-b border-[#FFD700]/30 backdrop-blur-sm">

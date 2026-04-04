@@ -5,6 +5,7 @@ import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { validateBody, memoryCreateSchema, memoryUpdateSchema } from '../../../middleware/validate.js';
 import { db } from '../../../db/index.js';
 import { getMemories, getRelevantMemories, deleteMemory, upsertMemory } from '../../../services/memory.js';
+import { getSessionContinuityContext } from '../../memory/services/session-summary.js';
 
 const router = Router();
 
@@ -147,6 +148,45 @@ router.delete('/memory/:id', requireAuth, (req: AuthRequest, res) => {
   const deleted = deleteMemory(req.userId!, req.params.id);
   if (!deleted) { res.status(404).json({ error: 'Memory not found' }); return; }
   res.json({ success: true });
+});
+
+/**
+ * GET /agent/session/last-summary
+ * Returns the most recent session summary for continuity banner.
+ */
+router.get('/session/last-summary', requireAuth, (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  try {
+    const row = db.prepare(`
+      SELECT summary, pending_items, accomplished, created_at
+      FROM session_summaries
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(userId) as { summary: string; pending_items: string | null; accomplished: string | null; created_at: string } | undefined;
+
+    if (!row) {
+      res.json({ summary: null });
+      return;
+    }
+
+    let pending: string[] = [];
+    let accomplished: string[] = [];
+    try { pending = JSON.parse(row.pending_items || '[]'); } catch { /* ignore */ }
+    try { accomplished = JSON.parse(row.accomplished || '[]'); } catch { /* ignore */ }
+
+    res.json({
+      summary: {
+        summary: row.summary,
+        accomplished,
+        pending,
+        created_at: row.created_at,
+      },
+      continuityContext: getSessionContinuityContext(userId),
+    });
+  } catch {
+    res.json({ summary: null });
+  }
 });
 
 export default router;

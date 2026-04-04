@@ -23,6 +23,9 @@ import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatD
 import { PageShell } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { SessionContinuityBanner } from '@/components/SessionContinuityBanner';
+import { AgentCapabilityBadge } from '@/components/AgentCapabilityBadge';
+import { DelegationLiveIndicator } from '@/components/DelegationLiveIndicator';
 
 // ── Types ──
 
@@ -318,6 +321,9 @@ export function ChatPage() {
   // SSE tool step tracking (agent-state-bus)
   const [sseToolSteps, setSSEToolSteps] = useState<SSEToolStep[]>([]);
   const [sseActive, setSSEActive] = useState(false);
+  const [activeDelegation, setActiveDelegation] = useState<{
+    from: string; to: string; reason?: string; status: 'delegating' | 'working' | 'done';
+  } | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const sseStepTimersRef = useRef<Map<string, number>>(new Map());
 
@@ -481,7 +487,17 @@ export function ChatPage() {
         }
         if (stepType === 'done') {
           setSSEToolSteps((prev) => prev.map((s) => s.status === 'active' ? { ...s, status: 'done' as const } : s));
+          // Clear delegation indicator when agent is done
+          setActiveDelegation((prev) => prev ? { ...prev, status: 'done' } : null);
+          setTimeout(() => setActiveDelegation(null), 2000);
           return;
+        }
+        // Track delegation events for live indicator
+        if (stepType === 'delegating' && data.targetAgent) {
+          setActiveDelegation({ from: data.agentId, to: data.targetAgent, reason: data.content, status: 'delegating' });
+        }
+        if (stepType === 'comm_sent' && data.targetAgent) {
+          setActiveDelegation((prev) => prev ? { ...prev, status: 'working' } : null);
         }
         if (stepType === 'responding') {
           setSSEToolSteps((prev) => prev.map((s) => s.status === 'active' && s.type === 'thinking' ? { ...s, status: 'done' as const } : s));
@@ -1205,6 +1221,10 @@ export function ChatPage() {
         {messages.length === 0 ? (
           <div className='flex-1 overflow-y-auto px-4 py-3 scrollbar-hide relative'>
             <div className='flex flex-col items-center justify-center h-full gap-4 text-center py-12'>
+              {/* Session continuity — "Welcome back" banner */}
+              <SessionContinuityBanner
+                onResume={(text) => { setInput(text); setTimeout(() => formRef.current?.requestSubmit(), 100); }}
+              />
               {/* Hero avatar */}
               <div className='relative'>
                 <div
@@ -1223,6 +1243,8 @@ export function ChatPage() {
                 <p className='text-sm text-[var(--ag-text-secondary)] mt-1 max-w-xs'>
                   {voice.isSupported ? 'Type, speak, or try a suggestion below' : 'Type a message or try a suggestion below'}
                 </p>
+                {/* Agent capabilities */}
+                <AgentCapabilityBadge agentId={personality} className='mt-2 justify-center' />
               </div>
               {voiceMode && voice.isSupported && (
                 <div className='flex items-center gap-1.5 text-xs text-[var(--ag-cyan)]'>
@@ -1336,6 +1358,17 @@ export function ChatPage() {
                     }
                     return null;
                   })()}
+
+                  {/* Delegation Live Indicator */}
+                  {activeDelegation && (
+                    <DelegationLiveIndicator
+                      fromAgent={activeDelegation.from}
+                      toAgent={activeDelegation.to}
+                      reason={activeDelegation.reason}
+                      status={activeDelegation.status}
+                      showCapabilities={activeDelegation.status === 'delegating'}
+                    />
+                  )}
 
                   {/* SSE Tool Step Indicator */}
                   {sseToolSteps.length > 0 && (
