@@ -26,6 +26,9 @@ import { startCalendarSyncScheduler } from './services/calendar-sync.js';
 import { startOllamaKeepalive } from './services/llm.js';
 import { startGmailSyncScheduler } from './services/gmail-sync.js';
 import { initProactiveGoalEngine } from './modules/agent/services/proactive-goals.js';
+import { initAgentObserver } from './modules/agent/services/agent-observer.js';
+import { initCognitiveMemoryTables } from './modules/memory/services/cognitive-memory.js';
+import { startSessionSummaryScheduler } from './modules/memory/services/session-summary.js';
 import { initAgentFloBridge, shutdownAgentFloBridge } from './modules/agent/services/agentflo-bridge.js';
 
 // Create the Express app using the factory
@@ -87,6 +90,7 @@ const httpServer = app.listen(config.port, () => {
 
   // Idempotent table migrations — safe to run in every cluster worker
   initMemoryTables();
+  initCognitiveMemoryTables();
   initWorkflowTables();
   initPicoFleetTables();
   initSocialMediaTables();
@@ -127,9 +131,11 @@ const httpServer = app.listen(config.port, () => {
     safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
     safeStart('proactive-engine', initProactiveEngine);
     safeStart('proactive-goals', initProactiveGoalEngine);
+    safeStart('agent-observer', initAgentObserver);
     safeStart('agentflo-bridge', initAgentFloBridge);
     safeStart('gmail-sync', startGmailSyncScheduler);
     safeStart('calendar-sync', startCalendarSyncScheduler);
+    safeStart('session-summary', startSessionSummaryScheduler);
 
     // Initialize Meilisearch + Qdrant (non-blocking, graceful if unavailable)
     safeStart('meilisearch-init', async () => {

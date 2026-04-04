@@ -3,6 +3,7 @@
 
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { runMemoryDecay } from '../modules/memory/services/cognitive-memory.js';
 import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
 import { eventBus } from './event-bus.js';
@@ -342,6 +343,11 @@ async function runProactiveChecks(): Promise<void> {
       const hour = getUserHour(tz);
       const todayStr = getUserDateStr(tz);
       const dayStart = new Date(todayStr + 'T00:00:00Z').getTime();
+
+      // Run memory decay once per day per user (at 3am their time)
+      if (hour === 3) {
+        try { runMemoryDecay(user.id); } catch { /* non-fatal */ }
+      }
 
       // Daily briefing at 8am user-local
       if (hour === 8) {

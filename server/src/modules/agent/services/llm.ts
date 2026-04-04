@@ -462,7 +462,25 @@ export async function streamOllama(
 async function callOllama(messages: ChatMessage[], intent?: Intent): Promise<{ content: string; tokensIn: number; tokensOut: number; model: string }> {
   const start = Date.now();
   const model = selectOllamaModel(intent);
-  const finalMessages = applyThinkingMode(messages, intent, model);
+  // Build a minimal system prompt for CPU inference.
+  // On CPU at ~6 tok/s prompt eval, every 100 tokens adds ~17s latency.
+  // Extract only: identity, current date, language rule, and brevity instruction.
+  const compactMessages = messages.map(m => {
+    if (m.role !== 'system') return m;
+    const src = m.content;
+    const identity = src.match(/YOUR IDENTITY:[^\n]+/)?.[0] || '';
+    const dateBlock = src.match(/Right now it is:[^\n]+/)?.[0] || '';
+    const compact = `Reply in the user's language. ${identity}\n${dateBlock}\nKeep responses SHORT. 1-3 sentences. Plain text only.`;
+    return { ...m, content: compact };
+  });
+  // Keep only last 4 conversation messages (2 exchanges) to stay under ~500 tokens total
+  const sysMsg = compactMessages.filter(m => m.role === 'system');
+  const convMsgs = compactMessages.filter(m => m.role !== 'system').slice(-4);
+  const trimmedMessages = [...sysMsg, ...convMsgs];
+  const finalMessages = applyThinkingMode(trimmedMessages, intent, model);
+  const sysLen = finalMessages.find(m => m.role === 'system')?.content?.length ?? 0;
+  const totalChars = finalMessages.reduce((sum, m) => sum + m.content.length, 0);
+  logger.info({ model, intent, sysLen, totalChars, msgCount: finalMessages.length }, 'callOllama: sending to Ollama');
   const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -473,7 +491,9 @@ async function callOllama(messages: ChatMessage[], intent?: Intent): Promise<{ c
       keep_alive: '24h',
       options: {
         temperature: 0.7,
-        num_predict: config.ollamaMaxTokens,
+        // Simple intents: cap at 100 tokens (1-3 sentences). Complex/coding: full budget.
+        // qwen3 generates ~100 thinking tokens even with /no_think, so 100 total keeps visible output short.
+        num_predict: (intent === 'simple') ? 100 : config.ollamaMaxTokens,
         top_p: 0.9,
         repeat_penalty: 1.1,
       },
@@ -1240,20 +1260,20 @@ export async function routeChat(
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
     }
 
-  } else if (isOpenRouterFreeAvailable()) {
-    // Tier 1: OpenRouter-free — faster than local models on 2-core VPS, all intents
-    provider = 'openrouter-free';
-    routingReason = 'openrouter_free_available';
+  } else if (ollamaOk) {
+    // Tier 1: Ollama — local-first, truly agentic (qwen3:8b simple, gemma4:e4b complex)
+    provider = 'ollama';
+    routingReason = 'ollama_healthy';
 
   } else if (picoOk && (intent === 'simple' || intent === 'code-micro')) {
-    // Tier 1.5: PicoClaw — local fallback when cloud unavailable
+    // Tier 1.5: PicoClaw — local fallback when Ollama down
     provider = 'picoclaw';
     routingReason = 'ollama_healthy';
 
-  } else if (ollamaOk) {
-    // Tier 1.5: Ollama hermes3:8b — local fallback when cloud unavailable
-    provider = 'ollama';
-    routingReason = 'ollama_healthy';
+  } else if (isOpenRouterFreeAvailable()) {
+    // Tier 2: OpenRouter-free — cloud fallback when local unavailable
+    provider = 'openrouter-free';
+    routingReason = 'openrouter_free_available';
 
   } else if (isGroqAvailable()) {
     // Tier 2: Groq — free quota cloud fallback (43,200 req/day × 3 keys)
@@ -1515,7 +1535,7 @@ export async function pickProvider(
   userId: string,
   messageText: string,
   userPlan: string,
-): Promise<Provider> {
+): Promise<Provider | undefined> {
   const agentConfig = db.prepare('SELECT model_preference FROM agent_configs WHERE user_id = ?')
     .get(userId) as { model_preference: string } | undefined;
   const preference = (agentConfig?.model_preference || 'auto') as UserModelPreference;
@@ -1526,7 +1546,7 @@ export async function pickProvider(
   if (preference === 'cloud') return 'openrouter-free';
   if (preference === 'premium') return isPaidPlan ? 'openrouter-free' : 'ollama';
 
-  // Auto: routeChat waterfall handles everything — return openrouter-free as default
-  // (routeChat will apply the full waterfall including race for free users)
-  return 'openrouter-free';
+  // Auto: return undefined so routeChat uses its full Ollama-first waterfall
+  // (tries Ollama → openrouter-free → groq → kimi → gemini → together → anthropic)
+  return undefined;
 }

@@ -13,6 +13,10 @@ import { OPENCLAW_IDENTITY } from '../../../prompts/openclaw-system.js';
 import { getPersonalityPrompt, getPersonality } from '../../../prompts/personalities.js';
 import { checkKeywordTriggers } from '../../../services/automations-engine.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithAI, getConversationContext, formatMemoryContext, extractMemoriesFromConversation } from '../../../services/memory.js';
+import { buildCognitiveContext } from '../../memory/services/cognitive-memory.js';
+import { touchSession } from '../../memory/services/session-summary.js';
+import { filterToolsBlock } from '../services/agent-tools-map.js';
+import { DateTime } from 'luxon';
 import { loadPicoContext, formatContextBlock } from '../../../services/pico-context.js';
 import { getFestivalContext } from '../../../services/festival-calendar.js';
 import { checkContent } from '../../../services/content-filter.js';
@@ -220,11 +224,17 @@ ${formatContextBlock(picoCtx)}
 --- USER SESSION ---
 User: ${userName}. Voice: ${voice}. Mode: ${mode}. Credits: ${credits ?? 0}.
 ${customPrompt ? `Custom instructions: ${customPrompt}` : ''}
-${memoryBlock}
-${formatMemoryContext(userId)}
+${buildCognitiveContext(userId, userMessage || '')}
 ${festivalBlock}
 
-${toolsBlock}
+--- CURRENT DATE & TIME ---
+${(() => {
+  const tzRow = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+  const tz = tzRow?.timezone || 'Asia/Kolkata';
+  return `Right now it is: ${DateTime.now().setZone(tz).toFormat("cccc, LLLL d, yyyy 'at' h:mm a z")}. Use this exact time when the user asks what time or date it is. Do NOT guess or infer from other context.`;
+})()}
+
+${filterToolsBlock(toolsBlock, personalityId)}
 
 ${closingInstruction}`;
 }
@@ -354,6 +364,8 @@ router.post('/chat', requireAuth, aiSecurityMiddleware, validateBody(chatSchema)
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
+  // Track session activity for idle-based summarization
+  touchSession(userId);
   const reqChannel = (req.body as { channel?: string }).channel;
   // Optional: builder sends this when editing an existing project so generate_code updates it
   const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
@@ -688,10 +700,11 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const msgIsHinglish = !forceRoute && msgWords.filter(w => HINGLISH_SET.has(w)).length >= 2;
     const webChatNeedsGroq = !forceRoute && (msgHasNonLatin || msgIsHinglish);
 
-    // Respect user's model_preference: "local" users want Ollama — skip bridge, go straight to
-    // the Phase 112 waterfall which honours pickProvider() → 'ollama'.
+    // Skip the Pico-Kimi bridge for web chat: the standard Ollama-first waterfall is faster
+    // and avoids PicoClaw<->Ollama contention on NUM_PARALLEL=1. The bridge still activates
+    // for explicit /bridge or /agent: prefixes, and for cloud-preference users.
     const userModelPref = (agentConfig?.model_preference as string) || 'auto';
-    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl && !webChatNeedsGroq && userModelPref !== 'local') {
+    if (!forceRoute && config.bridgeEnabled && config.picoClawEnabled && !hasUrl && !webChatNeedsGroq && userModelPref === 'cloud') {
       forceRoute = 'bridge';
     }
 
