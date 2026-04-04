@@ -3,8 +3,9 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -43,17 +44,17 @@ import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderChannel, ReminderCategory, ReminderPriority, Reminder } from '@/types';
 
 const categoryColors: Record<string, string> = {
-  personal: '#A78BFA',
-  work: '#00FF88',
-  health: '#FF2D78',
-  other: '#FFB800',
+  personal: 'var(--ag-cyan)',
+  work: 'var(--ag-green)', 
+  health: 'var(--ag-pink)',
+  other: 'var(--ag-amber)',
 };
 
 const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-  low:    { label: 'Low',    color: 'var(--ag-text-muted)', bg: '#6B728020' },
-  normal: { label: 'Normal', color: 'var(--ag-cyan)', bg: '#A78BFA20' },
-  high:   { label: 'High',   color: '#F59E0B', bg: '#F59E0B20' },
-  urgent: { label: 'Urgent', color: '#FF2D78', bg: '#FF2D7820' },
+  low:    { label: 'Low',    color: 'var(--ag-text-muted)', bg: 'rgba(107, 114, 128, 0.1)' },
+  normal: { label: 'Normal', color: 'var(--ag-cyan)', bg: 'rgba(167, 139, 250, 0.1)' },
+  high:   { label: 'High',   color: 'var(--ag-amber)', bg: 'rgba(245, 158, 11, 0.1)' },
+  urgent: { label: 'Urgent', color: 'var(--ag-pink)', bg: 'rgba(255, 45, 120, 0.1)' },
 };
 
 const examples = [
@@ -713,303 +714,308 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
   return (
     <DashboardPageWrapper>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-    <PageShell>
     <div className="space-y-6 pb-24 md:pb-6" data-testid="reminders-page">
       {/* 61.5: Snooze feedback toast */}
       {snoozeToast && (
-        <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFB800]/15 border border-[#FFB800]/40 text-[#FFB800] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
-          <AlarmClock className="w-4 h-4" />
-          {snoozeToast}
-        </div>
+        <BlurFade delay={0} inView>
+          <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-[var(--ag-amber)] text-sm font-medium shadow-[var(--ag-glow-md)] animate-in fade-in slide-in-from-bottom-2 duration-300" data-testid="snooze-toast">
+            <AlarmClock className="w-4 h-4" />
+            {snoozeToast}
+          </div>
+        </BlurFade>
       )}
       {/* 66.1: Undo toast after bulk-complete */}
       {undoToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#00FF88]/15 border border-[#00FF88]/40 text-[#00FF88] text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <CheckCheck className="w-4 h-4 flex-shrink-0" />
-          <span>{undoToast.count} reminder{undoToast.count > 1 ? 's' : ''} marked done</span>
-          <button
-            onClick={() => void handleUndoBulkComplete()}
-            className="ml-1 underline text-[#00FF88]/80 hover:text-[#00FF88] transition-colors text-xs font-semibold"
-          >
-            Undo
-          </button>
-          <button onClick={() => setUndoToast(null)} className="text-[#00FF88]/50 hover:text-[#00FF88] ml-1">✕</button>
-        </div>
+        <BlurFade delay={0.1} inView>
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-[var(--ag-green)] text-sm font-medium shadow-[var(--ag-glow-md)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <CheckCheck className="w-4 h-4 flex-shrink-0" />
+            <span>{undoToast.count} reminder{undoToast.count > 1 ? 's' : ''} marked done</span>
+            <button
+              onClick={() => void handleUndoBulkComplete()}
+              className="ml-1 underline text-[var(--ag-green)]/80 hover:text-[var(--ag-green)] transition-colors text-xs font-semibold min-h-[44px] px-2"
+            >
+              Undo
+            </button>
+            <button onClick={() => setUndoToast(null)} className="text-[var(--ag-green)]/50 hover:text-[var(--ag-green)] ml-1 min-h-[44px] min-w-[44px] flex items-center justify-center">✕</button>
+          </div>
+        </BlurFade>
       )}
       {/* 42.1: All caught up celebration banner */}
       {showCelebration && (
-        <div
-          className="flex items-center justify-between px-4 py-3 rounded-2xl border animate-in fade-in slide-in-from-top-2 duration-300"
-          style={{ background: 'rgba(0,255,136,0.12)', borderColor: 'rgba(0,255,136,0.4)' }}
-        >
-          <span className="text-sm font-semibold" style={{ color: '#00FF88' }}>
-            🎉 All caught up for today!
-          </span>
-          <button
-            onClick={() => setShowCelebration(false)}
-            className="text-[#00FF88]/60 hover:text-[#00FF88] transition-colors text-lg leading-none"
-            aria-label="Dismiss"
-          >
-            ×
-          </button>
-        </div>
+        <BlurFade delay={0.2} inView>
+          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] animate-in fade-in slide-in-from-top-2 duration-300">
+            <span className="text-sm font-semibold text-[var(--ag-green)] font-heading">
+              🎉 All caught up for today!
+            </span>
+            <button
+              onClick={() => setShowCelebration(false)}
+              className="text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors text-lg leading-none min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </BlurFade>
       )}
       {/* 49.3: Mark all overdue complete banner — shown when 4+ overdue items accumulate */}
       {!showCelebration && overdueReminders.length > 3 && (
-        <div
-          className="flex items-center justify-between px-4 py-3 rounded-2xl border"
-          style={{ background: 'rgba(255,45,120,0.08)', borderColor: 'rgba(255,45,120,0.35)' }}
-        >
-          <span className="text-sm font-medium" style={{ color: '#FF2D78' }}>
-            <AlarmClock className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-            {overdueReminders.length} overdue reminders
-          </span>
-          <button
-            onClick={handleMarkAllOverdueComplete}
-            disabled={isMarkingAllOverdue}
-            className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50"
-            style={{ background: 'rgba(255,45,120,0.18)', color: '#FF2D78', border: '1px solid rgba(255,45,120,0.4)' }}
-          >
-            {isMarkingAllOverdue ? 'Marking…' : 'Mark all complete'}
-          </button>
-        </div>
+        <BlurFade delay={0.3} inView>
+          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+            <span className="text-sm font-medium text-[var(--ag-pink)] font-heading">
+              <AlarmClock className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+              {overdueReminders.length} overdue reminders
+            </span>
+            <button
+              onClick={handleMarkAllOverdueComplete}
+              disabled={isMarkingAllOverdue}
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50 bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white min-h-[44px] hover:shadow-[var(--ag-glow-sm)]"
+            >
+              {isMarkingAllOverdue ? 'Marking…' : 'Mark all complete'}
+            </button>
+          </div>
+        </BlurFade>
       )}
       {/* Header — Cal ownership */}
-      <PageHeader
-        icon={Bell}
-        title="Reminders"
-        subtitle={`${activeReminders.length} active, ${completedReminders.length} completed`}
-        badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#84CC16]/10 border border-[#84CC16]/30 text-[#84CC16]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#84CC16] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#84CC16]" />
+      <BlurFade delay={0.4} inView>
+        <PageHeader
+          icon={Bell}
+          title="Reminders"
+          subtitle={`${activeReminders.length} active, ${completedReminders.length} completed`}
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-cal)]/10 border border-[var(--ag-cal)]/30 text-[var(--ag-cal)]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-cal)] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-cal)]" />
+              </span>
+              Cal
             </span>
-            Cal
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-3">
-            {streak && streak.streak > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)' }}>
-                <Flame className="w-3.5 h-3.5 text-[#F59E0B]" />
-                <span className="text-sm font-semibold text-[#F59E0B]">{streak.streak}</span>
-                <span className="text-xs text-[var(--ag-text-muted)]">day streak</span>
-              </div>
-            )}
-            <div className="px-3 py-1.5 rounded-full bg-[#84CC16]/10 border border-[#84CC16]/30">
-              <span className="text-sm text-[#84CC16]">{activeReminders.length} active</span>
-            </div>
-            <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Reminder
-            </Button>
-          </div>
-        }
-      />
-
-      {/* Quick Add - Natural Language */}
-      <SectionCard className="bg-gradient-to-r from-[#84CC16]/[0.06] to-[#8B5CF6]/[0.04]">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-[#84CC16]" />
-            <span className="text-sm font-medium text-[var(--ag-text-primary)]">Quick Add</span>
-            <span className="text-xs text-[var(--ag-text-muted)]">Type naturally like "tomorrow at 3pm call mom"</span>
-          </div>
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                ref={inputRef}
-                placeholder="Remind me..."
-                value={naturalInput}
-                onChange={(e) => setNaturalInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && parsedReminder) {
-                    handleNaturalAdd();
-                  }
-                }}
-                className="w-full px-4 py-3 min-h-[44px] bg-white/[0.03] border border-white/[0.08] rounded-xl text-[var(--ag-text-primary)] placeholder-[#6B7280] focus:outline-none focus:border-[#84CC16]/40"
-              />
-              {parsedReminder && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <span className="text-xs text-[#00FF88]">✓ Parsed</span>
+          }
+          actions={
+            <div className="flex items-center gap-3">
+              {streak && streak.streak > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+                  <Flame className="w-3.5 h-3.5 text-[var(--ag-amber)]" />
+                  <span className="text-sm font-semibold text-[var(--ag-amber)]">{streak.streak}</span>
+                  <span className="text-xs text-[var(--ag-text-muted)]">day streak</span>
                 </div>
               )}
-            </div>
-            <button
-              onClick={handleVoiceInput}
-              aria-label={isListening ? 'Listening... tap to stop' : 'Voice input'}
-              className={`p-3 rounded-xl transition-colors min-h-[44px] min-w-[44px] ${
-                isListening
-                  ? 'bg-[#FF6161]/20 text-[#FF6161]'
-                  : ' border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-white'
-              }`}
-            >
-              <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
-            </button>
-            <Button
-              onClick={handleNaturalAdd}
-              disabled={!parsedReminder}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white disabled:opacity-50 min-h-[44px]"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Add
-            </Button>
-          </div>
-          
-          {/* Parsed preview card — live preview of what will be created */}
-          {parsedReminder && (
-            <div className="mt-3 p-3.5 rounded-xl /80 border border-[#00FF88]/20 animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ag-text-muted)]">Preview</span>
-                {/* Confidence indicator */}
-                <span
-                  className="text-xs font-medium px-2 py-0.5 rounded-full"
-                  style={{
-                    color: parsedReminder.confidence > 0.8 ? '#00FF88' : parsedReminder.confidence > 0.5 ? '#FFB800' : '#FF2D78',
-                    backgroundColor: parsedReminder.confidence > 0.8 ? '#00FF8815' : parsedReminder.confidence > 0.5 ? '#FFB80015' : '#FF2D7815',
-                  }}
-                >
-                  {parsedReminder.confidence > 0.8 ? 'High confidence' : parsedReminder.confidence > 0.5 ? 'Medium confidence' : 'Low confidence'}
-                </span>
+              <div className="px-3 py-1.5 rounded-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+                <span className="text-sm text-[var(--ag-cal)]">{activeReminders.length} active</span>
               </div>
+              <Button data-testid="create-reminder-button" onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white min-h-[44px] hover:shadow-[var(--ag-glow-sm)] transition-shadow">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Reminder
+              </Button>
+            </div>
+          }
+        />
+      </BlurFade>
+
+      {/* Quick Add - Natural Language */}
+      <BlurFade delay={0.5} inView>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-[var(--ag-cal)]" />
+              <span className="text-sm font-medium font-heading text-[var(--ag-text-primary)]">Quick Add</span>
+              <span className="text-xs text-[var(--ag-text-muted)]">Type naturally like "tomorrow at 3pm call mom"</span>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  ref={inputRef}
+                  placeholder="Remind me..."
+                  value={naturalInput}
+                  onChange={(e) => setNaturalInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && parsedReminder) {
+                      handleNaturalAdd();
+                    }
+                  }}
+                  className="w-full px-4 py-3 min-h-[44px] bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)] focus:outline-none focus:border-[var(--ag-border-active)] focus:shadow-[var(--ag-focus-ring)]"
+                />
+                {parsedReminder && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <span className="text-xs text-[var(--ag-green)]">✓ Parsed</span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleVoiceInput}
+                aria-label={isListening ? 'Listening... tap to stop' : 'Voice input'}
+                className={`p-3 rounded-xl transition-colors min-h-[44px] min-w-[44px] ${
+                  isListening
+                    ? 'bg-[var(--ag-pink)]/20 text-[var(--ag-pink)]'
+                    : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'
+                }`}
+              >
+                <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
+              </button>
+              <Button
+                onClick={handleNaturalAdd}
+                disabled={!parsedReminder}
+                className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white disabled:opacity-50 min-h-[44px] hover:shadow-[var(--ag-glow-sm)] transition-shadow"
+              >
+                <Wand2 className="w-4 h-4 mr-2" />
+                Add
+              </Button>
+            </div>
+          
+            {/* Parsed preview card — live preview of what will be created */}
+            {parsedReminder && (
+              <div className="mt-3 p-3.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ag-text-muted)] font-heading">Preview</span>
+                  {/* Confidence indicator */}
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    style={{
+                      color: parsedReminder.confidence > 0.8 ? 'var(--ag-green)' : parsedReminder.confidence > 0.5 ? 'var(--ag-amber)' : 'var(--ag-pink)',
+                      backgroundColor: parsedReminder.confidence > 0.8 ? 'rgba(16, 185, 129, 0.1)' : parsedReminder.confidence > 0.5 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 45, 120, 0.1)',
+                    }}
+                  >
+                    {parsedReminder.confidence > 0.8 ? 'High confidence' : parsedReminder.confidence > 0.5 ? 'Medium confidence' : 'Low confidence'}
+                  </span>
+                </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">Task</span>
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">{parsedReminder.text}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">When</span>
-                  <span className="text-sm text-[#FFB800] flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3" />
-                    {parsedReminder.datetime.toLocaleString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-                {parsedReminder.recurring && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">Repeat</span>
-                    <Badge className="bg-[#84CC16]/20 text-[#84CC16] text-xs">
-                      <Repeat className="w-3 h-3 mr-1" />
-                      {parsedReminder.recurring}
-                    </Badge>
+                    <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">When</span>
+                    <span className="text-sm text-[var(--ag-amber)] flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3" />
+                      {parsedReminder.datetime.toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Examples */}
-          <div className="mt-3">
-            <button
-              onClick={() => setShowExamples(!showExamples)}
-              className="text-xs text-[var(--ag-text-muted)] hover:text-[#84CC16] transition-colors"
-            >
-              {showExamples ? 'Hide' : 'Show'} examples
-            </button>
-            {showExamples && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {examples.map((example) => (
-                  <button
-                    key={example}
-                    onClick={() => handleExampleClick(example)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors"
-                  >
-                    {example}
-                  </button>
-                ))}
+                  {parsedReminder.recurring && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[var(--ag-text-muted)] w-12 flex-shrink-0">Repeat</span>
+                      <Badge className="bg-[var(--ag-cal)]/20 text-[var(--ag-cal)] text-xs">
+                        <Repeat className="w-3 h-3 mr-1" />
+                        {parsedReminder.recurring}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-          </div>
-      </SectionCard>
+          
+            {/* Examples */}
+            <div className="mt-3">
+              <button
+                onClick={() => setShowExamples(!showExamples)}
+                className="text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-cal)] transition-colors min-h-[44px] px-2"
+              >
+                {showExamples ? 'Hide' : 'Show'} examples
+              </button>
+              {showExamples && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {examples.map((example) => (
+                    <button
+                      key={example}
+                      onClick={() => handleExampleClick(example)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] transition-colors min-h-[44px]"
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+        </SectionCard>
+      </BlurFade>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
-          <Input
-            placeholder="Search reminders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white/[0.03] border-white/[0.08] min-h-[44px]"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-            <TabsList className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      <BlurFade delay={0.6} inView>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
+            <Input
+              placeholder="Search reminders..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] min-h-[44px] focus:border-[var(--ag-border-active)] focus:shadow-[var(--ag-focus-ring)]"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+              <TabsList className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+            </Tabs>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
             {(['all', 'recurring', 'one-off'] as const).map((opt) => (
               <button
                 key={opt}
                 onClick={() => setRecurrenceFilter(opt)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all min-h-[44px] ${
                   recurrenceFilter === opt
                     ? opt === 'recurring'
-                      ? 'bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B]'
-                      : 'bg-[#84CC16]/10 border-[#84CC16]/30 text-[#84CC16]'
-                    : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
+                      ? 'bg-[var(--ag-amber)]/15 border-[var(--ag-amber)]/40 text-[var(--ag-amber)]'
+                      : 'bg-[var(--ag-cal)]/10 border-[var(--ag-cal)]/30 text-[var(--ag-cal)]'
+                    : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
                 }`}
               >
                 {opt === 'all' ? 'All types' : opt === 'recurring' ? '↺ Recurring' : '• One-off'}
               </button>
             ))}
             </div>
-            {/* 38.3: CSV export button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[#84CC16] hover:border-[var(--ag-border-default)]"
-              onClick={async () => {
-                try {
-                  const { data } = await reminderService.exportCsv(filter);
-                  const blob = new Blob([data], { type: 'text/csv' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `reminders-${new Date().toISOString().slice(0, 10)}.csv`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                } catch { /* ignore */ }
-              }}
-              aria-label="Export reminders as CSV"
-            >
-              <Download className="w-3 h-3 mr-1" />CSV
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs border-[var(--ag-border-subtle)] text-[#84CC16] hover:bg-[#84CC16]/10 px-2"
-              onClick={async () => {
-                try {
-                  const { data } = await reminderService.exportIcs('active');
-                  const blob = new Blob([data], { type: 'text/calendar' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `reminders-${new Date().toISOString().slice(0, 10)}.ics`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                } catch { /* ignore */ }
-              }}
-              aria-label="Export reminders as iCalendar"
-            >
-              <Download className="w-3 h-3 mr-1" />iCal
-            </Button>
+              {/* 38.3: CSV export button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:text-[var(--ag-cal)] hover:border-[var(--ag-border-default)]"
+                onClick={async () => {
+                  try {
+                    const { data } = await reminderService.exportCsv(filter);
+                    const blob = new Blob([data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `reminders-${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  } catch { /* ignore */ }
+                }}
+                aria-label="Export reminders as CSV"
+              >
+                <Download className="w-3 h-3 mr-1" />CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] text-[var(--ag-cal)] hover:bg-[var(--ag-cal)]/10 px-2"
+                onClick={async () => {
+                  try {
+                    const { data } = await reminderService.exportIcs('active');
+                    const blob = new Blob([data], { type: 'text/calendar' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `reminders-${new Date().toISOString().slice(0, 10)}.ics`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  } catch { /* ignore */ }
+                }}
+                aria-label="Export reminders as iCalendar"
+              >
+                <Download className="w-3 h-3 mr-1" />iCal
+              </Button>
           </div>
           {/* 40.1: Category filter pills */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -1069,61 +1075,62 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
         </div>
         <div className="flex items-center gap-2">
           {/* 66.8: Sort-by toggle */}
-          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-1">
-            <button
-              onClick={() => setSortMode('priority')}
-              aria-label="Sort by priority"
-              title="Sort by priority"
-              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'priority' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              P↑
-            </button>
-            <button
-              onClick={() => setSortMode('due')}
-              aria-label="Sort by due date"
-              title="Sort by due date"
-              className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'due' ? 'bg-[#84CC16]/20 text-[#84CC16]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              Due↑
-            </button>
-          </div>
-          {/* 63.3: Group-by toggle */}
-          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-1">
-            <button
-              onClick={() => setGroupMode('date')}
-              aria-label="Group by date"
-              title="Group by date"
-              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'date' ? 'bg-[#84CC16]/20 text-[#84CC16]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setGroupMode('category')}
-              aria-label="Group by category"
-              title="Group by category"
-              className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'category' ? 'bg-[#BF5FFF]/20 text-[#BF5FFF]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              aria-label="List view"
-              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[#84CC16]/20 text-[#84CC16]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              aria-label="Calendar view"
-              className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[#84CC16]/20 text-[#84CC16]' : 'text-[var(--ag-text-muted)]'}`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
+            <div className="flex items-center bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-lg p-1">
+              <button
+                onClick={() => setSortMode('priority')}
+                aria-label="Sort by priority"
+                title="Sort by priority"
+                className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'priority' ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                P↑
+              </button>
+              <button
+                onClick={() => setSortMode('due')}
+                aria-label="Sort by due date"
+                title="Sort by due date"
+                className={`p-2 rounded transition-colors min-h-[36px] flex items-center justify-center text-xs font-medium px-2 ${sortMode === 'due' ? 'bg-[var(--ag-cal)]/20 text-[var(--ag-cal)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                Due↑
+              </button>
+            </div>
+            {/* 63.3: Group-by toggle */}
+            <div className="flex items-center bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-lg p-1">
+              <button
+                onClick={() => setGroupMode('date')}
+                aria-label="Group by date"
+                title="Group by date"
+                className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'date' ? 'bg-[var(--ag-cal)]/20 text-[var(--ag-cal)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setGroupMode('category')}
+                aria-label="Group by category"
+                title="Group by category"
+                className={`p-2 rounded transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center text-xs font-medium ${groupMode === 'category' ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex items-center bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+                className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'list' ? 'bg-[var(--ag-cal)]/20 text-[var(--ag-cal)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                aria-label="Calendar view"
+                className={`p-2.5 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewMode === 'calendar' ? 'bg-[var(--ag-cal)]/20 text-[var(--ag-cal)]' : 'text-[var(--ag-text-muted)]'}`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </BlurFade>
 
       {/* Reminders List */}
       {/* Bulk snooze bar — shown when viewing active reminders (29.4) */}
@@ -1276,35 +1283,38 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {viewMode === 'list' ? (
         <div className="space-y-3">
           {filteredReminders.length === 0 ? (
-            <div className="text-center py-16 flex flex-col items-center">
-              <div className="relative mb-6">
-                <Bell className="w-14 h-14 text-[#84CC16]/30 animate-bounce" style={{ animationDuration: '2s' }} />
-                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#84CC16]/20 animate-ping" />
+            <BlurFade delay={0.7} inView>
+              <div className="text-center py-16 flex flex-col items-center">
+                <div className="relative mb-6">
+                  <Bell className="w-14 h-14 text-[var(--ag-cal)]/30 animate-bounce" style={{ animationDuration: '2s' }} />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--ag-cal)]/20 animate-ping" />
+                </div>
+                <p className="text-lg font-medium font-heading text-[var(--ag-text-primary)] mb-1">No reminders yet</p>
+                <p className="text-sm text-[var(--ag-text-muted)]/70 mt-1 max-w-xs">
+                  Try typing: <span className="text-[var(--ag-cal)]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
+                </p>
+                <Button
+                  onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
+                  className="mt-5 bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-semibold px-6 py-2.5 min-h-[44px] hover:shadow-[var(--ag-glow-sm)] transition-shadow"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create your first reminder
+                </Button>
               </div>
-              <p className="text-lg font-medium text-[var(--ag-text-primary)] mb-1">No reminders yet</p>
-              <p className="text-sm text-[var(--ag-text-muted)]/70 mt-1 max-w-xs">
-                Try typing: <span className="text-[#84CC16]/80 font-mono text-xs">&ldquo;Remind me tomorrow at 3pm to call mom&rdquo;</span>
-              </p>
-              <Button
-                onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
-                className="mt-5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-6 py-2.5 min-h-[44px]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create your first reminder
-              </Button>
-            </div>
+            </BlurFade>
           ) : filter === 'active' ? (
             // Grouped view for active reminders (date or category)
             (groupMode === 'category' ? groupRemindersByCategory(filteredReminders) : groupRemindersByDate(filteredReminders)).map(({ label, items }) => {
               // Smart grouping: color-coded headers by time context
-              const groupHeaderColor = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#84CC16' : label === 'Tomorrow' || label === 'This Week' ? '#E8E8F0' : '#8892A4';
-              const groupBadgeBg = label === 'Overdue' ? '#FF2D78' : label === 'Today' ? '#84CC16' : '#8B5CF6';
+              const groupHeaderColor = label === 'Overdue' ? 'var(--ag-pink)' : label === 'Today' ? 'var(--ag-cal)' : label === 'Tomorrow' || label === 'This Week' ? 'var(--ag-text-secondary)' : 'var(--ag-text-muted)';
+              const groupBadgeBg = label === 'Overdue' ? 'var(--ag-pink)' : label === 'Today' ? 'var(--ag-cal)' : 'var(--ag-violet)';
               return (
-              <div key={label} className="mb-4">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: groupHeaderColor }}>{label}</span>
-                  <span className="text-xs font-medium px-1.5 py-0.5 rounded-full" style={{ color: groupBadgeBg, backgroundColor: `${groupBadgeBg}15` }}>{items.length}</span>
-                </div>
+              <BlurFade key={label} delay={0.8} inView>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider font-heading" style={{ color: groupHeaderColor }}>{label}</span>
+                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full" style={{ color: groupBadgeBg, backgroundColor: `rgba(139, 92, 246, 0.1)` }}>{items.length}</span>
+                  </div>
                 <div className="space-y-2">
                   {items.map((reminder) => {
                     const formatted = formatDateTime(reminder.datetime);
@@ -1316,16 +1326,16 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       <Card
                         key={reminder.id}
                         data-testid={`reminder-card-${reminder.id}`}
-                        className={`bg-[var(--ag-bg-surface)] border transition-all duration-300 ${
+                        className={`bg-[var(--ag-bg-surface)] backdrop-blur-xl border rounded-xl transition-all duration-300 ${
                           isCompleting
-                            ? 'border-[#00FF88] bg-[#00FF88]/10 scale-[0.99]'
+                            ? 'border-[var(--ag-green)] bg-[var(--ag-green)]/10 scale-[0.99]'
                             : isJustCompleted
-                            ? 'bg-[#00FF88]/5'
+                            ? 'bg-[var(--ag-green)]/5'
                             : reminder.completed
                             ? 'border-[var(--ag-border-subtle)] opacity-60'
                             : overdue
-                            ? 'border-[#FF6161]/30 border-l-2 border-l-[#FF2D78]'
-                            : 'border-[var(--ag-border-subtle)]'
+                            ? 'border-[var(--ag-pink)]/30 border-l-2 border-l-[var(--ag-pink)]'
+                            : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)]'
                         }`}
                       >
                         <CardContent className="p-4">
@@ -1351,15 +1361,15 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                             {/* Date badge */}
                             <div className={`flex-shrink-0 w-14 text-center p-2 rounded-xl ${
                               reminder.completed
-                                ? 'bg-[#84CC16]/10'
+                                ? 'bg-[var(--ag-cal)]/10'
                                 : overdue
-                                ? 'bg-[#FF6161]/10'
-                                : 'bg-[#84CC16]/10'
+                                ? 'bg-[var(--ag-pink)]/10'
+                                : 'bg-[var(--ag-cal)]/10'
                             }`}>
-                              <div className={`text-xs ${overdue ? 'text-[#FF6161]' : 'text-[#84CC16]'}`}>
+                              <div className={`text-xs ${overdue ? 'text-[var(--ag-pink)]' : 'text-[var(--ag-cal)]'}`}>
                                 {formatted.month}
                               </div>
-                              <div className={`text-xl font-bold ${overdue ? 'text-[#FF6161]' : 'text-[var(--ag-text-primary)]'}`}>
+                              <div className={`text-xl font-bold ${overdue ? 'text-[var(--ag-pink)]' : 'text-[var(--ag-text-primary)]'}`}>
                                 {formatted.day}
                               </div>
                             </div>
@@ -1582,8 +1592,9 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
                       </Card>
                     );
                   })}
+                  </div>
                 </div>
-              </div>
+              </BlurFade>
               );
             })
           ) : (
@@ -2128,7 +2139,7 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
       {/* 45.4: Mobile Quick-Add FAB — visible only on mobile, clears above bottom nav */}
       <button
         onClick={() => { setEditingReminder(null); setIsAddDialogOpen(true); }}
-        className="md:hidden fixed bottom-[88px] right-4 w-14 h-14 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center justify-center shadow-lg z-40 text-xl font-bold min-h-[44px]"
+        className="md:hidden fixed bottom-[88px] right-4 w-14 h-14 rounded-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white flex items-center justify-center shadow-[var(--ag-glow-md)] z-40 text-xl font-bold min-h-[44px] hover:shadow-[var(--ag-glow-lg)] transition-shadow"
         aria-label="Add reminder"
       >
         +
@@ -2136,45 +2147,46 @@ const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, l
 
       {/* 51.2: Recurring reminder edit — choose scope before opening edit dialog */}
       {recurringEditChoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)' }}>
-          <div className="w-full max-w-sm rounded-2xl border border-[#BF5FFF]/30 p-6" style={{ background: '#06060B' }}>
-            <h3 className="text-base font-semibold text-[var(--ag-text-primary)] mb-1">Edit recurring reminder</h3>
-            <p className="text-sm text-[var(--ag-text-muted)] mb-5">This is a <span className="text-[#BF5FFF]">{recurringEditChoice.recurrence}</span> reminder. What would you like to edit?</p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  const r = recurringEditChoice;
-                  setRecurringEditChoice(null);
-                  setEditAsOneOff(true);
-                  handleEditClick(r, true);
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#BF5FFF]/10 border border-[#BF5FFF]/30 hover:bg-[#BF5FFF]/20 text-[#BF5FFF] text-sm font-medium transition-colors"
-              >
-                This occurrence only
-              </button>
-              <button
-                onClick={() => {
-                  const r = recurringEditChoice;
-                  setRecurringEditChoice(null);
-                  setEditAsOneOff(false);
-                  handleEditClick(r, true);
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#84CC16]/10 border border-[#84CC16]/30 hover:bg-[#84CC16]/20 text-[#84CC16] text-sm font-medium transition-colors min-h-[44px]"
-              >
-                All future occurrences
-              </button>
-              <button
-                onClick={() => setRecurringEditChoice(null)}
-                className="w-full py-2 text-sm text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors"
-              >
-                Cancel
-              </button>
+        <BlurFade delay={0} inView>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] p-6">
+              <h3 className="text-base font-semibold font-heading text-[var(--ag-text-primary)] mb-1">Edit recurring reminder</h3>
+              <p className="text-sm text-[var(--ag-text-muted)] mb-5">This is a <span className="text-[var(--ag-violet)]">{recurringEditChoice.recurrence}</span> reminder. What would you like to edit?</p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    const r = recurringEditChoice;
+                    setRecurringEditChoice(null);
+                    setEditAsOneOff(true);
+                    handleEditClick(r, true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[var(--ag-violet)]/10 border border-[var(--ag-violet)]/30 hover:bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] text-sm font-medium transition-colors min-h-[44px]"
+                >
+                  This occurrence only
+                </button>
+                <button
+                  onClick={() => {
+                    const r = recurringEditChoice;
+                    setRecurringEditChoice(null);
+                    setEditAsOneOff(false);
+                    handleEditClick(r, true);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[var(--ag-cal)]/10 border border-[var(--ag-cal)]/30 hover:bg-[var(--ag-cal)]/20 text-[var(--ag-cal)] text-sm font-medium transition-colors min-h-[44px]"
+                >
+                  All future occurrences
+                </button>
+                <button
+                  onClick={() => setRecurringEditChoice(null)}
+                  className="w-full py-2 text-sm text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </BlurFade>
       )}
     </div>
-    </PageShell>
     </PullToRefreshWrapper>
     </DashboardPageWrapper>
   );

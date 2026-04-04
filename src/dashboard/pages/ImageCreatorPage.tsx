@@ -5,8 +5,9 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { PageShell, PageHeader } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   ImageIcon, Sparkles, Send, Loader2, Trash2, Copy, Check,
@@ -523,18 +524,20 @@ export function ImageCreatorPage() {
       {activeTab === 'generate' && (
         <>
           {/* Mode Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              {
-                id: 'imagine' as const,
-                title: 'Imagine',
-                subtitle: 'Text to image',
-                desc: 'Describe what you want and the AI will generate it from scratch.',
-                icon: Wand2,
-                activeColor: '#8B5CF6',
-                activeBg: 'rgba(139,92,246,0.06)',
-                activeBorder: 'rgba(139,92,246,0.4)',
-              },
+          <BlurFade delay={0.1} inView>
+            <SectionCard>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  {
+                    id: 'imagine' as const,
+                    title: 'Imagine',
+                    subtitle: 'Text to image',
+                    desc: 'Describe what you want and the AI will generate it from scratch.',
+                    icon: Wand2,
+                    activeColor: '#8B5CF6',
+                    activeBg: 'rgba(139,92,246,0.06)',
+                    activeBorder: 'rgba(139,92,246,0.4)',
+                  },
               {
                 id: 'edit' as const,
                 title: 'Upload & Edit',
@@ -575,20 +578,18 @@ export function ImageCreatorPage() {
                   </div>
                   <p className="text-sm text-[var(--ag-text-secondary)]">{card.desc}</p>
                 </button>
-              );
-            })}
-          </div>
+                );
+              })}
+              </div>
+            </SectionCard>
+          </BlurFade>
 
           {/* Generation Panel */}
           {mode && (
-            <div
-              className="relative rounded-2xl border overflow-hidden p-6"
-              style={{
-                borderColor: mode === 'imagine' ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.2)',
-                background: mode === 'imagine' ? 'rgba(139,92,246,0.03)' : 'rgba(139,92,246,0.03)',
-              }}
-            >
-              {/* Reference image upload (edit mode) */}
+            <BlurFade delay={0.2} inView>
+              <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
+                <div className="relative">
+                  {/* Reference image upload (edit mode) */}
               {mode === 'edit' && (
                 <div className="mb-5">
                   <label className="text-sm text-[var(--ag-text-secondary)] mb-2 block">Reference Image (optional)</label>
@@ -802,7 +803,7 @@ export function ImageCreatorPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={generating || !prompt.trim() || imageCount >= maxImages}
-                  className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#7C3AED] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-bright)] text-white font-semibold text-sm hover:from-[#7C3AED] hover:to-[#8B5CF6] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ag-violet)]/25"
                 >
                   {generating ? (
                     <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
@@ -810,25 +811,28 @@ export function ImageCreatorPage() {
                     <><Send className="w-4 h-4" />{mode === 'edit' ? 'Generate Edit' : 'Imagine'}</>
                   )}
                 </button>
-              </div>
-            </div>
+                  </div>
+                </div>
+              </SectionCard>
+            </BlurFade>
           )}
 
           {/* Quick Gallery preview in Generate tab */}
           {images.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-[var(--ag-violet)]" />
-                  Recent Generations
-                </h2>
-                <button
-                  onClick={() => setActiveTab('gallery')}
-                  className="text-xs text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors"
-                >
-                  View all in Gallery
-                </button>
-              </div>
+            <BlurFade delay={0.3} inView>
+              <SectionCard>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-heading text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-[var(--ag-violet)]" />
+                    Recent Generations
+                  </h2>
+                  <button
+                    onClick={() => setActiveTab('gallery')}
+                    className="text-xs text-[var(--ag-violet)] hover:text-[var(--ag-violet)]/80 transition-colors"
+                  >
+                    View all in Gallery
+                  </button>
+                </div>
               {galleryLoading ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[...Array(4)].map((_, i) => <ShimmerCard key={i} />)}
@@ -876,33 +880,37 @@ export function ImageCreatorPage() {
                   ))}
                 </div>
               )}
-            </div>
+              </SectionCard>
+            </BlurFade>
           )}
 
           {/* Empty state for generate tab */}
           {!mode && images.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[var(--ag-violet)]/20 p-12 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-8 h-8 text-[var(--ag-violet)]/40" />
+            <BlurFade delay={0.2} inView>
+              <div className="rounded-2xl border border-dashed border-[var(--ag-violet)]/20 p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
+                  <ImageIcon className="w-8 h-8 text-[var(--ag-violet)]/40" />
+                </div>
+                <p className="text-[var(--ag-text-primary)] text-sm font-medium mb-1">No images yet</p>
+                <p className="text-[var(--ag-text-secondary)] text-xs max-w-xs mx-auto">
+                  Choose Imagine or Upload & Edit above to create your first AI image.
+                </p>
               </div>
-              <p className="text-[var(--ag-text-primary)] text-sm font-medium mb-1">No images yet</p>
-              <p className="text-[var(--ag-text-secondary)] text-xs max-w-xs mx-auto">
-                Choose Imagine or Upload & Edit above to create your first AI image.
-              </p>
-            </div>
+            </BlurFade>
           )}
 
           {/* Available Models panel */}
           {models.length > 0 && (
-            <div className="rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden">
-              <button
-                onClick={() => setShowModelsPanel(p => !p)}
-                className="w-full flex items-center justify-between p-4 hover:bg-[#8B5CF6]/5 transition-colors text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[var(--ag-violet)]" />
-                  <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Available Image Models</span>
-                </div>
+            <BlurFade delay={0.4} inView>
+              <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
+                <button
+                  onClick={() => setShowModelsPanel(p => !p)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-[#8B5CF6]/5 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[var(--ag-violet)]" />
+                    <span className="font-heading text-sm font-semibold text-[var(--ag-text-primary)]">Available Image Models</span>
+                  </div>
                 <ChevronDown className={`w-4 h-4 text-[var(--ag-text-secondary)] transition-transform ${showModelsPanel ? 'rotate-180' : ''}`} />
               </button>
 
@@ -946,7 +954,8 @@ export function ImageCreatorPage() {
                   })}
                 </div>
               )}
-            </div>
+              </SectionCard>
+            </BlurFade>
           )}
         </>
       )}
@@ -955,9 +964,11 @@ export function ImageCreatorPage() {
       {activeTab === 'gallery' && (
         <>
           {/* Gallery controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-1 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5">
-              {(['all', 'generated', 'edited'] as const).map(f => (
+          <BlurFade delay={0.1} inView>
+            <SectionCard className="p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-1 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5">
+                  {(['all', 'generated', 'edited'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setGalleryFilter(f)}
@@ -992,13 +1003,16 @@ export function ImageCreatorPage() {
                 <RefreshCw className={`w-3.5 h-3.5 ${galleryLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-            </div>
-          </div>
+                </div>
+              </div>
+            </SectionCard>
+          </BlurFade>
 
           {/* Date filter panel */}
           {showDateFilter && (
-            <div className="flex items-center gap-3 flex-wrap px-1">
-              {[
+            <BlurFade delay={0.15} inView>
+              <div className="flex items-center gap-3 flex-wrap px-1">
+                {[
                 { label: 'From:', value: dateFrom, onChange: setDateFrom },
                 { label: 'To:', value: dateTo, onChange: setDateTo },
               ].map(({ label, value, onChange }) => (
@@ -1017,19 +1031,23 @@ export function ImageCreatorPage() {
                   Clear dates
                 </button>
               )}
-            </div>
+              </div>
+            </BlurFade>
           )}
 
           {/* Gallery loading shimmer */}
           {galleryLoading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => <ShimmerCard key={i} />)}
-            </div>
+            <BlurFade delay={0.2} inView>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => <ShimmerCard key={i} />)}
+              </div>
+            </BlurFade>
           )}
 
           {/* Empty state */}
           {!galleryLoading && filteredImages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[var(--ag-violet)]/15">
+            <BlurFade delay={0.2} inView>
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center rounded-2xl border border-dashed border-[var(--ag-violet)]/15">
               <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-1">
                 <ImageIcon className="w-8 h-8 text-[var(--ag-violet)]/40" />
               </div>
@@ -1039,16 +1057,18 @@ export function ImageCreatorPage() {
               </p>
               <button
                 onClick={() => setActiveTab('generate')}
-                className="mt-2 px-4 py-2 rounded-xl bg-[#8B5CF6]/15 text-[var(--ag-violet)] text-sm font-medium hover:bg-[#8B5CF6]/25 transition-colors border border-[var(--ag-violet)]/30 min-h-[44px]"
+                className="mt-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[var(--ag-violet)]/10 to-[var(--ag-violet-bright)]/10 text-[var(--ag-violet)] text-sm font-medium hover:from-[var(--ag-violet)]/20 hover:to-[var(--ag-violet-bright)]/20 transition-all border border-[var(--ag-violet)]/30 min-h-[44px] shadow-sm"
               >
                 Start Generating
               </button>
-            </div>
+              </div>
+            </BlurFade>
           )}
 
           {/* Masonry grid */}
           {!galleryLoading && filteredImages.length > 0 && (
-            <div className="columns-2 sm:columns-3 lg:columns-4 gap-4">
+            <BlurFade delay={0.2} inView>
+              <div className="columns-2 sm:columns-3 lg:columns-4 gap-4">
               {filteredImages.map((img) => (
                 <div
                   key={img.id}
@@ -1126,7 +1146,8 @@ export function ImageCreatorPage() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            </BlurFade>
           )}
         </>
       )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
@@ -560,16 +561,17 @@ export function VideoGenPage() {
       )}
 
       {/* Header */}
-      <PageHeader
-        icon={Film}
-        title="Video Generator"
-        subtitle={`Create AI-powered short clips \u00b7 ${videoCount}/${maxVideos} saved`}
-        badge={
-          <span className="relative flex h-2.5 w-2.5" title="Forge agent">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F59E0B] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#F59E0B]" />
-          </span>
-        }
+      <BlurFade delay={0.1}>
+        <PageHeader
+          icon={Film}
+          title="Video Generator"
+          subtitle={`Create AI-powered short clips \u00b7 ${videoCount}/${maxVideos} saved`}
+          badge={
+            <span className="relative flex h-2.5 w-2.5" title="Forge agent">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-gold)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-gold)]" />
+            </span>
+          }
         actions={
           <div className="relative">
           {assignedAgent ? (
@@ -659,11 +661,13 @@ export function VideoGenPage() {
           )}
         </div>
         }
-      />
+        />
+      </BlurFade>
 
       {/* Honest unavailability notice — shown when all video providers are blocked */}
       {isProviderBroken && (
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--ag-amber)]/30 bg-gradient-to-br from-[var(--ag-amber)]/5 via-[#0C0C18] to-[var(--ag-amber)]/3 p-6">
+        <BlurFade delay={0.2}>
+          <div className="relative overflow-hidden rounded-2xl border border-[var(--ag-amber)]/30 bg-gradient-to-br from-[var(--ag-amber)]/5 via-[var(--ag-bg-base)] to-[var(--ag-amber)]/3 p-6 bg-[var(--ag-bg-surface)] backdrop-blur-xl">
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[var(--ag-amber)]/6 blur-3xl pointer-events-none" />
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="w-16 h-16 rounded-2xl bg-[var(--ag-amber)]/15 flex items-center justify-center flex-shrink-0">
@@ -694,13 +698,15 @@ export function VideoGenPage() {
             </div>
           </div>
         </div>
+        </BlurFade>
       )}
 
       {/* Generation Panel */}
-      <SectionCard>
+      <BlurFade delay={0.3}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
         <div className="flex items-center gap-2 mb-4">
-          <Wand2 className="w-5 h-5 text-[#F59E0B]" />
-          <h3 className="text-[var(--ag-text-primary,#F4F6FF)] font-semibold">Create Video</h3>
+          <Wand2 className="w-5 h-5 text-[var(--ag-gold)]" />
+          <h3 className="text-[var(--ag-text-primary)] font-heading font-semibold">Create Video</h3>
         </div>
 
         {/* Model selector + Duration */}
@@ -709,7 +715,7 @@ export function VideoGenPage() {
           <div className="relative">
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
-              className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] text-sm text-[var(--ag-text-primary,#F4F6FF)] hover:border-[rgba(139,92,246,0.15)] transition-colors"
+              className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-primary)] hover:border-[var(--ag-violet)]/30 transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-[var(--ag-violet)]" />
               {currentModel?.name || 'Select Model'}
@@ -734,8 +740,8 @@ export function VideoGenPage() {
                     }`}
                   >
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">{m.name}</div>
-                      <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">{m.description}</div>
+                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">{m.name}</div>
+                      <div className="text-xs text-[var(--ag-text-secondary)]">{m.description}</div>
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       m.tier === 'auto' ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]' :
@@ -761,7 +767,7 @@ export function VideoGenPage() {
                 className={`px-3 py-2 min-h-[44px] rounded-lg text-xs transition-all ${
                   duration === preset.val
                     ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
-                    : 'bg-[var(--ag-bg-base)] text-[var(--ag-text-secondary,#9CA3AF)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                    : 'bg-[var(--ag-bg-base)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30'
                 }`}
               >
                 {preset.label}
@@ -776,7 +782,7 @@ export function VideoGenPage() {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Describe the video you want to generate... (e.g. 'A drone flying over a city skyline at sunset, cinematic')"
           rows={3}
-          className="w-full bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-[var(--ag-text-primary,#F4F6FF)] placeholder-[#6B7280]/50 resize-none focus:border-[rgba(139,92,246,0.15)] outline-none text-sm"
+          className="w-full bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)]/70 resize-none focus:border-[var(--ag-violet)]/30 outline-none text-sm"
         />
 
         {/* Generate button */}
@@ -793,7 +799,7 @@ export function VideoGenPage() {
           <button
             onClick={handleGenerate}
             disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
-            className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#7C3AED] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-semibold text-sm hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             title={isProviderBroken ? "Video generation is temporarily unavailable from this server region" : ""}
           >
             {isProviderBroken ? (
@@ -831,12 +837,14 @@ export function VideoGenPage() {
           </p>
         )}
       </SectionCard>
+      </BlurFade>
 
       {/* Gallery */}
+      <BlurFade delay={0.4}>
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--ag-text-primary,#F4F6FF)] flex items-center gap-2">
-            <Film className="w-5 h-5 text-[#F59E0B]" />
+          <h2 className="text-lg font-heading font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+            <Film className="w-5 h-5 text-[var(--ag-gold)]" />
             Your Videos
             <span className="text-xs text-[var(--ag-text-muted)] font-normal ml-1">
               {videoCount}/{maxVideos}
@@ -879,11 +887,11 @@ export function VideoGenPage() {
                 return (order[a.status] ?? 2) - (order[b.status] ?? 2);
               }
               return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            }).map(vid => (
-              <div
-                key={vid.id}
-                className="group rounded-2xl border border-[rgba(139,92,246,0.08)] overflow-hidden hover:border-[rgba(139,92,246,0.15)] transition-all bg-[rgba(12,12,30,0.6)] backdrop-blur-xl"
-              >
+            }).map((vid, index) => (
+              <BlurFade key={vid.id} delay={0.5 + index * 0.05}>
+                <div
+                  className="group rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-violet)]/30 transition-all bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+                >
                 {/* Video / Processing placeholder */}
                 <div
                   className="aspect-video cursor-pointer relative bg-[var(--ag-bg-base)]"
@@ -934,7 +942,7 @@ export function VideoGenPage() {
                       {/* Copy ID */}
                       <button
                         onClick={() => handleCopyId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
                         aria-label={`Copy ID: ${vid.id}`}
                       >
                         {copiedId === vid.id ? (
@@ -946,7 +954,7 @@ export function VideoGenPage() {
                       {/* Delete */}
                       <button
                         onClick={() => setDeleteConfirmId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-error)] hover:bg-[var(--ag-error)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
                         aria-label="Delete video"
                         data-testid={`delete-video-${vid.id}`}
                       >
@@ -965,21 +973,24 @@ export function VideoGenPage() {
                     <span className="text-xs text-[var(--ag-text-muted)]">{vid.model}</span>
                   </div>
                 </div>
-              </div>
+                </div>
+              </BlurFade>
             ))}
           </div>
         )}
       </div>
+      </BlurFade>
 
       {/* ── 55.13: Director Mode ─────────────────────────────────── */}
-      <SectionCard>
+      <BlurFade delay={0.6}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/15 flex items-center justify-center">
-            <Wand2 className="w-4 h-4 text-[#F59E0B]" />
+          <div className="w-8 h-8 rounded-lg bg-[var(--ag-gold)]/15 flex items-center justify-center">
+            <Wand2 className="w-4 h-4 text-[var(--ag-gold)]" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-primary,#F4F6FF)]">Director Mode <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[var(--ag-violet)] ml-1">fal.ai Seedance</span></h2>
-            <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">One idea → AI director packet → 6 clips × 5s (750 credits)</p>
+            <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Director Mode <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] ml-1">fal.ai Seedance</span></h2>
+            <p className="text-xs text-[var(--ag-text-secondary)]">One idea → AI director packet → 6 clips × 5s (750 credits)</p>
           </div>
         </div>
 
@@ -992,7 +1003,7 @@ export function VideoGenPage() {
               onKeyDown={(e) => e.key === 'Enter' && void handleDirectorSubmit()}
               placeholder="e.g. A lone astronaut discovering an alien city at sunset"
               maxLength={500}
-              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] text-sm placeholder-[#374151] focus:outline-none focus:border-[rgba(139,92,246,0.15)]"
+              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-sm placeholder-[var(--ag-text-muted)]/60 focus:outline-none focus:border-[var(--ag-violet)]/30"
             />
             {/* 65.13: Expand idea with AI */}
             <button
@@ -1007,7 +1018,7 @@ export function VideoGenPage() {
             <button
               onClick={() => void handleDirectorSubmit()}
               disabled={!directorIdea.trim()}
-              className="flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-all shadow-lg"
             >
               {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {directorRunning ? 'Queue' : 'Direct'}
@@ -1030,7 +1041,7 @@ export function VideoGenPage() {
 
           {/* Active job progress */}
           {directorJob && (
-            <div className="rounded-xl border border-[var(--ag-violet)]/15 bg-[#8B5CF6]/5 p-4 space-y-3">
+            <div className="rounded-xl border border-[var(--ag-violet)]/15 bg-[var(--ag-violet)]/5 p-4 space-y-3">
               {directorJob.packet && (
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-[var(--ag-text-primary)]">{directorJob.packet.title}</p>
@@ -1071,7 +1082,7 @@ export function VideoGenPage() {
                     <div key={i} className="flex flex-col gap-1">
                     <div
                       className={`relative rounded-lg overflow-hidden aspect-video bg-[var(--ag-bg-surface)] border transition-all ${
-                        clip.success ? 'border-[var(--ag-violet)]/10 cursor-pointer hover:border-[var(--ag-violet)]/40 hover:scale-[1.02]' : 'border-[#FF6161]/20'
+                        clip.success ? 'border-[var(--ag-violet)]/10 cursor-pointer hover:border-[var(--ag-violet)]/40 hover:scale-[1.02]' : 'border-[var(--ag-error)]/20'
                       }`}
                       onClick={() => clip.success && clip.url && setPreviewClip({ url: clip.url, index: i })}
                       title={shot ? `${shot.cameraMove} — ${shot.prompt}` : (clip.success ? 'Click to preview' : undefined)}
@@ -1141,7 +1152,7 @@ export function VideoGenPage() {
               {directorJob.status === 'done' && directorJob.clips.length > 0 && (
                 <div className="space-y-2">
                   {stitchResult ? (
-                    <div className="rounded-xl border border-[var(--ag-violet)]/30 bg-[#8B5CF6]/5 p-3 space-y-2">
+                    <div className="rounded-xl border border-[var(--ag-violet)]/30 bg-[var(--ag-violet)]/5 p-3 space-y-2">
                       <p className="text-xs font-semibold text-[var(--ag-violet)]">
                         {stitchResult.url ? 'Stitched Video Ready' : 'Clip URLs Ready (soft stitch)'}
                       </p>
@@ -1157,7 +1168,7 @@ export function VideoGenPage() {
                           <a
                             href={stitchResult.url}
                             download="stitched.mp4"
-                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors w-fit"
+                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors w-fit"
                           >
                             <Download className="w-3.5 h-3.5" />
                             Download Stitched Video
@@ -1186,7 +1197,7 @@ export function VideoGenPage() {
                           onClick={() => void handleStitch()}
                           disabled={stitching || !directorJob.clips.some((c) => c.success)}
                           data-testid="stitch-btn"
-                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 disabled:opacity-50 transition-colors"
+                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 disabled:opacity-50 transition-colors"
                         >
                           {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
                           {stitching ? 'Stitching…' : directorJob.clips.some((c) => !c.success) ? 'Partial Stitch' : 'Stitch Clips'}
@@ -1241,7 +1252,7 @@ export function VideoGenPage() {
                           setCopiedClipUrl(true);
                           setTimeout(() => setCopiedClipUrl(false), 2000);
                         }}
-                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors"
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors"
                       >
                         {copiedClipUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                         {copiedClipUrl ? 'Copied!' : 'Copy URL'}
@@ -1249,7 +1260,7 @@ export function VideoGenPage() {
                       <a
                         href={previewClip.url}
                         download={`clip-${previewClip.index + 1}.mp4`}
-                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#6B7280]/60 transition-colors"
+                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-subtle)]/80 transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Download className="w-3 h-3" />
@@ -1295,7 +1306,7 @@ export function VideoGenPage() {
               {directorJobs.filter(j => jobHistoryFilter === 'all' || j.status === jobHistoryFilter).slice(0, 3).map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--ag-violet)]/10 bg-[#8B5CF6]/5"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--ag-violet)]/10 bg-[var(--ag-violet)]/5"
                 >
                   <button
                     onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
@@ -1307,7 +1318,7 @@ export function VideoGenPage() {
                   {/* 64.13: Re-use idea button */}
                   <button
                     onClick={() => setDirectorIdea(job.idea)}
-                    className="flex-shrink-0 p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-violet)]/50 hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+                    className="flex-shrink-0 p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-violet)]/50 hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
                     aria-label="Use this idea again"
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -1318,16 +1329,18 @@ export function VideoGenPage() {
           )}
         </div>
       </SectionCard>
+      </BlurFade>
 
       {/* Available Video Models */}
-      <SectionCard padding="sm" className="overflow-hidden">
+      <BlurFade delay={0.7}>
+        <SectionCard padding="sm" className="overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
         <button
           onClick={() => setShowVideoModelsPanel(p => !p)}
           className="w-full flex items-center justify-between p-3 min-h-[44px] hover:bg-[#8B5CF6]/5 transition-colors text-left"
         >
           <div className="flex items-center gap-2">
-            <Film className="w-4 h-4 text-[#F59E0B]" />
-            <span className="text-sm font-semibold text-[var(--ag-text-primary,#F4F6FF)]">Available Video Models</span>
+            <Film className="w-4 h-4 text-[var(--ag-gold)]" />
+            <span className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Available Video Models</span>
           </div>
           <ChevronDown className={`w-4 h-4 text-[var(--ag-text-muted)] transition-transform ${showVideoModelsPanel ? 'rotate-180' : ''}`} />
         </button>
@@ -1373,7 +1386,7 @@ export function VideoGenPage() {
                     className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       isDefault
                         ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] cursor-default'
-                        : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20 disabled:opacity-50'
+                        : 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/20 disabled:opacity-50'
                     }`}
                   >
                     {isSaving ? '...' : isDefault ? '✓ Default' : 'Set default'}
@@ -1384,29 +1397,32 @@ export function VideoGenPage() {
           </div>
         )}
       </SectionCard>
+      </BlurFade>
 
       {/* Usage info */}
-      <SectionCard padding="sm">
+      <BlurFade delay={0.8}>
+        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
         <div className="flex items-start gap-3 p-1">
-          <AlertCircle className="w-4 h-4 text-[var(--ag-text-secondary,#9CA3AF)] shrink-0 mt-0.5" />
-          <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] space-y-1">
-            <p>Videos are saved for <strong className="text-[var(--ag-text-primary,#F4F6FF)]">24 hours</strong> and then automatically deleted.</p>
-            <p>Generation takes <strong className="text-[var(--ag-text-primary,#F4F6FF)]">30-120 seconds</strong> depending on duration and model. The page auto-polls for readiness.</p>
-            <p>Maximum <strong className="text-[var(--ag-text-primary,#F4F6FF)]">{maxVideos} videos</strong> at a time. Delete old ones to make room for new ones.</p>
-            <p>Use <strong className="text-[var(--ag-text-primary,#F4F6FF)]">Copy ID</strong> to reference videos in other tools.</p>
+          <AlertCircle className="w-4 h-4 text-[var(--ag-text-secondary)] shrink-0 mt-0.5" />
+          <div className="text-xs text-[var(--ag-text-secondary)] space-y-1">
+            <p>Videos are saved for <strong className="text-[var(--ag-text-primary)]">24 hours</strong> and then automatically deleted.</p>
+            <p>Generation takes <strong className="text-[var(--ag-text-primary)]">30-120 seconds</strong> depending on duration and model. The page auto-polls for readiness.</p>
+            <p>Maximum <strong className="text-[var(--ag-text-primary)]">{maxVideos} videos</strong> at a time. Delete old ones to make room for new ones.</p>
+            <p>Use <strong className="text-[var(--ag-text-primary)]">Copy ID</strong> to reference videos in other tools.</p>
           </div>
         </div>
       </SectionCard>
+      </BlurFade>
       {/* Delete confirmation modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" data-testid="delete-confirm-modal">
-          <div className="bg-[var(--ag-bg-base)] border border-[#FF6161]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-error)]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FF6161]/10 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-[#FF6161]" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--ag-error)]/10 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[var(--ag-error)]" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-[var(--ag-text-primary)]">Delete video?</h3>
+                <h3 className="text-base font-heading font-semibold text-[var(--ag-text-primary)]">Delete video?</h3>
                 <p className="text-xs text-[var(--ag-text-muted)]">This action cannot be undone.</p>
               </div>
             </div>
@@ -1417,7 +1433,7 @@ export function VideoGenPage() {
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 disabled={isDeleting}
-                className="flex-1 py-2 px-4 rounded-xl border border-[#2A2A3A] text-sm text-[var(--ag-text-muted)] hover:bg-[#1A1A2E] transition-colors disabled:opacity-50"
+                className="flex-1 py-2 px-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-muted)] hover:bg-[var(--ag-bg-surface)] transition-colors disabled:opacity-50"
                 data-testid="delete-confirm-cancel"
               >
                 Cancel
@@ -1425,7 +1441,7 @@ export function VideoGenPage() {
               <button
                 onClick={() => void handleDelete(deleteConfirmId)}
                 disabled={isDeleting}
-                className="flex-1 py-2 px-4 rounded-xl bg-[#FF6161]/15 border border-[#FF6161]/30 text-sm text-[#FF6161] hover:bg-[#FF6161]/25 transition-colors disabled:opacity-50 font-medium"
+                className="flex-1 py-2 px-4 min-h-[44px] rounded-xl bg-[var(--ag-error)]/15 border border-[var(--ag-error)]/30 text-sm text-[var(--ag-error)] hover:bg-[var(--ag-error)]/25 transition-colors disabled:opacity-50 font-medium"
                 data-testid="delete-confirm-ok"
               >
                 {isDeleting ? 'Deleting…' : 'Delete'}

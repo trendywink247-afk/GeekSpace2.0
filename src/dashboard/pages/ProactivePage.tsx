@@ -1,5 +1,5 @@
 // ProactivePage.tsx -- Jarvis-owned Proactive AI dashboard
-// Design tokens: #06061a bg, rgba(12,12,30,0.6) surface, #ADFF2F jarvis
+// Design tokens: --ag-bg-base, --ag-bg-surface, --ag-jarvis
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Bell,
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import api from "@/services/api";
 import { PageShell, PageHeader, SectionCard, DashboardPageWrapper } from "@/components/agentin";
+import { BlurFade } from "@/components/magicui/blur-fade";
 import { useAgentCanvas } from "@/hooks/useAgentCanvas";
 
 // ---- Types ---------------------------------------------------------------
@@ -90,30 +91,30 @@ const CATEGORY_CONFIG: Record<MessageCategory, {
   },
   upcoming: {
     label: "Upcoming",
-    color: "text-violet-400",
-    bgColor: "bg-violet-500/10",
-    borderColor: "border-violet-500/20",
+    color: "text-[var(--ag-violet)]",
+    bgColor: "bg-[var(--ag-violet)]/10",
+    borderColor: "border-[var(--ag-violet)]/20",
     icon: CalendarClock,
   },
   insights: {
     label: "Insights",
-    color: "text-green-400",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20",
+    color: "text-[var(--ag-green)]",
+    bgColor: "bg-[var(--ag-green)]/10",
+    borderColor: "border-[var(--ag-green)]/20",
     icon: TrendingUp,
   },
   suggestions: {
     label: "Suggestions",
-    color: "text-violet-400",
-    bgColor: "bg-violet-500/10",
-    borderColor: "border-violet-500/20",
+    color: "text-[var(--ag-violet)]",
+    bgColor: "bg-[var(--ag-violet)]/10",
+    borderColor: "border-[var(--ag-violet)]/20",
     icon: Lightbulb,
   },
   celebrations: {
     label: "Celebrations",
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20",
+    color: "text-[var(--ag-amber)]",
+    bgColor: "bg-[var(--ag-amber)]/10",
+    borderColor: "border-[var(--ag-amber)]/20",
     icon: Trophy,
   },
 };
@@ -195,12 +196,9 @@ function MessageCard({
   return (
     <div
       className={
-        "rounded-xl border p-4 space-y-3 transition-all duration-300 hover:bg-white/[0.02] backdrop-blur-xl " +
-        config.borderColor
+        "rounded-xl border p-4 space-y-3 transition-all duration-300 hover:bg-[var(--ag-bg-surface-hover)] backdrop-blur-xl " +
+        config.borderColor + " bg-[var(--ag-bg-surface)]"
       }
-      style={{
-        background: "rgba(12,12,30,0.6)",
-      }}
     >
       {/* Header row */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -216,17 +214,17 @@ function MessageCard({
           >
             {config.label}
           </Badge>
-          <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] hidden sm:inline">
+          <span className="text-[10px] text-[var(--ag-text-secondary)] hidden sm:inline">
             {backendLabel}
           </span>
         </div>
-        <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]" title={formatDate(msg.sent_at)}>
+        <span className="text-xs text-[var(--ag-text-secondary)]" title={formatDate(msg.sent_at)}>
           {formatRelativeTime(msg.sent_at)}
         </span>
       </div>
 
       {/* Message body */}
-      <p className="text-sm leading-relaxed text-[var(--ag-text-primary,#F4F6FF)]/90">{msg.message}</p>
+      <p className="text-sm leading-relaxed text-[var(--ag-text-primary)]/90">{msg.message}</p>
 
       {/* Feedback row */}
       <div className="flex items-center gap-2 pt-1">
@@ -234,10 +232,10 @@ function MessageCard({
           onClick={() => onFeedback(msg.id, true)}
           className={
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
-            "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
+            "focus-visible:ring-2 focus-visible:ring-[var(--ag-green)]/50 " +
             (feedback === true
-              ? "bg-green-500/20 text-green-400 border border-green-500/30"
-              : "bg-white/[0.03] text-[var(--ag-text-secondary,#9CA3AF)] hover:bg-green-500/10 hover:text-green-400 border border-transparent")
+              ? "bg-[var(--ag-green)]/20 text-[var(--ag-green)] border border-[var(--ag-green)]/30"
+              : "bg-white/[0.03] text-[var(--ag-text-secondary)] hover:bg-[var(--ag-green)]/10 hover:text-[var(--ag-green)] border border-transparent")
           }
           aria-label="Mark as helpful"
         >
@@ -248,10 +246,10 @@ function MessageCard({
           onClick={() => onFeedback(msg.id, false)}
           className={
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
-            "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
+            "focus-visible:ring-2 focus-visible:ring-red-400/50 " +
             (feedback === false
               ? "bg-red-500/20 text-red-400 border border-red-500/30"
-              : "bg-white/[0.03] text-[var(--ag-text-secondary,#9CA3AF)] hover:bg-red-500/10 hover:text-red-400 border border-transparent")
+              : "bg-white/[0.03] text-[var(--ag-text-secondary)] hover:bg-red-500/10 hover:text-red-400 border border-transparent")
           }
           aria-label="Mark as not helpful"
         >
@@ -283,29 +281,29 @@ function FrequencyCard({
       onClick={() => onSelect(level)}
       className={
         "w-full text-left rounded-xl border p-3 transition-all min-h-[44px] " +
-        "focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
+        "focus-visible:ring-2 focus-visible:ring-[var(--ag-jarvis)]/50 " +
         (selected
-          ? "border-[#ADFF2F]/40 bg-[#ADFF2F]/5"
-          : "border-[rgba(139,92,246,0.08)] bg-white/[0.02] hover:border-[rgba(139,92,246,0.15)] hover:bg-white/[0.04]")
+          ? "border-[var(--ag-jarvis)]/40 bg-[var(--ag-jarvis)]/5"
+          : "border-[var(--ag-border-subtle)] bg-white/[0.02] hover:border-[var(--ag-border-default)] hover:bg-white/[0.04]")
       }
     >
       <div className="flex items-start gap-3">
         <div className={
           "rounded-lg p-2 shrink-0 " +
-          (selected ? "bg-[#ADFF2F]/10 text-[#ADFF2F]" : "bg-white/[0.05] text-[var(--ag-text-secondary,#9CA3AF)]")
+          (selected ? "bg-[var(--ag-jarvis)]/10 text-[var(--ag-jarvis)]" : "bg-white/[0.05] text-[var(--ag-text-secondary)]")
         }>
           <Icon className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={"text-sm font-medium " + (selected ? "text-[#ADFF2F]" : "text-[var(--ag-text-primary,#F4F6FF)]")}>
+            <p className={"text-sm font-medium " + (selected ? "text-[var(--ag-jarvis)]" : "text-[var(--ag-text-primary)]")}>
               {label}
             </p>
             {selected && (
-              <div className="h-2 w-2 rounded-full bg-[#ADFF2F] shrink-0" />
+              <div className="h-2 w-2 rounded-full bg-[var(--ag-jarvis)] shrink-0" />
             )}
           </div>
-          <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-0.5">{description}</p>
+          <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{description}</p>
         </div>
       </div>
     </button>
@@ -329,12 +327,12 @@ function TypeToggleRow({
     <div className="flex items-center justify-between gap-3 py-2">
       <div className="flex items-center gap-3">
         <Icon className={"h-4 w-4 shrink-0 " + color} />
-        <span className="text-sm text-[var(--ag-text-primary,#F4F6FF)]">{label}</span>
+        <span className="text-sm text-[var(--ag-text-primary)]">{label}</span>
       </div>
       <Switch
         checked={enabled}
         onCheckedChange={onToggle}
-        className="data-[state=checked]:bg-[#ADFF2F] min-w-[44px] min-h-[44px] flex items-center"
+        className="data-[state=checked]:bg-[var(--ag-jarvis)] min-w-[44px] min-h-[44px] flex items-center"
       />
     </div>
   );
@@ -349,9 +347,9 @@ function PlannedMessageRow({ planned }: { planned: PlannedMessage }) {
         <PlanIcon className={"h-3.5 w-3.5 " + config.color} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate text-[var(--ag-text-primary,#F4F6FF)]">{planned.label}</p>
+        <p className="text-sm truncate text-[var(--ag-text-primary)]">{planned.label}</p>
       </div>
-      <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] font-mono shrink-0">{planned.time}</span>
+      <span className="text-xs text-[var(--ag-text-secondary)] font-mono shrink-0">{planned.time}</span>
     </div>
   );
 }
@@ -368,8 +366,8 @@ function HelpfulnessBar({ feedbackMap }: { feedbackMap: Map<number, boolean> }) 
     <SectionCard>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-[#ADFF2F]" />
-          <span className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Jarvis helpfulness</span>
+          <Sparkles className="h-4 w-4 text-[var(--ag-jarvis)]" />
+          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Jarvis helpfulness</span>
         </div>
         <span className={"text-sm font-semibold " + textColor}>{pct}% positive</span>
       </div>
@@ -379,7 +377,7 @@ function HelpfulnessBar({ feedbackMap }: { feedbackMap: Map<number, boolean> }) 
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1.5">
+      <p className="text-xs text-[var(--ag-text-secondary)] mt-1.5">
         Based on {entries.length} {entries.length === 1 ? "rating" : "ratings"}
       </p>
     </SectionCard>
@@ -571,10 +569,10 @@ export function ProactivePage() {
         title="Proactive AI"
         subtitle="Jarvis reaches out with briefings, alerts, insights, and celebrations."
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-[#ADFF2F]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-jarvis)]/10 border border-[var(--ag-jarvis)]/30 text-[var(--ag-jarvis)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ADFF2F]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-jarvis)] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-jarvis)]" />
             </span>
             Jarvis
           </span>
@@ -610,30 +608,33 @@ export function ProactivePage() {
 
           {/* Error banner */}
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 flex items-center justify-between">
-              <span>{error}</span>
-              <button onClick={() => setError(null)} className="ml-2 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss error">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <BlurFade delay={0.1}>
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 flex items-center justify-between">
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="ml-2 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss error">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </BlurFade>
           )}
 
           {/* Global toggle card */}
-          <SectionCard>
+          <BlurFade delay={0.2}>
+            <SectionCard>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className={
                   "rounded-xl p-2.5 transition-colors " +
-                  (enabled ? "bg-[#ADFF2F]/10" : "bg-white/[0.05]")
+                  (enabled ? "bg-[var(--ag-jarvis)]/10" : "bg-white/[0.05]")
                 }>
                   {enabled
-                    ? <Bell className="h-5 w-5 text-[#ADFF2F]" />
-                    : <BellOff className="h-5 w-5 text-[var(--ag-text-secondary,#9CA3AF)]" />
+                    ? <Bell className="h-5 w-5 text-[var(--ag-jarvis)]" />
+                    : <BellOff className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                   }
                 </div>
                 <div>
-                  <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">Proactive Messages</p>
-                  <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+                  <p className="font-heading font-medium text-[var(--ag-text-primary)]">Proactive Messages</p>
+                  <p className="text-xs text-[var(--ag-text-secondary)]">
                     {enabled
                       ? "Jarvis will send scheduled messages via Telegram."
                       : "Proactive messages are paused."}
@@ -646,9 +647,9 @@ export function ProactivePage() {
                 aria-label={enabled ? "Disable proactive messages" : "Enable proactive messages"}
                 className={
                   "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent " +
-                  "transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ADFF2F]/50 " +
+                  "transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-jarvis)]/50 " +
                   "disabled:opacity-50 min-w-[44px] min-h-[44px] items-center " +
-                  (enabled ? "bg-[#ADFF2F]" : "bg-gray-600")
+                  (enabled ? "bg-[var(--ag-jarvis)]" : "bg-gray-600")
                 }
               >
                 <span
@@ -660,51 +661,61 @@ export function ProactivePage() {
               </button>
             </div>
           </SectionCard>
+          </BlurFade>
 
           {/* Category stat badges */}
           {!loading && messages.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(CATEGORY_CONFIG) as MessageCategory[]).map(cat => {
-                const cfg = CATEGORY_CONFIG[cat];
-                const count = categoryStats[cat];
-                if (count === 0) return null;
-                const CatIcon = cfg.icon;
-                return (
-                  <div
-                    key={cat}
-                    className={
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium " +
-                      cfg.bgColor + " " + cfg.borderColor + " " + cfg.color
-                    }
-                  >
-                    <CatIcon className="h-3 w-3" />
-                    <span>{count}</span>
-                    <span className="hidden sm:inline">{cfg.label}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <BlurFade delay={0.3}>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(CATEGORY_CONFIG) as MessageCategory[]).map(cat => {
+                  const cfg = CATEGORY_CONFIG[cat];
+                  const count = categoryStats[cat];
+                  if (count === 0) return null;
+                  const CatIcon = cfg.icon;
+                  return (
+                    <div
+                      key={cat}
+                      className={
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium " +
+                        cfg.bgColor + " " + cfg.borderColor + " " + cfg.color
+                      }
+                    >
+                      <CatIcon className="h-3 w-3" />
+                      <span>{count}</span>
+                      <span className="hidden sm:inline">{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </BlurFade>
           )}
 
           {/* Helpfulness bar */}
-          {feedbackMap.size > 0 && <HelpfulnessBar feedbackMap={feedbackMap} />}
+          {feedbackMap.size > 0 && (
+            <BlurFade delay={0.4}>
+              <HelpfulnessBar feedbackMap={feedbackMap} />
+            </BlurFade>
+          )}
 
           {/* Today's preview */}
           {enabled && plannedMessages.length > 0 && (
-            <SectionCard title="Today's Plan" subtitle="Here's what Jarvis plans to send today">
+            <BlurFade delay={0.5}>
+              <SectionCard title="Today's Plan" subtitle="Here's what Jarvis plans to send today">
               <div className="divide-y divide-white/[0.06]">
                 {plannedMessages.map((p, i) => (
                   <PlannedMessageRow key={i} planned={p} />
                 ))}
               </div>
             </SectionCard>
+            </BlurFade>
           )}
 
           {/* Message feed */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-4 w-4 text-[#ADFF2F]" />
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary,#F4F6FF)]">Message Feed</h2>
+          <BlurFade delay={0.6}>
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="h-4 w-4 text-[var(--ag-jarvis)]" />
+                <h2 className="text-base font-heading font-semibold text-[var(--ag-text-primary)]">Message Feed</h2>
               {messages.length > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">{messages.length}</Badge>
               )}
@@ -720,21 +731,24 @@ export function ProactivePage() {
               <EmptyState enabled={enabled} />
             ) : (
               <div className="space-y-3">
-                {sortedMessages.map(msg => (
-                  <MessageCard
-                    key={msg.id}
-                    msg={msg}
-                    feedback={feedbackMap.get(msg.id) ?? null}
-                    onFeedback={handleFeedback}
-                  />
+                {sortedMessages.map((msg, index) => (
+                  <BlurFade key={msg.id} delay={0.7 + index * 0.05}>
+                    <MessageCard
+                      msg={msg}
+                      feedback={feedbackMap.get(msg.id) ?? null}
+                      onFeedback={handleFeedback}
+                    />
+                  </BlurFade>
                 ))}
               </div>
             )}
-          </div>
+            </div>
+          </BlurFade>
         </div>
 
         {/* ===== Config Sidebar (desktop: always visible, mobile: toggle) ===== */}
-        <ConfigPanel
+        <BlurFade delay={0.8}>
+          <ConfigPanel
           show={showConfig}
           onClose={() => setShowConfig(false)}
           enabled={enabled}
@@ -744,7 +758,8 @@ export function ProactivePage() {
           onQuietHoursChange={handleQuietHoursChange}
           onAutonomyChange={handleAutonomyChange}
           onTypeToggle={handleTypeToggle}
-        />
+          />
+        </BlurFade>
       </div>
     </PageShell>
     </DashboardPageWrapper>
@@ -756,17 +771,17 @@ export function ProactivePage() {
 function EmptyState({ enabled }: { enabled: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="rounded-2xl bg-[#ADFF2F]/5 p-6 mb-6">
-        <Bot className="h-12 w-12 text-[#ADFF2F]/40" />
+      <div className="rounded-2xl bg-[var(--ag-jarvis)]/5 p-6 mb-6">
+        <Bot className="h-12 w-12 text-[var(--ag-jarvis)]/40" />
       </div>
-      <h3 className="text-lg font-semibold text-[var(--ag-text-primary,#F4F6FF)] mb-2">No proactive messages yet</h3>
-      <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)] max-w-sm">
+      <h3 className="text-lg font-heading font-semibold text-[var(--ag-text-primary)] mb-2">No proactive messages yet</h3>
+      <p className="text-sm text-[var(--ag-text-secondary)] max-w-sm">
         {enabled
           ? "Jarvis will start reaching out as you use the app more. Expect morning briefings, overdue alerts, and streak celebrations."
           : "Enable proactive messages above to let Jarvis send you helpful updates throughout the day."}
       </p>
       {enabled && (
-        <div className="flex items-center gap-2 mt-4 text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+        <div className="flex items-center gap-2 mt-4 text-xs text-[var(--ag-text-secondary)]">
           <Clock className="h-3.5 w-3.5" />
           <span>First message usually arrives with your morning briefing</span>
         </div>
@@ -822,8 +837,8 @@ function ConfigPanel({
         <div className="p-4 space-y-5 lg:space-y-6">
           {/* Mobile close header */}
           <div className="flex items-center justify-between lg:hidden">
-            <h2 className="text-base font-semibold flex items-center gap-2 text-[var(--ag-text-primary,#F4F6FF)]">
-              <Settings2 className="h-4 w-4 text-[#ADFF2F]" />
+            <h2 className="text-base font-heading font-semibold flex items-center gap-2 text-[var(--ag-text-primary)]">
+              <Settings2 className="h-4 w-4 text-[var(--ag-jarvis)]" />
               Configuration
             </h2>
             <Button variant="ghost" size="icon" onClick={onClose} className="min-w-[44px] min-h-[44px]">
@@ -832,8 +847,8 @@ function ConfigPanel({
           </div>
 
           {/* Desktop heading */}
-          <h2 className="text-base font-semibold items-center gap-2 hidden lg:flex text-[var(--ag-text-primary,#F4F6FF)]">
-            <Settings2 className="h-4 w-4 text-[#ADFF2F]" />
+          <h2 className="text-base font-heading font-semibold items-center gap-2 hidden lg:flex text-[var(--ag-text-primary)]">
+            <Settings2 className="h-4 w-4 text-[var(--ag-jarvis)]" />
             Configuration
           </h2>
 
@@ -842,14 +857,14 @@ function ConfigPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Moon className="h-4 w-4 text-[var(--ag-violet)]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Quiet Hours</p>
+                <p className="text-sm font-heading font-medium text-[var(--ag-text-primary)]">Quiet Hours</p>
               </div>
-              <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+              <p className="text-xs text-[var(--ag-text-secondary)]">
                 No messages during these hours
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary,#9CA3AF)] font-medium mb-1 block">
+                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary)] font-medium mb-1 block">
                     Start
                   </label>
                   <input
@@ -858,15 +873,15 @@ function ConfigPanel({
                     onChange={e => onQuietHoursChange("start", e.target.value)}
                     disabled={!enabled}
                     className={
-                      "w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary,#F4F6FF)] " +
-                      "focus:outline-none focus:ring-2 focus:ring-[#ADFF2F]/50 " +
+                      "w-full rounded-lg border border-[var(--ag-border-subtle)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary)] " +
+                      "focus:outline-none focus:ring-2 focus:ring-[var(--ag-jarvis)]/50 " +
                       "disabled:opacity-40 min-h-[44px] " +
                       "[color-scheme:dark]"
                     }
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary,#9CA3AF)] font-medium mb-1 block">
+                  <label className="text-[10px] uppercase tracking-wider text-[var(--ag-text-secondary)] font-medium mb-1 block">
                     End
                   </label>
                   <input
@@ -875,8 +890,8 @@ function ConfigPanel({
                     onChange={e => onQuietHoursChange("end", e.target.value)}
                     disabled={!enabled}
                     className={
-                      "w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary,#F4F6FF)] " +
-                      "focus:outline-none focus:ring-2 focus:ring-[#ADFF2F]/50 " +
+                      "w-full rounded-lg border border-[var(--ag-border-subtle)] bg-white/[0.03] px-3 py-2 text-sm text-[var(--ag-text-primary)] " +
+                      "focus:outline-none focus:ring-2 focus:ring-[var(--ag-jarvis)]/50 " +
                       "disabled:opacity-40 min-h-[44px] " +
                       "[color-scheme:dark]"
                     }
@@ -890,8 +905,8 @@ function ConfigPanel({
           <SectionCard>
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
-                <Gauge className="h-4 w-4 text-[#ADFF2F]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Autonomy Level</p>
+                <Gauge className="h-4 w-4 text-[var(--ag-jarvis)]" />
+                <p className="text-sm font-heading font-medium text-[var(--ag-text-primary)]">Autonomy Level</p>
               </div>
               <div className="space-y-2">
                 <FrequencyCard
@@ -934,35 +949,35 @@ function ConfigPanel({
           <SectionCard>
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-2">
-                <ChevronRight className="h-4 w-4 text-[#ADFF2F]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Message Types</p>
+                <ChevronRight className="h-4 w-4 text-[var(--ag-jarvis)]" />
+                <p className="text-sm font-heading font-medium text-[var(--ag-text-primary)]">Message Types</p>
               </div>
               <div className="divide-y divide-white/[0.06]">
                 <TypeToggleRow
                   label="Reminders"
                   icon={Sunrise}
-                  color="text-blue-400"
+                  color="text-[var(--ag-violet)]"
                   enabled={typeToggles.reminders}
                   onToggle={() => onTypeToggle("reminders")}
                 />
                 <TypeToggleRow
                   label="Insights"
                   icon={TrendingUp}
-                  color="text-green-400"
+                  color="text-[var(--ag-green)]"
                   enabled={typeToggles.insights}
                   onToggle={() => onTypeToggle("insights")}
                 />
                 <TypeToggleRow
                   label="Suggestions"
                   icon={Lightbulb}
-                  color="text-violet-400"
+                  color="text-[var(--ag-violet)]"
                   enabled={typeToggles.suggestions}
                   onToggle={() => onTypeToggle("suggestions")}
                 />
                 <TypeToggleRow
                   label="Celebrations"
                   icon={Trophy}
-                  color="text-amber-400"
+                  color="text-[var(--ag-amber)]"
                   enabled={typeToggles.celebrations}
                   onToggle={() => onTypeToggle("celebrations")}
                 />
@@ -975,32 +990,32 @@ function ConfigPanel({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-[var(--ag-violet)]" />
-                <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
+                <p className="text-sm font-heading font-medium text-[var(--ag-text-primary)]">Schedule ({Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace(/_/g, ' ') ?? 'Local'})</p>
               </div>
               <div className="space-y-2.5 text-xs">
                 <div className="flex items-start gap-2.5">
                   <Sunrise className="h-3.5 w-3.5 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">8:00 AM -- Daily Briefing</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Tasks, habits, and calendar</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">8:00 AM -- Daily Briefing</p>
+                    <p className="text-[var(--ag-text-secondary)]">Tasks, habits, and calendar</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-amber-400 shrink-0" />
+                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-[var(--ag-amber)] shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">10:00 AM -- Overdue Alert</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Only if items need attention</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">10:00 AM -- Overdue Alert</p>
+                    <p className="text-[var(--ag-text-secondary)]">Only if items need attention</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Moon className="h-3.5 w-3.5 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
-                    <p className="font-medium text-[var(--ag-text-primary,#F4F6FF)]">9:00 PM -- Habit Nudge</p>
-                    <p className="text-[var(--ag-text-secondary,#9CA3AF)]">Gentle reminder if habits are at risk</p>
+                    <p className="font-medium text-[var(--ag-text-primary)]">9:00 PM -- Habit Nudge</p>
+                    <p className="text-[var(--ag-text-secondary)]">Gentle reminder if habits are at risk</p>
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] pt-1 border-t border-[rgba(139,92,246,0.08)]">
+              <p className="text-[10px] text-[var(--ag-text-secondary)] pt-1 border-t border-[var(--ag-border-subtle)]">
                 Messages delivered via Telegram. Connect in Connections to receive them.
               </p>
             </div>

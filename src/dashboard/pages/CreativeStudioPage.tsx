@@ -360,8 +360,8 @@ export function CreativeStudioPage() {
         subtitle="Generate images, videos, browse templates, and manage your creations"
         badge={
           <span className="relative flex h-3 w-3" title="Owned by Edith">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#8B5CF6]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-violet)] opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--ag-violet)]" />
           </span>
         }
       />
@@ -378,8 +378,8 @@ export function CreativeStudioPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
                   isActive
-                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] shadow-sm'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
+                    ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] shadow-sm'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)]/50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -396,7 +396,7 @@ export function CreativeStudioPage() {
           {/* Prompt card */}
           <SectionCard>
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+              <div className="flex items-center gap-2 text-sm font-heading font-medium text-[var(--ag-text-primary)]">
                 <Wand2 className="w-4 h-4 text-[var(--ag-violet)]" />
                 Generate Image
               </div>
@@ -407,7 +407,7 @@ export function CreativeStudioPage() {
                 onChange={e => setImgPrompt(e.target.value)}
                 placeholder="Describe the image you want to create..."
                 rows={3}
-                className="w-full bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl px-4 py-3 text-sm text-[var(--ag-text-primary)] placeholder-[#6B7280] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.15)] transition-colors"
+                className="w-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl px-4 py-3 text-sm text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)] resize-none focus:outline-none focus:border-[var(--ag-border)] transition-colors"
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleImageGenerate(); }}
               />
 
@@ -433,7 +433,7 @@ export function CreativeStudioPage() {
               <button
                 onClick={handleImageGenerate}
                 disabled={!imgPrompt.trim() || imgGenerating}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {imgGenerating ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
@@ -447,10 +447,10 @@ export function CreativeStudioPage() {
           {/* Recent images grid */}
           <SectionCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Recent Images</h3>
+              <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Recent Images</h3>
               <button
                 onClick={loadImages}
-                className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="p-2 rounded-lg hover:bg-[var(--ag-violet)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -461,7 +461,7 @@ export function CreativeStudioPage() {
                 <Loader2 className="w-6 h-6 text-[var(--ag-violet)] animate-spin" />
               </div>
             ) : images.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[rgba(139,92,246,0.15)]">
+              <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[var(--ag-border-subtle)]">
                 <ImageIcon className="w-10 h-10 text-[var(--ag-violet)]/30 mb-3" />
                 <p className="text-sm text-[var(--ag-text-secondary)]">No images yet. Generate your first one above!</p>
               </div>
@@ -470,7 +470,7 @@ export function CreativeStudioPage() {
                 {images.map(img => (
                   <div
                     key={img.id}
-                    className="group relative aspect-square rounded-xl overflow-hidden border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] cursor-pointer"
+                    className="group relative aspect-square rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl cursor-pointer"
                     onClick={() => setPreviewImage(img)}
                   >
                     <img
@@ -485,7 +485,7 @@ export function CreativeStudioPage() {
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             onClick={e => { e.stopPropagation(); handleImageDelete(img.id); }}
-                            className="p-2 rounded-lg bg-[#FF6161]/20 text-[#FF6161] hover:bg-[#FF6161]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg bg-[var(--ag-error)]/20 text-[var(--ag-error)] hover:bg-[var(--ag-error)]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -494,7 +494,7 @@ export function CreativeStudioPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            className="p-2 rounded-lg bg-[#8B5CF6]/20 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Download className="w-3.5 h-3.5" />
                           </a>
@@ -516,7 +516,7 @@ export function CreativeStudioPage() {
           <SectionCard>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--ag-text-primary)]">
+                <div className="flex items-center gap-2 text-sm font-heading font-medium text-[var(--ag-text-primary)]">
                   <Film className="w-4 h-4 text-[var(--ag-violet)]" />
                   Generate Video
                 </div>
@@ -558,7 +558,7 @@ export function CreativeStudioPage() {
               <button
                 onClick={handleVideoGenerate}
                 disabled={!vidPrompt.trim() || vidGenerating || directorRunning}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {vidGenerating || directorRunning ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> {directorRunning ? 'Directing...' : 'Generating...'}</>
@@ -572,7 +572,7 @@ export function CreativeStudioPage() {
           {/* Recent videos grid */}
           <SectionCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Recent Videos</h3>
+              <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Recent Videos</h3>
               <button
                 onClick={loadVideos}
                 className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -719,7 +719,7 @@ export function CreativeStudioPage() {
                 {templates.map(tpl => (
                   <SectionCard key={tpl.id} padding="sm" className="!p-0 overflow-hidden">
                     {/* Thumbnail */}
-                    <div className="aspect-video bg-[rgba(12,12,30,0.6)] relative overflow-hidden">
+                    <div className="aspect-video bg-[var(--ag-bg-surface)] backdrop-blur-xl relative overflow-hidden">
                       {tpl.thumbnail ? (
                         <img
                           src={tpl.thumbnail}
@@ -733,7 +733,7 @@ export function CreativeStudioPage() {
                         </div>
                       )}
                       {tpl.isOfficial && (
-                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#8B5CF6]/90 text-white text-[10px] font-semibold uppercase tracking-wider">
+                        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[var(--ag-violet)]/90 text-white text-[10px] font-semibold uppercase tracking-wider">
                           Official
                         </span>
                       )}
@@ -741,7 +741,7 @@ export function CreativeStudioPage() {
                     {/* Info */}
                     <div className="p-4 space-y-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] truncate">{tpl.name}</h3>
+                        <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] truncate">{tpl.name}</h3>
                         <p className="text-xs text-[var(--ag-text-secondary)] line-clamp-2 mt-1">{tpl.description}</p>
                       </div>
                       <div className="flex items-center justify-between">
@@ -751,8 +751,8 @@ export function CreativeStudioPage() {
                           disabled={cloningId === tpl.id}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
                             clonedId === tpl.id
-                              ? 'bg-[#10B981]/15 text-[#10B981]'
-                              : 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/25'
+                              ? 'bg-[var(--ag-success)]/15 text-[var(--ag-success)]'
+                              : 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/25'
                           } disabled:opacity-50`}
                         >
                           {cloningId === tpl.id ? (
@@ -778,16 +778,16 @@ export function CreativeStudioPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-[var(--ag-text-secondary)]">
-              <span className="px-2 py-1 rounded bg-[#8B5CF6]/10 text-[var(--ag-violet)] text-xs">
+              <span className="px-2 py-1 rounded bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] text-xs">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded bg-[#A78BFA]/10 text-[var(--ag-cyan)] text-xs">
+              <span className="px-2 py-1 rounded bg-[var(--ag-violet-light)]/10 text-[var(--ag-violet-light)] text-xs">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>
             <button
               onClick={loadGallery}
-              className="p-2 rounded-lg hover:bg-[#8B5CF6]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-[var(--ag-violet)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -800,16 +800,16 @@ export function CreativeStudioPage() {
           ) : galleryItems.length === 0 ? (
             <SectionCard>
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--ag-violet)]/10 flex items-center justify-center mb-4">
                   <Sparkles className="w-8 h-8 text-[var(--ag-violet)]/40" />
                 </div>
-                <h3 className="text-base font-medium text-[var(--ag-text-primary)] mb-2">No media yet</h3>
+                <h3 className="text-base font-heading font-medium text-[var(--ag-text-primary)] mb-2">No media yet</h3>
                 <p className="text-[var(--ag-text-secondary)] text-sm max-w-xs mb-6">
                   Generate your first image or video using the tabs above.
                 </p>
                 <button
                   onClick={() => setActiveTab('images')}
-                  className="px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-medium text-sm transition-all hover:bg-[#8B5CF6]/90 min-h-[44px]"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 min-h-[44px]"
                 >
                   Start Creating
                 </button>
@@ -916,8 +916,8 @@ export function CreativeStudioPage() {
       {toast && (
         <div className={`fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all ${
           toast.type === 'success'
-            ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20'
-            : 'bg-[#FF6161]/15 text-[#FF6161] border border-[#FF6161]/20'
+            ? 'bg-[var(--ag-success)]/15 text-[var(--ag-success)] border border-[var(--ag-success)]/20'
+            : 'bg-[var(--ag-error)]/15 text-[var(--ag-error)] border border-[var(--ag-error)]/20'
         }`}>
           {toast.text}
         </div>

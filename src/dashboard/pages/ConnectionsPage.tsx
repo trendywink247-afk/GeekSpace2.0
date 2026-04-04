@@ -2,7 +2,7 @@
 // Connections Page — Revamped with design tokens + Nova ownership
 // Glass cards, health indicators, OAuth wiring, mobile-first
 // ============================================================
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -485,9 +485,10 @@ export function ConnectionsPage() {
   const getColor = (type: string) => colorMap[type] || '#A78BFA';
 
   return (
-    <PageShell maxWidth="6xl" className="animate-in fade-in duration-500">
+    <DashboardPageWrapper>
     <div data-testid="connections-page" className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
       {/* Header — Nova ownership */}
+      <BlurFade delay={0}>
       <PageHeader
         icon={Plug}
         title="Connections"
@@ -511,14 +512,14 @@ export function ConnectionsPage() {
               onClick={handleGenerateInvite}
               disabled={inviteLoading}
               variant="outline"
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 min-h-[44px]"
+              className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)] min-h-[44px]"
             >
               {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
               Invite
             </Button>
             <Button
               onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold min-h-[44px]"
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New
@@ -526,56 +527,57 @@ export function ConnectionsPage() {
           </div>
         }
       />
+      </BlurFade>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <BlurFade delay={0.1}>
-        <SectionCard padding="sm">
+        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/10 flex items-center justify-center">
-                <Plug className="w-5 h-5 text-[#00FF88]" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--ag-green)]/10 flex items-center justify-center">
+                <Plug className="w-5 h-5 text-[var(--ag-green)]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{connectedCount}</div>
+                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{connectedCount}</div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">Connected</div>
               </div>
             </div>
         </SectionCard>
         </BlurFade>
         <BlurFade delay={0.15}>
-        <SectionCard padding="sm">
+        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#A78BFA]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[var(--ag-cyan)]" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet)]/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-[var(--ag-violet)]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{totalRequests}</div>
+                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{totalRequests}</div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">Requests Today</div>
               </div>
             </div>
         </SectionCard>
         </BlurFade>
         <BlurFade delay={0.2}>
-        <SectionCard padding="sm">
+        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FFB800]/10 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-[#FFB800]" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--ag-amber)]/10 flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-[var(--ag-amber)]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{avgHealth}%</div>
+                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{avgHealth}%</div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">Avg Health</div>
               </div>
             </div>
         </SectionCard>
         </BlurFade>
         <BlurFade delay={0.25}>
-        <SectionCard padding="sm">
+        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#EC4899]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#EC4899]" />
+              <div className="w-10 h-10 rounded-lg bg-[var(--ag-green)]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[var(--ag-green)]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">100%</div>
+                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">100%</div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">Secure</div>
               </div>
             </div>
@@ -585,7 +587,8 @@ export function ConnectionsPage() {
 
       {/* Invite Link Card (27.3) */}
       {inviteUrl && (
-        <SectionCard className="!border-[var(--ag-violet)]/20 relative">
+        <BlurFade delay={0.3}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative">
             <button
               onClick={() => setInviteUrl(null)}
               className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -598,7 +601,7 @@ export function ConnectionsPage() {
                 <Link className="w-5 h-5 text-[var(--ag-violet)]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[var(--ag-text-primary)]">Invite Link Generated</h3>
+                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Invite Link Generated</h3>
                 <p className="text-xs text-[var(--ag-text-secondary)]">Valid for 7 days -- share with anyone to connect</p>
               </div>
             </div>
@@ -609,17 +612,19 @@ export function ConnectionsPage() {
               <Button
                 size="sm"
                 onClick={handleCopyInvite}
-                className={`min-h-[44px] ${inviteCopied ? 'bg-[#00FF88] text-[#06061a]' : 'bg-[#8B5CF6] hover:bg-[#8B5CF6]/80'}`}
+                className={`min-h-[44px] ${inviteCopied ? 'bg-[var(--ag-green)] text-[var(--ag-bg-base)]' : 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white'}`}
               >
                 {inviteCopied ? <CheckIcon className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
         </SectionCard>
+        </BlurFade>
       )}
 
       {/* Telegram Link Wizard */}
       {telegramDialog && (
-        <SectionCard className="!border-[#0088cc]/30 relative" padding="lg">
+        <BlurFade delay={0.1}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative" padding="lg">
             <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close Telegram dialog">
               <X className="w-5 h-5" />
             </button>
@@ -629,7 +634,7 @@ export function ConnectionsPage() {
                 <Send className="w-5 h-5 text-[#0088cc]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[var(--ag-text-primary)]">Connect Telegram</h3>
+                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Connect Telegram</h3>
                 <p className="text-xs text-[var(--ag-text-secondary)]">Chat with your agent on Telegram</p>
               </div>
             </div>
@@ -660,7 +665,7 @@ export function ConnectionsPage() {
               <div className="flex flex-col items-center gap-4 py-6">
                 <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
                 <p className="text-sm text-[var(--ag-text-primary)] font-medium">Telegram connected!</p>
-                <Button className="bg-[#00FF88] hover:bg-[#00FF88]/80 text-[#06061a] min-h-[44px]" onClick={closeTelegramDialog}>
+                <Button className="bg-gradient-to-r from-[var(--ag-green)] to-[var(--ag-green)] hover:from-[var(--ag-green)]/90 hover:to-[var(--ag-green)]/90 text-[var(--ag-bg-base)] min-h-[44px]" onClick={closeTelegramDialog}>
                   Done
                 </Button>
               </div>
@@ -680,7 +685,7 @@ export function ConnectionsPage() {
                 <p className="text-sm text-[var(--ag-text-primary)]">Still waiting -- try clicking the bot link again</p>
                 <p className="text-xs text-[var(--ag-text-secondary)] mt-1">No response received after 30 attempts (~2.5 min)</p>
                 <Button
-                  className="mt-4 bg-[rgba(12,12,30,0.6)] hover:bg-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)] border border-[rgba(139,92,246,0.08)] min-h-[44px]"
+                  className="mt-4 bg-[var(--ag-bg-surface)] hover:bg-[var(--ag-bg-surface-hover)] text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] min-h-[44px]"
                   onClick={() => { setTelegramPollAttempts(0); setPolling(true); setTelegramStep('open-bot'); }}
                 >
                   Retry
@@ -688,12 +693,14 @@ export function ConnectionsPage() {
               </div>
             )}
         </SectionCard>
+        </BlurFade>
       )}
 
 
       {/* Email Dialog */}
       {emailDialog && (
-        <SectionCard className="!border-[#00FF88]/30 relative" padding="lg">
+        <BlurFade delay={0.1}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative" padding="lg">
             <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close email dialog">
               <X className="w-5 h-5" />
             </button>
@@ -703,7 +710,7 @@ export function ConnectionsPage() {
                 <Mail className="w-5 h-5 text-[#00FF88]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[var(--ag-text-primary)]">Email Notifications</h3>
+                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Email Notifications</h3>
                 <p className="text-xs text-[var(--ag-text-secondary)]">Get reminders and briefings via email</p>
               </div>
             </div>
@@ -723,7 +730,7 @@ export function ConnectionsPage() {
                   className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary)]"
                 />
                 <Button
-                  className="w-full bg-[#00FF88] hover:bg-[#00FF88]/80 text-[#06061a] min-h-[44px]"
+                  className="w-full bg-gradient-to-r from-[var(--ag-green)] to-[var(--ag-green)] hover:from-[var(--ag-green)]/90 hover:to-[var(--ag-green)]/90 text-[var(--ag-bg-base)] min-h-[44px]"
                   onClick={handleEmailSave}
                   disabled={emailSaving}
                 >
@@ -733,6 +740,7 @@ export function ConnectionsPage() {
               </div>
             )}
         </SectionCard>
+        </BlurFade>
       )}
 
       {/* 50.4: Status filter chips — persisted to URL param */}
@@ -805,7 +813,7 @@ export function ConnectionsPage() {
                       <Icon className="w-6 h-6" style={{ color }} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-[var(--ag-text-primary)]">{connection.name}</h3>
+                      <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">{connection.name}</h3>
                       {/* 42.5: Last sync timestamp */}
                       {connection.status === 'connected' && connection.lastSync && (
                         <p className="text-[11px] text-[var(--ag-text-secondary)] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
@@ -860,7 +868,7 @@ export function ConnectionsPage() {
                       size={isMobile ? 'default' : 'sm'}
                       onClick={() => handleConnect(connection.type)}
                       disabled={connectingId === connection.type}
-                      className="bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 shadow-lg shadow-[#A78BFA]/10 shrink-0"
+                      className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 shadow-lg shadow-[var(--ag-violet)]/10 shrink-0"
                     >
                       {connectingId === connection.type ? (
                         <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting...</>
@@ -1093,7 +1101,7 @@ export function ConnectionsPage() {
                                 <Button
                                   onClick={handleCustomBotConnect}
                                   disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
-                                  className="w-full bg-[#A78BFA] hover:bg-[#00D4B0] text-[#0C0C18] font-semibold min-h-[44px] disabled:opacity-50"
+                                  className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px] disabled:opacity-50"
                                 >
                                   {customBotStatus === 'verifying' ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
@@ -1159,9 +1167,10 @@ export function ConnectionsPage() {
 
       {/* 66.4: Integration event log */}
       {integrationEvents.length > 0 && (
-        <SectionCard>
-            <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[var(--ag-cyan)]" />
+        <BlurFade delay={0.4}>
+        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
+            <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[var(--ag-violet)]" />
               Recent Integration Events
             </h4>
             <div className="space-y-2">
@@ -1175,21 +1184,24 @@ export function ConnectionsPage() {
               ))}
             </div>
         </SectionCard>
+        </BlurFade>
       )}
 
       {/* Privacy Note */}
-      <SectionCard className="!bg-gradient-to-r from-[#A78BFA]/5 to-transparent">
+      <BlurFade delay={0.5}>
+      <SectionCard className="bg-gradient-to-r from-[var(--ag-bg-surface)] to-[var(--ag-bg-surface)]/50 backdrop-blur-xl border-[var(--ag-border-subtle)]">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[var(--ag-cyan)] flex-shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-[var(--ag-green)] flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Privacy First</h4>
+              <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-1">Privacy First</h4>
               <p className="text-xs text-[var(--ag-text-secondary)]">
                 Your data is encrypted and never shared. You can disconnect any service at any time.
               </p>
             </div>
           </div>
       </SectionCard>
+      </BlurFade>
     </div>
-    </PageShell>
+    </DashboardPageWrapper>
   );
 }

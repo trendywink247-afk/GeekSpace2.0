@@ -78,13 +78,13 @@ interface HealthSnapshot {
 function statusColor(status: string): string {
   switch (status) {
     case 'ok': case 'reachable': case 'configured': case 'active':
-      return '#10B981'; // token green
+      return 'var(--ag-pulse)'; // pulse agent green
     case 'unreachable': case 'down': case 'no_backends': case 'not_running':
       return '#EF4444'; // red
     case 'not_configured': case 'disabled':
-      return '#6B7280'; // grey
+      return 'var(--ag-text-muted)'; // grey
     default:
-      return '#F59E0B'; // amber
+      return 'var(--ag-amber)'; // amber
   }
 }
 
@@ -251,7 +251,7 @@ export function HealthDashboardPage() {
     return (
       <PageShell>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[var(--ag-pulse)] animate-spin" />
           <p className="text-sm text-[var(--ag-text-secondary)]">Connecting to health service...</p>
           {error && (
             <div className="text-center space-y-3">
@@ -260,7 +260,7 @@ export function HealthDashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleRetry}
-                className="border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[rgba(139,92,246,0.05)] min-h-[44px] min-w-[44px] text-[var(--ag-text-primary)]"
+                className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] bg-clip-text text-transparent border-[var(--ag-border-default)] hover:border-[var(--ag-border-active)] hover:bg-[var(--ag-active-bg)] min-h-[44px] min-w-[44px] transition-all duration-300"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
@@ -294,10 +294,10 @@ export function HealthDashboardPage() {
           ? 'Live stream active — updates every 15s'
           : error || 'Periodic refresh — updates every 10s'}
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-pulse)]/10 border border-[var(--ag-pulse)]/30 text-[var(--ag-pulse)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-pulse)] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-pulse)]" />
             </span>
             Pulse
           </span>
@@ -308,11 +308,11 @@ export function HealthDashboardPage() {
             <span
               className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${
                 connected
-                  ? 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]'
-                  : 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B]'
+                  ? 'bg-[var(--ag-pulse)]/10 border-[var(--ag-pulse)]/30 text-[var(--ag-pulse)]'
+                  : 'bg-[var(--ag-amber)]/10 border-[var(--ag-amber)]/30 text-[var(--ag-amber)]'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-[#10B981] animate-pulse' : 'bg-[#F59E0B]'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-[var(--ag-pulse)] animate-pulse' : 'bg-[var(--ag-amber)]'}`} />
               {connected ? 'SSE' : 'REST'}
             </span>
             {/* Timestamp */}
@@ -326,7 +326,7 @@ export function HealthDashboardPage() {
               onClick={handleRetry}
               disabled={refreshing}
               aria-label="Refresh health data"
-              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 hover:bg-gradient-to-r hover:from-[var(--ag-violet)]/10 hover:to-[var(--ag-amber)]/10 transition-all duration-300"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -338,10 +338,10 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: 'Requests', value: snapshot.metrics.totalRequests.toLocaleString(), icon: Activity, color: 'var(--ag-violet)' },
-          { label: 'Errors', value: snapshot.metrics.totalErrors.toLocaleString(), icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#EF4444' : '#10B981' },
-          { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? '#F59E0B' : '#10B981' },
+          { label: 'Errors', value: snapshot.metrics.totalErrors.toLocaleString(), icon: AlertTriangle, color: snapshot.metrics.totalErrors > 0 ? '#EF4444' : 'var(--ag-pulse)' },
+          { label: 'Avg Latency', value: `${snapshot.metrics.avgLatencyMs}ms`, icon: Clock, color: snapshot.metrics.avgLatencyMs > 1000 ? 'var(--ag-amber)' : 'var(--ag-pulse)' },
           { label: 'Req/min', value: snapshot.metrics.requestsPerMinute.toString(), icon: Zap, color: 'var(--ag-violet)' },
-          { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: '#10B981' },
+          { label: 'Uptime', value: formatUptime(snapshot.system.uptime), icon: Server, color: 'var(--ag-pulse)' },
         ].map((stat, i) => (
           <BlurFade key={stat.label} delay={0.05 * i}>
             <SectionCard padding="sm">
@@ -357,8 +357,8 @@ export function HealthDashboardPage() {
 
       {/* ---- Component Status Grid ---- */}
       <div>
-        <h2 className="text-base font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-          <Server className="w-5 h-5 text-[#10B981]" />
+        <h2 className="text-base font-semibold font-heading text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+          <Server className="w-5 h-5 text-[var(--ag-pulse)]" />
           Components
           <span className="text-xs text-[var(--ag-text-secondary)] font-normal ml-1">
             {healthyCount}/{totalCount} healthy
@@ -368,7 +368,7 @@ export function HealthDashboardPage() {
           {Object.entries(snapshot.components).map(([key, status], i) => {
             const Icon = componentIcons[key] || Wifi;
             const color = statusColor(status);
-            const isHealthy = color === '#10B981';
+            const isHealthy = color === 'var(--ag-pulse)';
             return (
               <BlurFade key={key} delay={0.03 * i}>
                 <SectionCard padding="sm" className="!p-3">
@@ -403,12 +403,12 @@ export function HealthDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BlurFade delay={0.1}>
           <SectionCard>
-            <h3 className="text-sm text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm font-heading text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4" />
               Error Rate (5-min window)
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? '#F59E0B' : '#10B981' }}>
+              <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? 'var(--ag-amber)' : 'var(--ag-pulse)' }}>
                 {errorRate}%
               </span>
               <span className="text-sm text-[var(--ag-text-secondary)] mb-1">
@@ -419,7 +419,7 @@ export function HealthDashboardPage() {
         </BlurFade>
         <BlurFade delay={0.15}>
           <SectionCard>
-            <h3 className="text-sm text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
+            <h3 className="text-sm font-heading text-[var(--ag-text-secondary)] mb-2 flex items-center gap-1.5">
               <Cpu className="w-4 h-4" />
               Memory Usage
             </h3>
@@ -435,8 +435,8 @@ export function HealthDashboardPage() {
       {(snapshot.topEndpoints ?? []).length > 0 && (
         <BlurFade delay={0.2}>
           <div>
-            <h2 className="text-base font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#F59E0B]" />
+            <h2 className="text-base font-semibold font-heading text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[var(--ag-amber)]" />
               Hot Endpoints (5-min window)
             </h2>
             <SectionCard padding="sm" className="!p-0 overflow-hidden">
@@ -455,8 +455,8 @@ export function HealthDashboardPage() {
                       <tr key={ep.path} className="border-b border-[rgba(139,92,246,0.04)] hover:bg-[rgba(139,92,246,0.04)] transition-colors">
                         <td className="px-4 py-2.5 font-mono text-[var(--ag-text-primary)] text-xs whitespace-nowrap">{ep.path}</td>
                         <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)]">{ep.count}</td>
-                        <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#EF4444' : '#10B981' }}>{ep.errors}</td>
-                        <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? '#F59E0B' : '#9CA3AF' }}>{ep.avgMs}ms</td>
+                        <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#EF4444' : 'var(--ag-pulse)' }}>{ep.errors}</td>
+                        <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? 'var(--ag-amber)' : 'var(--ag-text-secondary)' }}>{ep.avgMs}ms</td>
                       </tr>
                     ))}
                   </tbody>

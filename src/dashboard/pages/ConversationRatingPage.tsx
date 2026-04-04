@@ -3,7 +3,7 @@ import { MessageSquare, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import api from '@/services/api';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
@@ -38,12 +38,12 @@ function StarRating({ score, onRate, disabled }: { score: number | null; onRate:
             onMouseEnter={() => setHovered(s)}
             onMouseLeave={() => setHovered(null)}
             disabled={disabled}
-            className="transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-[var(--ag-focus-ring)] focus-visible:outline-none rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--ag-active-bg)] hover:scale-110"
             aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
           >
             <Star
               size={20}
-              className={active ? 'fill-yellow-400 text-yellow-400' : 'text-[var(--ag-text-primary,#F4F6FF)]/30 hover:text-yellow-300'}
+              className={active ? 'fill-[var(--ag-amber)] text-[var(--ag-amber)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-amber)]/60'}
             />
           </button>
         );
@@ -103,119 +103,155 @@ export function ConversationRatingPage() {
     new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <PageShell spacing={4}>
-      {/* Weebo dot */}
-      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#A78BFA] shadow-[0_0_6px_rgba(139,92,246,0.4)]" aria-hidden="true" />
+    <DashboardPageWrapper className="min-h-screen px-4 py-6 max-w-4xl mx-auto" delay={100}>
+      {/* Weebo indicator */}
+      <div className="absolute top-6 right-6 w-3 h-3 rounded-full bg-[var(--ag-weebo)] shadow-[var(--ag-glow-sm)] animate-pulse" aria-hidden="true" />
 
-      <PageHeader
-        icon={MessageSquare}
-        title="Conversation Ratings"
-        subtitle={`${total} conversations — rate quality to improve your AI`}
-        badge={
-          total > 0 ? (
-            <Badge className="bg-[#A78BFA]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20 text-xs">
-              {total}
-            </Badge>
-          ) : undefined
-        }
-      />
+      <BlurFade delay={0}>
+        <PageHeader
+          icon={MessageSquare}
+          title="Conversation Ratings"
+          subtitle={`${total} conversations — rate quality to improve your AI`}
+          badge={
+            total > 0 ? (
+              <Badge className="bg-[var(--ag-active-bg)] text-[var(--ag-cyan)] border-[var(--ag-border-glow)] text-xs font-medium">
+                {total}
+              </Badge>
+            ) : undefined
+          }
+        />
+      </BlurFade>
 
-      {loading && (
-        <BlurFade delay={0.1}>
-          <div className="flex items-center justify-center py-12 text-[var(--ag-text-secondary,#9CA3AF)]">Loading conversations...</div>
-        </BlurFade>
-      )}
+      <div className="mt-6 space-y-4">
+        {loading && (
+          <BlurFade delay={0.1}>
+            <SectionCard className="text-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-[var(--ag-border-default)] border-t-[var(--ag-cyan)] rounded-full animate-spin"></div>
+                <p className="text-[var(--ag-text-secondary)] text-sm">Loading conversations...</p>
+              </div>
+            </SectionCard>
+          </BlurFade>
+        )}
 
-      {error && (
-        <BlurFade delay={0.1}>
-          <SectionCard>
-            <div className="text-red-400 text-sm py-4">{error}</div>
-          </SectionCard>
-        </BlurFade>
-      )}
+        {error && (
+          <BlurFade delay={0.1}>
+            <SectionCard className="border-red-500/20 bg-red-500/5">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></div>
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            </SectionCard>
+          </BlurFade>
+        )}
 
-      {!loading && !error && conversations.length === 0 && (
-        <BlurFade delay={0.1}>
-          <SectionCard>
-            <div className="text-center py-12 text-[var(--ag-text-secondary,#9CA3AF)]">
-              <MessageSquare size={40} className="mx-auto mb-3 opacity-30" />
-              <p>No conversations yet. Chat with your agent to get started.</p>
-            </div>
-          </SectionCard>
-        </BlurFade>
-      )}
+        {!loading && !error && conversations.length === 0 && (
+          <BlurFade delay={0.1}>
+            <SectionCard className="text-center py-16">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--ag-active-bg)] flex items-center justify-center">
+                  <MessageSquare size={24} className="text-[var(--ag-text-muted)]" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg text-[var(--ag-text-primary)] mb-1">No conversations yet</h3>
+                  <p className="text-[var(--ag-text-secondary)] text-sm">Chat with your agent to get started.</p>
+                </div>
+              </div>
+            </SectionCard>
+          </BlurFade>
+        )}
+      </div>
 
-      {!loading && conversations.map((conv, i) => (
-        <BlurFade key={conv.id} delay={0.05 + i * 0.03}>
-          <SectionCard>
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mb-1">{formatDate(conv.createdAt)}</p>
+      <div className="space-y-4">
+        {!loading && conversations.map((conv, i) => (
+          <BlurFade key={conv.id} delay={0.1 + i * 0.05}>
+            <SectionCard className="hover:shadow-[var(--ag-glow-sm)] transition-all duration-300">
+              <div className="space-y-4">
+                {/* Timestamp */}
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/40"></div>
+                  <time className="text-xs text-[var(--ag-text-muted)] font-mono">{formatDate(conv.createdAt)}</time>
+                </div>
+
+                {/* Messages */}
+                <div className="space-y-3">
                   {conv.userMessage && (
-                    <div className="mb-2">
-                      <span className="text-xs font-medium text-[var(--ag-cyan)] uppercase tracking-wide">You</span>
-                      <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/70 mt-0.5">{truncate(conv.userMessage, 200)}</p>
+                    <div className="relative pl-4 border-l-2 border-[var(--ag-border-subtle)]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-[var(--ag-cyan)] uppercase tracking-wider">You</span>
+                      </div>
+                      <p className="text-sm text-[var(--ag-text-primary)]/80 leading-relaxed">{truncate(conv.userMessage, 200)}</p>
                     </div>
                   )}
-                  <div>
-                    <span className="text-xs font-medium text-[var(--ag-violet)] uppercase tracking-wide">Agent</span>
-                    <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)]/90 mt-0.5">{truncate(conv.assistantMessage, 300)}</p>
+                  <div className="relative pl-4 border-l-2 border-[var(--ag-violet)]/30">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-medium text-[var(--ag-violet)] uppercase tracking-wider">Agent</span>
+                    </div>
+                    <p className="text-sm text-[var(--ag-text-primary)] leading-relaxed">{truncate(conv.assistantMessage, 300)}</p>
+                  </div>
+                </div>
+
+                {/* Metadata & Rating */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-[var(--ag-border-subtle)]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {conv.model && (
+                      <Badge variant="outline" className="text-xs text-[var(--ag-text-secondary)] border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] font-mono">
+                        {conv.model}
+                      </Badge>
+                    )}
+                    {conv.qualityScore !== null && (
+                      <Badge className="bg-[var(--ag-active-bg)] text-[var(--ag-amber)] border-[var(--ag-border-glow)] text-xs font-medium">
+                        ★ {conv.qualityScore}/5
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-[var(--ag-text-secondary)] font-medium">Rate quality:</span>
+                    <StarRating
+                      score={conv.qualityScore}
+                      onRate={(s) => void handleRate(conv.id, s)}
+                      disabled={busy[conv.id]}
+                    />
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-[rgba(139,92,246,0.08)]">
-                <div className="flex items-center gap-2">
-                  {conv.model && (
-                    <Badge variant="outline" className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] border-[rgba(139,92,246,0.15)]">
-                      {conv.model}
-                    </Badge>
-                  )}
-                  {conv.qualityScore !== null && (
-                    <Badge className="bg-[#A78BFA]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20 text-xs">
-                      {conv.qualityScore}/5
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Rate:</span>
-                  <StarRating
-                    score={conv.qualityScore}
-                    onRate={(s) => void handleRate(conv.id, s)}
-                    disabled={busy[conv.id]}
-                  />
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-        </BlurFade>
-      ))}
+            </SectionCard>
+          </BlurFade>
+        ))}
+      </div>
 
       {totalPages > 1 && (
-        <BlurFade delay={0.2}>
-          <div className="flex items-center justify-center gap-3 pt-2">
+        <BlurFade delay={0.3}>
+          <div className="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-[var(--ag-border-subtle)]">
             <Button
               variant="outline"
               disabled={page <= 1 || loading}
               onClick={() => void load(page - 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              <ChevronLeft size={16} className="mr-1" />
+              <ChevronLeft size={16} className="mr-2 group-hover:-translate-x-0.5 transition-transform" />
               Previous
             </Button>
-            <span className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">Page {page} of {totalPages}</span>
+            
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
+              <span className="text-sm text-[var(--ag-text-secondary)] font-medium">Page</span>
+              <span className="text-sm text-[var(--ag-text-primary)] font-mono font-bold">{page}</span>
+              <span className="text-sm text-[var(--ag-text-muted)]">/</span>
+              <span className="text-sm text-[var(--ag-text-secondary)] font-mono">{totalPages}</span>
+            </div>
+            
             <Button
               variant="outline"
               disabled={page >= totalPages || loading}
               onClick={() => void load(page + 1)}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary,#F4F6FF)] hover:bg-[#8B5CF6]/10 min-h-[44px] min-w-[44px]"
+              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               Next
-              <ChevronRight size={16} className="ml-1" />
+              <ChevronRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </div>
         </BlurFade>
       )}
-    </PageShell>
+    </DashboardPageWrapper>
   );
 }

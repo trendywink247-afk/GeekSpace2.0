@@ -409,7 +409,7 @@ export function DesignAssistantPage() {
               <button
                 onClick={isGenerating ? handleCancel : handleGenerate}
                 disabled={!prompt.trim() && !isGenerating}
-                className="min-w-[44px] min-h-[44px] px-4 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-cyan)] to-[var(--ag-violet)] text-[var(--ag-bg-deep)] hover:opacity-90 active:scale-95"
+                className="min-w-[44px] min-h-[44px] px-4 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white hover:opacity-90 active:scale-95"
               >
                 {isGenerating ? (
                   <>
@@ -500,13 +500,16 @@ export function DesignAssistantPage() {
           <div className="space-y-4">
             {/* Colors */}
             {brandKitColors.length > 0 && (
-              <SectionCard title="Brand Colors" subtitle="Click any swatch to copy its hex code">
+              <SectionCard 
+                title="Brand Colors" 
+                subtitle="Click any swatch to copy its hex code"
+              >
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                   {brandKitColors.map((c) => (
                     <button
                       key={c.hex}
                       onClick={() => handleCopyColor(c.hex)}
-                      className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all min-h-[44px]"
+                      className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all min-h-[44px]"
                     >
                       <div
                         className="w-full h-16 rounded-lg border border-white/10 shadow-md transition-shadow group-hover:shadow-lg"
@@ -528,15 +531,18 @@ export function DesignAssistantPage() {
 
             {/* Fonts */}
             {brandKitFonts.length > 0 && (
-              <SectionCard title="Typography" subtitle="Recommended font pairing">
+              <SectionCard 
+                title="Typography" 
+                subtitle="Recommended font pairing"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {brandKitFonts.map((f) => (
                     <div
                       key={f.name}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] min-h-[44px]"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] min-h-[44px]"
                     >
                       <div>
-                        <p className="text-sm font-semibold text-[var(--ag-text-primary)]">{f.name}</p>
+                        <p className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">{f.name}</p>
                         <p className="text-[10px] text-[var(--ag-text-secondary)]">{f.category} — {f.usage}</p>
                       </div>
                       {f.googleFontsUrl && (
@@ -558,12 +564,15 @@ export function DesignAssistantPage() {
 
             {/* Taglines */}
             {brandKitTaglines.length > 0 && (
-              <SectionCard title="Tagline Suggestions" subtitle="AI-generated brand messaging">
+              <SectionCard 
+                title="Tagline Suggestions" 
+                subtitle="AI-generated brand messaging"
+              >
                 <div className="space-y-2">
                   {brandKitTaglines.map((tagline, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] min-h-[44px]"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] min-h-[44px]"
                     >
                       <span className="text-xs font-mono text-[var(--ag-violet)] w-5 text-center shrink-0">{i + 1}</span>
                       <p className="text-sm text-[var(--ag-text-primary)] italic">&ldquo;{tagline}&rdquo;</p>
@@ -583,7 +592,7 @@ export function DesignAssistantPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 {isGenerating && <Loader2 className="w-4 h-4 text-[var(--ag-violet)] animate-spin" />}
-                <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">
+                <h3 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">
                   {isGenerating ? 'Generating design...' : 'Design Result'}
                 </h3>
               </div>
@@ -598,7 +607,7 @@ export function DesignAssistantPage() {
               {/* Live color swatches */}
               {liveColors.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-[var(--ag-text-primary)]/70 uppercase tracking-wider">Colors Found</h4>
+                  <h4 className="text-xs font-medium font-heading text-[var(--ag-text-primary)]/70 uppercase tracking-wider">Colors Found</h4>
                   <div className="flex flex-wrap gap-3">
                     {liveColors.map((hex) => (
                       <button
@@ -640,7 +649,7 @@ export function DesignAssistantPage() {
       {results.length > 0 && (
         <BlurFade delay={0.25}>
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-[var(--ag-text-primary)]/80 flex items-center gap-2">
+            <h2 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]/80 flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--ag-text-secondary)]" />
               Recent Designs
             </h2>
@@ -729,7 +738,7 @@ export function DesignAssistantPage() {
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--ag-violet)]/10 to-[var(--ag-cyan)]/10 flex items-center justify-center">
                 <Sparkles className="w-7 h-7 text-[var(--ag-text-secondary)]" />
               </div>
-              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Ready to design</h3>
+              <h3 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">Ready to design</h3>
               <p className="text-xs text-[var(--ag-text-secondary)] max-w-sm">
                 Describe your design vision above and choose a style. Try &quot;Modern SaaS dashboard with dark theme&quot; or &quot;Brand colors for a health app&quot;.
               </p>

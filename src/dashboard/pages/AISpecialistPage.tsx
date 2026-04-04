@@ -194,13 +194,13 @@ const CATEGORIES: { id: Category; label: string }[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  code: '#A78BFA',
-  research: '#8B5CF6',
-  writing: '#FF2D78',
-  learning: '#ADFF2F',
-  business: '#FFB800',
-  health: '#00FF88',
-  creative: '#FF6B6B',
+  code: 'var(--ag-violet-400)',
+  research: 'var(--ag-violet-500)',
+  writing: 'var(--ag-pink-500)',
+  learning: 'var(--ag-green-400)',
+  business: 'var(--ag-amber-500)',
+  health: 'var(--ag-emerald-400)',
+  creative: 'var(--ag-red-400)',
 };
 
 // ---------------------------------------------------------------------------
@@ -208,19 +208,19 @@ const CATEGORY_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; onActivate: () => void }) {
-  const catColor = CATEGORY_COLORS[specialist.category] ?? '#6366F1';
+  const catColor = CATEGORY_COLORS[specialist.category] ?? 'var(--ag-violet-500)';
   return (
-    <SectionCard padding="md" className="relative overflow-hidden border-[#6366F1]/20 bg-gradient-to-br from-[#6366F1]/5 via-transparent to-[#8B5CF6]/3">
-      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#6366F1]/5 blur-3xl pointer-events-none" />
+    <SectionCard padding="md" className="relative overflow-hidden border-[var(--ag-violet-500)]/20 bg-gradient-to-br from-[var(--ag-violet-500)]/5 via-transparent to-[var(--ag-violet-400)]/3">
+      <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--ag-violet-500)]/5 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${catColor}08` }} />
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-14 h-14 rounded-2xl bg-[#6366F1]/10 flex items-center justify-center flex-shrink-0 ring-2 ring-[#6366F1]/20">
+          <div className="w-14 h-14 rounded-xl bg-[var(--ag-violet-500)]/10 flex items-center justify-center flex-shrink-0 ring-2 ring-[var(--ag-violet-500)]/20">
             <span className="text-3xl" role="img" aria-label={specialist.name}>{specialist.emoji}</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge className="bg-[#6366F1]/20 text-[#6366F1] border-[#6366F1]/30 text-[10px] uppercase tracking-wider">
+              <Badge className="bg-[var(--ag-violet-500)]/20 text-[var(--ag-violet-500)] border-[var(--ag-violet-500)]/30 text-[10px] uppercase tracking-wider">
                 <Sparkles className="w-3 h-3 mr-1" />
                 Featured This Week
               </Badge>
@@ -231,7 +231,7 @@ function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; on
                 {specialist.category}
               </Badge>
             </div>
-            <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mt-1 truncate">
+            <h3 className="text-lg font-heading font-semibold text-[var(--ag-text-primary)] mt-1 truncate">
               {specialist.name}
               {specialist.codename && (
                 <span className="text-[var(--ag-text-secondary)] font-normal text-sm ml-2">({specialist.codename})</span>
@@ -244,7 +244,7 @@ function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; on
                 {specialist.conversations} conversations
               </span>
               <span className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
+                <Star className="w-3 h-3 text-[var(--ag-amber-500)] fill-[var(--ag-amber-500)]" />
                 {specialist.rating}
               </span>
             </div>
@@ -252,7 +252,7 @@ function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; on
         </div>
         <Button
           onClick={onActivate}
-          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center"
+          className="bg-gradient-to-r from-[var(--ag-violet-500)] to-[var(--ag-amber-500)] hover:from-[var(--ag-violet-600)] hover:to-[var(--ag-amber-600)] text-white font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center transition-all duration-300"
         >
           <Zap className="w-4 h-4 mr-1" />
           Activate
@@ -271,10 +271,10 @@ function SpecialistCard({
   onActivate: () => void;
   onPromptClick: (prompt: string) => void;
 }) {
-  const catColor = CATEGORY_COLORS[specialist.category] ?? '#6366F1';
+  const catColor = CATEGORY_COLORS[specialist.category] ?? 'var(--ag-violet-500)';
 
   return (
-    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-2xl p-5 transition-all duration-300 hover:border-[#6366F1]/25 hover:shadow-[0_0_24px_rgba(99,102,241,0.08)]">
+    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-5 transition-all duration-300 hover:border-[var(--ag-violet-500)]/25 hover:shadow-[0_0_24px_var(--ag-violet-500-rgb)/0.08]">
       {/* Category badge */}
       <Badge
         className="absolute top-3 right-3 text-[10px] uppercase tracking-wider border-0"
@@ -289,7 +289,7 @@ function SpecialistCard({
       </div>
 
       {/* Name */}
-      <h3 className="text-base font-semibold text-[var(--ag-text-primary)] text-center">
+      <h3 className="text-base font-heading font-semibold text-[var(--ag-text-primary)] text-center">
         {specialist.name}
         {specialist.codename && (
           <span className="text-[var(--ag-text-muted)] font-normal text-xs ml-1.5">({specialist.codename})</span>
@@ -306,7 +306,7 @@ function SpecialistCard({
           {specialist.conversations}
         </span>
         <span className="flex items-center gap-1">
-          <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
+          <Star className="w-3 h-3 text-[var(--ag-amber-500)] fill-[var(--ag-amber-500)]" />
           {specialist.rating}
         </span>
       </div>
@@ -317,7 +317,7 @@ function SpecialistCard({
           <button
             key={prompt}
             onClick={() => onPromptClick(prompt)}
-            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[#6366F1] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#6366F1]/5 truncate min-h-[30px] flex items-center"
+            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[var(--ag-violet-500)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--ag-violet-500)]/5 truncate min-h-[30px] flex items-center"
             title={prompt}
           >
             <span className="truncate">&ldquo;{prompt}&rdquo;</span>
@@ -328,7 +328,7 @@ function SpecialistCard({
       {/* Activate button */}
       <Button
         onClick={onActivate}
-        className="mt-4 w-full bg-[#6366F1]/10 text-[#6366F1] hover:bg-[#6366F1]/20 border border-[#6366F1]/20 hover:border-[#6366F1]/40 font-medium min-h-[44px]"
+        className="mt-4 w-full bg-gradient-to-r from-[var(--ag-violet-500)]/10 to-[var(--ag-amber-500)]/10 text-[var(--ag-violet-500)] hover:from-[var(--ag-violet-500)]/20 hover:to-[var(--ag-amber-500)]/20 border border-[var(--ag-violet-500)]/20 hover:border-[var(--ag-violet-500)]/40 font-medium min-h-[44px] transition-all duration-300"
       >
         <Zap className="w-4 h-4 mr-1" />
         Activate
@@ -420,10 +420,10 @@ export function AISpecialistPage() {
           title="AI Tools"
           subtitle="Developer utilities powered by AI"
           badge={
-            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/30 text-[#6366F1]">
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-violet-500)]/10 border border-[var(--ag-violet-500)]/30 text-[var(--ag-violet-500)]">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[#6366F1] opacity-75 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#6366F1]" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-violet-500)] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-violet-500)]" />
               </span>
               Echo
             </span>
@@ -451,8 +451,8 @@ export function AISpecialistPage() {
           {/* Coming Soon tool stubs */}
           <BlurFade delay={0.1}>
             <div>
-              <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#6366F1]" />
+              <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[var(--ag-violet-500)]" />
                 Coming Soon
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -461,7 +461,7 @@ export function AISpecialistPage() {
                   return (
                     <div
                       key={tool.id}
-                      className="relative group rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-5 overflow-hidden cursor-not-allowed opacity-80 hover:opacity-100 transition-opacity"
+                      className="relative group rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-5 overflow-hidden cursor-not-allowed opacity-80 hover:opacity-100 transition-opacity"
                     >
                       {/* Glass shimmer on hover */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
@@ -480,7 +480,7 @@ export function AISpecialistPage() {
                       >
                         <Icon className="w-5 h-5" style={{ color: tool.accentColor }} />
                       </div>
-                      <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1.5">{tool.name}</h3>
+                      <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] mb-1.5">{tool.name}</h3>
                       <p className="text-xs text-[var(--ag-text-secondary)] leading-relaxed">{tool.description}</p>
                     </div>
                   );
@@ -492,13 +492,13 @@ export function AISpecialistPage() {
           {/* JSON Formatter */}
           <BlurFade delay={0.15}>
             <div>
-              <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Braces className="w-4 h-4 text-[#6366F1]" />
+              <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Braces className="w-4 h-4 text-[var(--ag-violet-500)]" />
                 Available Now
               </h2>
-              <div className="relative rounded-2xl border border-[#6366F1]/20 overflow-hidden"
-                style={{ background: 'rgba(99,102,241,0.03)', backdropFilter: 'blur(16px)' }}>
-                <BorderBeam size={200} duration={15} colorFrom="#6366F1" colorTo="#8B5CF6" borderWidth={1} />
+              <div className="relative rounded-xl border border-[var(--ag-violet-500)]/20 overflow-hidden"
+                style={{ background: 'var(--ag-violet-500-rgb)/0.03', backdropFilter: 'blur(16px)' }}>
+                <BorderBeam size={200} duration={15} colorFrom="var(--ag-violet-500)" colorTo="var(--ag-violet-400)" borderWidth={1} />
                 <div className="p-1">
                   <JsonFormatterPage />
                 </div>
@@ -522,10 +522,10 @@ export function AISpecialistPage() {
         title="AI Specialists"
         subtitle="Pre-built AI modes you can activate with one click"
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#6366F1]/10 border border-[#6366F1]/30 text-[#6366F1]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-violet-500)]/10 border border-[var(--ag-violet-500)]/30 text-[var(--ag-violet-500)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#6366F1] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#6366F1]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-violet-500)] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-violet-500)]" />
             </span>
             Echo
           </span>
@@ -536,7 +536,7 @@ export function AISpecialistPage() {
       <div className="overflow-x-auto scrollbar-hide w-full">
         <div className="flex gap-1 border-b border-[var(--ag-border-subtle)] w-max min-w-full">
           <button
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[#6366F1] text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-[var(--ag-violet-500)] text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
           >
             <Sparkles className="w-3.5 h-3.5" />
             Specialists
@@ -570,7 +570,7 @@ export function AISpecialistPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search specialists..."
-                className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]/60 focus-visible:border-[#6366F1]/30 focus-visible:ring-[#6366F1]/20 min-h-[44px]"
+                className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)]/60 focus-visible:border-[var(--ag-violet-500)]/30 focus-visible:ring-[var(--ag-violet-500)]/20 min-h-[44px]"
               />
             </div>
 
@@ -584,8 +584,8 @@ export function AISpecialistPage() {
                     onClick={() => setActiveCategory(cat.id)}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
                       isActive
-                        ? 'bg-[#6366F1]/15 text-[#6366F1] border border-[#6366F1]/30'
-                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#6366F1]/20 hover:text-[var(--ag-text-primary)]'
+                        ? 'bg-[var(--ag-violet-500)]/15 text-[var(--ag-violet-500)] border border-[var(--ag-violet-500)]/30'
+                        : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet-500)]/20 hover:text-[var(--ag-text-primary)]'
                     }`}
                   >
                     {cat.label}
@@ -615,7 +615,7 @@ export function AISpecialistPage() {
               <p className="text-[var(--ag-text-muted)] text-sm">No specialists match your search.</p>
               <button
                 onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-                className="text-[#6366F1] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
+                className="text-[var(--ag-violet-500)] text-sm mt-2 hover:underline min-h-[44px] flex items-center"
               >
                 Clear filters
               </button>

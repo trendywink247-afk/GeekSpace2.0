@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { PageShell } from '@/components/agentin/PageShell';
 import { PageHeader } from '@/components/agentin/PageHeader';
-import { DashboardPageWrapper } from '@/components/agentin';
+import { DashboardPageWrapper, SectionCard } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -627,29 +628,31 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
     <PageShell>
     <div className="space-y-6 h-[calc(100dvh-220px)] md:h-[calc(100vh-140px)] flex flex-col">
       {/* Header — uses shared PageHeader with Jarvis branding */}
+      <BlurFade delay={0}>
       <PageHeader
         icon={TerminalIcon}
         title="Terminal"
         subtitle="Direct CLI access to Agentin API + Jarvis AI"
+        className="font-heading"
         badge={
-          <span className="text-xs px-2 py-0.5 rounded-full bg-[#ADFF2F]/10 border border-[#ADFF2F]/30 text-[#ADFF2F]">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--ag-lime)]/10 border border-[var(--ag-lime)]/30 text-[var(--ag-lime)]">
             <span className="inline-flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ADFF2F] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-lime)] animate-pulse" />
               Jarvis
             </span>
           </span>
         }
         actions={
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-lg bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#ADFF2F]" />
-              <span className="text-xs text-[#ADFF2F] font-mono">AI Ready</span>
+            <div className="px-3 py-1.5 rounded-lg bg-[var(--ag-lime)]/10 border border-[var(--ag-lime)]/20 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--ag-lime)]" />
+              <span className="text-xs text-[var(--ag-lime)] font-mono">AI Ready</span>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={clearTerminal}
-              className="border-[var(--ag-border-default)] text-[var(--ag-text-muted)] hover:border-[#ADFF2F]/40 min-h-[44px]"
+              className="border-[var(--ag-border-default)] text-[var(--ag-text-muted)] hover:border-[var(--ag-lime)]/40 hover:text-[var(--ag-lime)] min-h-[44px] transition-colors"
               aria-label="Clear terminal"
             >
               <Trash2 className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Clear</span>
@@ -657,70 +660,73 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
           </div>
         }
       />
+      </BlurFade>
 
       {/* Terminal Window — Jarvis-themed chrome */}
-      <div
-        className="flex-1 rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          background: 'linear-gradient(135deg, rgba(12,12,24,0.8), rgba(16,16,30,0.6))',
-          backdropFilter: 'blur(24px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-          border: '1px solid rgba(173,255,47,0.12)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
-        }}
-        onClick={() => inputRef.current?.focus()}
-      >
-        {/* Terminal Header Bar */}
-        <div className="h-10 bg-[var(--ag-bg-deep)] border-b border-[#ADFF2F]/15 flex items-center px-4 gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#FF6161]" />
-          <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
-          <div className="w-3 h-3 rounded-full bg-[#ADFF2F]" />
-          <div className="flex-1 text-center">
-            <span className="text-xs text-[var(--ag-text-muted)] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
+      <BlurFade delay={0.1}>
+      <SectionCard className="flex-1 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden flex flex-col p-0">
+        <div
+          className="flex-1 overflow-hidden flex flex-col"
+          style={{
+            border: `1px solid var(--ag-lime)`,
+            boxShadow: `0 0 20px rgba(173, 255, 47, 0.1), inset 0 1px 0 rgba(255,255,255,0.03)`,
+          }}
+          onClick={() => inputRef.current?.focus()}
+        >
+          {/* Terminal Header Bar */}
+          <div className="h-10 bg-[var(--ag-bg-deep)] border-b border-[var(--ag-lime)]/15 flex items-center px-4 gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#FF6161]" />
+            <div className="w-3 h-3 rounded-full bg-[#FFB800]" />
+            <div className="w-3 h-3 rounded-full bg-[var(--ag-lime)]" />
+            <div className="flex-1 text-center">
+              <span className="text-xs text-[var(--ag-text-muted)] font-mono">{user?.username || 'user'}@agentin ~ terminal</span>
+            </div>
+            <TerminalIcon className="w-4 h-4 text-[var(--ag-text-muted)]" />
           </div>
-          <TerminalIcon className="w-4 h-4 text-[var(--ag-text-muted)]" />
-        </div>
 
         {/* Terminal Content */}
         <div ref={terminalRef} className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-[var(--ag-bg-deep)]">
-          {commands.map((cmd) => (
-            <div key={cmd.id} className="mb-4">
+          {commands.map((cmd, index) => (
+            <BlurFade key={cmd.id} delay={0.15 + index * 0.05}>
+            <div className="mb-4">
               {cmd.input && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[#ADFF2F]">{'\u27A4'}</span>
+                  <span className="text-[var(--ag-lime)]">{'\u27A4'}</span>
                   <span className="text-[var(--ag-text-secondary)]">~</span>
                   <span className="text-[var(--ag-text-primary)]">{cmd.input}</span>
                 </div>
               )}
               {cmd.isLoading ? (
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="w-3 h-3 border-2 border-[#ADFF2F]/30 border-t-[#ADFF2F] rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-[var(--ag-lime)]/30 border-t-[var(--ag-lime)] rounded-full animate-spin" />
                   <span className="text-[var(--ag-text-muted)]">Thinking...</span>
                 </div>
               ) : cmd.output ? (
                 <div className="mt-1 relative group">
-                  <pre className={`whitespace-pre-wrap ${cmd.isError ? 'text-[#FF6161]' : 'text-[#ADFF2F]/90'}`}>
+                  <pre className={`whitespace-pre-wrap font-mono ${cmd.isError ? 'text-[#FF6161]' : 'text-[var(--ag-lime)]/90'}`}>
                     {cmd.output}
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center hover:border-[var(--ag-lime)]/40"
                     aria-label="Copy output"
                   >
                     {copiedId === cmd.id ? (
-                      <Check className="w-3 h-3 text-[#ADFF2F]" />
+                      <Check className="w-3 h-3 text-[var(--ag-lime)]" />
                     ) : (
-                      <Copy className="w-3 h-3 text-[var(--ag-text-muted)]" />
+                      <Copy className="w-3 h-3 text-[var(--ag-text-muted)] hover:text-[var(--ag-lime)]" />
                     )}
                   </button>
                 </div>
               ) : null}
             </div>
+            </BlurFade>
           ))}
 
           {/* Input Line */}
+          <BlurFade delay={0.3}>
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <span className="text-[#ADFF2F]">{'\u27A4'}</span>
+            <span className="text-[var(--ag-lime)]">{'\u27A4'}</span>
             <span className="text-[var(--ag-text-secondary)]">~</span>
             <input
               ref={inputRef}
@@ -728,19 +734,21 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
               value={input}
               onChange={(e) => { setInput(e.target.value); setAutocompleteSuggestions([]); }}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent border-none outline-none text-[var(--ag-text-primary)] font-mono"
+              className="flex-1 bg-transparent border-none outline-none text-[var(--ag-text-primary)] font-mono focus:ring-0 focus:outline-none"
               placeholder="Type a command or ask Jarvis for help..."
               autoComplete="off"
               spellCheck={false}
             />
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#ADFF2F]/10 border border-[#ADFF2F]/20 text-[10px] text-[#ADFF2F] font-mono whitespace-nowrap select-none">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--ag-lime)]/10 border border-[var(--ag-lime)]/20 text-[10px] text-[var(--ag-lime)] font-mono whitespace-nowrap select-none">
               <Bot className="w-3 h-3" />
               Jarvis
             </span>
           </form>
+          </BlurFade>
 
           {/* Tab autocomplete suggestions */}
           {autocompleteSuggestions.length > 1 && (
+            <BlurFade delay={0.35}>
             <div className="mt-1 ml-6 flex flex-wrap gap-1.5">
               {autocompleteSuggestions.map((s, i) => (
                 <button
@@ -748,8 +756,8 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
                   onClick={() => { setInput(s); setAutocompleteSuggestions([]); inputRef.current?.focus(); }}
                   className={`px-2 py-1 min-h-[44px] rounded text-xs font-mono transition-colors ${
                     i === autocompleteIndex
-                      ? 'bg-[#ADFF2F]/20 text-[#ADFF2F] border border-[#ADFF2F]/40'
-                      : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent'
+                      ? 'bg-[var(--ag-lime)]/20 text-[var(--ag-lime)] border border-[var(--ag-lime)]/40'
+                      : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] border border-transparent hover:border-[var(--ag-border-subtle)]'
                   }`}
                 >
                   {s}
@@ -757,34 +765,40 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
               ))}
               <span className="text-[10px] text-[var(--ag-text-muted)]/50 self-center ml-1">Tab to cycle</span>
             </div>
+            </BlurFade>
           )}
+          </div>
         </div>
-      </div>
+      </SectionCard>
+      </BlurFade>
 
       {/* Quick Commands */}
+      <BlurFade delay={0.2}>
       <div className="flex flex-wrap gap-2 items-center">
         {[
           'gs me', '/briefing', '/habits', '/reminders', '/stats',
           'ai "What should I build next?"', '/help'
-        ].map((cmd) => (
+        ].map((cmd, index) => (
+          <BlurFade key={cmd} delay={0.25 + index * 0.05}>
           <button
-            key={cmd}
             onClick={() => executeCommand(cmd)}
-            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs transition-colors ${
+            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono transition-all duration-200 ${
               cmd.startsWith('ai ') || cmd.startsWith('/')
-                ? 'bg-[#ADFF2F]/10 border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/20'
-                : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
+                ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-lime)] text-[var(--ag-text-primary)] hover:shadow-lg hover:shadow-[var(--ag-lime)]/25 hover:scale-105 border-transparent'
+                : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)] backdrop-blur-sm'
             }`}
           >
             {cmd}
           </button>
+          </BlurFade>
         ))}
         <span className="text-[10px] text-[var(--ag-text-muted)]/50 ml-auto hidden sm:inline">
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[var(--ag-border-subtle)] text-[#ADFF2F] font-mono">Tab</kbd> autocomplete
+          <kbd className="px-1 py-0.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] text-[var(--ag-lime)] font-mono">Tab</kbd> autocomplete
           <span className="mx-1.5">|</span>
-          <kbd className="px-1 py-0.5 rounded bg-[#1A1A2E] border border-[var(--ag-border-subtle)] text-[#ADFF2F] font-mono">&uarr;&darr;</kbd> history
+          <kbd className="px-1 py-0.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] text-[var(--ag-lime)] font-mono">&uarr;&darr;</kbd> history
         </span>
       </div>
+      </BlurFade>
     </div>
     </PageShell>
     </DashboardPageWrapper>

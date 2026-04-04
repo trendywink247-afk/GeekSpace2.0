@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
@@ -199,24 +200,28 @@ export function VoiceChatPage() {
     <PageShell maxWidth="4xl">
       <div className="flex flex-col h-[100dvh] md:h-full min-h-0">
       {/* -- Header -- */}
-      <PageHeader
-        icon={Mic}
-        title="Voice Chat"
-        subtitle="Voice with Weebo"
-        actions={
-          <button
-            onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-colors"
-            aria-label="Voice settings"
-          >
-            <Settings2 className="w-5 h-5 text-[var(--ag-text-muted)]" />
-          </button>
-        }
-      />
+      <BlurFade delay={0.1}>
+        <PageHeader
+          icon={Mic}
+          title="Voice Chat"
+          subtitle="Voice with Weebo"
+          className="font-heading"
+          actions={
+            <button
+              onClick={() => setSettingsOpen(!settingsOpen)}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-colors"
+              aria-label="Voice settings"
+            >
+              <Settings2 className="w-5 h-5 text-[var(--ag-text-muted)]" />
+            </button>
+          }
+        />
+      </BlurFade>
 
       {/* -- Settings Panel (collapsible) -- */}
       {settingsOpen && (
-        <SectionCard padding="sm" className="mt-3 animate-page-enter">
+        <BlurFade delay={0.2}>
+          <SectionCard padding="sm" className="mt-3 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             {/* Voice On/Off */}
             <label className="flex items-center gap-2 cursor-pointer select-none min-h-[44px]">
@@ -226,8 +231,8 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, ttsEnabled: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
+              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-violet)]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.ttsEnabled ? 'translate-x-4 bg-[var(--ag-violet)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
               <span className="text-[var(--ag-text-secondary)]">Voice replies</span>
             </label>
@@ -240,8 +245,8 @@ export function VoiceChatPage() {
                 onChange={e => setSettings(s => ({ ...s, autoSend: e.target.checked }))}
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-cyan)]/30 relative transition-colors">
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[var(--ag-cyan)]' : 'bg-[var(--ag-text-muted)]'}`} />
+              <div className="w-9 h-5 rounded-full bg-[var(--ag-bg-elevated)] peer-checked:bg-[var(--ag-violet)]/30 relative transition-colors">
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${settings.autoSend ? 'translate-x-4 bg-[var(--ag-violet)]' : 'bg-[var(--ag-text-muted)]'}`} />
               </div>
               <span className="text-[var(--ag-text-secondary)]">Auto-send</span>
             </label>
@@ -253,7 +258,7 @@ export function VoiceChatPage() {
                 <select
                   value={settings.speed}
                   onChange={e => setSettings(s => ({ ...s, speed: Number(e.target.value) }))}
-                  className="appearance-none bg-[var(--ag-bg-elevated)] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[var(--ag-border-subtle)] focus:outline-none focus:ring-1 focus:ring-[var(--ag-cyan)]/40 min-h-[36px]"
+                  className="appearance-none bg-[var(--ag-bg-elevated)] text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-1.5 pr-7 border border-[var(--ag-border-subtle)] focus:outline-none focus:ring-1 focus:ring-[var(--ag-violet)]/40 min-h-[36px]"
                 >
                   {SPEED_OPTIONS.map(s => (
                     <option key={s} value={s}>{s}x</option>
@@ -263,21 +268,23 @@ export function VoiceChatPage() {
               </div>
             </div>
           </div>
-        </SectionCard>
+          </SectionCard>
+        </BlurFade>
       )}
 
       {/* -- Main Content -- */}
       <div className="flex-1 flex flex-col items-center justify-between min-h-0 py-6 gap-4">
         {/* Glass card: orb + status */}
-        <SectionCard className="flex flex-col items-center gap-4 pt-4 w-full max-w-sm">
+        <BlurFade delay={0.3}>
+          <SectionCard className="flex flex-col items-center gap-4 pt-4 w-full max-w-sm bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
           {/* Central orb (80px) with animated states */}
           <div className="relative flex items-center justify-center">
             {/* Concentric rings for listening/recording */}
             {voiceState === 'recording' && (
               <>
-                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-cyan)]/40 animate-voice-ring-1" />
-                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-cyan)]/25 animate-voice-ring-2" />
-                <span className="absolute w-56 h-56 rounded-full border border-[var(--ag-cyan)]/12 animate-voice-ring-3" />
+                <span className="absolute w-32 h-32 rounded-full border border-[var(--ag-violet)]/40 animate-voice-ring-1" />
+                <span className="absolute w-44 h-44 rounded-full border border-[var(--ag-violet)]/25 animate-voice-ring-2" />
+                <span className="absolute w-56 h-56 rounded-full border border-[var(--ag-violet)]/12 animate-voice-ring-3" />
               </>
             )}
 
@@ -291,7 +298,7 @@ export function VoiceChatPage() {
 
             {/* Idle pulse glow */}
             {voiceState === 'idle' && (
-              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-cyan)]/5 animate-voice-idle-pulse" />
+              <span className="absolute w-28 h-28 rounded-full bg-[var(--ag-violet)]/5 animate-voice-idle-pulse" />
             )}
 
             {/* Error glow */}
@@ -309,10 +316,10 @@ export function VoiceChatPage() {
                     ? 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(12,12,24,1) 80%)'
                     : 'radial-gradient(circle, rgba(12,12,24,0.8) 0%, rgba(12,12,24,1) 80%)',
                 border: `2px solid ${
-                  voiceState === 'recording' ? 'var(--ag-cyan)'
+                  voiceState === 'recording' ? 'var(--ag-violet)'
                   : voiceState === 'speaking' ? 'var(--ag-weebo)'
                   : voiceState === 'error' ? 'var(--ag-pink)'
-                  : 'rgba(139,92,246,0.2)'
+                  : 'var(--ag-violet-subtle)'
                 }`,
                 boxShadow: voiceState === 'recording'
                   ? '0 0 32px rgba(139,92,246,0.35)'
@@ -325,7 +332,7 @@ export function VoiceChatPage() {
               }}
             >
               {voiceState === 'processing' ? (
-                <Loader2 className="w-9 h-9 text-[var(--ag-cyan)] animate-spin" />
+                <Loader2 className="w-9 h-9 text-[var(--ag-violet)] animate-spin" />
               ) : (
                 /* Weebo dot — #A78BFA */
                 <span
@@ -346,7 +353,7 @@ export function VoiceChatPage() {
               {[0, 1, 2, 3, 4, 5, 6].map(i => (
                 <span
                   key={i}
-                  className="w-1.5 bg-[var(--ag-cyan)] rounded-full animate-voice-wave"
+                  className="w-1.5 bg-[var(--ag-violet)] rounded-full animate-voice-wave"
                   style={{
                     animationDelay: `${i * 0.1}s`,
                     animationDuration: `${0.5 + (i % 3) * 0.15}s`,
@@ -376,8 +383,8 @@ export function VoiceChatPage() {
           <p
             className="text-sm font-medium transition-colors"
             style={{
-              color: voiceState === 'recording' ? 'var(--ag-cyan)'
-                : voiceState === 'processing' ? 'rgba(139,92,246,0.7)'
+              color: voiceState === 'recording' ? 'var(--ag-violet)'
+                : voiceState === 'processing' ? 'var(--ag-violet-subtle)'
                 : voiceState === 'speaking' ? 'var(--ag-weebo)'
                 : voiceState === 'error' ? 'var(--ag-pink)'
                 : 'var(--ag-text-secondary)',
@@ -393,14 +400,16 @@ export function VoiceChatPage() {
               &ldquo;{interimText}&rdquo;
             </p>
           )}
-        </SectionCard>
+          </SectionCard>
+        </BlurFade>
 
         {/* -- Transcript History -- */}
-        <SectionCard className="flex-1 w-full max-w-lg overflow-y-auto min-h-0" padding="sm">
+        <BlurFade delay={0.4}>
+          <SectionCard className="flex-1 w-full max-w-lg overflow-y-auto min-h-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl" padding="sm">
           <div ref={scrollRef} className="space-y-2 overflow-y-auto max-h-full">
             {transcript.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                <Mic className="w-8 h-8 text-[var(--ag-cyan)]/20 mb-3" />
+                <Mic className="w-8 h-8 text-[var(--ag-violet)]/20 mb-3" />
                 <p className="text-sm text-[var(--ag-text-muted)]">No conversation yet</p>
                 <p className="text-xs text-[var(--ag-text-muted)]/60 mt-1">Tap the microphone to start</p>
               </div>
@@ -411,14 +420,14 @@ export function VoiceChatPage() {
                   className={[
                     'flex flex-col gap-0.5 text-sm rounded-lg px-3 py-2',
                     turn.role === 'user'
-                      ? 'bg-[var(--ag-cyan)]/5 ml-4'
+                      ? 'bg-[var(--ag-violet)]/5 ml-4'
                       : 'bg-[var(--ag-bg-elevated)] mr-4',
                   ].join(' ')}
                 >
                   <div className="flex gap-2">
                     <span className={[
                       'font-semibold flex-shrink-0 text-xs mt-0.5',
-                      turn.role === 'user' ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-weebo)]',
+                      turn.role === 'user' ? 'text-[var(--ag-violet)]' : 'text-[var(--ag-weebo)]',
                     ].join(' ')}>
                       {turn.role === 'user' ? 'You' : agent.name || 'Weebo'}:
                     </span>
@@ -433,10 +442,12 @@ export function VoiceChatPage() {
               ))
             )}
           </div>
-        </SectionCard>
+          </SectionCard>
+        </BlurFade>
 
         {/* -- Mic Button (primary action) -- */}
-        <div className="flex flex-col items-center gap-3 flex-shrink-0">
+        <BlurFade delay={0.5}>
+          <div className="flex flex-col items-center gap-3 flex-shrink-0">
           <button
             onClick={toggleRecording}
             disabled={voiceState === 'processing' || !voice.isSupported}
@@ -451,27 +462,29 @@ export function VoiceChatPage() {
               voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
               voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-95' :
               voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-95' :
-              'bg-[var(--ag-cyan)]/15 border-2 border-[var(--ag-cyan)]/30 hover:bg-[var(--ag-cyan)]/25 hover:border-[var(--ag-cyan)]/50 cursor-pointer active:scale-95 animate-voice-idle-pulse',
+              'bg-gradient-to-br from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 cursor-pointer active:scale-95 animate-voice-idle-pulse shadow-lg hover:shadow-xl',
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
-              <Loader2 className="w-7 h-7 text-[var(--ag-cyan)] animate-spin" />
+              <Loader2 className="w-7 h-7 text-[var(--ag-violet)] animate-spin" />
             ) : voiceState === 'recording' ? (
               <MicOff className="w-7 h-7 text-white" />
             ) : voiceState === 'speaking' ? (
               <span className="w-5 h-5 rounded-sm bg-[var(--ag-weebo)]" />
             ) : (
-              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)]'}`} />
+              <Mic className={`w-7 h-7 ${voice.isSupported ? 'text-white' : 'text-[var(--ag-text-muted)]'}`} />
             )}
           </button>
 
           {!voice.isSupported && (
             <p className="text-xs text-[var(--ag-pink)]">Voice not supported in this browser</p>
           )}
-        </div>
+          </div>
+        </BlurFade>
 
         {/* -- Bottom Actions -- */}
-        <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
+        <BlurFade delay={0.6}>
+          <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
             className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
@@ -496,7 +509,8 @@ export function VoiceChatPage() {
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
           </button>
-        </div>
+          </div>
+        </BlurFade>
       </div>
 
       {/* -- Keyframe animations injected via style tag -- */}

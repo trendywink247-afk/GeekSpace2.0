@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 
 // ---- Filter types ----
@@ -27,15 +28,15 @@ interface ArtifactsPageProps {
 // ---- Shimmer placeholder for loading states ----
 function ShimmerCard() {
   return (
-    <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] overflow-hidden animate-pulse">
-      <div className="aspect-video bg-[rgba(139,92,246,0.04)]" />
+    <div className="rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl overflow-hidden animate-pulse">
+      <div className="aspect-video bg-[var(--ag-border-subtle)]" />
       <div className="p-4 space-y-3">
-        <div className="h-4 rounded bg-[rgba(139,92,246,0.06)] w-3/4" />
-        <div className="h-3 rounded bg-[rgba(139,92,246,0.04)] w-1/2" />
+        <div className="h-4 rounded bg-[var(--ag-border-subtle)] w-3/4" />
+        <div className="h-3 rounded bg-[var(--ag-border-subtle)] w-1/2" />
         <div className="flex gap-2 pt-2">
-          <div className="h-9 rounded-lg bg-[rgba(139,92,246,0.04)] w-20" />
-          <div className="h-9 rounded-lg bg-[rgba(139,92,246,0.04)] w-9" />
-          <div className="h-9 rounded-lg bg-[rgba(139,92,246,0.04)] w-9" />
+          <div className="h-9 rounded-lg bg-[var(--ag-border-subtle)] w-20" />
+          <div className="h-9 rounded-lg bg-[var(--ag-border-subtle)] w-9" />
+          <div className="h-9 rounded-lg bg-[var(--ag-border-subtle)] w-9" />
         </div>
       </div>
     </div>
@@ -260,21 +261,22 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
   }, [artifacts]);
 
   return (
-    <PageShell>
-    <div className={`${previewArtifact ? 'flex gap-4 h-[calc(100vh-6rem)]' : 'space-y-6'}`}>
+    <DashboardPageWrapper>
+      <div className={`${previewArtifact ? 'flex gap-4 h-[calc(100vh-6rem)]' : 'space-y-6'}`}>
       {/* Main content */}
       <div className={`space-y-6 ${previewArtifact ? 'w-1/2 overflow-y-auto' : ''}`}>
 
-      {/* Header with Edith ownership dot (#8B5CF6) */}
-      <PageHeader
+        {/* Header with Edith ownership dot */}
+        <BlurFade delay={0}>
+          <PageHeader
         icon={LayoutGrid}
         title="My Projects"
         subtitle={`${artifacts.length} ${artifacts.length === 1 ? 'project' : 'projects'} created with Agentin`}
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/30 text-[var(--ag-violet)]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-violet)]/10 border border-[var(--ag-violet)]/30 text-[var(--ag-violet)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B5CF6]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-edith)] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-edith)]" />
             </span>
             Edith
           </span>
@@ -282,16 +284,18 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         actions={
           <button
             onClick={() => onNavigate?.('templates')}
-            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-all duration-200 font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
           </button>
         }
-      />
+          />
+        </BlurFade>
 
-      {/* Filter bar */}
-      <SectionCard padding="sm" className="!p-2">
+        {/* Filter bar */}
+        <BlurFade delay={0.05}>
+          <SectionCard padding="sm" className="!p-2">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-0">
@@ -301,7 +305,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search projects..."
-              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-transparent border border-[rgba(139,92,246,0.08)] rounded-lg text-[var(--ag-text-primary)] text-sm placeholder:text-[var(--ag-text-muted)] focus:border-[rgba(139,92,246,0.3)] focus:outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-transparent border border-[var(--ag-border-subtle)] rounded-lg text-[var(--ag-text-primary)] text-sm placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-border-active)] focus:outline-none transition-colors"
             />
           </div>
 
@@ -313,8 +317,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 onClick={() => setTypeFilter(type)}
                 className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                   typeFilter === type
-                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] shadow-sm'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
+                    ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] shadow-sm'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
                 }`}
               >
                 {type === 'all' ? 'All' : type === 'code' ? 'Code' : 'Template'}
@@ -328,8 +332,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
               showFilters
-                ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
-                : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
+                ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)]'
+                : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -339,7 +343,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
         {/* Expanded sort options */}
         {showFilters && (
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[rgba(139,92,246,0.08)]">
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--ag-border-subtle)]">
             <Calendar className="w-4 h-4 text-[var(--ag-text-secondary)] shrink-0" />
             <span className="text-xs text-[var(--ag-text-secondary)] shrink-0">Sort by:</span>
             {([
@@ -352,8 +356,8 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 onClick={() => setSortBy(opt.value)}
                 className={`px-3 py-1.5 min-h-[36px] rounded-md text-xs font-medium transition-all ${
                   sortBy === opt.value
-                    ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
+                    ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)]'
+                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
                 }`}
               >
                 {opt.label}
@@ -361,77 +365,82 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             ))}
           </div>
         )}
-      </SectionCard>
+          </SectionCard>
+        </BlurFade>
 
-      {/* Loading state */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => <ShimmerCard key={i} />)}
-        </div>
-      ) : filteredArtifacts.length === 0 && artifacts.length === 0 ? (
-        /* Empty state — no artifacts at all */
-        <SectionCard className="!border-[rgba(139,92,246,0.15)]">
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-8 h-8 text-[var(--ag-violet)]/50" />
+        {/* Loading state */}
+        {loading ? (
+          <BlurFade delay={0.1}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => <ShimmerCard key={i} />)}
             </div>
-            <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">No projects yet</h3>
+          </BlurFade>
+      ) : filteredArtifacts.length === 0 && artifacts.length === 0 ? (
+          /* Empty state — no artifacts at all */
+          <BlurFade delay={0.1}>
+            <SectionCard className="!border-[var(--ag-border-glow)]">
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--ag-violet)]/10 flex items-center justify-center mx-auto mb-4">
+                  <Folder className="w-8 h-8 text-[var(--ag-violet)]/50" />
+                </div>
+                <h3 className="text-lg font-medium font-heading text-[var(--ag-text-primary)] mb-2">No projects yet</h3>
             <p className="text-[var(--ag-text-secondary)] text-sm mb-6 max-w-xs mx-auto">
               Create your first website from a template or ask your AI agent to build one for you
             </p>
             <button
               onClick={() => onNavigate?.('templates')}
-              className="px-5 py-2.5 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all duration-200 font-medium text-sm"
+              className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
             >
               Browse Templates
-            </button>
-          </div>
-        </SectionCard>
+                </button>
+              </div>
+            </SectionCard>
+          </BlurFade>
       ) : filteredArtifacts.length === 0 ? (
-        /* Empty state — filters yielded no results */
-        <SectionCard>
-          <div className="text-center py-12">
-            <Search className="w-10 h-10 text-[var(--ag-text-secondary)]/40 mx-auto mb-3" />
-            <h3 className="text-base font-medium text-[var(--ag-text-primary)] mb-1">No matching projects</h3>
+          /* Empty state — filters yielded no results */
+          <BlurFade delay={0.1}>
+            <SectionCard>
+              <div className="text-center py-12">
+                <Search className="w-10 h-10 text-[var(--ag-text-secondary)]/40 mx-auto mb-3" />
+                <h3 className="text-base font-medium font-heading text-[var(--ag-text-primary)] mb-1">No matching projects</h3>
             <p className="text-[var(--ag-text-secondary)] text-sm">
               Try adjusting your search or filter criteria
             </p>
             <button
               onClick={() => { setSearchQuery(''); setTypeFilter('all'); }}
-              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
             >
               Clear filters
-            </button>
-          </div>
-        </SectionCard>
+                </button>
+              </div>
+            </SectionCard>
+          </BlurFade>
       ) : (
-        /* Projects Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredArtifacts.map(artifact => (
-            <div
-              key={artifact.id}
-              className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl overflow-hidden hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(139,92,246,0.08)] transition-all duration-300 group"
-            >
-              {/* Preview thumbnail */}
-              <div className="aspect-video bg-gradient-to-br from-[#0C0C1E] to-[#111128] relative cursor-pointer" onClick={() => handleOpenPreview(artifact)}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Code className="w-12 h-12 text-[var(--ag-violet)]/20" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06061a] via-transparent to-transparent" />
+          /* Projects Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredArtifacts.map((artifact, index) => (
+              <BlurFade key={artifact.id} delay={0.1 + (index * 0.05)}>
+                <div className="rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 group">
+                  {/* Preview thumbnail */}
+                  <div className="aspect-video bg-gradient-to-br from-[var(--ag-bg-deep)] to-[var(--ag-bg-base)] relative cursor-pointer" onClick={() => handleOpenPreview(artifact)}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Code className="w-12 h-12 text-[var(--ag-violet)]/20" />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--ag-bg-base)] via-transparent to-transparent" />
 
-                {/* Type badge */}
-                <div className="absolute top-3 right-3">
-                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider ${
-                    artifact.type === 'template'
-                      ? 'bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20'
-                      : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20'
-                  }`}>
-                    {artifact.type}
-                  </span>
-                </div>
+                    {/* Type badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider ${
+                        artifact.type === 'template'
+                          ? 'bg-[var(--ag-amber)]/10 text-[var(--ag-amber)] border border-[var(--ag-amber)]/20'
+                          : 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20'
+                      }`}>
+                        {artifact.type}
+                      </span>
+                    </div>
 
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[var(--ag-text-primary)] font-medium truncate">{artifact.title}</h3>
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <h3 className="text-[var(--ag-text-primary)] font-medium font-heading truncate">{artifact.title}</h3>
                   <div className="flex items-center gap-3 text-xs text-[var(--ag-text-secondary)] mt-1">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -441,65 +450,65 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                       <Calendar className="w-3 h-3" />
                       {formatDate(artifact.createdAt)}
                     </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Actions */}
-              <div className="p-3 flex flex-wrap gap-2">
-                <button
-                  onClick={() => handleOpenPreview(artifact)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg transition-colors text-sm font-medium ${
-                    previewArtifact?.id === artifact.id
-                      ? 'bg-[#8B5CF6] text-white'
-                      : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20'
-                  }`}
+                  {/* Actions */}
+                  <div className="p-3 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleOpenPreview(artifact)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg transition-colors text-sm font-medium ${
+                        previewArtifact?.id === artifact.id
+                          ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white'
+                          : 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/20'
+                      }`}
                 >
                   <Monitor className="w-4 h-4" />
                   <span>Preview</span>
                 </button>
 
-                <button
-                  onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                    <button
+                      onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
                   title="Copy URL"
                   aria-label="Copy URL"
                 >
                   {copiedId === artifact.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                 </button>
 
-                <button
-                  onClick={() => handleEdit(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                    <button
+                      onClick={() => handleEdit(artifact)}
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
                   title="Edit"
                   aria-label="Edit project"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
 
-                <button
-                  onClick={() => handleExportZip(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                    <button
+                      onClick={() => handleExportZip(artifact)}
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
                   title="Download ZIP"
                   aria-label="Download ZIP"
                 >
                   <Download className="w-4 h-4" />
                 </button>
 
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent('Check out what I built with Agentin! ' + artifact.previewUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#25D366] hover:bg-[#25D366]/10 rounded-lg transition-colors"
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent('Check out what I built with Agentin! ' + artifact.previewUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-green)] hover:bg-[var(--ag-green)]/10 rounded-lg transition-colors"
                   title="Share on WhatsApp"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </a>
 
-                <button
-                  onClick={() => handleDomainSetup(artifact)}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
+                    <button
+                      onClick={() => handleDomainSetup(artifact)}
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
                   title="Custom Domain"
                   aria-label="Custom Domain"
                 >
@@ -515,92 +524,98 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   title="Delete"
                   aria-label="Delete project"
                 >
-                  <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </BlurFade>
+            ))}
+          </div>
+      )}
+
+        </div>{/* end main content */}
+
+        {/* Inline Preview Panel */}
+        {previewArtifact && (
+          <BlurFade delay={0.2}>
+            <div className="hidden md:flex w-1/2 flex-col border border-[var(--ag-border-subtle)] rounded-xl overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl">
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--ag-border-subtle)] shrink-0">
+                <span className="text-sm text-[var(--ag-text-secondary)] truncate flex-1">{previewArtifact.title}</span>
+                <button
+                  onClick={() => setPreviewDevice('desktop')}
+                  className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'desktop' ? 'text-[var(--ag-violet)] bg-[var(--ag-violet)]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
+                  aria-label="Desktop preview"
+                >
+                  <Monitor className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setPreviewDevice('mobile')}
+                  className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'mobile' ? 'text-[var(--ag-violet)] bg-[var(--ag-violet)]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
+                  aria-label="Mobile preview"
+                >
+                  <Smartphone className="w-4 h-4" />
+                </button>
+                <a
+                  href={previewArtifact.previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] rounded"
+                  aria-label="Open in new tab"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+                <button
+                  onClick={() => setPreviewArtifact(null)}
+                  className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] rounded"
+                  aria-label="Close preview"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+              <div className={`flex-1 flex items-center justify-center ${
+                previewDevice === 'mobile' ? 'p-8 bg-[var(--ag-bg-base)]' : 'p-0'
+              }`}>
+                <iframe
+                  src={previewArtifact.previewUrl}
+                  className={previewDevice === 'mobile'
+                    ? 'w-[375px] h-[667px] border border-[var(--ag-border-subtle)] rounded-xl shadow-2xl bg-white'
+                    : 'w-full h-full bg-white'}
+                  title={`Preview: ${previewArtifact.title}`}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          </BlurFade>
+        )}
 
-      </div>{/* end main content */}
-
-      {/* Inline Preview Panel */}
-      {previewArtifact && (
-        <div className="hidden md:flex w-1/2 flex-col border border-[rgba(139,92,246,0.08)] rounded-xl overflow-hidden bg-[rgba(12,12,30,0.6)] backdrop-blur-xl">
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-[rgba(139,92,246,0.08)] shrink-0">
-            <span className="text-sm text-[var(--ag-text-secondary)] truncate flex-1">{previewArtifact.title}</span>
-            <button
-              onClick={() => setPreviewDevice('desktop')}
-              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'desktop' ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
-              aria-label="Desktop preview"
-            >
-              <Monitor className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPreviewDevice('mobile')}
-              className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded ${previewDevice === 'mobile' ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'}`}
-              aria-label="Mobile preview"
-            >
-              <Smartphone className="w-4 h-4" />
-            </button>
-            <a
-              href={previewArtifact.previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] rounded"
-              aria-label="Open in new tab"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-            <button
-              onClick={() => setPreviewArtifact(null)}
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] rounded"
-              aria-label="Close preview"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className={`flex-1 flex items-center justify-center ${
-            previewDevice === 'mobile' ? 'p-8 bg-[var(--ag-bg-base)]' : 'p-0'
-          }`}>
-            <iframe
-              src={previewArtifact.previewUrl}
-              className={previewDevice === 'mobile'
-                ? 'w-[375px] h-[667px] border border-[rgba(139,92,246,0.08)] rounded-xl shadow-2xl bg-white'
-                : 'w-full h-full bg-white'}
-              title={`Preview: ${previewArtifact.title}`}
-              sandbox="allow-scripts allow-same-origin"
-            />
-          </div>
-        </div>
-      )}
+      </div>{/* end preview panel and main wrapper div */}
 
       {/* Edit Modal */}
       {showEditModal && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="rounded-xl border border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.95)] backdrop-blur-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)]">
-              <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Edit Project</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
-                aria-label="Close edit modal"
-              >
+          <BlurFade delay={0}>
+              <div className="rounded-xl border border-[var(--ag-border-glow)] bg-[var(--ag-bg-surface)] backdrop-blur-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--ag-border-subtle)]">
+                  <h2 className="text-lg font-medium font-heading text-[var(--ag-text-primary)]">Edit Project</h2>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                    aria-label="Close edit modal"
+                  >
                 <X className="w-5 h-5 text-[var(--ag-text-secondary)]" />
               </button>
             </div>
 
-            <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
-              <div>
-                <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">Title</label>
-                <input
-                  type="text"
-                  value={editForm.title}
-                  onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
-                />
-              </div>
+                <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
+                  <div>
+                    <label className="block text-sm text-[var(--ag-text-secondary)] mb-2">Title</label>
+                    <input
+                      type="text"
+                      value={editForm.title}
+                      onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[var(--ag-border-default)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
+                    />
+                  </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -608,7 +623,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <textarea
                     value={editForm.html}
                     onChange={e => setEditForm(prev => ({ ...prev, html: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[var(--ag-border-default)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
 
@@ -617,7 +632,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <textarea
                     value={editForm.css}
                     onChange={e => setEditForm(prev => ({ ...prev, css: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[var(--ag-border-default)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
 
@@ -626,49 +641,51 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <textarea
                     value={editForm.js}
                     onChange={e => setEditForm(prev => ({ ...prev, js: e.target.value }))}
-                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
+                    className="w-full h-48 px-3 py-2 bg-[var(--ag-bg-base)] border border-[var(--ag-border-default)] rounded-lg text-[var(--ag-text-primary)] font-mono text-xs focus:border-[var(--ag-violet)] outline-none resize-none transition-colors"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 p-4 border-t border-[rgba(139,92,246,0.08)]">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-2.5 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-all duration-200 font-medium text-sm"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
+                <div className="flex justify-end gap-3 p-4 border-t border-[var(--ag-border-subtle)]">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </BlurFade>
         </div>
       )}
 
       {/* Domain Modal */}
       {showDomainModal && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="rounded-xl border border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.95)] backdrop-blur-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)]">
-              <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Custom Domain</h2>
-              <button
-                onClick={() => setShowDomainModal(false)}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#8B5CF6]/10 rounded-lg transition-colors"
-                aria-label="Close domain modal"
-              >
+            <BlurFade delay={0}>
+              <div className="rounded-xl border border-[var(--ag-border-glow)] bg-[var(--ag-bg-surface)] backdrop-blur-xl w-full max-w-md">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--ag-border-subtle)]">
+                  <h2 className="text-lg font-medium font-heading text-[var(--ag-text-primary)]">Custom Domain</h2>
+                  <button
+                    onClick={() => setShowDomainModal(false)}
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                    aria-label="Close domain modal"
+                  >
                 <X className="w-5 h-5 text-[var(--ag-text-secondary)]" />
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
-              {domainInfo ? (
-                <div className="p-4 bg-[#8B5CF6]/10 rounded-lg border border-[rgba(139,92,246,0.15)]">
-                  <p className="text-sm text-[var(--ag-text-secondary)] mb-1">Your custom domain:</p>
+                <div className="p-4 space-y-4">
+                  {domainInfo ? (
+                    <div className="p-4 bg-[var(--ag-violet)]/10 rounded-lg border border-[var(--ag-border-default)]">
+                      <p className="text-sm text-[var(--ag-text-secondary)] mb-1">Your custom domain:</p>
                   <a
                     href={`https://${domainInfo.fullDomain}`}
                     target="_blank"
@@ -687,56 +704,58 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                       value={domainInput}
                       onChange={e => setDomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                       placeholder="my-project"
-                      className="flex-1 px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
+                      className="flex-1 px-3 py-2.5 min-h-[44px] bg-[var(--ag-bg-base)] border border-[var(--ag-border-default)] rounded-lg text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)] outline-none transition-colors"
                     />
                     <span className="px-3 py-2.5 min-h-[44px] flex items-center text-[var(--ag-text-secondary)]">.agentin.chat</span>
                   </div>
                   <button
                     onClick={handleSaveDomain}
                     disabled={!domainInput || domainInput.length < 2}
-                    className="mt-3 w-full px-4 py-2.5 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none font-medium text-sm"
+                    className="mt-3 w-full px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none font-medium text-sm"
                   >
                     Set Domain
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
+                  )}
+                </div>
+              </div>
+            </BlurFade>
         </div>
       )}
 
       {/* Delete Confirmation */}
       {showDeleteConfirm && selectedArtifact && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="rounded-xl border border-red-500/30 bg-[rgba(12,12,30,0.95)] backdrop-blur-xl w-full max-w-md">
-            <div className="p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-500" />
-                <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Delete Project?</h2>
-              </div>
-              <p className="text-[var(--ag-text-secondary)] mb-6">
-                Are you sure you want to delete &ldquo;{selectedArtifact.title}&rdquo;? This action cannot be undone.
-              </p>
+            <BlurFade delay={0}>
+              <div className="rounded-xl border border-red-500/30 bg-[var(--ag-bg-surface)] backdrop-blur-xl w-full max-w-md">
+                <div className="p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                    <h2 className="text-lg font-medium font-heading text-[var(--ag-text-primary)]">Delete Project?</h2>
+                  </div>
+                  <p className="text-[var(--ag-text-secondary)] mb-6">
+                    Are you sure you want to delete &ldquo;{selectedArtifact.title}&rdquo;? This action cannot be undone.
+                  </p>
 
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDelete(selectedArtifact.id)}
-                  className="px-4 py-2.5 min-h-[44px] bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
-                >
-                  Delete
-                </button>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDelete(selectedArtifact.id)}
+                      className="px-4 py-2.5 min-h-[44px] bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+          </BlurFade>
         </div>
       )}
-    </div>
-    </PageShell>
+    </DashboardPageWrapper>
   );
 }

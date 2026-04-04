@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   User,
@@ -581,7 +582,7 @@ export function SettingsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <h2 className="text-lg font-heading font-bold text-[var(--ag-text-primary)]">
                 Keyboard Shortcuts
               </h2>
               <button onClick={() => setShowShortcuts(false)} className="text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close shortcuts">✕</button>
@@ -610,22 +611,23 @@ export function SettingsPage() {
                     {items.map(({ key, desc }) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-[var(--ag-text-muted)] text-sm">{desc}</span>
-                        <kbd className="px-2 py-0.5 rounded bg-[#1A1A2E] border border-[var(--ag-cyan)]/20 text-[var(--ag-cyan)] text-xs font-mono">{key}</kbd>
+                        <kbd className="px-2 py-0.5 rounded bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[#8B5CF6] text-xs font-mono">{key}</kbd>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-[11px] text-[var(--ag-text-muted)] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1A1A2E] border border-[#6B7280]/30 text-xs font-mono">Esc</kbd> to close</p>
+            <p className="mt-5 text-[11px] text-[var(--ag-text-muted)] text-center">Press <kbd className="px-1.5 py-0.5 rounded bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs font-mono">?</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs font-mono">Esc</kbd> to close</p>
           </div>
         </div>
       )}
-      <PageHeader
-        icon={Settings}
-        title="Settings"
-        subtitle="Manage your account preferences"
-        badge={
+      <BlurFade delay={0.1}>
+        <PageHeader
+          icon={Settings}
+          title="Settings"
+          subtitle="Manage your account preferences"
+          badge={
           <>
             <span className="relative flex h-2.5 w-2.5" title="Weebo active">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A78BFA] opacity-75" />
@@ -650,7 +652,7 @@ export function SettingsPage() {
             >
               <kbd className="text-xs font-mono mr-1">?</kbd>Shortcuts
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50">
+            <Button onClick={handleSave} disabled={isSaving} className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200">
               {isSaving ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
               ) : (
@@ -659,10 +661,12 @@ export function SettingsPage() {
             </Button>
           </div>
         }
-      />
+        />
+      </BlurFade>
 
       {/* Section quick-nav — smooth-scrolls to each settings section */}
-      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2 whitespace-nowrap -webkit-overflow-scrolling-touch">
+      <BlurFade delay={0.2}>
+        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1 -mb-2 whitespace-nowrap -webkit-overflow-scrolling-touch">
         {[
           { id: 'profile', label: 'Profile', icon: User },
           { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -691,9 +695,11 @@ export function SettingsPage() {
             {label}
           </button>
         ))}
-      </nav>
+        </nav>
+      </BlurFade>
 
-      <Tabs id="settings-tabs-anchor" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <BlurFade delay={0.3}>
+        <Tabs id="settings-tabs-anchor" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
@@ -752,7 +758,7 @@ export function SettingsPage() {
                   {avatarError && <p className="text-xs text-[#FF3366] mt-1">{avatarError}</p>}
                   {!avatarError && <p className="text-xs text-[var(--ag-text-muted)] mt-1">Max 500 KB · JPEG, PNG, WebP</p>}
                 </div>
-                <h3 className="font-semibold text-[var(--ag-text-primary)]">{profile.name || user?.name || user?.email?.split('@')[0] || 'User'}</h3>
+                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">{profile.name || user?.name || user?.email?.split('@')[0] || 'User'}</h3>
                 <p className="text-sm text-[var(--ag-text-muted)]">@{profile.username}</p>
                 {/* 77.6: Dynamic plan badge */}
                 {(() => {
@@ -796,32 +802,32 @@ export function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Display Name</label>
-                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.name} placeholder="Your name" onChange={(e) => { setProfile({ ...profile, name: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]" />
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Username</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-muted)]">@</span>
-                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)] pl-8" />
+                      <Input value={profile.username} onChange={(e) => { setProfile({ ...profile, username: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)] pl-8" />
                     </div>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Email</label>
-                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]" />
+                  <Input type="email" value={profile.email} placeholder="your@email.com" onChange={(e) => { setProfile({ ...profile, email: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]" />
                 </div>
                 <div>
                   <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Bio</label>
-                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl border border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)] min-h-[100px] resize-none focus:outline-none focus:border-[var(--ag-cyan)]" />
+                  <textarea value={profile.bio} onChange={(e) => { setProfile({ ...profile, bio: e.target.value }); setHasUnsavedChanges(true); }} className="w-full p-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)] min-h-[100px] resize-none focus:outline-none" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Location</label>
-                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.location} onChange={(e) => { setProfile({ ...profile, location: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]" />
                   </div>
                   <div>
                     <label className="text-sm text-[var(--ag-text-muted)] mb-2 block">Website</label>
-                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]" />
+                    <Input value={profile.website} onChange={(e) => { setProfile({ ...profile, website: e.target.value }); setHasUnsavedChanges(true); }} className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]" />
                   </div>
                 </div>
               </CardContent>
@@ -1162,7 +1168,7 @@ export function SettingsPage() {
                     setFreeModelSaving(false);
                   }
                 }}
-                className="w-full px-3 py-2 border border-[var(--ag-cyan)]/20 rounded-xl text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[var(--ag-cyan)]/40"
+                className="w-full px-3 py-2 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 rounded-xl text-[var(--ag-text-primary)] text-sm focus:outline-none"
               >
                 <option value="auto">Auto (Agentin selects best available)</option>
                 {freeModels.map((m) => (
@@ -1194,7 +1200,7 @@ export function SettingsPage() {
                   value={pwCurrent}
                   onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter current password"
-                  className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]"
                 />
               </div>
               <div>
@@ -1204,7 +1210,7 @@ export function SettingsPage() {
                   value={pwNew}
                   onChange={(e) => { setPwNew(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Enter new password"
-                  className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]"
                 />
                 {/* Password strength meter */}
                 {pwNew.length > 0 && (() => {
@@ -1229,7 +1235,7 @@ export function SettingsPage() {
                           <div
                             key={i}
                             className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                              i < score ? segmentColors[score - 1] : 'bg-[#1C1C2E]'
+                              i < score ? segmentColors[score - 1] : 'bg-[var(--ag-bg-surface)]'
                             }`}
                           />
                         ))}
@@ -1248,7 +1254,7 @@ export function SettingsPage() {
                   value={pwConfirm}
                   onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); setPwSuccess(''); }}
                   placeholder="Confirm new password"
-                  className="border-[var(--ag-cyan)]/30 text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]"
                 />
               </div>
               {pwError && (
@@ -1288,7 +1294,7 @@ export function SettingsPage() {
                     setPwSaving(false);
                   }
                 }}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
+                className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200"
               >
                 {pwSaving ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
@@ -1340,8 +1346,8 @@ export function SettingsPage() {
                       onChange={(e) => setDeleteConfirmText(e.target.value)}
                       className={`bg-[var(--ag-bg-surface)] text-[var(--ag-text-primary)] font-mono tracking-wider ${
                         deleteConfirmText === 'DELETE'
-                          ? 'border-[#FF2D78]/60'
-                          : 'border-[#FF2D78]/20'
+                          ? 'border-[#FF2D78]/60 focus:border-[#FF2D78]/80'
+                          : 'border-[#FF2D78]/20 focus:border-[#FF2D78]/40'
                       }`}
                       autoComplete="off"
                       spellCheck={false}
@@ -1354,7 +1360,7 @@ export function SettingsPage() {
                       placeholder="Enter password"
                       value={deletePassword}
                       onChange={(e) => setDeletePassword(e.target.value)}
-                      className="bg-[var(--ag-bg-surface)] border-[#FF2D78]/20 text-[var(--ag-text-primary)]"
+                      className="bg-[var(--ag-bg-surface)] border-[#FF2D78]/20 focus:border-[#FF2D78]/40 text-[var(--ag-text-primary)]"
                       data-testid="delete-account-password-input"
                     />
                   </div>
@@ -1411,7 +1417,7 @@ export function SettingsPage() {
                   <CardTitle>API Keys</CardTitle>
                   <CardDescription className="text-[var(--ag-text-muted)]">Manage provider keys for &quot;Bring Your Own&quot; mode</CardDescription>
                 </div>
-                <Button onClick={() => setShowAddKey(true)} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                <Button onClick={() => setShowAddKey(true)} className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200">
                   <Plus className="w-4 h-4 mr-2" />Add Key
                 </Button>
               </div>
@@ -1459,7 +1465,7 @@ export function SettingsPage() {
                         placeholder="Paste new key value…"
                         value={rotateValue}
                         onChange={(e) => setRotateValue(e.target.value)}
-                        className="flex-1 text-sm bg-[#0A0A14] border-[var(--ag-cyan)]/20"
+                        className="flex-1 text-sm bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)]"
                       />
                       <Button size="sm" disabled={isRotating || rotateValue.trim().length < 8}
                         onClick={() => handleRotateKey(key.id)}
@@ -1505,7 +1511,7 @@ export function SettingsPage() {
                     <Button variant="outline" onClick={() => { setShowAddKey(false); setNewKeyValue(''); }} className="border-[var(--ag-cyan)]/30">
                       Cancel
                     </Button>
-                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">
+                    <Button onClick={handleAddKey} disabled={!newKeyValue} className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200">
                       Save Key
                     </Button>
                   </div>
@@ -1800,7 +1806,7 @@ export function SettingsPage() {
             <Button
               onClick={() => void handlePrivacySave()}
               disabled={savingPrivacy}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale"
+              className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200"
             >
               {savingPrivacy ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
@@ -1940,9 +1946,9 @@ export function SettingsPage() {
                     placeholder="Describe a vibe (optional)..."
                     value={bgVibe}
                     onChange={(e) => setBgVibe(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--ag-cyan)]/20 text-[var(--ag-text-primary)] text-sm focus:outline-none focus:border-[var(--ag-cyan)]/60"
+                    className="flex-1 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)] text-sm focus:outline-none"
                   />
-                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                  <Button onClick={handleGenerateBg} disabled={isGeneratingBg} size="sm" className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200">
                     {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </div>
@@ -1954,7 +1960,7 @@ export function SettingsPage() {
                     />
                     <p className="text-xs text-[var(--ag-text-muted)]">"{bgPreview.name}" — click Apply to use this background</p>
                     <div className="flex gap-2">
-                      <Button onClick={handleApplyBg} size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">Apply</Button>
+                      <Button onClick={handleApplyBg} size="sm" className="bg-gradient-to-r from-[#8B5CF6] to-[#D97706] hover:from-[#7C3AED] hover:to-[#C2410C] min-h-[44px] text-white font-semibold transition-all duration-200">Apply</Button>
                       <Button onClick={handleGenerateBg} variant="outline" size="sm" className="border-[var(--ag-cyan)]/30">Try another</Button>
                     </div>
                   </div>
@@ -1990,7 +1996,7 @@ export function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--ag-text-primary)]">Language</label>
-                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--ag-cyan)]/40">
+                <select value={voiceSettings.lang} onChange={(e) => saveVoiceSettings({ lang: e.target.value })} className="w-full bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] focus:border-[#8B5CF6]/50 text-[var(--ag-text-primary)] text-sm rounded-lg px-3 py-2 focus:outline-none">
                   <option value="en-US">English (US)</option>
                   <option value="en-GB">English (UK)</option>
                   <option value="hi-IN">Hindi (India)</option>
@@ -2014,7 +2020,8 @@ export function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </BlurFade>
 
       {/* App Version Footer */}
       {appVersion && (

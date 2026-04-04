@@ -2,7 +2,7 @@
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, useAgentCanvas, mobile 44px
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -40,10 +40,10 @@ const iconMap: Record<string, typeof Sunrise> = {
 
 // ----- Category colours ----------------------------------------
 const categoryColors: Record<string, string> = {
-  productivity: '#8B5CF6',
-  monitoring: '#FFB800',
-  communication: '#00FF88',
-  analytics: '#FF2D78',
+  productivity: 'var(--ag-violet)',
+  monitoring: 'var(--ag-amber)',
+  communication: 'var(--ag-green)',
+  analytics: 'var(--ag-pink)',
 };
 
 // ----- Trigger type per recipe ---------------------------------
@@ -161,29 +161,29 @@ export function RecipesPage() {
 
   if (loading) {
     return (
-      <PageShell>
+      <DashboardPageWrapper>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: ECHO }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--ag-echo)' }} />
         </div>
-      </PageShell>
+      </DashboardPageWrapper>
     );
   }
 
   return (
-    <PageShell>
+    <DashboardPageWrapper>
       {/* Inline toast */}
       {toast && (
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl backdrop-blur-sm border shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300 ${
             toast.type === 'success'
-              ? 'bg-[var(--ag-bg-surface)]/90 border-[#00FF88]/40 shadow-[#00FF88]/10'
-              : 'bg-[var(--ag-bg-surface)]/90 border-[#FF6161]/40 shadow-[#FF6161]/10'
+              ? 'bg-[var(--ag-bg-surface)]/90 border-[var(--ag-green)]/40 shadow-[var(--ag-green)]/10'
+              : 'bg-[var(--ag-bg-surface)]/90 border-[var(--ag-pink)]/40 shadow-[var(--ag-pink)]/10'
           }`}
         >
           {toast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-[#00FF88] shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[var(--ag-green)] shrink-0" />
           ) : (
-            <XCircle className="w-4 h-4 text-[#FF6161] shrink-0" />
+            <XCircle className="w-4 h-4 text-[var(--ag-pink)] shrink-0" />
           )}
           <span className="text-sm text-[var(--ag-text-primary)] font-medium">{toast.message}</span>
         </div>
@@ -197,10 +197,11 @@ export function RecipesPage() {
         badge={
           <span
             className="inline-block w-2 h-2 rounded-full animate-pulse"
-            style={{ backgroundColor: ECHO, boxShadow: `0 0 8px ${ECHO}80` }}
+            style={{ backgroundColor: 'var(--ag-echo)', boxShadow: `0 0 8px var(--ag-echo)80` }}
             title="Echo agent"
           />
         }
+        className="font-heading"
       />
 
       {/* Recipe Grid */}
@@ -209,11 +210,11 @@ export function RecipesPage() {
           <SectionCard className="text-center py-12">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${ECHO}0d`, border: `1px solid ${ECHO}1a` }}
+              style={{ backgroundColor: `var(--ag-echo)0d`, border: `1px solid var(--ag-echo)1a` }}
             >
-              <BookOpen className="w-8 h-8" style={{ color: `${ECHO}4d` }} />
+              <BookOpen className="w-8 h-8" style={{ color: `var(--ag-echo)4d` }} />
             </div>
-            <p className="text-[var(--ag-text-primary)] font-medium mb-1">No recipes available yet</p>
+            <h3 className="text-[var(--ag-text-primary)] font-heading font-medium mb-1">No recipes available yet</h3>
             <p className="text-sm text-[var(--ag-text-secondary)]">
               Discover pre-built automation recipes to supercharge your workflow
             </p>
@@ -230,9 +231,9 @@ export function RecipesPage() {
             return (
               <BlurFade key={recipe.id} delay={0.05 * idx}>
                 <SectionCard
-                  className={`flex flex-col h-full ${
+                  className={`flex flex-col h-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl ${
                     recipe.installed
-                      ? 'ring-1 ring-[#00FF88]/20'
+                      ? 'ring-1 ring-[var(--ag-green)]/20'
                       : ''
                   }`}
                 >
@@ -248,7 +249,7 @@ export function RecipesPage() {
                       {recipe.installed && (
                         <Badge
                           variant="outline"
-                          className="border-[#00FF88]/40 text-[#00FF88] text-xs gap-1"
+                          className="border-[var(--ag-green)]/40 text-[var(--ag-green)] text-xs gap-1"
                         >
                           <CheckCircle2 className="w-3 h-3" />
                           Active
@@ -269,8 +270,8 @@ export function RecipesPage() {
                           variant="outline"
                           className="text-xs gap-1"
                           style={{
-                            borderColor: `${ECHO}30`,
-                            color: `${ECHO}cc`,
+                            borderColor: `var(--ag-echo)30`,
+                            color: `var(--ag-echo)cc`,
                           }}
                         >
                           <trigger.icon className="w-3 h-3" />
@@ -281,7 +282,7 @@ export function RecipesPage() {
                   </div>
 
                   {/* Name + Description */}
-                  <h3 className="font-semibold text-[var(--ag-text-primary)] mb-1">{recipe.name}</h3>
+                  <h3 className="font-heading font-semibold text-[var(--ag-text-primary)] mb-1">{recipe.name}</h3>
                   <p className="text-sm text-[var(--ag-text-secondary)] mb-4 flex-1">{recipe.description}</p>
 
                   {/* Required Integrations */}
@@ -293,9 +294,9 @@ export function RecipesPage() {
                           key={int}
                           className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize"
                           style={{
-                            color: ECHO,
-                            borderColor: `${ECHO}30`,
-                            backgroundColor: `${ECHO}10`,
+                            color: 'var(--ag-echo)',
+                            borderColor: `var(--ag-echo)30`,
+                            backgroundColor: `var(--ag-echo)10`,
                           }}
                         >
                           {int}
@@ -308,7 +309,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full min-h-[44px] border-[#6B7280]/30 text-[var(--ag-text-muted)] hover:border-[#FF6161]/50 hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors"
+                      className="w-full min-h-[44px] border-[var(--ag-text-muted)]/30 text-[var(--ag-text-muted)] hover:border-[var(--ag-pink)]/50 hover:text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 transition-colors"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -319,7 +320,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+                      className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-all hover:shadow-[0_0_16px_var(--ag-violet)/30] hover:scale-[1.02] active:scale-[0.98]"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -335,6 +336,6 @@ export function RecipesPage() {
           })}
         </div>
       )}
-    </PageShell>
+    </DashboardPageWrapper>
   );
 }

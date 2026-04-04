@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Search, Activity, Briefcase, Bell, Link2, Bot, Filter, Trash2, Download, Flame, Calendar, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -31,21 +32,20 @@ const FILTER_ICONS: Record<FilterType, typeof Activity> = {
 };
 
 const FILTER_COLORS: Record<FilterType, string> = {
-  All: '#10B981',
-  Portfolio: '#BF5FFF',
-  Reminders: '#F59E0B',
-  Integrations: '#00FF88',
-  Agent: '#EC4899',
+  All: 'var(--ag-green)',
+  Portfolio: 'var(--ag-violet)',
+  Reminders: 'var(--ag-amber)',
+  Integrations: 'var(--ag-emerald)',
+  Agent: 'var(--ag-pink)',
 };
 
 function ActivityIcon({ icon }: { icon: string }) {
   const category = getCategory(icon) as FilterType;
-  const color = FILTER_COLORS[category] ?? '#6B7280';
+  const color = FILTER_COLORS[category] ?? 'var(--ag-text-muted)';
   const Icon = FILTER_ICONS[category] ?? Activity;
   return (
     <div
-      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-      style={{ backgroundColor: `${color}15` }}
+      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--ag-bg-subtle)] border border-[var(--ag-border-subtle)]"
     >
       <Icon className="w-4 h-4" style={{ color }} />
     </div>
@@ -88,11 +88,11 @@ const HEATMAP_WEEKS = 13;
 const DAY_LABELS_MAP: Record<number, string> = { 0: 'Mon', 2: 'Wed', 4: 'Fri' };
 
 function getHeatmapColor(count: number): string {
-  if (count === 0) return '#0C0C18';
-  if (count <= 2) return 'rgba(16,185,129,0.2)';
-  if (count <= 5) return 'rgba(16,185,129,0.4)';
-  if (count <= 10) return 'rgba(16,185,129,0.6)';
-  return '#10B981';
+  if (count === 0) return 'var(--ag-bg-surface)';
+  if (count <= 2) return 'hsl(from var(--ag-green) h s l / 0.2)';
+  if (count <= 5) return 'hsl(from var(--ag-green) h s l / 0.4)';
+  if (count <= 10) return 'hsl(from var(--ag-green) h s l / 0.6)';
+  return 'var(--ag-green)';
 }
 
 function buildHeatmapGrid(raw: Array<{ date: string; count: number }>): { grid: HeatmapDay[][]; monthLabels: Array<{ label: string; col: number }> } {
@@ -177,7 +177,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Flame className="w-4 h-4 text-[var(--ag-green)]" />
-          <span className="text-sm font-medium text-[var(--ag-text-primary)]">Activity Heatmap</span>
+          <span className="text-sm font-heading text-[var(--ag-text-primary)]">Activity Heatmap</span>
           <span className="text-xs text-[var(--ag-text-muted)]">last 90 days</span>
         </div>
         <span className="text-xs text-[var(--ag-text-muted)]">{totalEvents} total events</span>
@@ -254,7 +254,7 @@ function ActivityHeatmap({ data }: { data: Array<{ date: string; count: number }
           {/* Tooltip */}
           {tooltip && (
             <div
-              className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[var(--ag-text-primary)] bg-[#12121F] border border-[var(--ag-border-subtle)] shadow-lg whitespace-nowrap"
+              className="absolute pointer-events-none z-50 px-2 py-1 rounded-md text-xs text-[var(--ag-text-primary)] bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] shadow-lg whitespace-nowrap"
               style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}
             >
               {tooltip.text}
@@ -322,11 +322,11 @@ function StatsBar({ stats }: { stats: ActivityStats }) {
           key={label}
           className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all"
         >
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#10B981]/10 flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--ag-bg-subtle)] flex-shrink-0">
             <Icon className="w-3.5 h-3.5 text-[var(--ag-green)]" />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold text-[var(--ag-text-primary)] tabular-nums">{value.toLocaleString()}</div>
+            <div className="text-sm font-heading text-[var(--ag-text-primary)] tabular-nums">{value.toLocaleString()}</div>
             <div className="text-[10px] text-[var(--ag-text-muted)] leading-none">{label}</div>
           </div>
         </div>
@@ -471,21 +471,22 @@ export function ActivityPage() {
     <DashboardPageWrapper>
     <PullToRefreshWrapper onRefresh={handlePullRefresh}>
     <PageShell>
-    <div data-testid="activity-page" className="space-y-4 md:space-y-6 animate-in fade-in duration-500 px-1 md:px-0 pb-24 md:pb-6">
+    <div data-testid="activity-page" className="space-y-4 md:space-y-6 px-1 md:px-0 pb-24 md:pb-6">
       {/* Header — Pulse ownership */}
-      <PageHeader
-        icon={Activity}
-        title="Activity Log"
-        subtitle={`${displayTotal || entries.length} total events recorded`}
-        badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
+      <BlurFade delay={0.1}>
+        <PageHeader
+          icon={Activity}
+          title="Activity Log"
+          subtitle={`${displayTotal || entries.length} total events recorded`}
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-green)]/10 border border-[var(--ag-green)]/30 text-[var(--ag-green)]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-green)] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-green)]" />
+              </span>
+              Pulse
             </span>
-            Pulse
-          </span>
-        }
+          }
         actions={
           entries.length > 0 ? (
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -495,7 +496,7 @@ export function ActivityPage() {
                 variant="outline"
                 onClick={handleExport}
                 disabled={exporting}
-                className="min-h-[44px] border-[#10B981]/30 text-[#10B981]/70 hover:text-[#10B981] hover:border-[#10B981]/50"
+                className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] bg-clip-border border-transparent text-white hover:opacity-90 transition-opacity"
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />{exporting ? 'Exporting...' : 'Export CSV'}
               </Button>
@@ -507,7 +508,7 @@ export function ActivityPage() {
                     variant="destructive"
                     onClick={handleClearAll}
                     disabled={isClearing}
-                    className="min-h-[44px] bg-[#FF6161]/20 border border-[#FF6161]/40 text-[#FF6161] hover:bg-[#FF6161]/30"
+                    className="min-h-[44px] bg-[var(--ag-red)]/20 border border-[var(--ag-red)]/40 text-[var(--ag-red)] hover:bg-[var(--ag-red)]/30"
                   >
                     {isClearing ? 'Clearing...' : 'Yes, clear'}
                   </Button>
@@ -523,207 +524,226 @@ export function ActivityPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => setShowClearConfirm(true)}
-                  className="min-h-[44px] border-[#FF6161]/30 text-[#FF6161]/70 hover:text-[#FF6161] hover:border-[#FF6161]/50"
+                  className="min-h-[44px] border-[var(--ag-red)]/30 text-[var(--ag-red)]/70 hover:text-[var(--ag-red)] hover:border-[var(--ag-red)]/50"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-1.5" />Clear all
                 </Button>
               )}
             </div>
           ) : undefined
-        }
-      />
+          }
+        />
+      </BlurFade>
 
       {/* GAP-8: Stats Bar */}
-      <StatsBar stats={stats} />
+      <BlurFade delay={0.2}>
+        <StatsBar stats={stats} />
+      </BlurFade>
 
       {/* GAP-8: Activity Heatmap */}
-      {heatmapLoading ? (
-        <SectionCard>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-4 h-4 rounded bg-[#1a1a2e] animate-pulse" />
-            <div className="h-4 w-32 rounded bg-[#1a1a2e] animate-pulse" />
-          </div>
-          <div className="flex gap-[1px] ml-8">
-            {Array.from({ length: 13 }).map((_, i) => (
-              <div key={i} className="flex flex-col gap-[1px]">
-                {Array.from({ length: 7 }).map((_, j) => (
-                  <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[#1a1a2e] animate-pulse" />
-                ))}
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-      ) : (
-        <ActivityHeatmap data={heatmapData} />
-      )}
+      <BlurFade delay={0.3}>
+        {heatmapLoading ? (
+          <SectionCard>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-4 h-4 rounded bg-[var(--ag-bg-subtle)] animate-pulse" />
+              <div className="h-4 w-32 rounded bg-[var(--ag-bg-subtle)] animate-pulse" />
+            </div>
+            <div className="flex gap-[1px] ml-8">
+              {Array.from({ length: 13 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-[1px]">
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <div key={j} className="w-[13px] h-[13px] rounded-[2px] bg-[var(--ag-bg-subtle)] animate-pulse" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        ) : (
+          <ActivityHeatmap data={heatmapData} />
+        )}
+      </BlurFade>
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
-        <Input
-          placeholder="Search by action or details..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[var(--ag-border-default)] text-[var(--ag-text-primary)] min-h-[44px]"
-        />
-      </div>
+      <BlurFade delay={0.4}>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-muted)]" />
+          <Input
+            placeholder="Search by action or details..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] focus:border-[var(--ag-border-default)] text-[var(--ag-text-primary)] min-h-[44px]"
+          />
+        </div>
+      </BlurFade>
 
       {/* 65.9: Date-range filter */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ag-text-muted)]">
-        <span>From:</span>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
-          aria-label="Filter from date"
-        />
-        <span>To:</span>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
-          aria-label="Filter to date"
-        />
-        {(dateFrom || dateTo) && (
-          <button
-            onClick={() => { setDateFrom(''); setDateTo(''); }}
-            className="text-[#FF6161] hover:text-[#FF6161]/80 transition-colors min-h-[44px] px-2 flex items-center"
-            aria-label="Clear date range"
-          >
-            Clear dates
-          </button>
-        )}
-      </div>
+      <BlurFade delay={0.5}>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ag-text-muted)]">
+          <span>From:</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+            aria-label="Filter from date"
+          />
+          <span>To:</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="px-2 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-xs min-h-[44px]"
+            aria-label="Filter to date"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-[var(--ag-red)] hover:text-[var(--ag-red)]/80 transition-colors min-h-[44px] px-2 flex items-center"
+              aria-label="Clear date range"
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
+      </BlurFade>
 
       {/* Filter chips */}
-      <div data-testid="filter-chips" className="flex gap-2 flex-wrap">
-        <Filter className="w-4 h-4 text-[var(--ag-text-muted)] self-center flex-shrink-0" />
-        {FILTER_CHIPS.map((chip) => {
-          const Icon = FILTER_ICONS[chip];
-          const color = FILTER_COLORS[chip];
-          const isActive = activeFilter === chip;
-          return (
-            <button
-              key={chip}
-              onClick={() => setActiveFilter(chip)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border ${
-                isActive
-                  ? 'border-current'
-                  : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)]'
-              }`}
-              style={isActive ? { color, backgroundColor: `${color}15`, borderColor: `${color}60` } : {}}
-            >
-              <Icon className="w-3 h-3" />
-              {chip}
-              {isActive && (
-                <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ color, backgroundColor: `${color}15` }}>
-                  {displayTotal}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <BlurFade delay={0.6}>
+        <div data-testid="filter-chips" className="flex gap-2 flex-wrap">
+          <Filter className="w-4 h-4 text-[var(--ag-text-muted)] self-center flex-shrink-0" />
+          {FILTER_CHIPS.map((chip) => {
+            const Icon = FILTER_ICONS[chip];
+            const color = FILTER_COLORS[chip];
+            const isActive = activeFilter === chip;
+            return (
+              <button
+                key={chip}
+                onClick={() => setActiveFilter(chip)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border backdrop-blur-xl ${
+                  isActive
+                    ? 'border-current bg-[var(--ag-bg-surface)]'
+                    : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)]/50'
+                }`}
+                style={isActive ? { color, borderColor: color } : {}}
+              >
+                <Icon className="w-3 h-3" />
+                {chip}
+                {isActive && (
+                  <span className="px-1.5 py-0.5 rounded-full text-xs bg-[var(--ag-bg-subtle)]">
+                    {displayTotal}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </BlurFade>
 
       {/* 66.7: Category color legend */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ag-text-muted)]">
-        <span className="font-medium">Legend:</span>
-        {(Object.entries(FILTER_COLORS) as Array<[FilterType, string]>).filter(([k]) => k !== 'All').map(([cat, color]) => (
-          <span key={cat} className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-            {cat}
-          </span>
-        ))}
-      </div>
+      <BlurFade delay={0.7}>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--ag-text-muted)]">
+          <span className="font-heading">Legend:</span>
+          {(Object.entries(FILTER_COLORS) as Array<[FilterType, string]>).filter(([k]) => k !== 'All').map(([cat, color]) => (
+            <span key={cat} className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+              {cat}
+            </span>
+          ))}
+        </div>
+      </BlurFade>
 
       {/* Activity list */}
-      <SectionCard padding="sm" className="!p-0">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center mx-auto mb-4">
-              <Activity className="w-8 h-8 text-[#10B981]/40" />
+      <BlurFade delay={0.8}>
+        <SectionCard padding="sm" className="!p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-[var(--ag-green)] border-t-transparent rounded-full animate-spin" />
             </div>
-            <p className="text-[var(--ag-text-primary)] font-medium mb-1">
-              {serverQ || activeFilter !== 'All'
-                ? 'No events match your filters'
-                : 'No activity yet'}
-            </p>
-            <p className="text-sm text-[var(--ag-text-muted)]">
-              {serverQ || activeFilter !== 'All'
-                ? 'Try adjusting your search or filters'
-                : 'Every action you take -- chats, reminders, habits, integrations -- is tracked here so you can review what your AI has been doing for you'}
-            </p>
-            {(serverQ || activeFilter !== 'All') && (
-              <button
-                onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
-                className="text-xs text-[var(--ag-green)] hover:underline mt-3 min-h-[44px]"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-[var(--ag-border-subtle)]">
-            {filtered.map((entry) => (
-              <div
-                key={entry.id}
-                className="group flex items-start gap-3 px-4 py-3 hover:bg-[#10B981]/5 transition-colors"
-              >
-                <ActivityIcon icon={entry.icon} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{entry.action}</p>
-                  {entry.details && (
-                    <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">{entry.details}</p>
-                  )}
-                </div>
-                <div className="flex-shrink-0 text-right flex items-start gap-2">
-                  <div>
-                    <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">
-                      {timeAgo(entry.created_at)}
-                    </span>
-                    <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">
-                      {getCategory(entry.icon)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => { void handleDelete(entry.id); }}
-                    onTouchEnd={(e) => { e.preventDefault(); void handleDelete(entry.id); }}
-                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[var(--ag-text-muted)] hover:text-[#FF6161] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label="Delete this entry"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <div className="w-16 h-16 rounded-2xl bg-[var(--ag-bg-subtle)] border border-[var(--ag-border-subtle)] flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-8 h-8 text-[var(--ag-text-muted)]" />
               </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+              <p className="text-[var(--ag-text-primary)] font-heading mb-1">
+                {serverQ || activeFilter !== 'All'
+                  ? 'No events match your filters'
+                  : 'No activity yet'}
+              </p>
+              <p className="text-sm text-[var(--ag-text-muted)]">
+                {serverQ || activeFilter !== 'All'
+                  ? 'Try adjusting your search or filters'
+                  : 'Every action you take -- chats, reminders, habits, integrations -- is tracked here so you can review what your AI has been doing for you'}
+              </p>
+              {(serverQ || activeFilter !== 'All') && (
+                <button
+                  onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
+                  className="text-xs text-[var(--ag-green)] hover:underline mt-3 min-h-[44px]"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--ag-border-subtle)]">
+              {filtered.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="group flex items-start gap-3 px-4 py-3 hover:bg-[var(--ag-bg-subtle)] transition-colors"
+                >
+                  <ActivityIcon icon={entry.icon} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)] truncate">{entry.action}</p>
+                    {entry.details && (
+                      <p className="text-xs text-[var(--ag-text-muted)] truncate mt-0.5">{entry.details}</p>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 text-right flex items-start gap-2">
+                    <div>
+                      <span title={luxonFormatDateTime(new Date(parseSqliteTs(entry.created_at)))} className="text-xs text-[var(--ag-text-secondary)] whitespace-nowrap">
+                        {timeAgo(entry.created_at)}
+                      </span>
+                      <p className="text-xs text-[var(--ag-text-muted)] mt-0.5">
+                        {getCategory(entry.icon)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { void handleDelete(entry.id); }}
+                      onTouchEnd={(e) => { e.preventDefault(); void handleDelete(entry.id); }}
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 rounded text-[var(--ag-text-muted)] hover:text-[var(--ag-red)] transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label="Delete this entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      </BlurFade>
 
       {entries.length > 0 && entries.length < total && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#10B981]/30 text-[var(--ag-green)] text-sm hover:bg-[#10B981]/10 disabled:opacity-50 transition-colors min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#10B981]/50"
-          >
-            {loadingMore ? (
-              <div className="w-4 h-4 border-2 border-[#10B981]/30 border-t-[#10B981] rounded-full animate-spin" />
-            ) : null}
-            {loadingMore ? 'Loading...' : `Load more (${total - entries.length} remaining)`}
-          </button>
-        </div>
+        <BlurFade delay={0.9}>
+          <div className="flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white text-sm hover:opacity-90 disabled:opacity-50 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 backdrop-blur-xl"
+            >
+              {loadingMore ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : null}
+              {loadingMore ? 'Loading...' : `Load more (${total - entries.length} remaining)`}
+            </button>
+          </div>
+        </BlurFade>
       )}
       {filtered.length > 0 && (
-        <p className="text-xs text-[var(--ag-text-muted)] text-center">
-          Showing {filtered.length} of {displayTotal} events
-        </p>
+        <BlurFade delay={1.0}>
+          <p className="text-xs text-[var(--ag-text-muted)] text-center">
+            Showing {filtered.length} of {displayTotal} events
+          </p>
+        </BlurFade>
       )}
     </div>
     </PageShell>

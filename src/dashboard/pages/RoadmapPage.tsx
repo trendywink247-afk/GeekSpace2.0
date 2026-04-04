@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import {
   Rocket,
@@ -453,12 +454,12 @@ export function RoadmapPage() {
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'accepted': return '#00FF88';
-      case 'triaged': return '#A78BFA';
-      case 'rejected': return '#FF2D78';
-      case 'shipped_main': return '#BF5FFF';
-      case 'shipped_prod': return '#F59E0B';
-      default: return '#6B7280';
+      case 'accepted': return 'var(--ag-green)';
+      case 'triaged': return 'var(--ag-cyan)';
+      case 'rejected': return 'var(--ag-pink)';
+      case 'shipped_main': return 'var(--ag-violet)';
+      case 'shipped_prod': return 'var(--ag-amber)';
+      default: return 'var(--ag-text-muted)';
     }
   };
 
@@ -475,11 +476,11 @@ export function RoadmapPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-[#00FF88]/15 text-[#00FF88] border-[#00FF88]/30 shadow-[0_0_8px_rgba(0,255,136,0.1)]">Shipped</Badge>;
+        return <Badge className="bg-[var(--ag-green)]/15 text-[var(--ag-green)] border-[var(--ag-green)]/30 shadow-[0_0_8px_rgba(16,185,129,0.1)]">Shipped</Badge>;
       case 'in-progress':
-        return <Badge className="bg-[#8B5CF6]/15 text-[var(--ag-violet)] border-[var(--ag-violet)]/30 shadow-[0_0_8px_rgba(139,92,246,0.1)]">In Progress</Badge>;
+        return <Badge className="bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] border-[var(--ag-violet)]/30 shadow-[0_0_8px_rgba(139,92,246,0.1)]">In Progress</Badge>;
       default:
-        return <Badge className="bg-[#6B7280]/15 text-[var(--ag-text-secondary)] border-[#6B7280]/30">Planned</Badge>;
+        return <Badge className="bg-[var(--ag-text-muted)]/15 text-[var(--ag-text-secondary)] border-[var(--ag-text-muted)]/30">Planned</Badge>;
     }
   };
 
@@ -495,10 +496,10 @@ export function RoadmapPage() {
         badge={
           <span className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5" title="Nova">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EC4899] opacity-60" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#EC4899]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-nova)] opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-nova)]" />
             </span>
-            <Badge className="bg-[#EC4899]/15 text-[#EC4899] border-[#EC4899]/30 text-xs">Nova</Badge>
+            <Badge className="bg-[var(--ag-nova)]/15 text-[var(--ag-nova)] border-[var(--ag-nova)]/30 text-xs">Nova</Badge>
             <Badge className="bg-[rgba(139,92,246,0.1)] text-[var(--ag-violet)] border-[rgba(139,92,246,0.15)] text-xs">v{pkgJson.version}</Badge>
           </span>
         }
@@ -552,7 +553,7 @@ export function RoadmapPage() {
         </div>
         <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#00FF88]" />
+            <CheckCircle2 className="w-4 h-4 text-[var(--ag-green)]" />
             <span className="text-[var(--ag-text-primary)]">{completedCount} Completed</span>
           </div>
           <div className="flex items-center gap-2">
@@ -729,11 +730,11 @@ export function RoadmapPage() {
                         className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
                       />
                     </div>
-                    {submitError && <p className="text-xs text-[#FF2D78]">{submitError}</p>}
+                    {submitError && <p className="text-xs text-[var(--ag-pink)]">{submitError}</p>}
                     <Button
                       onClick={handleSubmit}
                       disabled={submitting || !formTitle.trim() || formBody.trim().length < 20}
-                      className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
+                      className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px]"
                     >
                       {submitting ? 'Submitting\u2026' : 'Submit Idea'}
                     </Button>
@@ -745,29 +746,29 @@ export function RoadmapPage() {
 
         {/* My Suggestions list */}
         <div className="mb-4">
-          <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#EC4899]" />
+          <h4 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-[var(--ag-nova)]" />
             My Suggestions
             {mySuggestions.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-[#EC4899]/15 text-[#EC4899] text-xs font-bold border border-[#EC4899]/30">
+              <span className="px-1.5 py-0.5 rounded-full bg-[var(--ag-nova)]/15 text-[var(--ag-nova)] text-xs font-bold border border-[var(--ag-nova)]/30">
                 {mySuggestions.length}
               </span>
             )}
           </h4>
           {loadError && (
-            <div className="mb-3 px-3 py-2 rounded-lg bg-[#FF2D78]/10 border border-[#FF2D78]/30 text-xs text-[#FF2D78]">
+            <div className="mb-3 px-3 py-2 rounded-lg bg-[var(--ag-pink)]/10 border border-[var(--ag-pink)]/30 text-xs text-[var(--ag-pink)]">
               {loadError}
             </div>
           )}
           {loadingSuggestions ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] animate-pulse">
+                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] animate-pulse">
                   <div className="flex-1 space-y-2">
-                    <div className="h-3.5 bg-[rgba(139,92,246,0.06)] rounded w-3/4" />
-                    <div className="h-2.5 bg-[rgba(139,92,246,0.04)] rounded w-1/2" />
+                    <div className="h-3.5 bg-[var(--ag-violet)]/6 rounded w-3/4" />
+                    <div className="h-2.5 bg-[var(--ag-violet)]/4 rounded w-1/2" />
                   </div>
-                  <div className="h-6 w-16 bg-[rgba(139,92,246,0.06)] rounded-full" />
+                  <div className="h-6 w-16 bg-[var(--ag-violet)]/6 rounded-full" />
                 </div>
               ))}
             </div>
@@ -780,7 +781,7 @@ export function RoadmapPage() {
                 const upvotes = vs?.upvotes ?? (s.upvotes ?? 0);
                 const downvotes = vs?.downvotes ?? (s.downvotes ?? 0);
                 return (
-                  <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+                  <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[var(--ag-text-primary)] truncate">{s.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -789,12 +790,12 @@ export function RoadmapPage() {
                           <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                         </span>
                         {downvotes > 0 && (
-                          <span className="flex items-center gap-0.5 text-xs text-[#FF6161]">
+                          <span className="flex items-center gap-0.5 text-xs text-[var(--ag-pink)]">
                             <ThumbsDown className="w-2.5 h-2.5" /> {downvotes}
                           </span>
                         )}
                         {s.trending === 1 && (
-                          <span className="text-xs text-[#F59E0B] font-semibold">trending</span>
+                          <span className="text-xs text-[var(--ag-amber)] font-semibold">trending</span>
                         )}
                       </div>
                     </div>
@@ -808,7 +809,7 @@ export function RoadmapPage() {
                           .catch(() => {})
                           .finally(() => setLoadingEvents(false));
                       }}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[var(--ag-violet)] text-xs font-medium transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--ag-violet)]/10 hover:bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] text-xs font-medium transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
                       aria-label="View details"
                     >
                       <Eye className="w-3 h-3" />
@@ -816,7 +817,7 @@ export function RoadmapPage() {
                     <button
                       onClick={() => void handleVote(s.id)}
                       disabled={vs?.voting}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#EC4899]/10 hover:bg-[#EC4899]/20 text-[#EC4899] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--ag-nova)]/10 hover:bg-[var(--ag-nova)]/20 text-[var(--ag-nova)] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
                       aria-label="Upvote this suggestion"
                     >
                       <ThumbsUp className="w-3 h-3" />
@@ -826,7 +827,7 @@ export function RoadmapPage() {
                     {s.status === 'new' && (
                       <button
                         onClick={() => { setEditingSuggestion(s); setEditTitle(s.title); setEditBody(s.body); setEditError(''); }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[rgba(139,92,246,0.1)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[var(--ag-violet)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] text-xs transition-colors flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
                         aria-label="Edit suggestion"
                       >
                         <Pencil className="w-3 h-3" />
@@ -836,7 +837,7 @@ export function RoadmapPage() {
                       <button
                         onClick={() => setDeleteDialogId(s.id)}
                         disabled={deletingId === s.id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[#FF2D78]/10 text-[var(--ag-text-secondary)] hover:text-[#FF2D78] text-xs transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-transparent hover:bg-[var(--ag-pink)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-pink)] text-xs transition-colors disabled:opacity-50 flex-shrink-0 min-w-[44px] min-h-[44px] justify-center"
                         aria-label="Delete suggestion"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -855,7 +856,7 @@ export function RoadmapPage() {
               {mySuggestions.length > 5 && (
                 <button
                   onClick={() => setShowAllSuggestions(prev => !prev)}
-                  className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/5 hover:bg-[#8B5CF6]/10 text-[var(--ag-violet)] text-xs font-medium transition-colors min-h-[44px]"
+                  className="flex items-center gap-1.5 mx-auto mt-2 px-3 py-1.5 rounded-lg bg-[var(--ag-violet)]/5 hover:bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] text-xs font-medium transition-colors min-h-[44px]"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
                   {showAllSuggestions ? 'Show less' : `View all ${mySuggestions.length} suggestions`}
@@ -868,13 +869,13 @@ export function RoadmapPage() {
         {/* Popular Ideas (top clusters) */}
         {topClusters.length > 0 && (
           <div className="mb-4">
-            <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
               <Layers className="w-4 h-4 text-[var(--ag-violet)]" />
               Popular Ideas
             </h4>
             <div className="space-y-2">
               {topClusters.map(cluster => (
-                <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+                <div key={cluster.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[var(--ag-text-primary)] truncate">
                       {cluster.name || cluster.canonical_summary}
@@ -884,7 +885,7 @@ export function RoadmapPage() {
                     )}
                   </div>
                   {cluster.total_votes !== undefined && (
-                    <span className="flex items-center gap-1 text-xs text-[#EC4899] flex-shrink-0">
+                    <span className="flex items-center gap-1 text-xs text-[var(--ag-nova)] flex-shrink-0">
                       <ThumbsUp className="w-3 h-3" /> {cluster.total_votes}
                     </span>
                   )}
@@ -897,22 +898,22 @@ export function RoadmapPage() {
         {/* Earned Credits */}
         {myRewards.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-              <Gift className="w-4 h-4 text-[#F59E0B]" />
+            <h4 className="text-sm font-semibold font-heading text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+              <Gift className="w-4 h-4 text-[var(--ag-amber)]" />
               Earned Credits
-              <span className="text-[#F59E0B] font-bold ml-auto">
+              <span className="text-[var(--ag-amber)] font-bold ml-auto">
                 +{myRewards.reduce((sum, r) => sum + r.credits, 0)} credits
               </span>
             </h4>
             <div className="space-y-2">
               {myRewards.slice(0, 5).map(r => (
-                <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/20">
-                  <Gift className="w-4 h-4 text-[#F59E0B] flex-shrink-0" />
+                <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--ag-amber)]/5 border border-[var(--ag-amber)]/20">
+                  <Gift className="w-4 h-4 text-[var(--ag-amber)] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[var(--ag-text-primary)]">{getRewardLabel(r.eventType)}</p>
                     <p className="text-xs text-[var(--ag-text-secondary)]">{new Date(r.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className="text-sm font-bold text-[#F59E0B] flex-shrink-0">+{r.credits}</span>
+                  <span className="text-sm font-bold text-[var(--ag-amber)] flex-shrink-0">+{r.credits}</span>
                 </div>
               ))}
             </div>
@@ -921,22 +922,24 @@ export function RoadmapPage() {
       </SectionCard>
 
       {/* CTA */}
-      <SectionCard padding="lg" className="text-center">
-        <Sparkles className="w-8 h-8 text-[#EC4899] mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-[var(--ag-text-primary)] mb-2">
-          Have a feature request?
-        </h3>
-        <p className="text-sm text-[var(--ag-text-secondary)] mb-4">
-          We're building Agentin for you. Let us know what you'd like to see next.
-        </p>
-        <button
-          onClick={() => setSuggestionOpen(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium transition-all duration-200 min-h-[44px]"
-        >
-          Share Feedback
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </SectionCard>
+      <BlurFade delay={0.7}>
+        <SectionCard padding="lg" className="text-center">
+          <Sparkles className="w-8 h-8 text-[var(--ag-nova)] mx-auto mb-3" />
+          <h3 className="text-lg font-semibold font-heading text-[var(--ag-text-primary)] mb-2">
+            Have a feature request?
+          </h3>
+          <p className="text-sm text-[var(--ag-text-secondary)] mb-4">
+            We're building Agentin for you. Let us know what you'd like to see next.
+          </p>
+          <button
+            onClick={() => setSuggestionOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-all duration-200 min-h-[44px] min-w-[44px]"
+          >
+            Share Feedback
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </SectionCard>
+      </BlurFade>
 
       {/* Recent Improvements */}
       {(() => {
@@ -946,13 +949,14 @@ export function RoadmapPage() {
           { phase: 70, title: 'Release Train R3 — v3.1.0 production deploy, clusters, trending' },
         ];
         return (
-          <SectionCard title="Recent Improvements" padding="lg">
+          <BlurFade delay={0.8}>
+            <SectionCard title="Recent Improvements" padding="lg">
             <div className="space-y-3">
               {RECENT_IMPROVEMENTS.map((item, idx) => (
                 <div key={item.phase} className="flex items-start gap-3">
                   <div className={`flex-shrink-0 w-px self-stretch bg-[#EC4899]/20 ml-5 ${idx === 0 ? 'mt-6' : ''}`} aria-hidden="true" />
                   <div className="flex items-start gap-3 flex-1 pb-3 border-b border-[rgba(139,92,246,0.08)] last:border-0">
-                    <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[#EC4899]/15 text-[#EC4899] text-xs font-bold border border-[#EC4899]/30">
+                    <span className="flex-shrink-0 px-2 py-0.5 rounded-full bg-[var(--ag-nova)]/15 text-[var(--ag-nova)] text-xs font-bold border border-[var(--ag-nova)]/30">
                       v{item.phase}
                     </span>
                     <p className="text-sm text-[var(--ag-text-secondary)] leading-relaxed">{item.title}</p>
@@ -961,6 +965,7 @@ export function RoadmapPage() {
               ))}
             </div>
           </SectionCard>
+          </BlurFade>
         );
       })()}
 
@@ -994,19 +999,19 @@ export function RoadmapPage() {
                 />
                 <p className="text-right text-xs text-[var(--ag-text-secondary)]">{editBody.length}/2000</p>
               </div>
-              {editError && <p className="text-xs text-[#FF2D78]">{editError}</p>}
+              {editError && <p className="text-xs text-[var(--ag-pink)]">{editError}</p>}
               <div className="flex gap-2">
                 <Button
                   onClick={() => setEditingSuggestion(null)}
                   variant="outline"
-                  className="flex-1 border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] min-h-[44px]"
+                  className="flex-1 border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] min-h-[44px]"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={() => void handleEdit()}
                   disabled={editSaving || !editTitle.trim() || editBody.trim().length < 20}
-                  className="flex-1 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold min-h-[44px]"
+                  className="flex-1 bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px]"
                 >
                   {editSaving ? 'Saving\u2026' : 'Save Changes'}
                 </Button>
@@ -1085,10 +1090,10 @@ export function RoadmapPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteDialogId} onOpenChange={(open) => { if (!open) setDeleteDialogId(null); }}>
-        <DialogContent className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)]">
+        <DialogContent className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-default)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-[var(--ag-text-primary)]">
-              <Trash2 className="w-5 h-5 text-[#FF2D78]" />
+            <DialogTitle className="flex items-center gap-2 text-[var(--ag-text-primary)] font-heading">
+              <Trash2 className="w-5 h-5 text-[var(--ag-pink)]" />
               Delete this suggestion?
             </DialogTitle>
             <DialogDescription className="text-[var(--ag-text-secondary)]">

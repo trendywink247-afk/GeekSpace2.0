@@ -35,6 +35,8 @@ import {
   StatCardSkeleton, MemoryCardSkeleton,
   MemoryGraph, StatsTab,
 } from './MemoryHubComponents';
+import { StaggeredList, fadeInUp } from '@/components/agentin';
+import { motion } from 'framer-motion';
 
 type HubTab = 'browse' | 'graph' | 'stats';
 
@@ -309,7 +311,7 @@ export function MemoryHubPage() {
     <DashboardPageWrapper>
     <PageShell>
     {/* Echo dot */}
-    <div className="absolute top-5 right-5 w-2 h-2 rounded-full bg-[#6366F1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="echo" />
+    <div className="absolute top-5 right-5 w-2 h-2 rounded-full bg-[var(--ag-echo)] shadow-[0_0_8px_rgba(99,102,241,0.5)]" title="echo" />
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <PageHeader
@@ -339,7 +341,12 @@ export function MemoryHubPage() {
       />
 
       {/* Hub tab switcher */}
-      <div className="flex items-center bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg p-0.5 w-fit">
+      <motion.div 
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+        className="flex items-center bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-0.5 w-fit"
+      >
         {hubTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -347,8 +354,8 @@ export function MemoryHubPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors min-h-[44px] ${
-                isActive ? 'bg-[#6366F1]/20 text-[#6366F1]' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                isActive ? 'bg-[var(--ag-echo)]/20 text-[var(--ag-echo)]' : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -356,7 +363,7 @@ export function MemoryHubPage() {
             </button>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Loading state */}
       {isLoading && (
@@ -374,9 +381,9 @@ export function MemoryHubPage() {
       {!isLoading && loadError && (
         <div className="text-center py-16">
           <AlertTriangle className="w-16 h-16 text-[var(--ag-pink)]/40 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">Could not load memories</h3>
+          <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>Could not load memories</h3>
           <p className="text-[var(--ag-text-secondary)] max-w-sm mx-auto mb-4">{loadError}</p>
-          <Button onClick={() => void loadMemories()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+          <Button onClick={() => void loadMemories()} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:opacity-90 text-white min-h-[44px] transition-opacity">
             <RefreshCw className="w-4 h-4 mr-2" /> Retry
           </Button>
         </div>
@@ -386,15 +393,15 @@ export function MemoryHubPage() {
       {!isLoading && !loadError && !hasMemories && (
         <div className="text-center py-16 space-y-5">
           <div className="relative mx-auto w-20 h-20">
-            <div className="w-20 h-20 rounded-2xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center animate-pulse">
-              <Brain className="w-10 h-10 text-[#6366F1]/50" />
+            <div className="w-20 h-20 rounded-2xl bg-[var(--ag-echo)]/10 border border-[var(--ag-echo)]/20 flex items-center justify-center animate-pulse">
+              <Brain className="w-10 h-10 text-[var(--ag-echo)]/50" />
             </div>
             <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--ag-lime)]/15 border border-[var(--ag-lime)]/30 flex items-center justify-center">
               <Sparkles className="w-3 h-3 text-[var(--ag-lime)]" />
             </span>
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">No memories yet</h3>
+            <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>No memories yet</h3>
             <p className="text-[var(--ag-text-secondary)] text-sm max-w-xs mx-auto leading-relaxed">
               Your AI remembers everything you teach it. Start a conversation or add a memory below.
             </p>
@@ -402,7 +409,7 @@ export function MemoryHubPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
               onClick={() => navigate('/dashboard/chat')}
-              className="bg-[#6366F1]/15 hover:bg-[#6366F1]/25 text-[#6366F1] border border-[#6366F1]/25 min-h-[44px] px-6"
+              className="bg-[var(--ag-echo)]/15 hover:bg-[var(--ag-echo)]/25 text-[var(--ag-echo)] border border-[var(--ag-echo)]/25 min-h-[44px] px-6"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Start Chat
@@ -426,7 +433,7 @@ export function MemoryHubPage() {
               <Button
                 onClick={() => void handleQuickAdd()}
                 disabled={isAdding || !quickAddText.trim()}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[44px] min-h-[44px]"
+                className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:opacity-90 text-white min-w-[44px] min-h-[44px] transition-opacity"
               >
                 {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
@@ -439,41 +446,49 @@ export function MemoryHubPage() {
       {!isLoading && !loadError && hasMemories && activeTab === 'browse' && (
         <>
           {/* Quick-add bar */}
-          <SectionCard>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
-                <Input
-                  ref={quickAddInputRef}
-                  placeholder="Add a memory... (e.g. 'favorite color: blue' or 'I work at Google')"
-                  value={quickAddText}
-                  onChange={e => setQuickAddText(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleQuickAdd(); } }}
-                  className="pl-10 bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]"
-                />
+          <motion.div variants={fadeInUp} initial="initial" animate="animate">
+            <SectionCard>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
+                  <Input
+                    ref={quickAddInputRef}
+                    placeholder="Add a memory... (e.g. 'favorite color: blue' or 'I work at Google')"
+                    value={quickAddText}
+                    onChange={e => setQuickAddText(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleQuickAdd(); } }}
+                    className="pl-10 bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]"
+                  />
+                </div>
+                <Select value={quickAddCategory} onValueChange={setQuickAddCategory}>
+                  <SelectTrigger className="w-full sm:w-[140px] bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => void handleQuickAdd()}
+                  disabled={isAdding || !quickAddText.trim()}
+                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:opacity-90 text-white min-w-[44px] min-h-[44px] transition-opacity"
+                >
+                  {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
               </div>
-              <Select value={quickAddCategory} onValueChange={setQuickAddCategory}>
-                <SelectTrigger className="w-full sm:w-[140px] bg-[var(--ag-bg-deep)] border-[var(--ag-border-default)]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORY_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={() => void handleQuickAdd()}
-                disabled={isAdding || !quickAddText.trim()}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[44px] min-h-[44px]"
-              >
-                {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-          </SectionCard>
+            </SectionCard>
+          </motion.div>
 
           {/* Search + category tabs */}
-          <div className="space-y-3">
+          <motion.div 
+            variants={fadeInUp} 
+            initial="initial" 
+            animate="animate" 
+            transition={{ delay: 0.2 }}
+            className="space-y-3"
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ag-text-secondary)]" />
               <Input
@@ -494,14 +509,14 @@ export function MemoryHubPage() {
                     onClick={() => setSelectedCategory(tab.id)}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm transition-all min-h-[44px] ${
                       isActive
-                        ? 'bg-[#6366F1]/20 text-[#6366F1] border border-[#6366F1]/30'
+                        ? 'bg-[var(--ag-echo)]/20 text-[var(--ag-echo)] border border-[var(--ag-echo)]/30'
                         : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-subtle)]'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
                     {count > 0 && (
-                      <span className={`text-xs font-mono ${isActive ? 'text-[#6366F1]' : 'text-[var(--ag-text-secondary)]'}`}>
+                      <span className={`text-xs font-mono ${isActive ? 'text-[var(--ag-echo)]' : 'text-[var(--ag-text-secondary)]'}`}>
                         {count}
                       </span>
                     )}
@@ -509,29 +524,29 @@ export function MemoryHubPage() {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
 
           {/* Memory list */}
           {filteredMemories.length === 0 ? (
             <div className="text-center py-16">
-              <Brain className="w-16 h-16 text-[#6366F1]/20 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">No matching memories</h3>
+              <Brain className="w-16 h-16 text-[var(--ag-echo)]/20 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>No matching memories</h3>
               <p className="text-[var(--ag-text-secondary)] max-w-sm mx-auto">Try adjusting your search or category filter.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <StaggeredList className="space-y-3" staggerDelay={0.05}>
               {filteredMemories.map(memory => {
                 const sourceStyle = getSourceStyle(memory.source);
                 const CategoryIcon = getCategoryIcon(memory.category);
                 const isEditing = editingId === memory.id;
 
                 return (
-                  <SectionCard key={memory.id} className="group">
+                  <SectionCard key={memory.id} className="group bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
                     {isEditing ? (
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-xs text-[var(--ag-text-secondary)]">
                           <CategoryIcon className="w-3.5 h-3.5" />
-                          <span className="font-mono text-[#6366F1]">{memory.key}</span>
+                          <span className="font-mono text-[var(--ag-echo)]">{memory.key}</span>
                         </div>
                         <Textarea
                           value={editValue}
@@ -574,7 +589,7 @@ export function MemoryHubPage() {
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <Badge className="bg-[#6366F1]/10 text-[#6366F1] text-xs px-2 py-0.5 rounded-full border-0">
+                            <Badge className="bg-[var(--ag-echo)]/10 text-[var(--ag-echo)] text-xs px-2 py-0.5 rounded-full border-0">
                               <CategoryIcon className="w-3 h-3 mr-1" />{memory.category}
                             </Badge>
                             <Badge className={`${sourceStyle.bg} ${sourceStyle.text} text-xs px-2 py-0.5 rounded-full border-0`}>
@@ -583,14 +598,14 @@ export function MemoryHubPage() {
                             </Badge>
                           </div>
                           <p
-                            className="text-sm text-[var(--ag-text-primary)] leading-relaxed mb-2 cursor-pointer hover:text-[#6366F1]/80 transition-colors"
+                            className="text-sm text-[var(--ag-text-primary)] leading-relaxed mb-2 cursor-pointer hover:text-[var(--ag-echo)]/80 transition-colors"
                             onClick={() => startInlineEdit(memory)}
                             title="Click to quick edit"
                           >
                             {memory.value}
                           </p>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--ag-text-secondary)]">
-                            <span className="font-mono text-[#6366F1]/60">{memory.key}</span>
+                            <span className="font-mono text-[var(--ag-echo)]/60">{memory.key}</span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />{formatRelativeDate(memory.createdAt)}
                             </span>
@@ -600,7 +615,7 @@ export function MemoryHubPage() {
                         <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => openEditDialog(memory)}
-                            className="p-2 rounded-lg text-[var(--ag-text-secondary)] hover:text-[#6366F1] hover:bg-[#6366F1]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg text-[var(--ag-text-secondary)] hover:text-[var(--ag-echo)] hover:bg-[var(--ag-echo)]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                             aria-label="Edit memory" title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -621,7 +636,7 @@ export function MemoryHubPage() {
               <p className="text-center text-xs text-[var(--ag-text-secondary)] pt-2">
                 Showing {filteredMemories.length} of {memories.length} memories
               </p>
-            </div>
+            </StaggeredList>
           )}
 
           {/* Danger zone */}
@@ -647,14 +662,18 @@ export function MemoryHubPage() {
 
       {/* ── GRAPH TAB ──────────────────────────────────────── */}
       {!isLoading && !loadError && hasMemories && activeTab === 'graph' && (
-        <SectionCard padding="lg">
-          <MemoryGraph memories={memories} />
-        </SectionCard>
+        <motion.div variants={fadeInUp} initial="initial" animate="animate">
+          <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
+            <MemoryGraph memories={memories} />
+          </SectionCard>
+        </motion.div>
       )}
 
       {/* ── STATS TAB ──────────────────────────────────────── */}
       {!isLoading && !loadError && hasMemories && activeTab === 'stats' && (
-        <StatsTab memories={memories} stats={stats} />
+        <motion.div variants={fadeInUp} initial="initial" animate="animate">
+          <StatsTab memories={memories} stats={stats} />
+        </motion.div>
       )}
 
       {/* ── Dialogs ────────────────────────────────────────── */}
@@ -736,7 +755,7 @@ export function MemoryHubPage() {
             <Button
               onClick={() => void handleSaveEditDialog()}
               disabled={!editForm.key.trim() || !editForm.value.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:opacity-90 text-white min-h-[44px] transition-opacity"
             >
               Save Changes
             </Button>

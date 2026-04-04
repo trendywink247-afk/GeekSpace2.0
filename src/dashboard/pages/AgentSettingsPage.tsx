@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
@@ -47,9 +48,9 @@ interface AgentDef {
 }
 
 const AGENTS: AgentDef[] = [
-  { id: 'weebo', name: 'Weebo', color: 'var(--ag-cyan)', description: 'Balanced all-rounder' },
-  { id: 'edith', name: 'Edith', color: 'var(--ag-violet)', description: 'Strategic & focused' },
-  { id: 'jarvis', name: 'Jarvis', color: '#ADFF2F', description: 'Professional & efficient' },
+  { id: 'weebo', name: 'Weebo', color: 'var(--ag-weebo)', description: 'Balanced all-rounder' },
+  { id: 'edith', name: 'Edith', color: 'var(--ag-edith)', description: 'Strategic & focused' },
+  { id: 'jarvis', name: 'Jarvis', color: 'var(--ag-jarvis)', description: 'Professional & efficient' },
 ];
 
 // ---- Model definitions ----
@@ -283,9 +284,9 @@ export function AgentSettingsPage() {
       {/* Toast notification */}
       {saveToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <div className="px-4 py-2.5 rounded-xl bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.15)] shadow-lg shadow-[#A78BFA]/10 text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
+          <div className="px-4 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] shadow-lg shadow-[var(--ag-glow-md)] text-sm text-[var(--ag-text-primary)] flex items-center gap-2">
             {saveToast.includes('Saved') || saveToast.includes('Switched') || saveToast.includes('Cleared') ? (
-              <Check className="w-4 h-4 text-[#ADFF2F]" />
+              <Check className="w-4 h-4 text-[var(--ag-lime)]" />
             ) : (
               <Sparkles className="w-4 h-4 text-[var(--ag-cyan)]" />
             )}
@@ -301,14 +302,15 @@ export function AgentSettingsPage() {
         subtitle={`Configure ${currentAgent.name} — personality, memory, tools & channels`}
         badge={
           <span className="relative flex h-3 w-3" title="Owned by Weebo">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A78BFA] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#A78BFA]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-cyan)] opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--ag-cyan)]" />
           </span>
         }
       />
 
       {/* Agent Selector Header */}
-      <SectionCard padding="lg">
+      <BlurFade delay={0.1}>
+        <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Active agent avatar */}
@@ -325,10 +327,10 @@ export function AgentSettingsPage() {
                 {currentAgent.name[0]}
               </div>
               {/* Online indicator */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#ADFF2F] border-2 border-[#06061a]" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--ag-lime)] border-2 border-[var(--ag-bg-base)]" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-[var(--ag-text-primary)]" style={{ fontFamily: 'Syne, sans-serif' }}>
+              <h2 className="text-2xl font-bold text-[var(--ag-text-primary)] font-heading">
                 {currentAgent.name}
               </h2>
               <p className="text-sm text-[var(--ag-text-secondary)]">{currentAgent.description}</p>
@@ -352,11 +354,11 @@ export function AgentSettingsPage() {
                     backgroundColor: `${a.color}20`,
                     border: `1px solid ${a.color}`,
                     color: a.color,
-                  } : { border: '1px solid rgba(139,92,246,0.08)' }}
+                  } : { border: '1px solid var(--ag-border-subtle)' }}
                 >
                   <div
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                    style={{ backgroundColor: a.color, color: '#06061a' }}
+                    style={{ backgroundColor: a.color, color: 'var(--ag-bg-base)' }}
                   >
                     {a.name[0]}
                   </div>
@@ -370,10 +372,11 @@ export function AgentSettingsPage() {
           </div>
         </div>
       </SectionCard>
+      </BlurFade>
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-transparent border-b border-[rgba(139,92,246,0.08)] rounded-none p-0 h-auto gap-0">
+        <TabsList className="w-full bg-transparent border-b border-[var(--ag-border-subtle)] rounded-none p-0 h-auto gap-0">
           {[
             { value: 'personality', label: 'Personality', icon: Bot },
             { value: 'memory', label: 'Memory', icon: Brain },
@@ -385,7 +388,7 @@ export function AgentSettingsPage() {
               value={tab.value}
               className={`flex-1 sm:flex-none rounded-none border-b-2 border-transparent px-4 sm:px-6 py-3 min-h-[44px] text-sm font-medium transition-all duration-200 bg-transparent shadow-none data-[state=active]:shadow-none data-[state=active]:bg-transparent ${
                 activeTab === tab.value
-                  ? '!border-b-[#A78BFA] !text-[var(--ag-cyan)]'
+                  ? '!border-b-[var(--ag-cyan)] !text-[var(--ag-cyan)]'
                   : '!text-[var(--ag-text-secondary)] hover:!text-[var(--ag-text-primary)]'
               }`}
             >
@@ -396,9 +399,10 @@ export function AgentSettingsPage() {
         </TabsList>
 
         {/* ========== PERSONALITY TAB ========== */}
-        <TabsContent value="personality" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <TabsContent value="personality" className="mt-6 space-y-6">
           {/* Agent Name */}
-          <SectionCard title="Agent Name" subtitle="This name is used in conversations and greetings." padding="lg">
+          <BlurFade delay={0.2}>
+            <SectionCard title="Agent Name" subtitle="This name is used in conversations and greetings." padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <Input
               value={agentName}
               onChange={(e) => { isDirty.current = true; setAgentName(e.target.value); }}
@@ -407,11 +411,13 @@ export function AgentSettingsPage() {
               maxLength={30}
             />
           </SectionCard>
+          </BlurFade>
 
           {/* Model Selector */}
-          <SectionCard padding="lg">
+          <BlurFade delay={0.3}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Primary Model
               </h2>
@@ -432,7 +438,7 @@ export function AgentSettingsPage() {
                   >
                     {m.label}
                     {m.tier === 'pro' && (
-                      <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/10 text-[var(--ag-violet)]">
+                      <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--ag-violet)]/10 text-[var(--ag-violet)]">
                         PRO
                       </span>
                     )}
@@ -441,11 +447,13 @@ export function AgentSettingsPage() {
               })}
             </div>
           </SectionCard>
+          </BlurFade>
 
           {/* Personality Sliders */}
-          <SectionCard padding="lg">
+          <BlurFade delay={0.4}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Personality Tuning
               </h2>
@@ -458,7 +466,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Creativity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
                     {['Precise', 'Focused', 'Balanced', 'Creative', 'Exploratory'][creativityStep]}
                   </span>
                 </div>
@@ -467,7 +475,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setCreativity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[var(--ag-bg-elevated)]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Factual</span>
@@ -479,7 +487,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Tone</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
                     {TONE_LABELS[toneStep]}
                   </span>
                 </div>
@@ -488,7 +496,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setTone(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[var(--ag-bg-elevated)]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Casual</span>
@@ -500,7 +508,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Verbosity</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
                     {VERBOSITY_LABELS[verbosityStep]}
                   </span>
                 </div>
@@ -509,7 +517,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setVerbosity(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[var(--ag-bg-elevated)]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Terse</span>
@@ -521,7 +529,7 @@ export function AgentSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Humor</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
                     {HUMOR_LABELS[humorStep]}
                   </span>
                 </div>
@@ -530,7 +538,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setHumor(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[var(--ag-bg-elevated)]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Serious</span>
@@ -542,7 +550,7 @@ export function AgentSettingsPage() {
               <div className="md:col-span-2 md:max-w-[calc(50%-1rem)]">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-[var(--ag-text-primary)]">Empathy</span>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#A78BFA]/10 text-[var(--ag-cyan)]">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)]">
                     {EMPATHY_LABELS[empathyStep]}
                   </span>
                 </div>
@@ -551,7 +559,7 @@ export function AgentSettingsPage() {
                   onValueChange={(v) => { isDirty.current = true; setEmpathy(v); }}
                   max={100}
                   step={25}
-                  className="w-full [&_[data-slot=slider-range]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:bg-[#A78BFA] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[#1A1A2E]"
+                  className="w-full [&_[data-slot=slider-range]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:bg-[var(--ag-cyan)] [&_[data-slot=slider-thumb]]:border-[var(--ag-cyan)] [&_[data-slot=slider-track]]:bg-[var(--ag-bg-elevated)]"
                 />
                 <div className="flex justify-between text-xs text-[var(--ag-text-secondary)] mt-1">
                   <span>Direct</span>
@@ -560,11 +568,13 @@ export function AgentSettingsPage() {
               </div>
             </div>
           </SectionCard>
+          </BlurFade>
 
           {/* Language Preference */}
-          <SectionCard padding="lg">
+          <BlurFade delay={0.5}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Globe className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Language Preference
               </h2>
@@ -581,10 +591,10 @@ export function AgentSettingsPage() {
                   <button
                     key={lang.id}
                     onClick={() => setLanguage(lang.id)}
-                    className={`px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+                    className={`px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 ${
                       isActive
-                        ? 'bg-[#8B5CF6]/20 border border-[var(--ag-violet)] text-[var(--ag-violet)]'
-                        : 'bg-white/[0.03] border border-white/[0.08] text-[var(--ag-text-secondary)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary)]'
+                        ? 'bg-[var(--ag-violet)]/20 border border-[var(--ag-violet)] text-[var(--ag-violet)]'
+                        : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
                     }`}
                   >
                     {lang.label}
@@ -593,11 +603,13 @@ export function AgentSettingsPage() {
               })}
             </div>
           </SectionCard>
+          </BlurFade>
 
           {/* Custom Instructions */}
-          <SectionCard padding="lg">
+          <BlurFade delay={0.6}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Brain className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Custom Instructions
               </h2>
@@ -612,7 +624,7 @@ export function AgentSettingsPage() {
                     setCustomInstructions(e.target.value);
                   }
                 }}
-                className="bg-white/[0.03] border border-white/[0.08] rounded-xl min-h-[120px] text-[var(--ag-text-primary)] resize-none pr-16 focus:border-[var(--ag-violet)]/40 focus:ring-[#8B5CF6]/20"
+                className="bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-xl min-h-[120px] text-[var(--ag-text-primary)] resize-none pr-16 focus:border-[var(--ag-violet)]/40 focus:ring-[var(--ag-violet)]/20"
                 placeholder="Tell your agent how to behave. E.g. 'Always respond with bullet points' or 'Be encouraging and use emojis'..."
                 maxLength={500}
               />
@@ -623,6 +635,7 @@ export function AgentSettingsPage() {
               </span>
             </div>
           </SectionCard>
+          </BlurFade>
 
           {/* Autonomy Level */}
           <SectionCard padding="lg">
@@ -707,12 +720,13 @@ export function AgentSettingsPage() {
           </SectionCard>
 
           {/* Save Button */}
-          <div className="flex justify-end">
+          <BlurFade delay={0.9}>
+            <div className="flex justify-end">
             <Button
               size="lg"
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-8 min-h-[44px] transition-all duration-200 rounded-xl"
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold px-8 min-h-[44px] transition-all duration-200 rounded-xl shadow-lg"
             >
               {isSaving ? (
                 <>
@@ -727,12 +741,14 @@ export function AgentSettingsPage() {
               )}
             </Button>
           </div>
+          </BlurFade>
         </TabsContent>
 
         {/* ========== MEMORY TAB ========== */}
-        <TabsContent value="memory" className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <TabsContent value="memory" className="mt-6 space-y-6">
           {/* Memory Toggle */}
-          <SectionCard padding="lg">
+          <BlurFade delay={0.2}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Brain className="w-5 h-5 text-[var(--ag-cyan)]" />
@@ -746,7 +762,7 @@ export function AgentSettingsPage() {
               <Switch
                 checked={memoryEnabled}
                 onCheckedChange={setMemoryEnabled}
-                className={`${memoryEnabled ? '!bg-[#A78BFA]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#A78BFA] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                className={`${memoryEnabled ? '!bg-[var(--ag-cyan)]' : '!bg-[var(--ag-bg-elevated)]'} data-[state=checked]:!bg-[var(--ag-cyan)] data-[state=unchecked]:!bg-[var(--ag-bg-elevated)]`}
               />
             </div>
 
@@ -802,13 +818,15 @@ export function AgentSettingsPage() {
               )}
             </Button>
           </SectionCard>
+          </BlurFade>
         </TabsContent>
 
         {/* ========== TOOLS TAB ========== */}
-        <TabsContent value="tools" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <SectionCard padding="lg">
+        <TabsContent value="tools" className="mt-6 space-y-4">
+          <BlurFade delay={0.2}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Wrench className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Available Tools
               </h2>
@@ -833,12 +851,12 @@ export function AgentSettingsPage() {
                       <div
                         className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200"
                         style={{
-                          backgroundColor: enabled ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.05)',
+                          backgroundColor: enabled ? 'var(--ag-violet)/10' : 'var(--ag-violet)/5',
                         }}
                       >
                         <tool.icon
                           className="w-4 h-4 transition-colors duration-200"
-                          style={{ color: enabled ? '#A78BFA' : '#9CA3AF' }}
+                          style={{ color: enabled ? 'var(--ag-cyan)' : 'var(--ag-text-muted)' }}
                         />
                       </div>
                       <div>
@@ -851,20 +869,22 @@ export function AgentSettingsPage() {
                     <Switch
                       checked={enabled}
                       onCheckedChange={() => toggleTool(tool.id)}
-                      className={`${enabled ? '!bg-[#A78BFA]' : '!bg-[#1A1A2E]'} data-[state=checked]:!bg-[#A78BFA] data-[state=unchecked]:!bg-[#1A1A2E]`}
+                      className={`${enabled ? '!bg-[var(--ag-cyan)]' : '!bg-[var(--ag-bg-elevated)]'} data-[state=checked]:!bg-[var(--ag-cyan)] data-[state=unchecked]:!bg-[var(--ag-bg-elevated)]`}
                     />
                   </div>
                 );
               })}
             </div>
           </SectionCard>
+          </BlurFade>
         </TabsContent>
 
         {/* ========== CHANNELS TAB ========== */}
-        <TabsContent value="channels" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <SectionCard padding="lg">
+        <TabsContent value="channels" className="mt-6 space-y-4">
+          <BlurFade delay={0.2}>
+            <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
             <div className="mb-4">
-              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
+              <h2 className="text-base font-semibold text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-[var(--ag-cyan)]" />
                 Connected Channels
               </h2>
@@ -875,7 +895,7 @@ export function AgentSettingsPage() {
 
             <div className="space-y-3">
               {/* Telegram */}
-              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)]">
+              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#0088CC]/10 flex items-center justify-center">
                     <Send className="w-5 h-5 text-[#0088CC]" />
@@ -907,7 +927,7 @@ export function AgentSettingsPage() {
               </div>
 
               {/* Web Chat */}
-              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)]">
+              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#A78BFA]/10 flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-[var(--ag-cyan)]" />
@@ -924,7 +944,7 @@ export function AgentSettingsPage() {
               </div>
 
               {/* WhatsApp */}
-              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] opacity-60">
+              <div className="flex items-center justify-between p-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] opacity-60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-[#25D366]" />
@@ -934,12 +954,13 @@ export function AgentSettingsPage() {
                     <p className="text-xs text-[var(--ag-text-secondary)]">Chat with your agent on WhatsApp</p>
                   </div>
                 </div>
-                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[#8B5CF6]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20">
+                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/20">
                   Coming soon
                 </span>
               </div>
             </div>
           </SectionCard>
+          </BlurFade>
         </TabsContent>
       </Tabs>
     </PageShell>

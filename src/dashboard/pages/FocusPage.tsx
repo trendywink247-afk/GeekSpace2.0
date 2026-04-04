@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -201,7 +202,7 @@ function useTimer(startMs: number | null, durationMin: number | null) {
 
 // ---------- Sub-components ----------
 
-function TimerRing({ progress, size = 220, strokeWidth = 10, color = '#A78BFA', children }: {
+function TimerRing({ progress, size = 220, strokeWidth = 10, color = 'var(--ag-cyan)', children }: {
   progress: number;
   size?: number;
   strokeWidth?: number;
@@ -214,7 +215,7 @@ function TimerRing({ progress, size = 220, strokeWidth = 10, color = '#A78BFA', 
   return (
     <div className="relative flex items-center justify-center mx-auto" style={{ width: size, height: size }}>
       <svg className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={center} cy={center} r={r} fill="none" stroke="#0C0C18" strokeWidth={strokeWidth} />
+        <circle cx={center} cy={center} r={r} fill="none" stroke="var(--ag-bg-deep)" strokeWidth={strokeWidth} />
         <circle
           cx={center} cy={center} r={r} fill="none"
           stroke={color} strokeWidth={strokeWidth}
@@ -272,10 +273,10 @@ function HabitCompletionRings({ habits }: { habits: Habit[] }) {
         );
       })}
       <div className="relative z-10 text-center">
-        <div className="text-lg font-bold text-[var(--ag-text-primary,#F4F6FF)]">
+        <div className="text-lg font-bold text-[var(--ag-text-primary)] font-heading">
           {topThree.filter(h => h.logged_today).length}/{topThree.length}
         </div>
-        <div className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]">done</div>
+        <div className="text-[10px] text-[var(--ag-text-secondary)]">done</div>
       </div>
     </div>
   );
@@ -320,19 +321,19 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
           return (
             <g key={i}>
               {/* Background bar */}
-              <rect x={x} y={0} width={barWidth} height={chartHeight} rx={6} fill="#0C0C18" />
+              <rect x={x} y={0} width={barWidth} height={chartHeight} rx={6} fill="var(--ag-bg-deep)" />
               {/* Data bar */}
               {hasData && (
                 <rect
                   x={x} y={y} width={barWidth} height={Math.max(barH, 4)} rx={6}
-                  fill={isToday ? '#A78BFA' : '#A78BFA'}
+                  fill={isToday ? 'var(--ag-cyan)' : 'var(--ag-cyan)'}
                   opacity={isToday ? 1 : 0.5}
                   style={{ transition: 'height 0.4s ease-out, y 0.4s ease-out' }}
                 />
               )}
               {/* Minutes label on hover area */}
               {hasData && (
-                <text x={x + barWidth / 2} y={y - 4} textAnchor="middle" fill="#8892A4" fontSize="9" fontFamily="monospace">
+                <text x={x + barWidth / 2} y={y - 4} textAnchor="middle" fill="var(--ag-text-secondary)" fontSize="9" fontFamily="monospace">
                   {mins}m
                 </text>
               )}
@@ -340,7 +341,7 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
               <text
                 x={x + barWidth / 2} y={chartHeight + 16}
                 textAnchor="middle"
-                fill={isToday ? '#A78BFA' : '#8892A4'}
+                fill={isToday ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)'}
                 fontSize="10"
                 fontWeight={isToday ? 'bold' : 'normal'}
                 fontFamily="inherit"
@@ -357,19 +358,19 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
 
 function SessionHistoryItem({ session }: { session: FocusSession }) {
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-300">
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-300">
       <div className="flex items-center gap-3 min-w-0">
         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${session.completed ? 'bg-[#ADFF2F]' : 'bg-[#FF2D78]'}`} />
         <div className="min-w-0">
-          <p className="text-sm text-[var(--ag-text-primary,#F4F6FF)] truncate">
+          <p className="text-sm text-[var(--ag-text-primary)] truncate">
             {session.goal || 'Focus session'}
           </p>
-          <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+          <p className="text-xs text-[var(--ag-text-secondary)]">
             {formatRelativeDate(session.started_at)}
           </p>
         </div>
       </div>
-      <Badge variant="outline" className="text-xs border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] flex-shrink-0 ml-2">
+      <Badge variant="outline" className="text-xs border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] flex-shrink-0 ml-2">
         {session.duration_min ? formatDuration(session.duration_min) : '--'}
       </Badge>
     </div>
@@ -383,8 +384,8 @@ function BreakSuggestion({ onDismiss }: { onDismiss: () => void }) {
       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#ADFF2F]/10">
         <Zap size={22} className="text-[#ADFF2F]" />
       </div>
-      <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">Session complete!</p>
-      <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">{tip}</p>
+      <p className="text-sm font-medium text-[var(--ag-text-primary)] font-heading">Session complete!</p>
+      <p className="text-sm text-[var(--ag-text-secondary)]">{tip}</p>
       <Button
         size="sm" variant="ghost"
         onClick={onDismiss}
@@ -749,67 +750,72 @@ export function FocusPage() {
       {showCelebration && <CelebrationPulse />}
 
       {/* ---- Header ---- */}
-      <PageHeader
-        icon={Target}
-        title="Focus & Habits"
-        subtitle="Coached by Pulse"
-        badge={
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]" />
-          </span>
-        }
-        actions={
-          <Button
-            variant="ghost" size="sm"
-            onClick={toggleFocusMode}
-            className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 ${
-              settings?.focus_mode_active
-                ? 'bg-[#A78BFA]/10 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/20'
-                : 'text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
-            }`}
-            aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
-          >
-            {settings?.focus_mode_active ? <BellOff size={14} /> : <Bell size={14} />}
-            {settings?.focus_mode_active ? 'Focus ON' : 'Focus OFF'}
-          </Button>
-        }
-      />
+      <BlurFade delay={0}>
+        <PageHeader
+          icon={Target}
+          title="Focus & Habits"
+          subtitle="Coached by Pulse"
+          badge={
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-pulse)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-pulse)]" />
+            </span>
+          }
+          actions={
+            <Button
+              variant="ghost" size="sm"
+              onClick={toggleFocusMode}
+              className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 ${
+                settings?.focus_mode_active
+                  ? 'bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/20'
+                  : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
+              }`}
+              aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
+            >
+              {settings?.focus_mode_active ? <BellOff size={14} /> : <Bell size={14} />}
+              {settings?.focus_mode_active ? 'Focus ON' : 'Focus OFF'}
+            </Button>
+          }
+        />
+      </BlurFade>
 
       {/* ---- Deferred messages banner ---- */}
       {deferredCount > 0 && (
-        <SectionCard padding="sm" className="border-[rgba(139,92,246,0.15)]">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--ag-text-primary,#F4F6FF)]">
-              <Bell size={14} className="inline mr-1.5 text-[var(--ag-cyan)]" />
-              {deferredCount} message{deferredCount > 1 ? 's' : ''} held during focus
-            </span>
-            <Button
-              size="sm" variant="outline"
-              className="text-xs min-h-[44px] border-[rgba(139,92,246,0.15)] text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10"
-              onClick={() => { setDeferredCount(0); void load(); }}
-            >
-              View now
-            </Button>
-          </div>
-        </SectionCard>
+        <BlurFade delay={0.1}>
+          <SectionCard padding="sm" className="border-[var(--ag-border-default)]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--ag-text-primary)]">
+                <Bell size={14} className="inline mr-1.5 text-[var(--ag-cyan)]" />
+                {deferredCount} message{deferredCount > 1 ? 's' : ''} held during focus
+              </span>
+              <Button
+                size="sm" variant="outline"
+                className="text-xs min-h-[44px] border-[var(--ag-border-default)] text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/10"
+                onClick={() => { setDeferredCount(0); void load(); }}
+              >
+                View now
+              </Button>
+            </div>
+          </SectionCard>
+        </BlurFade>
       )}
 
       {/* ---- Stats Summary ---- */}
-      <div className="grid grid-cols-3 gap-3">
+      <BlurFade delay={0.2}>
+        <div className="grid grid-cols-3 gap-3">
         <SectionCard padding="sm" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Flame size={14} className="text-orange-400" />
-            <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Focus streak</span>
+            <span className="text-xs text-[var(--ag-text-secondary)]">Focus streak</span>
           </div>
           {/* Arc progress ring */}
           <div className="relative w-16 h-16 mx-auto">
             <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
-              <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+              <circle cx="32" cy="32" r="28" fill="none" stroke="var(--ag-border-subtle)" strokeWidth="4" />
               <circle
                 cx="32" cy="32" r="28"
                 fill="none"
-                stroke={focusStreak >= 7 ? '#ADFF2F' : focusStreak >= 3 ? '#A78BFA' : '#FF2D78'}
+                stroke={focusStreak >= 7 ? 'var(--ag-lime)' : focusStreak >= 3 ? 'var(--ag-cyan)' : 'var(--ag-pink)'}
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={`${Math.min(focusStreak / 7, 1) * 175.9} 175.9`}
@@ -817,43 +823,45 @@ export function FocusPage() {
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] font-heading">{focusStreak}<span className="text-[9px] text-[var(--ag-text-secondary,#9CA3AF)] font-normal">d</span></p>
+              <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">{focusStreak}<span className="text-[9px] text-[var(--ag-text-secondary)] font-normal">d</span></p>
             </div>
           </div>
         </SectionCard>
         <SectionCard padding="sm" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <CheckCircle size={14} className="text-[#ADFF2F]" />
-            <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">Habits today</span>
+            <CheckCircle size={14} className="text-[var(--ag-lime)]" />
+            <span className="text-xs text-[var(--ag-text-secondary)]">Habits today</span>
           </div>
-          <p className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] font-heading">
-            {habitsLoggedToday}<span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] font-normal">/{habits.length}</span>
+          <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">
+            {habitsLoggedToday}<span className="text-xs text-[var(--ag-text-secondary)] font-normal">/{habits.length}</span>
           </p>
         </SectionCard>
         <SectionCard padding="sm" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Clock size={14} className="text-[var(--ag-cyan)]" />
-            <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">This week</span>
+            <span className="text-xs text-[var(--ag-text-secondary)]">This week</span>
           </div>
-          <p className="text-xl font-bold text-[var(--ag-text-primary,#F4F6FF)] font-heading">
+          <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">
             {summary ? formatDuration(summary.totalMinutesThisWeek) : '0m'}
           </p>
         </SectionCard>
-      </div>
+        </div>
+      </BlurFade>
 
       {/* ---- Tabs ---- */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] rounded-xl p-1 h-12">
+      <BlurFade delay={0.3}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-xl p-1 h-12">
           <TabsTrigger
             value="focus"
-            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[#A78BFA]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary,#9CA3AF)] transition-colors min-h-[44px]"
+            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[var(--ag-cyan)]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary)] transition-colors min-h-[44px]"
           >
             <Timer size={16} className="mr-1.5" />
             Focus Sessions
           </TabsTrigger>
           <TabsTrigger
             value="habits"
-            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[#A78BFA]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary,#9CA3AF)] transition-colors min-h-[44px]"
+            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[var(--ag-cyan)]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary)] transition-colors min-h-[44px]"
           >
             <Flame size={16} className="mr-1.5" />
             Daily Habits
@@ -870,17 +878,17 @@ export function FocusPage() {
                     <div className="text-4xl font-mono font-bold text-[var(--ag-cyan)] tracking-wider">
                       {remaining !== null ? remainStr : elapsedStr}
                     </div>
-                    <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1">
+                    <div className="text-xs text-[var(--ag-text-secondary)] mt-1">
                       {remaining !== null ? 'remaining' : 'elapsed'}
                     </div>
                   </TimerRing>
                   {session.goal && (
-                    <p className="text-center text-sm text-[var(--ag-text-primary,#F4F6FF)]/80">
+                    <p className="text-center text-sm text-[var(--ag-text-primary)]/80">
                       <Target size={12} className="inline mr-1 text-[var(--ag-cyan)]" />
                       {session.goal}
                     </p>
                   )}
-                  <div className="text-center text-xs text-[var(--ag-text-secondary,#9CA3AF)]">
+                  <div className="text-center text-xs text-[var(--ag-text-secondary)]">
                     {session.duration_min ? `${session.duration_min} min session` : 'Open session'}
                   </div>
                   <button
@@ -900,10 +908,10 @@ export function FocusPage() {
               ) : (
                 <div className="text-center space-y-5 py-2">
                   <TimerRing progress={0} size={200} strokeWidth={8}>
-                    <div className="text-3xl font-mono font-bold text-[var(--ag-text-secondary,#9CA3AF)]/40">
+                    <div className="text-3xl font-mono font-bold text-[var(--ag-text-secondary)]/40">
                       {pad(durInput)}:00
                     </div>
-                    <div className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1">ready</div>
+                    <div className="text-xs text-[var(--ag-text-secondary)] mt-1">ready</div>
                   </TimerRing>
 
                   {/* Duration preset cards */}
@@ -918,7 +926,7 @@ export function FocusPage() {
                           min-h-[44px]
                           ${durInput === d.value
                             ? 'bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
-                            : 'border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
+                            : 'border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
                           }
                         `}
                       >
@@ -1021,7 +1029,7 @@ export function FocusPage() {
 
           {habits.length === 0 ? (
             <div className="text-center py-12 space-y-3">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)]">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
                 <Flame size={28} className="text-[var(--ag-text-secondary,#9CA3AF)]/30" />
               </div>
               <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">No habits yet</p>
@@ -1045,7 +1053,7 @@ export function FocusPage() {
                   className={`
                     flex items-center justify-between p-3.5 rounded-xl backdrop-blur-xl
                     bg-[var(--ag-bg-surface)] border transition-all duration-300
-                    ${h.logged_today ? 'border-[#ADFF2F]/15' : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'}
+                    ${h.logged_today ? 'border-[var(--ag-lime)]/15' : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'}
                     ${deletingHabitId === h.id ? 'opacity-50 scale-95' : ''}
                   `}
                 >
@@ -1056,16 +1064,16 @@ export function FocusPage() {
                         {h.name}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] flex items-center gap-0.5">
+                        <span className="text-xs text-[var(--ag-text-secondary)] flex items-center gap-0.5">
                           <Flame size={10} className="text-orange-400" />
                           {h.current_streak}d
                         </span>
                         <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]/50">|</span>
-                        <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] flex items-center gap-0.5">
-                          <Trophy size={10} className="text-[var(--ag-text-secondary,#9CA3AF)]/60" />
+                        <span className="text-xs text-[var(--ag-text-secondary)] flex items-center gap-0.5">
+                          <Trophy size={10} className="text-[var(--ag-text-secondary)]/60" />
                           Best: {h.longest_streak}d
                         </span>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)]/60 h-4">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)]/60 h-4">
                           {h.frequency}
                         </Badge>
                       </div>
@@ -1098,11 +1106,12 @@ export function FocusPage() {
             </SectionCard>
           )}
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </BlurFade>
 
       {/* ======== Start Focus Modal ======== */}
       <Dialog open={showStartModal} onOpenChange={setShowStartModal}>
-        <DialogContent className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
+        <DialogContent className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
           <DialogHeader>
             <DialogTitle className="font-heading flex items-center gap-2">
               <Play size={18} className="text-[var(--ag-cyan)]" />
@@ -1119,8 +1128,8 @@ export function FocusPage() {
                 value={goalInput}
                 onChange={e => setGoalInput(e.target.value)}
                 placeholder="e.g. Write report, Fix bug, Study..."
-                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] h-12 rounded-xl
-                  placeholder:text-[var(--ag-text-secondary,#9CA3AF)]/40 focus-visible:ring-[#A78BFA]/30"
+                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] h-12 rounded-xl
+                  placeholder:text-[var(--ag-text-secondary)]/40 focus-visible:ring-[var(--ag-cyan)]/30"
                 onKeyDown={e => { if (e.key === 'Enter') void handleStartFocus(); }}
               />
             </div>
@@ -1136,8 +1145,8 @@ export function FocusPage() {
                       focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
                       min-h-[44px]
                       ${durInput === d.value
-                        ? 'bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
-                        : 'bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)]'
+                        ? 'bg-[var(--ag-cyan)]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
+                        : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)]'
                       }
                     `}
                   >
@@ -1169,7 +1178,7 @@ export function FocusPage() {
 
       {/* ======== Add Habit Modal ======== */}
       <Dialog open={showAddHabit} onOpenChange={setShowAddHabit}>
-        <DialogContent className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
+        <DialogContent className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
           <DialogHeader>
             <DialogTitle className="font-heading flex items-center gap-2">
               <Plus size={18} className="text-[var(--ag-cyan)]" />
@@ -1183,8 +1192,8 @@ export function FocusPage() {
                 value={newHabitName}
                 onChange={e => setNewHabitName(e.target.value)}
                 placeholder="e.g. Morning Workout, Read 30 mins..."
-                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary,#F4F6FF)] h-12 rounded-xl
-                  placeholder:text-[var(--ag-text-secondary,#9CA3AF)]/40 focus-visible:ring-[#A78BFA]/30"
+                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] h-12 rounded-xl
+                  placeholder:text-[var(--ag-text-secondary)]/40 focus-visible:ring-[var(--ag-cyan)]/30"
                 onKeyDown={e => { if (e.key === 'Enter') void handleAddHabit(); }}
               />
             </div>
@@ -1222,8 +1231,8 @@ export function FocusPage() {
                       focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
                       min-h-[44px]
                       ${newHabitFreq === f.value
-                        ? 'bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] font-medium'
-                        : 'bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)]'
+                        ? 'bg-[var(--ag-cyan)]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] font-medium'
+                        : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)]'
                       }
                     `}
                   >

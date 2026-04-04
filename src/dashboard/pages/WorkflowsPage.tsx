@@ -132,10 +132,9 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
           <div key={idx}>
             {/* Step card */}
             <div
-              className="relative rounded-xl p-3 transition-all duration-300"
+              className="relative rounded-xl p-3 transition-all duration-300 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]"
               style={{
-                background: `rgba(12,12,30,0.6)`,
-                border: `1px solid ${statusColor}20`,
+                borderColor: `${statusColor}20`,
                 boxShadow: runStep?.status === "running" ? `0 0 12px ${statusColor}15` : undefined,
               }}
             >
@@ -185,8 +184,7 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
               {/* Run output */}
               {runStep?.output && (
                 <div
-                  className="mt-2 rounded-lg p-2 text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap line-clamp-6"
-                  style={{ background: "rgba(12,12,30,0.8)" }}
+                  className="mt-2 rounded-lg p-2 text-sm text-[var(--ag-text-primary)] whitespace-pre-wrap line-clamp-6 bg-[var(--ag-bg-subtle)] border border-[var(--ag-border-subtle)]"
                 >
                   {runStep.output}
                 </div>
@@ -269,7 +267,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
 
   return (
     <BlurFade delay={0.1}>
-      <SectionCard title="New Workflow">
+      <SectionCard title="New Workflow" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
         <div className="space-y-4">
           {error && (
             <div className="rounded-lg border border-[#FF6161]/30 bg-[#FF6161]/10 p-2.5 text-sm text-[#FF6161]">
@@ -305,10 +303,9 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
               return (
                 <div
                   key={idx}
-                  className="rounded-xl p-3 space-y-2"
+                  className="rounded-xl p-3 space-y-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]"
                   style={{
-                    background: "rgba(12,12,30,0.6)",
-                    border: `1px solid ${color}15`,
+                    borderColor: `${color}15`,
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -337,7 +334,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       <select
                         value={step.agent}
                         onChange={(e) => updateStep(idx, "agent", e.target.value)}
-                        className="w-full mt-1 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-2 py-2 text-sm text-[var(--ag-text-primary)] min-h-[44px] focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                        className="w-full mt-1 rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] px-2 py-2 text-sm text-[var(--ag-text-primary)] min-h-[44px] focus:outline-none focus:border-[var(--ag-border-focus)]"
                       >
                         <option value="weebo">Weebo</option>
                         <option value="jarvis">Jarvis</option>
@@ -365,7 +362,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       onChange={(e) => updateStep(idx, "prompt_template", e.target.value)}
                       placeholder={"Summarize the following: {{user_input}}"}
                       rows={3}
-                      className="mt-1 w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[rgba(139,92,246,0.3)]"
+                      className="mt-1 w-full rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] px-3 py-2 text-sm text-[var(--ag-text-primary)] resize-none focus:outline-none focus:border-[var(--ag-border-focus)]"
                     />
                   </div>
                 </div>
@@ -384,7 +381,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
             <Button
               onClick={handleSubmit}
               disabled={saving}
-              className="min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Workflow
@@ -582,7 +579,7 @@ function WorkflowCard({
             <Button
               onClick={handleRun}
               disabled={running}
-              className="w-full min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
             >
               {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
               {running ? "Running\u2026" : "Run Workflow"}
@@ -614,8 +611,7 @@ function WorkflowCard({
                     <div key={key} className="space-y-1">
                       <span className="text-xs text-[var(--ag-text-secondary)] font-mono">{key}</span>
                       <p
-                        className="text-xs rounded-lg p-2 whitespace-pre-wrap line-clamp-4 text-[var(--ag-text-primary)]"
-                        style={{ background: "rgba(12,12,30,0.6)" }}
+                        className="text-xs rounded-lg p-2 whitespace-pre-wrap line-clamp-4 text-[var(--ag-text-primary)] bg-[var(--ag-bg-subtle)] border border-[var(--ag-border-subtle)]"
                       >
                         {value}
                       </p>
@@ -690,6 +686,7 @@ export function WorkflowsPage() {
         icon={GitBranch}
         title="Workflows"
         subtitle="Chain Weebo, Jarvis, and Edith together for multi-step tasks"
+       
         badge={
           <span className="relative flex h-3 w-3" title="Owned by Jarvis">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: JARVIS }} />
@@ -710,7 +707,7 @@ export function WorkflowsPage() {
             </Button>
             <Button
               onClick={() => setShowForm(true)}
-              className="min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
             >
               <Plus className="h-4 w-4 mr-1" />
               New
@@ -761,8 +758,7 @@ export function WorkflowsPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-20 rounded-xl animate-pulse"
-              style={{ background: "rgba(12,12,30,0.6)", border: "1px solid rgba(139,92,246,0.08)" }}
+              className="h-20 rounded-xl animate-pulse bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]"
             />
           ))}
         </div>
@@ -781,7 +777,7 @@ export function WorkflowsPage() {
             </p>
             <Button
               onClick={() => setShowForm(true)}
-              className="mt-4 min-h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white"
+              className="mt-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
             >
               <Plus className="h-4 w-4 mr-1" />Create Workflow
             </Button>

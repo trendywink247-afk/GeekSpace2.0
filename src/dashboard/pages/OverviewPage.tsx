@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -695,68 +695,41 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         />
 
         {/* ─── Agent Status Strip ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.06 }}
-        >
+        <BlurFade delay={0.05}>
           <AgentStatusStrip
             onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
           />
-        </motion.div>
+        </BlurFade>
 
         {/* ─── Live Agent Feed ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.12 }}
-        >
+        <BlurFade delay={0.10}>
           <LiveAgentFeed onNavigate={onNavigate} />
-        </motion.div>
+        </BlurFade>
 
         {/* ─── Goals Summary ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.18 }}
-          whileHover={{ y: -2 }}
-        >
+        <BlurFade delay={0.15}>
           <GoalsSummaryCard onNavigate={onNavigate} />
-        </motion.div>
+        </BlurFade>
 
         {/* ─── Sprint 4: Quick Actions Grid ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.24 }}
-        >
+        <BlurFade delay={0.20}>
           <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
-        </motion.div>
+        </BlurFade>
 
         {/* ─── Sprint 4: Creations + Streak row ─── */}
-        <motion.div
-          className="grid gap-4 lg:grid-cols-3"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.30 }}
-        >
-          <motion.div className="lg:col-span-2" whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+        <BlurFade delay={0.25} className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
             <RecentGenerations onNavigate={onNavigate} />
-          </motion.div>
-          <motion.div className="lg:col-span-1" whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          </div>
+          <div className="lg:col-span-1">
             <StreakCard onNavigate={onNavigate} />
-          </motion.div>
-        </motion.div>
+          </div>
+        </BlurFade>
 
         {/* ─── Sprint 4: Inbox Card ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 24, delay: 0.36 }}
-          whileHover={{ y: -2 }}
-        >
+        <BlurFade delay={0.30}>
           <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
-        </motion.div>
+        </BlurFade>
 
         {/* ─── Load error banner ─── */}
         {loadErrors > 0 && !loadErrDismissed && (
@@ -814,13 +787,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               : glanceCards.map((card, idx) => (
                   <div
                     key={card.key}
-                    className={`min-w-[160px] flex-shrink-0 snap-start rounded-2xl border p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer backdrop-blur-xl ${
+                    className={`min-w-[160px] flex-shrink-0 snap-start bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer ${
                       mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                     }`}
                     style={{
                       transitionDelay: `${idx * 80}ms`,
-                      background: 'var(--ag-glass-bg)',
-                      borderColor: 'var(--ag-glass-border)',
                       boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 20px ${card.color}08`,
                     }}
                     onClick={() => {
@@ -861,12 +832,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
         </section>
 
         {/* ─── Quick Actions Strip ─── */}
-        <section>
-          <h2
-            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-          >
-            Quick actions
-          </h2>
+        <BlurFade delay={0.40}>
+          <section>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading">
+              Quick actions
+            </h2>
           <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-none">
             {quickActions.map((action) => (
               <button
@@ -891,10 +861,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               </button>
             ))}
           </div>
-        </section>
+          </section>
+        </BlurFade>
 
         {/* ─── Two-column layout: Conversations + Sparkline ─── */}
-        <div className="grid gap-4 lg:grid-cols-5">
+        <BlurFade delay={0.50} className="grid gap-4 lg:grid-cols-5">
           {/* Recent Conversations */}
           <section className="lg:col-span-3">
             <div className="flex items-center justify-between mb-3">
@@ -911,10 +882,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <Card
-              className="rounded-2xl overflow-hidden backdrop-blur-xl"
-              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
-            >
+            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
               <CardContent className="p-0">
                 {loading ? (
                   <div className="divide-y divide-[var(--ag-border-subtle)]">
@@ -980,7 +948,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2 text-[var(--ag-cyan)] min-h-[44px]"
+                      className="mt-2 bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 min-h-[44px]"
                       onClick={() => onOpenChat?.()}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1008,10 +976,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <Card
-              className="rounded-2xl backdrop-blur-xl"
-              style={{ background: 'var(--ag-glass-bg)', border: '1px solid var(--ag-glass-border)' }}
-            >
+            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
               <CardContent className="p-4">
                 {loading ? (
                   <div className="space-y-3">
@@ -1084,10 +1049,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
               />
             </div>
           </section>
-        </div>
+        </BlurFade>
 
         {/* ─── GAP-1: Today's Reminders Card ─── */}
-        <section>
+        <BlurFade delay={0.55}>
+          <section>
           <div className="flex items-center justify-between mb-3">
             <h2
               className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
@@ -1164,10 +1130,12 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               )}
           </SectionCard>
-        </section>
+          </section>
+        </BlurFade>
 
         {/* ─── GAP-1: Habits Today Card ─── */}
-        <section>
+        <BlurFade delay={0.60}>
+          <section>
           <div className="flex items-center justify-between mb-3">
             <h2
               className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
@@ -1262,7 +1230,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1.5 text-[var(--ag-cyan)] min-h-[44px]"
+                    className="mt-1.5 bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 min-h-[44px]"
                     onClick={() => onNavigate?.('reminders')}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
@@ -1271,11 +1239,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               )}
           </SectionCard>
-        </section>
+          </section>
+        </BlurFade>
 
         {/* ─── GAP-1: Calendar Today Card ─── */}
         {overviewData && overviewData.calendarEventsToday.length > 0 && (
-          <section>
+          <BlurFade delay={0.65}>
+            <section>
             <div className="flex items-center justify-between mb-3">
               <h2
                 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
@@ -1325,12 +1295,14 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                   })}
                 </div>
             </SectionCard>
-          </section>
+            </section>
+          </BlurFade>
         )}
 
         {/* ─── GAP-1: Weekly Stats Card ─── */}
         {overviewData && (
-          <section>
+          <BlurFade delay={0.70}>
+            <section>
             <h2
               className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
             >
@@ -1359,22 +1331,17 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Habits Logged</div>
               </SectionCard>
             </div>
-          </section>
+            </section>
+          </BlurFade>
         )}
 
         {/* ─── Onboarding Checklist (new users, first 7 days) ─── */}
         {showOnboarding && (
-          <section
-            className={`transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-          >
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-            >
+          <BlurFade delay={0.40}>
+            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading">
               Get started
             </h2>
-            <Card
-              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
-            >
+            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-4">
                   <div
@@ -1462,17 +1429,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               </CardContent>
             </Card>
-          </section>
+          </BlurFade>
         )}
 
         {/* ─── Onboarding Card (empty state, no-data fallback) ─── */}
         {isEmptyState && !showOnboarding && (
-          <section
-            className={`transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-          >
-            <Card
-              className="border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)] rounded-2xl overflow-hidden backdrop-blur-xl"
-            >
+          <BlurFade delay={0.45}>
+            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
               <CardContent className="p-6 sm:p-8">
                 <div className="flex items-start gap-4 mb-5">
                   <div
@@ -1496,15 +1459,14 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     onClick={() => onOpenChat?.()}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-jarvis)]/15 transition-all hover:border-[var(--ag-jarvis)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(173,255,47,0.06)' }}
+                    className="flex items-center gap-3 p-3 rounded-xl border-0 transition-all hover:scale-[1.02] active:scale-95 min-h-[44px] bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90"
                   >
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
                       <Send className="w-4 h-4 text-[var(--ag-jarvis)]" />
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Chat with Weebo</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Ask anything</div>
+                      <div className="text-sm font-medium text-white">Chat with Weebo</div>
+                      <div className="text-xs text-white/80">Ask anything</div>
                     </div>
                   </button>
                   <button
@@ -1536,13 +1498,11 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 </div>
               </CardContent>
             </Card>
-          </section>
+          </BlurFade>
         )}
 
         {/* ─── Quick Chat Input ─── */}
-        <section
-          className={`transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-        >
+        <BlurFade delay={0.35}>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -1553,7 +1513,7 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
             }}
             className="relative"
           >
-            <div className="flex items-center gap-2 rounded-2xl border p-2 transition-all backdrop-blur-xl focus-within:shadow-[var(--ag-glow-sm)]" style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
+            <div className="flex items-center gap-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl p-2 transition-all focus-within:shadow-[var(--ag-glow-sm)]">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0 ml-1">
                 <MessageSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
               </div>
@@ -1569,13 +1529,13 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
                 type="submit"
                 size="sm"
                 disabled={!quickChatInput.trim()}
-                className="rounded-xl bg-[var(--ag-cyan)]/15 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/25 border-0 disabled:opacity-30 min-h-[44px] min-w-[44px] px-3"
+                className="rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 border-0 disabled:opacity-30 min-h-[44px] min-w-[44px] px-3"
               >
                 <Send className="w-4 h-4" />
               </Button>
             </div>
           </form>
-        </section>
+        </BlurFade>
       </div>
       </PageShell>
     </PullToRefreshWrapper>

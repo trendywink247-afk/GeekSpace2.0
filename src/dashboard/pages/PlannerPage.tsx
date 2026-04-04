@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -151,7 +152,7 @@ function StatBadge({
 }) {
   return (
     <div className="flex items-baseline gap-1">
-      <span className={`text-lg font-bold ${accent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
+      <span className={`text-lg font-bold font-heading ${accent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
         {value}{suffix}
       </span>
       <span className="text-[10px] text-[var(--ag-text-secondary)] uppercase tracking-wider">{label}</span>
@@ -174,7 +175,7 @@ function BacklogCard({
       draggable
       onDragStart={() => onDragStart(item)}
       className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-grab active:cursor-grabbing
-        border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] bg-white/[0.02] hover:bg-white/[0.04]
+        border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] bg-[var(--ag-active-bg)] hover:bg-[var(--ag-bg-surface-hover)]
         transition-all duration-150 select-none min-h-[44px]"
       style={{
         borderLeftWidth: 3,
@@ -308,7 +309,7 @@ function QuickAddForm({
         />
         <Button
           size="sm"
-          className="h-9 sm:h-7 px-2 text-xs bg-[#8B5CF6] hover:bg-[#8B5CF6]/80 text-white min-w-[44px]"
+          className="h-9 sm:h-7 px-2 text-xs bg-gradient-to-r from-[var(--ag-violet)] to-[#F59E0B] hover:opacity-90 text-white min-w-[44px] shadow-lg shadow-[var(--ag-violet)]/25 hover:shadow-[var(--ag-violet)]/40 transition-all"
           onClick={onSubmit}
           disabled={!title.trim()}
         >
@@ -331,8 +332,8 @@ function QuickAddForm({
             className={`
               px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded text-[10px] font-medium border transition-colors min-h-[44px] sm:min-h-0
               ${duration === opt.value
-                ? 'bg-[#8B5CF6]/20 border-[var(--ag-violet)]/40 text-[var(--ag-violet)]'
-                : 'bg-white/5 border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary)]'}
+                ? 'bg-[var(--ag-active-bg)] border-[var(--ag-border-active)] text-[var(--ag-violet)]'
+                : 'bg-[var(--ag-active-bg)] border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'}
             `}
           >
             {opt.label}
@@ -616,7 +617,8 @@ export function PlannerPage() {
     <PageShell>
     <div className="space-y-6">
       {/* Header with jarvis ownership dot */}
-      <PageHeader
+      <BlurFade delay={0}>
+        <PageHeader
         icon={CalendarCheck}
         title={`${viewMode === 'day' ? 'Daily' : 'Weekly'} Planner`}
         subtitle={viewMode === 'day' ? 'Drag tasks from backlog into your timeline' : 'See your full week at a glance'}
@@ -665,17 +667,24 @@ export function PlannerPage() {
           </div>
         }
       />
+      </BlurFade>
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-        <StatBadge label="planned" value={stats.planned} suffix=" items" />
-        <StatBadge label="blocked" value={stats.hoursBlocked} suffix="h" />
-        <StatBadge label="of day" value={stats.pct} suffix="%" accent />
-      </div>
+      <BlurFade delay={0.1}>
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+          <StatBadge label="planned" value={stats.planned} suffix=" items" />
+          <StatBadge label="blocked" value={stats.hoursBlocked} suffix="h" />
+          <StatBadge label="of day" value={stats.pct} suffix="%" accent />
+        </div>
+      </BlurFade>
 
       {/* Week View */}
       {viewMode === 'week' && (
-        <SectionCard padding="sm" className="overflow-hidden !p-0">
+        <BlurFade delay={0.2}>
+          <SectionCard 
+            padding="sm" 
+            className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
+          >
           {/* Week header with nav */}
           <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -687,7 +696,7 @@ export function PlannerPage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm font-semibold text-[var(--ag-text-primary)]">
+              <span className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">
                 {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
                 {' - '}
                 {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
@@ -730,7 +739,7 @@ export function PlannerPage() {
                       <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-secondary)]'}`}>
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}
                       </span>
-                      <span className={`block text-lg font-bold mt-0.5 ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
+                      <span className={`block text-lg font-bold font-heading mt-0.5 ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
                         {d.getDate()}
                       </span>
                     </button>
@@ -810,17 +819,22 @@ export function PlannerPage() {
             </div>
           </div>
         </SectionCard>
+        </BlurFade>
       )}
 
       {/* Main Layout (Day View) */}
       {viewMode === 'day' && <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
         {/* Left: Backlog Panel */}
-        <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-          <SectionCard padding="sm" className="overflow-hidden !p-0">
+        <BlurFade delay={0.2}>
+          <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
+            <SectionCard 
+              padding="sm" 
+              className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
+            >
             <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 text-[var(--ag-text-secondary)]" />
-                <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Backlog</span>
+                <span className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">Backlog</span>
                 <Badge
                   variant="outline"
                   className="text-xs border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] bg-[#A78BFA]/10"
@@ -862,25 +876,30 @@ export function PlannerPage() {
             <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
               <div className="flex items-center gap-3 text-[10px] text-[var(--ag-text-secondary)]">
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#A78BFA]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--ag-cyan)]" />
                   Reminders
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--ag-green)]" />
                   Habits
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--ag-violet)]" />
                   Custom
                 </span>
               </div>
             </div>
           </SectionCard>
         </div>
+        </BlurFade>
 
         {/* Right: Timeline */}
-        <div className="flex-1 min-w-0">
-          <SectionCard padding="sm" className="overflow-hidden !p-0">
+        <BlurFade delay={0.3}>
+          <div className="flex-1 min-w-0">
+            <SectionCard 
+              padding="sm" 
+              className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
+            >
             {/* Date header */}
             <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -894,7 +913,7 @@ export function PlannerPage() {
                 </Button>
                 <button
                   onClick={goToday}
-                  className="text-sm font-semibold text-[var(--ag-text-primary)] hover:text-[var(--ag-cyan)] transition-colors min-h-[44px] px-2"
+                  className="text-sm font-semibold font-heading text-[var(--ag-text-primary)] hover:text-[var(--ag-cyan)] transition-colors min-h-[44px] px-2"
                 >
                   {formatDate(currentDate)}
                 </button>
@@ -1009,14 +1028,15 @@ export function PlannerPage() {
                   }}
                 >
                   <div className="flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-[#FF2D78] -ml-1" />
-                    <div className="flex-1 h-[2px] bg-[#FF2D78]/60" />
+                    <div className="w-2 h-2 rounded-full bg-[var(--ag-pink)] -ml-1" />
+                    <div className="flex-1 h-[2px] bg-[var(--ag-pink)]/60" />
                   </div>
                 </div>
               )}
             </div>
           </SectionCard>
         </div>
+        </BlurFade>
       </div>}
     </div>
     </PageShell>

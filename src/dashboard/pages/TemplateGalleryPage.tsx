@@ -1,6 +1,6 @@
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, forge ownership, useAgentCanvas, mobile 44px
 import { useState, useEffect, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
@@ -131,7 +131,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
   };
 
   return (
-    <PageShell>
+    <DashboardPageWrapper>
     <div className="space-y-6">
       {/* Header -- hidden when embedded inside another page's tab */}
       {!embedded && (
@@ -159,17 +159,17 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-lg text-[var(--ag-text-primary)] placeholder-[#9CA3AF] focus:border-[rgba(139,92,246,0.3)] focus:shadow-[0_0_12px_rgba(139,92,246,0.1)] outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)] focus:border-[var(--ag-border-active)] focus:shadow-[var(--ag-glow-md)] outline-none transition-all duration-200"
             />
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 min-w-0">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`flex items-center gap-2 px-3 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-all duration-200 ${
                 selectedCategory === 'all'
-                  ? 'bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                  : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                  ? 'bg-[var(--ag-violet)] text-white shadow-[var(--ag-glow-md)]'
+                  : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
               }`}
             >
               <LayoutTemplate className="w-4 h-4" />
@@ -182,10 +182,10 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3 min-h-[44px] rounded-lg whitespace-nowrap transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-all duration-200 ${
                     selectedCategory === cat.id
-                      ? 'bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)]'
-                      : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+                      ? 'bg-[var(--ag-violet)] text-white shadow-[var(--ag-glow-md)]'
+                      : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -206,10 +206,10 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       ) : templates.length === 0 ? (
         <BlurFade delay={0.15}>
         <SectionCard className="text-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-[#8B5CF6]/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--ag-violet)]/10 flex items-center justify-center mx-auto mb-4">
             <LayoutTemplate className="w-8 h-8 text-[var(--ag-violet)]/50" />
           </div>
-          <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2">No templates found</h3>
+          <h3 className="text-lg font-medium text-[var(--ag-text-primary)] mb-2" style={{fontFamily: 'Syne, sans-serif'}}>No templates found</h3>
           <p className="text-[var(--ag-text-secondary)] text-sm max-w-xs mx-auto">Try adjusting your search or filters to discover templates</p>
         </SectionCard>
         </BlurFade>
@@ -218,10 +218,10 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
           {templates.map((template, idx) => (
             <BlurFade key={template.id} delay={0.05 + idx * 0.03}>
             <div
-              className="rounded-xl border border-[rgba(139,92,246,0.08)] overflow-hidden hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(139,92,246,0.06)] transition-all duration-300 group bg-[rgba(12,12,30,0.6)] backdrop-blur-xl"
+              className="rounded-xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-lg)] transition-all duration-300 group bg-[var(--ag-bg-surface)] backdrop-blur-xl"
             >
               {/* Thumbnail */}
-              <div className="aspect-video bg-gradient-to-br from-[#1a1a2e] to-[#16213e] relative overflow-hidden">
+              <div className="aspect-video bg-gradient-to-br from-[var(--ag-bg-elevated)] to-[var(--ag-bg-surface)] relative overflow-hidden">
                 {template.thumbnail ? (
                   <img
                     src={template.thumbnail}
@@ -234,26 +234,26 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     <Code className="w-16 h-16 text-[var(--ag-violet)]/20" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06061a] via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--ag-bg-base)] via-transparent to-transparent" />
 
                 {/* Official badge */}
                 {template.isOfficial && (
-                  <div className="absolute top-3 left-3 px-2 py-1 bg-[#F59E0B]/90 text-white text-xs rounded-full flex items-center gap-1 font-medium">
+                  <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--ag-amber)]/90 text-white text-xs rounded-full flex items-center gap-1 font-medium">
                     <Check className="w-3 h-3" />
                     <span>Official</span>
                   </div>
                 )}
 
                 {/* Category badge */}
-                <div className="absolute top-3 right-3 px-2 py-1 bg-[rgba(12,12,30,0.8)] text-[var(--ag-text-secondary)] text-xs rounded-full capitalize border border-[rgba(139,92,246,0.08)]">
+                <div className="absolute top-3 right-3 px-2 py-1 bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-secondary)] text-xs rounded-full capitalize border border-[var(--ag-border-subtle)]">
                   {template.category}
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-[var(--ag-text-primary)] font-medium text-lg">{template.name}</h3>
+                  <h3 className="text-[var(--ag-text-primary)] font-medium text-lg" style={{fontFamily: 'Syne, sans-serif'}}>{template.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-[var(--ag-text-secondary)] mt-1">
                     <span>{template.cloneCount ?? 0} uses</span>
-                    {template.isOfficial && <span className="text-[#F59E0B]">Agentin</span>}
+                    {template.isOfficial && <span className="text-[var(--ag-amber)]">Agentin</span>}
                   </div>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePreview(template)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[#8B5CF6]/10 text-[var(--ag-violet)] rounded-lg hover:bg-[#8B5CF6]/20 border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-200"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-200"
                   >
                     <Globe className="w-4 h-4" />
                     <span>Preview</span>
@@ -276,7 +276,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                   <button
                     onClick={() => handleClone(template)}
                     disabled={cloningId === template.id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
                   >
                     {cloningId === template.id ? (
                       <>
@@ -306,17 +306,17 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       {/* Clone Success Modal */}
       {cloneResult && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[rgba(12,12,30,0.95)] backdrop-blur-xl rounded-xl border border-[rgba(139,92,246,0.15)] w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-[rgba(139,92,246,0.08)]">
+          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl rounded-xl border border-[var(--ag-border-subtle)] w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--ag-border-subtle)]">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
-                  <Check className="w-4 h-4 text-[#F59E0B]" />
+                <div className="w-8 h-8 rounded-lg bg-[var(--ag-amber)]/10 flex items-center justify-center">
+                  <Check className="w-4 h-4 text-[var(--ag-amber)]" />
                 </div>
-                <h2 className="text-lg font-medium text-[var(--ag-text-primary)]">Template Cloned!</h2>
+                <h2 className="text-lg font-medium text-[var(--ag-text-primary)]" style={{fontFamily: 'Syne, sans-serif'}}>Template Cloned!</h2>
               </div>
               <button
                 onClick={() => setCloneResult(null)}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[rgba(139,92,246,0.08)] rounded-lg transition-colors"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[var(--ag-active-bg)] rounded-xl transition-colors"
               >
                 <X className="w-5 h-5 text-[var(--ag-text-secondary)]" />
               </button>
@@ -331,7 +331,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     setCloneResult(null);
                     onNavigate?.('website-builder');
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] hover:shadow-[0_0_16px_rgba(139,92,246,0.3)] transition-all duration-200 font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
                 >
                   <Code className="w-4 h-4" />
                   Open in Website Builder
@@ -341,7 +341,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     setCloneResult(null);
                     onNavigate?.('artifacts');
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-[#8B5CF6]/10 text-[var(--ag-violet)] rounded-lg hover:bg-[#8B5CF6]/20 border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all duration-200 font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-200 font-medium text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View All Projects
@@ -352,6 +352,6 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
         </div>
       )}
     </div>
-    </PageShell>
+    </DashboardPageWrapper>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   Send, Volume2, VolumeX, RotateCcw, Sparkles, Square,
-  Pin, Search, Plus, Trash2,
+  Pin, Search, Plus, Trash2, MessageSquare,
   ChevronDown, X, PanelLeftClose, PanelLeft,
   Wifi, WifiOff, Clock, Star,
 } from 'lucide-react';
@@ -21,7 +21,8 @@ import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
 import { PageShell } from '@/components/agentin';
-import { DashboardPageWrapper } from '@/components/agentin';
+import { DashboardPageWrapper, PageHeader } from '@/components/agentin';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { SessionContinuityBanner } from '@/components/SessionContinuityBanner';
 import { AgentCapabilityBadge } from '@/components/AgentCapabilityBadge';
@@ -1068,8 +1069,14 @@ export function ChatPage() {
 
   return (
     <DashboardPageWrapper>
-    <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
-    <div className='flex h-[calc(100dvh-184px)] md:h-[calc(100vh-130px)]'>
+      <PageHeader 
+        title="AI Chat"
+        subtitle="Chat with your AI assistant"
+        icon={MessageSquare}
+      />
+      <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
+        <BlurFade delay={0.1} inView>
+          <div className='flex h-[calc(100dvh-240px)] md:h-[calc(100vh-180px)]'>
       {/* ── Conversation Sidebar ── */}
       {sidebarOpen && (
         <div className='w-64 md:w-72 flex-shrink-0 border-r flex flex-col rounded-l-xl overflow-hidden backdrop-blur-xl' style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
@@ -1477,7 +1484,11 @@ export function ChatPage() {
         )}
 
         {/* Input */}
-        <div className='px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t flex-shrink-0 backdrop-blur-md' style={{ borderColor: 'var(--ag-border-subtle)', background: 'var(--ag-glass-bg)' }}>
+        <div className='px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t flex-shrink-0' style={{ 
+          borderColor: 'var(--ag-border-subtle)', 
+          background: 'var(--ag-glass-bg)',
+          backdropFilter: 'blur(16px)'
+        }}>
           {/* Agent Picker */}
           <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
             {[
@@ -1578,7 +1589,10 @@ export function ChatPage() {
                 enterKeyHint='send'
                 inputMode='text'
                 autoCapitalize='sentences'
-                className='w-full resize-none bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-violet)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--ag-violet)]/15 focus:shadow-[0_0_20px_rgba(139,92,246,0.08)] rounded-xl px-3 py-2.5 text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation transition-all duration-200'
+                className='w-full resize-none bg-[var(--ag-glass-bg)] border border-[var(--ag-border-default)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-muted)] focus:border-[var(--ag-violet)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--ag-violet)]/20 focus:shadow-[var(--ag-glow-md)] rounded-2xl px-4 py-3 text-sm leading-relaxed min-h-[44px] max-h-[120px] scrollbar-hide touch-manipulation backdrop-blur-xl transition-all duration-200'
+                style={{
+                  borderImage: 'linear-gradient(145deg, var(--ag-border-default), var(--ag-border-subtle)) 1'
+                }}
               />
               {input.length > 200 && (
                 <span className='absolute right-2 bottom-1.5 text-[10px] text-[var(--ag-text-muted)] tabular-nums pointer-events-none'>
@@ -1626,8 +1640,9 @@ export function ChatPage() {
           </div>
         </div>
       </div>
-    </div>
-    </PageShell>
+          </div>
+        </BlurFade>
+      </PageShell>
     </DashboardPageWrapper>
   );
 }

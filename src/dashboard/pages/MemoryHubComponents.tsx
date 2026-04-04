@@ -36,23 +36,23 @@ export const CATEGORY_OPTIONS = [
 ] as const;
 
 export const SOURCE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  manual: { bg: 'bg-[#A78BFA]/10', text: 'text-[var(--ag-cyan)]', label: 'Manual' },
-  chat: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
-  extracted: { bg: 'bg-[#ADFF2F]/10', text: 'text-[#ADFF2F]', label: 'Chat' },
-  inferred: { bg: 'bg-[#8B5CF6]/10', text: 'text-[var(--ag-violet)]', label: 'Inferred' },
-  telegram: { bg: 'bg-[#FFB800]/10', text: 'text-[#FFB800]', label: 'Telegram' },
-  'portfolio-chat': { bg: 'bg-[#FF2D78]/10', text: 'text-[#FF2D78]', label: 'Portfolio' },
+  manual: { bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]', label: 'Manual' },
+  chat: { bg: 'bg-[var(--ag-lime)]/10', text: 'text-[var(--ag-lime)]', label: 'Chat' },
+  extracted: { bg: 'bg-[var(--ag-lime)]/10', text: 'text-[var(--ag-lime)]', label: 'Chat' },
+  inferred: { bg: 'bg-[var(--ag-violet)]/10', text: 'text-[var(--ag-violet)]', label: 'Inferred' },
+  telegram: { bg: 'bg-[var(--ag-amber)]/10', text: 'text-[var(--ag-amber)]', label: 'Telegram' },
+  'portfolio-chat': { bg: 'bg-[var(--ag-pink)]/10', text: 'text-[var(--ag-pink)]', label: 'Portfolio' },
 };
 
 export const GRAPH_COLORS: Record<string, string> = {
-  personal: '#A78BFA',
-  work: '#FFB800',
-  preference: '#FF2D78',
-  goal: '#ADFF2F',
-  fact: '#8B5CF6',
-  general: '#8892A4',
-  context: '#00D4B0',
-  task: '#FF6161',
+  personal: 'var(--ag-cyan)',
+  work: 'var(--ag-amber)',
+  preference: 'var(--ag-pink)',
+  goal: 'var(--ag-lime)',
+  fact: 'var(--ag-violet)',
+  general: 'var(--ag-text-secondary)',
+  context: 'var(--ag-green)',
+  task: 'var(--ag-pink)',
 };
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -150,15 +150,15 @@ export function CategoryBreakdownBar({ memories }: { memories: MemoryEntry[] }) 
         {breakdown.map(({ category, pct }) => (
           <div
             key={category}
-            className="h-full transition-all duration-500"
-            style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }}
+            className="h-full transition-all duration-[var(--ag-transition-spring)]"
+            style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: GRAPH_COLORS[category] ?? 'var(--ag-text-secondary)' }}
           />
         ))}
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {breakdown.map(({ category, count, pct }) => (
           <div key={category} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? '#8892A4' }} />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GRAPH_COLORS[category] ?? 'var(--ag-text-secondary)' }} />
             <span className="capitalize">{category}</span>
             <span className="text-[var(--ag-text-primary)] font-medium">{count}</span>
             <span>({pct}%)</span>
@@ -180,7 +180,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
       if (e) { e.count++; e.memories.push(m); } else { map.set(cat, { count: 1, memories: [m] }); }
     }
     return Array.from(map.entries()).map(([cat, data], i) => {
-      const color = GRAPH_COLORS[cat] ?? '#8892A4';
+      const color = GRAPH_COLORS[cat] ?? 'var(--ag-text-secondary)';
       const angle = (i / map.size) * Math.PI * 2;
       return {
         id: cat,
@@ -202,14 +202,14 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
     <div className="flex flex-col lg:flex-row gap-6">
       <div className="flex-1 flex items-center justify-center">
         <svg viewBox="0 0 400 360" className="w-full max-w-[400px]">
-          <circle cx="200" cy="180" r="30" fill="#6366F1" opacity={0.15} stroke="#6366F1" strokeWidth={1} />
-          <text x="200" y="184" textAnchor="middle" fill="#6366F1" fontSize="11" fontWeight="bold">You</text>
+          <circle cx="200" cy="180" r="30" fill="var(--ag-violet)" opacity={0.15} stroke="var(--ag-violet)" strokeWidth={1} />
+          <text x="200" y="184" textAnchor="middle" fill="var(--ag-violet)" fontSize="11" fontWeight="bold">You</text>
           {nodes.map(n => (
             <g key={n.id} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered(null)} className="cursor-pointer">
               <line x1={200} y1={180} x2={n.cx} y2={n.cy} stroke={hovered === n.id ? n.color : 'rgba(255,255,255,0.1)'} strokeWidth={hovered === n.id ? 2 : 1} strokeDasharray={hovered === n.id ? undefined : '4 4'} />
               <circle cx={n.cx} cy={n.cy} r={n.r} fill={n.color} opacity={hovered === n.id ? 0.3 : 0.15} stroke={n.color} strokeWidth={hovered === n.id ? 2 : 1} />
               <text x={n.cx} y={n.cy - n.r - 6} textAnchor="middle" fill={n.color} fontSize="10" fontWeight="500">{n.label}</text>
-              <text x={n.cx} y={n.cy + 4} textAnchor="middle" fill="#F4F6FF" fontSize="12" fontWeight="bold">{n.count}</text>
+              <text x={n.cx} y={n.cy + 4} textAnchor="middle" fill="var(--ag-text-primary)" fontSize="12" fontWeight="bold">{n.count}</text>
             </g>
           ))}
         </svg>
@@ -222,8 +222,8 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
             </h3>
             <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
               {hovMems.slice(0, 10).map(m => (
-                <div key={m.id} className="p-2 rounded-lg bg-white/5 border border-white/5 text-xs">
-                  <span className="text-[#6366F1] font-mono">{m.key}</span>
+                <div key={m.id} className="p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs">
+                  <span className="text-[var(--ag-violet)] font-mono">{m.key}</span>
                   <span className="text-[var(--ag-text-secondary)] mx-1">=</span>
                   <span className="text-[var(--ag-text-primary)]">{m.value}</span>
                 </div>
@@ -257,8 +257,8 @@ export function StatsTab({ memories, stats }: StatsTabProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SectionCard>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#6366F1]/10 flex items-center justify-center shrink-0">
-              <Brain className="w-5 h-5 text-[#6366F1]" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet)]/10 flex items-center justify-center shrink-0">
+              <Brain className="w-5 h-5 text-[var(--ag-violet)]" />
             </div>
             <div>
               <div className="text-2xl font-bold text-[var(--ag-text-primary)]">{stats.total}</div>
@@ -304,12 +304,12 @@ export function StatsTab({ memories, stats }: StatsTabProps) {
       </div>
 
       {/* Category breakdown */}
-      <SectionCard title="Category Breakdown">
+      <SectionCard title="Category Breakdown" className="">
         <CategoryBreakdownBar memories={memories} />
       </SectionCard>
 
       {/* Per-source breakdown */}
-      <SectionCard title="Sources">
+      <SectionCard title="Sources" className="">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {Object.entries(
             memories.reduce<Record<string, number>>((acc, m) => {
@@ -321,7 +321,7 @@ export function StatsTab({ memories, stats }: StatsTabProps) {
             .map(([source, count]) => {
               const style = getSourceStyle(source);
               return (
-                <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5">
+                <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-[var(--ag-transition-fast)]">
                   <Badge className={`${style.bg} ${style.text} text-xs px-2 py-0.5 rounded-full border-0`}>
                     {style.label}
                   </Badge>

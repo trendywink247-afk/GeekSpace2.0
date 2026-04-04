@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell, PageHeader, SectionCard, PageWrapper } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import {
   Save, Plus, Trash2, X, ExternalLink, Sparkles, Loader2,
@@ -425,17 +425,18 @@ export function PortfolioPage() {
   return (
     <DashboardPageWrapper>
     <PageShell maxWidth="5xl">
-    <div data-testid="portfolio-page" className="space-y-6 animate-in fade-in duration-500">
+    <PageWrapper>
+    <div data-testid="portfolio-page" className="space-y-6">
       {/* Header with Nova dot */}
       <PageHeader
         icon={Briefcase}
         title="Portfolio"
         subtitle="Manage your public portfolio"
         badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/30 text-[#EC4899]">
+          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-nova)]/10 border border-[var(--ag-nova)]/30 text-[var(--ag-nova)]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#EC4899] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#EC4899]" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-nova)] opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-nova)]" />
             </span>
             Nova
           </span>
@@ -444,13 +445,13 @@ export function PortfolioPage() {
           <div className="flex items-center gap-2 flex-wrap">
             {/* Unsaved changes indicator */}
             {isDirty.current && !isSaving && (
-              <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">
+              <div className="px-3 py-1.5 rounded-lg bg-[var(--ag-amber)]/10 border border-[var(--ag-amber)]/30 text-[var(--ag-amber)] text-xs">
                 Unsaved changes
               </div>
             )}
             {portfolioStats !== null && (
               <span className="text-xs text-[var(--ag-text-secondary)] hidden sm:inline-flex items-center gap-1">
-                <Eye className="w-3 h-3 text-[#EC4899]" />
+                <Eye className="w-3 h-3 text-[var(--ag-nova)]" />
                 {portfolioStats.totalViews} views
                 {lastViewedAt && (
                   <span
@@ -467,7 +468,7 @@ export function PortfolioPage() {
                 <button
                   onClick={handleCopyLink}
                   className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 min-h-[44px] ${linkCopied ? 'scale-105' : ''}`}
-                  style={linkCopied ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 12px rgba(0,255,136,0.15)' } : { color: '#EC4899', borderColor: 'rgba(236,72,153,0.3)' }}
+                  style={linkCopied ? { color: 'var(--ag-green)', borderColor: 'rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.1)', boxShadow: '0 0 12px rgba(16,185,129,0.15)' } : { color: 'var(--ag-nova)', borderColor: 'var(--ag-border-default)' }}
                   title="Copy portfolio link"
                 >
                   {linkCopied ? <CheckCircle2 className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
@@ -477,14 +478,18 @@ export function PortfolioPage() {
                   href={`/portfolio/${user.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)] hover:border-[rgba(139,92,246,0.3)] hover:bg-[#8B5CF6]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 min-h-[44px]"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[var(--ag-violet)] border border-[var(--ag-border-default)] hover:border-[var(--ag-border-glow)] hover:bg-[var(--ag-violet)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 min-h-[44px]"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View Live
                 </a>
               </>
             )}
-            <Button onClick={handleSave} disabled={isSaving} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px] press-scale">
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving} 
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white border-0 min-h-[44px] press-scale shadow-lg hover:shadow-xl transition-all duration-300"
+            >
               {isSaving ? (
                 <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Saving...</>
               ) : (
@@ -497,10 +502,10 @@ export function PortfolioPage() {
 
       {/* Status message */}
       {message && (
-        <div className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 ${
+        <div className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] ${
           message.type === 'success'
-            ? 'bg-[#00FF88]/10 border border-[#00FF88]/30 text-[#00FF88]'
-            : 'bg-[#FF6161]/10 border border-[#FF6161]/30 text-[#FF6161]'
+            ? 'border-[var(--ag-green)]/30 text-[var(--ag-green)]'
+            : 'border-[var(--ag-pink)]/30 text-[var(--ag-pink)]'
         }`}>
           {message.text}
         </div>
@@ -508,11 +513,11 @@ export function PortfolioPage() {
 
       {/* Profile Completion Progress Bar */}
       {completionPct < 100 && (
-        <SectionCard>
+        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-[var(--ag-text-primary)]">
+            <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] font-heading">
               Profile {completionPct}% complete
-            </span>
+            </h3>
             <span className="text-xs text-[var(--ag-text-secondary)]">{completedCount}/{completionItems.length} fields</span>
           </div>
           <div className="w-full bg-[var(--ag-bg-base)] rounded-full h-2 mb-3">
@@ -521,10 +526,10 @@ export function PortfolioPage() {
               style={{
                 width: `${completionPct}%`,
                 background: completionPct >= 80
-                  ? '#00FF88'
+                  ? 'var(--ag-green)'
                   : completionPct >= 50
-                    ? '#EC4899'
-                    : '#F59E0B',
+                    ? 'var(--ag-nova)'
+                    : 'var(--ag-amber)',
               }}
             />
           </div>
@@ -536,24 +541,24 @@ export function PortfolioPage() {
                 <button
                   key={item.label}
                   onClick={() => setActiveTab(item.tab)}
-                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#EC4899]/10 text-[#EC4899] border border-[#EC4899]/20 hover:bg-[#EC4899]/20 transition-colors min-h-[44px]"
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[var(--ag-nova)]/10 text-[var(--ag-nova)] border border-[var(--ag-nova)]/20 hover:bg-[var(--ag-nova)]/20 transition-colors min-h-[44px]"
                 >
                   <Plus className="w-3 h-3" />
                   {item.label}
                 </button>
               ))}
           </div>
-        </SectionCard>
+        </div>
       )}
 
       {/* Share Your Portfolio Card */}
       {user?.username && (
-        <SectionCard>
+        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Link className="w-4 h-4 text-[#EC4899]" />
-                <span className="text-sm font-semibold text-[var(--ag-text-primary)]">Share Your Portfolio</span>
+                <Link className="w-4 h-4 text-[var(--ag-nova)]" />
+                <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] font-heading">Share Your Portfolio</h3>
               </div>
               <p className="text-xs text-[var(--ag-text-secondary)] truncate">
                 {`${window.location.origin}/portfolio/${user.username}`}
@@ -564,8 +569,8 @@ export function PortfolioPage() {
                 onClick={handleCopyLink}
                 className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition-all duration-300 min-h-[44px] ${linkCopied ? 'scale-105' : ''}`}
                 style={linkCopied
-                  ? { color: '#00FF88', borderColor: 'rgba(0,255,136,0.4)', background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 12px rgba(0,255,136,0.15)' }
-                  : { color: '#EC4899', borderColor: 'rgba(236,72,153,0.3)', background: 'transparent' }
+                  ? { color: 'var(--ag-green)', borderColor: 'rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.1)', boxShadow: '0 0 12px rgba(16,185,129,0.15)' }
+                  : { color: 'var(--ag-nova)', borderColor: 'var(--ag-border-default)', background: 'transparent' }
                 }
               >
                 {linkCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -592,49 +597,49 @@ export function PortfolioPage() {
               </a>
             </div>
           </div>
-        </SectionCard>
+        </div>
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
-          <TabsList className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)] p-1 flex flex-nowrap w-max md:w-auto">
-            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+          <TabsList className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] p-1 flex flex-nowrap w-max md:w-auto">
+            <TabsTrigger value="profile" data-testid="portfolio-tab-profile" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <User className="w-4 h-4 mr-2" />Profile
             </TabsTrigger>
-            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="skills" data-testid="portfolio-tab-skills" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Code2 className="w-4 h-4 mr-2" />Skills
             </TabsTrigger>
-            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="projects" data-testid="portfolio-tab-projects" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <FolderGit2 className="w-4 h-4 mr-2" />Projects
             </TabsTrigger>
-            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="milestones" data-testid="portfolio-tab-milestones" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Award className="w-4 h-4 mr-2" />Milestones
             </TabsTrigger>
-            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="social" data-testid="portfolio-tab-social" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Share2 className="w-4 h-4 mr-2" />Social
             </TabsTrigger>
-            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="ai" data-testid="portfolio-tab-ai" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Bot className="w-4 h-4 mr-2" />AI Edit
             </TabsTrigger>
-            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="suggestions" data-testid="portfolio-tab-suggestions" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Lightbulb className="w-4 h-4 mr-2" />Suggestions
               {suggestions.length > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[#EC4899] text-white rounded-full">
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[var(--ag-nova)] text-white rounded-full">
                   {suggestions.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="analytics" data-testid="portfolio-tab-analytics" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <BarChart3 className="w-4 h-4 mr-2" />Analytics
             </TabsTrigger>
-            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
+            <TabsTrigger value="preview" data-testid="portfolio-tab-preview" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale min-h-[44px]">
               <Eye className="w-4 h-4 mr-2" />Preview
             </TabsTrigger>
             {/* 38.5: Messages tab */}
-            <TabsTrigger value="messages" className="data-[state=active]:bg-[#8B5CF6] data-[state=active]:text-white whitespace-nowrap press-scale relative min-h-[44px]">
+            <TabsTrigger value="messages" className="data-[state=active]:bg-[var(--ag-violet)] data-[state=active]:text-white whitespace-nowrap press-scale relative min-h-[44px]">
               Messages
               {contacts.length > 0 && (
-                <span className="ml-1.5 bg-[#EC4899] text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                <span className="ml-1.5 bg-[var(--ag-nova)] text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
                   {contacts.length}
                 </span>
               )}
@@ -644,7 +649,11 @@ export function PortfolioPage() {
 
         {/* ── Profile Tab ─────────────────────────────────────── */}
         <TabsContent value="profile" className="space-y-6">
-          <SectionCard title="Profile Details" subtitle="Your public portfolio headline, bio, and layout">
+          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
+            <div className="mb-6">
+              <h3 className="text-xl font-heading text-[var(--ag-text-primary)] mb-2">Profile Details</h3>
+              <p className="text-[var(--ag-text-secondary)] text-sm">Your public portfolio headline, bio, and layout</p>
+            </div>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -652,7 +661,7 @@ export function PortfolioPage() {
                   <button
                     onClick={() => handleGenerate('headline', `${about}\n${skills.join(', ')}`, setHeadline)}
                     disabled={generatingField === 'headline'}
-                    className="text-xs flex items-center gap-1 text-[#EC4899] hover:text-[#EC4899] disabled:opacity-50"
+                    className="text-xs flex items-center gap-1 text-[var(--ag-nova)] hover:text-[var(--ag-nova)] disabled:opacity-50"
                   >
                     {generatingField === 'headline' ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -666,7 +675,7 @@ export function PortfolioPage() {
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="Full-Stack Developer & AI Enthusiast"
-                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-base)] border-[var(--ag-border-default)] text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)]"
                 />
               </div>
               <div>
@@ -814,7 +823,7 @@ export function PortfolioPage() {
                 </div>
               </div>
             </div>
-          </SectionCard>
+          </div>
         </TabsContent>
 
         {/* ── Skills Tab ──────────────────────────────────────── */}
@@ -844,7 +853,7 @@ export function PortfolioPage() {
                   }}
                   disabled={generatingField === 'skills' || !headline}
                   variant="outline"
-                  className="border-[rgba(139,92,246,0.15)]"
+                  className="border-[var(--ag-border-default)] hover:border-[var(--ag-border-glow)]"
                 >
                   {generatingField === 'skills' ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -861,16 +870,20 @@ export function PortfolioPage() {
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   placeholder="e.g. TypeScript, React, Docker..."
-                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.15)] text-[var(--ag-text-primary)]"
+                  className="bg-[var(--ag-bg-base)] border-[var(--ag-border-default)] text-[var(--ag-text-primary)] focus:border-[var(--ag-violet)]"
                 />
-                <Button onClick={addSkill} disabled={!newSkill.trim()} className="bg-[#8B5CF6] hover:bg-[#7C3AED] min-h-[44px]">
+                <Button 
+                  onClick={addSkill} 
+                  disabled={!newSkill.trim()} 
+                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white border-0 min-h-[44px] press-scale shadow-lg hover:shadow-xl transition-all duration-300"
+                >
                   <Plus className="w-4 h-4 mr-2" />Add
                 </Button>
               </div>
 
               {skills.length === 0 ? (
                 <div className="text-center py-8">
-                  <Code2 className="w-10 h-10 text-[#EC4899]/30 mx-auto mb-3" />
+                  <Code2 className="w-10 h-10 text-[var(--ag-nova)]/30 mx-auto mb-3" />
                   <p className="text-[var(--ag-text-secondary)]">No skills added yet</p>
                 </div>
               ) : (
@@ -879,7 +892,7 @@ export function PortfolioPage() {
                     <button
                       key={skill}
                       onClick={() => removeSkill(skill)}
-                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#EC4899]/10 border border-[#EC4899]/30 text-[#EC4899] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/30 hover:text-[#FF6161] transition-all press-scale"
+                      className="group flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[var(--ag-nova)]/10 border border-[var(--ag-nova)]/30 text-[var(--ag-nova)] hover:bg-[var(--ag-pink)]/10 hover:border-[var(--ag-pink)]/30 hover:text-[var(--ag-pink)] transition-all press-scale"
                     >
                       {skill}
                       <X className="w-3 h-3 opacity-0 group-hover:opacity-100 md:opacity-0 max-md:opacity-60 transition-opacity" />
@@ -1558,6 +1571,7 @@ export function PortfolioPage() {
         </div>
       )}
     </div>
+    </PageWrapper>
     </PageShell>
     </DashboardPageWrapper>
   );

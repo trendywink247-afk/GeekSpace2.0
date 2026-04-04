@@ -838,7 +838,7 @@ export function WebsiteBuilderPage() {
               </div>
             </BlurFade>
           ) : (
-            <div className="space-y-6">
+            <>
               {/* Assigned agents */}
               <BlurFade delay={0.2}>
                 <SectionCard padding="lg" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
@@ -949,7 +949,6 @@ export function WebsiteBuilderPage() {
                   </div>
                 )}
               </SectionCard>
-              </BlurFade>
 
               {/* Quick task for assigned agents */}
               {assignedAgents.length > 0 && (
@@ -1139,7 +1138,7 @@ export function WebsiteBuilderPage() {
                   </div>
                 </BlurFade>
               )}
-            </div>
+            </>
           )}
         </TabsContent>
         </Tabs>

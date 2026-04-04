@@ -82,10 +82,10 @@ interface LocalEvent {
 }
 
 const CATEGORY_COLORS: Record<EventCategory, string> = {
-  work: "bg-blue-400",
-  personal: "bg-cyan-400",
-  health: "bg-green-400",
-  social: "bg-pink-400",
+  work: "bg-[var(--ag-violet)]",
+  personal: "bg-[var(--ag-violet-light)]",
+  health: "bg-[var(--ag-accent)]",
+  social: "bg-[var(--ag-violet-soft)]",
 };
 
 const CATEGORY_LABELS: Record<EventCategory, string> = {
@@ -96,17 +96,17 @@ const CATEGORY_LABELS: Record<EventCategory, string> = {
 };
 
 const CATEGORY_TEXT_COLORS: Record<EventCategory, string> = {
-  work: "text-blue-400",
-  personal: "text-cyan-400",
-  health: "text-green-400",
-  social: "text-pink-400",
+  work: "text-[var(--ag-violet)]",
+  personal: "text-[var(--ag-violet-light)]",
+  health: "text-[var(--ag-accent)]",
+  social: "text-[var(--ag-violet-soft)]",
 };
 
 const CATEGORY_BG_FAINT: Record<EventCategory, string> = {
-  work: "bg-blue-400/10",
-  personal: "bg-cyan-400/10",
-  health: "bg-green-400/10",
-  social: "bg-pink-400/10",
+  work: "bg-[var(--ag-violet)]/10",
+  personal: "bg-[var(--ag-violet-light)]/10",
+  health: "bg-[var(--ag-accent)]/10",
+  social: "bg-[var(--ag-violet-soft)]/10",
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -606,7 +606,7 @@ export function CalendarPage() {
             <Button
               size="sm"
               onClick={() => setShowAddDialog(true)}
-              className="gap-1.5 min-h-[44px] bg-[#A78BFA]/10 text-[var(--ag-cyan,#A78BFA)] border border-[var(--ag-cyan)]/20 hover:bg-[#A78BFA]/20 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+              className="gap-1.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-accent)] text-white hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 transition-all duration-300"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Event</span>
@@ -617,7 +617,7 @@ export function CalendarPage() {
               onClick={() => void fetchData(true)}
               disabled={refreshing}
               aria-label="Refresh"
-              className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+              className="min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 hover:bg-[var(--ag-bg-surface)]"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
             </Button>
@@ -635,9 +635,9 @@ export function CalendarPage() {
 
       {/* Connection status card */}
       <BlurFade delay={0.1}>
-      <SectionCard>
+      <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
           {loading ? (
-            <div className="h-12 rounded-lg bg-[#F4F6FF]/5 animate-pulse" />
+            <div className="h-12 rounded-lg bg-[var(--ag-bg-subtle)] animate-pulse" />
           ) : status?.available === false ? (
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-amber-400/10 p-2">
@@ -711,7 +711,7 @@ export function CalendarPage() {
               <Button
                 size="sm"
                 onClick={handleConnect}
-                className="gap-1.5 shrink-0 min-h-[44px] bg-[#A78BFA] hover:bg-[#A78BFA]/80 text-[#06061a] font-semibold focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
+                className="gap-1.5 shrink-0 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-accent)] text-white hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-accent)]/90 font-semibold focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 transition-all duration-300"
               >
                 <Link2 className="h-3.5 w-3.5" />
                 Connect Google Calendar
@@ -728,7 +728,7 @@ export function CalendarPage() {
         <div className="space-y-4">
           {/* Calendar grid */}
           <BlurFade delay={0.15}>
-          <SectionCard className="overflow-hidden">
+          <SectionCard className="overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
               {/* Month navigation */}
               <div className="flex items-center justify-between mb-4">
                 <Button
@@ -741,7 +741,7 @@ export function CalendarPage() {
                   <ChevronLeft className="h-5 w-5 text-[var(--ag-text-secondary)]" />
                 </Button>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[var(--ag-text-primary)]">{monthLabel}</h2>
+                  <h2 className="text-lg font-heading font-semibold text-[var(--ag-text-primary)]">{monthLabel}</h2>
                   {!(
                     viewYear === today.getFullYear() &&
                     viewMonth === today.getMonth()
@@ -750,7 +750,7 @@ export function CalendarPage() {
                       variant="outline"
                       size="sm"
                       onClick={goToToday}
-                      className="text-xs min-h-[44px] px-3 border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
+                      className="text-xs min-h-[44px] px-3 border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)]"
                     >
                       Today
                     </Button>
@@ -780,7 +780,7 @@ export function CalendarPage() {
               </div>
 
               {/* Day cells */}
-              <div className="grid grid-cols-7 gap-px bg-[rgba(139,92,246,0.08)] rounded-lg overflow-hidden">
+              <div className="grid grid-cols-7 gap-px bg-[var(--ag-border-subtle)] rounded-lg overflow-hidden">
                 {gridCells.map((cell, idx) => {
                   const key = dateKey(cell.date);
                   const isToday = isSameDay(cell.date, today);
@@ -796,36 +796,36 @@ export function CalendarPage() {
                       key={idx}
                       onClick={() => setSelectedDate(cell.date)}
                       className={[
-                        "relative flex flex-col items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[56px] bg-[rgba(12,12,30,0.6)] transition-colors",
+                        "relative flex flex-col items-center py-2 sm:py-3 min-h-[44px] sm:min-h-[56px] bg-[var(--ag-bg-surface)] transition-colors",
                         cell.isCurrentMonth
                           ? "text-[var(--ag-text-primary)]"
                           : "text-[var(--ag-text-muted)]/40",
-                        isToday ? "ring-1 ring-inset ring-[#84CC16] bg-[#84CC16]/5" : "",
-                        isSelected && !isToday ? "bg-[#A78BFA]/10" : "",
-                        isSelected && isToday ? "bg-[#84CC16]/15 ring-2 ring-[#84CC16]" : "",
-                        "hover:bg-[#A78BFA]/8 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
+                        isToday ? "ring-1 ring-inset ring-[var(--ag-accent)] bg-[var(--ag-accent)]/5" : "",
+                        isSelected && !isToday ? "bg-[var(--ag-violet)]/10" : "",
+                        isSelected && isToday ? "bg-[var(--ag-accent)]/15 ring-2 ring-[var(--ag-accent)]" : "",
+                        "hover:bg-[var(--ag-violet)]/8 focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 focus-visible:outline-none",
                       ].join(" ")}
                     >
                       <span
                         className={[
                           "text-sm font-medium leading-none",
-                          isToday ? "text-[#84CC16] font-bold" : "",
+                          isToday ? "text-[var(--ag-accent)] font-bold" : "",
                         ].join(" ")}
                       >
                         {cell.day}
                       </span>
 
-                      {/* Dots */}
-                      {(hasEvents || hasReminders) && (
+                      {/* Event indicators */}
+                      {(hasEvents || hasReminders) ? (
                         <div className="flex items-center gap-0.5 mt-1">
                           {hasEvents && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-violet)]" />
                           )}
                           {hasReminders && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-accent)]" />
                           )}
                         </div>
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}
@@ -834,15 +834,15 @@ export function CalendarPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-3 text-xs text-[var(--ag-text-muted)]">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#A78BFA]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-violet)]" />
                   Events
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-accent)]" />
                   Reminders
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#84CC16]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--ag-accent)]" />
                   Today
                 </div>
               </div>
@@ -851,17 +851,17 @@ export function CalendarPage() {
 
           {/* Selected day event list */}
           <BlurFade delay={0.2}>
-          <SectionCard>
+          <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-4 w-4 text-[var(--ag-cyan)]" />
-                <h2 className="text-base font-semibold text-[var(--ag-text-primary)]">
+                <Clock className="h-4 w-4 text-[var(--ag-violet)]" />
+                <h2 className="text-base font-heading font-semibold text-[var(--ag-text-primary)]">
                 {isSameDay(selectedDate, today)
                   ? "Today"
                   : DateTime.fromJSDate(selectedDate).toLocaleString({ weekday: 'long', month: 'short', day: 'numeric' })}
                 </h2>
                 {(selectedDayEvents.length > 0 ||
                   selectedDayReminders.length > 0) && (
-                  <Badge variant="secondary" className="ml-1 text-xs bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/30">
+                  <Badge variant="secondary" className="ml-1 text-xs bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/30">
                     {selectedDayEvents.length + selectedDayReminders.length}
                   </Badge>
                 )}
@@ -912,7 +912,7 @@ export function CalendarPage() {
                             onClick={() =>
                               setExpandedEventId(isExpanded ? null : ev.id)
                             }
-                            className="w-full rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 text-left hover:border-[rgba(139,92,246,0.15)] hover:bg-[rgba(12,12,30,0.8)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none"
+                            className="w-full rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-3 flex items-start gap-3 text-left hover:border-[var(--ag-violet)]/30 hover:bg-[var(--ag-bg-subtle)] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 focus-visible:outline-none"
                           >
                             <div
                               className={`rounded-full ${catBg} p-1.5 mt-0.5 shrink-0`}
@@ -948,7 +948,7 @@ export function CalendarPage() {
 
                           {/* Expanded details */}
                           {isExpanded && (
-                            <div className="ml-9 mt-1 mb-2 rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.4)] p-3 space-y-2 text-sm">
+                            <div className="ml-9 mt-1 mb-2 rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-subtle)] p-3 space-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <span className="text-[var(--ag-text-muted)]">
                                   Time:
@@ -1012,10 +1012,10 @@ export function CalendarPage() {
                   {selectedDayReminders.map((r) => (
                     <div
                       key={r.id}
-                      className="rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3"
+                      className="rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-3 flex items-start gap-3"
                     >
-                      <div className="rounded-full bg-amber-400/10 p-1.5 mt-0.5 shrink-0">
-                        <Bell className="h-3.5 w-3.5 text-amber-400" />
+                      <div className="rounded-full bg-[var(--ag-accent)]/10 p-1.5 mt-0.5 shrink-0">
+                        <Bell className="h-3.5 w-3.5 text-[var(--ag-accent)]" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium leading-snug truncate text-[var(--ag-text-primary)]">
@@ -1025,12 +1025,12 @@ export function CalendarPage() {
                           {r.datetime
                             ? formatTime(new Date(r.datetime).getTime())
                             : "All day"}
-                          <span className="ml-2 text-amber-400/70">
+                          <span className="ml-2 text-[var(--ag-accent)]/70">
                             Reminder
                           </span>
                         </p>
                       </div>
-                      <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-amber-400" />
+                      <span className="w-2 h-2 rounded-full mt-2 shrink-0 bg-[var(--ag-accent)]" />
                     </div>
                   ))}
                 </div>
@@ -1042,13 +1042,13 @@ export function CalendarPage() {
         {/* Right sidebar: upcoming events widget */}
         <div className="space-y-4">
           <BlurFade delay={0.2}>
-          <SectionCard title="Upcoming">
+          <SectionCard title="Upcoming" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
               {loading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-14 rounded-lg bg-[#F4F6FF]/5 animate-pulse"
+                      className="h-14 rounded-lg bg-[var(--ag-bg-subtle)] animate-pulse"
                     />
                   ))}
                 </div>
@@ -1074,7 +1074,7 @@ export function CalendarPage() {
                     return (
                       <div
                         key={ev.id}
-                        className="rounded-lg border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] p-3 flex items-start gap-3 hover:border-[rgba(139,92,246,0.15)] transition-all duration-300"
+                        className="rounded-lg border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] p-3 flex items-start gap-3 hover:border-[var(--ag-violet)]/30 transition-all duration-300"
                       >
                         <div
                           className={`rounded-full ${catBg} p-1.5 mt-0.5 shrink-0`}
@@ -1092,7 +1092,7 @@ export function CalendarPage() {
                               {DateTime.fromMillis(ms).toLocaleString({ month: 'short', day: 'numeric' })}{" "}
                               {formatTime(ms)}
                             </p>
-                            <span className="text-xs text-[var(--ag-cyan)] font-medium">
+                            <span className="text-xs text-[var(--ag-violet)] font-medium">
                               {relativeCountdown(ms)}
                             </span>
                           </div>
@@ -1111,10 +1111,10 @@ export function CalendarPage() {
           {/* How it works -- shown when not connected */}
           {!loading && !status?.connected && (
             <BlurFade delay={0.25}>
-            <SectionCard title="How It Works">
+            <SectionCard title="How It Works" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
                 <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Connect your Google account
@@ -1126,7 +1126,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Events are pulled automatically
@@ -1138,7 +1138,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       Context-aware responses
@@ -1150,7 +1150,7 @@ export function CalendarPage() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-cyan)] shrink-0" />
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-[var(--ag-violet)] shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-[var(--ag-text-primary)]">
                       You stay in control
@@ -1180,13 +1180,13 @@ export function CalendarPage() {
           </DialogHeader>
 
           {/* Mode toggle */}
-          <div className="flex gap-2 p-1 bg-[#F4F6FF]/5 rounded-lg">
+          <div className="flex gap-2 p-1 bg-[var(--ag-bg-subtle)] rounded-lg">
             <button
               onClick={() => setAddMode("natural")}
               className={[
                 "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
                 addMode === "natural"
-                  ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
+                  ? "bg-[var(--ag-bg-surface)] text-[var(--ag-text-primary)] shadow-sm"
                   : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
               ].join(" ")}
             >
@@ -1197,7 +1197,7 @@ export function CalendarPage() {
               className={[
                 "flex-1 text-sm py-2.5 min-h-[44px] rounded-md transition-colors font-medium focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none",
                 addMode === "manual"
-                  ? "bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-primary)] shadow-sm"
+                  ? "bg-[var(--ag-bg-surface)] text-[var(--ag-text-primary)] shadow-sm"
                   : "text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]",
               ].join(" ")}
             >
@@ -1286,25 +1286,25 @@ export function CalendarPage() {
                     <SelectContent>
                       <SelectItem value="work">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-blue-400" />
+                          <span className="w-2 h-2 rounded-full bg-[var(--ag-violet)]" />
                           Work
                         </span>
                       </SelectItem>
                       <SelectItem value="personal">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          <span className="w-2 h-2 rounded-full bg-[var(--ag-violet-light)]" />
                           Personal
                         </span>
                       </SelectItem>
                       <SelectItem value="health">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-green-400" />
+                          <span className="w-2 h-2 rounded-full bg-[var(--ag-accent)]" />
                           Health
                         </span>
                       </SelectItem>
                       <SelectItem value="social">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-pink-400" />
+                          <span className="w-2 h-2 rounded-full bg-[var(--ag-violet-soft)]" />
                           Social
                         </span>
                       </SelectItem>
@@ -1330,7 +1330,7 @@ export function CalendarPage() {
                   ? !nlInput.trim()
                   : !manualTitle.trim() || !manualDate
               }
-              className="min-h-[44px] bg-[#A78BFA] text-black hover:bg-[#A78BFA]/90"
+              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-accent)] text-white hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-accent)]/90 transition-all duration-300"
             >
               <Plus className="h-4 w-4 mr-1.5" />
               Add Event
@@ -1361,7 +1361,7 @@ export function CalendarPage() {
       {/* ── AI Assistant Panel ────────────────────────────────── */}
       {showAI && (
         <div
-          className="fixed z-40 bg-[var(--ag-bg-surface)] border border-[rgba(139,92,246,0.15)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
+          className="fixed z-40 bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300
             bottom-0 left-0 right-0 h-[80vh]
             md:bottom-6 md:left-auto md:right-24 md:top-auto md:w-[400px] md:h-[560px]"
           style={{
@@ -1369,15 +1369,15 @@ export function CalendarPage() {
           }}
         >
           {/* Panel header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] shrink-0">
             <div
               className="flex items-center justify-center w-8 h-8 rounded-lg"
               style={{ background: "linear-gradient(135deg, #A78BFA20, #8B5CF620)" }}
             >
-              <Sparkles className="h-4 w-4 text-[var(--ag-cyan)]" />
+              <Sparkles className="h-4 w-4 text-[var(--ag-violet)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-[var(--ag-text-primary)]">Calendar AI</h3>
+              <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Calendar AI</h3>
               <p className="text-xs text-[var(--ag-text-secondary)] truncate">Ask about your schedule</p>
             </div>
             <button
@@ -1390,7 +1390,7 @@ export function CalendarPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[rgba(139,92,246,0.06)] shrink-0">
+          <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-[var(--ag-border-subtle)]/50 shrink-0">
             {[
               { label: "Find free time", prompt: "Find me some free time slots this week for a 1-hour meeting" },
               { label: "Block focus time", prompt: "Block 2 hours of focus time tomorrow morning on my calendar" },
@@ -1400,12 +1400,7 @@ export function CalendarPage() {
                 key={action.label}
                 onClick={() => void askCalendarAI(action.prompt)}
                 disabled={aiLoading}
-                className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium border transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                style={{
-                  background: "rgba(139,92,246,0.06)",
-                  borderColor: "rgba(139,92,246,0.15)",
-                  color: "#A78BFA",
-                }}
+                className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium border transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 bg-[var(--ag-violet)]/6 border-[var(--ag-violet)]/15 text-[var(--ag-violet)]"
               >
                 {action.label}
               </button>
@@ -1419,7 +1414,7 @@ export function CalendarPage() {
           >
             {aiLoading ? (
               <div className="flex items-center gap-2 text-[var(--ag-text-secondary)] py-8 justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-cyan)]" />
+                <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-violet)]" />
                 <span>Thinking...</span>
               </div>
             ) : aiResponse ? (
@@ -1430,7 +1425,7 @@ export function CalendarPage() {
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
                   style={{ background: "rgba(139,92,246,0.08)" }}
                 >
-                  <Calendar className="h-6 w-6 text-[var(--ag-cyan)]/60" />
+                  <Calendar className="h-6 w-6 text-[var(--ag-violet)]/60" />
                 </div>
                 <p className="text-[var(--ag-text-secondary)] text-xs max-w-[240px]">
                   Ask me to find free slots, schedule meetings, or check what is coming up.
@@ -1448,7 +1443,7 @@ export function CalendarPage() {
               setAiInput("");
               void askCalendarAI(trimmed);
             }}
-            className="flex items-center gap-2 px-3 py-3 border-t border-[rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] shrink-0"
+            className="flex items-center gap-2 px-3 py-3 border-t border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] shrink-0"
           >
             <input
               type="text"
@@ -1456,7 +1451,7 @@ export function CalendarPage() {
               onChange={(e) => setAiInput(e.target.value)}
               placeholder="Ask about your calendar..."
               disabled={aiLoading}
-              className="flex-1 bg-[#12121F] border border-[rgba(139,92,246,0.1)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none focus:border-[var(--ag-cyan)]/40 transition-colors disabled:opacity-50"
+              className="flex-1 bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none focus:border-[var(--ag-violet)]/40 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
@@ -1464,7 +1459,7 @@ export function CalendarPage() {
               className="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-150 disabled:opacity-30 hover:scale-105 active:scale-95"
               style={{
                 background: aiInput.trim()
-                  ? "linear-gradient(135deg, #A78BFA, #8B5CF6)"
+                  ? "linear-gradient(135deg, var(--ag-violet), var(--ag-accent))"
                   : "rgba(139,92,246,0.08)",
               }}
               aria-label="Send message"

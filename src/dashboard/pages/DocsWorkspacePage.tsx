@@ -204,15 +204,14 @@ export function DocsWorkspacePage() {
     <PageShell className="!p-0 !pb-0">
     <div className="flex h-full min-h-[calc(100vh-64px)]">
       {/* Left sidebar — hidden on mobile */}
-      <aside className="hidden md:flex w-56 border-r border-[rgba(139,92,246,0.08)] flex-col bg-[var(--ag-bg-base)]/50 shrink-0">
-        {/* New doc button — forge amber */}
+      <aside className="hidden md:flex w-56 border-r border-[var(--ag-border-subtle)] flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl shrink-0">
+        {/* New doc button — violet-gold gradient */}
         <button
           onClick={handleCreate}
           className="m-3 flex items-center gap-2 px-3 py-2.5 rounded-xl
-                     bg-[#F59E0B]/10 border border-[#F59E0B]/20
-                     text-[#F59E0B] text-sm font-medium
-                     hover:bg-[#F59E0B]/15 transition-colors
-                     min-h-[44px]"
+                     bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] text-white text-sm font-medium
+                     hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 transition-all
+                     min-h-[44px] shadow-lg"
         >
           <Plus className="w-4 h-4" />
           New Document
@@ -237,12 +236,12 @@ export function DocsWorkspacePage() {
           ))}
         </div>
 
-        <div className="mx-3 my-2 border-t border-[rgba(139,92,246,0.08)]" />
+        <div className="mx-3 my-2 border-t border-[var(--ag-border-subtle)]" />
 
         {/* Folders */}
         <div className="px-2 flex-1 overflow-y-auto">
           <div className="flex items-center justify-between px-3 mb-1">
-            <span className="text-xs text-[var(--ag-text-secondary)] uppercase tracking-wider">Folders</span>
+            <span className="text-xs text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading">Folders</span>
             <button
               onClick={() => setNewFolderOpen(true)}
               className="p-1 rounded hover:bg-white/5 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-w-[28px] min-h-[28px] flex items-center justify-center"
@@ -278,7 +277,7 @@ export function DocsWorkspacePage() {
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header with Forge agent dot */}
-        <div className="px-4 md:px-6 py-4 border-b border-[rgba(139,92,246,0.08)]">
+        <div className="px-4 md:px-6 py-4 border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]/50 backdrop-blur-xl">
           <PageHeader
             icon={FileText}
             title="Docs Workspace"
@@ -300,13 +299,13 @@ export function DocsWorkspacePage() {
                     placeholder="Search documents..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-9 h-10 bg-[rgba(12,12,30,0.6)] border-[rgba(139,92,246,0.08)]"
+                    className="pl-9 h-10 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)]"
                   />
                 </div>
                 <Button
                   size="sm"
                   onClick={handleCreate}
-                  className="gap-1.5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shrink-0 min-h-[44px]"
+                  className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white shrink-0 min-h-[44px] shadow-lg transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New</span>
@@ -334,7 +333,7 @@ export function DocsWorkspacePage() {
                   className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[44px]
                     ${viewFilter === v.id
                       ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
-                      : 'bg-white/5 text-[var(--ag-text-secondary)] border border-[rgba(139,92,246,0.08)]'
+                      : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)]'
                     }`}
                 >
                   {v.label}
@@ -346,7 +345,7 @@ export function DocsWorkspacePage() {
 
         {/* Quick capture bar */}
         <BlurFade delay={0.1}>
-          <div className="px-4 md:px-6 py-3 border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)]/30">
+          <div className="px-4 md:px-6 py-3 border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]/50 backdrop-blur-xl">
             <div className="flex gap-2 max-w-2xl">
               <textarea
                 ref={quickCaptureRef}
@@ -354,15 +353,15 @@ export function DocsWorkspacePage() {
                 onChange={e => setQuickCapture(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleQuickCapture(); } }}
                 placeholder="Quick capture -- jot a note, paste a link, save an idea..."
-                className="flex-1 bg-transparent border border-[rgba(139,92,246,0.08)] rounded-lg px-3 py-2
-                           text-sm text-[var(--ag-text-primary)] placeholder-[#9CA3AF]/50 resize-none h-10
-                           focus:border-[#F59E0B]/30 focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/20
-                           placeholder:transition-opacity placeholder:duration-700"
+                className="flex-1 bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] rounded-lg px-3 py-2
+                           text-sm text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)] resize-none h-10
+                           focus:border-[var(--ag-violet)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--ag-violet)]/20
+                           placeholder:transition-opacity placeholder:duration-700 backdrop-blur-xl"
                 rows={1}
               />
               {quickCapture && (
                 <Button size="sm" onClick={handleQuickCapture}
-                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all">
                   Capture
                 </Button>
               )}
@@ -375,7 +374,9 @@ export function DocsWorkspacePage() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="h-36 rounded-2xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] animate-pulse backdrop-blur-xl" />
+                <BlurFade key={i} delay={0.05 + i * 0.02}>
+                  <div className="h-36 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] animate-pulse backdrop-blur-xl" />
+                </BlurFade>
               ))}
             </div>
           ) : filteredDocs.length === 0 ? (
@@ -384,14 +385,14 @@ export function DocsWorkspacePage() {
                 <div className="w-16 h-16 rounded-2xl bg-[#F59E0B]/5 border border-[#F59E0B]/10 flex items-center justify-center mb-4">
                   <FileText className="w-8 h-8 text-[#F59E0B]/30" />
                 </div>
-                <h3 className="text-[var(--ag-text-primary)] font-medium mb-1">
+                <h3 className="text-[var(--ag-text-primary)] font-heading font-medium mb-1">
                   {search ? 'No documents match your search' : 'No documents yet'}
                 </h3>
                 <p className="text-[var(--ag-text-secondary)] text-sm mb-4">
                   {search ? 'Try a different search term' : 'Start writing. Your AI-powered workspace awaits.'}
                 </p>
                 {!search && (
-                  <Button onClick={handleCreate} className="gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+                  <Button onClick={handleCreate} className="gap-2 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all">
                     <Plus className="w-4 h-4" />
                     Create Document
                   </Button>
@@ -432,7 +433,7 @@ export function DocsWorkspacePage() {
                           </button>
                         </div>
                       </div>
-                      <h3 className="text-[var(--ag-text-primary)] font-medium text-sm mb-1 line-clamp-1">
+                      <h3 className="text-[var(--ag-text-primary)] font-heading font-medium text-sm mb-1 line-clamp-1">
                         {doc.title || 'Untitled'}
                       </h3>
                       <p className="text-[var(--ag-text-secondary)] text-xs line-clamp-2 mb-3">
@@ -460,22 +461,22 @@ export function DocsWorkspacePage() {
 
       {/* New folder dialog */}
       <Dialog open={newFolderOpen} onOpenChange={setNewFolderOpen}>
-        <DialogContent className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border-[rgba(139,92,246,0.08)] max-w-sm">
+        <DialogContent className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-[var(--ag-text-primary)]">New Folder</DialogTitle>
+            <DialogTitle className="text-[var(--ag-text-primary)] font-heading">New Folder</DialogTitle>
           </DialogHeader>
           <Input
             value={newFolderName}
             onChange={e => setNewFolderName(e.target.value)}
             placeholder="Folder name"
-            className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.08)]"
+            className="bg-[var(--ag-bg-base)] border-[var(--ag-border-subtle)]"
             onKeyDown={e => { if (e.key === 'Enter') handleCreateFolder(); }}
             autoFocus
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewFolderOpen(false)} className="min-h-[44px]">Cancel</Button>
             <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]">
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               Create
             </Button>
           </DialogFooter>
@@ -691,9 +692,9 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
 
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-64px)]">
-      {/* Header — forge tokens */}
+      {/* Header — agentin tokens */}
       <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3
-                         bg-[var(--ag-bg-base)]/95 backdrop-blur-xl border-b border-[rgba(139,92,246,0.08)]">
+                         bg-[var(--ag-bg-surface)]/95 backdrop-blur-xl border-b border-[var(--ag-border-subtle)]">
         <button onClick={onBack} className="p-2 rounded-lg hover:bg-white/5 min-w-[44px] min-h-[44px]
                                             flex items-center justify-center"
                 aria-label="Back to documents">
@@ -703,8 +704,8 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
         <input
           value={title}
           onChange={e => handleTitleChange(e.target.value)}
-          className="flex-1 bg-transparent font-semibold text-lg text-[var(--ag-text-primary)]
-                     outline-none placeholder-white/20"
+          className="flex-1 bg-transparent font-heading font-semibold text-lg text-[var(--ag-text-primary)]
+                     outline-none placeholder-[var(--ag-text-muted)]"
           placeholder="Untitled"
         />
 
@@ -724,7 +725,7 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
         <Button
           size="sm"
           onClick={openConversationModal}
-          className="gap-1.5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-h-[44px]"
+          className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all"
           title="Create from Conversation"
         >
           <MessageSquare className="w-4 h-4" />
@@ -732,8 +733,8 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
         </Button>
       </header>
 
-      {/* AI Writing Toolbar — forge amber accents */}
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] overflow-x-auto scrollbar-hide">
+      {/* AI Writing Toolbar — violet accents */}
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] overflow-x-auto scrollbar-hide">
         <span className="text-[10px] text-[var(--ag-text-secondary)]/60 uppercase tracking-wider mr-1 shrink-0">AI</span>
         {aiActions.map(({ id, icon: Icon, label }) => (
           <button
@@ -785,9 +786,9 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
 
       {/* Create from Conversation Modal */}
       <Dialog open={convModalOpen} onOpenChange={setConvModalOpen}>
-        <DialogContent className="bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border-[rgba(139,92,246,0.08)] max-w-lg max-h-[80vh] flex flex-col">
+        <DialogContent className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="text-[var(--ag-text-primary)] flex items-center gap-2">
+            <DialogTitle className="text-[var(--ag-text-primary)] font-heading flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-[var(--ag-violet)]" />
               Create from Conversation
             </DialogTitle>
@@ -811,9 +812,9 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
                     key={conv.id}
                     onClick={() => createFromConversation(conv)}
                     disabled={!!convProcessing}
-                    className="w-full text-left p-3 rounded-xl border border-[rgba(139,92,246,0.08)]
-                               hover:border-[rgba(139,92,246,0.15)] hover:bg-[#8B5CF6]/5
-                               transition-all disabled:opacity-50 min-h-[44px]"
+                    className="w-full text-left p-3 rounded-xl border border-[var(--ag-border-subtle)]
+                               hover:border-[var(--ag-border-subtle)]/50 hover:bg-[var(--ag-violet)]/5
+                               transition-all disabled:opacity-50 min-h-[44px] backdrop-blur-xl"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <Badge className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20">

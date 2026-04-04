@@ -184,17 +184,17 @@ function SkeletonBar() {
 
 function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
   if (trend === 'up') {
-    return <TrendingUp className="w-4 h-4 text-[#ADFF2F]" />;
+    return <TrendingUp className="w-4 h-4 text-[var(--ag-lime)]" />;
   }
   if (trend === 'down') {
-    return <TrendingDown className="w-4 h-4 text-[#FF2D78]" />;
+    return <TrendingDown className="w-4 h-4 text-[var(--ag-pink)]" />;
   }
   return <ArrowUpRight className="w-4 h-4 text-[var(--ag-text-secondary)] opacity-40" />;
 }
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
 
-function MiniSparkline({ data, color = '#A78BFA' }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = 'var(--ag-cyan)' }: { data: number[]; color?: string }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const w = 60;
@@ -471,18 +471,18 @@ interface AIInsight {
 }
 
 const INSIGHT_BORDER_COLORS: Record<string, string> = {
-  achievement: '#ADFF2F',
-  warning: '#F59E0B',
-  tip: '#A78BFA',
-  positive: '#8B5CF6',
+  achievement: 'var(--ag-lime)',
+  warning: 'var(--ag-amber)',
+  tip: 'var(--ag-cyan)',
+  positive: 'var(--ag-violet)',
 };
 
 // ── AI Insight Card ─────────────────────────────────────────────
 
 function InsightCard({ text }: { text: string }) {
   return (
-    <div className="border-l-2 border-[#ADFF2F] pl-4 py-2 flex items-start gap-2.5">
-      <Lightbulb className="w-4 h-4 text-[#ADFF2F] mt-0.5 flex-shrink-0" />
+    <div className="border-l-2 border-[var(--ag-lime)] pl-4 py-2 flex items-start gap-2.5">
+      <Lightbulb className="w-4 h-4 text-[var(--ag-lime)] mt-0.5 flex-shrink-0" />
       <span className="text-sm text-[var(--ag-text-primary)]">{text}</span>
     </div>
   );
@@ -1108,7 +1108,7 @@ export function AnalyticsPage() {
       <SectionCard title="AI Insights">
         <div className="flex items-center justify-between mb-4 -mt-1">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#10B981]" />
+            <Zap className="w-4 h-4 text-[var(--ag-green)]" />
             <span className="text-xs text-[var(--ag-text-secondary)]">Powered by Pulse</span>
           </div>
           <button
@@ -1151,8 +1151,8 @@ export function AnalyticsPage() {
       {/* 4. Agent Metrics Charts (recharts) */}
       {!loading && (
         <section>
-          <h2 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#10B981]" />
+          <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[var(--ag-green)]" />
             Agent Metrics
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1163,15 +1163,15 @@ export function AnalyticsPage() {
                   <AreaChart data={latencyChartData}>
                     <defs>
                       <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--ag-green)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="var(--ag-green)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" />
-                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ag-border-subtle)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
                     <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number) => [`${value}ms`, 'Latency']} />
-                    <Area type="monotone" dataKey="latency" stroke="#10B981" fill="url(#latencyGrad)" strokeWidth={2} dot={{ r: 3, fill: '#10B981', strokeWidth: 2, stroke: '#06061a' }} />
+                    <Area type="monotone" dataKey="latency" stroke="var(--ag-green)" fill="url(#latencyGrad)" strokeWidth={2} dot={{ r: 3, fill: 'var(--ag-green)', strokeWidth: 2, stroke: 'var(--ag-bg-base)' }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -1253,11 +1253,11 @@ export function AnalyticsPage() {
                 1,
               );
               const agentColors: Record<string, string> = {
-                weebo: '#ADFF2F',
-                jarvis: '#8B5CF6',
-                edith: '#A78BFA',
-                pulse: '#10B981',
-                builtin: '#F59E0B',
+                weebo: 'var(--ag-lime)',
+                jarvis: 'var(--ag-violet)',
+                edith: 'var(--ag-cyan)',
+                pulse: 'var(--ag-green)',
+                builtin: 'var(--ag-amber)',
               };
               return (
                 <div key={a.agent} className="flex items-center gap-3">

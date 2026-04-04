@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageProgress } from '@/components/ui/page-progress';
 import { MobileTable } from '@/components/ui/mobile-table';
+import { BlurFade } from '@/components/magicui/blur-fade';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -24,23 +25,22 @@ import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/typ
 
 // ---- constants -----------------------------------------------------------
 
-const NOVA = '#EC4899';
 
 // Plan display metadata for sale styling
 const PLAN_DISPLAY: Record<string, { oldPrice: number; badge: string; badgeColor?: string; agentSlots: number; tokenBudget: string; hasKimi: boolean; highlighted?: boolean }> = {
   free: { oldPrice: 99, badge: '', agentSlots: 1, tokenBudget: '50K', hasKimi: false },
-  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: NOVA, agentSlots: 2, tokenBudget: '300K', hasKimi: true, highlighted: true },
-  monthly: { oldPrice: 1499, badge: 'Popular', badgeColor: '#FFB800', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
+  intro: { oldPrice: 1499, badge: 'Most Popular', badgeColor: 'var(--ag-nova)', agentSlots: 2, tokenBudget: '300K', hasKimi: true, highlighted: true },
+  monthly: { oldPrice: 1499, badge: 'Popular', badgeColor: 'var(--ag-amber)', agentSlots: 2, tokenBudget: '300K', hasKimi: true },
   halfyear: { oldPrice: 5999, badge: '', agentSlots: 3, tokenBudget: '750K', hasKimi: true },
-  yearly: { oldPrice: 9999, badge: 'Best Value', badgeColor: '#10B981', agentSlots: 3, tokenBudget: '1M', hasKimi: true },
+  yearly: { oldPrice: 9999, badge: 'Best Value', badgeColor: 'var(--ag-green)', agentSlots: 3, tokenBudget: '1M', hasKimi: true },
 };
 
 const PLAN_PILL: Record<string, { bg: string; text: string; border: string }> = {
-  free: { bg: 'rgba(156,163,175,0.15)', text: '#9CA3AF', border: 'rgba(156,163,175,0.3)' },
-  intro: { bg: `${NOVA}26`, text: NOVA, border: `${NOVA}4D` },
-  monthly: { bg: `${NOVA}26`, text: NOVA, border: `${NOVA}4D` },
-  halfyear: { bg: 'rgba(139,92,246,0.15)', text: '#8B5CF6', border: 'rgba(139,92,246,0.3)' },
-  yearly: { bg: 'rgba(139,92,246,0.15)', text: '#8B5CF6', border: 'rgba(139,92,246,0.3)' },
+  free: { bg: 'var(--ag-bg-surface)', text: 'var(--ag-text-muted)', border: 'var(--ag-border-subtle)' },
+  intro: { bg: 'rgba(236, 72, 153, 0.15)', text: 'var(--ag-nova)', border: 'rgba(236, 72, 153, 0.3)' },
+  monthly: { bg: 'rgba(236, 72, 153, 0.15)', text: 'var(--ag-nova)', border: 'rgba(236, 72, 153, 0.3)' },
+  halfyear: { bg: 'rgba(139,92,246,0.15)', text: 'var(--ag-violet)', border: 'rgba(139,92,246,0.3)' },
+  yearly: { bg: 'rgba(139,92,246,0.15)', text: 'var(--ag-violet)', border: 'rgba(139,92,246,0.3)' },
 };
 
 // ---- helpers -------------------------------------------------------------
@@ -299,12 +299,12 @@ export function BillingPage() {
     return (
       <div
         key={plan.id}
-        className={`relative overflow-hidden rounded-xl border bg-[rgba(12,12,30,0.6)] backdrop-blur-xl transition-all ${
+        className={`relative overflow-hidden rounded-xl border bg-[var(--ag-bg-surface)] backdrop-blur-xl transition-all ${
           isCurrent
-            ? 'border-[var(--ag-violet)] ring-1 ring-[#8B5CF6]/30'
+            ? 'border-[var(--ag-violet)] ring-1 ring-[var(--ag-border-active)]'
             : isHighlighted
-              ? `border-[${NOVA}] ring-1 ring-[${NOVA}]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]`
-              : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
+              ? 'border-[var(--ag-nova)] ring-1 ring-[var(--ag-nova)]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]'
+              : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
         } ${isFree && !isCurrent ? 'opacity-60' : ''} ${extraClass}`}
       >
         {/* Badge */}
@@ -337,7 +337,7 @@ export function BillingPage() {
           <div className="flex items-center justify-between">
             <span className="capitalize text-[var(--ag-text-primary)] font-semibold">{plan.id}</span>
             {isCurrent && (
-              <Badge className="bg-[#8B5CF6]/20 text-[var(--ag-violet)] border-[var(--ag-violet)]/30">
+              <Badge className="bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border-[var(--ag-border-default)]">
                 Current
               </Badge>
             )}
@@ -369,7 +369,7 @@ export function BillingPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-[var(--ag-text-secondary)]">Kimi Access</span>
               {display.hasKimi ? (
-                <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                <CheckCircle2 className="w-4 h-4 text-[var(--ag-green)]" />
               ) : (
                 <span className="text-[var(--ag-text-secondary)]">{'\u2014'}</span>
               )}
@@ -381,7 +381,7 @@ export function BillingPage() {
             {formatCredits(plan.credits)} credits
           </div>
           {isCurrent ? (
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-[#8B5CF6]/10 text-sm text-[var(--ag-violet)]">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ag-violet)]/10 text-sm text-[var(--ag-violet)]">
               <Check className="w-4 h-4" />
               Active plan
             </div>
@@ -390,7 +390,7 @@ export function BillingPage() {
               <Button
                 onClick={() => handleRazorpayCheckout(plan.id, plan.id, plan.priceInr)}
                 disabled={razorpayLoading === plan.id}
-                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
+                className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-pink)] hover:from-[var(--ag-violet)] hover:to-[var(--ag-nova)] disabled:opacity-50 min-h-[44px] transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
               >
                 {razorpayLoading === plan.id ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -405,7 +405,7 @@ export function BillingPage() {
             <Button
               onClick={() => handleUpgrade(plan.id)}
               disabled={upgrading === plan.id || isFree}
-              className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 min-h-[44px] transition-shadow hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
+              className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-pink)] hover:from-[var(--ag-violet)] hover:to-[var(--ag-nova)] disabled:opacity-50 min-h-[44px] transition-all hover:shadow-[0_0_16px_rgba(139,92,246,0.4)]"
             >
               {upgrading === plan.id ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -418,7 +418,7 @@ export function BillingPage() {
           {subscription?.plan === 'free' && plan.id === 'free' && (
             <button
               onClick={handleDayPass}
-              className="w-full mt-2 py-2 px-3 rounded-lg border border-[rgba(139,92,246,0.15)] text-[var(--ag-violet)] text-xs hover:bg-[#8B5CF6]/10 transition-colors min-h-[44px]"
+              className="w-full mt-2 py-2 px-3 rounded-lg border border-[var(--ag-border-subtle)] text-[var(--ag-violet)] text-xs hover:bg-[var(--ag-violet)]/10 transition-colors min-h-[44px]"
             >
               Try Weebo for $1/day {'\u2192'}
             </button>
@@ -430,55 +430,61 @@ export function BillingPage() {
 
   return (
     <DashboardPageWrapper>
-    <PageShell maxWidth="6xl">
-    <div data-testid="billing-page" className="space-y-6 animate-in fade-in duration-500 pb-24 md:pb-6">
+      <PageShell maxWidth="6xl">
+        <div data-testid="billing-page" className="space-y-6 pb-24 md:pb-6">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl border text-sm font-medium transition-all animate-in slide-in-from-top-2 ${
-          toast.type === 'success'
-            ? 'bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]'
-            : 'bg-[#FF6161]/10 border-[#FF6161]/30 text-[#FF6161]'
-        }`}>
-          {toast.message}
-        </div>
+        <BlurFade delay={0}>
+          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl border border-var(--ag-border-subtle) backdrop-blur-xl text-sm font-medium transition-all animate-in slide-in-from-top-2 ${
+            toast.type === 'success'
+              ? 'bg-green-500/10 text-green-400'
+              : 'bg-red-500/10 text-red-400'
+          }`}>
+            {toast.message}
+          </div>
+        </BlurFade>
       )}
 
       {/* Header with nova dot */}
-      <PageHeader
-        icon={CreditCard}
-        title="Billing"
-        subtitle="Manage your plan and credits"
-        badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/30 text-[#EC4899]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#EC4899] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#EC4899]" />
+      <BlurFade delay={0.1}>
+        <PageHeader
+          icon={CreditCard}
+          title="Billing"
+          subtitle="Manage your plan and credits"
+          className="font-heading"
+          badge={
+            <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[rgba(236,72,153,0.1)] border border-[rgba(236,72,153,0.3)] text-[var(--ag-nova)]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-nova)] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-nova)]" />
+              </span>
+              nova
             </span>
-            nova
-          </span>
-        }
-        actions={
-          /* Currency toggle */
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-[rgba(12,12,30,0.6)] backdrop-blur-xl border border-[rgba(139,92,246,0.08)]">
-            {(['USD', 'INR'] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setCurrency(c)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
-                  currency === c
-                    ? 'bg-[#8B5CF6] text-white'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-                }`}
-              >
-                {c === 'USD' ? '$ USD' : '\u20B9 INR'}
-              </button>
-            ))}
-          </div>
-        }
-      />
+          }
+          actions={
+            /* Currency toggle */
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+              {(['USD', 'INR'] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCurrency(c)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
+                    currency === c
+                      ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-pink)] text-white shadow-[0_0_16px_rgba(139,92,246,0.4)]'
+                      : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
+                  }`}
+                >
+                  {c === 'USD' ? '$ USD' : '\u20B9 INR'}
+                </button>
+              ))}
+            </div>
+          }
+        />
+      </BlurFade>
 
       {/* Payment Gateway Section — Stripe (USD) or Razorpay (INR) based on currency */}
-      <SectionCard>
+      <BlurFade delay={0.2}>
+        <SectionCard>
         <div className="flex items-center gap-3 mb-4">
           <Star className="w-5 h-5 text-[var(--ag-violet)]" />
           <div className="flex-1">
@@ -489,12 +495,12 @@ export function BillingPage() {
             </p>
           </div>
           {stripeStatus?.isPaid && (
-            <Badge className="bg-[#8B5CF6]/20 text-[var(--ag-violet)] border-[var(--ag-violet)]/30 ml-auto">{stripeStatus.label} Active</Badge>
+            <Badge className="bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border-[var(--ag-border-default)] ml-auto">{stripeStatus.label} Active</Badge>
           )}
         </div>
 
         {/* Gateway indicator */}
-        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[rgba(139,92,246,0.05)] border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary)]">
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-text-secondary)]">
           <Lock className="w-3.5 h-3.5 text-[var(--ag-violet)] flex-shrink-0" />
           <span>
             Payments processed securely via{' '}
@@ -554,20 +560,22 @@ export function BillingPage() {
           </div>
 
         {!stripeStatus?.isPaid && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[#8B5CF6]/5 border border-[rgba(139,92,246,0.15)] text-sm text-[var(--ag-text-secondary)]" data-testid="upgrade-to-unlock">
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)]" data-testid="upgrade-to-unlock">
             <Lock className="w-4 h-4 text-[var(--ag-violet)] flex-shrink-0" />
             <span>Upgrade to Basic or Pro to unlock image and voice generation</span>
           </div>
         )}
-      </SectionCard>
+        </SectionCard>
+      </BlurFade>
 
       {/* Current Plan Card */}
       {subscription && (
-        <SectionCard padding="lg">
-          <div className="p-4 -m-6 mb-4 bg-gradient-to-br from-[#8B5CF6]/15 to-transparent border-b border-[rgba(139,92,246,0.15)]">
+        <BlurFade delay={0.3}>
+          <SectionCard padding="lg">
+          <div className="p-4 -m-6 mb-4 bg-gradient-to-br from-[var(--ag-violet)]/15 to-transparent border-b border-[var(--ag-border-default)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 p-2">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-[var(--ag-violet)]/20 flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-[var(--ag-violet)]" />
                 </div>
                 <div>
@@ -594,7 +602,7 @@ export function BillingPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-2">
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-4 h-4 text-[var(--ag-violet)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Credits Remaining</span>
@@ -604,9 +612,9 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-[#FFB800]" />
+                  <TrendingUp className="w-4 h-4 text-[var(--ag-amber)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Credits Used</span>
                 </div>
                 <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
@@ -614,9 +622,9 @@ export function BillingPage() {
                 </div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">this cycle</div>
               </div>
-              <div className="p-4 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)]">
+              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-[#10B981]" />
+                  <Calendar className="w-4 h-4 text-[var(--ag-green)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Cycle Ends</span>
                 </div>
                 <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
@@ -632,45 +640,49 @@ export function BillingPage() {
                 <span className="text-xs text-[var(--ag-text-secondary)]">Credit usage</span>
                 <span className="text-xs text-[var(--ag-text-secondary)] font-mono">{usedPercent.toFixed(1)}%</span>
               </div>
-              <div className="h-3 sm:h-2 rounded-full bg-[rgba(139,92,246,0.08)] overflow-hidden">
+              <div className="h-3 sm:h-2 rounded-full bg-[var(--ag-border-subtle)] overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    usedPercent > 90 ? 'bg-[#FF6161]' : usedPercent > 70 ? 'bg-[#FFB800]' : 'bg-gradient-to-r from-[#8B5CF6] to-[#EC4899]'
+                    usedPercent > 90 ? 'bg-red-500' : usedPercent > 70 ? 'bg-[var(--ag-amber)]' : 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-pink)]'
                   }`}
                   style={{ width: `${usedPercent}%` }}
                 />
               </div>
             </div>
           </div>
-        </SectionCard>
+          </SectionCard>
+        </BlurFade>
       )}
 
       {/* Plan Cards Grid */}
-      <div>
-        <h2 className="text-xl font-bold text-[var(--ag-text-primary)] mb-4 font-heading">
-          Available Plans
-        </h2>
-        {isMobile ? (
-          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
-            {plans.map((plan) => (
-              <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
-                {renderPlanCard(plan, 'h-full')}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {plans.map((plan) => renderPlanCard(plan))}
-          </div>
-        )}
-      </div>
+      <BlurFade delay={0.4}>
+        <div>
+          <h2 className="text-xl font-bold text-[var(--ag-text-primary)] mb-4 font-heading">
+            Available Plans
+          </h2>
+          {isMobile ? (
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4">
+              {plans.map((plan) => (
+                <div key={plan.id} className="min-w-[280px] snap-center flex-shrink-0">
+                  {renderPlanCard(plan, 'h-full')}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {plans.map((plan) => renderPlanCard(plan))}
+            </div>
+          )}
+        </div>
+      </BlurFade>
 
       {/* Plan Comparison Table */}
-      <SectionCard title="Plan Comparison" subtitle="Compare features across all plans">
+      <BlurFade delay={0.5}>
+        <SectionCard title="Plan Comparison" subtitle="Compare features across all plans">
         <div className="overflow-x-auto -mx-4 px-4 md:-mx-5 md:px-5">
           <table className="w-full min-w-[500px]">
             <thead>
-              <tr className="border-b border-[rgba(139,92,246,0.15)]">
+              <tr className="border-b border-[var(--ag-border-default)]">
                 <th className="text-left py-3 px-2 text-sm font-medium text-[var(--ag-text-secondary)]">Feature</th>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
@@ -696,7 +708,7 @@ export function BillingPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.3)]">
+              <tr className="border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]/50">
                 <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Agent Slots</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
@@ -707,7 +719,7 @@ export function BillingPage() {
                   );
                 })}
               </tr>
-              <tr className="border-b border-[rgba(139,92,246,0.08)]">
+              <tr className="border-b border-[var(--ag-border-subtle)]">
                 <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Token Budget</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
@@ -718,14 +730,14 @@ export function BillingPage() {
                   );
                 })}
               </tr>
-              <tr className="border-b border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.3)]">
+              <tr className="border-b border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)]/50">
                 <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Kimi Access</td>
                 {plans.map((plan) => {
                   const display = PLAN_DISPLAY[plan.id];
                   return (
                     <td key={plan.id} className="text-center py-3 px-2">
                       {display?.hasKimi ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#10B981] mx-auto" />
+                        <CheckCircle2 className="w-5 h-5 text-[var(--ag-green)] mx-auto" />
                       ) : (
                         <span className="text-[var(--ag-text-secondary)]">{'\u2014'}</span>
                       )}
@@ -733,7 +745,7 @@ export function BillingPage() {
                   );
                 })}
               </tr>
-              <tr className="border-b border-[rgba(139,92,246,0.08)]">
+              <tr className="border-b border-[var(--ag-border-subtle)]">
                 <td className="py-3 px-2 text-sm text-[var(--ag-text-secondary)]">Credits / Cycle</td>
                 {plans.map((plan) => (
                   <td key={plan.id} className="text-center py-3 px-2 text-sm text-[var(--ag-text-primary)]">
@@ -760,10 +772,12 @@ export function BillingPage() {
             </tbody>
           </table>
         </div>
-      </SectionCard>
+        </SectionCard>
+      </BlurFade>
 
       {/* Usage History Table */}
-      <SectionCard title="Usage History" subtitle="Last 30 days of daily usage">
+      <BlurFade delay={0.6}>
+        <SectionCard title="Usage History" subtitle="Last 30 days of daily usage">
         {usage.length === 0 ? (
           <div className="text-center py-8">
             <TrendingUp className="w-10 h-10 text-[var(--ag-violet)]/30 mx-auto mb-3" />
@@ -784,10 +798,12 @@ export function BillingPage() {
             striped
           />
         )}
-      </SectionCard>
+        </SectionCard>
+      </BlurFade>
 
       {/* Credit History -- per-event detail */}
-      <SectionCard title="Credit History" subtitle="Last 20 AI requests with cost breakdown">
+      <BlurFade delay={0.7}>
+        <SectionCard title="Credit History" subtitle="Last 20 AI requests with cost breakdown">
         {events.length === 0 ? (
           <div className="text-center py-8">
             <Zap className="w-10 h-10 text-[var(--ag-violet)]/30 mx-auto mb-3" />
@@ -845,9 +861,10 @@ export function BillingPage() {
             striped
           />
         )}
-      </SectionCard>
-    </div>
-    </PageShell>
+        </SectionCard>
+      </BlurFade>
+        </div>
+      </PageShell>
     </DashboardPageWrapper>
   );
 }

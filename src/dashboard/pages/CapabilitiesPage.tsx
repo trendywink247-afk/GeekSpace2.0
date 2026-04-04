@@ -47,7 +47,7 @@ const capabilities: Capability[] = [
     id: 'multi-model-chat',
     category: 'chat',
     icon: Brain,
-    color: 'var(--ag-cyan)',
+    color: 'var(--ag-violet)',
     glow: 'rgba(139,92,246,0.12)',
     title: 'Multi-Model Intelligence',
     description: 'Your agent automatically routes to the right AI brain — free Llama for quick answers, Kimi K2 for deep technical work — based on complexity and your credit balance.',
@@ -59,7 +59,7 @@ const capabilities: Capability[] = [
     id: 'voice-notes',
     category: 'chat',
     icon: Mic,
-    color: 'var(--ag-cyan)',
+    color: 'var(--ag-violet)',
     glow: 'rgba(139,92,246,0.12)',
     title: 'Voice Notes',
     description: 'Send a voice message on Telegram and get a spoken audio reply back. Full Whisper transcription → agent reasoning → TTS pipeline.',
@@ -512,9 +512,9 @@ function CapabilityCard({
   };
 
   const badgeColors: Record<string, string> = {
-    Core: 'bg-[#A78BFA]/10 text-[var(--ag-cyan)] border-[var(--ag-cyan)]/20',
-    Pro: 'bg-[#BF5FFF]/10 text-[#BF5FFF] border-[#BF5FFF]/20',
-    New: 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20',
+    Core: 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20',
+    Pro: 'bg-[var(--ag-purple)]/10 text-[var(--ag-purple)] border-[var(--ag-purple)]/20',
+    New: 'bg-[var(--ag-green)]/10 text-[var(--ag-green)] border-[var(--ag-green)]/20',
   };
 
   return (
@@ -619,7 +619,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border)] hover:text-[var(--ag-text-primary)] transition-all"
             >
               Open
             </button>
@@ -627,7 +627,7 @@ function CapabilityCard({
           {cap.needsSetup && (
             <button
               onClick={() => onNavigate?.('connections')}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/10 transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-gold)]/30 text-[var(--ag-gold)] hover:bg-[var(--ag-gold)]/10 transition-all"
             >
               Connect
             </button>
@@ -647,9 +647,9 @@ function PipelineVisualizer() {
       {/* Pipeline */}
       <div>
         {/* Example message */}
-        <div className="mb-6 p-3 rounded-xl bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/15 text-center">
-          <span className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]">You type: </span>
-          <span className="text-sm text-[var(--ag-cyan,#A78BFA)] font-mono">"build me a hello world page"</span>
+        <div className="mb-6 p-3 rounded-xl bg-[var(--ag-violet)]/5 border border-[var(--ag-violet)]/15 text-center">
+          <span className="text-xs text-[var(--ag-text-secondary)]">You type: </span>
+          <span className="text-sm text-[var(--ag-violet)] font-mono">"build me a hello world page"</span>
         </div>
 
         {/* Steps — horizontal on large desktop, vertical on smaller screens */}
@@ -844,10 +844,10 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
         <div className="relative z-10">
           {/* Eyebrow */}
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-5 h-5 rounded-full bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/25 flex items-center justify-center">
-              <Sparkles className="w-2.5 h-2.5 text-[var(--ag-cyan)]" />
+            <div className="w-5 h-5 rounded-full bg-[var(--ag-violet)]/15 border border-[var(--ag-violet)]/25 flex items-center justify-center">
+              <Sparkles className="w-2.5 h-2.5 text-[var(--ag-violet)]" />
             </div>
-            <span className="text-xs font-mono text-[var(--ag-cyan)] tracking-widest uppercase">Agent Command Center</span>
+            <span className="text-xs font-mono text-[var(--ag-violet)] tracking-widest uppercase">Agent Command Center</span>
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black text-[var(--ag-text-primary,#F4F6FF)] mb-4 leading-tight">
@@ -868,7 +868,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { value: `${capabilities.length}+`, label: 'Capabilities', color: 'var(--ag-cyan)' },
+              { value: `${capabilities.length}+`, label: 'Capabilities', color: 'var(--ag-violet)' },
               { value: '5', label: 'AI Models', color: '#BF5FFF' },
               { value: '3', label: 'Channels', color: '#00FF88' },
               { value: '24/7', label: 'Always On', color: '#F59E0B' },
