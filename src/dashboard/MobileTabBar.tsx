@@ -52,7 +52,7 @@ export function MobileTabBar({
             aria-selected={isActive}
             aria-label={t(tab.label)}
             onClick={() => {
-              navigate(tab.id === 'overview' ? '/dashboard' : `/dashboard/${tab.id}`);
+              navigate(tab.id === 'overview' || tab.id === 'office' ? '/dashboard' : `/dashboard/${tab.id}`);
             }}
             className={`
               flex flex-col items-center justify-center gap-1.5 

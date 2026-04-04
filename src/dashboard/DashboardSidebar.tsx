@@ -242,7 +242,7 @@ export function DashboardSidebar({
                 {group.items.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => { navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`); setSidebarOpen(false); }}
+                    onClick={() => { navigate(item.id === 'overview' || item.id === 'office' ? '/dashboard' : `/dashboard/${item.id}`); setSidebarOpen(false); }}
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
                     style={isPageActive(item.id) ? {

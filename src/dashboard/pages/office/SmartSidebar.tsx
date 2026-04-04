@@ -123,12 +123,14 @@ interface SmartSidebarProps {
   onCreateTask?: (agentId: string, title: string) => void;
   /** When true (mobile), hide the bottom chat input since SpotlightHUD is showing */
   spotlightActive?: boolean;
+  /** When true, hide the bottom chat input completely */
+  hideInput?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spotlightActive }: SmartSidebarProps) {
+export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spotlightActive, hideInput }: SmartSidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('timeline');
   const [chatInput, setChatInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -316,56 +318,58 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spot
         {activeTab === 'goals' && <GoalsTab />}
       </div>
 
-      {/* ── Chat input — hidden on mobile when SpotlightHUD is active ── */}
-      <div
-        className={`flex items-center gap-2 px-3 py-2.5 flex-shrink-0 pb-4 md:pb-2.5 ${spotlightActive ? 'hidden sm:flex' : ''}`}
-        style={{
-          background: 'rgba(6,6,26,0.7)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(139,92,246,0.1)',
-        }}
-      >
-        <input
-          ref={inputRef}
-          type="text"
-          value={chatInput}
-          onChange={(e) => setChatInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask any agent..."
-          disabled={sending}
-          className="flex-1 text-xs rounded-xl px-3.5 py-2.5 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[44px] transition-all"
+      {/* ── Chat input — hidden when hideInput is true or on mobile when SpotlightHUD is active ── */}
+      {!hideInput && (
+        <div
+          className={`flex items-center gap-2 px-3 py-2.5 flex-shrink-0 pb-4 md:pb-2.5 ${spotlightActive ? 'hidden sm:flex' : ''}`}
           style={{
-            background: 'rgba(12,12,30,0.5)',
-            color: '#F4F6FF',
-            border: chatInput.trim()
-              ? '1px solid rgba(139,92,246,0.3)'
-              : '1px solid rgba(139,92,246,0.08)',
-            boxShadow: chatInput.trim() ? '0 0 12px rgba(139,92,246,0.08)' : 'none',
+            background: 'rgba(6,6,26,0.7)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderTop: '1px solid rgba(139,92,246,0.1)',
           }}
-        />
-        <button
-          onClick={() => void handleSend()}
-          disabled={!chatInput.trim() || sending}
-          className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0"
-          style={{
-            background: chatInput.trim()
-              ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(139,92,246,0.2))'
-              : 'rgba(139,92,246,0.08)',
-            color: chatInput.trim() ? '#E8E8F0' : '#4B5563',
-            border: chatInput.trim()
-              ? '1px solid rgba(139,92,246,0.3)'
-              : '1px solid rgba(139,92,246,0.06)',
-          }}
-          aria-label="Send message"
         >
-          {sending ? (
-            <div className="w-3.5 h-3.5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
-          ) : (
-            <span className="text-sm">▶</span>
-          )}
-        </button>
-      </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask any agent..."
+            disabled={sending}
+            className="flex-1 text-xs rounded-xl px-3.5 py-2.5 outline-none placeholder:text-[#4B5563] disabled:opacity-50 min-h-[44px] transition-all"
+            style={{
+              background: 'rgba(12,12,30,0.5)',
+              color: '#F4F6FF',
+              border: chatInput.trim()
+                ? '1px solid rgba(139,92,246,0.3)'
+                : '1px solid rgba(139,92,246,0.08)',
+              boxShadow: chatInput.trim() ? '0 0 12px rgba(139,92,246,0.08)' : 'none',
+            }}
+          />
+          <button
+            onClick={() => void handleSend()}
+            disabled={!chatInput.trim() || sending}
+            className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0"
+            style={{
+              background: chatInput.trim()
+                ? 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(139,92,246,0.2))'
+                : 'rgba(139,92,246,0.08)',
+              color: chatInput.trim() ? '#E8E8F0' : '#4B5563',
+              border: chatInput.trim()
+                ? '1px solid rgba(139,92,246,0.3)'
+                : '1px solid rgba(139,92,246,0.06)',
+            }}
+            aria-label="Send message"
+          >
+            {sending ? (
+              <div className="w-3.5 h-3.5 border-2 border-[#8B5CF6]/30 border-t-[#8B5CF6] rounded-full animate-spin" />
+            ) : (
+              <span className="text-sm">▶</span>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

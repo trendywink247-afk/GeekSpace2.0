@@ -558,6 +558,7 @@ function EnhancedSidebar({
               officeData={officeData}
               sseEvents={sseEvents}
               onCreateTask={onCreateTask}
+              hideInput={true}
             />
           </div>
         )}
@@ -842,7 +843,7 @@ export function OfficeHomePage() {
   return (
     <DashboardPageWrapper>
       <div
-        className="relative flex flex-col min-h-[calc(100dvh-64px)] md:min-h-dvh overflow-y-auto overflow-x-hidden pb-20 md:pb-0"
+        className="relative flex flex-col min-h-[calc(100dvh-64px)] md:h-[calc(100dvh-64px)] overflow-y-auto md:overflow-hidden overflow-x-hidden pb-20 md:pb-0"
         style={{ background: 'var(--ag-bg-deep)' }}
       >
       {/* Atmospheric background layer */}
@@ -1050,7 +1051,7 @@ export function OfficeHomePage() {
         {/* Enhanced Sidebar -- 40% desktop, rest of viewport on mobile */}
         <BlurFade delay={0.15} inView className="flex-1 md:w-[40%] min-h-0">
           <div
-            className="h-full border-t md:border-t-0 md:border-l"
+            className="h-full border-t md:border-t-0 md:border-l overflow-y-auto"
             style={{ borderColor: 'var(--ag-border-subtle)' }}
           >
             <EnhancedSidebar

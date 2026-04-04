@@ -491,7 +491,6 @@ export function DashboardApp() {
         <div className={`${currentPage === 'office' ? '' : 'p-4 md:p-6'}`} {...swipeHandlers}>
           <ErrorBoundary>
           <DashboardRouter 
-            key={location.pathname}
             currentPage={currentPage}
             navigate={navigate}
             onOpenChat={() => setChatOpen(true)}
