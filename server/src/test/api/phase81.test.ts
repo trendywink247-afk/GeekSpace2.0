@@ -209,9 +209,9 @@ describe('Phase 81 — Image Generation Pipeline', () => {
       expect(src).toContain('imageService');
     });
 
-    it('gallery route is registered in DashboardApp', () => {
-      const src = readFile('src/dashboard/DashboardApp.tsx');
-      expect(src).toContain("'gallery'");
+    it('gallery route is registered in DashboardRouter', () => {
+      const src = readFile('src/dashboard/DashboardRouter.tsx');
+      expect(src).toContain("case 'gallery'");
       expect(src).toContain('ImageCreatorPage');
     });
   });

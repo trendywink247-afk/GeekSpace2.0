@@ -496,10 +496,10 @@ describe("97.11 frontend files", () => {
     expect(src).toContain("export function InboxPage");
   });
 
-  it("DashboardApp.tsx has InboxPage lazy import", () => {
-    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardApp.tsx"), "utf-8");
+  it("DashboardRouter.tsx has InboxPage lazy import", () => {
+    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardRouter.tsx"), "utf-8");
     expect(src).toContain("InboxPage");
-    expect(src).toContain("inbox");
+    expect(src).toContain("case 'inbox'");
   });
 
   it("DashboardApp.tsx has inbox in PageType union", () => {

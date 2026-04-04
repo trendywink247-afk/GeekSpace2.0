@@ -14,8 +14,8 @@ describe('Phase 75 — Production Hardening + E2E', () => {
     expect(existsSync(resolve(ROOT, 'src/utils/lazyRetry.ts'))).toBe(true);
   });
 
-  it('DashboardApp uses lazyRetry instead of bare lazy', () => {
-    const content = readFileSync(resolve(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+  it('DashboardRouter uses lazyRetry instead of bare lazy', () => {
+    const content = readFileSync(resolve(ROOT, 'src/dashboard/DashboardRouter.tsx'), 'utf-8');
     expect(content).toContain("import { lazyRetry } from '@/utils/lazyRetry'");
     expect(content).toContain('lazyRetry(');
     // Should not import lazy from react (Suspense is still imported)

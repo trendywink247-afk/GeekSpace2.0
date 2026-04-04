@@ -274,9 +274,9 @@ describe('G: JSON Formatter component', () => {
     expect(content).toContain('Ctrl+Shift+F');
   });
 
-  it('DashboardApp includes tools page type', () => {
-    const content = readSrc('dashboard/DashboardApp.tsx');
-    expect(content).toContain("'tools'");
+  it('DashboardRouter includes tools case and AISpecialistPage', () => {
+    const content = readSrc('dashboard/DashboardRouter.tsx');
+    expect(content).toContain("case 'tools'");
     expect(content).toContain('AISpecialistPage');
   });
 });

@@ -191,27 +191,23 @@ describe('90.6 ProactivePage frontend', () => {
     expect(src).toContain('/proactive/toggle');
   });
 
-  it('DashboardApp has ProactivePage lazy import', () => {
-    const src = readFile('src/dashboard/DashboardApp.tsx');
+  it('DashboardRouter has ProactivePage lazy import', () => {
+    const src = readFile('src/dashboard/DashboardRouter.tsx');
     expect(src).toContain("import('./pages/ProactivePage')");
   });
 
-  it('DashboardApp PageType includes proactive', () => {
-    const src = readFile('src/dashboard/DashboardApp.tsx');
-    expect(src).toContain("'proactive'");
-  });
-
-  it('DashboardApp has proactive page route', () => {
-    const src = readFile('src/dashboard/DashboardApp.tsx');
-    // Proactive AI page accessible via URL even if not in sidebar
+  it('DashboardRouter has proactive page route', () => {
+    const src = readFile('src/dashboard/DashboardRouter.tsx');
     expect(src).toContain("case 'proactive'");
   });
 
-  it('DashboardApp renders ProactivePage for proactive case', () => {
-    const src = readFile('src/dashboard/DashboardApp.tsx');
+  it('DashboardRouter renders ProactivePage for proactive case', () => {
+    const src = readFile('src/dashboard/DashboardRouter.tsx');
     expect(src).toContain("case 'proactive'");
     expect(src).toContain('<ProactivePage />');
   });
+
+
 });
 
 // ---- 90.7: Functional tests for engine --------------------------------

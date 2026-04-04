@@ -266,12 +266,12 @@ describe("99.6 ChatPage.tsx source checks", () => {
 // =============================================================================
 describe("99.7 DashboardApp: voice shortcut + ChatPage integration", () => {
   it("imports ChatPage lazy", () => {
-    const src = readFrontend("dashboard", "DashboardApp.tsx");
+    const src = readFrontend("dashboard", "DashboardRouter.tsx");
     expect(src).toContain("ChatPage");
   });
-  it("has chat in PageType union", () => {
-    const src = readFrontend("dashboard", "DashboardApp.tsx");
-    expect(src).toContain("'chat'");
+  it("has chat case in router", () => {
+    const src = readFrontend("dashboard", "DashboardRouter.tsx");
+    expect(src).toContain("case 'chat'");
   });
   it("Alt+V shortcut handler exists", () => {
     const src = readFrontend("dashboard", "DashboardApp.tsx");

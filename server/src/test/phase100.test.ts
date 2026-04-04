@@ -441,13 +441,13 @@ describe("100.14 Frontend integration", () => {
     expect(fileExists("src/dashboard/pages/GmailPage.tsx")).toBe(true);
   });
 
-  it("DashboardApp.tsx imports GmailPage", () => {
-    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardApp.tsx"), "utf-8");
+  it("DashboardRouter.tsx imports GmailPage", () => {
+    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardRouter.tsx"), "utf-8");
     expect(src).toContain("GmailPage");
   });
 
-  it("DashboardApp.tsx includes 'gmail' PageType", () => {
-    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardApp.tsx"), "utf-8");
-    expect(src).toContain("'gmail'");
+  it("DashboardRouter.tsx includes 'gmail' case", () => {
+    const src = readFileSync(path.join(ROOT, "src/dashboard/DashboardRouter.tsx"), "utf-8");
+    expect(src).toContain("case 'gmail'");
   });
 });

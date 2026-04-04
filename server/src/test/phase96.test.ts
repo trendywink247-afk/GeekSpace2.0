@@ -659,8 +659,8 @@ describe('96.7 WorkflowsPage frontend integration', () => {
     expect(src).toContain('/run');
   });
 
-  it('DashboardApp has WorkflowsPage lazy import', () => {
-    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+  it('DashboardRouter has WorkflowsPage lazy import', () => {
+    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardRouter.tsx'), 'utf-8');
     expect(src).toContain('WorkflowsPage');
   });
 
@@ -669,19 +669,19 @@ describe('96.7 WorkflowsPage frontend integration', () => {
     expect(src).toContain("'workflows'");
   });
 
-  it('DashboardApp has Workflows menu item', () => {
-    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+  it('DashboardSidebar has Workflows menu item', () => {
+    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardSidebar.tsx'), 'utf-8');
     expect(src).toContain('Workflows');
   });
 
-  it('DashboardApp renders WorkflowsPage for workflows case', () => {
-    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+  it('DashboardRouter renders WorkflowsPage for workflows case', () => {
+    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardRouter.tsx'), 'utf-8');
     expect(src).toContain("case 'workflows'");
     expect(src).toContain('<WorkflowsPage />');
   });
 
-  it('DashboardApp imports Sparkles from lucide-react', () => {
-    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardApp.tsx'), 'utf-8');
+  it('DashboardSidebar imports Sparkles from lucide-react', () => {
+    const src = readFileSync(path.join(ROOT, 'src/dashboard/DashboardSidebar.tsx'), 'utf-8');
     expect(src).toContain('Sparkles');
   });
 });
