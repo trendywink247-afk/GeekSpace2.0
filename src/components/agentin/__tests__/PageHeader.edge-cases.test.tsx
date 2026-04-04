@@ -84,7 +84,7 @@ describe('PageHeader — Edge Cases & Integration', () => {
       );
       const iconBg = container.querySelector('[class*="bg-"]');
       // Check for cyan color reference
-      expect(iconBg?.className).toMatch(/bg-.*00F0FF|bg-cyan/i);
+      expect(iconBg?.className).toMatch(/bg-.*00F0FF|bg-cyan|bg-\[var\(--ag-cyan/i);
     });
   });
 
