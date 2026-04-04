@@ -48,6 +48,7 @@ export function SpriteTeaser() {
 
   useEffect(() => {
     const map = sheetsRef.current;
+    const hueMap = hueRef.current;
     let loaded = 0;
     const total = 6;
     const canvas = canvasRef.current;
@@ -206,7 +207,7 @@ export function SpriteTeaser() {
       // Cancel any in-flight image loads and clear refs
       Array.from(map.values()).forEach(img => { img.src = ''; });
       map.clear();
-      hueRef.current.clear();
+      hueMap.clear();
     };
   }, [spread, prefersReduced]);
 
