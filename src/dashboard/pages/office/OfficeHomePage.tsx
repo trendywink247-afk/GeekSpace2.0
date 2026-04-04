@@ -1101,6 +1101,42 @@ export function OfficeHomePage() {
         </div>
       </BlurFade>
 
+      {/* Quick Access Command Cards */}
+      <BlurFade delay={0.22} inView>
+        <div className="px-4 pb-3">
+          <h3 className="text-xs font-bold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>Quick Access</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Chat', desc: 'Talk to your agents', icon: '💬', page: 'chat', color: 'var(--ag-cyan)' },
+              { label: 'Create', desc: 'Images, video, websites', icon: '✨', page: 'creative-studio', color: 'var(--ag-violet)' },
+              { label: 'Reminders', desc: 'Tasks & deadlines', icon: '🔔', page: 'reminders', color: 'var(--ag-pink)' },
+              { label: 'Calendar', desc: 'Schedule & events', icon: '📅', page: 'calendar', color: 'var(--ag-lime)' },
+              { label: 'Workflows', desc: 'Automations & chains', icon: '⚡', page: 'workflows', color: 'var(--ag-amber)' },
+              { label: 'Memory', desc: 'What your agent knows', icon: '🧠', page: 'memory', color: 'var(--ag-violet)' },
+              { label: 'Inbox', desc: 'Messages & notifications', icon: '📥', page: 'inbox', color: 'var(--ag-cyan)' },
+              { label: 'Settings', desc: 'Account & preferences', icon: '⚙️', page: 'settings', color: 'var(--ag-text-secondary)' },
+            ].map((card) => (
+              <button
+                key={card.page}
+                onClick={() => navigate(`/dashboard/${card.page}`)}
+                className="flex items-start gap-3 rounded-xl px-3.5 py-3 backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] text-left min-h-[44px] group"
+                style={{
+                  background: 'rgba(12,12,30,0.5)',
+                  border: '1px solid rgba(139,92,246,0.08)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+                }}
+              >
+                <span className="text-xl mt-0.5">{card.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-[var(--ag-text-primary)] group-hover:text-[var(--ag-cyan)] transition-colors" style={{ fontFamily: 'Syne, sans-serif' }}>{card.label}</div>
+                  <div className="text-[10px] text-[var(--ag-text-muted)] truncate">{card.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </BlurFade>
+
       {/* Suggestion strip at bottom with BlurFade */}
       <BlurFade delay={0.2} inView>
         <SuggestionStrip onSelect={handleSuggestion} />

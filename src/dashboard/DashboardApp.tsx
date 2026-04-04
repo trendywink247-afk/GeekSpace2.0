@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
-  LayoutDashboard, Link2, Bot, Bell, Terminal, Settings, Zap,
+  LayoutDashboard, Link2, Bot, Bell, Settings, Zap,
   LogOut, ChevronRight, ChevronDown, Hexagon, DollarSign, Compass, Palette,
-  X, Menu, Clock, Brain, Cpu, Activity, Monitor,
-  Code, Rocket, CalendarCheck, Share2, Sparkles, WifiOff,
-  Inbox, MessageSquare, TrendingUp, Target, Mic, FileText, Search,
-  ImageIcon, Video, BookOpen, HelpCircle, Star, GitBranch, Mail, BarChart3, CreditCard, Map
+  X, Menu, Clock, Brain,
+  Code, Rocket, CalendarCheck, Sparkles, WifiOff,
+  Inbox, MessageSquare, Target, Mic, Search,
+  ImageIcon, Video, GitBranch
 } from 'lucide-react';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { AgentChatButton } from '@/components/AgentChatButton';
@@ -81,7 +81,6 @@ const WorkflowsPage = lazyRetry(() => import('./pages/WorkflowsPage').then(m => 
 const CalendarPage = lazyRetry(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
 const ConversationRatingPage = lazyRetry(() => import('./pages/ConversationRatingPage').then(m => ({ default: m.ConversationRatingPage })));
 const DocsWorkspacePage = lazyRetry(() => import('./pages/DocsWorkspacePage').then(m => ({ default: m.DocsWorkspacePage })));
-const OfficePage = lazyRetry(() => import('./pages/office/index').then(m => ({ default: m.OfficePage })));
 const OfficeHomePage = lazyRetry(() => import('./pages/office/index').then(m => ({ default: m.OfficeHomePage })));
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
@@ -106,12 +105,12 @@ interface MenuGroup {
 }
 
 const menuGroups: MenuGroup[] = [
-  // Pinned (always visible, no collapse header)
+  // Pinned (always visible)
   {
     label: null,
     icon: null,
     items: [
-      { id: 'overview', label: 'Home', icon: LayoutDashboard },
+      { id: 'office', label: 'Home', icon: LayoutDashboard },
       { id: 'chat', label: 'Chat', icon: MessageSquare },
     ],
   },
@@ -123,23 +122,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'creative-studio', label: 'Creative Studio', icon: Palette },
       { id: 'image-gen', label: 'Images', icon: ImageIcon },
       { id: 'video-gen', label: 'Video', icon: Video },
-      { id: 'website-builder', label: 'Website Builder', icon: Code },
-      { id: 'design', label: 'Design Assistant', icon: Palette },
-      { id: 'tools', label: 'AI Tools', icon: Cpu },
-    ],
-  },
-  // My Agent
-  {
-    label: 'My Agent',
-    icon: Bot,
-    items: [
-      { id: 'office', label: 'Agent Office', icon: Monitor },
-      { id: 'goals', label: 'Goals', icon: Target },
-      { id: 'agent', label: 'Agent Settings', icon: Bot },
-      { id: 'memory', label: 'Memory', icon: Brain },
-      { id: 'recipes', label: 'Recipes', icon: BookOpen },
-      { id: 'capabilities', label: 'What Can I Do?', icon: HelpCircle },
-      { id: 'training', label: 'Ratings', icon: Star },
+      { id: 'website-builder', label: 'Websites', icon: Code },
     ],
   },
   // Work
@@ -150,41 +133,19 @@ const menuGroups: MenuGroup[] = [
       { id: 'reminders', label: 'Reminders', icon: Bell, shortcut: 'R' },
       { id: 'calendar', label: 'Calendar', icon: CalendarCheck },
       { id: 'workflows', label: 'Workflows', icon: GitBranch },
-      { id: 'automations', label: 'Automations', icon: Zap },
-      { id: 'focus', label: 'Focus & Habits', icon: Target, shortcut: 'F' },
-      { id: 'docs', label: 'Docs', icon: FileText },
-      { id: 'social-media', label: 'Social Media', icon: Share2 },
-      { id: 'proactive', label: 'Proactive AI', icon: Sparkles },
+      { id: 'focus', label: 'Focus', icon: Target, shortcut: 'F' },
+      { id: 'inbox', label: 'Inbox', icon: Inbox },
     ],
   },
-  // Connect
+  // Settings & More
   {
-    label: 'Connect',
-    icon: MessageSquare,
-    items: [
-      { id: 'connect-inbox', label: 'Inbox', icon: Inbox },
-      { id: 'inbox', label: 'All Messages', icon: Inbox },
-      { id: 'gmail', label: 'Gmail', icon: Mail },
-      { id: 'voice', label: 'Voice Chat', icon: Mic, shortcut: 'C' },
-      { id: 'pico', label: 'Fleet', icon: Cpu },
-      { id: 'planner', label: 'Planner', icon: CalendarCheck },
-    ],
-  },
-  // Control
-  {
-    label: 'Control',
+    label: 'More',
     icon: Settings,
     items: [
-      { id: 'portfolio', label: 'Portfolio', icon: Palette },
-      { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+      { id: 'agent', label: 'Agent', icon: Bot },
+      { id: 'memory', label: 'Memory', icon: Brain },
       { id: 'connections', label: 'Connections', icon: Link2 },
       { id: 'settings', label: 'Settings', icon: Settings },
-      { id: 'usage', label: 'Usage', icon: BarChart3 },
-      { id: 'billing', label: 'Billing', icon: CreditCard },
-      { id: 'health', label: 'Health', icon: Activity },
-      { id: 'activity', label: 'Activity Log', icon: Clock },
-      { id: 'terminal', label: 'Terminal', icon: Terminal },
-      { id: 'roadmap', label: 'Roadmap', icon: Map },
     ],
   },
 ];
@@ -192,7 +153,7 @@ const menuGroups: MenuGroup[] = [
 // Bottom tabs for mobile — 6 zone icons (icon-only, no labels on mobile)
 type MobileTabId = PageType | 'more';
 const mobileTabs: { id: MobileTabId; label: string; icon: typeof LayoutDashboard; color: string }[] = [
-  { id: 'overview', label: 'Home', icon: LayoutDashboard, color: 'var(--ag-cyan)' },
+  { id: 'office', label: 'Home', icon: LayoutDashboard, color: 'var(--ag-cyan)' },
   { id: 'office', label: 'Agent', icon: Bot, color: 'var(--ag-violet)' },
   { id: 'creative-studio', label: 'Create', icon: Sparkles, color: '#F59E0B' },
   { id: 'reminders', label: 'Work', icon: Zap, color: '#ADFF2F' },
@@ -209,7 +170,7 @@ export function DashboardApp() {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const { t, isHindi, toggleLang } = useTranslation();
-  const [currentPage, setCurrentPage] = useState<PageType>('overview');
+  const [currentPage, setCurrentPage] = useState<PageType>('office');
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse state
   const [chatOpen, setChatOpen] = useState(false);
@@ -221,7 +182,6 @@ export function DashboardApp() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showOnboardingWizard, setShowOnboardingWizard] = useState(false);
-  const officeHomepage = true;
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   useLogoutBlocker(logout);
@@ -362,7 +322,8 @@ export function DashboardApp() {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
     if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox'];
+    if (segment === 'overview' || segment === '') segment = 'office';
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox', 'goals'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
       setCurrentPage(segment as PageType);
     }
@@ -438,9 +399,8 @@ export function DashboardApp() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return officeHomepage
-          ? <OfficeHomePage />
-          : <OverviewPage onViewPortfolio={(u: string) => navigate(`/portfolio/${u}`)} onNavigate={(page: string) => navigate(page === 'overview' ? '/dashboard' : `/dashboard/${page}`)} onRefresh={loadDashboard} onOpenChat={() => setChatOpen(true)} />;
+      case 'office':
+        return <OfficeHomePage />;
       case 'portfolio':
         return <PortfolioPage />;
       case 'usage':
@@ -513,8 +473,6 @@ export function DashboardApp() {
         return <DocsWorkspacePage />;
       case 'training':
         return <ConversationRatingPage />;
-      case 'office':
-        return <OfficePage />;
       case 'voice':
         return <VoiceChatPage />;
       case 'design':
