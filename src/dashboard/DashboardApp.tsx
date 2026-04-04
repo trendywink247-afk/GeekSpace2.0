@@ -550,7 +550,7 @@ export function DashboardApp() {
       {/* Logo */}
       <div className="h-14 flex items-center px-4" style={{ borderBottom: '1px solid var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }}>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => { navigate('/dashboard'); setSidebarOpen(false); }}
           className="group flex items-center gap-3 flex-1 transition-all duration-300"
           aria-label="Go to dashboard home"
         >
@@ -623,7 +623,7 @@ export function DashboardApp() {
                     {group.items.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => navigate(`/dashboard/${item.id}`)}
+                        onClick={() => { navigate(`/dashboard/${item.id}`); setSidebarOpen(false); }}
                         aria-current={isPageActive(item.id) ? 'page' : undefined}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 min-h-[38px] relative ${
                           isPageActive(item.id)
@@ -671,7 +671,7 @@ export function DashboardApp() {
                 {group.items.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`)}
+                    onClick={() => { navigate(item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`); setSidebarOpen(false); }}
                     aria-current={isPageActive(item.id) ? 'page' : undefined}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
                     style={isPageActive(item.id) ? {
@@ -691,7 +691,7 @@ export function DashboardApp() {
                 {/* Explore after ungrouped */}
                 {groupIdx === 0 && (
                   <button
-                    onClick={() => navigate('/explore')}
+                    onClick={() => { navigate('/explore'); setSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all min-h-[44px]"
                     style={{ color: 'var(--ag-text-secondary, #9CA3AF)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--ag-bg-surface-hover, rgba(20,20,40,0.8))'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ag-text-primary, #F4F6FF)'; }}
@@ -710,7 +710,7 @@ export function DashboardApp() {
         <div className="mt-2">
           <div className="h-px my-2 mx-2" style={{ background: 'var(--ag-border-subtle, rgba(139, 92, 246, 0.08))' }} />
           <button
-            onClick={() => navigate('/dashboard/roadmap')}
+            onClick={() => { navigate('/dashboard/roadmap'); setSidebarOpen(false); }}
             aria-current={isPageActive('roadmap') ? 'page' : undefined}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 min-h-[44px] relative border-l-2"
             style={isPageActive('roadmap') ? {
@@ -786,7 +786,7 @@ export function DashboardApp() {
               <span className="text-[11px] truncate block" style={{ color: 'var(--ag-text-muted, #6B7280)' }}>{user?.email || ''}</span>
             </div>
             <button
-              onClick={() => navigate('/dashboard/settings')}
+              onClick={() => { navigate('/dashboard/settings'); setSidebarOpen(false); }}
               className="p-1.5 rounded-lg transition-colors flex-shrink-0"
               style={{ color: 'var(--ag-text-muted, #6B7280)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139, 92, 246, 0.08)'; }}
