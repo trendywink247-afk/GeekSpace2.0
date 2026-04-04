@@ -201,9 +201,10 @@ describe('90.6 ProactivePage frontend', () => {
     expect(src).toContain("'proactive'");
   });
 
-  it('DashboardApp has Proactive AI menu item', () => {
+  it('DashboardApp has proactive page route', () => {
     const src = readFile('src/dashboard/DashboardApp.tsx');
-    expect(src).toContain('Proactive AI');
+    // Proactive AI page accessible via URL even if not in sidebar
+    expect(src).toContain("case 'proactive'");
   });
 
   it('DashboardApp renders ProactivePage for proactive case', () => {

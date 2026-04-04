@@ -84,7 +84,7 @@ const OfficeHomePage = lazyRetry(() => import('./pages/office/index').then(m => 
 const VoiceChatPage = lazyRetry(() => import('./pages/VoiceChatPage').then(m => ({ default: m.VoiceChatPage })));
 const DesignAssistantPage = lazyRetry(() => import('./pages/DesignAssistantPage').then(m => ({ default: m.DesignAssistantPage })));
 const CreativeStudioPage = lazyRetry(() => import('./pages/CreativeStudioPage').then(m => ({ default: m.CreativeStudioPage })));
-const ConnectInboxPage = lazyRetry(() => import('./pages/ConnectInboxPage').then(m => ({ default: m.ConnectInboxPage })));
+
 const GoalsPage = lazyRetry(() => import('./pages/GoalsPage').then(m => ({ default: m.GoalsPage })));
 
 type PageType = 'overview' | 'portfolio' | 'usage' | 'billing' | 'memory' | 'personal-memory' | 'connections' | 'agent' | 'reminders' | 'automations' | 'recipes' | 'pico' | 'health' | 'terminal' | 'settings' | 'website-builder' | 'roadmap' | 'image-gen' | 'video-gen' | 'planner' | 'social-media' | 'capabilities' | 'activity' | 'gallery' | 'tools' | 'proactive' | 'inbox' | 'gmail' | 'analytics' | 'focus' | 'chat' | 'calendar' | 'workflows' | 'training' | 'docs' | 'office' | 'voice' | 'design' | 'creative-studio' | 'connect-inbox' | 'goals';
@@ -320,7 +320,7 @@ export function DashboardApp() {
   useEffect(() => {
     let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
     // Backward compat: map old page IDs to new ones
-    if (segment === 'artifacts' || segment === 'templates') segment = 'website-builder';
+    if (segment === 'templates') segment = 'website-builder';
     if (segment === 'overview' || segment === '') segment = 'office';
     const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox', 'goals'];
     if (validPages.includes(segment as PageType) && segment !== currentPage) {
@@ -451,7 +451,7 @@ export function DashboardApp() {
       case 'proactive':
         return <ProactivePage />;
       case 'connect-inbox':
-        return <ConnectInboxPage />;
+        return <InboxPage />;
       case 'goals':
         return <GoalsPage />;
       case 'inbox':
