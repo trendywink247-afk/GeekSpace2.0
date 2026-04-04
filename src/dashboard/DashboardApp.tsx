@@ -229,7 +229,7 @@ export function DashboardApp() {
     if (segment === 'templates') segment = 'website-builder';
     if (segment === 'overview' || segment === '') segment = 'office';
     const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox', 'goals'];
-    if (validPages.includes(segment as PageType) && segment !== currentPage) {
+    if (validPages.includes(segment as PageType)) {
       setCurrentPage(segment as PageType);
     }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -488,9 +488,10 @@ export function DashboardApp() {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 md:p-6" {...swipeHandlers}>
+        <div className={`${currentPage === 'office' ? '' : 'p-4 md:p-6'}`} {...swipeHandlers}>
           <ErrorBoundary>
           <DashboardRouter 
+            key={location.pathname}
             currentPage={currentPage}
             navigate={navigate}
             onOpenChat={() => setChatOpen(true)}

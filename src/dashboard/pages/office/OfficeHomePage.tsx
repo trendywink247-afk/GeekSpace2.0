@@ -842,7 +842,7 @@ export function OfficeHomePage() {
   return (
     <DashboardPageWrapper>
       <div
-        className="relative flex flex-col h-[calc(100dvh-64px)] md:h-dvh overflow-hidden"
+        className="relative flex flex-col min-h-[calc(100dvh-64px)] md:min-h-dvh overflow-y-auto overflow-x-hidden pb-20 md:pb-0"
         style={{ background: 'var(--ag-bg-deep)' }}
       >
       {/* Atmospheric background layer */}
@@ -875,7 +875,7 @@ export function OfficeHomePage() {
       {/* Main content: canvas + sidebar */}
       <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden relative z-[1]">
         {/* Office Stage -- 60% desktop, 45vh mobile */}
-        <BlurFade delay={0.1} inView className="relative w-full md:w-[60%] h-[45vh] md:h-full flex-shrink-0">
+        <BlurFade delay={0.1} inView className="relative w-full md:w-[60%] h-[30vh] md:h-full flex-shrink-0">
           {/* Canvas wrapper glow */}
           <div
             className="absolute inset-0 pointer-events-none z-[2]"
