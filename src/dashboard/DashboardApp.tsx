@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import {
@@ -76,7 +76,14 @@ export function DashboardApp() {
   const unreadCount = 0; // Disabled after mobile nav simplification
   const swipeHandlers = useSwipeNavigation(location.pathname);
   const { isHindi, toggleLang, t } = useTranslation();
-  const [currentPage, setCurrentPage] = useState<PageType>('office');
+  // Derive currentPage directly from URL — no useState sync needed
+  const currentPage = useMemo<PageType>(() => {
+    let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
+    if (segment === 'templates') segment = 'website-builder';
+    if (segment === 'overview' || segment === '') segment = 'office';
+    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox', 'goals'];
+    return validPages.includes(segment as PageType) ? segment as PageType : 'office';
+  }, [location.pathname]);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -200,7 +207,6 @@ export function DashboardApp() {
       if (e.altKey && e.key === 'v') {
         e.preventDefault();
         navigate('/dashboard/voice');
-        setCurrentPage('voice');
         setVoiceListening(true);
         setTimeout(() => setVoiceListening(false), 200);
       }
@@ -222,17 +228,7 @@ export function DashboardApp() {
     }
   }, [agent.id, agent.use_case, user, onboarding.completed]);
 
-  // Sync URL pathname → currentPage (so navigate() calls update the view)
-  useEffect(() => {
-    let segment = location.pathname.replace('/dashboard', '').replace(/^\//, '').split('/')[0] || 'overview';
-    // Backward compat: map old page IDs to new ones
-    if (segment === 'templates') segment = 'website-builder';
-    if (segment === 'overview' || segment === '') segment = 'office';
-    const validPages: PageType[] = ['overview', 'portfolio', 'usage', 'billing', 'memory', 'personal-memory', 'connections', 'agent', 'reminders', 'automations', 'recipes', 'pico', 'health', 'terminal', 'settings', 'website-builder', 'roadmap', 'image-gen', 'video-gen', 'planner', 'social-media', 'activity', 'gallery', 'tools', 'capabilities', 'proactive', 'inbox', 'gmail', 'analytics', 'focus', 'chat', 'calendar', 'workflows', 'training', 'docs', 'office', 'voice', 'design', 'creative-studio', 'connect-inbox', 'goals'];
-    if (validPages.includes(segment as PageType)) {
-      setCurrentPage(segment as PageType);
-    }
-  }, [location.pathname]);
+  // currentPage is now derived via useMemo above — no sync needed
 
   // Close mobile sidebar when page changes
   useEffect(() => {
