@@ -4,10 +4,10 @@
 // Tier 0 (PicoClaw):     simple/code-micro intent → qwen2.5-coder:3b (88ms, $0)
 // automation intent:     OpenRouter-free first (Qwen3 235B MoE >> qwen3:8b for tool calling)
 //
-// ALL users — sequential waterfall:
-//   Tier 1:   Ollama qwen3:8b (simple) / gemma4:e4b (complex) ($0, local, intent-based model routing)
-//   Tier 1.5: OpenRouter-free            ($0, dynamic model rotation — Qwen3 235B, Llama 3.3 70B, etc.)
-//              — Ollama fallback + automation-intent primary
+// ALL users — intent-based routing:
+//   Simple/automation: Groq 70B first ($0, 0.2s, precise) → Ollama fallback
+//   Complex/coding:    Ollama gemma4:e4b first ($0, local) → Groq fallback
+//   Tier 1.5: OpenRouter-free            ($0, dynamic model rotation)
 //   Tier 2:   Groq Llama 3.3 70B        ($0, free quota, 43,200 req/day × 3 keys)
 //   Tier 3:   Together Qwen3.5 9B       ($0.10/$0.15/1M, subject to $2/day system cap)
 //
@@ -1260,8 +1260,19 @@ export async function routeChat(
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
     }
 
+  } else if ((intent === 'simple' || intent === 'automation' || intent === 'code-micro') && isGroqAvailable()) {
+    // Tier 1a: Simple/automation intents → Groq first (70B, 0.2s, precise, free)
+    // Groq Llama 3.3 70B is faster AND more accurate than local 8B for simple tasks
+    provider = 'groq';
+    routingReason = 'ollama_healthy'; // counts as healthy routing (intentional cloud-first for speed)
+
+  } else if (ollamaOk && (intent === 'complex' || intent === 'coding' || intent === 'planning')) {
+    // Tier 1b: Complex/coding/planning → Ollama gemma4 (local, free, good reasoning)
+    provider = 'ollama';
+    routingReason = 'ollama_healthy';
+
   } else if (ollamaOk) {
-    // Tier 1: Ollama — local-first, truly agentic (qwen3:8b simple, gemma4:e4b complex)
+    // Tier 1c: Ollama fallback for any intent when cloud unavailable
     provider = 'ollama';
     routingReason = 'ollama_healthy';
 
@@ -1270,15 +1281,15 @@ export async function routeChat(
     provider = 'picoclaw';
     routingReason = 'ollama_healthy';
 
-  } else if (isOpenRouterFreeAvailable()) {
-    // Tier 2: OpenRouter-free — cloud fallback when local unavailable
-    provider = 'openrouter-free';
-    routingReason = 'openrouter_free_available';
-
   } else if (isGroqAvailable()) {
-    // Tier 2: Groq — free quota cloud fallback (43,200 req/day × 3 keys)
+    // Tier 2: Groq — fallback for complex when Ollama down
     provider = 'groq';
     routingReason = 'fallback_chain';
+
+  } else if (isOpenRouterFreeAvailable()) {
+    // Tier 2.5: OpenRouter-free — cloud fallback
+    provider = 'openrouter-free';
+    routingReason = 'openrouter_free_available';
 
   } else if (isTogetherAvailable() && !overBudget && !overDailyBudget) {
     // Tier 3: Together Qwen3.5 9B — paid fallback, all users, subject to $2/day cap
