@@ -14,9 +14,7 @@ import { type ChatMessage, type ToolStep } from '@/components/ChatMessageBubble'
 import type { AgentPersonality } from '@/types';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
-import { PageShell } from '@/components/agentin';
 import { DashboardPageWrapper, PageHeader } from '@/components/agentin';
-import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useAgentState } from '@/hooks/useAgentState';
@@ -293,10 +291,14 @@ export function ChatPage() {
   }, []);
 
   // Cleanup on unmount
+  const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       abortControllerRef.current?.abort();
+      setIsTyping(false);
+      setIsStreamActive(false);
     };
   }, []);
 
@@ -311,6 +313,8 @@ export function ChatPage() {
       const elapsed = Date.now() - lastChunkTimeRef.current;
       if (elapsed > 15000) {
         setStreamHealth('disconnected');
+        setIsTyping(false);
+        setIsStreamActive(false);
       } else if (elapsed > 5000) {
         setStreamHealth('slow');
       } else {
@@ -419,6 +423,7 @@ export function ChatPage() {
       connectAgentStateSSE();
     }
     lastChunkTimeRef.current = Date.now();
+    let responseTimeout: number | null = null;
 
     try {
       const response = await agentService.chatStream(text, 'web', ac.signal, selectedAgent || undefined);
@@ -430,6 +435,21 @@ export function ChatPage() {
       setIsStreamActive(true);
       setStreamHealth('connected');
       reconnectCountRef.current = 0;
+
+      // Response timeout — abort if no complete response in 30s
+      responseTimeout = setTimeout(() => {
+        abortControllerRef.current?.abort();
+        setIsTyping(false);
+        setIsStreamActive(false);
+        setStreamHealth('disconnected');
+        disconnectAgentStateSSE();
+        // Replace the empty streaming message with an error
+        setMessages((prev) => prev.map((m) => 
+          m.role === 'agent' && !m.content 
+            ? { ...m, content: 'Response timed out. Tap to retry.', failed: true }
+            : m
+        ));
+      }, 30_000);
 
       // RAF flush loop — activeMsgId tracks which bubble we're streaming into
       let activeMsgId = retryCount === 0 ? assistantMsgId : messages[messages.length - 1]?.id || assistantMsgId;
@@ -518,6 +538,7 @@ export function ChatPage() {
         );
       }
 
+      if (responseTimeout) clearTimeout(responseTimeout);
       setIsStreamActive(false);
       setStreamHealth('connected');
       disconnectAgentStateSSE();
@@ -528,6 +549,7 @@ export function ChatPage() {
         tts.speak(cleanContent);
       }
     } catch (err) {
+      if (responseTimeout) clearTimeout(responseTimeout);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = 0;
@@ -598,10 +620,10 @@ export function ChatPage() {
         ]);
       }
     } finally {
-      if (retryCount === 0 || retryCount >= RECONNECT_DELAYS.length) {
+      if (mountedRef.current) {
         setIsTyping(false);
-        abortControllerRef.current = null;
       }
+      abortControllerRef.current = null;
     }
   }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent, connectAgentStateSSE, disconnectAgentStateSSE, notifyStart, notifyDone, notifyFail]);
 
@@ -773,9 +795,7 @@ export function ChatPage() {
           icon={MessageSquare}
         />
       </div>
-      <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
-        <BlurFade delay={0.1} inView>
-          <div className='flex h-[calc(100dvh-140px)] md:h-[calc(100vh-140px)] pb-20 md:pb-0'>
+      <div className='flex flex-col h-[calc(100dvh-60px)] md:h-[calc(100vh-60px)]'>
             {/* ── Conversation Sidebar ── */}
             <ChatSidebar
               conversations={conversations}
@@ -790,7 +810,7 @@ export function ChatPage() {
             />
 
             {/* ── Main Chat Area ── */}
-            <div className='flex-1 flex flex-col rounded-xl border min-w-0 relative' style={{ background: 'var(--ag-bg-deep)', borderColor: 'var(--ag-border-subtle)' }}>
+            <div className='flex-1 flex flex-col min-w-0 relative'>
               {/* Header */}
               <div className='flex-shrink-0'>
                 <ChatHeader
@@ -888,7 +908,7 @@ export function ChatPage() {
               )}
 
               {/* Input */}
-              <div className='flex-shrink-0'>
+              <div className='flex-shrink-0 pb-16 md:pb-0'>
                 <ChatInput
                   input={input}
                   onInputChange={handleInputChange}
@@ -911,8 +931,6 @@ export function ChatPage() {
               </div>
             </div>
           </div>
-        </BlurFade>
-      </PageShell>
     </DashboardPageWrapper>
   );
 }
