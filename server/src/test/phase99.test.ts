@@ -236,8 +236,9 @@ describe("99.6 ChatPage.tsx source checks", () => {
     expect(src).toContain("useTTS");
   });
   it("imports VoiceButton component", () => {
-    const src = readFrontend("dashboard/pages", "ChatPage.tsx");
-    expect(src).toContain("VoiceButton");
+    // VoiceButton is a standalone component; ChatPage uses useVoice hook + inline Mic buttons in ChatInput
+    const chatInput = readFrontend("dashboard/pages/chat", "ChatInput.tsx");
+    expect(chatInput).toContain("Mic");
   });
   it("has voiceMode state", () => {
     const src = readFrontend("dashboard/pages", "ChatPage.tsx");
@@ -248,7 +249,8 @@ describe("99.6 ChatPage.tsx source checks", () => {
     expect(src).toContain("agentin_voice_settings");
   });
   it("auto-reads response when voice mode is on", () => {
-    const src = readFrontend("dashboard/pages", "ChatPage.tsx");
+    // tts.speak is called in useChatStream hook, not ChatPage directly
+    const src = readFrontend("hooks", "useChatStream.ts");
     expect(src).toContain("tts.speak");
   });
   it("exports ChatPage", () => {
