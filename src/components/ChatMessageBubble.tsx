@@ -35,30 +35,30 @@ export type FeedbackValue = 'up' | 'down' | null;
 // ── Constants ──
 
 const LANG_COLORS: Record<string, { label: string; bg: string; text: string }> = {
-  javascript: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  js: { label: 'JavaScript', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  typescript: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  ts: { label: 'TypeScript', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  tsx: { label: 'TSX', bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  jsx: { label: 'JSX', bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  python: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
-  py: { label: 'Python', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
-  html: { label: 'HTML', bg: 'bg-orange-500/15', text: 'text-orange-400' },
-  css: { label: 'CSS', bg: 'bg-pink-500/15', text: 'text-pink-400' },
-  json: { label: 'JSON', bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  bash: { label: 'Bash', bg: 'bg-green-500/15', text: 'text-green-400' },
-  sh: { label: 'Shell', bg: 'bg-green-500/15', text: 'text-green-400' },
-  sql: { label: 'SQL', bg: 'bg-violet-500/15', text: 'text-violet-400' },
-  rust: { label: 'Rust', bg: 'bg-orange-600/15', text: 'text-orange-300' },
-  go: { label: 'Go', bg: 'bg-sky-500/15', text: 'text-sky-400' },
-  java: { label: 'Java', bg: 'bg-red-500/15', text: 'text-red-400' },
-  c: { label: 'C', bg: 'bg-gray-500/15', text: 'text-gray-400' },
-  cpp: { label: 'C++', bg: 'bg-gray-500/15', text: 'text-gray-400' },
-  yaml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
-  yml: { label: 'YAML', bg: 'bg-rose-500/15', text: 'text-rose-400' },
-  markdown: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
-  md: { label: 'Markdown', bg: 'bg-slate-500/15', text: 'text-slate-400' },
-  dockerfile: { label: 'Dockerfile', bg: 'bg-blue-600/15', text: 'text-blue-300' },
+  javascript: { label: 'JavaScript', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  js: { label: 'JavaScript', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  typescript: { label: 'TypeScript', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  ts: { label: 'TypeScript', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  tsx: { label: 'TSX', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  jsx: { label: 'JSX', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  python: { label: 'Python', bg: 'bg-[var(--ag-amber)]/10', text: 'text-[var(--ag-amber)]' },
+  py: { label: 'Python', bg: 'bg-[var(--ag-amber)]/10', text: 'text-[var(--ag-amber)]' },
+  html: { label: 'HTML', bg: 'bg-[var(--ag-amber)]/10', text: 'text-[var(--ag-amber)]' },
+  css: { label: 'CSS', bg: 'bg-[var(--ag-pink)]/10', text: 'text-[var(--ag-pink)]' },
+  json: { label: 'JSON', bg: 'bg-[var(--ag-green)]/10', text: 'text-[var(--ag-green)]' },
+  bash: { label: 'Bash', bg: 'bg-[var(--ag-green)]/10', text: 'text-[var(--ag-green)]' },
+  sh: { label: 'Shell', bg: 'bg-[var(--ag-green)]/10', text: 'text-[var(--ag-green)]' },
+  sql: { label: 'SQL', bg: 'bg-[var(--ag-violet)]/10', text: 'text-[var(--ag-violet)]' },
+  rust: { label: 'Rust', bg: 'bg-[var(--ag-amber)]/10', text: 'text-[var(--ag-amber)]' },
+  go: { label: 'Go', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  java: { label: 'Java', bg: 'bg-[var(--ag-pink)]/10', text: 'text-[var(--ag-pink)]' },
+  c: { label: 'C', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  cpp: { label: 'C++', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  yaml: { label: 'YAML', bg: 'bg-[var(--ag-pink)]/10', text: 'text-[var(--ag-pink)]' },
+  yml: { label: 'YAML', bg: 'bg-[var(--ag-pink)]/10', text: 'text-[var(--ag-pink)]' },
+  markdown: { label: 'Markdown', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  md: { label: 'Markdown', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
+  dockerfile: { label: 'Dockerfile', bg: 'bg-[var(--ag-cyan)]/10', text: 'text-[var(--ag-cyan)]' },
 };
 
 // ── Sub-components ──
@@ -102,6 +102,62 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   );
 }
 
+function renderInlineMarkdown(text: string): React.ReactNode {
+  // Split into lines for list handling
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let listItems: string[] = [];
+  let keyIdx = 0;
+
+  const processInline = (line: string): React.ReactNode => {
+    // Process inline markdown: bold, italic, inline code, links
+    const parts: React.ReactNode[] = [];
+    // Regex for **bold**, *italic*, `code`, [text](url)
+    const inlineRegex = /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)/g;
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+    let pIdx = 0;
+    while ((match = inlineRegex.exec(line)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(line.slice(lastIdx, match.index));
+      }
+      if (match[1]) parts.push(<strong key={pIdx++} className="font-semibold text-[var(--ag-text-primary)]">{match[1]}</strong>);
+      else if (match[2]) parts.push(<em key={pIdx++} className="italic text-[var(--ag-text-secondary)]">{match[2]}</em>);
+      else if (match[3]) parts.push(<code key={pIdx++} className="px-1.5 py-0.5 rounded bg-[var(--ag-bg-surface)] text-[var(--ag-cyan)] text-sm font-mono">{match[3]}</code>);
+      else if (match[4] && match[5]) parts.push(<a key={pIdx++} href={match[5]} target="_blank" rel="noopener noreferrer" className="text-[var(--ag-violet)] hover:text-[var(--ag-cyan)] underline underline-offset-2">{match[4]}</a>);
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < line.length) parts.push(line.slice(lastIdx));
+    return parts.length === 1 ? parts[0] : <>{parts}</>;
+  };
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={keyIdx++} className="list-disc list-inside space-y-1 my-1.5 text-[var(--ag-text-secondary)]">
+          {listItems.map((item, i) => <li key={i}>{processInline(item)}</li>)}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  for (const line of lines) {
+    if (line.match(/^[-*] /)) {
+      listItems.push(line.replace(/^[-*] /, ''));
+    } else {
+      flushList();
+      if (line.trim()) {
+        elements.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{processInline(line)}{'\n'}</span>);
+      } else {
+        elements.push(<br key={keyIdx++} />);
+      }
+    }
+  }
+  flushList();
+  return <>{elements}</>;
+}
+
 function renderMessageContent(content: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
   const fenceRegex = /```(\w*)?\n?([\s\S]*?)```/g;
@@ -110,13 +166,13 @@ function renderMessageContent(content: string): React.ReactNode {
   let keyIdx = 0;
   while ((match = fenceRegex.exec(content)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex, match.index)}</span>);
+      parts.push(<span key={keyIdx++}>{renderInlineMarkdown(content.slice(lastIndex, match.index))}</span>);
     }
     parts.push(<CodeBlock key={keyIdx++} lang={match[1] || ''} code={match[2] || ''} />);
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < content.length) {
-    parts.push(<span key={keyIdx++} style={{ whiteSpace: 'pre-wrap' }}>{content.slice(lastIndex)}</span>);
+    parts.push(<span key={keyIdx++}>{renderInlineMarkdown(content.slice(lastIndex))}</span>);
   }
   return parts.length > 0 ? <>{parts}</> : content;
 }

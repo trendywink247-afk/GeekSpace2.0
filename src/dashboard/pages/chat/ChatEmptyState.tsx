@@ -45,23 +45,24 @@ export function ChatEmptyState({
   return (
     <div className='flex-1 overflow-y-auto px-4 py-3 scrollbar-hide relative' data-testid="chat-empty-state">
       <div className='flex flex-col items-center justify-center h-full gap-4 text-center py-12'>
-        {/* Session continuity — "Welcome back" banner */}
-        <SessionContinuityBanner
-          onResume={onResume}
-        />
-        {/* Hero avatar */}
-        <div className='relative'>
-          <div
-            className='w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-black relative z-10'
-            style={{ background: meta.color, boxShadow: meta.glow }}
-          >
-            {meta.initial}
-          </div>
-          <span
-            className='absolute inset-[-4px] rounded-full'
-            style={{ border: `1.5px solid ${meta.color}`, opacity: 0.25 }}
+        <div className='backdrop-blur-xl bg-[var(--ag-bg-surface)]/50 border border-[var(--ag-border-subtle)] rounded-2xl p-8 max-w-lg w-full'>
+          {/* Session continuity — "Welcome back" banner */}
+          <SessionContinuityBanner
+            onResume={onResume}
           />
-        </div>
+          {/* Hero avatar */}
+          <div className='relative mb-4'>
+            <div
+              className='w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-black relative z-10 mx-auto'
+              style={{ background: meta.color, boxShadow: 'var(--ag-glow-md)' }}
+            >
+              {meta.initial}
+            </div>
+            <span
+              className='absolute inset-[-4px] rounded-full'
+              style={{ border: `1.5px solid ${meta.color}`, opacity: 0.25 }}
+            />
+          </div>
         <div>
           <p className='text-lg font-semibold text-[var(--ag-text-primary)] font-heading'>{timeContext.greeting}</p>
           <p className='text-sm text-[var(--ag-text-secondary)] mt-1 max-w-xs'>
@@ -76,19 +77,20 @@ export function ChatEmptyState({
             Voice mode active
           </div>
         )}
-        {/* Context-aware starter prompts */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md'>
-          {timeContext.prompts.map((prompt) => (
-            <button
-              key={prompt.text}
-              onClick={() => onStarterPrompt(prompt.text)}
-              data-testid="chat-starter-prompt"
-              className='flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-left text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-200 min-h-[44px]'
-            >
-              <Clock className='w-4 h-4 text-[var(--ag-cyan)]/50 shrink-0' />
-              <span className='line-clamp-2'>{prompt.text}</span>
-            </button>
-          ))}
+          {/* Context-aware starter prompts */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full'>
+            {timeContext.prompts.map((prompt) => (
+              <button
+                key={prompt.text}
+                onClick={() => onStarterPrompt(prompt.text)}
+                data-testid="chat-starter-prompt"
+                className='flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] text-left text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-200 min-h-[44px]'
+              >
+                <Clock className='w-4 h-4 text-[var(--ag-cyan)]/50 shrink-0' />
+                <span className='line-clamp-2'>{prompt.text}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

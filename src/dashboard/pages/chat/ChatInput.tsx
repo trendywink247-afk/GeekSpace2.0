@@ -73,7 +73,7 @@ export function ChatInput({
   }, [mobileDropdownOpen]);
   
   const agents = [
-    { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
+    { id: '', name: 'Auto', emoji: '🤖', color: 'var(--ag-text-muted)' },
     { id: 'weebo', name: 'Weebo', emoji: '✨', color: 'var(--ag-cyan)' },
     { id: 'edith', name: 'Edith', emoji: '⚡', color: 'var(--ag-violet)' },
     { id: 'jarvis', name: 'Jarvis', emoji: '🎩', color: 'var(--ag-lime)' },
@@ -104,7 +104,7 @@ export function ChatInput({
             style={{
               border: `1px solid ${selectedAgent === p.id ? p.color + '60' : 'rgba(255,255,255,0.06)'}`,
               background: selectedAgent === p.id ? p.color + '15' : 'transparent',
-              color: selectedAgent === p.id ? p.color : '#8892A4',
+              color: selectedAgent === p.id ? p.color : 'var(--ag-text-muted)',
             }}
           >
             <span>{p.emoji}</span>
@@ -263,7 +263,7 @@ export function ChatInput({
           type='submit'
           disabled={!input.trim() || isTyping}
           data-testid="chat-send-button"
-          className='bg-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/80 text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 shrink-0'
+          className='bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] hover:from-[#8B5CF6]/90 hover:to-[#F59E0B]/90 text-black h-10 px-3 min-w-[44px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 shrink-0'
           aria-label='Send message'
         >
           <Send className='w-4 h-4' />

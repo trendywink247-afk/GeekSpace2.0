@@ -89,7 +89,7 @@ export function ChatHeader({
         <div className='relative'>
           <div
             className='w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-black relative z-10'
-            style={{ background: meta.color, boxShadow: meta.glow }}
+            style={{ background: meta.color, boxShadow: 'var(--ag-glow-sm)' }}
           >
             {meta.initial}
           </div>
