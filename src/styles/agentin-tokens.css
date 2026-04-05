@@ -5,6 +5,8 @@
   --ag-bg-surface: rgba(12, 12, 30, 0.6);
   --ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
   --ag-bg-elevated: rgba(30, 30, 50, 0.7);
+  /* Header/footer chrome — semi-opaque for backdrop-blur to be visible */
+  --ag-bg-chrome: rgba(6, 6, 26, 0.88);
 
   /* Borders */
   --ag-border-subtle: rgba(139, 92, 246, 0.08);

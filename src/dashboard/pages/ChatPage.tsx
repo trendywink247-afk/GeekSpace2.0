@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import {
-  MessageSquare, ChevronDown,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { type VirtuosoHandle } from 'react-virtuoso';
 
@@ -16,7 +14,7 @@ import { type ChatMessage } from '@/components/ChatMessageBubble';
 import type { AgentPersonality } from '@/types';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
-import { DashboardPageWrapper, PageHeader } from '@/components/agentin';
+
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useAgentState } from '@/hooks/useAgentState';
@@ -141,7 +139,7 @@ export function ChatPage() {
   const user = useAuthStore((s) => s.user);
   const [input, setInput] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string>('');
-  const [voiceMode, setVoiceMode] = useState<boolean>(getVoiceMode);
+  const [voiceMode] = useState<boolean>(getVoiceMode);
   const [interimText, setInterimText] = useState('');
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -331,23 +329,6 @@ export function ChatPage() {
 
 
 
-  // ── Voice ──
-
-  const toggleVoiceMode = useCallback(() => {
-    setVoiceMode((prev) => {
-      const next = !prev;
-      try {
-        const raw = localStorage.getItem('agentin_voice_settings');
-        const cfg: Record<string, unknown> = raw ? JSON.parse(raw) as Record<string, unknown> : {};
-        cfg.enabled = next;
-        localStorage.setItem('agentin_voice_settings', JSON.stringify(cfg));
-      } catch { /* ignore */ }
-      if (!next && tts.isSpeaking) tts.stop();
-      return next;
-    });
-  }, [tts]);
-
-
 
   // ── @mention handlers ──
 
@@ -474,15 +455,7 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
-    <DashboardPageWrapper>
-      <div className="hidden md:block">
-        <PageHeader 
-          title="AI Chat"
-          subtitle="Chat with your AI assistant"
-          icon={MessageSquare}
-        />
-      </div>
-      <div className='flex flex-col h-[calc(100dvh-60px)] md:h-[calc(100vh-60px)]'>
+    <div className='flex flex-col h-[calc(100dvh-60px)] md:h-[calc(100vh-60px)] bg-[var(--ag-bg-base)]'>
             {/* ── Conversation Sidebar ── */}
             <ChatSidebar
               conversations={conversations}
@@ -500,23 +473,25 @@ export function ChatPage() {
             <div className='flex-1 flex flex-col min-w-0 relative'>
               {/* Header */}
               <div className='flex-shrink-0'>
+                <div className='max-w-3xl mx-auto w-full'>
                 <ChatHeader
                   agentName={agentName}
                   meta={meta}
                   isTyping={isTyping}
                   isStreamActive={isStreamActive}
                   streamHealth={streamHealth}
-                  voiceMode={voiceMode}
-                  onToggleVoice={toggleVoiceMode}
                   onClear={clearChat}
                   sidebarOpen={sidebarOpen}
                   onToggleSidebar={() => setSidebarOpen(true)}
                   tts={tts}
+                  selectedAgent={selectedAgent}
+                  onAgentSelect={setSelectedAgent}
                 />
+                </div>
               </div>
 
               {/* Messages — Virtualized or Empty State */}
-              <div className='flex-1 overflow-y-auto min-h-0'>
+              <div className='flex-1 overflow-y-auto min-h-0 max-w-3xl mx-auto w-full'>
                 {messages.length === 0 ? (
                   <ChatEmptyState
                     meta={meta}
@@ -590,6 +565,7 @@ export function ChatPage() {
 
               {/* Input */}
               <div className='flex-shrink-0 pb-16 md:pb-0'>
+                <div className='max-w-3xl mx-auto w-full px-4'>
                 <ChatInput
                   input={input}
                   onInputChange={handleInputChange}
@@ -601,17 +577,12 @@ export function ChatPage() {
                   onMentionSelect={handleMentionSelect}
                   mentionedAgent={mentionedAgent}
                   onClearMention={clearMention}
-                  councilMode={councilMode}
-                  onToggleCouncil={() => setCouncilMode(!councilMode)}
                   textareaRef={textareaRef}
                   formRef={formRef}
-                  selectedAgent={selectedAgent}
-                  onAgentSelect={setSelectedAgent}
-                  onTranscript={handleTranscript}
                 />
+                </div>
               </div>
             </div>
-          </div>
-    </DashboardPageWrapper>
+    </div>
   );
 }

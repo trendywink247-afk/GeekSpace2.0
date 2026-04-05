@@ -111,7 +111,8 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
           const isEditingMsg = editingMsgId === msg.id;
 
           return (
-            <div className='px-4 py-0.5'>
+            <div className='px-4 py-1'>
+              <div className='max-w-3xl mx-auto w-full'>
               <ChatMessageBubble
                 msg={msg}
                 isStreaming={isStreaming}
@@ -133,12 +134,14 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                 onCancelEdit={onCancelEdit}
                 onEditTextChange={onEditTextChange}
               />
+              </div>
             </div>
           );
         }}
         components={{
           Footer: () => (
             <div className='px-4 py-1.5'>
+              <div className='max-w-3xl mx-auto w-full'>
               {/* Rating Nudge — show after 5+ agent messages */}
               {(() => {
                 const agentMsgCount = messages.filter(m => m.role === 'agent').length;
@@ -271,6 +274,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                   </div>
                 </div>
               )}
+              </div>
             </div>
           ),
         }}
