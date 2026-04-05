@@ -4,6 +4,8 @@
 Modular monolith. 18 domain modules in `server/src/modules/`. React 19 frontend in `src/`.
 Full architecture in `CLAUDE.md` — read it before touching any module.
 
+**CRITICAL**: Read `.pi/FULL_AUDIT.md` for the complete system state including all known bugs, infrastructure map, database tables, and deployment flow.
+
 ## Multi-agent environment — READ THIS FIRST
 This repo runs a hybrid master + specialist agent system.
 - Master agent: plans, dispatches tasks, detects conflicts
