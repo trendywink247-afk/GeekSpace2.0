@@ -94,3 +94,31 @@ modules/example/
 ├── types.ts           # Module-specific TypeScript types
 └── README.md          # Module documentation
 ```
+
+## New Services (Agentic v2)
+
+### Conversation Threading
+- `server/src/modules/agent/services/conversation-threads.ts` — Thread CRUD, auto-title, getOrCreate, close after 30min idle
+- DB: `conversations` table + `conversation_id` column on `conversation_log`
+- Routes: `GET /conversations/threads`, `GET /conversations/:id/messages`
+- All chat routes accept optional `conversationId` in request body
+- `getConversationContext(userId, maxChars, conversationId?)` scopes to thread
+
+### Human-in-the-Loop Confirmation
+- `server/src/modules/agent/services/confirm-action.ts` — Manage pending confirmations with 2-min expiry
+- Dangerous tools: `send_email`, `github_pr`, `create_automation`, `create_calendar_event`, `generate_social_post`, `delete_reminder(deleteAll)`
+- Routes: `POST /agent/confirm/:id`, `GET /agent/confirm/pending`
+- ReAct loop pauses at `needsConfirmation()`, waits for user approval via `waitForConfirmation()`
+
+### File Upload
+- `server/src/modules/agent/middleware/file-upload.ts` — Multer: 25MB, 5 files, safe MIME filter
+- `server/src/modules/agent/services/file-processor.ts` — PDF text (pdf-parse), image base64, code/text content
+- `buildFileContext(files)` returns prompt injection block
+- Both `chat.ts` and `streaming.ts` process `req.files` and inject into system prompt
+
+### Feedback System
+- `server/src/modules/agent/services/feedback-service.ts` — Store 👍/👎 + comments
+- `getUserFeedbackPatterns(userId)` returns anti-pattern block for system prompt injection
+- Injected into `buildCognitiveContext()` in cognitive-memory.ts
+- Routes: `POST /agent/feedback`, `GET /agent/feedback/stats`
+- DB: `message_feedback` table with unique constraint per user+message

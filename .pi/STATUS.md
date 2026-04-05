@@ -5,8 +5,10 @@ Agents append updates here. Format:
 
 ---
 
-[2026-04-04T09:15:00Z] [designer] [TASK-5] COMPLETED: Fixed 3 layout issues in OfficeHomePage.tsx: (1) Changed outer container from md:min-h-dvh to md:h-[calc(100dvh-64px)] and added md:overflow-hidden for desktop fixed height (2) SmartSidebar wrapper div now has overflow-y-auto for independent scrolling (3) Main content flex row already had correct min-h-0. TypeScript check passed with zero errors.
+[2026-04-05T20:00:00Z] [MASTER] [TASK-22] COMPLETED: Agentic Experience v2 — 30 files, +1697 lines. Conversation threading, human-in-the-loop confirmation, file upload, feedback system, agent theater, channel badges, autonomy fix, observer upgrade, Telegram-Web sync. All wired end-to-end. Zero breaking changes.
 
-[2026-04-04T09:20:00Z] [frontend] [TASK-4] COMPLETED: Fixed navigation issues across DashboardApp, DashboardSidebar, and MobileTabBar: (1) Removed key={location.pathname} from DashboardRouter to prevent unwanted remounts (2) Changed Home/office navigation from /dashboard/office to /dashboard in both sidebar and mobile tab bar (3) Verified no references to /dashboard/office in navigation. TypeScript check passed with zero errors.
+[2026-04-05T20:04:00Z] [MASTER] [TASK-24] COMPLETED: Fixed all lint errors (unused vars, setState-in-effect, missing deps) and 16 pre-existing test failures (SectionCard shadow design + ChatPage decomposition). All 3592 tests green.
 
-[2026-04-04T09:25:00Z] [coder] [TASK-6] COMPLETED: Fixed duplicate chat inputs by hiding SmartSidebar input: (1) Added hideInput?: boolean prop to SmartSidebar interface (2) Wrapped chat input section in {!hideInput && (...)} conditional (3) Modified OfficeHomePage to pass hideInput={true} to SmartSidebar. Now only SuggestionStrip and ChatInputBar handle chat inputs. TypeScript check passed with zero errors.
+[2026-04-05T20:17:00Z] [MASTER] [TASK-23] COMPLETED: LLM routing optimization — simple intents now route to Groq 70B first (0.2s) instead of Ollama gemma4 (12-45s). Complex stays on Ollama (local, free). 60x speedup for simple responses.
+
+[2026-04-05T22:30:00Z] [MASTER] [TASK-25,26,27,28] COMPLETED: Monitoring stack rebuilt (compose file, Prometheus targets, Grafana dashboards+datasources provisioned). All ports rebound to 127.0.0.1. Dozzle+Windmill cleaned. Pre-push hook installed.

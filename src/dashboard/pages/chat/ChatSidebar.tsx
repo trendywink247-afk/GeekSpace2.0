@@ -20,6 +20,9 @@ interface ChatSidebarProps {
   onClearChat: () => void;
   isOpen: boolean;
   onClose: () => void;
+  onSelectConversation?: (convId: string) => void;
+  activeConversationId?: string | null;
+  onNewConversation?: () => void;
 }
 
 // ── Helper Functions ──
@@ -123,6 +126,9 @@ export function ChatSidebar({
   onClearChat,
   isOpen,
   onClose,
+  onSelectConversation,
+  activeConversationId,
+  onNewConversation,
 }: ChatSidebarProps) {
   // Filter conversations based on search
   let filteredConversations = conversations;
@@ -186,7 +192,7 @@ export function ChatSidebar({
       {/* New Chat button */}
       <div className='px-3 py-2'>
         <button
-          onClick={onClearChat}
+          onClick={() => { onClearChat(); onNewConversation?.(); }}
           className='flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/20 transition-colors text-xs font-medium min-h-[44px]'
         >
           <Plus className='w-3.5 h-3.5' />
@@ -219,13 +225,9 @@ export function ChatSidebar({
               convId={conv.id}
               title={conv.title}
               timestamp={conv.timestamp}
-              isActive={false}
+              isActive={conv.id === activeConversationId}
               pinned={conv.pinned}
-              onClick={() => {
-                // Scroll to message in current view
-                const el = document.getElementById(`msg-${conv.id}`);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => onSelectConversation?.(conv.id)}
               onPin={() => onPin(conv.id)}
               onDelete={() => onDelete(conv.id)}
               deleteConfirm={deleteConfirmId === conv.id}

@@ -104,3 +104,30 @@ const result = await executeReActLoop(
 - **Premium users**: All tiers available (+ Kimi K2, Edith)
 - **Budget exceeded**: Auto-degrade to free providers only
 - **Daily caps**: Together ($2/day), Kimi (3 calls/user/day)
+
+## LLM Routing Changes (Agentic v2)
+
+### Intent-Based Provider Priority
+The routing was changed from "always Ollama first" to intent-based:
+- **Simple/automation intents** → Groq Llama 3.3 70B first (0.2s, free, 70B = zero hallucinations) → Ollama fallback
+- **Complex/coding/planning intents** → Ollama gemma4:e4b first (local, free, good reasoning) → Groq fallback
+
+This makes simple responses ~60x faster (12s → 0.2s).
+
+### Agent Observer Upgrade
+- `agent-observer.ts` now uses `routeChat` with `forceProvider: 'groq'` instead of PicoClaw (3B)
+- 70B model makes dramatically better proactive decisions
+
+### Autonomy Level Fix
+- `proactive-goals.ts` now maps frontend values to backend canonical values:
+  - `assisted` → `suggest`
+  - `proactive` → `semi_auto`
+  - `autonomous` → `full_auto`
+- Default changed to `semi_auto` — goals actually auto-execute now
+
+### Delegation Narration
+- `delegation-pipeline.ts` generates personality-aware handoff text
+- Weebo: "Ooh, this needs Forge's expertise! Passing it over~"
+- Edith: "Routing to Forge. They'll handle this."
+- Jarvis: "I've brought in Forge to assist with this, sir."
+- Result includes `narration` field

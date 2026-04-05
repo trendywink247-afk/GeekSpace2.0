@@ -472,6 +472,30 @@ export function ChatPage() {
     });
   }, []);
 
+  const handleSelectConversation = useCallback(async (convId: string) => {
+    try {
+      setConversationId(convId);
+      const res = await conversationThreadsService.getMessages(convId, 50);
+      if (res.data?.messages) {
+        setMessages(res.data.messages.map(m => ({
+          id: m.id,
+          role: m.role === 'assistant' ? 'agent' as const : 'user' as const,
+          content: m.content,
+          timestamp: new Date(m.created_at),
+        })));
+      }
+      setSidebarOpen(false);
+    } catch {
+      toast.error('Failed to load conversation');
+    }
+  }, [setMessages]);
+
+  const handleNewConversation = useCallback(() => {
+    setConversationId(null);
+    setMessages([]);
+    setSidebarOpen(false);
+  }, [setMessages]);
+
   const handleDeleteConversation = useCallback((convId: string) => {
     if (deleteConfirmId === convId) {
       setConversations((prev) => prev.filter((c) => c.id !== convId));
@@ -532,6 +556,9 @@ export function ChatPage() {
               onClearChat={clearChat}
               isOpen={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
+              onSelectConversation={handleSelectConversation}
+              activeConversationId={conversationId}
+              onNewConversation={handleNewConversation}
             />
 
             {/* ── Main Chat Area ── */}

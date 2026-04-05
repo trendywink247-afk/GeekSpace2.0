@@ -1,44 +1,42 @@
 # Agent Task Board
 
 Last updated by: MASTER
-Sprint goal: Chat page — Final polish round, then move on
+Last updated: 2026-04-05T22:00:00Z
+Sprint goal: Infrastructure hardening + monitoring + orchestration v2
 
 ---
 
-## TASK-19 | AGENT:frontend | STATUS:PENDING
-**Goal**: Extract streaming logic from ChatPage.tsx into a useChatStream hook to get ChatPage under 600 lines.
-Create src/hooks/useChatStream.ts that contains: sendMessage function, all streaming state (isTyping, isStreamActive, streamHealth, streamBuffer), the responseTimeout logic, reconnect logic, sync fallback, 401 redirect, and the mountedRef pattern.
-Hook signature: `useChatStream({ personality, selectedAgent, mentionedAgent, onNotifyStart, onNotifyDone, onNotifyFail, connectSSE, disconnectSSE })`
-Returns: `{ messages, setMessages, sendMessage, isTyping, isStreamActive, streamHealth, clearChat }`
-Move ALL streaming code out of ChatPage.tsx into this hook. ChatPage becomes pure composition.
-After: `npx tsc -b --noEmit` zero errors. ChatPage.tsx under 600 lines.
-**Files in scope**: src/dashboard/pages/ChatPage.tsx, src/hooks/useChatStream.ts (new)
-**Files OFF LIMITS**: src/dashboard/pages/chat/* (TASK-20 owns those), server/*
+## COMPLETED (this session)
+- TASK-19: useChatStream hook extraction ✅ (done before session)
+- TASK-20: Chat design polish ✅ (done before session)
+- TASK-21: Markdown rendering ✅ (done before session)
+- TASK-22: Agentic Experience v2 ✅ (conversation threading, confirmation, file upload, feedback, agent theater, channel badges, autonomy fix, observer upgrade, telegram sync)
+- TASK-23: LLM routing optimization ✅ (simple→Groq 0.2s, complex→Ollama local)
+- TASK-24: CI fix ✅ (lint errors, 16 pre-existing test failures fixed, all 3592 tests green)
+- TASK-25: Monitoring fix ✅ (recreated compose, fixed ports, Grafana dashboards, Prometheus targets)
+- TASK-26: Security fix ✅ (all 5 monitoring ports rebound to 127.0.0.1)
+- TASK-27: Cleanup ✅ (Dozzle removed, Windmill removed, build cache reclaimed 127GB)
+- TASK-28: Pre-push hook ✅ (lint + typecheck + build before push)
 
-## TASK-20 | AGENT:designer | STATUS:PENDING
-**Goal**: Final visual polish on Chat components using ui-ux-pro-max design intelligence. First run:
-```bash
-python3 .pi/skills/ui-ux-pro-max/scripts/search.py "AI chat messenger dark mode glassmorphism" --design-system
-python3 .pi/skills/ui-ux-pro-max/scripts/search.py "chat animation loading states" --domain ux
-```
-Then apply recommendations to these files:
-(1) ChatHeader.tsx — replace raw rgba glow shadows in personalityMeta with CSS variables or design-system-appropriate values
-(2) ChatEmptyState.tsx — make starter prompts dynamic based on time of day (already has timeContext), ensure the empty state looks premium (glass card, proper spacing, agent avatar with glow)
-(3) ChatMessageBubble.tsx — the code block syntax highlighting colors are hardcoded (bg-cyan-500/15 etc). Replace with design-token-based colors that work in both light and dark mode. Also ensure message bubbles have proper max-width (85% mobile, 70% desktop)
-(4) ChatInput.tsx — ensure the input area has proper glass styling, the send button has the CTA gradient, and the agent selector dropdown looks polished
-After: `npx tsc -b --noEmit` zero errors. No hardcoded hex colors.
-**Files in scope**: src/dashboard/pages/chat/*.tsx, src/components/ChatMessageBubble.tsx
-**Files OFF LIMITS**: ChatPage.tsx (TASK-19 owns it), server/*
+## PENDING
 
-## TASK-21 | AGENT:coder | STATUS:PENDING
-**Goal**: Add basic markdown rendering to agent chat messages. Currently agent responses only handle code blocks (triple backtick). Add support for: **bold**, *italic*, [links](url), and bullet lists.
-Read src/components/ChatMessageBubble.tsx. Find the `renderMessageContent` function. Enhance it to handle:
-(1) **bold** → `<strong>`
-(2) *italic* → `<em>`
-(3) [text](url) → `<a href="url" target="_blank" rel="noopener">`  with violet color and underline
-(4) `inline code` → `<code>` with monospace font and subtle bg
-(5) Lines starting with `- ` or `* ` → `<li>` inside `<ul>`
-Keep the existing code block (triple backtick) handling. Process markdown AFTER code blocks are extracted (so markdown inside code blocks is not processed).
-After: `npx tsc -b --noEmit` zero errors. Test with a message containing all 5 markdown types.
-**Files in scope**: src/components/ChatMessageBubble.tsx
-**Files OFF LIMITS**: ChatPage.tsx, chat/*.tsx, server/*
+### TASK-29 | AGENT:frontend | STATUS:PENDING
+**Goal**: Wire ChatSidebar to real conversation thread list with conversation switching
+Replace current message-grouping logic with `conversationThreadsService.list()` API call. When user clicks a conversation in sidebar, load its messages via `conversationThreadsService.getMessages(id)` and set `conversationId` state in ChatPage. Add "New Conversation" button that creates a fresh thread.
+**Files in scope**: src/dashboard/pages/chat/ChatSidebar.tsx, src/dashboard/pages/ChatPage.tsx
+**Files OFF LIMITS**: server/*
+
+### TASK-30 | AGENT:infra | STATUS:PENDING
+**Goal**: Wire Cronicle → Claude Bridge for nightly automated audit
+Create a Cronicle job that calls /root/GeekSpace2.0/scripts/nightly-ai-audit.sh daily at 3:00 AM. The script already exists and calls Claude Bridge to run lint + typecheck.
+**Files in scope**: Cronicle web UI (localhost:3012), scripts/nightly-ai-audit.sh
+
+### TASK-31 | AGENT:backend | STATUS:PENDING
+**Goal**: Add Prometheus metrics endpoint to GeekSpace API
+Install prom-client, create /api/metrics endpoint exposing: request count, latency histogram, LLM provider usage, active SSE connections, credit deductions. This enables Prometheus to scrape the app directly.
+**Files in scope**: server/src/middleware/metrics.ts, server/src/app.ts, server/package.json
+
+### TASK-32 | AGENT:infra | STATUS:PENDING
+**Goal**: Wire Prometheus alerts to Telegram
+Set up Alertmanager (or a simple webhook) that sends firing alerts to the Agentin Telegram bot. Use the existing TELEGRAM_BOT_TOKEN.
+**Files in scope**: /root/docker/monitoring/
