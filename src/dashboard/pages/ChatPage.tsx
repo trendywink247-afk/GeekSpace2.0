@@ -429,6 +429,13 @@ export function ChatPage() {
       const response = await agentService.chatStream(text, 'web', ac.signal, selectedAgent || undefined);
 
       if (!response.ok || !response.body) {
+        // 401 = token expired → redirect to login
+        if (response.status === 401) {
+          localStorage.removeItem('gs_token');
+          localStorage.removeItem('gs-auth');
+          window.location.href = '/login';
+          return;
+        }
         throw new Error(`Stream request failed: ${response.status}`);
       }
 
