@@ -4,6 +4,10 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Force test environment so React exports `act` (prevents React.act is not a function)
+    'process.env.NODE_ENV': JSON.stringify('test'),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

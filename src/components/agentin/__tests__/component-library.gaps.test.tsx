@@ -372,8 +372,8 @@ describe('Component Library — CRITICAL GAPS', () => {
 
       const card = container.firstChild as HTMLElement;
 
-      // Should have border with hover variant
-      expect(card.className).toMatch(/(border|hover:border)/);
+      // Uses box-shadow to simulate border + hover variant via hover:shadow-[...]
+      expect(card.className).toMatch(/(shadow-\[|hover:shadow)/);
     });
   });
 

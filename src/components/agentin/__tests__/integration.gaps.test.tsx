@@ -269,7 +269,8 @@ describe('Component Library — Critical Integration Gaps', () => {
       );
 
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:border/);
+      // Shadow-based border changes on hover via hover:shadow-[...]
+      expect(card.className).toMatch(/hover:shadow/);
     });
 
     it('SectionCard glow effect on hover (shadow)', () => {

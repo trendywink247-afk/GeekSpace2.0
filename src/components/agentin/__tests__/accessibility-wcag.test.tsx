@@ -222,8 +222,9 @@ describe('Agentin Components — WCAG 2.1 AA Accessibility', () => {
       );
 
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/border/);
-      // Assumes border color has sufficient contrast
+      // Uses box-shadow to simulate a visible 1px border (shadow-[0_0_0_1px_rgba(139,92,246,...)])
+      expect(card.className).toMatch(/shadow-\[/);
+      // Assumes shadow-border color has sufficient contrast
     });
 
     it('hover states maintain color contrast', () => {

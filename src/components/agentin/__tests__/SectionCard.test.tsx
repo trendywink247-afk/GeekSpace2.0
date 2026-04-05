@@ -23,8 +23,8 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Should have border class (exact color varies with theme)
-      expect(card.className).toMatch(/border/);
+      // Uses box-shadow to simulate a 1px border (shadow-[0_0_0_1px_...])
+      expect(card.className).toMatch(/shadow-\[/);
     });
 
     it('uses CSS custom properties for border color (--ag-border or similar)', () => {
@@ -44,7 +44,8 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:border/);
+      // Shadow-based border changes on hover via hover:shadow-[...]
+      expect(card.className).toMatch(/hover:shadow/);
     });
 
     it('applies hover:shadow-* for glow effect on hover', () => {
@@ -60,9 +61,8 @@ describe('SectionCard', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Either inset-shadow or gradient background
-      const hasInsetOrGradient = /inset|bg-gradient|before:|after:/.test(card.className);
-      expect(hasInsetOrGradient).toBe(true);
+      // Uses layered box-shadow for glow highlight effect on hover
+      expect(card.className).toMatch(/hover:shadow-\[/);
     });
 
     it('transitions are smooth (duration-300)', () => {

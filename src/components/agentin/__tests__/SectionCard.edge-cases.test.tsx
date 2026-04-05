@@ -23,7 +23,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/border/);
+      // Uses box-shadow to simulate a 1px border (shadow-[0_0_0_1px_...])
+      expect(card.className).toMatch(/shadow-\[/);
     });
 
     it('uses CSS custom properties for colors (--ag-*)', () => {
@@ -51,7 +52,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      expect(card.className).toMatch(/hover:border/);
+      // Shadow-based border changes on hover via hover:shadow-[...]
+      expect(card.className).toMatch(/hover:shadow/);
     });
 
     it('applies hover:shadow-* for glow effect', () => {
@@ -75,8 +77,8 @@ describe('SectionCard — Edge Cases & Interactions', () => {
         <SectionCard>Content</SectionCard>
       );
       const card = container.firstChild as HTMLElement;
-      // Check for pseudo-element references
-      expect(card.className).toMatch(/before:|after:|inset/);
+      // Uses layered box-shadow for glow highlight effect on hover
+      expect(card.className).toMatch(/hover:shadow-\[/);
     });
   });
 
