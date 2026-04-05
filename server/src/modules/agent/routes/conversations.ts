@@ -19,6 +19,7 @@ import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { getRecentConversations } from '../../../services/memory.js';
+import { listConversations, getConversationMessages } from '../services/conversation-threads.js';
 
 const router = Router();
 
@@ -289,6 +290,37 @@ router.post('/conversations/:id/rating', requireAuth, (req: AuthRequest, res): v
   } catch (err) {
     logger.error({ err, userId, id }, 'Failed to update conversation rating');
     res.status(500).json({ error: 'Failed to update rating' });
+  }
+});
+
+/**
+ * GET /conversations/threads
+ * List conversation threads (real threading, not message grouping).
+ */
+router.get('/threads', requireAuth, (req: AuthRequest, res) => {
+  try {
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 30, 100));
+    const conversations = listConversations(req.userId!, limit);
+    res.json({ conversations });
+  } catch (err) {
+    logger.error({ err }, 'Failed to list conversation threads');
+    res.status(500).json({ error: 'Failed to list conversations' });
+  }
+});
+
+/**
+ * GET /conversations/:conversationId/messages
+ * Get messages for a specific conversation thread.
+ */
+router.get('/:conversationId/messages', requireAuth, (req: AuthRequest, res) => {
+  try {
+    const { conversationId } = req.params;
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 50, 200));
+    const messages = getConversationMessages(req.userId!, conversationId, limit);
+    res.json({ messages });
+  } catch (err) {
+    logger.error({ err }, 'Failed to get conversation messages');
+    res.status(500).json({ error: 'Failed to get messages' });
   }
 });
 

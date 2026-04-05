@@ -29,6 +29,7 @@ import { parseActions, type ParsedAction } from '../../../services/action-parser
 import { executeAction, type ActionResult } from './action-executor.js';
 import { logger } from '../../../logger.js';
 import { emitThinking, emitToolCall, emitToolResult, emitResponding, emitDone } from './agent-state-bus.js';
+import { needsConfirmation } from './confirm-action.js';
 
 const MAX_REACT_ITERATIONS = 5;
 
@@ -47,6 +48,7 @@ export interface ReactLoopOptions {
   userId: string;
   forceProvider?: Provider;
   onStep?: (step: ThinkingStep) => void;
+  onConfirmNeeded?: (tool: string, params: Record<string, unknown>) => Promise<{ approved: boolean; editedParams?: Record<string, unknown>; rejectReason?: string }>;
 }
 
 export interface ReactLoopResult {
@@ -137,6 +139,21 @@ export async function runReactLoop(
         allDeferredActions.push(action);
         opts.onStep?.({ type: 'tool_call', content: 'Generating code...', tool: action.tool, iteration: i });
         continue;
+      }
+
+      // Human-in-the-loop: check if this tool needs confirmation
+      if (opts.onConfirmNeeded && needsConfirmation(action.tool, action.params)) {
+        opts.onStep?.({ type: 'tool_call', content: `Requesting confirmation for ${action.tool}...`, tool: action.tool, iteration: i + 1 });
+        const confirmation = await opts.onConfirmNeeded(action.tool, action.params);
+        if (!confirmation.approved) {
+          const reason = confirmation.rejectReason || 'User declined';
+          observations.push(`Tool ${action.tool} was REJECTED by user: ${reason}. Do not retry this action. Adjust your approach.`);
+          opts.onStep?.({ type: 'tool_result', content: `${action.tool} rejected: ${reason}`, tool: action.tool, iteration: i + 1 });
+          continue;
+        }
+        if (confirmation.editedParams) {
+          action.params = { ...action.params, ...confirmation.editedParams };
+        }
       }
 
       // Emit tool call step

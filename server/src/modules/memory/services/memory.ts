@@ -208,6 +208,7 @@ export function logConversation(
   providerOrModel?: string,
   modelParam?: string,
   agentId?: string,
+  conversationId?: string,
 ): void {
   // Guest/visitor tokens have sub = 'guest:UUID' — skip conversation logging
   // (no row in users table, FOREIGN KEY constraint would fail)
@@ -230,8 +231,8 @@ export function logConversation(
   }
 
   db.prepare(
-    'INSERT INTO conversation_log (id, user_id, role, content, provider, model, request_id, agent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(uuid(), userId, role, content.slice(0, 8000), provider, model, requestId, agentId || null);
+    'INSERT INTO conversation_log (id, user_id, role, content, provider, model, request_id, agent_id, conversation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(uuid(), userId, role, content.slice(0, 8000), provider, model, requestId, agentId || null, conversationId || null);
 
   // Forward to GeekOS for semantic embedding (fire-and-forget)
   import('../../../routes/geekos-bridge.js')
@@ -250,8 +251,15 @@ export function getRecentConversations(userId: string, limit = 10, search?: stri
   ).all(userId, limit) as ConversationEntry[];
 }
 
-export function getConversationContext(userId: string, maxChars = 4096): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const rows = getRecentConversations(userId, 10);
+export function getConversationContext(userId: string, maxChars = 4096, conversationId?: string): Array<{ role: 'user' | 'assistant'; content: string }> {
+  let rows: ConversationEntry[];
+  if (conversationId) {
+    rows = db.prepare(
+      'SELECT * FROM conversation_log WHERE user_id = ? AND conversation_id = ? ORDER BY created_at DESC LIMIT 20'
+    ).all(userId, conversationId) as ConversationEntry[];
+  } else {
+    rows = getRecentConversations(userId, 10);
+  }
   const messages = rows.reverse().map(r => ({
     role: r.role as 'user' | 'assistant',
     content: r.content,

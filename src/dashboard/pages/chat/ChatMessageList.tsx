@@ -6,6 +6,8 @@ import { agentService } from '@/services/api';
 import { ChatMessageBubble, type ChatMessage, type FeedbackValue } from '@/components/ChatMessageBubble';
 import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/ToolStepIndicator';
 import { DelegationLiveIndicator } from '@/components/DelegationLiveIndicator';
+import { FeedbackButtons } from '@/components/FeedbackButtons';
+import { ChannelBadge } from '@/components/ChannelBadge';
 import type { AgentPersonality } from '@/types';
 
 // ── Types ──
@@ -48,6 +50,7 @@ interface ChatMessageListProps {
   reconnectDelaysLength: number;
   interimText: string;
   onStopGeneration: () => void;
+  onMessageFeedback?: (messageId: string, rating: 'up' | 'down', comment?: string) => void;
 }
 
 // ── Main Component ──
@@ -90,6 +93,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
     reconnectDelaysLength,
     interimText,
     onStopGeneration,
+    onMessageFeedback,
   }, ref) => {
     return (
       <Virtuoso
@@ -113,6 +117,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
           return (
             <div className='px-4 py-1'>
               <div className='max-w-3xl mx-auto w-full'>
+              <div className="group">
               <ChatMessageBubble
                 msg={msg}
                 isStreaming={isStreaming}
@@ -134,6 +139,15 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                 onCancelEdit={onCancelEdit}
                 onEditTextChange={onEditTextChange}
               />
+              {msg.role === 'agent' && !isStreaming && onMessageFeedback && (
+                <div className="mt-0.5 ml-8 flex items-center gap-2">
+                  <FeedbackButtons messageId={msg.id} onFeedback={onMessageFeedback} />
+                  {(msg as ChatMessage & { channel?: string }).channel && (
+                    <ChannelBadge channel={(msg as ChatMessage & { channel?: string }).channel!} />
+                  )}
+                </div>
+              )}
+              </div>
               </div>
             </div>
           );

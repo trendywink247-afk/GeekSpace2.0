@@ -35,6 +35,9 @@ import { logActivity } from '../../../services/activity-log.js';
 import { emitThinking, emitDone } from '../services/agent-state-bus.js';
 import { routeDelegation, canDelegate, decrementDelegation } from '../../../services/delegation.js';
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
+import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
+import { uploadMiddleware } from '../middleware/file-upload.js';
+import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
 
 const router = Router();
 
@@ -365,6 +368,9 @@ router.post('/chat', requireAuth, aiSecurityMiddleware, validateBody(chatSchema)
   // Track session activity for idle-based summarization
   touchSession(userId);
   const reqChannel = (req.body as { channel?: string }).channel;
+  // Conversation threading: get or create a conversation thread
+  const reqConversationId = (req.body as { conversationId?: string }).conversationId;
+  const conversationId = getOrCreateConversation(userId, reqConversationId, reqChannel || 'web');
   // Optional: builder sends this when editing an existing project so generate_code updates it
   const reqExistingArtifactId = (req.body as { existingArtifactId?: string }).existingArtifactId;
   // Guest/visitor tokens have sub = 'guest:UUID' — route to portfolio chat logic
@@ -400,7 +406,19 @@ router.post('/chat', requireAuth, aiSecurityMiddleware, validateBody(chatSchema)
     const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
     const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
     const userCredits = (user?.credits as number) || 0;
-    const systemPrompt = buildSystemPrompt(agentConfig, user, userId, message, reqChannel, userCredits);
+    let systemPrompt = buildSystemPrompt(agentConfig, user, userId, message, reqChannel, userCredits);
+
+    // Process file attachments if present (multipart/form-data)
+    const files = (req as unknown as { files?: Express.Multer.File[] }).files;
+    if (files && files.length > 0) {
+      try {
+        const processed = await Promise.all(files.map(f => processUploadedFile(f)));
+        const fileContext = buildFileContext(processed);
+        if (fileContext) systemPrompt += fileContext;
+      } catch (err) {
+        logger.warn({ err }, 'File processing failed (non-fatal)');
+      }
+    }
 
     // Check subscription credits
     const sub = db.prepare('SELECT plan, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(userId) as { plan: string; credits_remaining: number; billing_cycle_end: string } | undefined;
@@ -422,7 +440,9 @@ router.post('/chat', requireAuth, aiSecurityMiddleware, validateBody(chatSchema)
     checkContent(message, userId);
 
     // Log user message + extract memories (non-blocking)
-    logConversation(userId, 'user', message);
+    logConversation(userId, 'user', message, undefined, undefined, undefined, undefined, conversationId);
+    autoTitleConversation(conversationId, message);
+    updateConversationMeta(conversationId, message.slice(0, 200));
     extractMemories(userId, message);
 
     // ---- Terminal Jarvis: route ai "prompt" through Jarvis on OpenRouter free ----
@@ -803,7 +823,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
           }
         }
 
-        const history = getConversationContext(userId);
+        const history = getConversationContext(userId, 4096, conversationId);
         const bridgeReq: BridgeRequest = {
           userId,
           message,
@@ -1000,7 +1020,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     // Reduce context for Ollama — 4K tokens on CPU is too slow (60s+ prefill).
     // Cloud models handle 4096 chars fine; Ollama needs ~1500 to stay under 30s.
     const isLocalRoute = !resolvedProvider || resolvedProvider === 'ollama' || resolvedProvider === 'picoclaw';
-    const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096);
+    const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096, conversationId);
     const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
 
     // Route complex queries through deep reasoning engine (10 iterations + self-reflection + delegation)
@@ -1092,6 +1112,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
       model: result.model,
       creditsUsed: result.creditCost,
       creditsRemaining: updatedCredits,
+      conversationId,
     };
 
     // Attach action results and receipts if any

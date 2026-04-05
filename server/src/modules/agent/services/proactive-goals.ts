@@ -30,13 +30,27 @@ type AutonomyLevel = 'manual' | 'suggest' | 'semi_auto' | 'full_auto';
 
 const VALID_AUTONOMY_LEVELS: Set<string> = new Set(['manual', 'suggest', 'semi_auto', 'full_auto']);
 
+// Map frontend autonomy names to backend canonical names
+const AUTONOMY_ALIAS: Record<string, AutonomyLevel> = {
+  manual: 'manual',
+  suggest: 'suggest',
+  assisted: 'suggest',
+  semi_auto: 'semi_auto',
+  proactive: 'semi_auto',
+  full_auto: 'full_auto',
+  autonomous: 'full_auto',
+};
+
 function getUserAutonomyLevel(userId: string): AutonomyLevel {
   try {
     const config = db.prepare('SELECT autonomy_level FROM agent_configs WHERE user_id = ?')
       .get(userId) as { autonomy_level: string | null } | undefined;
     const level = config?.autonomy_level;
-    if (level && VALID_AUTONOMY_LEVELS.has(level)) return level as AutonomyLevel;
-    return 'suggest';
+    if (level) {
+      if (VALID_AUTONOMY_LEVELS.has(level)) return level as AutonomyLevel;
+      if (AUTONOMY_ALIAS[level]) return AUTONOMY_ALIAS[level];
+    }
+    return 'semi_auto'; // Default: allow proactive goal execution
   } catch {
     return 'suggest';
   }

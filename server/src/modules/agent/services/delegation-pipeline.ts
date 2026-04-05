@@ -41,6 +41,7 @@ export interface DelegationResult {
   result: string;
   success: boolean;
   durationMs: number;
+  narration?: string;
 }
 
 // ── Agent Expertise Mapping ─────────────────────────────────
@@ -155,6 +156,25 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
 
     logger.info({ delegationId, durationMs, success: true }, 'delegation:complete');
 
+    // Generate in-character narration for the handoff
+    const fromP = getPersonality(req.fromAgent);
+    const toP = getPersonality(req.toAgent);
+    let narration = '';
+    switch (req.fromAgent) {
+      case 'weebo':
+        narration = `Ooh, this needs ${toP.name}'s expertise! Passing it over~`;
+        break;
+      case 'edith':
+        narration = `Routing to ${toP.name}. They'll handle this.`;
+        break;
+      case 'jarvis':
+        narration = `I've brought in ${toP.name} to assist with this, sir.`;
+        break;
+      default:
+        narration = `Delegating to ${toP.name} — ${toP.description.toLowerCase()}`;
+        break;
+    }
+
     return {
       id: delegationId,
       fromAgent: req.fromAgent,
@@ -163,6 +183,7 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
       result: result.text,
       success: true,
       durationMs,
+      narration,
     };
   } catch (err) {
     const durationMs = Date.now() - startTime;

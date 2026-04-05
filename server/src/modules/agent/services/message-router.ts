@@ -37,6 +37,8 @@ import { runDeepReasoning } from './deep-reasoning.js';
 import { classifyMessageComplexity } from './unified-agent-router.js';
 import { bridgeChat, type BridgeRequest } from '../../../services/pico-kimi-bridge.js';
 import { buildMemoryContext, logConversation, logTrainingExample, extractMemories, extractMemoriesWithOllama, getConversationContext, upsertMemory } from '../../../services/memory.js';
+import { getOrCreateConversation, updateConversationMeta } from './conversation-threads.js';
+import { touchSession } from '../../memory/services/session-summary.js';
 import { logActivity } from '../../../services/activity-log.js';
 import { checkKeywordTriggers } from '../../../services/automations-engine.js';
 import { sendTelegramMessage, sendTelegramPhoto, sendTelegramVideo, sendTelegramTyping, sendTelegramButtons } from '../../../services/telegram.js';
@@ -929,11 +931,16 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
   db.prepare("UPDATE integrations SET last_sync = ? WHERE user_id = ? AND type = ?")
     .run(now, userId, msg.channel);
 
+  // Session tracking + conversation threading
+  touchSession(userId);
+  const conversationId = getOrCreateConversation(userId, undefined, msg.channel);
+
   // Capture conversation history BEFORE logging current message (prevents duplication in LLM context)
-  const history = getConversationContext(userId, 16000);
+  const history = getConversationContext(userId, 16000, conversationId);
 
   // 4. Log user message + extract memories
-  logConversation(userId, 'user', msg.text, requestId);
+  logConversation(userId, 'user', msg.text, requestId, undefined, undefined, undefined, conversationId);
+  updateConversationMeta(conversationId, msg.text.slice(0, 200));
   extractMemories(userId, msg.text);
   logger.debug({ requestId, userId }, 'Activity logged and memories extracted');
 

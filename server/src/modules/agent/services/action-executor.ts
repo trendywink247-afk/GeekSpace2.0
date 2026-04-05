@@ -41,6 +41,8 @@ import { indexNote, indexReminder, indexHabit, indexMemory } from '../../../serv
 import { semanticSearch, upsertMemoryVector } from '../../../services/search-vector.js';
 import { eventBus } from '../../../services/event-bus.js';
 
+export { needsConfirmation, CONFIRM_REQUIRED } from './confirm-action.js';
+
 // ── Hinglish Preprocessor ────────────────────────────────────
 
 // Pre-process Hinglish time expressions into English before LLM datetime parsing

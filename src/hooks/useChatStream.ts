@@ -19,6 +19,7 @@ interface UseChatStreamOptions {
   notifyStart: (msg: string) => void;
   notifyDone: (msg: string) => void;
   notifyFail: (msg: string) => void;
+  conversationId?: string | null;
 }
 
 // ── Constants ──
@@ -82,6 +83,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     notifyStart,
     notifyDone,
     notifyFail,
+    conversationId,
   } = options;
 
   // State
@@ -175,7 +177,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     let responseTimeout: number | null = null;
 
     try {
-      const response = await agentService.chatStream(text, 'web', ac.signal, selectedAgent || undefined);
+      const response = await agentService.chatStream(text, 'web', ac.signal, selectedAgent || undefined, conversationId || undefined);
 
       if (!response.ok || !response.body) {
         // 401 = token expired → redirect to login

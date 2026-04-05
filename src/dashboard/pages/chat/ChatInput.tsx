@@ -1,6 +1,7 @@
 import { Send, X, Mic, MicOff } from 'lucide-react';
 import { AgentMentionPopup } from '@/components/AgentMentionPopup';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
+import { FileUploadZone } from '@/components/FileUploadZone';
 
 // ── Types ──
 
@@ -32,6 +33,8 @@ export interface ChatInputProps {
   onTranscript?: (text: string) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   formRef: React.RefObject<HTMLFormElement | null>;
+  files?: File[];
+  onFilesChange?: (files: File[]) => void;
 }
 
 // ── Main Component ──
@@ -49,6 +52,8 @@ export function ChatInput({
   onClearMention,
   textareaRef,
   formRef,
+  files = [],
+  onFilesChange,
 }: ChatInputProps) {
   const canSend = !!input.trim() && !isTyping;
 
@@ -80,6 +85,11 @@ export function ChatInput({
             </button>
           </span>
         </div>
+      )}
+
+      {/* File upload zone (drag-drop + paste + previews) */}
+      {onFilesChange && (
+        <FileUploadZone files={files} onFilesChange={onFilesChange} disabled={isTyping} />
       )}
 
       {/* ── Input form ── */}

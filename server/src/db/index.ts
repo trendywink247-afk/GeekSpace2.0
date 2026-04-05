@@ -2438,3 +2438,102 @@ try {
 
 // Phase: Multi-agent transparent delegation — track which personality generated each message
 try { db.exec(`ALTER TABLE conversation_log ADD COLUMN agent_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+
+// ── Phase: Conversation Threading ────────────────────────────
+try { db.exec(`ALTER TABLE conversation_log ADD COLUMN conversation_id TEXT DEFAULT NULL`); } catch { /* column already exists */ }
+try { db.exec(`CREATE INDEX IF NOT EXISTS idx_conversation_log_thread ON conversation_log(user_id, conversation_id, created_at)`); } catch { /* already exists */ }
+
+// Conversations table — tracks chat sessions/threads
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT DEFAULT 'New conversation',
+      last_message_preview TEXT DEFAULT '',
+      message_count INTEGER DEFAULT 0,
+      channel TEXT DEFAULT 'web',
+      agent_id TEXT DEFAULT NULL,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_conversations_active ON conversations(user_id, is_active, updated_at DESC);
+  `);
+} catch { /* table already exists */ }
+
+// Pending confirmations — human-in-the-loop for dangerous tool actions
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pending_confirmations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      conversation_id TEXT,
+      tool TEXT NOT NULL,
+      params TEXT NOT NULL DEFAULT '{}',
+      status TEXT DEFAULT 'pending',
+      edited_params TEXT DEFAULT NULL,
+      reject_reason TEXT DEFAULT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      resolved_at TEXT DEFAULT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_pending_confirm_user ON pending_confirmations(user_id, status);
+  `);
+} catch { /* table already exists */ }
+
+// Message feedback — thumbs up/down on agent responses
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_feedback (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      message_id TEXT NOT NULL,
+      rating TEXT NOT NULL,
+      comment TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_message_feedback_user ON message_feedback(user_id, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_message_feedback_unique ON message_feedback(user_id, message_id);
+  `);
+} catch { /* table already exists */ }
+
+// Retroactive conversation threading — group old messages by 30-min time gaps
+try {
+  const hasConversations = (db.prepare('SELECT COUNT(*) as cnt FROM conversations').get() as { cnt: number }).cnt;
+  if (hasConversations === 0) {
+    const rows = db.prepare(`
+      SELECT id, user_id, created_at FROM conversation_log
+      ORDER BY user_id, created_at ASC
+    `).all() as Array<{ id: string; user_id: string; created_at: string }>;
+
+    if (rows.length > 0) {
+      const { v4: uuid } = await import('uuid');
+      let currentUserId = '';
+      let currentConvId = '';
+      let lastTime = 0;
+      const GAP_MS = 30 * 60 * 1000; // 30 minutes
+
+      const updateStmt = db.prepare('UPDATE conversation_log SET conversation_id = ? WHERE id = ?');
+      const insertConv = db.prepare('INSERT INTO conversations (id, user_id, title, channel, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+
+      const txn = db.transaction(() => {
+        for (const row of rows) {
+          const msgTime = new Date(row.created_at).getTime();
+          if (row.user_id !== currentUserId || (msgTime - lastTime) > GAP_MS) {
+            currentUserId = row.user_id;
+            currentConvId = uuid();
+            insertConv.run(currentConvId, row.user_id, 'Imported conversation', 'web', row.created_at, row.created_at);
+          }
+          updateStmt.run(currentConvId, row.id);
+          lastTime = msgTime;
+        }
+      });
+      txn();
+      logger.info({ conversations: hasConversations, messages: rows.length }, 'Retroactive conversation threading complete');
+    }
+  }
+} catch (err) {
+  logger.debug({ err }, 'Retroactive conversation threading skipped (non-fatal)');
+}

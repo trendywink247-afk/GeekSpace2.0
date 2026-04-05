@@ -19,6 +19,7 @@ import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { getUserEntities, recallEntity, extractEntitiesFromText } from './graph-memory.js';
 import { getTopUserMemories, type UserMemory } from './memory.js';
+import { getUserFeedbackPatterns } from '../../agent/services/feedback-service.js';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -164,7 +165,7 @@ function scoreMemory(memory: AgentMemoryRow, messageKeywords: Set<string>, now: 
  * @param currentMessage - The user's current message (for relevance scoring)
  * @returns A markdown string to inject into the system prompt
  */
-export function buildCognitiveContext(userId: string, currentMessage: string): string {
+export function buildCognitiveContext(userId: string, currentMessage: string, agentId?: string): string {
   const sections: string[] = [];
   const now = Date.now();
 
@@ -374,6 +375,12 @@ export function buildCognitiveContext(userId: string, currentMessage: string): s
   } catch { /* calendar table may not exist */ }
 
   // ── Assemble ───────────────────────────────────────────────
+
+  // ── Inject feedback anti-patterns ────────────────────────
+  try {
+    const feedbackBlock = getUserFeedbackPatterns(userId);
+    if (feedbackBlock) sections.push(feedbackBlock);
+  } catch { /* feedback service may not be ready */ }
 
   if (sections.length === 0) return '';
 

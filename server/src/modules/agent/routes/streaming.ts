@@ -31,6 +31,9 @@ import { emitThinking, emitResponding, emitDone } from '../services/agent-state-
 import { routeDelegation } from '../../../services/delegation.js';
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
 import { buildSystemPrompt } from './chat.js';
+import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
+import { touchSession } from '../../memory/services/session-summary.js';
+import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
 
 const router = Router();
 
@@ -41,6 +44,14 @@ const router = Router();
 router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
   const { message } = req.body as { message: string };
   const userId = req.userId!;
+
+  // Conversation threading + session tracking
+  touchSession(userId);
+  const reqConversationId = (req.body as { conversationId?: string }).conversationId;
+  const conversationId = getOrCreateConversation(userId, reqConversationId, 'web');
+  logConversation(userId, 'user', message, undefined, undefined, undefined, undefined, conversationId);
+  autoTitleConversation(conversationId, message);
+  updateConversationMeta(conversationId, message.slice(0, 200));
 
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
@@ -59,10 +70,20 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
     const userCredits = (user?.credits as number) || 0;
     let systemPrompt = buildSystemPrompt(agentConfig, user, userId, undefined, undefined, userCredits);
 
+    // Process file attachments if present
+    const files = (req as unknown as { files?: Express.Multer.File[] }).files;
+    if (files && files.length > 0) {
+      try {
+        const processed = await Promise.all(files.map(f => processUploadedFile(f)));
+        const fileContext = buildFileContext(processed);
+        if (fileContext) systemPrompt += fileContext;
+      } catch { /* non-fatal */ }
+    }
+
     // 82.6: Content filter — tag flagged messages (non-blocking)
     checkContent(message, userId);
 
-    const history = getConversationContext(userId);
+    const history = getConversationContext(userId, 4096, conversationId);
     const intent = classifyIntent(message);
     const agentName = (agentConfig?.name as string) || 'Geek';
 
@@ -173,7 +194,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       logConversation(userId, 'assistant', result.text, result.provider, result.model, undefined, personalityId);
       res.write(`data: ${JSON.stringify({
         text: '', done: true, provider: result.provider, model: result.model,
-        tier, creditsUsed: result.creditCost,
+        tier, creditsUsed: result.creditCost, conversationId,
       })}\n\n`);
     } else {
       // Simple/automation intents — stream via Ollama if online, else cloud fallback
@@ -278,7 +299,7 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
     try {
       const agentConfig = db.prepare('SELECT * FROM agent_configs WHERE user_id = ?').get(userId) as Record<string, unknown> | undefined;
       const user = db.prepare('SELECT name, credits FROM users WHERE id = ?').get(userId) as Record<string, unknown> | undefined;
-      const fallbackHistory = getConversationContext(userId);
+      const fallbackHistory = getConversationContext(userId, 4096, conversationId);
       const fallbackPersonality = (agentConfig?.personality as string) || personalityId;
       emitResponding(String(userId), fallbackPersonality, 'Composing response...');
       const result = await routeChat(

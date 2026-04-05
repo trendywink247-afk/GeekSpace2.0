@@ -18,6 +18,8 @@ import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatD
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useChatActions } from '@/hooks/useChatActions';
 import { useAgentState } from '@/hooks/useAgentState';
+import { feedbackService, conversationThreadsService } from '@/services/api';
+import { AgentTheaterPanel, type TheaterEvent } from '@/components/AgentTheaterPanel';
 
 // Import the new components
 import { ChatSidebar } from './chat/ChatSidebar';
@@ -162,6 +164,15 @@ export function ChatPage() {
   const [mentionedAgent, setMentionedAgent] = useState<MentionAgent | null>(null);
   const mentionStartRef = useRef<number>(-1);
 
+  // Conversation threading
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  // Agent theater events
+  const [theaterEvents, setTheaterEvents] = useState<TheaterEvent[]>([]);
+
+  // File upload state
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [conversationSearch, setConversationSearch] = useState('');
@@ -195,6 +206,32 @@ export function ChatPage() {
     sseActive, 
     activeDelegation,
   } = agentState;
+
+  // Track delegation events for Agent Theater
+  useEffect(() => {
+    if (activeDelegation) {
+      const evt: TheaterEvent = {
+        id: `deleg-${Date.now()}`,
+        type: activeDelegation.status === 'done' ? 'done' : 'delegation',
+        fromAgent: activeDelegation.from,
+        toAgent: activeDelegation.to,
+        content: activeDelegation.reason || `Delegating to ${activeDelegation.to}`,
+        timestamp: new Date().toISOString(),
+        status: activeDelegation.status === 'done' ? 'done' : 'active',
+      };
+      setTheaterEvents(prev => [...prev.slice(-20), evt]);
+    }
+  }, [activeDelegation]);
+
+  // Clear theater events on new conversation
+  useEffect(() => {
+    setTheaterEvents([]);
+  }, [conversationId]);
+
+  // Feedback handler
+  const handleMessageFeedback = useCallback((messageId: string, rating: 'up' | 'down', comment?: string) => {
+    feedbackService.record(messageId, rating, comment).catch(() => {});
+  }, []);
   
   // Chat streaming hook
   const {
@@ -216,6 +253,7 @@ export function ChatPage() {
     notifyStart,
     notifyDone,
     notifyFail,
+    conversationId,
   });
   
   const chatActions = useChatActions({ messages, sendMessage });
@@ -295,6 +333,21 @@ export function ChatPage() {
   useEffect(() => {
     const loadHistory = async () => {
       try {
+        // Load real conversation threads from API
+        const threadsRes = await conversationThreadsService.list(30).catch(() => null);
+        if (threadsRes?.data?.conversations?.length) {
+          const threads = threadsRes.data.conversations;
+          setConversations(threads.map(t => ({
+            id: t.id,
+            title: t.title || 'New conversation',
+            timestamp: t.updated_at ? luxonFormatDate(new Date(t.updated_at)) : '',
+            pinned: false,
+          })));
+          // Set current conversation to most recent
+          setConversationId(threads[0].id);
+        }
+
+        // Load recent messages
         const res = await memoryService.conversations(30);
         const entries = res.data;
         if (Array.isArray(entries) && entries.length > 0) {
@@ -306,7 +359,15 @@ export function ChatPage() {
             timestamp: entry.createdAt ? new Date(entry.createdAt) : new Date(),
           })));
 
-          buildConversationList(entries);
+          // Fallback: build conversation list from messages if threads API unavailable
+          if (!conversations.length) {
+            buildConversationList(entries);
+          }
+
+          const lastEntry = entries[0] as { conversationId?: string };
+          if (lastEntry?.conversationId && !conversationId) {
+            setConversationId(lastEntry.conversationId);
+          }
         }
       } catch {
         // Fresh start
@@ -542,9 +603,17 @@ export function ChatPage() {
                     onStopGeneration={() => {
                       // Stop generation handled by the hook
                     }}
+                    onMessageFeedback={handleMessageFeedback}
                   />
                 )}
               </div>
+
+              {/* Agent Theater Panel — floating, shows during delegation */}
+              <AgentTheaterPanel
+                events={theaterEvents}
+                isActive={activeDelegation?.status === 'delegating' || activeDelegation?.status === 'working'}
+                onClose={() => setTheaterEvents([])}
+              />
               
               {/* Scroll to bottom button */}
               {showScrollToBottom && (
@@ -579,6 +648,8 @@ export function ChatPage() {
                   onClearMention={clearMention}
                   textareaRef={textareaRef}
                   formRef={formRef}
+                  files={attachedFiles}
+                  onFilesChange={setAttachedFiles}
                 />
                 </div>
               </div>

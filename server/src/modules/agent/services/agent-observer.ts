@@ -19,6 +19,7 @@
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { isPicoClawAvailable, queryPicoClaw } from '../../../services/picoclaw.js';
+import { routeChat, type ChatMessage } from './llm.js';
 import { getActionableGoals, getUserGoals, getGoalSteps, executeNextStep } from './goal-service.js';
 import { sendAgentNotification, type NotificationType } from './agent-notifications.js';
 import { emitThinking, emitDone } from './agent-state-bus.js';
@@ -286,8 +287,12 @@ If no action needed, respond: []
 JSON only, no markdown:`;
 
   try {
-    const response = await queryPicoClaw(prompt);
-    const jsonMatch = response.text.match(/\[[\s\S]*\]/);
+    const messages: ChatMessage[] = [
+      { role: 'system', content: 'You are an AI agent assistant. Respond with a JSON array only, no markdown.' },
+      { role: 'user', content: prompt },
+    ];
+    const result = await routeChat(messages, { userId, forceProvider: 'groq' as any });
+    const jsonMatch = result.reply.match(/\[\s\S]*\]/);
     if (jsonMatch) {
       const decisions = JSON.parse(jsonMatch[0]) as ObserverDecision[];
       return decisions

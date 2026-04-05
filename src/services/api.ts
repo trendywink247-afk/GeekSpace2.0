@@ -197,13 +197,14 @@ export const agentService = {
   updateConfig: (data: Partial<AgentConfig>) =>
     api.patch<AgentConfig>('/agent/config', data),
 
-  chat: (message: string, channel: string = 'web', existingArtifactId?: string) =>
+  chat: (message: string, channel: string = 'web', existingArtifactId?: string, conversationId?: string) =>
     api.post<{
       text: string;
       route: string;
       latencyMs: number;
       provider: string;
       model: string;
+      conversationId?: string;
       actions?: Array<{
         tool: string;
         success: boolean;
@@ -214,10 +215,10 @@ export const agentService = {
       }>;
       receiptText?: string;
       receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
-    }>('/agent/chat', { message, channel, ...(existingArtifactId ? { existingArtifactId } : {}) }),
+    }>('/agent/chat', { message, channel, ...(existingArtifactId ? { existingArtifactId } : {}), ...(conversationId ? { conversationId } : {}) }),
 
   /** SSE streaming chat — returns a ReadableStream */
-  chatStream: async (message: string, channel: string = 'web', signal?: AbortSignal, personality?: string) => {
+  chatStream: async (message: string, channel: string = 'web', signal?: AbortSignal, personality?: string, conversationId?: string) => {
     const token = localStorage.getItem('gs_token');
     const res = await fetch(`${API_URL}/agent/chat/stream`, {
       method: 'POST',
@@ -225,7 +226,7 @@ export const agentService = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, channel, ...(personality ? { personality } : {}) }),
+      body: JSON.stringify({ message, channel, ...(personality ? { personality } : {}), ...(conversationId ? { conversationId } : {}) }),
       signal,
     });
     return res;
@@ -1644,4 +1645,43 @@ export const agentNotificationsService = {
     api.patch<{ success: boolean }>(`/agent/notifications/${id}/read`),
   markAllRead: () =>
     api.post<{ success: boolean }>('/agent/notifications/read-all'),
+};
+
+// ---- Conversation Threading ----
+export interface ConversationThreadData {
+  id: string;
+  user_id: string;
+  title: string;
+  last_message_preview: string;
+  message_count: number;
+  channel: string;
+  agent_id: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const conversationThreadsService = {
+  list: (limit?: number) =>
+    api.get<{ conversations: ConversationThreadData[] }>('/agent/conversations/threads', { params: limit ? { limit } : undefined }),
+  getMessages: (conversationId: string, limit?: number) =>
+    api.get<{ messages: Array<{ id: string; role: string; content: string; agent_id: string | null; provider: string; created_at: string }> }>(
+      `/agent/conversations/${conversationId}/messages`, { params: limit ? { limit } : undefined }
+    ),
+};
+
+// ---- Feedback ----
+export const feedbackService = {
+  record: (messageId: string, rating: 'up' | 'down', comment?: string) =>
+    api.post<{ success: boolean }>('/agent/feedback', { messageId, rating, comment }),
+  stats: () =>
+    api.get<{ total: number; positive: number; negative: number; patterns: string[] }>('/agent/feedback/stats'),
+};
+
+// ---- Confirmation ----
+export const confirmService = {
+  resolve: (confirmId: string, approved: boolean, editedParams?: Record<string, unknown>, rejectReason?: string) =>
+    api.post(`/agent/confirm/${confirmId}`, { approved, editedParams, rejectReason }),
+  listPending: () =>
+    api.get<{ confirmations: Array<{ id: string; tool: string; params: string; status: string; expires_at: string }> }>('/agent/confirm/pending'),
 };

@@ -27,6 +27,8 @@ import premiumRouter from './premium.js';
 import workflowsRouter from './workflows.js';
 import goalsRouter from './goals.js';
 import notificationsRouter from './notifications.js';
+import confirmRouter from './confirm.js';
+import feedbackRouter from './feedback.js';
 
 export const agentRouter = Router();
 
@@ -40,5 +42,7 @@ agentRouter.use(premiumRouter);
 agentRouter.use(workflowsRouter);
 agentRouter.use(goalsRouter);
 agentRouter.use(notificationsRouter);
+agentRouter.use('/confirm', confirmRouter);
+agentRouter.use('/feedback', feedbackRouter);
 
 export default agentRouter;
