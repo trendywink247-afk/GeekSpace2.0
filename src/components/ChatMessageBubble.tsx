@@ -321,7 +321,7 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
         className={[
           isUser
             // User: subtle bubble, right-aligned
-            ? 'max-w-[80%] px-4 py-2.5 rounded-2xl rounded-tr-sm bg-[var(--ag-violet)]/10 border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-sm leading-[1.7]'
+            ? 'w-fit max-w-[80%] md:max-w-[70%] ml-auto px-4 py-2.5 rounded-2xl rounded-tr-sm bg-[var(--ag-violet)]/10 border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-sm leading-[1.7]'
             // Agent: no bubble — just text, document-style
             : 'flex-1 min-w-0 text-sm leading-[1.7] text-[var(--ag-text-primary)]',
         ].join(' ')}

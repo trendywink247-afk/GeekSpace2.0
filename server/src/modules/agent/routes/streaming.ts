@@ -205,43 +205,70 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       let fullReply = '';
       let emittedResponding = false;
 
-      const { tokensIn, tokensOut } = await streamOllama(fullMessages, (chunk) => {
-        if (!emittedResponding) {
-          emitResponding(String(userId), personalityId, 'Writing response...');
-          emittedResponding = true;
+      // Race: stream Ollama with 15s first-chunk timeout, fallback to cloud
+      let gotFirstChunk = false;
+      const firstChunkTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => { if (!gotFirstChunk) reject(new Error('ollama_first_chunk_timeout')); }, 15000)
+      );
+
+      try {
+        const streamPromise = streamOllama(fullMessages, (chunk) => {
+          gotFirstChunk = true;
+          if (!emittedResponding) {
+            emitResponding(String(userId), personalityId, 'Writing response...');
+            emittedResponding = true;
+          }
+          fullReply += chunk;
+          res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
+        }, intent);
+
+        const { tokensIn, tokensOut } = await Promise.race([streamPromise, firstChunkTimeout]) as { tokensIn: number; tokensOut: number };
+
+        const latencyMs = Date.now() - start;
+
+        // If streaming produced empty content, fall back to non-streaming call
+        if (!fullReply.trim()) {
+          logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
+          emitResponding(String(userId), personalityId, 'Composing response...');
+          const result = await routeChat(
+            [...history, { role: 'user', content: message }],
+            { systemPrompt, agentName, userCredits, userId },
+          );
+          res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+          res.write(`data: ${JSON.stringify({
+            text: '', done: true, provider: result.provider, model: result.model,
+            latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
+          })}\n\n`);
+        } else {
+          // Log usage
+          db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
+            VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
+            uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
+          );
+          logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel, undefined, personalityId);
+
+          // Send final event
+          res.write(`data: ${JSON.stringify({
+            text: '', done: true, provider: 'ollama', model: config.ollamaModel,
+            latencyMs, tier: 'local', creditsUsed: 0,
+          })}\n\n`);
         }
-        fullReply += chunk;
-        res.write(`data: ${JSON.stringify({ text: chunk, done: false })}\n\n`);
-      }, intent);
-
-      const latencyMs = Date.now() - start;
-
-      // If streaming produced empty content, fall back to non-streaming call
-      if (!fullReply.trim()) {
-        logger.warn({ userId, latencyMs }, 'Stream produced empty reply, falling back to routeChat');
-        emitResponding(String(userId), personalityId, 'Composing response...');
-        const result = await routeChat(
-          [...history, { role: 'user', content: message }],
-          { systemPrompt, agentName, userCredits, userId },
-        );
-        res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
-        res.write(`data: ${JSON.stringify({
-          text: '', done: true, provider: result.provider, model: result.model,
-          latencyMs: result.latencyMs, tier: (result.provider === 'ollama' || result.provider === 'openrouter-free') ? 'local' : 'premium', creditsUsed: result.creditCost,
-        })}\n\n`);
-      } else {
-        // Log usage
-        db.prepare(`INSERT INTO usage_events (id, user_id, provider, model, tokens_in, tokens_out, cost_usd, channel, tool)
-          VALUES (?, ?, 'ollama', ?, ?, ?, 0, 'web', 'ai.chat.stream')`).run(
-          uuid(), userId, config.ollamaModel, tokensIn, tokensOut,
-        );
-        logConversation(userId, 'assistant', fullReply, 'ollama', config.ollamaModel, undefined, personalityId);
-
-        // Send final event
-        res.write(`data: ${JSON.stringify({
-          text: '', done: true, provider: 'ollama', model: config.ollamaModel,
-          latencyMs, tier: 'local', creditsUsed: 0,
-        })}\n\n`);
+      } catch (streamErr) {
+        if ((streamErr as Error).message === 'ollama_first_chunk_timeout' || !gotFirstChunk) {
+          // Ollama too slow — fallback to cloud
+          emitResponding(String(userId), personalityId, 'Switching to cloud...');
+          const result = await routeChat(
+            [...history, { role: 'user', content: message }],
+            { systemPrompt, agentName, userCredits, userId, forceProvider: 'openrouter-free' as Provider },
+          );
+          fullReply = result.reply;
+          res.write(`data: ${JSON.stringify({ text: result.reply, done: false })}\n\n`);
+          logConversation(userId, 'assistant', result.reply, result.provider, result.model, undefined, personalityId);
+          res.write(`data: ${JSON.stringify({ text: '', done: true, provider: result.provider, model: result.model, tier: 'local', creditsUsed: result.creditCost })}\n\n`);
+          res.end();
+          return;
+        }
+        throw streamErr; // re-throw non-timeout errors
       }
       } // end: Ollama is up
     }

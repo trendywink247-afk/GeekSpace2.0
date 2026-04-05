@@ -124,15 +124,13 @@ export function ChatSidebar({
   isOpen,
   onClose,
 }: ChatSidebarProps) {
-  if (!isOpen) return null;
-
   // Filter conversations based on search
   let filteredConversations = conversations;
   if (conversationSearch.trim()) {
     const q = conversationSearch.toLowerCase();
     filteredConversations = conversations.filter((c) => c.title.toLowerCase().includes(q));
   }
-  
+
   // Sort: pinned first, then by most recent
   const sortedConversations = [...filteredConversations].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
@@ -142,14 +140,36 @@ export function ChatSidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
-      <div 
-        className='md:hidden fixed inset-0 bg-black/60 z-40'
+      {/* Mobile backdrop — fades in/out, invisible and non-interactive when closed */}
+      <div
+        className={[
+          'md:hidden fixed inset-0 bg-black/60 z-40',
+          'transition-opacity duration-300 ease-out',
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        ].join(' ')}
         onClick={onClose}
+        aria-hidden='true'
       />
-      
-      {/* Sidebar */}
-      <div className='w-64 md:w-72 flex-shrink-0 border-r flex flex-col rounded-l-xl overflow-hidden backdrop-blur-xl md:relative fixed inset-y-0 left-0 z-50' data-testid="chat-sidebar" style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}>
+
+      {/* Sidebar panel */}
+      {/* Mobile: fixed overlay that slides in from the left */}
+      {/* Desktop: part of flex layout, hidden via md:hidden when closed */}
+      <div
+        className={[
+          'w-64 md:w-72 flex-shrink-0 border-r flex flex-col overflow-hidden backdrop-blur-xl',
+          // Mobile: fixed position overlay
+          'fixed inset-y-0 left-0 z-50',
+          // Desktop: inline in flex layout
+          'md:relative md:inset-auto md:z-auto md:rounded-l-xl',
+          // Slide animation (mobile only — desktop uses hidden/block)
+          'transition-transform duration-300 ease-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: toggle visibility without animation
+          !isOpen ? 'md:hidden' : '',
+        ].join(' ')}
+        data-testid='chat-sidebar'
+        style={{ background: 'var(--ag-glass-bg)', borderColor: 'var(--ag-glass-border)' }}
+      >
       {/* Sidebar Header */}
       <div className='flex items-center justify-between px-3 py-3 border-b' style={{ borderColor: 'var(--ag-border-subtle)' }}>
         <h3 className='text-xs font-semibold text-[var(--ag-text-primary)] uppercase tracking-wider'>Conversations</h3>

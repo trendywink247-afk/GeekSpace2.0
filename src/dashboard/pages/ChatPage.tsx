@@ -564,7 +564,7 @@ export function ChatPage() {
               )}
 
               {/* Input */}
-              <div className='flex-shrink-0 pb-16 md:pb-0'>
+              <div className='flex-shrink-0'>
                 <div className='max-w-3xl mx-auto w-full px-4'>
                 <ChatInput
                   input={input}

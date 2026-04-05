@@ -97,7 +97,7 @@ export function ChatHeader({
           <button
             onClick={onToggleSidebar}
             data-testid='chat-sidebar-toggle'
-            className='hidden md:flex p-1.5 rounded-lg hover:bg-white/5 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-secondary)] items-center justify-center min-h-[36px] min-w-[36px] transition-colors cursor-pointer'
+            className='flex p-1.5 rounded-lg hover:bg-white/5 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-secondary)] items-center justify-center min-h-[44px] min-w-[44px] transition-colors cursor-pointer'
             title='Open conversation history'
             aria-label='Open conversation history'
           >
