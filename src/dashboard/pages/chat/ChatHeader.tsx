@@ -71,14 +71,14 @@ export function ChatHeader({
   tts,
 }: ChatHeaderProps) {
   return (
-    <div className='flex items-center justify-between px-4 py-3 border-b flex-shrink-0 backdrop-blur-md' style={{ borderColor: 'var(--ag-border-subtle)', background: 'var(--ag-glass-bg)' }}>
+    <div className='sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b border-[var(--ag-border-subtle)] flex-shrink-0 backdrop-blur-xl' style={{ background: 'var(--ag-bg-base)/0.8' }}>
       <div className='flex items-center gap-3'>
         {/* Sidebar toggle */}
         {!sidebarOpen && (
           <button
             onClick={onToggleSidebar}
             data-testid="chat-sidebar-toggle"
-            className='p-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[36px] min-w-[36px] flex items-center justify-center'
+            className='hidden md:flex p-1.5 rounded-lg hover:bg-[var(--ag-cyan)]/10 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] min-h-[36px] min-w-[36px] items-center justify-center'
             title='Open conversation sidebar'
             aria-label='Open conversation sidebar'
           >

@@ -1,50 +1,40 @@
 # Agent Task Board
 
 Last updated by: MASTER
-Sprint goal: Chat page — Round 1 fixes (split component, mobile layout, test IDs)
+Sprint goal: Chat page Round 2 — maximize message area, kill mobile bloat
 
 ---
 
-## TASK-10 | AGENT:frontend | STATUS:PENDING
-**Goal**: Split ChatPage.tsx (1648 lines) into smaller components. Extract these into separate files in src/dashboard/pages/chat/:
-(1) ChatSidebar.tsx — the conversation sidebar (ConversationItem component + sidebar JSX, ~150 lines). Props: conversations, search, onPin, onDelete, onClear, isOpen, onClose.
-(2) ChatHeader.tsx — the chat header bar with agent avatar, voice toggle, clear button, stream health. Props: agentName, personality, meta, isTyping, isStreamActive, streamHealth, voiceMode, onToggleVoice, onClear, sidebarOpen, onToggleSidebar, ttsIsSpeaking, onStopTTS.
-(3) ChatEmptyState.tsx — the empty state with hero avatar, greeting, starter prompts, session continuity. Props: meta, timeContext, onStarterPrompt, onResume.
-(4) ChatInput.tsx — the input form at the bottom with textarea, send button, voice button, mention popup, council toggle. Props: input, onInputChange, onSubmit, isTyping, voiceMode, voice, interimText, mentionPopup state, councilMode, mentionedAgent.
-Keep ChatPage.tsx as the orchestrator that composes these 4 + the Virtuoso message list.
-After splitting, run `npx tsc -b --noEmit` — MUST be zero errors including TS6133. The page must work IDENTICALLY to before.
-**Files in scope**: src/dashboard/pages/ChatPage.tsx, src/dashboard/pages/chat/ (new dir)
-**Files OFF LIMITS**: server/*, components/ChatMessageBubble.tsx, components/ToolStepIndicator.tsx
+## TASK-13 | AGENT:frontend | STATUS:PENDING
+**Goal**: Remove bloat from ChatPage to maximize message area on mobile. Read src/dashboard/pages/ChatPage.tsx and all files in src/dashboard/pages/chat/. Make these changes:
+(1) Hide the PageHeader ("AI Chat / Chat with your AI assistant") entirely on mobile — wrap it in `<div className="hidden md:block">`. It's redundant on mobile since the ChatHeader already shows the agent name.
+(2) In ChatInput.tsx, find the keyboard shortcut hint ("Shift+Enter for new line · Alt+V for voice") and hide it on mobile: `<span className="hidden md:inline">...</span>`.
+(3) In ChatInput.tsx, find the agent selector chips (Auto, Weebo, Edith, Jarvis, Aria). Replace the always-visible chip row with a single dropdown/select button on mobile. Use a button that shows the current agent name, and on click opens a small popover or bottom sheet with the agent options. On desktop, keep the chips visible.
+(4) Update the main chat height calc to reclaim the space: change `h-[calc(100dvh-200px)]` to `h-[calc(100dvh-140px)]` on mobile since we're hiding the page header.
+After changes: `npx tsc -b --noEmit` — zero errors.
+**Files in scope**: src/dashboard/pages/ChatPage.tsx, src/dashboard/pages/chat/ChatInput.tsx, src/dashboard/pages/chat/ChatHeader.tsx
+**Files OFF LIMITS**: server/*, DashboardApp.tsx, MobileTabBar.tsx
 **Depends on**: NONE
-**Done when**: ChatPage.tsx under 800 lines. 4 new files created. `npx tsc -b --noEmit` zero errors. `npx vite build` succeeds.
+**Done when**: On mobile 393px viewport, messages get ~70% of screen. No shortcut hints visible. Agent selector is compact.
 
-## TASK-11 | AGENT:designer | STATUS:PENDING
-**Goal**: Fix Chat page mobile layout and design consistency. Read src/dashboard/pages/ChatPage.tsx (and any new chat/ subcomponents if TASK-10 runs first). Make these changes:
-(1) Replace `h-[calc(100dvh-240px)] md:h-[calc(100vh-180px)]` with `h-[calc(100dvh-200px)] md:h-[calc(100vh-140px)]` — account for header (56px) + page header (~60px) + bottom tabs (80px) on mobile.
-(2) Add `pb-20 md:pb-0` to the main chat container so bottom tab bar doesn't cover the input.
-(3) Sidebar action buttons (pin/delete in ConversationItem): change `min-w-[24px] min-h-[24px]` to `min-w-[36px] min-h-[36px]` for better touch targets.
-(4) Replace hardcoded colors in personalityMeta with CSS variables: `'#ADFF2F'` → `'var(--ag-lime)'`, `'#FF6B9D'` → `'var(--ag-pink)'`, `'#F59E0B'` → `'var(--ag-amber)'`, `'#10B981'` → `'var(--ag-green)'`, `'#6366F1'` → `'var(--ag-indigo)'`, `'#84CC16'` → `'var(--ag-lime)'`, `'#EC4899'` → `'var(--ag-nova)'`.
-(5) Make conversation sidebar a mobile drawer: on mobile (md:hidden), it should be `fixed inset-0 z-50` with backdrop overlay, not inline push.
-After changes run `npx tsc -b --noEmit` — zero errors.
-**Files in scope**: src/dashboard/pages/ChatPage.tsx, src/dashboard/pages/chat/*.tsx (if they exist from TASK-10)
-**Files OFF LIMITS**: server/*, DashboardApp.tsx, DashboardSidebar.tsx
-**Depends on**: TASK-10 (but can start on ChatPage.tsx directly if TASK-10 isn't done yet)
-**Done when**: Mobile chat usable — input visible above tab bar, sidebar is drawer overlay, 44px+ touch targets. `npx tsc -b --noEmit` zero errors.
+## TASK-14 | AGENT:designer | STATUS:PENDING
+**Goal**: Fix floating button overlap and reduce bottom bloat on the Chat page. Read src/dashboard/DashboardApp.tsx and src/dashboard/pages/ChatPage.tsx.
+(1) In DashboardApp.tsx, find the floating AgentChatButton (`fixed bottom-24 md:bottom-8 right-4`) — HIDE it when currentPage is 'chat' since we're already on the chat page. Wrap it: `{currentPage !== 'chat' && <div className="fixed bottom-24..."><AgentChatButton .../></div>}`
+(2) In DashboardApp.tsx, find the Mobile Quick Actions Button (`fixed bottom-24 left-4 md:hidden`) — also HIDE it on the chat page: `{currentPage !== 'chat' && ...}`
+(3) In ChatInput.tsx or ChatPage.tsx, find any council mode toggle button at the bottom and make it smaller or move it inline with the send button instead of being a separate row.
+After changes: `npx tsc -b --noEmit` — zero errors.
+**Files in scope**: src/dashboard/DashboardApp.tsx, src/dashboard/pages/ChatPage.tsx, src/dashboard/pages/chat/ChatInput.tsx
+**Files OFF LIMITS**: server/*, DashboardSidebar.tsx, MobileTabBar.tsx
+**Depends on**: NONE
+**Done when**: No floating buttons visible on chat page. Clean input area without overlap. Zero TS errors.
 
-## TASK-12 | AGENT:coder | STATUS:PENDING
-**Goal**: Add data-testid attributes to ChatPage for E2E testing. Read the ChatPage.tsx (or the new split files if TASK-10 ran). Add these test IDs:
-(1) `data-testid="chat-input"` on the textarea
-(2) `data-testid="chat-send-button"` on the send button
-(3) `data-testid="chat-message-list"` on the Virtuoso container or its wrapper div
-(4) `data-testid="chat-sidebar-toggle"` on the sidebar open/close button
-(5) `data-testid="chat-voice-toggle"` on the voice mode toggle
-(6) `data-testid="chat-clear-button"` on the clear chat button
-(7) `data-testid="chat-empty-state"` on the empty state container
-(8) `data-testid="chat-agent-name"` on the agent name in the header
-(9) `data-testid="chat-stream-health"` on the StreamHealthDot component wrapper
-Also add `data-testid="chat-starter-prompt"` to each starter prompt button.
-After changes run `npx tsc -b --noEmit` — zero errors.
-**Files in scope**: src/dashboard/pages/ChatPage.tsx, src/dashboard/pages/chat/*.tsx (if they exist)
-**Files OFF LIMITS**: server/*, test files (TASK-12 only adds IDs, doesn't write tests)
-**Depends on**: TASK-10 (but can work on ChatPage.tsx directly)
-**Done when**: `grep -c 'data-testid' src/dashboard/pages/ChatPage.tsx src/dashboard/pages/chat/*.tsx` shows 10+ test IDs. Zero TS errors.
+## TASK-15 | AGENT:coder | STATUS:PENDING  
+**Goal**: Merge the ChatHeader agent info with the DashboardApp header on mobile to eliminate one layer. Read src/dashboard/pages/chat/ChatHeader.tsx and src/dashboard/pages/ChatPage.tsx.
+(1) On mobile, the ChatHeader (agent name, voice toggle, clear) should BE the page header — not a separate bar below it. Move the agent avatar + name into the space where "AI Chat" title was (which TASK-13 hides on mobile). The ChatHeader should have `sticky top-0 z-20` on mobile so it stays visible while scrolling.
+(2) Remove the conversation sidebar toggle button from the ChatHeader on mobile — the sidebar is now a drawer triggered by a hamburger in the DashboardApp header, not a separate toggle.
+(3) Ensure the ChatHeader has proper glass styling: `backdrop-blur-xl` with `bg-[var(--ag-bg-base)]/80`.
+After changes: `npx tsc -b --noEmit` — zero errors.
+**Files in scope**: src/dashboard/pages/chat/ChatHeader.tsx, src/dashboard/pages/ChatPage.tsx
+**Files OFF LIMITS**: server/*, DashboardApp.tsx (TASK-14 owns it), ChatInput.tsx (TASK-13 owns it)
+**Depends on**: NONE
+**Done when**: On mobile, only ONE header row with agent info. No duplicate navigation layers. Zero TS errors.

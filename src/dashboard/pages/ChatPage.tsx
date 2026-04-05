@@ -766,14 +766,16 @@ export function ChatPage() {
 
   return (
     <DashboardPageWrapper>
-      <PageHeader 
-        title="AI Chat"
-        subtitle="Chat with your AI assistant"
-        icon={MessageSquare}
-      />
+      <div className="hidden md:block">
+        <PageHeader 
+          title="AI Chat"
+          subtitle="Chat with your AI assistant"
+          icon={MessageSquare}
+        />
+      </div>
       <PageShell maxWidth="full" spacing={4} className="!p-0 md:!p-0 !pb-0 md:!pb-0">
         <BlurFade delay={0.1} inView>
-          <div className='flex h-[calc(100dvh-200px)] md:h-[calc(100vh-140px)] pb-20 md:pb-0'>
+          <div className='flex h-[calc(100dvh-140px)] md:h-[calc(100vh-140px)] pb-20 md:pb-0'>
             {/* ── Conversation Sidebar ── */}
             <ChatSidebar
               conversations={conversations}

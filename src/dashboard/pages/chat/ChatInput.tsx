@@ -1,5 +1,5 @@
-// No unused useRef import
-import { Send, Sparkles, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, Sparkles, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VoiceButton } from '@/components/VoiceButton';
 import { AgentMentionPopup } from '@/components/AgentMentionPopup';
@@ -55,6 +55,23 @@ export function ChatInput({
   onAgentSelect,
   onTranscript,
 }: ChatInputProps) {
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setMobileDropdownOpen(false);
+      }
+    };
+    
+    if (mobileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [mobileDropdownOpen]);
+  
   const agents = [
     { id: '', name: 'Auto', emoji: '🤖', color: '#8892A4' },
     { id: 'weebo', name: 'Weebo', emoji: '✨', color: 'var(--ag-cyan)' },
@@ -67,6 +84,8 @@ export function ChatInput({
     { id: 'cal', name: 'Cal', emoji: '📅', color: 'var(--ag-lime)' },
     { id: 'nova', name: 'Nova', emoji: '🔭', color: 'var(--ag-nova)' },
   ];
+  
+  const currentAgent = agents.find(a => a.id === selectedAgent) || agents[0];
 
   return (
     <div className='px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t flex-shrink-0' style={{ 
@@ -74,8 +93,8 @@ export function ChatInput({
       background: 'var(--ag-glass-bg)',
       backdropFilter: 'blur(16px)'
     }}>
-      {/* Agent Picker */}
-      <div className='flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
+      {/* Agent Picker - Desktop */}
+      <div className='hidden md:flex gap-1.5 pb-2 overflow-x-auto' style={{ scrollbarWidth: 'none' }}>
         {agents.map(p => (
           <button
             key={p.id}
@@ -92,6 +111,50 @@ export function ChatInput({
             <span>{p.name}</span>
           </button>
         ))}
+      </div>
+      
+      {/* Agent Picker - Mobile Compact */}
+      <div ref={dropdownRef} className='md:hidden pb-2 relative'>
+        <button
+          type='button'
+          onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+          className='flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px]'
+          style={{
+            border: `1px solid ${currentAgent.color + '60'}`,
+            background: currentAgent.color + '15',
+            color: currentAgent.color,
+          }}
+        >
+          <div className='flex items-center gap-2'>
+            <span>{currentAgent.emoji}</span>
+            <span>{currentAgent.name}</span>
+          </div>
+          <ChevronDown className={`w-4 h-4 transition-transform ${mobileDropdownOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {/* Mobile Dropdown */}
+        {mobileDropdownOpen && (
+          <div className='absolute top-full left-0 right-0 mt-1 bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-lg overflow-hidden z-50 shadow-lg'>
+            {agents.map(agent => (
+              <button
+                key={agent.id}
+                type='button'
+                onClick={() => {
+                  onAgentSelect(agent.id);
+                  setMobileDropdownOpen(false);
+                }}
+                className='flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium transition-all hover:bg-[var(--ag-bg-subtle)] min-h-[44px]'
+                style={{
+                  color: selectedAgent === agent.id ? agent.color : 'var(--ag-text-primary)',
+                  backgroundColor: selectedAgent === agent.id ? agent.color + '10' : 'transparent',
+                }}
+              >
+                <span>{agent.emoji}</span>
+                <span>{agent.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {voice.error && (
         <p className='text-xs text-[var(--ag-pink)] mb-2'>{voice.error}</p>
@@ -206,7 +269,7 @@ export function ChatInput({
           <Send className='w-4 h-4' />
         </Button>
       </form>
-      <div className='flex items-center justify-between mt-1.5 px-0.5'>
+      <div className='hidden md:flex items-center justify-between mt-1.5 px-0.5'>
         <p className='text-[10px] text-[var(--ag-text-muted)]'>
           Shift+Enter for new line &middot; @ to mention &middot; <Sparkles className='w-2.5 h-2.5 inline' /> for council
         </p>

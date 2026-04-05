@@ -510,19 +510,23 @@ export function DashboardApp() {
       />
 
       {/* Floating Alex orb — higher on mobile to clear bottom tabs */}
-      <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40">
-        <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
-      </div>
+      {currentPage !== 'chat' && (
+        <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40">
+          <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
+        </div>
+      )}
 
       {/* Mobile Quick Actions Button */}
-      <div className="fixed bottom-24 left-4 md:hidden z-40">
-        <button
-          onClick={() => setShowQuickActions(true)}
-          className="w-12 h-12 rounded-full bg-[#ADFF2F] text-[#06060B] flex items-center justify-center shadow-lg shadow-[#ADFF2F]/30"
-        >
-          <span className="text-xl">⚡</span>
-        </button>
-      </div>
+      {currentPage !== 'chat' && (
+        <div className="fixed bottom-24 left-4 md:hidden z-40">
+          <button
+            onClick={() => setShowQuickActions(true)}
+            className="w-12 h-12 rounded-full bg-[#ADFF2F] text-[#06060B] flex items-center justify-center shadow-lg shadow-[#ADFF2F]/30"
+          >
+            <span className="text-xl">⚡</span>
+          </button>
+        </div>
+      )}
 
       {/* Slide-out agent chat */}
       <AgentChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
