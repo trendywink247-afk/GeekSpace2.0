@@ -231,7 +231,7 @@ export function RecipesPage() {
             return (
               <BlurFade key={recipe.id} delay={0.05 * idx}>
                 <SectionCard
-                  className={`flex flex-col h-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl ${
+                  className={`flex flex-col h-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_2px_8px_rgba(0,0,0,0.18)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.20),0_6px_20px_rgba(0,0,0,0.28)] transition-[box-shadow] duration-300 ${
                     recipe.installed
                       ? 'ring-1 ring-[var(--ag-green)]/20'
                       : ''
@@ -309,7 +309,7 @@ export function RecipesPage() {
                   {recipe.installed ? (
                     <Button
                       variant="outline"
-                      className="w-full min-h-[44px] border-[var(--ag-text-muted)]/30 text-[var(--ag-text-muted)] hover:border-[var(--ag-pink)]/50 hover:text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 transition-colors"
+                      className="w-full min-h-[44px] border-[var(--ag-text-muted)]/30 text-[var(--ag-text-muted)] hover:border-[var(--ag-pink)]/50 hover:text-[var(--ag-pink)] hover:bg-[var(--ag-pink)]/10 transition-[transform,colors] active:scale-[0.96]"
                       onClick={() => handleUninstall(recipe.id)}
                       disabled={isActionInProgress}
                     >
@@ -320,7 +320,7 @@ export function RecipesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-all hover:shadow-[0_0_16px_var(--ag-violet)/30] hover:scale-[1.02] active:scale-[0.98]"
+                      className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-[transform,box-shadow] duration-150 hover:shadow-[0_4px_16px_rgba(139,92,246,0.35)] active:scale-[0.96]"
                       onClick={() => handleInstall(recipe.id)}
                       disabled={isActionInProgress}
                     >

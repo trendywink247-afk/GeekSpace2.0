@@ -1003,10 +1003,10 @@ html, body {
 }
 
 .press-scale {
-  transition: transform 0.1s ease;
+  transition: transform 0.15s ease-out;
 }
 .press-scale:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 
 .scrollbar-hide {

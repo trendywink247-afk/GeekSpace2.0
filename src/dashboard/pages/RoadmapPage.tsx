@@ -543,7 +543,7 @@ export function RoadmapPage() {
       <SectionCard padding="lg">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-[var(--ag-text-secondary)]">Overall Progress</span>
-          <span className="text-sm font-medium text-[var(--ag-text-primary)]">{Math.round(progressPercent)}%</span>
+          <span className="text-sm font-medium text-[var(--ag-text-primary)] tabular-nums">{Math.round(progressPercent)}%</span>
         </div>
         <div className="h-3 bg-[var(--ag-bg-base)] rounded-full overflow-hidden mb-4">
           <div
@@ -554,7 +554,7 @@ export function RoadmapPage() {
         <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-[var(--ag-green)]" />
-            <span className="text-[var(--ag-text-primary)]">{completedCount} Completed</span>
+            <span className="text-[var(--ag-text-primary)] tabular-nums">{completedCount} Completed</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#FFB800]" />
@@ -562,7 +562,7 @@ export function RoadmapPage() {
           </div>
           <div className="flex items-center gap-2">
             <Circle className="w-4 h-4 text-[var(--ag-violet)]" />
-            <span className="text-[var(--ag-text-secondary)]">{plannedCount} Planned</span>
+            <span className="text-[var(--ag-text-secondary)] tabular-nums">{plannedCount} Planned</span>
           </div>
         </div>
       </SectionCard>
@@ -673,7 +673,7 @@ export function RoadmapPage() {
           </div>
           <Dialog open={suggestionOpen} onOpenChange={setSuggestionOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold gap-2 shrink-0 transition-all duration-200 min-h-[44px]">
+              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold gap-2 shrink-0 transition-[transform,background-color] duration-150 active:scale-[0.96] min-h-[44px]">
                 <Lightbulb className="w-4 h-4" />
                 Suggest a Feature
               </Button>
@@ -786,7 +786,7 @@ export function RoadmapPage() {
                       <p className="text-sm text-[var(--ag-text-primary)] truncate">{s.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-xs text-[var(--ag-text-secondary)]">{new Date(s.created_at).toLocaleDateString()}</p>
-                        <span className="flex items-center gap-0.5 text-xs text-[var(--ag-violet)]">
+                        <span className="flex items-center gap-0.5 text-xs text-[var(--ag-violet)] tabular-nums">
                           <ThumbsUp className="w-2.5 h-2.5" /> {upvotes}
                         </span>
                         {downvotes > 0 && (
@@ -933,7 +933,7 @@ export function RoadmapPage() {
           </p>
           <button
             onClick={() => setSuggestionOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-all duration-200 min-h-[44px] min-w-[44px]"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-medium transition-[transform,opacity] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px]"
           >
             Share Feedback
             <ArrowRight className="w-4 h-4" />

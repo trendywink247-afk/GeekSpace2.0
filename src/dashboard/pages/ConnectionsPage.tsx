@@ -1,11 +1,12 @@
 // ============================================================
-// Connections Page — Revamped with design tokens + Nova ownership
-// Glass cards, health indicators, OAuth wiring, mobile-first
+// Connections Page — Full redesign: shadows over borders,
+// concentric radii, scale-on-press, stagger animations,
+// glass cards, mobile-first, CSS vars only.
 // ============================================================
-import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
-
+import { DashboardPageWrapper, PageHeader } from '@/components/agentin';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare,
   Calendar,
@@ -49,8 +50,8 @@ import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
 import { notify } from '@/services/notifications';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
-import { BlurFade } from '@/components/magicui/blur-fade';
 
+// ─── Icon + Color Maps ──────────────────────────────────────────────────────
 const iconMap: Record<string, typeof MessageSquare> = {
   telegram: Send,
   'google-calendar': Calendar,
@@ -78,7 +79,7 @@ const colorMap: Record<string, string> = {
   image: '#FF2D78',
 };
 
-// 42.5: Time ago formatter for last sync display
+// ─── Time formatter ──────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -86,29 +87,54 @@ function timeAgo(dateStr: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
 }
+
+// ─── Motion variants ─────────────────────────────────────────────────────────
+const EASE = [0.4, 0, 0.2, 1] as [number, number, number, number];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 10 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.07, duration: 0.35, ease: EASE },
+  }),
+};
+
+const slideDown = {
+  hidden: { opacity: 0, height: 0 },
+  show: { opacity: 1, height: 'auto', transition: { duration: 0.25, ease: EASE } },
+  exit: { opacity: 0, height: 0, transition: { duration: 0.2, ease: EASE } },
+};
+
+// ─── Shadow presets (shadows over borders) ───────────────────────────────────
+const SHADOW = {
+  card: '0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.07), 0 6px 20px rgba(0,0,0,0.25)',
+  cardHover: '0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.15), 0 8px 28px rgba(0,0,0,0.3), 0 0 24px rgba(139,92,246,0.06)',
+  cardConnected: '0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,136,0.1), 0 6px 20px rgba(0,0,0,0.25), 0 0 24px rgba(0,255,136,0.04)',
+  cardTelegram: '0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(167,139,250,0.2), 0 6px 20px rgba(0,0,0,0.25), 0 0 32px rgba(139,92,246,0.07)',
+  stat: '0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.06), 0 4px 12px rgba(0,0,0,0.18)',
+  pill: '0 0 0 1px rgba(139,92,246,0.25), 0 0 12px rgba(139,92,246,0.12)',
+};
 
 type TelegramStep = 'idle' | 'generating' | 'open-bot' | 'send-code' | 'waiting' | 'success' | 'error' | 'timeout';
 
 const MAX_TELEGRAM_POLL = 30;
 
+// ─── Component ───────────────────────────────────────────────────────────────
 export function ConnectionsPage() {
   const { integrations, connectIntegration, disconnectIntegration, loadIntegrations } = useDashboardStore();
   const isMobile = useMobileDetect();
   const { notifyDone, notifyFail } = useAgentCanvas({ agent: 'nova', page: 'connections' });
 
-  // 50.4: Status filter persisted to URL param
   const [searchParams, setSearchParams] = useSearchParams();
   const statusFilter = (searchParams.get('status') as 'all' | 'connected' | 'disconnected') || 'all';
   const setStatusFilter = (v: 'all' | 'connected' | 'disconnected') => {
     setSearchParams(v === 'all' ? {} : { status: v }, { replace: true });
   };
 
-  // Per-integration connecting state — avoids blocking ALL buttons when one is connecting
   const [connectingId, setConnectingId] = useState<string | null>(null);
-
   const [telegramDialog, setTelegramDialog] = useState(false);
   const [telegramStep, setTelegramStep] = useState<TelegramStep>('idle');
   const [telegramLink, setTelegramLink] = useState<{
@@ -120,69 +146,33 @@ export function ConnectionsPage() {
   } | null>(null);
   const [polling, setPolling] = useState(false);
   const [telegramPollAttempts, setTelegramPollAttempts] = useState(0);
-
-
-  // 78.6: Telegram last message time + username (from channel_links via status endpoint)
   const [telegramLastPing, setTelegramLastPing] = useState<string | null>(null);
   const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
-
-  // Health poll state (24.1) — keyed by integration type
   const [healthStatus, setHealthStatus] = useState<Record<string, 'healthy' | 'unhealthy' | 'checking'>>({});
-  // 62.7: Ping latency badge — keyed by integration type
   const [pingLatency, setPingLatency] = useState<Record<string, number | null>>({});
   const [pinging, setPinging] = useState<Record<string, boolean>>({});
-
-  // Email dialog state
   const [emailDialog, setEmailDialog] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailSaved, setEmailSaved] = useState(false);
-
-  // Invite link state (27.3)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
-  // Test connection result state — keyed by integration type
   const [testResult, setTestResult] = useState<Record<string, { status: 'pass' | 'fail'; message: string; at: string } | null>>({});
   const [testing, setTesting] = useState<Record<string, boolean>>({});
-
-  // 55.9: Mobile tap-to-expand connection cards
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Custom Telegram bot state
   const [customBotToken, setCustomBotToken] = useState('');
   const [customBotStatus, setCustomBotStatus] = useState<'idle' | 'verifying' | 'connected' | 'error'>('idle');
   const [customBotInfo, setCustomBotInfo] = useState<{ botName: string; botUsername: string } | null>(null);
   const [customBotError, setCustomBotError] = useState<string | null>(null);
   const [customBotExpanded, setCustomBotExpanded] = useState(false);
-
-  const handleGenerateInvite = async () => {
-    setInviteLoading(true);
-    try {
-      const res = await integrationService.createInvite();
-      setInviteUrl(res.data.inviteUrl);
-    } catch { /* ignore */ } finally {
-      setInviteLoading(false);
-    }
-  };
-
-  const handleCopyInvite = async () => {
-    if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setInviteCopied(true);
-      notify('Invite link copied!', 'success');
-      setTimeout(() => setInviteCopied(false), 2000);
-    } catch { /* ignore */ }
-  };
-
-  // 66.4: Integration event log
   const [integrationEvents, setIntegrationEvents] = useState<Array<{ id: string; action: string; details: string; icon: string; created_at: string }>>([]);
+
+  // ─── Effects ───────────────────────────────────────────────────────────────
   useEffect(() => {
     integrationService.getEvents(10).then((r) => setIntegrationEvents(r.data.events)).catch(() => {});
   }, []);
 
-  // Run health check for all connected integrations on mount and every 60s
   useEffect(() => {
     const runHealthChecks = async () => {
       const connected = integrations.filter(c => c.status === 'connected');
@@ -199,22 +189,16 @@ export function ConnectionsPage() {
         const next = { ...prev };
         results.forEach((r, i) => {
           const type = connected[i].type;
-          if (r.status === 'fulfilled') {
-            next[type] = r.value.data.healthy ? 'healthy' : 'unhealthy';
-          } else {
-            next[type] = 'unhealthy';
-          }
+          next[type] = r.status === 'fulfilled' ? (r.value.data.healthy ? 'healthy' : 'unhealthy') : 'unhealthy';
         });
         return next;
       });
     };
-
     runHealthChecks();
     const interval = setInterval(runHealthChecks, 60_000);
     return () => clearInterval(interval);
   }, [integrations]);
 
-  // 78.6: Fetch Telegram lastPing + username on mount if Telegram is connected
   useEffect(() => {
     const tg = integrations.find(i => i.type === 'telegram' && i.status === 'connected');
     if (!tg) return;
@@ -226,44 +210,64 @@ export function ConnectionsPage() {
       .catch(() => {});
   }, [integrations]);
 
-  const connectedCount = integrations.filter(c => c.status === 'connected').length;
-  const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
-  const avgHealth = Math.round(integrations.filter(c => c.status === 'connected').reduce((acc, c) => acc + c.health, 0) / (connectedCount || 1));
+  useEffect(() => {
+    integrationService.getCustomTelegramBotStatus()
+      .then((r) => {
+        if (r.data.connected && r.data.botName && r.data.botUsername) {
+          setCustomBotInfo({ botName: r.data.botName, botUsername: r.data.botUsername });
+          setCustomBotStatus('connected');
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  // 50.4: Apply status filter
-  const filteredIntegrations = statusFilter === 'all'
-    ? integrations
-    : integrations.filter(c => statusFilter === 'connected' ? c.status === 'connected' : c.status !== 'connected');
-
-  // Poll for Telegram link status
+  // ─── Polling ───────────────────────────────────────────────────────────────
   const pollTelegramStatus = useCallback(async () => {
     try {
       const res = await integrationService.checkTelegramLink();
-      if (res.data.linked) {
-        setTelegramStep('success');
-        setPolling(false);
-      }
+      if (res.data.linked) { setTelegramStep('success'); setPolling(false); }
     } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
     if (!polling) return;
     if (telegramPollAttempts >= MAX_TELEGRAM_POLL) {
-      setPolling(false);
-      setTelegramStep('timeout');
-      return;
+      setPolling(false); setTelegramStep('timeout'); return;
     }
-    // Exponential backoff: 1s → 2s → 4s, capped at 5s, with ±500ms jitter
     const base = Math.min(1000 * Math.pow(2, telegramPollAttempts), 5000);
-    const jitter = Math.random() * 500 - 250;
-    const delay = Math.max(500, base + jitter);
-    const timer = setTimeout(() => {
-      pollTelegramStatus();
-      setTelegramPollAttempts(a => a + 1);
-    }, delay);
+    const delay = Math.max(500, base + (Math.random() * 500 - 250));
+    const timer = setTimeout(() => { pollTelegramStatus(); setTelegramPollAttempts(a => a + 1); }, delay);
     return () => clearTimeout(timer);
   }, [polling, telegramPollAttempts, pollTelegramStatus]);
 
+  // ─── Derived ──────────────────────────────────────────────────────────────
+  const connectedCount = integrations.filter(c => c.status === 'connected').length;
+  const totalRequests = integrations.reduce((acc, c) => acc + c.requestsToday, 0);
+  const avgHealth = Math.round(
+    integrations.filter(c => c.status === 'connected').reduce((acc, c) => acc + c.health, 0) / (connectedCount || 1)
+  );
+  const filteredIntegrations = statusFilter === 'all'
+    ? integrations
+    : integrations.filter(c => statusFilter === 'connected' ? c.status === 'connected' : c.status !== 'connected');
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
+  const handleGenerateInvite = async () => {
+    setInviteLoading(true);
+    try {
+      const res = await integrationService.createInvite();
+      setInviteUrl(res.data.inviteUrl);
+    } catch { /* ignore */ } finally { setInviteLoading(false); }
+  };
+
+  const handleCopyInvite = async () => {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteCopied(true);
+      notify('Invite link copied!', 'success');
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
 
   const handleEmailSave = async () => {
     setEmailSaving(true);
@@ -273,40 +277,28 @@ export function ConnectionsPage() {
       setEmailSaved(true);
       notify('Email notifications enabled!', 'success');
       void notifyDone('email notifications enabled');
-    } catch { /* ignore */ } finally {
-      setEmailSaving(false);
-    }
+    } catch { /* ignore */ } finally { setEmailSaving(false); }
   };
 
   const handleConnect = async (type: IntegrationType) => {
     setConnectingId(type);
     try {
       if (type === 'email') {
-        setEmailAddress('');
-        setEmailSaved(false);
-        setEmailDialog(true);
-        return;
+        setEmailAddress(''); setEmailSaved(false); setEmailDialog(true); return;
       }
       if (type === 'telegram') {
-        setTelegramDialog(true);
-        setTelegramStep('generating');
-        setTelegramPollAttempts(0);
+        setTelegramDialog(true); setTelegramStep('generating'); setTelegramPollAttempts(0);
         try {
           const res = await integrationService.linkTelegram();
           setTelegramLink(res.data);
           if (res.data.linked) {
-            // Already connected — close dialog and refresh so tile shows correct state
-            setTelegramDialog(false);
-            setTelegramStep('idle');
-            setTelegramLink(null);
-            setConnectingId(null);
-            loadIntegrations();
+            setTelegramDialog(false); setTelegramStep('idle'); setTelegramLink(null);
+            setConnectingId(null); loadIntegrations();
           } else {
-            setTelegramStep('open-bot');
-            setPolling(true);
+            setTelegramStep('open-bot'); setPolling(true);
           }
         } catch {
-          setTelegramLink({ message: 'Telegram bot is not configured on this server. Contact the admin.' });
+          setTelegramLink({ message: 'Telegram bot is not configured. Contact the admin.' });
           setTelegramStep('error');
         }
         return;
@@ -323,59 +315,46 @@ export function ConnectionsPage() {
     }
   };
 
-  // 62.7: Ping integration for latency badge
   const handlePing = async (type: string) => {
-    setPinging((prev) => ({ ...prev, [type]: true }));
-    setPingLatency((prev) => ({ ...prev, [type]: null }));
+    setPinging(p => ({ ...p, [type]: true }));
+    setPingLatency(p => ({ ...p, [type]: null }));
     try {
       const res = await integrationService.pingIntegration(type);
-      setPingLatency((prev) => ({ ...prev, [type]: res.data.latencyMs }));
-      setHealthStatus((prev) => ({ ...prev, [type]: res.data.healthy ? 'healthy' : 'unhealthy' }));
+      setPingLatency(p => ({ ...p, [type]: res.data.latencyMs }));
+      setHealthStatus(p => ({ ...p, [type]: res.data.healthy ? 'healthy' : 'unhealthy' }));
     } catch {
-      setPingLatency((prev) => ({ ...prev, [type]: null }));
+      setPingLatency(p => ({ ...p, [type]: null }));
     } finally {
-      setPinging((prev) => ({ ...prev, [type]: false }));
+      setPinging(p => ({ ...p, [type]: false }));
     }
   };
 
-  // Test connection — calls test endpoint, shows pass/fail result on card
   const handleTestConnection = async (type: string) => {
-    setTesting((prev) => ({ ...prev, [type]: true }));
-    setTestResult((prev) => ({ ...prev, [type]: null }));
+    setTesting(p => ({ ...p, [type]: true }));
+    setTestResult(p => ({ ...p, [type]: null }));
     try {
       const res = await integrationService.testIntegration(type);
       const healthy = res.data.healthy;
-      setTestResult((prev) => ({
-        ...prev,
-        [type]: {
-          status: healthy ? 'pass' : 'fail',
-          message: healthy ? 'Connection is healthy' : 'Connection has issues',
-          at: new Date().toLocaleTimeString(),
-        },
+      setTestResult(p => ({
+        ...p,
+        [type]: { status: healthy ? 'pass' : 'fail', message: healthy ? 'Connection is healthy' : 'Connection has issues', at: new Date().toLocaleTimeString() },
       }));
-      setHealthStatus((prev) => ({ ...prev, [type]: healthy ? 'healthy' : 'unhealthy' }));
+      setHealthStatus(p => ({ ...p, [type]: healthy ? 'healthy' : 'unhealthy' }));
     } catch {
-      setTestResult((prev) => ({
-        ...prev,
-        [type]: {
-          status: 'fail',
-          message: 'Test failed - service unreachable',
-          at: new Date().toLocaleTimeString(),
-        },
+      setTestResult(p => ({
+        ...p,
+        [type]: { status: 'fail', message: 'Test failed — service unreachable', at: new Date().toLocaleTimeString() },
       }));
     } finally {
-      setTesting((prev) => ({ ...prev, [type]: false }));
+      setTesting(p => ({ ...p, [type]: false }));
     }
   };
 
   const handleDisconnect = async (id: string) => {
-    const integration = integrations.find((i) => i.id === id);
-    if (integration?.type === 'email') {
-      await integrationService.updateNotificationEmail({ enabled: false });
-    }
+    const integration = integrations.find(i => i.id === id);
+    if (integration?.type === 'email') await integrationService.updateNotificationEmail({ enabled: false });
     if (integration?.type === 'telegram') {
-      // Must delete channel_links row so reconnect starts fresh (not showing "already linked")
-      try { await integrationService.unlinkTelegram(); } catch { /* ignore if not linked */ }
+      try { await integrationService.unlinkTelegram(); } catch { /* ignore */ }
     }
     notify(`${integration?.name || 'Integration'} disconnected`, 'info');
     void notifyDone(`${integration?.name || 'integration'} disconnected`);
@@ -383,21 +362,14 @@ export function ConnectionsPage() {
   };
 
   const closeTelegramDialog = () => {
-    setTelegramDialog(false);
-    setTelegramLink(null);
-    setTelegramStep('idle');
-    setPolling(false);
-    setTelegramPollAttempts(0);
-    setConnectingId(null);
-    // Only reload integrations, not the full dashboard
+    setTelegramDialog(false); setTelegramLink(null); setTelegramStep('idle');
+    setPolling(false); setTelegramPollAttempts(0); setConnectingId(null);
     loadIntegrations();
   };
 
-  // Custom Telegram bot: verify & connect
   const handleCustomBotConnect = async () => {
     if (!customBotToken.trim()) return;
-    setCustomBotStatus('verifying');
-    setCustomBotError(null);
+    setCustomBotStatus('verifying'); setCustomBotError(null);
     try {
       const res = await integrationService.connectCustomTelegramBot({ botToken: customBotToken.trim() });
       setCustomBotInfo({ botName: res.data.botName, botUsername: res.data.botUsername });
@@ -405,803 +377,796 @@ export function ConnectionsPage() {
       notify('Custom Telegram bot connected!', 'success');
       loadIntegrations();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
         || 'Failed to verify bot token. Please check and try again.';
-      setCustomBotError(message);
-      setCustomBotStatus('error');
+      setCustomBotError(message); setCustomBotStatus('error');
     }
   };
 
-  // Custom Telegram bot: disconnect
   const handleCustomBotDisconnect = async () => {
     try {
       await integrationService.disconnectCustomTelegramBot();
-      setCustomBotInfo(null);
-      setCustomBotStatus('idle');
-      setCustomBotToken('');
-      setCustomBotError(null);
-      notify('Custom bot disconnected', 'info');
-      loadIntegrations();
-    } catch {
-      notify('Failed to disconnect custom bot', 'error');
-    }
+      setCustomBotInfo(null); setCustomBotStatus('idle'); setCustomBotToken(''); setCustomBotError(null);
+      notify('Custom bot disconnected', 'info'); loadIntegrations();
+    } catch { notify('Failed to disconnect custom bot', 'error'); }
   };
 
-  // On mount, check if a custom bot is already connected
-  useEffect(() => {
-    integrationService.getCustomTelegramBotStatus()
-      .then((r) => {
-        if (r.data.connected && r.data.botName && r.data.botUsername) {
-          setCustomBotInfo({ botName: r.data.botName, botUsername: r.data.botUsername });
-          setCustomBotStatus('connected');
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const getStatusDot = (status: string, type?: string) => {
-    const health = type ? healthStatus[type] : undefined;
-    switch (status) {
-      case 'connected':
-        return (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span
-                className="absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{
-                  backgroundColor: health === 'unhealthy' ? '#FF6161' : '#00FF88',
-                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                }}
-              />
-              <span
-                className="relative inline-flex rounded-full h-2.5 w-2.5"
-                style={{ backgroundColor: health === 'unhealthy' ? '#FF6161' : '#00FF88' }}
-              />
-            </span>
-            <span className={`text-xs font-medium ${health === 'unhealthy' ? 'text-[#FF6161]' : 'text-[#00FF88]'}`}>
-              {health === 'unhealthy' ? 'Degraded' : 'Connected'}
-            </span>
-          </span>
-        );
-      case 'error':
-        return (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FF6161]" />
-            <span className="text-xs text-[#FF6161] font-medium">Error -- reconnect</span>
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#9CA3AF]" />
-            <span className="text-xs text-[var(--ag-text-secondary)]">Not connected</span>
-          </span>
-        );
-    }
-  };
-
+  // ─── Sub-renderers ────────────────────────────────────────────────────────
   const getIcon = (type: string) => iconMap[type] || Zap;
   const getColor = (type: string) => colorMap[type] || '#A78BFA';
 
+  const renderStatusBadge = (status: string, type?: string) => {
+    const health = type ? healthStatus[type] : undefined;
+    if (status === 'connected') {
+      const isUnhealthy = health === 'unhealthy';
+      const dotColor = isUnhealthy ? '#FF6161' : '#00FF88';
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inset-0 rounded-full animate-ping opacity-60" style={{ backgroundColor: dotColor }} />
+            <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: dotColor }} />
+          </span>
+          <span className="text-xs font-medium tabular-nums" style={{ color: dotColor }}>
+            {isUnhealthy ? 'Degraded' : 'Connected'}
+          </span>
+        </span>
+      );
+    }
+    if (status === 'error') {
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-[#FF6161]" />
+          <span className="text-xs font-medium text-[#FF6161]">Error — reconnect</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-[var(--ag-text-muted)]" />
+        <span className="text-xs text-[var(--ag-text-muted)]">Not connected</span>
+      </span>
+    );
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <DashboardPageWrapper>
-    <div data-testid="connections-page" className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      {/* Header — Nova ownership */}
-      <BlurFade delay={0}>
-      <PageHeader
-        icon={Plug}
-        title="Connections"
-        subtitle={`${connectedCount} of ${integrations.length} services connected`}
-        badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#EC4899]/10 border border-[#EC4899]/30 text-[#EC4899]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#EC4899] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#EC4899]" />
-            </span>
-            Nova
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="border-[#00FF88]/30 text-[#00FF88] px-3 py-1 hidden sm:inline-flex">
-              <Shield className="w-3.5 h-3.5 mr-1.5" />
-              Encrypted
-            </Badge>
-            <Button
-              onClick={handleGenerateInvite}
-              disabled={inviteLoading}
-              variant="outline"
-              className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)] min-h-[44px]"
-            >
-              {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
-              Invite
-            </Button>
-            <Button
-              onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px]"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add New
-            </Button>
-          </div>
-        }
-      />
-      </BlurFade>
+      <div data-testid="connections-page" className="space-y-5 pb-24 md:pb-8 overflow-x-hidden">
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <BlurFade delay={0.1}>
-        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--ag-green)]/10 flex items-center justify-center">
-                <Plug className="w-5 h-5 text-[var(--ag-green)]" />
+        {/* ── Header ── */}
+        <motion.div custom={0} variants={fadeUp} initial="hidden" animate="show">
+          <PageHeader
+            icon={Plug}
+            title="Connections"
+            subtitle={`${connectedCount} of ${integrations.length} services connected`}
+            badge={
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(236,72,153,0.1)', boxShadow: '0 0 0 1px rgba(236,72,153,0.25)' }}>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inset-0 rounded-full bg-[#EC4899] animate-ping opacity-70" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-[#EC4899]" />
+                </span>
+                <span className="text-[#EC4899] font-medium">Nova</span>
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className="border-[var(--ag-green)]/30 text-[var(--ag-green)] px-3 py-1 hidden sm:inline-flex gap-1.5">
+                  <Shield className="w-3.5 h-3.5" />
+                  Encrypted
+                </Badge>
+                <Button
+                  onClick={handleGenerateInvite}
+                  disabled={inviteLoading}
+                  variant="outline"
+                  className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)] min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                >
+                  {inviteLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link className="w-4 h-4 mr-2" />}
+                  Invite
+                </Button>
+                <Button
+                  onClick={() => document.getElementById('integration-grid')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:opacity-90 text-white font-semibold min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New
+                </Button>
               </div>
-              <div>
-                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{connectedCount}</div>
-                <div className="text-xs text-[var(--ag-text-secondary)]">Connected</div>
-              </div>
-            </div>
-        </SectionCard>
-        </BlurFade>
-        <BlurFade delay={0.15}>
-        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--ag-violet)]/10 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-[var(--ag-violet)]" />
-              </div>
-              <div>
-                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{totalRequests}</div>
-                <div className="text-xs text-[var(--ag-text-secondary)]">Requests Today</div>
-              </div>
-            </div>
-        </SectionCard>
-        </BlurFade>
-        <BlurFade delay={0.2}>
-        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--ag-amber)]/10 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-[var(--ag-amber)]" />
-              </div>
-              <div>
-                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">{avgHealth}%</div>
-                <div className="text-xs text-[var(--ag-text-secondary)]">Avg Health</div>
-              </div>
-            </div>
-        </SectionCard>
-        </BlurFade>
-        <BlurFade delay={0.25}>
-        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--ag-green)]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[var(--ag-green)]" />
-              </div>
-              <div>
-                <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)]">100%</div>
-                <div className="text-xs text-[var(--ag-text-secondary)]">Secure</div>
-              </div>
-            </div>
-        </SectionCard>
-        </BlurFade>
-      </div>
+            }
+          />
+        </motion.div>
 
-      {/* Invite Link Card (27.3) */}
-      {inviteUrl && (
-        <BlurFade delay={0.3}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative">
-            <button
-              onClick={() => setInviteUrl(null)}
-              className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Dismiss invite card"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/20 flex items-center justify-center">
-                <Link className="w-5 h-5 text-[var(--ag-violet)]" />
-              </div>
-              <div>
-                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Invite Link Generated</h3>
-                <p className="text-xs text-[var(--ag-text-secondary)]">Valid for 7 days -- share with anyone to connect</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-[var(--ag-bg-base)] rounded-lg px-3 py-2 text-xs text-[var(--ag-text-secondary)] font-mono truncate border border-[rgba(139,92,246,0.08)]">
-                {inviteUrl}
-              </div>
-              <Button
-                size="sm"
-                onClick={handleCopyInvite}
-                className={`min-h-[44px] ${inviteCopied ? 'bg-[var(--ag-green)] text-[var(--ag-bg-base)]' : 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white'}`}
+        {/* ── Stats Row ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { icon: Plug,     color: 'var(--ag-green)',   value: connectedCount,  label: 'Connected',       delay: 1 },
+            { icon: Activity, color: 'var(--ag-violet)',  value: totalRequests,   label: 'Requests Today',  delay: 2 },
+            { icon: RefreshCw,color: 'var(--ag-amber)',   value: `${avgHealth}%`, label: 'Avg Health',      delay: 3 },
+            { icon: Shield,   color: 'var(--ag-green)',   value: '100%',          label: 'Secure',          delay: 4 },
+          ].map(({ icon: Icon, color, value, label, delay }) => (
+            <motion.div key={label} custom={delay} variants={fadeUp} initial="hidden" animate="show">
+              <div
+                className="relative overflow-hidden rounded-2xl p-4 bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+                style={{ boxShadow: SHADOW.stat }}
               >
-                {inviteCopied ? <CheckIcon className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-        </SectionCard>
-        </BlurFade>
-      )}
-
-      {/* Telegram Link Wizard */}
-      {telegramDialog && (
-        <BlurFade delay={0.1}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative" padding="lg">
-            <button onClick={closeTelegramDialog} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close Telegram dialog">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center">
-                <Send className="w-5 h-5 text-[#0088cc]" />
-              </div>
-              <div>
-                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Connect Telegram</h3>
-                <p className="text-xs text-[var(--ag-text-secondary)]">Chat with your agent on Telegram</p>
-              </div>
-            </div>
-
-            {telegramStep === 'generating' && (
-              <div className="flex flex-col items-center gap-3 py-8">
-                <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
-                <p className="text-sm text-[var(--ag-text-secondary)]">Setting up your connection...</p>
-              </div>
-            )}
-
-            {telegramStep === 'open-bot' && telegramLink?.deepLink && (
-              <div className="space-y-4">
-                <div className="bg-[var(--ag-bg-base)] rounded-lg p-4 border border-[rgba(139,92,246,0.08)]">
-                  <p className="text-sm text-[var(--ag-text-primary)] font-medium mb-2">Step 1: Open Telegram</p>
-                  <p className="text-xs text-[var(--ag-text-secondary)]">Click below to open our bot, then send the start command.</p>
-                </div>
-                <a href={telegramLink.deepLink} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white font-medium min-h-[44px]">
-                  <Send className="w-4 h-4" />
-                  Open in Telegram
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-            )}
-
-            {telegramStep === 'success' && (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <CheckCircle2 className="w-12 h-12 text-[#00FF88]" />
-                <p className="text-sm text-[var(--ag-text-primary)] font-medium">Telegram connected!</p>
-                <Button className="bg-gradient-to-r from-[var(--ag-green)] to-[var(--ag-green)] hover:from-[var(--ag-green)]/90 hover:to-[var(--ag-green)]/90 text-[var(--ag-bg-base)] min-h-[44px]" onClick={closeTelegramDialog}>
-                  Done
-                </Button>
-              </div>
-            )}
-
-            {telegramStep === 'error' && (
-              <div className="text-center py-6">
-                <AlertTriangle className="w-12 h-12 text-[#FF6161] mx-auto mb-2" />
-                <p className="text-sm text-[var(--ag-text-primary)]">Connection failed</p>
-                <p className="text-xs text-[var(--ag-text-secondary)] mt-1">{telegramLink?.message}</p>
-              </div>
-            )}
-
-            {telegramStep === 'timeout' && (
-              <div className="text-center py-6">
-                <AlertTriangle className="w-12 h-12 text-[#F59E0B] mx-auto mb-2" />
-                <p className="text-sm text-[var(--ag-text-primary)]">Still waiting -- try clicking the bot link again</p>
-                <p className="text-xs text-[var(--ag-text-secondary)] mt-1">No response received after 30 attempts (~2.5 min)</p>
-                <Button
-                  className="mt-4 bg-[var(--ag-bg-surface)] hover:bg-[var(--ag-bg-surface-hover)] text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] min-h-[44px]"
-                  onClick={() => { setTelegramPollAttempts(0); setPolling(true); setTelegramStep('open-bot'); }}
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-        </SectionCard>
-        </BlurFade>
-      )}
-
-
-      {/* Email Dialog */}
-      {emailDialog && (
-        <BlurFade delay={0.1}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] relative" padding="lg">
-            <button onClick={() => setEmailDialog(false)} className="absolute top-4 right-4 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] z-10 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close email dialog">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#00FF88]/20 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-[#00FF88]" />
-              </div>
-              <div>
-                <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Email Notifications</h3>
-                <p className="text-xs text-[var(--ag-text-secondary)]">Get reminders and briefings via email</p>
-              </div>
-            </div>
-
-            {emailSaved ? (
-              <div className="text-center py-4">
-                <CheckCircle2 className="w-12 h-12 text-[#00FF88] mx-auto mb-2" />
-                <p className="text-sm text-[var(--ag-text-primary)]">Email notifications enabled!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={emailAddress}
-                  onChange={(e) => setEmailAddress(e.target.value)}
-                  className="bg-[var(--ag-bg-base)] border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary)]"
-                />
-                <Button
-                  className="w-full bg-gradient-to-r from-[var(--ag-green)] to-[var(--ag-green)] hover:from-[var(--ag-green)]/90 hover:to-[var(--ag-green)]/90 text-[var(--ag-bg-base)] min-h-[44px]"
-                  onClick={handleEmailSave}
-                  disabled={emailSaving}
-                >
-                  {emailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
-                  Enable Notifications
-                </Button>
-              </div>
-            )}
-        </SectionCard>
-        </BlurFade>
-      )}
-
-      {/* 50.4: Status filter chips — persisted to URL param */}
-      <div className="flex items-center gap-2">
-        {(['all', 'connected', 'disconnected'] as const).map((opt) => (
-          <button
-            key={opt}
-            onClick={() => setStatusFilter(opt)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all min-h-[36px] ${
-              statusFilter === opt
-                ? opt === 'connected'
-                  ? 'bg-[#00FF88]/15 border-[#00FF88]/50 text-[#00FF88]'
-                  : opt === 'disconnected'
-                  ? 'bg-[#FF6161]/15 border-[#FF6161]/50 text-[#FF6161]'
-                  : 'bg-[#A78BFA]/15 border-[var(--ag-cyan)]/50 text-[var(--ag-cyan)]'
-                : 'border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary)]'
-            }`}
-          >
-            {opt === 'all' ? `All (${integrations.length})` : opt === 'connected' ? `Connected (${connectedCount})` : `Disconnected (${integrations.length - connectedCount})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Connection Grid */}
-      <div id="integration-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 46.3: Empty state when no integrations are available */}
-        {filteredIntegrations.length === 0 && (
-          <div className="md:col-span-2 text-center py-12 text-[var(--ag-text-secondary)]">
-            <Plug className="w-12 h-12 mx-auto mb-4 text-[var(--ag-text-secondary)]/40" />
-            <p className="text-lg font-medium mb-2 text-[var(--ag-text-primary)]">{statusFilter === 'all' ? 'No integrations connected yet' : `No ${statusFilter} integrations`}</p>
-            <p className="text-sm text-[var(--ag-text-secondary)]">Connect Telegram, WhatsApp, or webhooks to receive notifications and automate your workflows.</p>
-          </div>
-        )}
-        {filteredIntegrations.map((connection, idx) => {
-          const Icon = getIcon(connection.type);
-          const color = getColor(connection.type);
-          const isTelegram = connection.type === 'telegram';
-          // 55.9: On mobile, cards are collapsed by default; tap the header to expand
-          const isExpanded = !isMobile || expandedId === connection.id;
-          return (
-            <BlurFade key={connection.id} delay={0.05 * idx}>
-            <SectionCard
-              className={`group h-full ${
-                isTelegram
-                  ? '!border-[var(--ag-cyan)]/30 ring-1 ring-[#A78BFA]/10'
-                  : connection.status === 'connected'
-                  ? '!border-[#00FF88]/15'
-                  : ''
-              }`}
-              padding={isMobile ? 'sm' : 'md'}
-            >
-              {/* Telegram: Recommended badge */}
-              {isTelegram && (
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
-                    Recommended
-                  </Badge>
-                  <span className="text-[10px] text-[var(--ag-text-secondary)]">Primary notification channel</span>
-                </div>
-              )}
-                <div
-                  className={`flex items-start justify-between ${isExpanded ? 'mb-4' : ''} ${isMobile ? 'cursor-pointer' : ''}`}
-                  onClick={isMobile ? () => setExpandedId(expandedId === connection.id ? null : connection.id) : undefined}
-                >
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shrink-0"
-                      style={{ backgroundColor: `${color}20` }}
-                    >
-                      <Icon className="w-6 h-6" style={{ color }} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">{connection.name}</h3>
-                      {/* 42.5: Last sync timestamp */}
-                      {connection.status === 'connected' && connection.lastSync && (
-                        <p className="text-[11px] text-[var(--ag-text-secondary)] mb-0.5">Last synced: {timeAgo(connection.lastSync)}</p>
-                      )}
-                      {/* Status dot indicator with health-aware pulse */}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {connection.type === 'whatsapp' && connection.status !== 'connected' ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-full bg-[#F59E0B]" />
-                            <span className="text-xs text-[#F59E0B] font-medium">Not yet available</span>
-                          </span>
-                        ) : getStatusDot(connection.status, connection.type)}
-                        {connection.status === 'connected' && healthStatus[connection.type] === 'checking' && (
-                          <span
-                            className="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-[#F59E0B] animate-pulse"
-                            title="Checking health..."
-                          />
-                        )}
-                        {/* 62.7: Ping latency badge */}
-                        {connection.status === 'connected' && pingLatency[connection.type] != null && (
-                          <span className="text-xs text-[var(--ag-cyan)] font-mono">{pingLatency[connection.type]}ms</span>
-                        )}
-                      </div>
-                    </div>
+                {/* subtle top-edge highlight */}
+                <div className="absolute inset-x-0 top-0 h-px opacity-30" style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 12%, transparent)` }}>
+                    <Icon className="w-5 h-5" style={{ color }} />
                   </div>
+                  <div className="min-w-0">
+                    <div className="text-2xl font-heading font-bold text-[var(--ag-text-primary)] tabular-nums leading-none mb-0.5">{value}</div>
+                    <div className="text-xs text-[var(--ag-text-secondary)] truncate">{label}</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
-                  {connection.status === 'connected' ? (
-                    <Button
-                      variant="outline"
-                      size={isMobile ? 'default' : 'sm'}
-                      onClick={(e) => { e.stopPropagation(); /* managed via switch still, but show subtle button */ }}
-                      className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[rgba(139,92,246,0.3)] min-h-[44px] shrink-0"
-                    >
-                      Manage
-                    </Button>
-                  ) : connection.type === 'whatsapp' ? (
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <Badge className="bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5">
-                        Coming Soon
-                      </Badge>
-                      <Button
-                        size="sm"
-                        disabled
-                        className="bg-[#9CA3AF]/20 text-[var(--ag-text-secondary)] cursor-not-allowed opacity-60 min-h-[44px]"
-                      >
-                        <Plug className="w-3.5 h-3.5 mr-1.5" />
-                        Connect
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size={isMobile ? 'default' : 'sm'}
-                      onClick={() => handleConnect(connection.type)}
-                      disabled={connectingId === connection.type}
-                      className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 shadow-lg shadow-[var(--ag-violet)]/10 shrink-0"
-                    >
-                      {connectingId === connection.type ? (
-                        <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Connecting...</>
-                      ) : (
-                        <><Plug className="w-3.5 h-3.5 mr-1.5" />Connect</>
-                      )}
-                    </Button>
-                  )}
+        {/* ── Invite Link Card ── */}
+        <AnimatePresence initial={false}>
+          {inviteUrl && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -4, height: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="relative rounded-2xl p-5 bg-[var(--ag-bg-surface)] backdrop-blur-xl" style={{ boxShadow: SHADOW.card }}>
+                <button
+                  onClick={() => setInviteUrl(null)}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-elevated)] active:scale-[0.96] transition-[transform,background,color] duration-150"
+                  aria-label="Dismiss invite"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                    <Link className="w-5 h-5 text-[var(--ag-violet)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-semibold text-[var(--ag-text-primary)] text-wrap-balance">Invite Link Generated</h3>
+                    <p className="text-xs text-[var(--ag-text-secondary)]">Valid for 7 days · share to connect</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-xl px-3 py-2.5 text-xs text-[var(--ag-text-secondary)] font-mono truncate bg-[var(--ag-bg-deep)]"
+                    style={{ boxShadow: '0 0 0 1px rgba(139,92,246,0.08) inset' }}>
+                    {inviteUrl}
+                  </div>
+                  <button
+                    onClick={handleCopyInvite}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 active:scale-[0.96] transition-[transform,opacity] duration-150"
+                    style={{
+                      background: inviteCopied
+                        ? 'rgba(16,185,129,0.15)'
+                        : 'linear-gradient(135deg, var(--ag-violet), var(--ag-amber))',
+                      boxShadow: inviteCopied ? '0 0 0 1px rgba(16,185,129,0.3)' : '0 2px 8px rgba(139,92,246,0.3)',
+                    }}
+                    aria-label="Copy invite link"
+                  >
+                    {inviteCopied
+                      ? <CheckIcon className="w-4 h-4 text-[var(--ag-green)]" />
+                      : <Copy className="w-4 h-4 text-white" />}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Telegram Wizard ── */}
+        <AnimatePresence initial={false}>
+          {telegramDialog && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="relative rounded-2xl p-6 bg-[var(--ag-bg-surface)] backdrop-blur-xl" style={{ boxShadow: '0 0 0 1px rgba(0,136,204,0.2), 0 8px 32px rgba(0,0,0,0.3)' }}>
+                <button onClick={closeTelegramDialog}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-elevated)] active:scale-[0.96] transition-[transform,background,color] duration-150"
+                  aria-label="Close">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,136,204,0.15)' }}>
+                    <Send className="w-5 h-5 text-[#0088cc]" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Connect Telegram</h3>
+                    <p className="text-xs text-[var(--ag-text-secondary)]">Chat with your agent on Telegram</p>
+                  </div>
                 </div>
 
-                {isExpanded && (
-                  <>
-                    <p className="text-sm text-[var(--ag-text-secondary)] mb-4">
-                      {connection.description}
-                    </p>
+                {telegramStep === 'generating' && (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <Loader2 className="w-8 h-8 text-[#0088cc] animate-spin" />
+                    <p className="text-sm text-[var(--ag-text-secondary)]">Setting up your connection…</p>
+                  </div>
+                )}
 
-                    {connection.status === 'connected' && (
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-[var(--ag-text-secondary)]">Health</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[var(--ag-text-primary)]">{connection.health}%</span>
-                            {/* 62.7: Ping button */}
-                            <button
-                              onClick={() => void handlePing(connection.type)}
-                              disabled={pinging[connection.type]}
-                              className="flex items-center gap-1 text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)]/80 disabled:opacity-50 transition-colors min-h-[28px]"
-                              title="Test latency"
-                            >
-                              {pinging[connection.type] ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <span>Ping{pingLatency[connection.type] != null ? ` ${pingLatency[connection.type]}ms` : ''}</span>
-                              )}
-                            </button>
+                {telegramStep === 'open-bot' && telegramLink?.deepLink && (
+                  <div className="space-y-4">
+                    <div className="rounded-xl p-4 bg-[var(--ag-bg-deep)]" style={{ boxShadow: '0 0 0 1px rgba(0,136,204,0.12)' }}>
+                      <p className="text-sm font-medium text-[var(--ag-text-primary)] mb-1">Step 1: Open Telegram</p>
+                      <p className="text-xs text-[var(--ag-text-secondary)]">Tap below to open the bot, then send the start command.</p>
+                    </div>
+                    <a href={telegramLink.deepLink} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-medium min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                      style={{ background: '#0088cc', boxShadow: '0 2px 12px rgba(0,136,204,0.3)' }}>
+                      <Send className="w-4 h-4" />Open in Telegram<ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
+
+                {telegramStep === 'success' && (
+                  <div className="flex flex-col items-center gap-4 py-6">
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 0 1px rgba(0,255,136,0.2), 0 0 24px rgba(0,255,136,0.1)' }}>
+                      <CheckCircle2 className="w-8 h-8 text-[var(--ag-green)]" />
+                    </div>
+                    <p className="text-sm text-[var(--ag-text-primary)] font-medium">Telegram connected!</p>
+                    <Button onClick={closeTelegramDialog}
+                      className="min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                      style={{ background: 'var(--ag-green)', color: 'var(--ag-bg-base)' }}>
+                      Done
+                    </Button>
+                  </div>
+                )}
+
+                {telegramStep === 'error' && (
+                  <div className="text-center py-6">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(255,97,97,0.1)', boxShadow: '0 0 0 1px rgba(255,97,97,0.2)' }}>
+                      <AlertTriangle className="w-7 h-7 text-[#FF6161]" />
+                    </div>
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">Connection failed</p>
+                    <p className="text-xs text-[var(--ag-text-secondary)] mt-1">{telegramLink?.message}</p>
+                  </div>
+                )}
+
+                {telegramStep === 'timeout' && (
+                  <div className="text-center py-6">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(245,158,11,0.1)', boxShadow: '0 0 0 1px rgba(245,158,11,0.2)' }}>
+                      <AlertTriangle className="w-7 h-7 text-[var(--ag-amber)]" />
+                    </div>
+                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">Still waiting…</p>
+                    <p className="text-xs text-[var(--ag-text-secondary)] mt-1 mb-4">No response after 30 attempts. Try clicking the bot link again.</p>
+                    <Button
+                      onClick={() => { setTelegramPollAttempts(0); setPolling(true); setTelegramStep('open-bot'); }}
+                      className="min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150 bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] text-[var(--ag-text-primary)]"
+                      style={{ boxShadow: SHADOW.card }}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Email Dialog ── */}
+        <AnimatePresence initial={false}>
+          {emailDialog && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="relative rounded-2xl p-6 bg-[var(--ag-bg-surface)] backdrop-blur-xl" style={{ boxShadow: '0 0 0 1px rgba(0,255,136,0.15), 0 8px 32px rgba(0,0,0,0.3)' }}>
+                <button onClick={() => setEmailDialog(false)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-elevated)] active:scale-[0.96] transition-[transform,background,color] duration-150"
+                  aria-label="Close">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,255,136,0.12)' }}>
+                    <Mail className="w-5 h-5 text-[var(--ag-green)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-semibold text-[var(--ag-text-primary)]">Email Notifications</h3>
+                    <p className="text-xs text-[var(--ag-text-secondary)]">Receive reminders and briefings by email</p>
+                  </div>
+                </div>
+                {emailSaved ? (
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 0 1px rgba(0,255,136,0.2)' }}>
+                      <CheckCircle2 className="w-7 h-7 text-[var(--ag-green)]" />
+                    </div>
+                    <p className="text-sm text-[var(--ag-text-primary)] font-medium">Email notifications enabled!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] min-h-[44px] rounded-xl"
+                    />
+                    <Button
+                      onClick={handleEmailSave}
+                      disabled={emailSaving}
+                      className="w-full min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                      style={{ background: 'var(--ag-green)', color: 'var(--ag-bg-base)', boxShadow: '0 2px 12px rgba(16,185,129,0.25)' }}
+                    >
+                      {emailSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                      Enable Notifications
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Filter Chips ── */}
+        <motion.div custom={5} variants={fadeUp} initial="hidden" animate="show"
+          className="flex items-center gap-2 flex-wrap">
+          {(['all', 'connected', 'disconnected'] as const).map((opt) => {
+            const isActive = statusFilter === opt;
+            const activeColor = opt === 'connected' ? 'var(--ag-green)' : opt === 'disconnected' ? '#FF6161' : 'var(--ag-text-accent)';
+            return (
+              <button
+                key={opt}
+                onClick={() => setStatusFilter(opt)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium min-h-[36px] active:scale-[0.96] transition-[transform,box-shadow,color,background] duration-150"
+                style={{
+                  color: isActive ? activeColor : 'var(--ag-text-secondary)',
+                  background: isActive ? `color-mix(in srgb, ${activeColor} 10%, transparent)` : 'transparent',
+                  boxShadow: isActive ? `0 0 0 1px color-mix(in srgb, ${activeColor} 40%, transparent), 0 0 12px color-mix(in srgb, ${activeColor} 10%, transparent)` : '0 0 0 1px rgba(139,92,246,0.1)',
+                }}
+              >
+                {opt === 'all'
+                  ? `All (${integrations.length})`
+                  : opt === 'connected'
+                  ? `Connected (${connectedCount})`
+                  : `Disconnected (${integrations.length - connectedCount})`}
+              </button>
+            );
+          })}
+        </motion.div>
+
+        {/* ── Integration Grid ── */}
+        <div id="integration-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredIntegrations.length === 0 && (
+            <motion.div custom={6} variants={fadeUp} initial="hidden" animate="show"
+              className="md:col-span-2 text-center py-16">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ background: 'rgba(139,92,246,0.06)', boxShadow: SHADOW.stat }}>
+                <Plug className="w-7 h-7 text-[var(--ag-text-muted)]" />
+              </div>
+              <p className="text-base font-medium text-[var(--ag-text-primary)] mb-2">
+                {statusFilter === 'all' ? 'No integrations yet' : `No ${statusFilter} integrations`}
+              </p>
+              <p className="text-sm text-[var(--ag-text-secondary)] max-w-sm mx-auto text-wrap-balance">
+                Connect Telegram, WhatsApp, or webhooks to receive notifications and automate workflows.
+              </p>
+            </motion.div>
+          )}
+
+          {filteredIntegrations.map((connection, idx) => {
+            const Icon = getIcon(connection.type);
+            const color = getColor(connection.type);
+            const isTelegram = connection.type === 'telegram';
+            const isExpanded = !isMobile || expandedId === connection.id;
+            const cardShadow = isTelegram
+              ? SHADOW.cardTelegram
+              : connection.status === 'connected'
+              ? SHADOW.cardConnected
+              : SHADOW.card;
+
+            return (
+              <motion.div
+                key={connection.id}
+                custom={idx + 6}
+                variants={fadeUp}
+                initial="hidden"
+                animate="show"
+                className="h-full"
+              >
+                <div
+                  className="relative group h-full rounded-2xl overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl transition-[box-shadow] duration-300"
+                  style={{ boxShadow: cardShadow }}
+                >
+                  {/* Top edge color accent */}
+                  <div className="absolute inset-x-0 top-0 h-px opacity-50"
+                    style={{ background: `linear-gradient(90deg, transparent 10%, ${color}40, transparent 90%)` }} />
+
+                  <div className="p-4 md:p-5">
+                    {/* Telegram recommended badge */}
+                    {isTelegram && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full text-[var(--ag-text-accent)]"
+                          style={{ background: 'rgba(167,139,250,0.1)', boxShadow: '0 0 0 1px rgba(167,139,250,0.25)' }}>
+                          Recommended
+                        </span>
+                        <span className="text-[10px] text-[var(--ag-text-muted)]">Primary channel</span>
+                      </div>
+                    )}
+
+                    {/* Card header row */}
+                    <div
+                      className={`flex items-start justify-between gap-3 ${isExpanded ? 'mb-4' : ''} ${isMobile ? 'cursor-pointer' : ''}`}
+                      onClick={isMobile ? () => setExpandedId(expandedId === connection.id ? null : connection.id) : undefined}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Icon — concentric: card rounded-2xl(16), icon rounded-xl(12) with ~6px visual gap */}
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-[transform] duration-200 group-hover:scale-105"
+                          style={{ background: `${color}18`, boxShadow: `0 0 0 1px ${color}25` }}
+                        >
+                          <Icon className="w-6 h-6" style={{ color }} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="font-heading font-semibold text-[var(--ag-text-primary)] leading-tight text-wrap-balance">
+                            {connection.name}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {connection.type === 'whatsapp' && connection.status !== 'connected' ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-full bg-[var(--ag-amber)]" />
+                                <span className="text-xs text-[var(--ag-amber)] font-medium">Not yet available</span>
+                              </span>
+                            ) : (
+                              renderStatusBadge(connection.status, connection.type)
+                            )}
+                            {connection.status === 'connected' && healthStatus[connection.type] === 'checking' && (
+                              <span className="w-2 h-2 rounded-full bg-[var(--ag-amber)] animate-pulse" title="Checking health…" />
+                            )}
+                            {connection.status === 'connected' && pingLatency[connection.type] != null && (
+                              <span className="text-xs text-[var(--ag-text-accent)] font-mono tabular-nums">{pingLatency[connection.type]}ms</span>
+                            )}
                           </div>
                         </div>
-                        <div className="h-1.5 bg-[var(--ag-bg-base)] rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${connection.health}%`,
-                              backgroundColor: connection.health > 80 ? '#00FF88' : connection.health > 50 ? '#FFB800' : '#FF6161'
-                            }}
-                          />
-                        </div>
                       </div>
-                    )}
 
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {connection.features.map((feature, i) => (
-                        <Badge key={i} variant="outline" className="border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] text-xs">
-                          {feature}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* WhatsApp: Notify me interest capture */}
-                    {connection.type === 'whatsapp' && connection.status !== 'connected' && (
-                      <div className="mb-4 p-3 rounded-xl bg-[#F59E0B]/5 border border-[#F59E0B]/20">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs text-[var(--ag-text-secondary)]">
-                            WhatsApp integration is under development. We'll let you know when it's ready.
-                          </p>
-                          <button
-                            onClick={() => notify('We\'ll notify you when WhatsApp is available!', 'success')}
-                            className="flex items-center gap-1.5 text-xs text-[#F59E0B] hover:text-[#FBBF24] font-medium whitespace-nowrap transition-colors min-h-[44px]"
-                          >
-                            <Bell className="w-3.5 h-3.5" />
-                            Notify me
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Test Connection Button + Result */}
-                    {connection.status === 'connected' && (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      {/* Action button — top-right */}
+                      <div className="shrink-0 flex flex-col items-end gap-1.5">
+                        {connection.status === 'connected' ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => void handleTestConnection(connection.type)}
-                            disabled={testing[connection.type]}
-                            className="border-[rgba(139,92,246,0.15)] text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 text-xs min-h-[44px]"
-                            data-testid={`test-connection-${connection.type}`}
+                            className="border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)] min-h-[40px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {testing[connection.type] ? (
-                              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Testing...</>
-                            ) : (
-                              <><Wifi className="w-3 h-3 mr-1.5" />Test Connection</>
-                            )}
+                            Manage
                           </Button>
-                          {testResult[connection.type] && (
-                            <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                              testResult[connection.type]!.status === 'pass' ? 'text-[#00FF88]' : 'text-[#FF6161]'
-                            }`}>
-                              {testResult[connection.type]!.status === 'pass' ? (
-                                <CheckCircle2 className="w-3 h-3" />
-                              ) : (
-                                <WifiOff className="w-3 h-3" />
-                              )}
-                              {testResult[connection.type]!.message}
-                              <span className="text-[var(--ag-text-secondary)] font-normal ml-1">at {testResult[connection.type]!.at}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Telegram QR deep link */}
-                    {connection.type === 'telegram' && connection.status === 'connected' && telegramUsername && (
-                      <div className="mb-4 p-3 rounded-xl bg-[#0088cc]/5 border border-[rgba(139,92,246,0.08)]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#0088cc]/20 flex items-center justify-center shrink-0">
-                            <Send className="w-5 h-5 text-[#0088cc]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[var(--ag-text-primary)]">@{telegramUsername}</p>
-                            <p className="text-xs text-[var(--ag-text-secondary)]">Open in Telegram to chat with your agent</p>
-                          </div>
-                          <a
-                            href={`https://t.me/${telegramUsername}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0088cc] hover:bg-[#0077b5] text-white text-xs font-medium transition-colors min-h-[44px] shrink-0"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Open
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom Telegram Bot — "Connect Your Own Bot" */}
-                    {connection.type === 'telegram' && (
-                      <div className="mb-4">
-                        {/* Divider */}
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-[#A78BFA]/15" />
-                          <span className="text-xs text-[var(--ag-text-muted)] whitespace-nowrap">— or —</span>
-                          <div className="flex-1 h-px bg-[#A78BFA]/15" />
-                        </div>
-
-                        {/* Expandable header */}
-                        <button
-                          onClick={() => setCustomBotExpanded(!customBotExpanded)}
-                          className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-cyan)]/20 hover:border-[var(--ag-cyan)]/40 transition-all group/cbot"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <Bot className="w-4 h-4 text-[var(--ag-cyan)]" />
-                            <span className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Your Own Bot</span>
-                            {customBotStatus === 'connected' && customBotInfo && (
-                              <Badge className="bg-[#00FF88]/15 text-[#00FF88] border border-[#00FF88]/30 text-[10px] px-1.5 py-0">
-                                Active
-                              </Badge>
-                            )}
-                          </div>
-                          {customBotExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-cyan)] transition-colors" />
-                          )}
-                        </button>
-
-                        {/* Expanded content */}
-                        {customBotExpanded && (
-                          <div className="mt-3 p-4 rounded-lg bg-[var(--ag-bg-deep)] border border-[var(--ag-cyan)]/15 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                            {/* Already connected state */}
-                            {customBotStatus === 'connected' && customBotInfo ? (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#00FF88]/5 border border-[#00FF88]/20">
-                                  <CheckCircle2 className="w-5 h-5 text-[#00FF88] flex-shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[var(--ag-text-primary)]">{customBotInfo.botName}</p>
-                                    <p className="text-xs text-[var(--ag-text-muted)]">@{customBotInfo.botUsername}</p>
-                                  </div>
-                                  <a
-                                    href={`https://t.me/${customBotInfo.botUsername}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-[#0088cc]/20 hover:bg-[#0088cc]/30 text-[#0088cc] text-xs font-medium transition-colors min-h-[36px]"
-                                  >
-                                    <ExternalLink className="w-3 h-3" />
-                                    Open
-                                  </a>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleCustomBotDisconnect}
-                                  className="w-full border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10 hover:border-[#FF6161]/50 min-h-[44px]"
-                                >
-                                  <Unplug className="w-3.5 h-3.5 mr-1.5" />
-                                  Disconnect Custom Bot
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                {/* Token input */}
-                                <div className="space-y-2">
-                                  <label className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
-                                    <Key className="w-3 h-3" />
-                                    Paste your BotFather token
-                                  </label>
-                                  <Input
-                                    type="text"
-                                    placeholder="123456:ABC-DEF..."
-                                    value={customBotToken}
-                                    onChange={(e) => {
-                                      setCustomBotToken(e.target.value);
-                                      if (customBotStatus === 'error') {
-                                        setCustomBotStatus('idle');
-                                        setCustomBotError(null);
-                                      }
-                                    }}
-                                    className="bg-[#0C0C18] border-[var(--ag-cyan)]/20 text-[var(--ag-text-primary)] font-mono text-sm placeholder:text-[#8888AA]/50 min-h-[44px]"
-                                  />
-                                </div>
-
-                                {/* Error message */}
-                                {customBotStatus === 'error' && customBotError && (
-                                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#FF6161]/5 border border-[#FF6161]/20">
-                                    <AlertTriangle className="w-4 h-4 text-[#FF6161] flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-[#FF6161]">{customBotError}</p>
-                                  </div>
-                                )}
-
-                                {/* Verify button */}
-                                <Button
-                                  onClick={handleCustomBotConnect}
-                                  disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
-                                  className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 text-white font-semibold min-h-[44px] disabled:opacity-50"
-                                >
-                                  {customBotStatus === 'verifying' ? (
-                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying...</>
-                                  ) : (
-                                    <><CheckCircle2 className="w-4 h-4 mr-2" />Verify & Connect</>
-                                  )}
-                                </Button>
-
-                                {/* Instructions */}
-                                <p className="text-[11px] text-[var(--ag-text-muted)] leading-relaxed">
-                                  Open{' '}
-                                  <a
-                                    href="https://t.me/BotFather"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[var(--ag-cyan)] hover:underline"
-                                  >
-                                    @BotFather
-                                  </a>
-                                  {' '}in Telegram → /newbot → copy the token
-                                </p>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-muted)]">
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        {connection.lastSync ? (
-                          <span>Last synced: {timeAgo(connection.lastSync)}</span>
+                        ) : connection.type === 'whatsapp' ? (
+                          <>
+                            <Badge className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5"
+                              style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--ag-amber)', boxShadow: '0 0 0 1px rgba(245,158,11,0.25)' }}>
+                              Coming Soon
+                            </Badge>
+                            <Button size="sm" disabled className="opacity-40 min-h-[40px] cursor-not-allowed">
+                              <Plug className="w-3.5 h-3.5 mr-1.5" />Connect
+                            </Button>
+                          </>
                         ) : (
-                          <span>Never synced</span>
-                        )}
-                        {/* 78.6: Show Telegram username + last message time */}
-                        {connection.type === 'telegram' && connection.status === 'connected' && telegramUsername && (
-                          <span className="text-[#0088cc] font-medium">@{telegramUsername}</span>
-                        )}
-                        {connection.type === 'telegram' && connection.status === 'connected' && telegramLastPing && (
-                          <span className="text-[var(--ag-cyan)]">Last message: {timeAgo(telegramLastPing)}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {connection.status === 'connected' && (
-                          <span>{connection.requestsToday} req today</span>
-                        )}
-                        {connection.status === 'connected' && (
-                          <Switch
-                            checked={true}
-                            onCheckedChange={() => handleDisconnect(connection.id)}
-                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleConnect(connection.type)}
+                            disabled={connectingId === connection.type}
+                            className="min-h-[40px] font-semibold text-white active:scale-[0.96] transition-[transform,opacity] duration-150 disabled:opacity-50"
+                            style={{ background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-amber))', boxShadow: '0 2px 10px rgba(139,92,246,0.25)' }}
+                          >
+                            {connectingId === connection.type
+                              ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Connecting…</>
+                              : <><Plug className="w-3.5 h-3.5 mr-1.5" />Connect</>}
+                          </Button>
                         )}
                       </div>
                     </div>
-                  </>
-                )}
-            </SectionCard>
-            </BlurFade>
-          );
-        })}
-      </div>
 
-      {/* 66.4: Integration event log */}
-      {integrationEvents.length > 0 && (
-        <BlurFade delay={0.4}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-            <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[var(--ag-violet)]" />
-              Recent Integration Events
-            </h4>
-            <div className="space-y-2">
-              {integrationEvents.slice(0, 5).map((ev) => (
-                <div key={ev.id} className="flex items-center gap-3 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-[#A78BFA] flex-shrink-0" />
-                  <span className="text-[var(--ag-text-primary)] flex-1 truncate">{ev.action}</span>
-                  {ev.details && <span className="text-[var(--ag-text-secondary)] truncate max-w-[120px]">{ev.details}</span>}
-                  <span className="text-[var(--ag-text-secondary)] flex-shrink-0">{timeAgo(ev.created_at)}</span>
+                    {/* Expanded content */}
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div variants={slideDown} initial="hidden" animate="show" exit="exit" className="overflow-hidden">
+                          <p className="text-sm text-[var(--ag-text-secondary)] mb-4 text-wrap-pretty">
+                            {connection.description}
+                          </p>
+
+                          {/* Health bar */}
+                          {connection.status === 'connected' && (
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between text-xs mb-2">
+                                <span className="text-[var(--ag-text-muted)]">Health</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[var(--ag-text-primary)] font-medium tabular-nums">{connection.health}%</span>
+                                  <button
+                                    onClick={() => void handlePing(connection.type)}
+                                    disabled={pinging[connection.type]}
+                                    className="text-xs text-[var(--ag-text-accent)] hover:text-[var(--ag-violet)] disabled:opacity-50 min-h-[28px] active:scale-[0.96] transition-[transform,color] duration-150"
+                                    title="Test latency"
+                                  >
+                                    {pinging[connection.type]
+                                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                                      : <span>Ping{pingLatency[connection.type] != null ? ` · ${pingLatency[connection.type]}ms` : ''}</span>}
+                                  </button>
+                                </div>
+                              </div>
+                              {/* bar track — rounded inner: 9999 matching bar fill */}
+                              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.25)', boxShadow: '0 0 0 1px rgba(255,255,255,0.04) inset' }}>
+                                <div
+                                  className="h-full rounded-full transition-[width] duration-700"
+                                  style={{
+                                    width: `${connection.health}%`,
+                                    background: connection.health > 80
+                                      ? 'linear-gradient(90deg, #00CC6A, #00FF88)'
+                                      : connection.health > 50
+                                      ? 'linear-gradient(90deg, #D97706, #F59E0B)'
+                                      : 'linear-gradient(90deg, #DC2626, #FF6161)',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Feature badges */}
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {connection.features.map((feature, i) => (
+                              <span key={i} className="text-xs px-2 py-0.5 rounded-full text-[var(--ag-text-muted)]"
+                                style={{ boxShadow: '0 0 0 1px rgba(139,92,246,0.1)' }}>
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* WhatsApp: interest capture */}
+                          {connection.type === 'whatsapp' && connection.status !== 'connected' && (
+                            <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.05)', boxShadow: '0 0 0 1px rgba(245,158,11,0.15)' }}>
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-xs text-[var(--ag-text-secondary)]">WhatsApp integration is under development.</p>
+                                <button
+                                  onClick={() => notify("We'll notify you when WhatsApp is available!", 'success')}
+                                  className="flex items-center gap-1.5 text-xs text-[var(--ag-amber)] hover:opacity-80 font-medium whitespace-nowrap min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                                >
+                                  <Bell className="w-3.5 h-3.5" />Notify me
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Test connection */}
+                          {connection.status === 'connected' && (
+                            <div className="mb-4 flex items-center gap-2 flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void handleTestConnection(connection.type)}
+                                disabled={testing[connection.type]}
+                                className="border-[var(--ag-border-subtle)] text-[var(--ag-text-accent)] hover:border-[var(--ag-border-default)] hover:bg-[var(--ag-active-bg)] text-xs min-h-[40px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                                data-testid={`test-connection-${connection.type}`}
+                              >
+                                {testing[connection.type]
+                                  ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Testing…</>
+                                  : <><Wifi className="w-3 h-3 mr-1.5" />Test Connection</>}
+                              </Button>
+                              {testResult[connection.type] && (
+                                <span className={`inline-flex items-center gap-1 text-xs font-medium ${testResult[connection.type]!.status === 'pass' ? 'text-[var(--ag-green)]' : 'text-[#FF6161]'}`}>
+                                  {testResult[connection.type]!.status === 'pass'
+                                    ? <CheckCircle2 className="w-3 h-3" />
+                                    : <WifiOff className="w-3 h-3" />}
+                                  {testResult[connection.type]!.message}
+                                  <span className="text-[var(--ag-text-muted)] font-normal ml-0.5">at {testResult[connection.type]!.at}</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Telegram: show linked username */}
+                          {isTelegram && connection.status === 'connected' && telegramUsername && (
+                            <div className="mb-4 p-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(0,136,204,0.06)', boxShadow: '0 0 0 1px rgba(0,136,204,0.15)' }}>
+                              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(0,136,204,0.15)' }}>
+                                <Send className="w-4 h-4 text-[#0088cc]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[var(--ag-text-primary)]">@{telegramUsername}</p>
+                                <p className="text-xs text-[var(--ag-text-secondary)]">Open in Telegram to chat with your agent</p>
+                              </div>
+                              <a href={`https://t.me/${telegramUsername}`} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-medium min-h-[40px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                                style={{ background: '#0088cc', boxShadow: '0 2px 8px rgba(0,136,204,0.25)' }}>
+                                <ExternalLink className="w-3 h-3" />Open
+                              </a>
+                            </div>
+                          )}
+
+                          {/* Custom Telegram Bot */}
+                          {isTelegram && (
+                            <div className="mb-4">
+                              <div className="flex items-center gap-3 my-4">
+                                <div className="flex-1 h-px" style={{ background: 'rgba(167,139,250,0.1)' }} />
+                                <span className="text-[11px] text-[var(--ag-text-muted)]">or</span>
+                                <div className="flex-1 h-px" style={{ background: 'rgba(167,139,250,0.1)' }} />
+                              </div>
+
+                              <button
+                                onClick={() => setCustomBotExpanded(!customBotExpanded)}
+                                className="flex items-center justify-between w-full min-h-[44px] px-3 py-2.5 rounded-xl group/cbot active:scale-[0.96] transition-[transform,box-shadow] duration-150"
+                                style={{
+                                  background: 'var(--ag-bg-deep)',
+                                  boxShadow: customBotExpanded
+                                    ? '0 0 0 1px rgba(167,139,250,0.3), 0 0 12px rgba(167,139,250,0.08)'
+                                    : '0 0 0 1px rgba(167,139,250,0.15)',
+                                }}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <Bot className="w-4 h-4 text-[var(--ag-text-accent)]" />
+                                  <span className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Your Own Bot</span>
+                                  {customBotStatus === 'connected' && customBotInfo && (
+                                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-[var(--ag-green)]"
+                                      style={{ background: 'rgba(0,255,136,0.1)', boxShadow: '0 0 0 1px rgba(0,255,136,0.2)' }}>
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                {customBotExpanded
+                                  ? <ChevronUp className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-text-accent)] transition-colors duration-150" />
+                                  : <ChevronDown className="w-4 h-4 text-[var(--ag-text-muted)] group-hover/cbot:text-[var(--ag-text-accent)] transition-colors duration-150" />}
+                              </button>
+
+                              <AnimatePresence initial={false}>
+                                {customBotExpanded && (
+                                  <motion.div variants={slideDown} initial="hidden" animate="show" exit="exit" className="overflow-hidden">
+                                    <div className="mt-3 p-4 rounded-xl space-y-4" style={{ background: 'var(--ag-bg-deep)', boxShadow: '0 0 0 1px rgba(167,139,250,0.12)' }}>
+                                      {customBotStatus === 'connected' && customBotInfo ? (
+                                        <div className="space-y-3">
+                                          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'rgba(0,255,136,0.05)', boxShadow: '0 0 0 1px rgba(0,255,136,0.15)' }}>
+                                            <CheckCircle2 className="w-5 h-5 text-[var(--ag-green)] shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium text-[var(--ag-text-primary)]">{customBotInfo.botName}</p>
+                                              <p className="text-xs text-[var(--ag-text-muted)]">@{customBotInfo.botUsername}</p>
+                                            </div>
+                                            <a href={`https://t.me/${customBotInfo.botUsername}`} target="_blank" rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[#0088cc] text-xs font-medium min-h-[36px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                                              style={{ background: 'rgba(0,136,204,0.12)' }}>
+                                              <ExternalLink className="w-3 h-3" />Open
+                                            </a>
+                                          </div>
+                                          <Button variant="outline" size="sm" onClick={handleCustomBotDisconnect}
+                                            className="w-full min-h-[44px] active:scale-[0.96] transition-[transform,opacity] duration-150"
+                                            style={{ borderColor: 'rgba(255,97,97,0.3)', color: '#FF6161' }}>
+                                            <Unplug className="w-3.5 h-3.5 mr-1.5" />Disconnect Custom Bot
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="space-y-2">
+                                            <label className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
+                                              <Key className="w-3 h-3" />Paste your BotFather token
+                                            </label>
+                                            <Input
+                                              type="text"
+                                              placeholder="123456:ABC-DEF…"
+                                              value={customBotToken}
+                                              onChange={(e) => {
+                                                setCustomBotToken(e.target.value);
+                                                if (customBotStatus === 'error') { setCustomBotStatus('idle'); setCustomBotError(null); }
+                                              }}
+                                              className="bg-[var(--ag-bg-base)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] font-mono text-sm min-h-[44px] rounded-xl"
+                                            />
+                                          </div>
+                                          {customBotStatus === 'error' && customBotError && (
+                                            <div className="flex items-start gap-2 p-3 rounded-lg" style={{ background: 'rgba(255,97,97,0.06)', boxShadow: '0 0 0 1px rgba(255,97,97,0.2)' }}>
+                                              <AlertTriangle className="w-4 h-4 text-[#FF6161] shrink-0 mt-0.5" />
+                                              <p className="text-xs text-[#FF6161]">{customBotError}</p>
+                                            </div>
+                                          )}
+                                          <Button
+                                            onClick={handleCustomBotConnect}
+                                            disabled={customBotStatus === 'verifying' || !customBotToken.trim()}
+                                            className="w-full min-h-[44px] font-semibold text-white active:scale-[0.96] transition-[transform,opacity] duration-150 disabled:opacity-50"
+                                            style={{ background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-amber))', boxShadow: '0 2px 10px rgba(139,92,246,0.25)' }}
+                                          >
+                                            {customBotStatus === 'verifying'
+                                              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying…</>
+                                              : <><CheckCircle2 className="w-4 h-4 mr-2" />Verify & Connect</>}
+                                          </Button>
+                                          <p className="text-[11px] text-[var(--ag-text-muted)] leading-relaxed">
+                                            Open{' '}
+                                            <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer"
+                                              className="text-[var(--ag-text-accent)] hover:underline">
+                                              @BotFather
+                                            </a>
+                                            {' '}in Telegram → /newbot → copy the token
+                                          </p>
+                                        </>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+
+                          {/* Footer: last sync + disconnect switch */}
+                          <div className="flex items-center justify-between pt-4 text-xs text-[var(--ag-text-muted)]"
+                            style={{ borderTop: '1px solid rgba(139,92,246,0.06)' }}>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              {connection.lastSync
+                                ? <span>Last synced: {timeAgo(connection.lastSync)}</span>
+                                : <span>Never synced</span>}
+                              {isTelegram && connection.status === 'connected' && telegramUsername && (
+                                <span className="text-[#0088cc] font-medium">@{telegramUsername}</span>
+                              )}
+                              {isTelegram && connection.status === 'connected' && telegramLastPing && (
+                                <span className="text-[var(--ag-text-accent)]">Last message: {timeAgo(telegramLastPing)}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              {connection.status === 'connected' && (
+                                <span className="tabular-nums">{connection.requestsToday} req today</span>
+                              )}
+                              {connection.status === 'connected' && (
+                                <Switch
+                                  checked={true}
+                                  onCheckedChange={() => handleDisconnect(connection.id)}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-              ))}
-            </div>
-        </SectionCard>
-        </BlurFade>
-      )}
+              </motion.div>
+            );
+          })}
+        </div>
 
-      {/* Privacy Note */}
-      <BlurFade delay={0.5}>
-      <SectionCard className="bg-gradient-to-r from-[var(--ag-bg-surface)] to-[var(--ag-bg-surface)]/50 backdrop-blur-xl border-[var(--ag-border-subtle)]">
-          <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[var(--ag-green)] flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-1">Privacy First</h4>
-              <p className="text-xs text-[var(--ag-text-secondary)]">
-                Your data is encrypted and never shared. You can disconnect any service at any time.
-              </p>
+        {/* ── Integration Events ── */}
+        {integrationEvents.length > 0 && (
+          <motion.div custom={filteredIntegrations.length + 7} variants={fadeUp} initial="hidden" animate="show">
+            <div className="rounded-2xl p-5 bg-[var(--ag-bg-surface)] backdrop-blur-xl" style={{ boxShadow: SHADOW.card }}>
+              <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[var(--ag-violet)]" />
+                Recent Integration Events
+              </h4>
+              <div className="space-y-2.5">
+                {integrationEvents.slice(0, 5).map((ev, i) => (
+                  <motion.div
+                    key={ev.id}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.25 }}
+                    className="flex items-center gap-3 text-xs"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--ag-text-accent)' }} />
+                    <span className="text-[var(--ag-text-primary)] flex-1 truncate">{ev.action}</span>
+                    {ev.details && <span className="text-[var(--ag-text-secondary)] truncate max-w-[100px]">{ev.details}</span>}
+                    <span className="text-[var(--ag-text-muted)] shrink-0 tabular-nums">{timeAgo(ev.created_at)}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Privacy Note ── */}
+        <motion.div custom={filteredIntegrations.length + 8} variants={fadeUp} initial="hidden" animate="show">
+          <div className="rounded-2xl p-5 bg-[var(--ag-bg-surface)] backdrop-blur-xl" style={{ boxShadow: SHADOW.card }}>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(16,185,129,0.1)' }}>
+                <Shield className="w-4.5 h-4.5 text-[var(--ag-green)]" />
+              </div>
+              <div>
+                <h4 className="text-sm font-heading font-medium text-[var(--ag-text-primary)] mb-1">Privacy First</h4>
+                <p className="text-xs text-[var(--ag-text-secondary)] text-wrap-pretty">
+                  Your data is encrypted and never shared. You can disconnect any service at any time.
+                </p>
+              </div>
             </div>
           </div>
-      </SectionCard>
-      </BlurFade>
-    </div>
+        </motion.div>
+
+      </div>
     </DashboardPageWrapper>
   );
 }

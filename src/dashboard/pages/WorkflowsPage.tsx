@@ -132,10 +132,12 @@ function StepFlowVisualiser({ steps, runSteps }: { steps: WorkflowStep[]; runSte
           <div key={idx}>
             {/* Step card */}
             <div
-              className="relative rounded-xl p-3 transition-all duration-300 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]"
+              className="relative rounded-xl p-3 transition-[box-shadow,border-color] duration-200 bg-[var(--ag-bg-surface)] backdrop-blur-xl"
               style={{
-                borderColor: `${statusColor}20`,
-                boxShadow: runStep?.status === "running" ? `0 0 12px ${statusColor}15` : undefined,
+                border: `1px solid ${statusColor}20`,
+                boxShadow: runStep?.status === "running"
+                  ? `0 0 0 1px ${statusColor}30, 0 0 16px ${statusColor}20`
+                  : '0 0 0 1px rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
               <div className="flex items-center gap-3">
@@ -292,7 +294,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                 variant="ghost"
                 size="sm"
                 onClick={addStep}
-                className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
+                className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,color] duration-150 active:scale-[0.96]"
               >
                 <Plus className="h-3 w-3 mr-1" />Add Step
               </Button>
@@ -303,9 +305,10 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
               return (
                 <div
                   key={idx}
-                  className="rounded-xl p-3 space-y-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]"
+                  className="rounded-xl p-3 space-y-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl"
                   style={{
-                    borderColor: `${color}15`,
+                    border: `1px solid ${color}15`,
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.25)',
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -319,7 +322,7 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="min-h-[44px] min-w-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                        className="min-h-[44px] min-w-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 transition-[transform,background-color] duration-150 active:scale-[0.96]"
                         onClick={() => removeStep(idx)}
                         aria-label={"Remove step " + (idx + 1)}
                       >
@@ -374,14 +377,14 @@ function NewWorkflowForm({ onCreated, onCancel }: { onCreated: () => void; onCan
             <Button
               variant="ghost"
               onClick={onCancel}
-              className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]"
+              className="min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,color] duration-150 active:scale-[0.96]"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={saving}
-              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
+              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] hover:opacity-90 text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.96]"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Workflow
@@ -511,7 +514,7 @@ function WorkflowCard({
   };
 
   return (
-    <SectionCard>
+    <SectionCard className="transition-[box-shadow] duration-200 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_8px_28px_rgba(0,0,0,0.45)]">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -540,7 +543,7 @@ function WorkflowCard({
           <Button
             variant="ghost"
             size="icon"
-            className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+            className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 transition-[transform,color] duration-150 active:scale-[0.96]"
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse workflow" : "Expand workflow"}
           >
@@ -549,7 +552,7 @@ function WorkflowCard({
           <Button
             variant="ghost"
             size={confirmDelete ? "sm" : "icon"}
-            className={`min-h-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${confirmDelete ? "px-3 border border-[#FF6161]/40 bg-[#FF6161]/10" : "min-w-[44px]"}`}
+            className={`min-h-[44px] text-[#FF6161] hover:bg-[#FF6161]/10 focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 transition-[transform,background-color] duration-150 active:scale-[0.96] ${confirmDelete ? "px-3 border border-[#FF6161]/40 bg-[#FF6161]/10" : "min-w-[44px]"}`}
             onClick={handleDelete}
             disabled={deleting}
             aria-label={confirmDelete ? "Confirm delete workflow" : "Delete workflow"}
@@ -579,7 +582,7 @@ function WorkflowCard({
             <Button
               onClick={handleRun}
               disabled={running}
-              className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
+              className="w-full min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] hover:opacity-90 text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.96]"
             >
               {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
               {running ? "Running\u2026" : "Run Workflow"}
@@ -701,13 +704,13 @@ export function WorkflowsPage() {
               onClick={() => void fetchWorkflows(true)}
               disabled={refreshing}
               aria-label="Refresh workflows"
-              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 transition-[transform,color] duration-150 active:scale-[0.96]"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
             </Button>
             <Button
               onClick={() => setShowForm(true)}
-              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
+              className="min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] hover:opacity-90 text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.96]"
             >
               <Plus className="h-4 w-4 mr-1" />
               New
@@ -777,7 +780,7 @@ export function WorkflowsPage() {
             </p>
             <Button
               onClick={() => setShowForm(true)}
-              className="mt-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] text-white shadow-lg"
+              className="mt-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] hover:opacity-90 text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.96]"
             >
               <Plus className="h-4 w-4 mr-1" />Create Workflow
             </Button>

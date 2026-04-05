@@ -166,7 +166,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
           <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 min-w-0">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-all duration-200 ${
+              className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-[transform,background-color,color,box-shadow] duration-200 active:scale-[0.96] ${
                 selectedCategory === 'all'
                   ? 'bg-[var(--ag-violet)] text-white shadow-[var(--ag-glow-md)]'
                   : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
@@ -182,7 +182,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 min-h-[44px] rounded-xl whitespace-nowrap transition-[transform,background-color,color,box-shadow] duration-200 active:scale-[0.96] ${
                     selectedCategory === cat.id
                       ? 'bg-[var(--ag-violet)] text-white shadow-[var(--ag-glow-md)]'
                       : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
@@ -218,7 +218,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
           {templates.map((template, idx) => (
             <BlurFade key={template.id} delay={0.05 + idx * 0.03}>
             <div
-              className="rounded-xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-lg)] transition-all duration-300 group bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+              className="rounded-xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-lg)] transition-[transform,border-color,box-shadow] duration-300 group bg-[var(--ag-bg-surface)] backdrop-blur-xl"
             >
               {/* Thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-[var(--ag-bg-elevated)] to-[var(--ag-bg-surface)] relative overflow-hidden">
@@ -267,7 +267,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePreview(template)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-200"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-[transform,background-color,border-color] duration-200 active:scale-[0.96]"
                   >
                     <Globe className="w-4 h-4" />
                     <span>Preview</span>
@@ -276,7 +276,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                   <button
                     onClick={() => handleClone(template)}
                     disabled={cloningId === template.id}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-[transform,box-shadow] duration-200 active:scale-[0.96] disabled:opacity-50 disabled:hover:shadow-none disabled:active:scale-100"
                   >
                     {cloningId === template.id ? (
                       <>
@@ -331,7 +331,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     setCloneResult(null);
                     onNavigate?.('website-builder');
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white rounded-xl hover:from-[#7C3AED] hover:to-[#D97706] hover:shadow-[var(--ag-glow-md)] transition-[transform,box-shadow] duration-200 active:scale-[0.96] font-medium text-sm"
                 >
                   <Code className="w-4 h-4" />
                   Open in Website Builder
@@ -341,7 +341,7 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
                     setCloneResult(null);
                     onNavigate?.('artifacts');
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-200 font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-[44px] bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] rounded-xl hover:bg-[var(--ag-violet)]/20 border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-[transform,background-color,border-color] duration-200 active:scale-[0.96] font-medium text-sm"
                 >
                   <ExternalLink className="w-4 h-4" />
                   View All Projects

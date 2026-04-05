@@ -326,7 +326,7 @@ export function HealthDashboardPage() {
               onClick={handleRetry}
               disabled={refreshing}
               aria-label="Refresh health data"
-              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 hover:bg-gradient-to-r hover:from-[var(--ag-violet)]/10 hover:to-[var(--ag-amber)]/10 transition-all duration-300"
+              className="min-h-[44px] min-w-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 hover:bg-gradient-to-r hover:from-[var(--ag-violet)]/10 hover:to-[var(--ag-amber)]/10 transition-[transform,background] duration-150 active:scale-[0.96]"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -349,7 +349,7 @@ export function HealthDashboardPage() {
                 <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                 <span className="text-xs text-[var(--ag-text-secondary)]">{stat.label}</span>
               </div>
-              <p className="text-2xl md:text-xl font-bold text-[var(--ag-text-primary)]">{stat.value}</p>
+              <p className="text-2xl md:text-xl font-bold text-[var(--ag-text-primary)] tabular-nums">{stat.value}</p>
             </SectionCard>
           </BlurFade>
         ))}
@@ -408,7 +408,7 @@ export function HealthDashboardPage() {
               Error Rate (5-min window)
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? 'var(--ag-amber)' : 'var(--ag-pulse)' }}>
+              <span className="text-3xl font-bold tabular-nums" style={{ color: errorRate > 5 ? '#EF4444' : errorRate > 0 ? 'var(--ag-amber)' : 'var(--ag-pulse)' }}>
                 {errorRate}%
               </span>
               <span className="text-sm text-[var(--ag-text-secondary)] mb-1">
@@ -424,7 +424,7 @@ export function HealthDashboardPage() {
               Memory Usage
             </h3>
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-[var(--ag-violet)]">{snapshot.system.memoryMb} MB</span>
+              <span className="text-3xl font-bold text-[var(--ag-violet)] tabular-nums">{snapshot.system.memoryMb} MB</span>
               <span className="text-sm text-[var(--ag-text-secondary)] mb-1">heap used</span>
             </div>
           </SectionCard>
@@ -454,9 +454,9 @@ export function HealthDashboardPage() {
                     {(snapshot.topEndpoints ?? []).map((ep) => (
                       <tr key={ep.path} className="border-b border-[rgba(139,92,246,0.04)] hover:bg-[rgba(139,92,246,0.04)] transition-colors">
                         <td className="px-4 py-2.5 font-mono text-[var(--ag-text-primary)] text-xs whitespace-nowrap">{ep.path}</td>
-                        <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)]">{ep.count}</td>
-                        <td className="px-4 py-2.5 text-right" style={{ color: ep.errors > 0 ? '#EF4444' : 'var(--ag-pulse)' }}>{ep.errors}</td>
-                        <td className="px-4 py-2.5 text-right" style={{ color: ep.avgMs > 1000 ? 'var(--ag-amber)' : 'var(--ag-text-secondary)' }}>{ep.avgMs}ms</td>
+                        <td className="px-4 py-2.5 text-right text-[var(--ag-text-primary)] tabular-nums">{ep.count}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums" style={{ color: ep.errors > 0 ? '#EF4444' : 'var(--ag-pulse)' }}>{ep.errors}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums" style={{ color: ep.avgMs > 1000 ? 'var(--ag-amber)' : 'var(--ag-text-secondary)' }}>{ep.avgMs}ms</td>
                       </tr>
                     ))}
                   </tbody>

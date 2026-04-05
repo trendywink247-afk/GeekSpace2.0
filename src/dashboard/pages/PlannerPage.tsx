@@ -152,7 +152,7 @@ function StatBadge({
 }) {
   return (
     <div className="flex items-baseline gap-1">
-      <span className={`text-lg font-bold font-heading ${accent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
+      <span className={`text-lg font-bold font-heading tabular-nums ${accent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
         {value}{suffix}
       </span>
       <span className="text-[10px] text-[var(--ag-text-secondary)] uppercase tracking-wider">{label}</span>
@@ -174,9 +174,10 @@ function BacklogCard({
     <div
       draggable
       onDragStart={() => onDragStart(item)}
-      className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-grab active:cursor-grabbing
-        border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] bg-[var(--ag-active-bg)] hover:bg-[var(--ag-bg-surface-hover)]
-        transition-all duration-150 select-none min-h-[44px]"
+      className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-grab active:cursor-grabbing active:scale-[0.96]
+        shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_4px_rgba(0,0,0,0.18)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.18),0_4px_12px_rgba(0,0,0,0.28)]
+        bg-[var(--ag-active-bg)] hover:bg-[var(--ag-bg-surface-hover)]
+        transition-[transform,box-shadow] duration-150 select-none min-h-[44px]"
       style={{
         borderLeftWidth: 3,
         borderLeftColor: `${borderColor}60`,
@@ -231,7 +232,7 @@ function TimeBlockCard({
 
   return (
     <div
-      className="group relative rounded-lg px-3 py-2 mb-1 border transition-all duration-150 hover:scale-[1.01]"
+      className="group relative rounded-lg px-3 py-2 mb-1 shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_3px_rgba(0,0,0,0.15)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.20),0_4px_10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow] duration-150 hover:scale-[1.01] active:scale-[0.96]"
       style={{
         backgroundColor: `${block.color}0A`,
         borderColor: `${block.color}35`,
@@ -242,7 +243,7 @@ function TimeBlockCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div
-            className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+            className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${block.color}20` }}
           >
             {block.type === 'reminder' ? (
@@ -258,7 +259,7 @@ function TimeBlockCard({
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="flex items-center gap-0.5 text-[10px] text-[var(--ag-text-secondary)]">
+          <span className="flex items-center gap-0.5 text-[10px] text-[var(--ag-text-secondary)] tabular-nums">
             <Clock className="w-3 h-3" />
             {durationLabel}
           </span>
@@ -634,7 +635,7 @@ export function PlannerPage() {
             <div className="flex items-center rounded-lg border border-[rgba(139,92,246,0.08)] overflow-hidden">
               <button
                 onClick={() => setViewMode('day')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
+                className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
                   viewMode === 'day'
                     ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
@@ -644,11 +645,11 @@ export function PlannerPage() {
               </button>
               <button
                 onClick={() => setViewMode('week')}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] ${
+                className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
                   viewMode === 'week'
                     ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
-                }`}
+                }` }
               >
                 <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
               </button>
@@ -658,7 +659,7 @@ export function PlannerPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs"
+              className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs active:scale-[0.96] transition-transform"
               onClick={() => navigate('/dashboard/chat?agent=cal&prompt=Plan+my+week')}
             >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
@@ -965,7 +966,7 @@ export function PlannerPage() {
                         ? 'border-r-2 border-r-[#A78BFA] text-[var(--ag-cyan)]'
                         : 'border-r-white/5 text-[var(--ag-text-secondary)]'}
                     `}>
-                      <span className="font-mono text-xs sm:text-sm">
+                      <span className="font-mono text-xs sm:text-sm tabular-nums">
                         {formatHour(hour)}
                       </span>
                     </div>

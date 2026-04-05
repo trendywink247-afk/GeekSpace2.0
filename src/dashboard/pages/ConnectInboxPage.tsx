@@ -56,7 +56,7 @@ export function ConnectInboxPage() {
                   id={`tab-${id}`}
                   onClick={() => setActiveTab(id)}
                   className={[
-                    'flex items-center gap-2 px-4 py-3 text-sm font-medium font-heading rounded-t-xl border-b-2 transition-all duration-300 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/30',
+                    'flex items-center gap-2 px-4 py-3 text-sm font-medium font-heading rounded-t-xl border-b-2 transition-[color,background-color,border-color,box-shadow,transform] duration-150 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/30 active:scale-[0.96]',
                     activeTab === id
                       ? 'border-[var(--ag-aria)] text-[var(--ag-aria)] bg-gradient-to-br from-[var(--ag-violet)]/10 to-[var(--ag-amber)]/5 shadow-[var(--ag-glow-sm)]'
                       : 'border-transparent text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)] hover:border-[var(--ag-border-default)]',

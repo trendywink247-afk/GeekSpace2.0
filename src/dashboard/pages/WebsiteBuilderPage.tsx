@@ -364,7 +364,7 @@ export function WebsiteBuilderPage() {
         <button
           key={mode}
           onClick={() => setDeviceMode(mode)}
-          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-[transform,color,background-color] duration-150 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
             deviceMode === mode
               ? 'text-[var(--ag-violet)] bg-[#8B5CF6]/10'
               : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary,#F4F6FF)]'
@@ -420,7 +420,7 @@ export function WebsiteBuilderPage() {
       {/* Toast */}
       {toast && (
         <BlurFade delay={0}>
-          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium backdrop-blur-xl ${
+          <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] ${
             toast.type === 'success'
               ? 'bg-[var(--ag-bg-surface)] text-[var(--ag-violet)] border border-[var(--ag-border-active)]'
               : 'bg-red-500/10 text-red-400 border border-red-500/20'
@@ -474,7 +474,7 @@ export function WebsiteBuilderPage() {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedProject(null)}
-                className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px] ${
+                className={`px-3 py-2 rounded-lg text-sm transition-[transform,box-shadow,border-color,color] duration-150 min-h-[44px] active:scale-[0.96] ${
                   !selectedProject
                     ? 'bg-[var(--ag-active-bg)] text-[var(--ag-violet)] border border-[var(--ag-border-active)] shadow-[var(--ag-glow-sm)]'
                     : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
@@ -492,7 +492,7 @@ export function WebsiteBuilderPage() {
                   <button
                     key={p.id}
                     onClick={() => loadProjectForDev(p)}
-                    className={`px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate max-w-[200px] min-h-[44px] ${
+                    className={`px-3 py-2 rounded-lg text-sm transition-[transform,box-shadow,border-color,color] duration-150 truncate max-w-[200px] min-h-[44px] active:scale-[0.96] ${
                       selectedProject?.id === p.id
                         ? 'bg-[var(--ag-active-bg)] text-[var(--ag-violet)] border border-[var(--ag-border-active)] shadow-[var(--ag-glow-sm)]'
                         : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
@@ -512,10 +512,10 @@ export function WebsiteBuilderPage() {
             {/* Imagine & Add */}
             <button
               onClick={() => setBuilderMode('imagine')}
-              className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
+              className={`p-6 rounded-2xl text-left transition-[transform,box-shadow,border-color] duration-200 group active:scale-[0.96] ${
                 builderMode === 'imagine'
-                  ? 'border-[var(--ag-border-active)] bg-[var(--ag-active-bg)] shadow-[var(--ag-glow-md)]'
-                  : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] bg-[var(--ag-bg-surface)]'
+                  ? 'border border-[var(--ag-border-active)] bg-[var(--ag-active-bg)] shadow-[0_0_0_1px_rgba(139,92,246,0.25),0_8px_32px_rgba(0,0,0,0.45),var(--ag-glow-md)]'
+                  : 'border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-glow)] bg-[var(--ag-bg-surface)] shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_4px_16px_rgba(0,0,0,0.35)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_8px_24px_rgba(0,0,0,0.45)]'
               }`}
               style={{ backdropFilter: 'blur(var(--ag-glass-blur))', WebkitBackdropFilter: 'blur(var(--ag-glass-blur))' }}
             >
@@ -543,10 +543,10 @@ export function WebsiteBuilderPage() {
                   loadProjectForDev(selectedProject);
                 }
               }}
-              className={`p-6 rounded-2xl border text-left transition-all duration-300 group hover:-translate-y-0.5 ${
+              className={`p-6 rounded-2xl text-left transition-[transform,box-shadow,border-color] duration-200 group active:scale-[0.96] ${
                 builderMode === 'dev'
-                  ? 'border-[var(--ag-border-active)] bg-[var(--ag-cyan)]/5 shadow-[var(--ag-glow-md)]'
-                  : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] bg-[var(--ag-bg-surface)]'
+                  ? 'border border-[var(--ag-border-active)] bg-[var(--ag-cyan)]/5 shadow-[0_0_0_1px_rgba(139,92,246,0.25),0_8px_32px_rgba(0,0,0,0.45),var(--ag-glow-md)]'
+                  : 'border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-glow)] bg-[var(--ag-bg-surface)] shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_4px_16px_rgba(0,0,0,0.35)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_8px_24px_rgba(0,0,0,0.45)]'
               }`}
               style={{ backdropFilter: 'blur(var(--ag-glass-blur))', WebkitBackdropFilter: 'blur(var(--ag-glass-blur))' }}
             >
@@ -591,14 +591,14 @@ export function WebsiteBuilderPage() {
                     ? 'e.g. "Add a contact form section with a dark theme..."'
                     : 'e.g. "A modern landing page for a SaaS product with pricing cards..."'}
                   rows={3}
-                  className="flex-1 bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[#6B7280]/50 resize-none focus:border-[var(--ag-violet)]/50 outline-none text-sm"
+                  className="flex-1 bg-[var(--ag-bg-elevated)] border border-[var(--ag-border-default)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)] resize-none focus:border-[var(--ag-border-active)] outline-none text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] transition-[border-color,box-shadow] duration-150"
                 />
               </div>
               <div className="flex justify-end mt-3">
                 <button
                   onClick={handleImagine}
                   disabled={imagineLoading || !imaginePrompt.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white font-semibold text-sm hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px]"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white font-semibold text-sm hover:shadow-[var(--ag-glow-md)] transition-[transform,box-shadow,opacity] duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px] active:scale-[0.96] shadow-[0_4px_16px_rgba(139,92,246,0.3)]"
                 >
                   {imagineLoading ? (
                     <>
@@ -766,7 +766,7 @@ export function WebsiteBuilderPage() {
                 <button
                   onClick={handleDevSave}
                   disabled={devSaving}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white font-bold text-sm hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none min-h-[44px]"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white font-bold text-sm hover:shadow-[var(--ag-glow-md)] transition-[transform,box-shadow,opacity] duration-150 disabled:opacity-50 disabled:hover:shadow-none min-h-[44px] active:scale-[0.96] shadow-[0_4px_16px_rgba(139,92,246,0.3)]"
                 >
                   {devSaving ? (
                     <>
@@ -788,7 +788,7 @@ export function WebsiteBuilderPage() {
                       setTimeout(refreshPreview, 50);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-active)] transition-colors text-sm min-h-[44px]"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-active)] transition-[transform,border-color,color] duration-150 text-sm min-h-[44px] active:scale-[0.96] shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
                 >
                   <Eye className="w-4 h-4" />
                   {showPreview ? 'Hide Preview' : 'Preview'}
@@ -796,7 +796,7 @@ export function WebsiteBuilderPage() {
                 {showPreview && (
                   <button
                     onClick={() => setSplitView(!splitView)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-active)] transition-colors text-sm min-h-[44px]"
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-active)] transition-[transform,border-color,color] duration-150 text-sm min-h-[44px] active:scale-[0.96] shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
                     title={splitView ? 'Stack view' : 'Split view'}
                   >
                     <PanelLeft className="w-4 h-4" />
@@ -853,8 +853,8 @@ export function WebsiteBuilderPage() {
                 </div>
 
                 {assignedAgents.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[var(--ag-border-glow)] p-10 text-center bg-[var(--ag-active-bg)]">
-                    <div className="w-14 h-14 rounded-2xl bg-[var(--ag-violet)]/10 flex items-center justify-center mx-auto mb-4">
+                  <div className="rounded-2xl border border-dashed border-[var(--ag-border-glow)] p-10 text-center bg-[var(--ag-active-bg)] shadow-[inset_0_0_40px_rgba(139,92,246,0.03)]">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--ag-violet)]/10 flex items-center justify-center mx-auto mb-4 shadow-[0_0_0_1px_rgba(139,92,246,0.15)]">
                       <Bot className="w-7 h-7 text-[var(--ag-violet)]/50" />
                     </div>
                     <p className="text-[var(--ag-text-primary)] font-medium text-sm mb-1">No agents assigned yet</p>
@@ -869,7 +869,7 @@ export function WebsiteBuilderPage() {
                       return (
                         <div
                           key={agent.id}
-                          className="rounded-2xl border border-[var(--ag-border-default)] p-5 transition-all hover:border-[var(--ag-border-active)] bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+                          className="rounded-2xl p-5 transition-[box-shadow,border-color] duration-200 bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_8px_32px_rgba(0,0,0,0.45)] hover:border-[var(--ag-border-active)]"
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
@@ -893,7 +893,7 @@ export function WebsiteBuilderPage() {
                               {/* Unassign */}
                               <button
                                 onClick={() => toggleAssign(agent.slot)}
-                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
+                                className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-[transform,color,background-color] duration-150 active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
                                 aria-label={`Unassign ${agent.name} from Builder`}
                               >
                                 <X className="w-4 h-4" />
@@ -905,11 +905,11 @@ export function WebsiteBuilderPage() {
                           <div className="flex gap-3 mb-3">
                             <div className="flex-1 p-2.5 rounded-lg bg-[var(--ag-bg-base)] border border-[var(--ag-green)]/10">
                               <div className="text-xs text-[var(--ag-text-secondary)]">Completed</div>
-                              <div className="text-lg font-bold text-[var(--ag-green)] font-mono">{agent.tasks_completed}</div>
+                              <div className="text-lg font-bold text-[var(--ag-green)] font-mono tabular-nums">{agent.tasks_completed}</div>
                             </div>
                             <div className="flex-1 p-2.5 rounded-lg bg-[var(--ag-bg-base)] border border-[#FF6161]/10">
                               <div className="text-xs text-[var(--ag-text-secondary)]">Failed</div>
-                              <div className="text-lg font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
+                              <div className="text-lg font-bold text-[#FF6161] font-mono tabular-nums">{agent.tasks_failed}</div>
                             </div>
                           </div>
 
@@ -971,7 +971,7 @@ export function WebsiteBuilderPage() {
                     <button
                       onClick={handleAssignTask}
                       disabled={!taskInput.trim() || planningTask}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/90 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px]"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/90 hover:shadow-[0_0_20px_rgba(139,92,246,0.35)] transition-[transform,box-shadow,background-color] duration-150 active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none min-h-[44px] shadow-[0_4px_16px_rgba(139,92,246,0.25)]"
                     >
                       {planningTask ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1006,7 +1006,7 @@ export function WebsiteBuilderPage() {
                         <button
                           key={agent.id}
                           onClick={() => toggleAssign(agent.slot)}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-active)] hover:bg-[var(--ag-active-bg)] transition-all text-left cursor-pointer group min-h-[44px] backdrop-blur-xl"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] hover:border-[var(--ag-border-active)] hover:bg-[var(--ag-active-bg)] transition-[transform,box-shadow,border-color,background-color] duration-150 active:scale-[0.96] text-left cursor-pointer group min-h-[44px] backdrop-blur-xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
                         >
                           <span className="text-lg">{personality}</span>
                           <div className="flex-1 min-w-0">
@@ -1047,7 +1047,7 @@ export function WebsiteBuilderPage() {
                           <button
                             key={p.id}
                             onClick={() => setNewAgentPersonality(p.id)}
-                            className="flex flex-col items-center gap-1 p-3 rounded-lg border transition-all min-w-[60px] min-h-[44px]"
+                            className="flex flex-col items-center gap-1 p-3 rounded-lg border transition-[transform,border-color,background-color] duration-150 active:scale-[0.96] min-w-[60px] min-h-[44px]"
                             style={{
                               borderColor: newAgentPersonality === p.id ? p.color : 'rgba(139, 92, 246, 0.15)',
                               backgroundColor: newAgentPersonality === p.id ? `${p.color}10` : 'transparent',
@@ -1069,14 +1069,14 @@ export function WebsiteBuilderPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setCreatingSlot(null); setNewAgentName(''); }}
-                          className="px-4 py-2 rounded-xl border border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary)] text-sm hover:text-[var(--ag-text-primary)] transition-colors min-h-[44px]"
+                          className="px-4 py-2 rounded-xl border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] text-sm hover:text-[var(--ag-text-primary)] transition-[transform,color,border-color] duration-150 active:scale-[0.96] min-h-[44px] shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={handleDeployAgent}
                           disabled={!newAgentName.trim() || savingAgent}
-                          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#8B5CF6] text-white font-semibold text-sm hover:bg-[#8B5CF6]/90 transition-[transform,background-color,box-shadow] duration-150 active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] shadow-[0_4px_16px_rgba(139,92,246,0.25)]"
                         >
                           {savingAgent ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deploy'}
                         </button>
@@ -1088,7 +1088,7 @@ export function WebsiteBuilderPage() {
                         <button
                           key={slot}
                           onClick={() => setCreatingSlot(slot)}
-                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[var(--ag-border-default)] hover:border-[var(--ag-border-active)] hover:bg-[var(--ag-active-bg)] transition-all cursor-pointer group min-h-[44px] backdrop-blur-xl"
+                          className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-[var(--ag-border-default)] hover:border-[var(--ag-border-active)] hover:bg-[var(--ag-active-bg)] transition-[transform,border-color,background-color] duration-150 active:scale-[0.96] cursor-pointer group min-h-[44px] backdrop-blur-xl"
                         >
                           <Plus className="w-5 h-5 text-[var(--ag-violet)] group-hover:text-[var(--ag-violet)]" />
                           <span className="text-sm text-[var(--ag-text-secondary)] group-hover:text-[var(--ag-text-primary)]">Slot {slot}</span>

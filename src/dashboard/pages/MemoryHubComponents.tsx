@@ -222,7 +222,7 @@ export function MemoryGraph({ memories }: { memories: MemoryEntry[] }) {
             </h3>
             <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
               {hovMems.slice(0, 10).map(m => (
-                <div key={m.id} className="p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs">
+                <div key={m.id} className="p-2 rounded-lg bg-[var(--ag-bg-surface)] shadow-[inset_0_0_0_1px_var(--ag-border-subtle)] text-xs">
                   <span className="text-[var(--ag-violet)] font-mono">{m.key}</span>
                   <span className="text-[var(--ag-text-secondary)] mx-1">=</span>
                   <span className="text-[var(--ag-text-primary)]">{m.value}</span>
@@ -321,7 +321,7 @@ export function StatsTab({ memories, stats }: StatsTabProps) {
             .map(([source, count]) => {
               const style = getSourceStyle(source);
               return (
-                <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-[var(--ag-transition-fast)]">
+                <div key={source} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--ag-bg-surface)] shadow-[inset_0_0_0_1px_var(--ag-border-subtle)] hover:shadow-[inset_0_0_0_1px_var(--ag-border-default)] transition-[box-shadow] duration-150">
                   <Badge className={`${style.bg} ${style.text} text-xs px-2 py-0.5 rounded-full border-0`}>
                     {style.label}
                   </Badge>

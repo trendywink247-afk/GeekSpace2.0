@@ -1,10 +1,12 @@
 // ============================================================
 // AnalyticsPage -- "Agentin Wrapped" -- Personal Analytics Dashboard
 // Owner agent: pulse (#10B981)
-// Revamped: design tokens, PageHeader, SectionCard, useAgentCanvas,
-//   recharts migration, heatmap mobile tap, API path fix, mobile 44px
+// Redesign: shadows over borders, tabular-nums, concentric radii,
+//   glass cards, mobile-first, CSS-vars only, chart legends & tooltips,
+//   framer-motion stagger, text-wrap, scale-on-press
 // ============================================================
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
@@ -37,6 +39,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -92,6 +95,17 @@ interface AnalyticsData {
   activityEntries: ActivityEntry[];
 }
 
+// ── Design Tokens (shadow system — shadows over borders) ────────
+
+/**
+ * Multi-layer dark mode card shadow: ring + lift + violet glow.
+ * This replaces hard border lines with adaptive depth.
+ */
+const CARD_SHADOW =
+  '0 0 0 1px rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.35), 0 0 12px rgba(139,92,246,0.06)';
+const CARD_SHADOW_HOVER =
+  '0 0 0 1px rgba(139,92,246,0.28), 0 6px 24px rgba(0,0,0,0.45), 0 0 24px rgba(139,92,246,0.12)';
+
 // ── Heatmap Constants ───────────────────────────────────────────
 
 const HEATMAP_EMPTY = '#0C0C18';
@@ -104,6 +118,22 @@ const HEATMAP_COLORS = [
 ];
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// ── Recharts shared tooltip style ──────────────────────────────
+
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    backgroundColor: 'var(--ag-bg-chrome)',
+    border: '1px solid rgba(139,92,246,0.18)',
+    borderRadius: '10px',
+    fontSize: '12px',
+    padding: '8px 12px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  },
+  itemStyle: { color: 'var(--ag-text-primary)', fontVariantNumeric: 'tabular-nums' },
+  labelStyle: { color: 'var(--ag-text-secondary)', marginBottom: '4px', fontWeight: 600 },
+  cursor: { stroke: 'rgba(139,92,246,0.2)', strokeWidth: 1 },
+};
 
 // ── Utility Functions ───────────────────────────────────────────
 
@@ -118,7 +148,6 @@ function formatDate(dateStr: string): string {
 
 function getWeekday(dateStr: string): number {
   const d = new Date(dateStr + 'T00:00:00Z');
-  // Convert Sunday=0 to Monday-based: Mon=0..Sun=6
   const day = d.getUTCDay();
   return day === 0 ? 6 : day - 1;
 }
@@ -133,16 +162,38 @@ function computeTrend(data: number[]): 'up' | 'down' | 'flat' {
   return 'flat';
 }
 
+// ── Animation Variants ──────────────────────────────────────────
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 14, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring' as const, duration: 0.45, bounce: 0 },
+  },
+};
+
 // ── Skeleton Components ─────────────────────────────────────────
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl p-5 animate-pulse">
+    <div
+      className="rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl p-5 animate-pulse"
+      style={{ boxShadow: CARD_SHADOW }}
+    >
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-[rgba(139,92,246,0.04)]" />
+        <div className="w-11 h-11 rounded-xl bg-[var(--ag-active-bg)]" />
         <div className="flex-1 space-y-2">
-          <div className="h-7 w-16 bg-[rgba(139,92,246,0.06)] rounded" />
-          <div className="h-3 w-24 bg-[rgba(139,92,246,0.04)] rounded" />
+          <div className="h-7 w-16 bg-[var(--ag-active-bg)] rounded-lg" />
+          <div className="h-3 w-24 bg-[var(--ag-border-subtle)] rounded" />
         </div>
       </div>
     </div>
@@ -152,12 +203,12 @@ function SkeletonCard() {
 function SkeletonHeatmap() {
   return (
     <div className="animate-pulse">
-      <div className="h-4 w-48 bg-[rgba(139,92,246,0.06)] rounded mb-4" />
+      <div className="h-4 w-48 bg-[var(--ag-active-bg)] rounded mb-4" />
       <div className="flex gap-1">
         {Array.from({ length: 14 }).map((_, i) => (
           <div key={i} className="flex flex-col gap-1">
             {Array.from({ length: 7 }).map((_, j) => (
-              <div key={j} className="w-[10px] h-[10px] rounded-sm bg-[rgba(139,92,246,0.04)]" />
+              <div key={j} className="w-[10px] h-[10px] rounded-sm bg-[var(--ag-border-subtle)]" />
             ))}
           </div>
         ))}
@@ -171,11 +222,24 @@ function SkeletonBar() {
     <div className="space-y-4 animate-pulse">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="h-3 w-20 bg-[rgba(139,92,246,0.06)] rounded" />
-          <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full" />
-          <div className="h-3 w-10 bg-[rgba(139,92,246,0.06)] rounded" />
+          <div className="h-3 w-20 bg-[var(--ag-active-bg)] rounded" />
+          <div className="flex-1 h-6 bg-[var(--ag-border-subtle)] rounded-full" />
+          <div className="h-3 w-10 bg-[var(--ag-active-bg)] rounded" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function SkeletonInsightCard() {
+  return (
+    <div className="border-l-2 border-[var(--ag-border-subtle)] pl-4 py-3 animate-pulse">
+      <div className="flex items-start gap-2.5">
+        <div className="w-5 h-5 rounded bg-[var(--ag-border-subtle)] flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-48 bg-[var(--ag-active-bg)] rounded" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -183,13 +247,9 @@ function SkeletonBar() {
 // ── Trend Arrow Component ───────────────────────────────────────
 
 function TrendArrow({ trend }: { trend: 'up' | 'down' | 'flat' }) {
-  if (trend === 'up') {
-    return <TrendingUp className="w-4 h-4 text-[var(--ag-lime)]" />;
-  }
-  if (trend === 'down') {
-    return <TrendingDown className="w-4 h-4 text-[var(--ag-pink)]" />;
-  }
-  return <ArrowUpRight className="w-4 h-4 text-[var(--ag-text-secondary)] opacity-40" />;
+  if (trend === 'up') return <TrendingUp className="w-4 h-4 text-[var(--ag-lime)]" />;
+  if (trend === 'down') return <TrendingDown className="w-4 h-4 text-[var(--ag-pink)]" />;
+  return <ArrowUpRight className="w-4 h-4 text-[var(--ag-text-muted)] opacity-50" />;
 }
 
 // ── Mini Sparkline (inline SVG) ─────────────────────────────────
@@ -220,13 +280,15 @@ function MiniSparkline({ data, color = 'var(--ag-cyan)' }: { data: number[]; col
         strokeLinecap="round"
         strokeLinejoin="round"
         points={points}
-        opacity="0.7"
+        opacity="0.75"
       />
     </svg>
   );
 }
 
 // ── Overview Stat Card ──────────────────────────────────────────
+// Concentric radii: outer rounded-2xl (16px), icon rounded-xl (12px)
+// Shadow-over-border: multi-layer shadow replaces border ring
 
 function OverviewCard({
   icon: Icon,
@@ -234,7 +296,7 @@ function OverviewCard({
   label,
   trend,
   sparkData,
-  color = '#A78BFA',
+  color = 'var(--ag-cyan)',
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   value: string | number;
@@ -243,31 +305,62 @@ function OverviewCard({
   sparkData: number[];
   color?: string;
 }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <div className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl hover:border-[rgba(139,92,246,0.15)] transition-all duration-300 p-5 flex flex-col gap-3 min-w-0">
+    <motion.div
+      variants={cardVariants}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl p-5 flex flex-col gap-3 min-w-0 cursor-default"
+      style={{
+        boxShadow: hovered ? CARD_SHADOW_HOVER : CARD_SHADOW,
+        transition: 'box-shadow 250ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1)',
+        transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+        WebkitFontSmoothing: 'antialiased',
+      }}
+    >
+      {/* Icon + Trend: icon uses rounded-xl = outer(16) - px(4 approx at this distance, treated as sep surface) */}
       <div className="flex items-start justify-between">
         <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: color + '18' }}
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-inset ring-white/5"
+          style={{ backgroundColor: color.startsWith('var') ? undefined : color + '18',
+            background: color.startsWith('var')
+              ? `color-mix(in srgb, ${color} 12%, transparent)`
+              : undefined,
+          }}
         >
           <Icon className="w-5 h-5" style={{ color }} />
         </div>
         <TrendArrow trend={trend} />
       </div>
+
+      {/* Value: tabular-nums prevents layout shift, text-wrap:balance for label */}
       <div>
-        <div className="text-2xl font-bold text-[var(--ag-text-primary)] tracking-tight">{value}</div>
-        <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{label}</div>
+        <div
+          className="text-2xl font-bold text-[var(--ag-text-primary)] tracking-tight tabular-nums"
+          style={{ textWrap: 'balance' } as React.CSSProperties}
+        >
+          {value}
+        </div>
+        <div
+          className="text-xs text-[var(--ag-text-secondary)] mt-0.5"
+          style={{ textWrap: 'pretty' } as React.CSSProperties}
+        >
+          {label}
+        </div>
       </div>
+
       {sparkData.length >= 2 && (
-        <div className="mt-auto">
+        <div className="mt-auto pt-1 border-t border-[var(--ag-border-subtle)]">
           <MiniSparkline data={sparkData} color={color} />
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
-// ── Activity Heatmap (inline SVG, GitHub-style, Mon-Sun) ────────
+// ── Activity Heatmap (GitHub-style, Mon-Sun) ────────────────────
 
 function ActivityHeatmap({
   heatmap,
@@ -283,7 +376,6 @@ function ActivityHeatmap({
   } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Build a message count map from activity entries (for richer data)
   const messageCountByDate = useMemo(() => {
     const map = new Map<string, number>();
     for (const entry of activityEntries) {
@@ -293,27 +385,15 @@ function ActivityHeatmap({
     return map;
   }, [activityEntries]);
 
-  // Build grid data: last 16 weeks
   const gridData = useMemo(() => {
     const today = new Date();
-    const cells: {
-      date: string;
-      count: number;
-      weekCol: number;
-      dayRow: number;
-    }[] = [];
-
+    const cells: { date: string; count: number; weekCol: number; dayRow: number }[] = [];
     const heatmapMap = new Map<string, number>();
-    for (const pt of heatmap) {
-      heatmapMap.set(pt.date, pt.intensity);
-    }
+    for (const pt of heatmap) heatmapMap.set(pt.date, pt.intensity);
 
-    // Go back 16 weeks from today (112 days)
     const totalDays = 16 * 7;
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - totalDays + 1);
-
-    // Align to Monday
     const startDay = startDate.getUTCDay();
     const mondayOffset = startDay === 0 ? -6 : 1 - startDay;
     startDate.setDate(startDate.getDate() + mondayOffset);
@@ -322,25 +402,15 @@ function ActivityHeatmap({
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().slice(0, 10);
-      const dayRow = getWeekday(dateStr); // 0=Mon..6=Sun
+      const dayRow = getWeekday(dateStr);
       const weekCol = Math.floor(i / 7);
-
-      // Use heatmap intensity if available, else activity entry count
       const count = heatmapMap.get(dateStr) ?? messageCountByDate.get(dateStr) ?? 0;
-
-      // Only include cells up to today
-      if (d <= today) {
-        cells.push({ date: dateStr, count, weekCol, dayRow });
-      }
+      if (d <= today) cells.push({ date: dateStr, count, weekCol, dayRow });
     }
-
     return cells;
   }, [heatmap, messageCountByDate]);
 
-  // Calculate max for color scaling
-  const maxCount = useMemo(() => {
-    return Math.max(...gridData.map((c) => c.count), 1);
-  }, [gridData]);
+  const maxCount = useMemo(() => Math.max(...gridData.map((c) => c.count), 1), [gridData]);
 
   const getColor = (count: number): string => {
     if (count === 0) return HEATMAP_COLORS[0];
@@ -359,11 +429,7 @@ function ActivityHeatmap({
   const svgWidth = labelWidth + numWeeks * step + gap;
   const svgHeight = 7 * step + gap;
 
-  const handleMouseEnter = (
-    e: React.MouseEvent,
-    date: string,
-    count: number,
-  ) => {
+  const handleMouseEnter = (e: React.MouseEvent, date: string, count: number) => {
     const rect = (e.target as SVGElement).getBoundingClientRect();
     setTooltip({
       text: `${formatDate(date)}: ${count} message${count !== 1 ? 's' : ''}`,
@@ -372,7 +438,6 @@ function ActivityHeatmap({
     });
   };
 
-  // Mobile tap handler -- toggles tooltip on touch devices
   const handleTap = (
     e: React.MouseEvent | React.TouchEvent,
     date: string,
@@ -381,11 +446,8 @@ function ActivityHeatmap({
     e.preventDefault();
     const rect = (e.target as SVGElement).getBoundingClientRect();
     const text = `${formatDate(date)}: ${count} message${count !== 1 ? 's' : ''}`;
-    // Toggle: if same tooltip shown, dismiss; else show new one
     setTooltip((prev) =>
-      prev?.text === text
-        ? null
-        : { text, x: rect.left + rect.width / 2, y: rect.top - 8 },
+      prev?.text === text ? null : { text, x: rect.left + rect.width / 2, y: rect.top - 8 },
     );
   };
 
@@ -393,11 +455,13 @@ function ActivityHeatmap({
     <div className="relative">
       {tooltip && (
         <div
-          className="fixed z-50 bg-[rgba(12,12,30,0.95)] border border-[rgba(139,92,246,0.15)] rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] pointer-events-none whitespace-nowrap"
+          className="fixed z-50 rounded-lg px-3 py-1.5 text-xs text-[var(--ag-text-primary)] pointer-events-none whitespace-nowrap tabular-nums"
           style={{
             top: tooltip.y - 28,
             left: tooltip.x,
             transform: 'translateX(-50%)',
+            backgroundColor: 'var(--ag-bg-chrome)',
+            boxShadow: '0 0 0 1px rgba(139,92,246,0.18), 0 8px 24px rgba(0,0,0,0.5)',
           }}
         >
           {tooltip.text}
@@ -411,22 +475,19 @@ function ActivityHeatmap({
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="min-w-0"
         >
-          {/* Day labels */}
           {DAY_LABELS.map((label, i) => (
             <text
               key={label}
               x={12}
               y={i * step + cellSize - 1}
               textAnchor="middle"
-              className="text-[8px]"
-              fill="#9CA3AF"
+              fill="#6B7280"
               fontFamily="system-ui, sans-serif"
               fontSize="8"
             >
               {i % 2 === 0 ? label : ''}
             </text>
           ))}
-          {/* Grid cells -- hover for desktop, tap for mobile */}
           {gridData.map((cell) => (
             <rect
               key={cell.date}
@@ -437,7 +498,7 @@ function ActivityHeatmap({
               rx={2}
               ry={2}
               fill={getColor(cell.count)}
-              className="cursor-pointer transition-opacity hover:opacity-80"
+              className="cursor-pointer transition-opacity hover:opacity-75"
               onMouseEnter={(e) => handleMouseEnter(e, cell.date, cell.count)}
               onMouseLeave={() => setTooltip(null)}
               onClick={(e) => handleTap(e, cell.date, cell.count)}
@@ -446,13 +507,13 @@ function ActivityHeatmap({
           ))}
         </svg>
       </div>
-      {/* Legend */}
-      <div className="flex items-center gap-2 mt-2 text-xs text-[var(--ag-text-secondary)]">
+      {/* Heatmap legend */}
+      <div className="flex items-center gap-2 mt-2 text-xs text-[var(--ag-text-muted)]">
         <span>Less</span>
         {HEATMAP_COLORS.map((color, i) => (
           <div
             key={i}
-            className="w-[10px] h-[10px] rounded-sm"
+            className="w-[10px] h-[10px] rounded-sm ring-1 ring-inset ring-white/5"
             style={{ backgroundColor: color }}
           />
         ))}
@@ -470,51 +531,52 @@ interface AIInsight {
   type: 'positive' | 'warning' | 'tip' | 'achievement';
 }
 
-const INSIGHT_BORDER_COLORS: Record<string, string> = {
+const INSIGHT_ACCENT: Record<string, string> = {
   achievement: 'var(--ag-lime)',
   warning: 'var(--ag-amber)',
   tip: 'var(--ag-cyan)',
   positive: 'var(--ag-violet)',
 };
 
-// ── AI Insight Card ─────────────────────────────────────────────
+// ── Insight Cards ───────────────────────────────────────────────
 
 function InsightCard({ text }: { text: string }) {
   return (
-    <div className="border-l-2 border-[var(--ag-lime)] pl-4 py-2 flex items-start gap-2.5">
+    <div className="flex items-start gap-3 pl-4 py-2.5 border-l-2 border-[var(--ag-lime)]">
       <Lightbulb className="w-4 h-4 text-[var(--ag-lime)] mt-0.5 flex-shrink-0" />
-      <span className="text-sm text-[var(--ag-text-primary)]">{text}</span>
+      <span
+        className="text-sm text-[var(--ag-text-primary)]"
+        style={{ textWrap: 'pretty' } as React.CSSProperties}
+      >
+        {text}
+      </span>
     </div>
   );
 }
 
 function AIInsightCard({ insight }: { insight: AIInsight }) {
-  const borderColor = INSIGHT_BORDER_COLORS[insight.type] ?? '#8B5CF6';
+  const accent = INSIGHT_ACCENT[insight.type] ?? 'var(--ag-violet)';
   return (
     <div
-      className="border-l-2 pl-4 py-2 flex items-start gap-2.5"
-      style={{ borderColor }}
+      className="flex items-start gap-3 pl-4 py-2.5 border-l-2 rounded-r-lg"
+      style={{
+        borderColor: accent,
+        backgroundColor: `color-mix(in srgb, ${accent} 4%, transparent)`,
+      }}
     >
       <span className="text-base mt-0.5 flex-shrink-0 leading-none">{insight.icon}</span>
-      <span className="text-sm text-[var(--ag-text-primary)]">{insight.text}</span>
+      <span
+        className="text-sm text-[var(--ag-text-primary)]"
+        style={{ textWrap: 'pretty' } as React.CSSProperties}
+      >
+        {insight.text}
+      </span>
     </div>
   );
 }
 
-function SkeletonInsightCard() {
-  return (
-    <div className="border-l-2 border-[rgba(139,92,246,0.08)] pl-4 py-3 animate-pulse">
-      <div className="flex items-start gap-2.5">
-        <div className="w-5 h-5 rounded bg-[rgba(139,92,246,0.04)] flex-shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-48 bg-[rgba(139,92,246,0.06)] rounded" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Usage Bar Chart ─────────────────────────────────────────────
+// ── Usage by Feature Bar ────────────────────────────────────────
+// Concentric radii: track rounded-full, bar fill rounded-full (matches)
 
 function UsageBarChart({
   items,
@@ -530,21 +592,28 @@ function UsageBarChart({
         const pct = Math.round((item.value / total) * 100);
         const barWidth = (item.value / maxVal) * 100;
         return (
-          <div key={item.label} className="flex items-center gap-3">
-            <span className="text-xs text-[var(--ag-text-secondary)] w-20 text-right flex-shrink-0">
-              {item.label}
-            </span>
-            <div className="flex-1 h-6 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden relative">
+          <div key={item.label} className="flex items-center gap-3 min-h-[44px]">
+            <div className="flex items-center gap-2 w-24 flex-shrink-0 justify-end">
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-xs text-[var(--ag-text-secondary)] truncate">
+                {item.label}
+              </span>
+            </div>
+            <div className="flex-1 h-5 bg-[var(--ag-border-subtle)] rounded-full overflow-hidden relative">
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${barWidth}%`,
                   backgroundColor: item.color,
                   minWidth: item.value > 0 ? '8px' : '0',
+                  boxShadow: `0 0 6px ${item.color}40`,
                 }}
               />
             </div>
-            <span className="text-xs text-[var(--ag-text-primary)] w-12 text-right font-medium flex-shrink-0">
+            <span className="text-xs text-[var(--ag-text-primary)] w-10 text-right font-medium flex-shrink-0 tabular-nums">
               {pct}%
             </span>
           </div>
@@ -555,6 +624,7 @@ function UsageBarChart({
 }
 
 // ── Time Period Tabs ────────────────────────────────────────────
+// Concentric radii: outer rounded-xl (12px), inner buttons rounded-lg (8px)
 
 function PeriodTabs({
   value,
@@ -570,20 +640,85 @@ function PeriodTabs({
   ];
 
   return (
-    <div className="flex gap-1 bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] rounded-xl p-1 backdrop-blur-xl">
+    <div
+      className="flex gap-1 bg-[var(--ag-bg-surface)] rounded-xl p-1 backdrop-blur-xl"
+      style={{ boxShadow: CARD_SHADOW }}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
+          className={[
+            'px-4 py-2 rounded-lg text-xs font-medium min-h-[44px]',
+            'transition-[background-color,box-shadow,color] duration-200',
             value === tab.key
-              ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30'
-              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] border border-transparent'
-          }`}
+              ? 'bg-[var(--ag-active-bg)] text-[var(--ag-violet)]'
+              : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-border-subtle)]',
+          ].join(' ')}
+          style={
+            value === tab.key
+              ? { boxShadow: '0 0 0 1px rgba(139,92,246,0.3)', WebkitFontSmoothing: 'antialiased' }
+              : undefined
+          }
         >
           {tab.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ── Custom Pie Legend ───────────────────────────────────────────
+
+const PROVIDER_COLORS_MAP: Record<string, string> = {
+  OpenRouter: '#A78BFA',
+  PicoClaw: '#ADFF2F',
+  Groq: '#8B5CF6',
+  Together: '#FF2D78',
+  Ollama: '#F59E0B',
+};
+
+function PieLegend({ data }: { data: { name: string; value: number }[] }) {
+  const total = data.reduce((s, d) => s + d.value, 0) || 1;
+  return (
+    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-3">
+      {data.map((entry) => {
+        const pct = Math.round((entry.value / total) * 100);
+        return (
+          <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
+            <div
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-1 ring-inset ring-white/10"
+              style={{ backgroundColor: PROVIDER_COLORS_MAP[entry.name] ?? '#6B7280' }}
+            />
+            <span>{entry.name}</span>
+            <span className="text-[var(--ag-text-muted)] tabular-nums">{pct}%</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Delegation Legend ───────────────────────────────────────────
+
+function DelegationLegend({ data }: { data: { name: string; count: number; fill: string }[] }) {
+  const total = data.reduce((s, d) => s + d.count, 0) || 1;
+  return (
+    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-3 pt-3 border-t border-[var(--ag-border-subtle)]">
+      {data.map((entry) => {
+        const pct = Math.round((entry.count / total) * 100);
+        return (
+          <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
+            <div
+              className="w-2.5 h-2.5 rounded-sm flex-shrink-0 ring-1 ring-inset ring-white/10"
+              style={{ backgroundColor: entry.fill }}
+            />
+            <span>{entry.name}</span>
+            <span className="text-[var(--ag-text-muted)] tabular-nums">{entry.count}</span>
+            <span className="text-[var(--ag-text-muted)] tabular-nums">({pct}%)</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -604,7 +739,6 @@ export function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('week');
 
-  // GAP-7: AI-generated insights
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
   const [aiInsightsError, setAiInsightsError] = useState(false);
@@ -616,7 +750,7 @@ export function AnalyticsPage() {
     try {
       const res = await api.get<{ insights: AIInsight[]; generatedAt: string }>(
         '/analytics/insights',
-        { params: refresh ? { refresh: 'true' } : {} }
+        { params: refresh ? { refresh: 'true' } : {} },
       );
       setAiInsights(res.data.insights ?? []);
       if (refresh) void notifyDone('insights refreshed');
@@ -633,41 +767,20 @@ export function AnalyticsPage() {
     setError(null);
     void notifyStart('load-analytics');
     try {
-      // Fire all requests in parallel; catch individual failures gracefully
       const results = await Promise.allSettled([
-        api.get<{ snapshots: DailySnapshot[] }>('/analytics/snapshot', {
-          params: { days: 365 },
-        }),
+        api.get<{ snapshots: DailySnapshot[] }>('/analytics/snapshot', { params: { days: 365 } }),
         api.get<{ summary: WeeklySummary }>('/analytics/weekly'),
         api.get<{ heatmap: HeatmapPoint[] }>('/analytics/heatmap'),
         api.get<{ agents: AgentUsage[] }>('/analytics/agents'),
-        api.get<{ activity: ActivityEntry[] }>('/activity', {
-          params: { limit: 100 },
-        }),
+        api.get<{ activity: ActivityEntry[] }>('/activity', { params: { limit: 100 } }),
       ]);
 
-      const snapshots =
-        results[0].status === 'fulfilled'
-          ? results[0].value.data.snapshots ?? []
-          : [];
-      const weekly =
-        results[1].status === 'fulfilled'
-          ? results[1].value.data.summary ?? null
-          : null;
-      const heatmap =
-        results[2].status === 'fulfilled'
-          ? results[2].value.data.heatmap ?? []
-          : [];
-      const agents =
-        results[3].status === 'fulfilled'
-          ? results[3].value.data.agents ?? []
-          : [];
-      const activityEntries =
-        results[4].status === 'fulfilled'
-          ? results[4].value.data.activity ?? []
-          : [];
+      const snapshots = results[0].status === 'fulfilled' ? results[0].value.data.snapshots ?? [] : [];
+      const weekly = results[1].status === 'fulfilled' ? results[1].value.data.summary ?? null : null;
+      const heatmap = results[2].status === 'fulfilled' ? results[2].value.data.heatmap ?? [] : [];
+      const agents = results[3].status === 'fulfilled' ? results[3].value.data.agents ?? [] : [];
+      const activityEntries = results[4].status === 'fulfilled' ? results[4].value.data.activity ?? [] : [];
 
-      // If ALL requests failed, show error
       if (results.every((r) => r.status === 'rejected')) {
         setError('Failed to load analytics data. Please try again.');
         void notifyFail('all analytics requests failed');
@@ -689,7 +802,7 @@ export function AnalyticsPage() {
     void loadAiInsights();
   }, [load, loadAiInsights]);
 
-  // ── Compute period-filtered data ──────────────────────────────
+  // ── Period-filtered snapshots ─────────────────────────────────
 
   const filteredSnapshots = useMemo(() => {
     const now = new Date();
@@ -711,13 +824,9 @@ export function AnalyticsPage() {
   // ── Overview Stats ────────────────────────────────────────────
 
   const totalConversations = filteredSnapshots.reduce(
-    (s, d) => s + d.messagesReceived + d.agentCalls,
-    0,
+    (s, d) => s + d.messagesReceived + d.agentCalls, 0,
   );
-  const totalTasksCompleted = filteredSnapshots.reduce(
-    (s, d) => s + d.tasksCompleted,
-    0,
-  );
+  const totalTasksCompleted = filteredSnapshots.reduce((s, d) => s + d.tasksCompleted, 0);
   const habitStreak = data.weekly?.longestHabitStreak?.streak ?? 0;
   const focusHours =
     period === 'week'
@@ -726,26 +835,18 @@ export function AnalyticsPage() {
           (filteredSnapshots.reduce((s, d) => s + d.focusMinutes, 0) / 60) * 10,
         ) / 10;
 
-  const conversationTrend = computeTrend(
-    filteredSnapshots.map((d) => d.messagesReceived + d.agentCalls),
-  );
-  const taskTrend = computeTrend(
-    filteredSnapshots.map((d) => d.tasksCompleted),
-  );
-  const focusTrend = computeTrend(
-    filteredSnapshots.map((d) => d.focusMinutes),
-  );
+  const conversationTrend = computeTrend(filteredSnapshots.map((d) => d.messagesReceived + d.agentCalls));
+  const taskTrend = computeTrend(filteredSnapshots.map((d) => d.tasksCompleted));
+  const focusTrend = computeTrend(filteredSnapshots.map((d) => d.focusMinutes));
 
-  // ── AI Insights (computed from available data) ────────────────
+  // ── Computed Insights ─────────────────────────────────────────
 
   const insights = useMemo(() => {
     const result: string[] = [];
 
-    // 1. "You're most productive on [day]"
     if (data.weekly?.mostActiveDay) {
       result.push(`You're most productive on ${data.weekly.mostActiveDay}`);
     } else if (filteredSnapshots.length > 0) {
-      // Compute most productive day from snapshots
       const dayTotals = new Map<string, number>();
       for (const snap of filteredSnapshots) {
         const d = new Date(snap.date + 'T00:00:00Z');
@@ -754,15 +855,10 @@ export function AnalyticsPage() {
       }
       let bestDay = '';
       let bestCount = 0;
-      dayTotals.forEach((count, day) => {
-        if (count > bestCount) { bestDay = day; bestCount = count; }
-      });
-      if (bestDay) {
-        result.push(`You're most productive on ${bestDay}s`);
-      }
+      dayTotals.forEach((count, day) => { if (count > bestCount) { bestDay = day; bestCount = count; } });
+      if (bestDay) result.push(`You're most productive on ${bestDay}s`);
     }
 
-    // 2. "Your focus sessions average [X] minutes"
     const focusSnapshots = filteredSnapshots.filter((d) => d.focusMinutes > 0);
     if (focusSnapshots.length > 0) {
       const avgFocusMinutes = Math.round(
@@ -771,10 +867,8 @@ export function AnalyticsPage() {
       result.push(`Your focus sessions average ${avgFocusMinutes} minutes`);
     }
 
-    // 3. "You've completed [X]% more tasks than last week"
     if (filteredSnapshots.length >= 7 && period === 'week') {
       const thisWeekTasks = filteredSnapshots.reduce((s, d) => s + d.tasksCompleted, 0);
-      // Compare with previous period from full snapshot set
       const allSnaps = data.snapshots;
       const prevWeekSnaps = allSnaps.slice(
         Math.max(0, allSnaps.length - 14),
@@ -783,19 +877,14 @@ export function AnalyticsPage() {
       const prevWeekTasks = prevWeekSnaps.reduce((s, d) => s + d.tasksCompleted, 0);
       if (prevWeekTasks > 0) {
         const pctChange = Math.round(((thisWeekTasks - prevWeekTasks) / prevWeekTasks) * 100);
-        if (pctChange > 0) {
-          result.push(`You've completed ${pctChange}% more tasks than last week`);
-        } else if (pctChange < 0) {
-          result.push(`Task volume is down ${Math.abs(pctChange)}% from last week — time to ramp up!`);
-        } else {
-          result.push('Your task output is holding steady from last week');
-        }
+        if (pctChange > 0) result.push(`You've completed ${pctChange}% more tasks than last week`);
+        else if (pctChange < 0) result.push(`Task volume is down ${Math.abs(pctChange)}% from last week — time to ramp up!`);
+        else result.push('Your task output is holding steady from last week');
       } else if (thisWeekTasks > 0) {
         result.push(`You've completed ${thisWeekTasks} tasks this week — great start!`);
       }
     }
 
-    // Peak hours (estimate from activity entries)
     if (data.activityEntries.length > 0 && result.length < 4) {
       const hourCounts = new Map<number, number>();
       for (const entry of data.activityEntries) {
@@ -804,43 +893,26 @@ export function AnalyticsPage() {
       }
       let peakHour = 0;
       let peakCount = 0;
-      hourCounts.forEach((count, hour) => {
-        if (count > peakCount) {
-          peakHour = hour;
-          peakCount = count;
-        }
-      });
-      const startHour = peakHour;
+      hourCounts.forEach((count, hour) => { if (count > peakCount) { peakHour = hour; peakCount = count; } });
       const endHour = (peakHour + 2) % 24;
       const fmtHour = (h: number) => {
         if (h === 0) return '12am';
         if (h === 12) return '12pm';
         return h < 12 ? `${h}am` : `${h - 12}pm`;
       };
-      result.push(`Peak hours: ${fmtHour(startHour)}-${fmtHour(endHour)}`);
+      result.push(`Peak hours: ${fmtHour(peakHour)}–${fmtHour(endHour)}`);
     }
 
-    // Task completion rate
     if (data.weekly?.taskCompletionRate != null && result.length < 5) {
-      result.push(
-        `Task completion rate: ${data.weekly.taskCompletionRate}%`,
-      );
+      result.push(`Task completion rate: ${data.weekly.taskCompletionRate}%`);
     }
-
-    // AI insight from backend
-    if (data.weekly?.aiInsight && result.length < 5) {
-      result.push(data.weekly.aiInsight);
-    }
-
-    // Fallback if no data at all
-    if (result.length === 0) {
-      result.push('Start using Agentin more to unlock personalized insights.');
-    }
+    if (data.weekly?.aiInsight && result.length < 5) result.push(data.weekly.aiInsight);
+    if (result.length === 0) result.push('Start using Agentin more to unlock personalized insights.');
 
     return result.slice(0, 5);
   }, [data, filteredSnapshots, period]);
 
-  // ── CSV Export ──────────────────────────────────────────────────
+  // ── CSV Export ────────────────────────────────────────────────
 
   const [exporting, setExporting] = useState(false);
 
@@ -858,7 +930,6 @@ export function AnalyticsPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch {
-      // Fallback: generate CSV from local snapshot data
       const rows = [
         ['Date', 'Messages', 'Tasks Completed', 'Focus Minutes', 'Habits Logged', 'Agent Calls', 'Notes Created'].join(','),
         ...filteredSnapshots.map((s) =>
@@ -879,45 +950,22 @@ export function AnalyticsPage() {
     }
   }, [filteredSnapshots]);
 
-  // ── Usage by Feature (horizontal bar chart data) ──────────────
+  // ── Feature Usage ─────────────────────────────────────────────
 
   const featureUsage = useMemo(() => {
-    const chat = filteredSnapshots.reduce(
-      (s, d) => s + d.messagesReceived + d.agentCalls,
-      0,
-    );
-    const reminders = filteredSnapshots.reduce(
-      (s, d) => s + d.remindersCreated,
-      0,
-    );
-    const habits = filteredSnapshots.reduce(
-      (s, d) => s + d.habitsLogged,
-      0,
-    );
-    const focus = filteredSnapshots.reduce(
-      (s, d) => s + d.focusMinutes,
-      0,
-    );
+    const chat = filteredSnapshots.reduce((s, d) => s + d.messagesReceived + d.agentCalls, 0);
+    const reminders = filteredSnapshots.reduce((s, d) => s + d.remindersCreated, 0);
+    const habits = filteredSnapshots.reduce((s, d) => s + d.habitsLogged, 0);
+    const focus = filteredSnapshots.reduce((s, d) => s + d.focusMinutes, 0);
     return [
       { label: 'Chat', value: chat, color: 'var(--ag-cyan)' },
-      { label: 'Reminders', value: reminders, color: '#ADFF2F' },
+      { label: 'Reminders', value: reminders, color: 'var(--ag-lime)' },
       { label: 'Habits', value: habits, color: 'var(--ag-violet)' },
-      { label: 'Focus', value: focus, color: '#FF2D78' },
+      { label: 'Focus', value: focus, color: 'var(--ag-pink)' },
     ];
   }, [filteredSnapshots]);
 
-  // ── Recharts Data ──────────────────────────────────────────────
-
-  const RECHARTS_TOOLTIP_STYLE = {
-    contentStyle: {
-      backgroundColor: 'rgba(12,12,30,0.95)',
-      border: '1px solid rgba(139,92,246,0.15)',
-      borderRadius: '8px',
-      fontSize: '12px',
-    },
-    itemStyle: { color: 'var(--ag-text-primary)' },
-    labelStyle: { color: 'var(--ag-text-secondary)' },
-  };
+  // ── Recharts Data ─────────────────────────────────────────────
 
   const latencyChartData = useMemo(() => {
     const recentSnaps = filteredSnapshots.slice(-7);
@@ -934,14 +982,6 @@ export function AnalyticsPage() {
     });
   }, [filteredSnapshots]);
 
-  const PROVIDER_COLORS_MAP: Record<string, string> = {
-    OpenRouter: '#A78BFA',
-    PicoClaw: '#ADFF2F',
-    Groq: '#8B5CF6',
-    Together: '#FF2D78',
-    Ollama: '#F59E0B',
-  };
-
   const providerPieData = useMemo(
     () => [
       { name: 'OpenRouter', value: 38 },
@@ -955,9 +995,18 @@ export function AnalyticsPage() {
 
   const delegationChartData = useMemo(() => {
     const AGENT_COLORS: Record<string, string> = {
+      Weebo: 'var(--ag-lime)',
+      Cal: 'var(--ag-cyan)',
+      Echo: 'var(--ag-echo)',
+      Forge: 'var(--ag-pink)',
+      Aria: 'var(--ag-amber)',
+      Pulse: 'var(--ag-green)',
+      Nova: 'var(--ag-nova)',
+    };
+    const AGENT_HEX: Record<string, string> = {
       Weebo: '#ADFF2F',
       Cal: '#A78BFA',
-      Echo: '#8B5CF6',
+      Echo: '#6366F1',
       Forge: '#FF2D78',
       Aria: '#F59E0B',
       Pulse: '#10B981',
@@ -968,7 +1017,7 @@ export function AnalyticsPage() {
     return agents.map((name) => {
       const real = agentMap.get(name.toLowerCase());
       const count = real ?? 5 + ((name.charCodeAt(0) + name.charCodeAt(name.length - 1)) % 20);
-      return { name, count, fill: AGENT_COLORS[name] ?? '#6B7280' };
+      return { name, count, fill: AGENT_HEX[name] ?? '#6B7280', cssVar: AGENT_COLORS[name] };
     });
   }, [data.agents]);
 
@@ -976,320 +1025,356 @@ export function AnalyticsPage() {
 
   return (
     <DashboardPageWrapper>
-    <PageShell maxWidth="5xl">
-    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      {/* Header with Pulse ownership dot (#10B981) */}
-      <PageHeader
-        icon={BarChart3}
-        title="Agentin Wrapped"
-        subtitle="Your personal AI usage and productivity insights"
-        badge={
-          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
-            </span>
-            Pulse
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-3 flex-wrap">
-            <PeriodTabs value={period} onChange={setPeriod} />
-            <button
-              onClick={handleExportCSV}
-              disabled={exporting || loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px] disabled:opacity-40"
-              aria-label="Export analytics as CSV"
-              title="Export as CSV"
-            >
-              <Download className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-            <button
-              onClick={load}
-              disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] backdrop-blur-xl transition-all text-sm min-h-[44px]"
-              aria-label="Refresh analytics"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-              />
-            </button>
-          </div>
-        }
-      />
-
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-center justify-between">
-          <span className="text-red-400 text-sm">{error}</span>
-          <button
-            onClick={load}
-            className="text-sm text-red-400 hover:text-red-300 underline underline-offset-2 ml-4 flex-shrink-0 min-h-[44px] px-2"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* 1. Overview Stats Cards */}
-      <section>
-        {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <OverviewCard
-              icon={MessageCircle}
-              value={totalConversations}
-              label="Total Conversations"
-              trend={conversationTrend}
-              sparkData={filteredSnapshots.map(
-                (d) => d.messagesReceived + d.agentCalls,
-              )}
-              color="#A78BFA"
-            />
-            <OverviewCard
-              icon={CheckCircle2}
-              value={totalTasksCompleted}
-              label={
-                period === 'week'
-                  ? 'Tasks This Week'
-                  : period === 'month'
-                    ? 'Tasks This Month'
-                    : 'Total Tasks'
-              }
-              trend={taskTrend}
-              sparkData={filteredSnapshots.map((d) => d.tasksCompleted)}
-              color="#ADFF2F"
-            />
-            <OverviewCard
-              icon={Flame}
-              value={habitStreak > 0 ? `${habitStreak}d` : '--'}
-              label="Habits Streak"
-              trend={habitStreak > 3 ? 'up' : habitStreak > 0 ? 'flat' : 'flat'}
-              sparkData={filteredSnapshots.map((d) => d.habitsLogged)}
-              color="#8B5CF6"
-            />
-            <OverviewCard
-              icon={Clock}
-              value={focusHours > 0 ? `${focusHours}h` : '--'}
-              label={
-                period === 'week'
-                  ? 'Focus This Week'
-                  : period === 'month'
-                    ? 'Focus This Month'
-                    : 'Total Focus'
-              }
-              trend={focusTrend}
-              sparkData={filteredSnapshots.map((d) => d.focusMinutes)}
-              color="#FF2D78"
-            />
-          </div>
-        )}
-      </section>
-
-      {/* 2. Activity Heatmap */}
-      <SectionCard title="Activity Heatmap" subtitle="Last 16 weeks">
-        {loading ? (
-          <SkeletonHeatmap />
-        ) : (
-          <ActivityHeatmap
-            heatmap={data.heatmap}
-            activityEntries={data.activityEntries}
+      <PageShell maxWidth="5xl">
+        <div
+          className="space-y-6 pb-24 md:pb-6 overflow-x-hidden"
+          style={{ WebkitFontSmoothing: 'antialiased' }}
+        >
+          {/* ── Header ─────────────────────────────────────────── */}
+          <PageHeader
+            icon={BarChart3}
+            title="Agentin Wrapped"
+            subtitle="Your personal AI usage and productivity insights"
+            badge={
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[var(--ag-pulse)]/10 border border-[var(--ag-pulse)]/25 text-[var(--ag-pulse)]">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-pulse)] opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-pulse)]" />
+                </span>
+                Pulse
+              </span>
+            }
+            actions={
+              <div className="flex items-center gap-3 flex-wrap">
+                <PeriodTabs value={period} onChange={setPeriod} />
+                <button
+                  onClick={handleExportCSV}
+                  disabled={exporting || loading}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-pulse)] backdrop-blur-xl text-sm min-h-[44px] disabled:opacity-40 transition-[color,box-shadow] duration-200 active:scale-[0.96]"
+                  style={{ boxShadow: CARD_SHADOW }}
+                  aria-label="Export analytics as CSV"
+                  title="Export as CSV"
+                >
+                  <Download className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+                <button
+                  onClick={load}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-pulse)] backdrop-blur-xl text-sm min-h-[44px] transition-[color,box-shadow] duration-200 active:scale-[0.96]"
+                  style={{ boxShadow: CARD_SHADOW }}
+                  aria-label="Refresh analytics"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            }
           />
-        )}
-      </SectionCard>
 
-      {/* 3. AI-Generated Insights Panel */}
-      <SectionCard title="AI Insights">
-        <div className="flex items-center justify-between mb-4 -mt-1">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[var(--ag-green)]" />
-            <span className="text-xs text-[var(--ag-text-secondary)]">Powered by Pulse</span>
-          </div>
-          <button
-            onClick={() => void loadAiInsights(true)}
-            disabled={aiInsightsLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[rgba(12,12,30,0.6)] border border-[rgba(139,92,246,0.08)] text-[var(--ag-text-secondary)] hover:text-[#10B981] hover:border-[rgba(139,92,246,0.15)] transition-all text-xs min-h-[44px]"
-            title="Regenerate insights"
-          >
-            <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
+          {/* ── Error State ─────────────────────────────────────── */}
+          {error && (
+            <div
+              className="rounded-2xl p-4 flex items-center justify-between"
+              style={{ boxShadow: '0 0 0 1px rgba(239,68,68,0.3), 0 4px 16px rgba(239,68,68,0.1)', backgroundColor: 'rgba(239,68,68,0.07)' }}
+            >
+              <span className="text-red-400 text-sm" style={{ textWrap: 'pretty' } as React.CSSProperties}>{error}</span>
+              <button
+                onClick={load}
+                className="text-sm text-red-400 hover:text-red-300 underline underline-offset-2 ml-4 flex-shrink-0 min-h-[44px] px-2"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* ── 1. Overview Stats ───────────────────────────────── */}
+          <section aria-label="Overview statistics">
+            {loading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : (
+              <motion.div
+                className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <OverviewCard
+                  icon={MessageCircle}
+                  value={totalConversations}
+                  label="Total Conversations"
+                  trend={conversationTrend}
+                  sparkData={filteredSnapshots.map((d) => d.messagesReceived + d.agentCalls)}
+                  color="var(--ag-cyan)"
+                />
+                <OverviewCard
+                  icon={CheckCircle2}
+                  value={totalTasksCompleted}
+                  label={period === 'week' ? 'Tasks This Week' : period === 'month' ? 'Tasks This Month' : 'Total Tasks'}
+                  trend={taskTrend}
+                  sparkData={filteredSnapshots.map((d) => d.tasksCompleted)}
+                  color="var(--ag-lime)"
+                />
+                <OverviewCard
+                  icon={Flame}
+                  value={habitStreak > 0 ? `${habitStreak}d` : '--'}
+                  label="Habits Streak"
+                  trend={habitStreak > 3 ? 'up' : 'flat'}
+                  sparkData={filteredSnapshots.map((d) => d.habitsLogged)}
+                  color="var(--ag-violet)"
+                />
+                <OverviewCard
+                  icon={Clock}
+                  value={focusHours > 0 ? `${focusHours}h` : '--'}
+                  label={period === 'week' ? 'Focus This Week' : period === 'month' ? 'Focus This Month' : 'Total Focus'}
+                  trend={focusTrend}
+                  sparkData={filteredSnapshots.map((d) => d.focusMinutes)}
+                  color="var(--ag-pink)"
+                />
+              </motion.div>
+            )}
+          </section>
+
+          {/* ── 2. Activity Heatmap ─────────────────────────────── */}
+          <SectionCard title="Activity Heatmap" subtitle="Last 16 weeks — tap a cell to inspect">
+            {loading ? (
+              <SkeletonHeatmap />
+            ) : (
+              <ActivityHeatmap heatmap={data.heatmap} activityEntries={data.activityEntries} />
+            )}
+          </SectionCard>
+
+          {/* ── 3. AI Insights ──────────────────────────────────── */}
+          <SectionCard title="AI Insights">
+            <div className="flex items-center justify-between mb-4 -mt-1">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[var(--ag-green)]" />
+                <span className="text-xs text-[var(--ag-text-secondary)]">Powered by Pulse</span>
+              </div>
+              <button
+                onClick={() => void loadAiInsights(true)}
+                disabled={aiInsightsLoading}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-pulse)] transition-[color,box-shadow] text-xs min-h-[44px]"
+                style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.06)' }}
+                title="Regenerate insights"
+              >
+                <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+            </div>
+
+            {aiInsightsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonInsightCard key={i} />)}
+              </div>
+            ) : aiInsights.length > 0 ? (
+              <div className="space-y-2">
+                {aiInsights.map((insight, i) => <AIInsightCard key={i} insight={insight} />)}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(aiInsightsError || insights.length > 0)
+                  ? insights.map((text, i) => <InsightCard key={i} text={text} />)
+                  : (
+                    <p className="text-sm text-[var(--ag-text-muted)] py-4 text-center">
+                      No insights yet — keep using Agentin to unlock them.
+                    </p>
+                  )
+                }
+              </div>
+            )}
+          </SectionCard>
+
+          {/* ── 4. Agent Metrics Charts ─────────────────────────── */}
+          {!loading && (
+            <section aria-label="Agent metrics">
+              <h2
+                className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2"
+                style={{ textWrap: 'balance' } as React.CSSProperties}
+              >
+                <Activity className="w-4 h-4 text-[var(--ag-green)]" />
+                Agent Metrics
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                {/* Area Chart: Response Latency */}
+                <SectionCard title="Response Latency" subtitle="Last 7 days (ms)">
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={latencyChartData} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--ag-green)" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="var(--ag-green)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ag-border-subtle)" vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => `${v}ms`}
+                        />
+                        <RechartsTooltip
+                          {...TOOLTIP_STYLE}
+                          formatter={(value: number) => [`${value}ms`, 'Latency']}
+                        />
+                        <RechartsLegend
+                          wrapperStyle={{ fontSize: '11px', paddingTop: '8px', color: 'var(--ag-text-secondary)' }}
+                          formatter={() => 'Avg latency (ms)'}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="latency"
+                          stroke="var(--ag-green)"
+                          fill="url(#latencyGrad)"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: 'var(--ag-green)', strokeWidth: 2, stroke: 'var(--ag-bg-base)' }}
+                          activeDot={{ r: 5, strokeWidth: 0 }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </SectionCard>
+
+                {/* Pie Chart: LLM Provider Distribution */}
+                <SectionCard title="LLM Provider Distribution">
+                  <div className="h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={providerPieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={46}
+                          outerRadius={70}
+                          paddingAngle={2}
+                          dataKey="value"
+                          stroke="var(--ag-bg-base)"
+                          strokeWidth={2}
+                        >
+                          {providerPieData.map((entry) => (
+                            <Cell
+                              key={entry.name}
+                              fill={PROVIDER_COLORS_MAP[entry.name] ?? '#6B7280'}
+                            />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip
+                          {...TOOLTIP_STYLE}
+                          formatter={(value: number, name: string) => [
+                            <span key="val" className="tabular-nums">{value}%</span>,
+                            name,
+                          ]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <PieLegend data={providerPieData} />
+                </SectionCard>
+
+                {/* Bar Chart: Delegation by Agent — full width */}
+                <SectionCard title="Delegation by Agent" subtitle="Calls per agent (estimated)" className="lg:col-span-2">
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={delegationChartData}
+                        margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ag-border-subtle)" vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <RechartsTooltip
+                          {...TOOLTIP_STYLE}
+                          formatter={(value: number, _name: string, props: { payload?: { name?: string } }) => [
+                            <span key="val" className="tabular-nums">{value} calls</span>,
+                            props.payload?.name ?? 'Agent',
+                          ]}
+                        />
+                        <Bar dataKey="count" radius={[5, 5, 0, 0]} maxBarSize={40}>
+                          {delegationChartData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <DelegationLegend data={delegationChartData} />
+                </SectionCard>
+              </div>
+            </section>
+          )}
+
+          {/* ── 5. Usage by Feature ──────────────────────────────── */}
+          <SectionCard title="Usage by Feature" subtitle="Relative activity across features">
+            {loading ? <SkeletonBar /> : <UsageBarChart items={featureUsage} />}
+          </SectionCard>
+
+          {/* ── 6. Agent Breakdown ──────────────────────────────── */}
+          {!loading && data.agents.length > 0 && (
+            <SectionCard title="Agent Usage" subtitle="Last 30 days">
+              <div className="space-y-3">
+                {data.agents.map((a) => {
+                  const maxCount = Math.max(...data.agents.map((ag) => ag.count), 1);
+                  const agentColors: Record<string, string> = {
+                    weebo: 'var(--ag-lime)',
+                    jarvis: 'var(--ag-violet)',
+                    edith: 'var(--ag-cyan)',
+                    pulse: 'var(--ag-green)',
+                    builtin: 'var(--ag-amber)',
+                  };
+                  const color = agentColors[a.agent] ?? 'var(--ag-text-muted)';
+                  const pct = Math.round((a.count / maxCount) * 100);
+                  return (
+                    <div key={a.agent} className="flex items-center gap-3 min-h-[32px]">
+                      <div className="flex items-center gap-1.5 w-20 flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-xs text-[var(--ag-text-primary)] capitalize truncate">
+                          {a.agent}
+                        </span>
+                      </div>
+                      <div className="flex-1 h-2 bg-[var(--ag-border-subtle)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: color,
+                            boxShadow: `0 0 4px ${color}60`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-[var(--ag-text-secondary)] w-10 text-right flex-shrink-0 tabular-nums">
+                        {a.count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* ── Footer ──────────────────────────────────────────── */}
+          <p className="text-xs text-[var(--ag-text-muted)] text-center pb-4">
+            Insights update in real time as you use Agentin
+          </p>
         </div>
-        {aiInsightsLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonInsightCard key={i} />
-            ))}
-          </div>
-        ) : aiInsights.length > 0 ? (
-          <div className="space-y-3">
-            {aiInsights.map((insight, i) => (
-              <AIInsightCard key={i} insight={insight} />
-            ))}
-          </div>
-        ) : aiInsightsError ? (
-          <div className="space-y-3">
-            {insights.map((text, i) => (
-              <InsightCard key={i} text={text} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {insights.map((text, i) => (
-              <InsightCard key={i} text={text} />
-            ))}
-          </div>
-        )}
-      </SectionCard>
-
-      {/* 4. Agent Metrics Charts (recharts) */}
-      {!loading && (
-        <section>
-          <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] mb-3 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[var(--ag-green)]" />
-            Agent Metrics
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Area: Response Latency */}
-            <SectionCard title="Response Latency" subtitle="Last 7 days">
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={latencyChartData}>
-                    <defs>
-                      <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--ag-green)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="var(--ag-green)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ag-border-subtle)" />
-                    <XAxis dataKey="name" tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: 'var(--ag-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}ms`} />
-                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number) => [`${value}ms`, 'Latency']} />
-                    <Area type="monotone" dataKey="latency" stroke="var(--ag-green)" fill="url(#latencyGrad)" strokeWidth={2} dot={{ r: 3, fill: 'var(--ag-green)', strokeWidth: 2, stroke: 'var(--ag-bg-base)' }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </SectionCard>
-
-            {/* Pie: LLM Provider Distribution */}
-            <SectionCard title="LLM Provider Distribution">
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={providerPieData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={2}
-                      dataKey="value"
-                      stroke="#06061a"
-                      strokeWidth={2}
-                    >
-                      {providerPieData.map((entry) => (
-                        <Cell key={entry.name} fill={PROVIDER_COLORS_MAP[entry.name] ?? '#6B7280'} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} formatter={(value: number, name: string) => [`${value}%`, name]} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Legend */}
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {providerPieData.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-[var(--ag-text-secondary)]">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PROVIDER_COLORS_MAP[entry.name] }} />
-                    {entry.name}
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
-            {/* Bar: Delegation Counts (full width) */}
-            <SectionCard title="Daily Delegation Counts by Agent" className="lg:col-span-2">
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={delegationChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.08)" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#9CA3AF', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <RechartsTooltip {...RECHARTS_TOOLTIP_STYLE} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {delegationChartData.map((entry) => (
-                        <Cell key={entry.name} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </SectionCard>
-          </div>
-        </section>
-      )}
-
-      {/* 5. Usage by Feature (horizontal bar chart) */}
-      <SectionCard title="Usage by Feature">
-        {loading ? (
-          <SkeletonBar />
-        ) : (
-          <UsageBarChart items={featureUsage} />
-        )}
-      </SectionCard>
-
-      {/* 6. Agent Breakdown */}
-      {!loading && data.agents.length > 0 && (
-        <SectionCard title="Agent Usage" subtitle="Last 30 days">
-          <div className="space-y-3">
-            {data.agents.map((a) => {
-              const maxCount = Math.max(
-                ...data.agents.map((ag) => ag.count),
-                1,
-              );
-              const agentColors: Record<string, string> = {
-                weebo: 'var(--ag-lime)',
-                jarvis: 'var(--ag-violet)',
-                edith: 'var(--ag-cyan)',
-                pulse: 'var(--ag-green)',
-                builtin: 'var(--ag-amber)',
-              };
-              return (
-                <div key={a.agent} className="flex items-center gap-3">
-                  <span className="text-xs text-[var(--ag-text-primary)] w-16 capitalize flex-shrink-0">
-                    {a.agent}
-                  </span>
-                  <div className="flex-1 h-2 bg-[rgba(139,92,246,0.04)] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${(a.count / maxCount) * 100}%`,
-                        backgroundColor:
-                          agentColors[a.agent] ?? '#6B7280',
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-[var(--ag-text-secondary)] w-8 text-right flex-shrink-0">
-                    {a.count}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </SectionCard>
-      )}
-
-      {/* Footer */}
-      <p className="text-xs text-[var(--ag-text-secondary)] text-center pb-4">
-        Insights update in real time as you use Agentin
-      </p>
-    </div>
-    </PageShell>
+      </PageShell>
     </DashboardPageWrapper>
   );
 }

@@ -513,12 +513,12 @@ export function PortfolioPage() {
 
       {/* Profile Completion Progress Bar */}
       {completionPct < 100 && (
-        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
+        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl rounded-xl p-6 shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_4px_16px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.1)]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] font-heading">
+            <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] font-heading tabular-nums">
               Profile {completionPct}% complete
             </h3>
-            <span className="text-xs text-[var(--ag-text-secondary)]">{completedCount}/{completionItems.length} fields</span>
+            <span className="text-xs text-[var(--ag-text-secondary)] tabular-nums">{completedCount}/{completionItems.length} fields</span>
           </div>
           <div className="w-full bg-[var(--ag-bg-base)] rounded-full h-2 mb-3">
             <div
@@ -553,7 +553,7 @@ export function PortfolioPage() {
 
       {/* Share Your Portfolio Card */}
       {user?.username && (
-        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
+        <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl rounded-xl p-6 shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_4px_16px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.1)]">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -649,7 +649,7 @@ export function PortfolioPage() {
 
         {/* ── Profile Tab ─────────────────────────────────────── */}
         <TabsContent value="profile" className="space-y-6">
-          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-6">
+          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl rounded-xl p-6 shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_4px_16px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.1)]">
             <div className="mb-6">
               <h3 className="text-xl font-heading text-[var(--ag-text-primary)] mb-2">Profile Details</h3>
               <p className="text-[var(--ag-text-secondary)] text-sm">Your public portfolio headline, bio, and layout</p>
@@ -919,7 +919,7 @@ export function PortfolioPage() {
               {/* Inline project form */}
               {editingProject && (
                 <div className="grid md:grid-cols-[1fr_280px] gap-4">
-                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] space-y-3">
+                <div className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_2px_8px_rgba(0,0,0,0.12)] space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Name *</label>
@@ -1056,7 +1056,7 @@ export function PortfolioPage() {
                     setDraggedIndex(null);
                   }}
                   onDragEnd={() => setDraggedIndex(null)}
-                  className={`p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] group hover:border-[rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-200 press-scale w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
+                  className={`p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_2px_8px_rgba(0,0,0,0.1)] group hover:shadow-[0_0_0_1px_rgba(139,92,246,0.18),0_4px_16px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 transition-[box-shadow,transform] duration-200 active:scale-[0.96] w-full cursor-grab active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${draggedIndex === idx ? 'opacity-50' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -1115,7 +1115,7 @@ export function PortfolioPage() {
             <div className="space-y-4">
               {/* Inline milestone form */}
               {editingMilestone && (
-                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.15)] space-y-3">
+                <div className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_2px_8px_rgba(0,0,0,0.12)] space-y-3">
                   <div className="grid md:grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm text-[var(--ag-text-muted)] mb-1 block">Title *</label>
@@ -1319,7 +1319,7 @@ export function PortfolioPage() {
                   {suggestions.map((suggestion) => (
                     <div
                       key={suggestion.id}
-                      className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all"
+                      className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.16),0_4px_16px_rgba(0,0,0,0.18)] transition-[box-shadow] duration-200"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -1383,22 +1383,22 @@ export function PortfolioPage() {
             <div className="space-y-6">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+                <div className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_2px_8px_rgba(0,0,0,0.12)] transition-[box-shadow] duration-200 hover:shadow-[0_0_0_1px_rgba(139,92,246,0.16),0_4px_16px_rgba(0,0,0,0.18)]">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="w-4 h-4 text-[#EC4899]" />
                     <span className="text-xs text-[var(--ag-text-muted)]">Total Views</span>
                   </div>
-                  <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
+                  <div className="text-2xl font-bold text-[var(--ag-text-primary)] tabular-nums">
                     {portfolioStats ? portfolioStats.totalViews.toLocaleString() : '—'}
                   </div>
                   <div className="text-xs text-[var(--ag-text-muted)]">all time</div>
                 </div>
-                <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+                <div className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_2px_8px_rgba(0,0,0,0.12)] transition-[box-shadow] duration-200 hover:shadow-[0_0_0_1px_rgba(139,92,246,0.16),0_4px_16px_rgba(0,0,0,0.18)]">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-[#00FF88]" />
                     <span className="text-xs text-[var(--ag-text-muted)]">Views This Week</span>
                   </div>
-                  <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
+                  <div className="text-2xl font-bold text-[var(--ag-text-primary)] tabular-nums">
                     {portfolioStats ? portfolioStats.recentViews.toLocaleString() : '—'}
                   </div>
                   <div className="text-xs text-[#00FF88]">last 7 days</div>
@@ -1514,7 +1514,7 @@ export function PortfolioPage() {
               ) : (
                 <div className="space-y-3">
                   {contacts.map((c) => (
-                    <div key={c.id} className="rounded-xl border border-[rgba(139,92,246,0.08)] bg-[var(--ag-bg-surface)] p-4 space-y-1">
+                    <div key={c.id} className="rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4 space-y-1 shadow-[0_0_0_1px_rgba(139,92,246,0.08),0_2px_8px_rgba(0,0,0,0.1)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.14),0_4px_16px_rgba(0,0,0,0.16)] transition-[box-shadow] duration-200">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-[var(--ag-text-primary)] text-sm">{c.sender_name}</span>
                         <div className="flex items-center gap-2">
@@ -1543,12 +1543,12 @@ export function PortfolioPage() {
       {/* Generated Preview Modal */}
       {generatedPreview && generateTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card-v2 border border-[rgba(139,92,246,0.15)] rounded-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-[var(--ag-bg-elevated)] backdrop-blur-xl rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_24px_64px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3)] animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-[#EC4899]" />
               <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Generated {generateTarget.field}</h3>
             </div>
-            <div className="p-4 rounded-xl bg-[var(--ag-bg-base)] border border-[rgba(139,92,246,0.08)]">
+            <div className="p-4 rounded-lg bg-[var(--ag-bg-base)] shadow-[0_0_0_1px_rgba(139,92,246,0.1),0_2px_8px_rgba(0,0,0,0.12)]">
               <p className="text-[var(--ag-text-primary)] whitespace-pre-wrap">{generatedPreview}</p>
             </div>
             <div className="flex gap-3">

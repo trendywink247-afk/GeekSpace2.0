@@ -210,7 +210,8 @@ export function DocsWorkspacePage() {
           onClick={handleCreate}
           className="m-3 flex items-center gap-2 px-3 py-2.5 rounded-xl
                      bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] text-white text-sm font-medium
-                     hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 transition-all
+                     hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90
+                     transition-[transform,opacity,box-shadow] active:scale-[0.96]
                      min-h-[44px] shadow-lg"
         >
           <Plus className="w-4 h-4" />
@@ -223,10 +224,10 @@ export function DocsWorkspacePage() {
             <button
               key={v.id}
               onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
-                min-h-[44px]
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-[transform,background-color,color]
+                min-h-[44px] active:scale-[0.96]
                 ${viewFilter === v.id && !activeFolder
-                  ? 'bg-[#F59E0B]/10 text-[#F59E0B]'
+                  ? 'bg-[var(--ag-amber)]/10 text-[var(--ag-amber)]'
                   : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
             >
@@ -254,14 +255,14 @@ export function DocsWorkspacePage() {
             <button
               key={f.id}
               onClick={() => { setActiveFolder(f.id); setViewFilter('all'); }}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
-                min-h-[44px]
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-[transform,background-color,color]
+                min-h-[44px] active:scale-[0.96]
                 ${activeFolder === f.id
-                  ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]'
+                  ? 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)]'
                   : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                 }`}
             >
-              <span className="w-6 h-6 rounded-md flex items-center justify-center bg-[#8B5CF6]/10 shrink-0">
+              <span className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--ag-violet)]/10 shrink-0">
                 <Folder className="w-3.5 h-3.5 shrink-0" />
               </span>
               <span className="truncate flex-1 text-left">{f.icon || ''} {f.name}</span>
@@ -283,10 +284,10 @@ export function DocsWorkspacePage() {
             title="Docs Workspace"
             subtitle="AI-powered writing and knowledge management"
             badge={
-              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B]">
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-[var(--ag-amber)]/10 border border-[var(--ag-amber)]/30 text-[var(--ag-amber)]">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#F59E0B] opacity-75 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F59E0B]" />
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-amber)] opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-amber)]" />
                 </span>
                 Forge
               </span>
@@ -305,7 +306,7 @@ export function DocsWorkspacePage() {
                 <Button
                   size="sm"
                   onClick={handleCreate}
-                  className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white shrink-0 min-h-[44px] shadow-lg transition-all"
+                  className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white shrink-0 min-h-[44px] shadow-lg transition-[transform,opacity,box-shadow] active:scale-[0.96]"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New</span>
@@ -330,9 +331,9 @@ export function DocsWorkspacePage() {
                 <button
                   key={v.id}
                   onClick={() => { setViewFilter(v.id); setActiveFolder(null); }}
-                  className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[44px]
+                  className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap min-h-[44px] transition-[transform,background-color,color] active:scale-[0.96]
                     ${viewFilter === v.id
-                      ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
+                      ? 'bg-[var(--ag-amber)]/15 text-[var(--ag-amber)] border border-[var(--ag-amber)]/30'
                       : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)]'
                     }`}
                 >
@@ -361,7 +362,7 @@ export function DocsWorkspacePage() {
               />
               {quickCapture && (
                 <Button size="sm" onClick={handleQuickCapture}
-                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all">
+                  className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-[transform,opacity,box-shadow] active:scale-[0.96]">
                   Capture
                 </Button>
               )}
@@ -382,8 +383,8 @@ export function DocsWorkspacePage() {
           ) : filteredDocs.length === 0 ? (
             <BlurFade delay={0.15}>
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#F59E0B]/5 border border-[#F59E0B]/10 flex items-center justify-center mb-4">
-                  <FileText className="w-8 h-8 text-[#F59E0B]/30" />
+                <div className="w-16 h-16 rounded-2xl bg-[var(--ag-amber)]/5 border border-[var(--ag-amber)]/10 flex items-center justify-center mb-4">
+                  <FileText className="w-8 h-8 text-[var(--ag-amber)]/30" />
                 </div>
                 <h3 className="text-[var(--ag-text-primary)] font-heading font-medium mb-1">
                   {search ? 'No documents match your search' : 'No documents yet'}
@@ -392,7 +393,7 @@ export function DocsWorkspacePage() {
                   {search ? 'Try a different search term' : 'Start writing. Your AI-powered workspace awaits.'}
                 </p>
                 {!search && (
-                  <Button onClick={handleCreate} className="gap-2 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all">
+                  <Button onClick={handleCreate} className="gap-2 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-[transform,opacity,box-shadow] active:scale-[0.96]">
                     <Plus className="w-4 h-4" />
                     Create Document
                   </Button>
@@ -406,7 +407,7 @@ export function DocsWorkspacePage() {
                   <SectionCard className="!p-0 cursor-pointer group" padding="sm">
                     <button
                       onClick={() => { setSelectedDoc(doc); setEditorOpen(true); }}
-                      className="w-full text-left p-4 min-h-[44px]"
+                      className="w-full text-left p-4 min-h-[44px] transition-[transform] active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <span className="text-lg">{doc.icon || '📄'}</span>
@@ -443,7 +444,7 @@ export function DocsWorkspacePage() {
                         <span className="text-[var(--ag-text-secondary)]/50 text-xs">{formatDate(doc.updated_at)}</span>
                         <div className="flex items-center gap-1.5">
                           {parseTags(doc.tags).slice(0, 2).map(tag => (
-                            <Badge key={tag} className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20">
+                            <Badge key={tag} className="text-[10px] px-1.5 py-0 bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20">
                               {tag}
                             </Badge>
                           ))}
@@ -476,7 +477,7 @@ export function DocsWorkspacePage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewFolderOpen(false)} className="min-h-[44px]">Cancel</Button>
             <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}
-              className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-[transform,opacity,box-shadow] active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
               Create
             </Button>
           </DialogFooter>
@@ -696,7 +697,7 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
       <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3
                          bg-[var(--ag-bg-surface)]/95 backdrop-blur-xl border-b border-[var(--ag-border-subtle)]">
         <button onClick={onBack} className="p-2 rounded-lg hover:bg-white/5 min-w-[44px] min-h-[44px]
-                                            flex items-center justify-center"
+                                            flex items-center justify-center transition-[transform,background-color] active:scale-[0.96]"
                 aria-label="Back to documents">
           <ChevronRight className="w-4 h-4 rotate-180 text-[var(--ag-text-secondary)]" />
         </button>
@@ -710,10 +711,10 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
         />
 
         {/* Forge agent dot inline */}
-        <span className="inline-flex items-center gap-1.5 text-[10px] text-[#F59E0B] shrink-0">
+        <span className="inline-flex items-center gap-1.5 text-[10px] text-[var(--ag-amber)] shrink-0">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#F59E0B] opacity-75 animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F59E0B]" />
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--ag-amber)] opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--ag-amber)]" />
           </span>
           Forge
         </span>
@@ -725,7 +726,7 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
         <Button
           size="sm"
           onClick={openConversationModal}
-          className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-all"
+          className="gap-1.5 bg-gradient-to-r from-[var(--ag-violet)] to-[#FFD700] hover:from-[var(--ag-violet)]/90 hover:to-[#FFD700]/90 text-white min-h-[44px] shadow-lg transition-[transform,opacity,box-shadow] active:scale-[0.96]"
           title="Create from Conversation"
         >
           <MessageSquare className="w-4 h-4" />
@@ -742,12 +743,12 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
             onClick={() => handleAIAction(id)}
             disabled={!!aiProcessing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
-                       text-[var(--ag-text-secondary)] hover:text-[#F59E0B] hover:bg-[#F59E0B]/10
-                       transition-colors whitespace-nowrap disabled:opacity-50
-                       min-h-[44px]"
+                       text-[var(--ag-text-secondary)] hover:text-[var(--ag-amber)] hover:bg-[var(--ag-amber)]/10
+                       transition-[transform,background-color,color] whitespace-nowrap disabled:opacity-50
+                       active:scale-[0.96] min-h-[44px]"
           >
             {aiProcessing === id ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F59E0B]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ag-amber)]" />
             ) : (
               <Icon className="w-3.5 h-3.5" />
             )}
@@ -757,7 +758,7 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
 
         {/* Processing indicator */}
         {aiProcessing && (
-          <span className="text-[10px] text-[#F59E0B] animate-pulse ml-auto shrink-0">
+          <span className="text-[10px] text-[var(--ag-amber)] animate-pulse ml-auto shrink-0">
             Processing...
           </span>
         )}
@@ -814,10 +815,10 @@ function DocEditorInline({ doc, onBack, onSaved, onSaveFailed }: { doc: Doc; onB
                     disabled={!!convProcessing}
                     className="w-full text-left p-3 rounded-xl border border-[var(--ag-border-subtle)]
                                hover:border-[var(--ag-border-subtle)]/50 hover:bg-[var(--ag-violet)]/5
-                               transition-all disabled:opacity-50 min-h-[44px] backdrop-blur-xl"
+                               transition-[transform,background-color,border-color] active:scale-[0.98] disabled:opacity-50 min-h-[44px] backdrop-blur-xl"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <Badge className="text-[10px] px-1.5 py-0 bg-[#8B5CF6]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20">
+                      <Badge className="text-[10px] px-1.5 py-0 bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border-[var(--ag-violet)]/20">
                         {conv.role}
                       </Badge>
                       {convProcessing === conv.id && (

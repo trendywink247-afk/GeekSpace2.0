@@ -209,7 +209,7 @@ export function VoiceChatPage() {
           actions={
             <button
               onClick={() => setSettingsOpen(!settingsOpen)}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-[var(--ag-active-bg)] transition-[transform,background-color] duration-150 active:scale-[0.96]"
               aria-label="Voice settings"
             >
               <Settings2 className="w-5 h-5 text-[var(--ag-text-muted)]" />
@@ -460,9 +460,9 @@ export function VoiceChatPage() {
               'relative min-h-[64px] min-w-[64px] w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200',
               !voice.isSupported ? 'opacity-40 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
               voiceState === 'processing' ? 'opacity-60 cursor-not-allowed bg-[var(--ag-bg-elevated)]' :
-              voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-95' :
-              voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-95' :
-              'bg-gradient-to-br from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 cursor-pointer active:scale-95 animate-voice-idle-pulse shadow-lg hover:shadow-xl',
+              voiceState === 'recording' ? 'bg-[var(--ag-pink)] shadow-[0_0_32px_rgba(255,45,120,0.4)] hover:bg-[var(--ag-pink)]/90 cursor-pointer active:scale-[0.96]' :
+              voiceState === 'speaking' ? 'bg-[var(--ag-weebo)]/20 border-2 border-[var(--ag-weebo)]/40 hover:bg-[var(--ag-weebo)]/30 cursor-pointer active:scale-[0.96]' :
+              'bg-gradient-to-br from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 cursor-pointer active:scale-[0.96] animate-voice-idle-pulse shadow-lg hover:shadow-xl',
             ].join(' ')}
           >
             {voiceState === 'processing' ? (
@@ -487,7 +487,7 @@ export function VoiceChatPage() {
           <div className="flex items-center justify-center gap-3 flex-shrink-0 w-full max-w-lg">
           <button
             onClick={() => navigate('/dashboard/chat')}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
           >
             <MessageSquare className="w-4 h-4" />
             <span>Text Mode</span>
@@ -496,7 +496,7 @@ export function VoiceChatPage() {
           <button
             onClick={clearTranscript}
             disabled={transcript.length === 0}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,background-color,color] duration-150 active:scale-[0.96] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear</span>
@@ -504,7 +504,7 @@ export function VoiceChatPage() {
 
           <button
             onClick={() => setSettingsOpen(!settingsOpen)}
-            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--ag-bg-elevated)] hover:bg-[var(--ag-bg-surface-hover)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
           >
             <Settings2 className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>

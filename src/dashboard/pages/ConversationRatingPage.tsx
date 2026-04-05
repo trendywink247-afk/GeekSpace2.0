@@ -38,7 +38,7 @@ function StarRating({ score, onRate, disabled }: { score: number | null; onRate:
             onMouseEnter={() => setHovered(s)}
             onMouseLeave={() => setHovered(null)}
             disabled={disabled}
-            className="transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-[var(--ag-focus-ring)] focus-visible:outline-none rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--ag-active-bg)] hover:scale-110"
+            className="transition-[transform,background-color] duration-150 min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-[var(--ag-focus-ring)] focus-visible:outline-none rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--ag-active-bg)] hover:scale-110 active:scale-[0.96]"
             aria-label={`Rate ${s} star${s > 1 ? 's' : ''}`}
           >
             <Star
@@ -165,7 +165,7 @@ export function ConversationRatingPage() {
       <div className="space-y-4">
         {!loading && conversations.map((conv, i) => (
           <BlurFade key={conv.id} delay={0.1 + i * 0.05}>
-            <SectionCard className="hover:shadow-[var(--ag-glow-sm)] transition-all duration-300">
+            <SectionCard className="hover:shadow-[var(--ag-glow-sm)] transition-[transform,box-shadow,border-color] duration-300">
               <div className="space-y-4">
                 {/* Timestamp */}
                 <div className="flex items-center gap-2">
@@ -227,13 +227,13 @@ export function ConversationRatingPage() {
               variant="outline"
               disabled={page <= 1 || loading}
               onClick={() => void load(page - 1)}
-              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-[transform,border-color,box-shadow,opacity] duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.96] group"
             >
               <ChevronLeft size={16} className="mr-2 group-hover:-translate-x-0.5 transition-transform" />
               Previous
             </Button>
             
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--ag-bg-surface)] shadow-[inset_0_0_0_1px_var(--ag-border-subtle)]">
               <span className="text-sm text-[var(--ag-text-secondary)] font-medium">Page</span>
               <span className="text-sm text-[var(--ag-text-primary)] font-mono font-bold">{page}</span>
               <span className="text-sm text-[var(--ag-text-muted)]">/</span>
@@ -244,7 +244,7 @@ export function ConversationRatingPage() {
               variant="outline"
               disabled={page >= totalPages || loading}
               onClick={() => void load(page + 1)}
-              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="min-h-[44px] px-6 border-[var(--ag-border-default)] text-[var(--ag-text-primary)] hover:bg-[var(--ag-active-bg)] hover:border-[var(--ag-border-glow)] hover:shadow-[var(--ag-glow-sm)] transition-[transform,border-color,box-shadow,opacity] duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.96] group"
             >
               Next
               <ChevronRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />

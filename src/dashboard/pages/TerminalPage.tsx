@@ -708,7 +708,7 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
                   </pre>
                   <button
                     onClick={() => copyToClipboard(cmd.output, cmd.id)}
-                    className="absolute top-0 right-0 p-1.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center hover:border-[var(--ag-lime)]/40"
+                    className="absolute top-0 right-0 p-1.5 rounded bg-[var(--ag-bg-deep)] border border-[var(--ag-border-subtle)] opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-[transform,opacity,border-color] duration-150 active:scale-[0.96] min-w-[44px] min-h-[44px] flex items-center justify-center hover:border-[var(--ag-lime)]/40"
                     aria-label="Copy output"
                   >
                     {copiedId === cmd.id ? (
@@ -782,7 +782,7 @@ Portfolio: https://${user?.username || 'user'}.agentin.chat`,
           <BlurFade key={cmd} delay={0.25 + index * 0.05}>
           <button
             onClick={() => executeCommand(cmd)}
-            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono transition-all duration-200 ${
+            className={`px-3 py-2.5 min-h-[44px] rounded-lg border text-xs font-mono transition-[transform,box-shadow,border-color] duration-150 active:scale-[0.96] ${
               cmd.startsWith('ai ') || cmd.startsWith('/')
                 ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-lime)] text-[var(--ag-text-primary)] hover:shadow-lg hover:shadow-[var(--ag-lime)]/25 hover:scale-105 border-transparent'
                 : 'bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)] backdrop-blur-sm'

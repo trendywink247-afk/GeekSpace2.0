@@ -1,4 +1,11 @@
+// ============================================================
+// Focus Page — Full Redesign
+// Violet gradient timer ring · Shadow-depth cards · Stagger
+// Scale 0.96 on press · Concentric radii · CSS vars only
+// ============================================================
+
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, type TargetAndTransition } from 'framer-motion';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
@@ -82,7 +89,12 @@ const BREAK_TIPS = [
   'Grab a healthy snack',
 ];
 
-const RING_COLORS = ['#A78BFA', '#ADFF2F', '#FF2D78'];
+// Ring colors — CSS vars for tokens, fallback hex for SVG compat
+const RING_COLORS = ['var(--ag-cyan)', 'var(--ag-lime)', 'var(--ag-pink)'];
+
+// Shadow tokens
+const SHADOW_CARD = '0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.3)';
+const SHADOW_CARD_HOVER = '0 0 0 1px rgba(139,92,246,0.18), 0 6px 20px rgba(0,0,0,0.4), 0 0 20px rgba(139,92,246,0.07)';
 
 // ---------- Utilities ----------
 
@@ -131,7 +143,6 @@ const TIMER_WORKER_CODE = `
       intervalId = setInterval(function() {
         self.postMessage({ type: 'tick', elapsed: Math.floor((Date.now() - startMs) / 1000) });
       }, 1000);
-      // Send first tick immediately
       self.postMessage({ type: 'tick', elapsed: Math.floor((Date.now() - startMs) / 1000) });
     } else if (e.data.type === 'stop') {
       if (intervalId) clearInterval(intervalId);
@@ -161,8 +172,7 @@ function useTimer(startMs: number | null, durationMin: number | null) {
 
   useEffect(() => {
     if (!startMs) {
-      setElapsed(0); // eslint-disable-line react-hooks/set-state-in-effect
-      // Stop existing worker
+      setElapsed(0);
       if (workerRef.current) {
         workerRef.current.postMessage({ type: 'stop' });
         workerRef.current.terminate();
@@ -171,7 +181,6 @@ function useTimer(startMs: number | null, durationMin: number | null) {
       return;
     }
 
-    // Try Web Worker first (works in background tabs)
     const worker = createTimerWorker();
     if (worker) {
       workerRef.current = worker;
@@ -188,7 +197,6 @@ function useTimer(startMs: number | null, durationMin: number | null) {
       };
     }
 
-    // Fallback: main-thread interval (throttled in background tabs)
     const tick = () => setElapsed(Math.floor((Date.now() - startMs) / 1000));
     tick();
     const id = setInterval(tick, 1000);
@@ -202,37 +210,48 @@ function useTimer(startMs: number | null, durationMin: number | null) {
 
 // ---------- Sub-components ----------
 
-function TimerRing({ progress, size = 220, strokeWidth = 10, color = 'var(--ag-cyan)', children }: {
+/** Timer ring with violet→cyan gradient stroke */
+function TimerRing({ progress, size = 220, strokeWidth = 10, children }: {
   progress: number;
   size?: number;
   strokeWidth?: number;
-  color?: string;
   children: React.ReactNode;
 }) {
   const r = (size - strokeWidth * 2) / 2;
   const circ = 2 * Math.PI * r;
   const center = size / 2;
+  const gradId = `timer-grad-${size}`;
   return (
     <div className="relative flex items-center justify-center mx-auto" style={{ width: size, height: size }}>
       <svg className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={center} cy={center} r={r} fill="none" stroke="var(--ag-bg-deep)" strokeWidth={strokeWidth} />
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--ag-violet)" />
+            <stop offset="100%" stopColor="var(--ag-cyan)" />
+          </linearGradient>
+        </defs>
+        {/* Track */}
+        <circle cx={center} cy={center} r={r} fill="none" stroke="rgba(139,92,246,0.08)" strokeWidth={strokeWidth} />
+        {/* Progress — violet gradient */}
         <circle
           cx={center} cy={center} r={r} fill="none"
-          stroke={color} strokeWidth={strokeWidth}
+          stroke={`url(#${gradId})`}
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={circ * (1 - progress / 100)}
           style={{ transition: 'stroke-dashoffset 1s linear' }}
         />
-        {/* Glow effect */}
+        {/* Glow layer */}
         <circle
           cx={center} cy={center} r={r} fill="none"
-          stroke={color} strokeWidth={strokeWidth + 4}
+          stroke="var(--ag-violet)"
+          strokeWidth={strokeWidth + 6}
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={circ * (1 - progress / 100)}
-          opacity={0.15}
-          style={{ transition: 'stroke-dashoffset 1s linear', filter: 'blur(6px)' }}
+          opacity={0.14}
+          style={{ transition: 'stroke-dashoffset 1s linear', filter: 'blur(8px)' }}
         />
       </svg>
       <div className="relative z-10 text-center">{children}</div>
@@ -273,26 +292,24 @@ function HabitCompletionRings({ habits }: { habits: Habit[] }) {
         );
       })}
       <div className="relative z-10 text-center">
-        <div className="text-lg font-bold text-[var(--ag-text-primary)] font-heading">
+        <div className="text-lg font-bold font-heading" style={{ color: 'var(--ag-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
           {topThree.filter(h => h.logged_today).length}/{topThree.length}
         </div>
-        <div className="text-[10px] text-[var(--ag-text-secondary)]">done</div>
+        <div className="text-[10px]" style={{ color: 'var(--ag-text-secondary)' }}>done</div>
       </div>
     </div>
   );
 }
 
 function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
-  // Build Mon-Sun data for current week
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun
+  const dayOfWeek = now.getDay();
   const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const monday = new Date(now);
   monday.setDate(now.getDate() - mondayOffset);
   monday.setHours(0, 0, 0, 0);
 
   const dailyMinutes: number[] = Array(7).fill(0);
-
   for (const s of sessions) {
     if (!s.ended_at || !s.duration_min) continue;
     const sessionDate = new Date(s.started_at);
@@ -302,16 +319,26 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
     }
   }
 
-  const maxMin = Math.max(...dailyMinutes, 30); // At least 30 for scale
+  const maxMin = Math.max(...dailyMinutes, 30);
   const barWidth = 28;
   const chartHeight = 100;
-  const chartWidth = barWidth * 7 + 6 * 8; // 7 bars + 6 gaps of 8px
+  const chartWidth = barWidth * 7 + 6 * 8;
   const gap = 8;
   const todayIndex = mondayOffset;
 
   return (
     <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${chartWidth} ${chartHeight + 24}`} className="w-full max-w-[320px] mx-auto" preserveAspectRatio="xMidYMid meet">
+      <svg
+        viewBox={`0 0 ${chartWidth} ${chartHeight + 24}`}
+        className="w-full max-w-[320px] mx-auto"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <linearGradient id="bar-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--ag-cyan)" />
+            <stop offset="100%" stopColor="var(--ag-violet)" />
+          </linearGradient>
+        </defs>
         {dailyMinutes.map((mins, i) => {
           const barH = maxMin > 0 ? (mins / maxMin) * chartHeight : 0;
           const x = i * (barWidth + gap);
@@ -320,20 +347,24 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
           const hasData = mins > 0;
           return (
             <g key={i}>
-              {/* Background bar */}
-              <rect x={x} y={0} width={barWidth} height={chartHeight} rx={6} fill="var(--ag-bg-deep)" />
+              {/* Background track */}
+              <rect x={x} y={0} width={barWidth} height={chartHeight} rx={6}
+                fill="rgba(139,92,246,0.05)"
+              />
               {/* Data bar */}
               {hasData && (
                 <rect
                   x={x} y={y} width={barWidth} height={Math.max(barH, 4)} rx={6}
-                  fill={isToday ? 'var(--ag-cyan)' : 'var(--ag-cyan)'}
-                  opacity={isToday ? 1 : 0.5}
+                  fill={isToday ? 'url(#bar-grad)' : 'var(--ag-violet)'}
+                  opacity={isToday ? 1 : 0.45}
                   style={{ transition: 'height 0.4s ease-out, y 0.4s ease-out' }}
                 />
               )}
-              {/* Minutes label on hover area */}
+              {/* Minutes label */}
               {hasData && (
-                <text x={x + barWidth / 2} y={y - 4} textAnchor="middle" fill="var(--ag-text-secondary)" fontSize="9" fontFamily="monospace">
+                <text x={x + barWidth / 2} y={y - 4} textAnchor="middle"
+                  fill="var(--ag-text-secondary)" fontSize="9" fontFamily="monospace"
+                >
                   {mins}m
                 </text>
               )}
@@ -341,7 +372,7 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
               <text
                 x={x + barWidth / 2} y={chartHeight + 16}
                 textAnchor="middle"
-                fill={isToday ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)'}
+                fill={isToday ? 'var(--ag-cyan)' : 'var(--ag-text-muted)'}
                 fontSize="10"
                 fontWeight={isToday ? 'bold' : 'normal'}
                 fontFamily="inherit"
@@ -358,52 +389,78 @@ function WeeklyFocusChart({ sessions }: { sessions: FocusSession[] }) {
 
 function SessionHistoryItem({ session }: { session: FocusSession }) {
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all duration-300">
+    <motion.div
+      className="flex items-center justify-between py-2.5 px-3 rounded-xl backdrop-blur-xl"
+      style={{
+        background: 'var(--ag-bg-surface)',
+        boxShadow: SHADOW_CARD,
+        transition: 'box-shadow var(--ag-transition-fast)',
+      }}
+      whileHover={{ boxShadow: SHADOW_CARD_HOVER } as TargetAndTransition}
+    >
       <div className="flex items-center gap-3 min-w-0">
-        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${session.completed ? 'bg-[#ADFF2F]' : 'bg-[#FF2D78]'}`} />
+        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: session.completed ? 'var(--ag-lime)' : 'var(--ag-pink)' }} />
         <div className="min-w-0">
-          <p className="text-sm text-[var(--ag-text-primary)] truncate">
+          <p className="text-sm truncate" style={{ color: 'var(--ag-text-primary)' }}>
             {session.goal || 'Focus session'}
           </p>
-          <p className="text-xs text-[var(--ag-text-secondary)]">
+          <p className="text-xs" style={{ color: 'var(--ag-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
             {formatRelativeDate(session.started_at)}
           </p>
         </div>
       </div>
-      <Badge variant="outline" className="text-xs border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] flex-shrink-0 ml-2">
+      <Badge
+        variant="outline"
+        className="text-xs flex-shrink-0 ml-2"
+        style={{ borderColor: 'var(--ag-border-subtle)', color: 'var(--ag-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+      >
         {session.duration_min ? formatDuration(session.duration_min) : '--'}
       </Badge>
-    </div>
+    </motion.div>
   );
 }
 
 function BreakSuggestion({ onDismiss }: { onDismiss: () => void }) {
   const [tip] = useState(getRandomBreakTip);
   return (
-    <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[#ADFF2F]/20 rounded-xl p-4 text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#ADFF2F]/10">
-        <Zap size={22} className="text-[#ADFF2F]" />
+    <motion.div
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
+      className="backdrop-blur-xl rounded-2xl p-5 text-center space-y-3"
+      style={{
+        background: 'var(--ag-bg-surface)',
+        boxShadow: '0 0 0 1px rgba(173,255,47,0.15), 0 8px 24px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* Outer icon wrapper: rounded-2xl p-3 → inner rounded-xl (concentric) */}
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl" style={{ background: 'rgba(173,255,47,0.1)' }}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(173,255,47,0.08)' }}>
+          <Zap size={20} style={{ color: 'var(--ag-lime)' }} />
+        </div>
       </div>
-      <p className="text-sm font-medium text-[var(--ag-text-primary)] font-heading">Session complete!</p>
-      <p className="text-sm text-[var(--ag-text-secondary)]">{tip}</p>
-      <Button
-        size="sm" variant="ghost"
-        onClick={onDismiss}
-        className="text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 min-h-[44px]"
-      >
-        Got it
-      </Button>
-    </div>
+      <p className="text-sm font-medium font-heading" style={{ color: 'var(--ag-text-primary)' }}>Session complete!</p>
+      <p className="text-sm" style={{ color: 'var(--ag-text-secondary)', textWrap: 'pretty' } as React.CSSProperties}>{tip}</p>
+      <motion.div whileTap={{ scale: 0.96 }}>
+        <Button
+          size="sm" variant="ghost"
+          onClick={onDismiss}
+          className="min-h-[44px]"
+          style={{ color: 'var(--ag-cyan)' }}
+        >
+          Got it
+        </Button>
+      </motion.div>
+    </motion.div>
   );
 }
 
-// Confetti-like pulse overlay
 function CelebrationPulse() {
   return (
     <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-      <div className="w-64 h-64 rounded-full bg-[#ADFF2F]/10 animate-ping" />
-      <div className="absolute w-48 h-48 rounded-full bg-[#A78BFA]/10 animate-ping" style={{ animationDelay: '0.15s' }} />
-      <div className="absolute w-32 h-32 rounded-full bg-[#FF2D78]/10 animate-ping" style={{ animationDelay: '0.3s' }} />
+      <div className="w-64 h-64 rounded-full animate-ping" style={{ background: 'rgba(173,255,47,0.08)' }} />
+      <div className="absolute w-48 h-48 rounded-full animate-ping" style={{ background: 'rgba(167,139,250,0.08)', animationDelay: '0.15s' }} />
+      <div className="absolute w-32 h-32 rounded-full animate-ping" style={{ background: 'rgba(255,45,120,0.08)', animationDelay: '0.3s' }} />
     </div>
   );
 }
@@ -416,7 +473,6 @@ function HabitLogButton({ habit, onLog }: { habit: Habit; onLog: (id: number) =>
     if (habit.logged_today || animating) return;
     setAnimating(true);
     onLog(habit.id);
-    // Show checkmark animation
     setTimeout(() => {
       setJustLogged(true);
       setAnimating(false);
@@ -426,27 +482,30 @@ function HabitLogButton({ habit, onLog }: { habit: Habit; onLog: (id: number) =>
   const isComplete = habit.logged_today || justLogged;
 
   return (
-    <button
+    <motion.button
       onClick={handleClick}
       disabled={isComplete}
+      whileTap={isComplete ? {} : { scale: 0.96 }}
       className={`
-        min-h-[44px] min-w-[44px] px-4 rounded-lg flex items-center justify-center gap-2
+        min-h-[44px] min-w-[44px] px-4 rounded-xl flex items-center justify-center gap-2
         font-medium text-sm transition-all duration-300
-        focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-        ${isComplete
-          ? 'bg-[#ADFF2F]/15 text-[#ADFF2F] cursor-default'
-          : 'bg-[#A78BFA]/10 text-[var(--ag-cyan)] hover:bg-[#A78BFA]/20 active:scale-95'
-        }
-        ${animating ? 'scale-110' : ''}
+        focus-visible:ring-2 focus-visible:outline-none
+        ${isComplete ? 'cursor-default' : ''}
+        ${animating ? 'scale-105' : ''}
       `}
+      style={{
+        background: isComplete ? 'rgba(173,255,47,0.12)' : 'rgba(167,139,250,0.1)',
+        color: isComplete ? 'var(--ag-lime)' : 'var(--ag-cyan)',
+        focusVisibleOutlineColor: 'var(--ag-cyan)',
+      } as React.CSSProperties}
       aria-label={`Log ${habit.name}`}
     >
       <CheckCircle
         size={18}
-        className={`transition-all duration-300 ${isComplete ? 'scale-125' : ''} ${animating ? 'animate-spin' : ''}`}
+        className={`transition-all duration-300 ${isComplete ? 'scale-110' : ''} ${animating ? 'animate-spin' : ''}`}
       />
       {isComplete ? 'Done' : 'Log'}
-    </button>
+    </motion.button>
   );
 }
 
@@ -463,18 +522,15 @@ export function FocusPage() {
   const [summary, setSummary] = useState<FocusSummary | null>(null);
   const [activeTab, setActiveTab] = useState('focus');
 
-  // Modals
   const [showStartModal, setShowStartModal] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
 
-  // Form state
   const [goalInput, setGoalInput] = useState('');
   const [durInput, setDurInput] = useState(25);
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitIcon, setNewHabitIcon] = useState('⭐');
   const [newHabitFreq, setNewHabitFreq] = useState('daily');
 
-  // Loading / UI state
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showBreakSuggestion, setShowBreakSuggestion] = useState(false);
@@ -486,12 +542,11 @@ export function FocusPage() {
     session?.duration_min ?? null,
   );
 
-  // --- Wake Lock (keep screen on during focus sessions) ---
+  // --- Wake Lock ---
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     if (!session) {
-      // Release wake lock when session ends
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {/* ignore */});
         wakeLockRef.current = null;
@@ -499,7 +554,6 @@ export function FocusPage() {
       return;
     }
 
-    // Acquire wake lock when session is active
     async function acquireWakeLock() {
       if (!('wakeLock' in navigator)) return;
       try {
@@ -510,7 +564,6 @@ export function FocusPage() {
     }
     void acquireWakeLock();
 
-    // Re-acquire on visibility change (wake lock is released when tab is hidden)
     function handleVisibilityChange() {
       if (document.visibilityState === 'visible' && !wakeLockRef.current) {
         void acquireWakeLock();
@@ -527,14 +580,11 @@ export function FocusPage() {
     };
   }, [session]);
 
-  // --- Request notification permission on mount ---
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().catch(() => {/* ignore */});
     }
   }, []);
-
-  // --- Data loading ---
 
   const load = useCallback(async () => {
     try {
@@ -561,11 +611,9 @@ export function FocusPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Auto-detect session completion
   const prevRemaining = useRef<number | null>(null);
   useEffect(() => {
     if (prevRemaining.current !== null && prevRemaining.current > 0 && remaining === 0 && session) {
-      // Timer just hit zero — notify user (works even in background tab)
       if ('Notification' in window && Notification.permission === 'granted') {
         const dur = session.duration_min ?? Math.floor(elapsed / 60);
         new Notification('Focus Session Complete!', {
@@ -618,12 +666,10 @@ export function FocusPage() {
   async function handleLogHabit(id: number) {
     try {
       await api.post('/habits/' + id + '/log', {});
-      // Optimistic update
       setHabits(prev => {
         const updated = prev.map(h =>
           h.id === id ? { ...h, logged_today: true, current_streak: h.current_streak + 1 } : h,
         );
-        // Check if all habits are now logged
         const allDone = updated.length > 0 && updated.every(h => h.logged_today);
         if (allDone) {
           setShowCelebration(true);
@@ -633,7 +679,6 @@ export function FocusPage() {
       });
       toast.success('Habit logged');
       void notifyDone('Habit checked in');
-      // Full reload for accurate streak data
       setTimeout(() => void load(), 600);
     } catch {
       toast.error('Failed to log habit');
@@ -698,7 +743,6 @@ export function FocusPage() {
   const habitsLoggedToday = habits.filter(h => h.logged_today).length;
   const completedHistory = history.filter(h => h.ended_at !== null);
 
-  // Compute focus streak: consecutive days with at least one completed session
   const focusStreak = (() => {
     if (completedHistory.length === 0) return 0;
     const sessionDates = new Set(
@@ -710,7 +754,6 @@ export function FocusPage() {
     today.setHours(0, 0, 0, 0);
     let streak = 0;
     const check = new Date(today);
-    // Allow today or yesterday as the most recent session day
     const todayStr = check.toISOString().slice(0, 10);
     const yest = new Date(check);
     yest.setDate(yest.getDate() - 1);
@@ -731,14 +774,14 @@ export function FocusPage() {
   if (initialLoading) {
     return (
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <div className="h-8 w-48 bg-[var(--ag-bg-surface)] rounded animate-pulse" />
+        <div className="h-8 w-48 rounded-xl animate-pulse" style={{ background: 'var(--ag-bg-surface)' }} />
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-[var(--ag-bg-surface)] rounded-xl animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: 'var(--ag-bg-surface)' }} />
           ))}
         </div>
-        <div className="h-64 bg-[var(--ag-bg-surface)] rounded-xl animate-pulse" />
-        <div className="h-48 bg-[var(--ag-bg-surface)] rounded-xl animate-pulse" />
+        <div className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--ag-bg-surface)' }} />
+        <div className="h-48 rounded-2xl animate-pulse" style={{ background: 'var(--ag-bg-surface)' }} />
       </div>
     );
   }
@@ -757,506 +800,694 @@ export function FocusPage() {
           subtitle="Coached by Pulse"
           badge={
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-pulse)] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-pulse)]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--ag-pulse)' }} />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: 'var(--ag-pulse)' }} />
             </span>
           }
           actions={
-            <Button
-              variant="ghost" size="sm"
-              onClick={toggleFocusMode}
-              className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50 ${
-                settings?.focus_mode_active
-                  ? 'bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/20'
-                  : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
-              }`}
-              aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
-            >
-              {settings?.focus_mode_active ? <BellOff size={14} /> : <Bell size={14} />}
-              {settings?.focus_mode_active ? 'Focus ON' : 'Focus OFF'}
-            </Button>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                variant="ghost" size="sm"
+                onClick={toggleFocusMode}
+                className={`gap-1.5 text-xs min-h-[44px] px-3 rounded-xl transition-all focus-visible:outline-none`}
+                style={{
+                  background: settings?.focus_mode_active ? 'rgba(167,139,250,0.1)' : 'transparent',
+                  color: settings?.focus_mode_active ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                  boxShadow: settings?.focus_mode_active ? '0 0 0 1px rgba(167,139,250,0.2)' : 'none',
+                }}
+                aria-label={settings?.focus_mode_active ? 'Turn focus mode off' : 'Turn focus mode on'}
+              >
+                {settings?.focus_mode_active ? <BellOff size={14} /> : <Bell size={14} />}
+                {settings?.focus_mode_active ? 'Focus ON' : 'Focus OFF'}
+              </Button>
+            </motion.div>
           }
         />
       </BlurFade>
 
       {/* ---- Deferred messages banner ---- */}
-      {deferredCount > 0 && (
-        <BlurFade delay={0.1}>
-          <SectionCard padding="sm" className="border-[var(--ag-border-default)]">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--ag-text-primary)]">
-                <Bell size={14} className="inline mr-1.5 text-[var(--ag-cyan)]" />
-                {deferredCount} message{deferredCount > 1 ? 's' : ''} held during focus
-              </span>
-              <Button
-                size="sm" variant="outline"
-                className="text-xs min-h-[44px] border-[var(--ag-border-default)] text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/10"
-                onClick={() => { setDeferredCount(0); void load(); }}
-              >
-                View now
-              </Button>
-            </div>
-          </SectionCard>
-        </BlurFade>
-      )}
+      <AnimatePresence>
+        {deferredCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
+          >
+            <SectionCard padding="sm" className="border-[var(--ag-border-default)]">
+              <div className="flex items-center justify-between">
+                <span className="text-sm" style={{ color: 'var(--ag-text-primary)' }}>
+                  <Bell size={14} className="inline mr-1.5" style={{ color: 'var(--ag-cyan)' }} />
+                  {deferredCount} message{deferredCount > 1 ? 's' : ''} held during focus
+                </span>
+                <motion.div whileTap={{ scale: 0.96 }}>
+                  <Button
+                    size="sm" variant="outline"
+                    className="text-xs min-h-[44px] rounded-lg"
+                    style={{ borderColor: 'var(--ag-border-default)', color: 'var(--ag-cyan)' }}
+                    onClick={() => { setDeferredCount(0); void load(); }}
+                  >
+                    View now
+                  </Button>
+                </motion.div>
+              </div>
+            </SectionCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* ---- Stats Summary ---- */}
-      <BlurFade delay={0.2}>
-        <div className="grid grid-cols-3 gap-3">
-        <SectionCard padding="sm" className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Flame size={14} className="text-orange-400" />
-            <span className="text-xs text-[var(--ag-text-secondary)]">Focus streak</span>
-          </div>
-          {/* Arc progress ring */}
-          <div className="relative w-16 h-16 mx-auto">
-            <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
-              <circle cx="32" cy="32" r="28" fill="none" stroke="var(--ag-border-subtle)" strokeWidth="4" />
-              <circle
-                cx="32" cy="32" r="28"
-                fill="none"
-                stroke={focusStreak >= 7 ? 'var(--ag-lime)' : focusStreak >= 3 ? 'var(--ag-cyan)' : 'var(--ag-pink)'}
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={`${Math.min(focusStreak / 7, 1) * 175.9} 175.9`}
-                className="transition-all duration-700"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">{focusStreak}<span className="text-[9px] text-[var(--ag-text-secondary)] font-normal">d</span></p>
-            </div>
-          </div>
-        </SectionCard>
-        <SectionCard padding="sm" className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <CheckCircle size={14} className="text-[var(--ag-lime)]" />
-            <span className="text-xs text-[var(--ag-text-secondary)]">Habits today</span>
-          </div>
-          <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">
-            {habitsLoggedToday}<span className="text-xs text-[var(--ag-text-secondary)] font-normal">/{habits.length}</span>
-          </p>
-        </SectionCard>
-        <SectionCard padding="sm" className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Clock size={14} className="text-[var(--ag-cyan)]" />
-            <span className="text-xs text-[var(--ag-text-secondary)]">This week</span>
-          </div>
-          <p className="text-xl font-bold text-[var(--ag-text-primary)] font-heading">
-            {summary ? formatDuration(summary.totalMinutesThisWeek) : '0m'}
-          </p>
-        </SectionCard>
-        </div>
+      {/* ---- Stats Summary — stagger ---- */}
+      <BlurFade delay={0.15}>
+        <motion.div
+          className="grid grid-cols-3 gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+        >
+          {/* Focus Streak */}
+          <motion.div
+            variants={{ hidden: { opacity: 0, y: 10, scale: 0.96 }, visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, duration: 0.4, bounce: 0 } } }}
+          >
+            <SectionCard padding="sm" className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Flame size={13} className="text-orange-400" />
+                <span className="text-xs" style={{ color: 'var(--ag-text-secondary)' }}>Focus streak</span>
+              </div>
+              {/* Arc ring */}
+              <div className="relative w-16 h-16 mx-auto">
+                <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                  <defs>
+                    <linearGradient id="streak-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="var(--ag-violet)" />
+                      <stop offset="100%" stopColor="var(--ag-cyan)" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(139,92,246,0.08)" strokeWidth="4" />
+                  <circle
+                    cx="32" cy="32" r="28" fill="none"
+                    stroke="url(#streak-grad)"
+                    strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={`${Math.min(focusStreak / 7, 1) * 175.9} 175.9`}
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-xl font-bold font-heading" style={{ color: 'var(--ag-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                    {focusStreak}<span className="text-[9px] font-normal" style={{ color: 'var(--ag-text-secondary)' }}>d</span>
+                  </p>
+                </div>
+              </div>
+            </SectionCard>
+          </motion.div>
+
+          {/* Habits Today */}
+          <motion.div
+            variants={{ hidden: { opacity: 0, y: 10, scale: 0.96 }, visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, duration: 0.4, bounce: 0 } } }}
+          >
+            <SectionCard padding="sm" className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <CheckCircle size={13} style={{ color: 'var(--ag-lime)' }} />
+                <span className="text-xs" style={{ color: 'var(--ag-text-secondary)' }}>Habits today</span>
+              </div>
+              <p className="text-xl font-bold font-heading" style={{ color: 'var(--ag-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {habitsLoggedToday}<span className="text-xs font-normal" style={{ color: 'var(--ag-text-secondary)' }}>/{habits.length}</span>
+              </p>
+            </SectionCard>
+          </motion.div>
+
+          {/* This Week */}
+          <motion.div
+            variants={{ hidden: { opacity: 0, y: 10, scale: 0.96 }, visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, duration: 0.4, bounce: 0 } } }}
+          >
+            <SectionCard padding="sm" className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Clock size={13} style={{ color: 'var(--ag-cyan)' }} />
+                <span className="text-xs" style={{ color: 'var(--ag-text-secondary)' }}>This week</span>
+              </div>
+              <p className="text-xl font-bold font-heading" style={{ color: 'var(--ag-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {summary ? formatDuration(summary.totalMinutesThisWeek) : '0m'}
+              </p>
+            </SectionCard>
+          </motion.div>
+        </motion.div>
       </BlurFade>
 
       {/* ---- Tabs ---- */}
-      <BlurFade delay={0.3}>
+      <BlurFade delay={0.25}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] rounded-xl p-1 h-12">
-          <TabsTrigger
-            value="focus"
-            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[var(--ag-cyan)]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary)] transition-colors min-h-[44px]"
+          {/* Outer rounded-xl, inner triggers rounded-lg — concentric radii */}
+          <TabsList
+            className="w-full p-1 h-12 rounded-xl"
+            style={{ background: 'var(--ag-bg-surface)', boxShadow: SHADOW_CARD }}
           >
-            <Timer size={16} className="mr-1.5" />
-            Focus Sessions
-          </TabsTrigger>
-          <TabsTrigger
-            value="habits"
-            className="flex-1 rounded-lg h-10 text-sm font-medium data-[state=active]:bg-[var(--ag-cyan)]/10 data-[state=active]:text-[var(--ag-cyan)] text-[var(--ag-text-secondary)] transition-colors min-h-[44px]"
-          >
-            <Flame size={16} className="mr-1.5" />
-            Daily Habits
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger
+              value="focus"
+              className="flex-1 rounded-lg h-10 text-sm font-medium transition-colors min-h-[44px]"
+              style={{ '--tw-text-opacity': '1' } as React.CSSProperties}
+            >
+              <Timer size={15} className="mr-1.5" />
+              Focus Sessions
+            </TabsTrigger>
+            <TabsTrigger
+              value="habits"
+              className="flex-1 rounded-lg h-10 text-sm font-medium transition-colors min-h-[44px]"
+            >
+              <Flame size={15} className="mr-1.5" />
+              Daily Habits
+            </TabsTrigger>
+          </TabsList>
 
-        {/* ======== Focus Sessions Tab ======== */}
-        <TabsContent value="focus" className="mt-4 space-y-4">
-          {/* Timer card */}
-          <SectionCard padding="lg">
+          {/* ======== Focus Sessions Tab ======== */}
+          <TabsContent value="focus" className="mt-4 space-y-4">
+            {/* Timer card — outer rounded-2xl, inner elements rounded-xl */}
+            <motion.div
+              className="rounded-2xl backdrop-blur-xl p-6"
+              style={{ background: 'var(--ag-bg-surface)', boxShadow: SHADOW_CARD }}
+              layout
+            >
               {session ? (
                 <div className="space-y-5">
-                  <TimerRing progress={progress} size={240} strokeWidth={10}>
-                    <div className="text-4xl font-mono font-bold text-[var(--ag-cyan)] tracking-wider">
+                  <TimerRing progress={progress} size={240} strokeWidth={11}>
+                    <div
+                      className="text-4xl font-mono font-bold tracking-wider"
+                      style={{ color: 'var(--ag-cyan)', fontVariantNumeric: 'tabular-nums' }}
+                    >
                       {remaining !== null ? remainStr : elapsedStr}
                     </div>
-                    <div className="text-xs text-[var(--ag-text-secondary)] mt-1">
+                    <div className="text-xs mt-1" style={{ color: 'var(--ag-text-secondary)' }}>
                       {remaining !== null ? 'remaining' : 'elapsed'}
                     </div>
                   </TimerRing>
                   {session.goal && (
-                    <p className="text-center text-sm text-[var(--ag-text-primary)]/80">
-                      <Target size={12} className="inline mr-1 text-[var(--ag-cyan)]" />
+                    <p className="text-center text-sm" style={{ color: 'var(--ag-text-secondary)' }}>
+                      <Target size={12} className="inline mr-1" style={{ color: 'var(--ag-cyan)' }} />
                       {session.goal}
                     </p>
                   )}
-                  <div className="text-center text-xs text-[var(--ag-text-secondary)]">
+                  <div className="text-center text-xs" style={{ color: 'var(--ag-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                     {session.duration_min ? `${session.duration_min} min session` : 'Open session'}
                   </div>
-                  <button
+                  <motion.button
                     onClick={handleEndFocus}
                     disabled={loading}
-                    className="w-full h-14 px-8 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-medium
-                      transition-colors flex items-center justify-center gap-2
-                      focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-                      disabled:opacity-50 active:scale-[0.98]"
+                    whileTap={{ scale: 0.96 }}
+                    className="w-full h-14 px-8 rounded-xl text-white font-semibold
+                      flex items-center justify-center gap-2
+                      focus-visible:ring-2 focus-visible:outline-none
+                      disabled:opacity-50 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(239,68,68,0.9), rgba(220,38,38,0.8))',
+                      boxShadow: '0 0 0 1px rgba(239,68,68,0.2), 0 4px 12px rgba(239,68,68,0.2)',
+                    }}
                   >
                     <Pause size={18} />
                     End Session
-                  </button>
+                  </motion.button>
                 </div>
               ) : showBreakSuggestion ? (
                 <BreakSuggestion onDismiss={() => setShowBreakSuggestion(false)} />
               ) : (
                 <div className="text-center space-y-5 py-2">
-                  <TimerRing progress={0} size={200} strokeWidth={8}>
-                    <div className="text-3xl font-mono font-bold text-[var(--ag-text-secondary)]/40">
+                  <TimerRing progress={0} size={200} strokeWidth={9}>
+                    <div
+                      className="text-3xl font-mono font-bold"
+                      style={{ color: 'rgba(167,139,250,0.3)', fontVariantNumeric: 'tabular-nums' }}
+                    >
                       {pad(durInput)}:00
                     </div>
-                    <div className="text-xs text-[var(--ag-text-secondary)] mt-1">ready</div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--ag-text-muted)' }}>ready</div>
                   </TimerRing>
 
-                  {/* Duration preset cards */}
+                  {/* Duration preset cards — outer rounded-xl, inner rounded-lg */}
                   <div className="grid grid-cols-4 gap-2">
                     {DURATIONS.map(d => (
-                      <button
+                      <motion.button
                         key={d.value}
                         onClick={() => setDurInput(d.value)}
-                        className={`
-                          rounded-xl p-2.5 text-center transition-all duration-200
-                          focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-                          min-h-[44px]
-                          ${durInput === d.value
-                            ? 'bg-[#A78BFA]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
-                            : 'border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'
-                          }
-                        `}
+                        whileTap={{ scale: 0.94 }}
+                        className="rounded-xl p-2.5 text-center transition-all duration-200
+                          focus-visible:ring-2 focus-visible:outline-none min-h-[44px]"
+                        style={{
+                          background: durInput === d.value ? 'rgba(139,92,246,0.12)' : 'var(--ag-bg-surface)',
+                          color: durInput === d.value ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                          boxShadow: durInput === d.value
+                            ? '0 0 0 1px rgba(139,92,246,0.3), 0 0 12px rgba(139,92,246,0.1)'
+                            : SHADOW_CARD,
+                        }}
                       >
                         <div className="text-lg font-bold font-heading">{d.label}</div>
                         <div className="text-[10px] mt-0.5 opacity-70">{d.desc}</div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
 
-                  <Button
+                  <motion.button
                     onClick={() => setShowStartModal(true)}
-                    className="bg-[#A78BFA] text-black hover:bg-[#00d4e0] h-14 px-10 rounded-xl text-base font-semibold
-                      focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 active:scale-[0.98] transition-transform"
+                    whileTap={{ scale: 0.96 }}
+                    className="h-14 px-10 rounded-xl text-base font-semibold
+                      focus-visible:ring-2 focus-visible:outline-none
+                      flex items-center justify-center gap-2 mx-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-cyan))',
+                      color: '#0d0d1a',
+                      boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 4px 16px rgba(139,92,246,0.3)',
+                    }}
                   >
-                    <Play size={18} className="mr-2" />
+                    <Play size={18} className="ml-0.5" />
                     Start Focus
-                  </Button>
+                  </motion.button>
                 </div>
               )}
-          </SectionCard>
+            </motion.div>
 
-          {/* Weekly chart */}
-          {completedHistory.length > 0 && (
-            <SectionCard title="This week">
-              <div className="flex items-center gap-2 -mt-3 mb-2">
-                <TrendingUp size={16} className="text-[var(--ag-cyan)]" />
-              </div>
-              <WeeklyFocusChart sessions={history} />
-            </SectionCard>
-          )}
-
-          {/* Session history */}
-          {completedHistory.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-[var(--ag-text-secondary,#9CA3AF)] flex items-center gap-2 px-1 font-heading">
-                <Calendar size={14} />
-                Recent sessions
-              </h3>
-              <div className="space-y-1.5">
-                {completedHistory.slice(0, 5).map(s => (
-                  <SessionHistoryItem key={s.id} session={s} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {completedHistory.length === 0 && !session && (
-            <div className="text-center py-8">
-              <Timer size={32} className="mx-auto text-[var(--ag-text-secondary,#9CA3AF)]/30 mb-3" />
-              <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">No focus sessions yet.</p>
-              <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]/60 mt-1">Start one to begin tracking your deep work.</p>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ======== Daily Habits Tab ======== */}
-        <TabsContent value="habits" className="mt-4 space-y-4">
-          {/* Completion rings */}
-          {habits.length > 0 && (
-            <SectionCard>
-              <div className="flex items-center gap-6">
-                <HabitCompletionRings habits={habits} />
-                <div className="flex-1 space-y-2">
-                  {habits.slice(0, 3).map((h, i) => (
-                    <div key={h.id} className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: RING_COLORS[i] }} />
-                      <span className="text-xs text-[var(--ag-text-primary,#F4F6FF)] truncate">{h.icon} {h.name}</span>
-                      {h.logged_today && (
-                        <CheckCircle size={12} className="text-[#ADFF2F] flex-shrink-0 ml-auto" />
-                      )}
-                    </div>
-                  ))}
-                  {habits.length > 3 && (
-                    <p className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)] pl-4">
-                      +{habits.length - 3} more habit{habits.length - 3 > 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </SectionCard>
-          )}
-
-          {/* Habit cards */}
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-medium text-[var(--ag-text-secondary,#9CA3AF)] font-heading">
-              Your habits ({habits.length})
-            </h3>
-            <Button
-              size="sm" variant="ghost"
-              onClick={() => setShowAddHabit(true)}
-              className="text-[var(--ag-cyan)] min-h-[44px] min-w-[44px] hover:bg-[#A78BFA]/10
-                focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
-              aria-label="Add habit"
-            >
-              <Plus size={16} className="mr-1" />
-              Add
-            </Button>
-          </div>
-
-          {habits.length === 0 ? (
-            <div className="text-center py-12 space-y-3">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)]">
-                <Flame size={28} className="text-[var(--ag-text-secondary,#9CA3AF)]/30" />
-              </div>
-              <p className="text-sm text-[var(--ag-text-secondary,#9CA3AF)]">No habits yet</p>
-              <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)]/60">
-                Add your first habit to start building streaks.
-              </p>
-              <Button
-                size="sm"
-                onClick={() => setShowAddHabit(true)}
-                className="bg-[#A78BFA] text-black hover:bg-[#00d4e0] min-h-[44px] mt-2"
+            {/* Weekly chart */}
+            {completedHistory.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, type: 'spring', duration: 0.4, bounce: 0 }}
               >
-                <Plus size={16} className="mr-1" />
-                Add Habit
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {habits.map(h => (
-                <div
-                  key={h.id}
-                  className={`
-                    flex items-center justify-between p-3.5 rounded-xl backdrop-blur-xl
-                    bg-[var(--ag-bg-surface)] border transition-all duration-300
-                    ${h.logged_today ? 'border-[var(--ag-lime)]/15' : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'}
-                    ${deletingHabitId === h.id ? 'opacity-50 scale-95' : ''}
-                  `}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-2xl flex-shrink-0">{h.icon}</span>
-                    <div className="min-w-0">
-                      <p className={`text-sm font-medium truncate ${h.logged_today ? 'text-[#ADFF2F]' : 'text-[var(--ag-text-primary,#F4F6FF)]'}`}>
-                        {h.name}
+                <SectionCard>
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp size={14} style={{ color: 'var(--ag-cyan)' }} />
+                    <span className="text-sm font-semibold font-heading" style={{ color: 'var(--ag-text-primary)' }}>This week</span>
+                  </div>
+                  <WeeklyFocusChart sessions={history} />
+                </SectionCard>
+              </motion.div>
+            )}
+
+            {/* Session history */}
+            {completedHistory.length > 0 && (
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, type: 'spring', duration: 0.4, bounce: 0 }}
+              >
+                <h3 className="text-sm font-medium flex items-center gap-2 px-1 font-heading" style={{ color: 'var(--ag-text-secondary)' }}>
+                  <Calendar size={14} />
+                  Recent sessions
+                </h3>
+                <div className="space-y-1.5">
+                  {completedHistory.slice(0, 5).map((s, idx) => (
+                    <motion.div
+                      key={s.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05, type: 'spring', duration: 0.35, bounce: 0 }}
+                    >
+                      <SessionHistoryItem session={s} />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Empty state */}
+            {completedHistory.length === 0 && !session && (
+              <motion.div
+                className="text-center py-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'rgba(139,92,246,0.07)' }}>
+                  <Timer size={28} style={{ color: 'rgba(139,92,246,0.3)' }} />
+                </div>
+                <p className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>No focus sessions yet.</p>
+                <p className="text-xs mt-1 opacity-60" style={{ color: 'var(--ag-text-secondary)' }}>Start one to begin tracking your deep work.</p>
+              </motion.div>
+            )}
+          </TabsContent>
+
+          {/* ======== Daily Habits Tab ======== */}
+          <TabsContent value="habits" className="mt-4 space-y-4">
+            {/* Completion rings */}
+            {habits.length > 0 && (
+              <SectionCard>
+                <div className="flex items-center gap-6">
+                  <HabitCompletionRings habits={habits} />
+                  <div className="flex-1 space-y-2">
+                    {habits.slice(0, 3).map((h, i) => (
+                      <div key={h.id} className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: RING_COLORS[i] }} />
+                        <span className="text-xs truncate" style={{ color: 'var(--ag-text-primary)' }}>{h.icon} {h.name}</span>
+                        {h.logged_today && (
+                          <CheckCircle size={12} className="flex-shrink-0 ml-auto" style={{ color: 'var(--ag-lime)' }} />
+                        )}
+                      </div>
+                    ))}
+                    {habits.length > 3 && (
+                      <p className="text-[10px] pl-4" style={{ color: 'var(--ag-text-secondary)' }}>
+                        +{habits.length - 3} more habit{habits.length - 3 > 1 ? 's' : ''}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-[var(--ag-text-secondary)] flex items-center gap-0.5">
-                          <Flame size={10} className="text-orange-400" />
-                          {h.current_streak}d
-                        </span>
-                        <span className="text-[10px] text-[var(--ag-text-secondary,#9CA3AF)]/50">|</span>
-                        <span className="text-xs text-[var(--ag-text-secondary)] flex items-center gap-0.5">
-                          <Trophy size={10} className="text-[var(--ag-text-secondary)]/60" />
-                          Best: {h.longest_streak}d
-                        </span>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)]/60 h-4">
-                          {h.frequency}
-                        </Badge>
+                    )}
+                  </div>
+                </div>
+              </SectionCard>
+            )}
+
+            {/* Habit cards header */}
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-medium font-heading" style={{ color: 'var(--ag-text-secondary)' }}>
+                Your habits ({habits.length})
+              </h3>
+              <motion.div whileTap={{ scale: 0.96 }}>
+                <Button
+                  size="sm" variant="ghost"
+                  onClick={() => setShowAddHabit(true)}
+                  className="min-h-[44px] min-w-[44px] rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                  style={{ color: 'var(--ag-cyan)' }}
+                  aria-label="Add habit"
+                >
+                  <Plus size={16} className="mr-1" />
+                  Add
+                </Button>
+              </motion.div>
+            </div>
+
+            {/* Habits list */}
+            {habits.length === 0 ? (
+              <motion.div
+                className="text-center py-12 space-y-3"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
+              >
+                <div
+                  className="inline-flex items-center justify-center w-16 h-16 rounded-2xl"
+                  style={{ background: 'var(--ag-bg-surface)', boxShadow: SHADOW_CARD }}
+                >
+                  <Flame size={28} style={{ color: 'rgba(139,92,246,0.25)' }} />
+                </div>
+                <p className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>No habits yet</p>
+                <p className="text-xs opacity-60" style={{ color: 'var(--ag-text-secondary)' }}>
+                  Add your first habit to start building streaks.
+                </p>
+                <motion.div whileTap={{ scale: 0.96 }}>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddHabit(true)}
+                    className="min-h-[44px] mt-2 rounded-xl font-semibold"
+                    style={{ background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-cyan))', color: '#0d0d1a', border: 'none' }}
+                  >
+                    <Plus size={16} className="mr-1" />
+                    Add Habit
+                  </Button>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="space-y-2"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+              >
+                {habits.map(h => (
+                  <motion.div
+                    key={h.id}
+                    variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, duration: 0.35, bounce: 0 } } }}
+                    className="flex items-center justify-between p-3.5 rounded-2xl backdrop-blur-xl transition-all duration-300"
+                    style={{
+                      background: 'var(--ag-bg-surface)',
+                      boxShadow: h.logged_today
+                        ? '0 0 0 1px rgba(173,255,47,0.12), 0 2px 8px rgba(0,0,0,0.3)'
+                        : SHADOW_CARD,
+                      opacity: deletingHabitId === h.id ? 0.5 : 1,
+                      scale: deletingHabitId === h.id ? 0.97 : 1,
+                    }}
+                    whileHover={{ boxShadow: SHADOW_CARD_HOVER } as TargetAndTransition}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="text-2xl flex-shrink-0">{h.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: h.logged_today ? 'var(--ag-lime)' : 'var(--ag-text-primary)' }}>
+                          {h.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs flex items-center gap-0.5" style={{ color: 'var(--ag-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                            <Flame size={10} className="text-orange-400" />
+                            {h.current_streak}d
+                          </span>
+                          <span className="text-[10px] opacity-40" style={{ color: 'var(--ag-text-secondary)' }}>|</span>
+                          <span className="text-xs flex items-center gap-0.5" style={{ color: 'var(--ag-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                            <Trophy size={10} className="opacity-50" />
+                            Best: {h.longest_streak}d
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-4"
+                            style={{ borderColor: 'var(--ag-border-subtle)', color: 'var(--ag-text-muted)' }}
+                          >
+                            {h.frequency}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                    <HabitLogButton habit={h} onLog={handleLogHabit} />
-                    <button
-                      className="min-h-[44px] min-w-[36px] rounded-lg text-[var(--ag-text-secondary,#9CA3AF)]/30 hover:text-red-400
-                        hover:bg-red-400/10 flex items-center justify-center transition-colors
-                        focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none"
-                      onClick={() => void handleDeleteHabit(h.id)}
-                      disabled={deletingHabitId === h.id}
-                      aria-label={`Delete ${h.name}`}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                      <HabitLogButton habit={h} onLog={handleLogHabit} />
+                      <motion.button
+                        whileTap={{ scale: 0.96 }}
+                        className="min-h-[44px] min-w-[36px] rounded-xl flex items-center justify-center transition-colors
+                          focus-visible:ring-2 focus-visible:outline-none"
+                        style={{ color: 'rgba(156,163,175,0.3)' }}
+                        onClick={() => void handleDeleteHabit(h.id)}
+                        disabled={deletingHabitId === h.id}
+                        aria-label={`Delete ${h.name}`}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(156,163,175,0.3)')}
+                      >
+                        <Trash2 size={14} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
 
-          {/* All done celebration message */}
-          {habits.length > 0 && habitsLoggedToday === habits.length && (
-            <SectionCard className="border-[#ADFF2F]/20 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <Trophy size={28} className="mx-auto text-[#ADFF2F] mb-2" />
-              <p className="text-sm font-medium text-[var(--ag-text-primary,#F4F6FF)]">All habits logged today!</p>
-              <p className="text-xs text-[var(--ag-text-secondary,#9CA3AF)] mt-1">You are on fire. Keep this momentum going.</p>
-            </SectionCard>
-          )}
-        </TabsContent>
+            {/* All done celebration */}
+            <AnimatePresence>
+              {habits.length > 0 && habitsLoggedToday === habits.length && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
+                  className="rounded-2xl p-5 text-center"
+                  style={{
+                    background: 'var(--ag-bg-surface)',
+                    boxShadow: '0 0 0 1px rgba(173,255,47,0.15), 0 4px 16px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <Trophy size={28} className="mx-auto mb-2" style={{ color: 'var(--ag-lime)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--ag-text-primary)' }}>All habits logged today!</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ag-text-secondary)' }}>You are on fire. Keep this momentum going.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </TabsContent>
         </Tabs>
       </BlurFade>
 
       {/* ======== Start Focus Modal ======== */}
       <Dialog open={showStartModal} onOpenChange={setShowStartModal}>
-        <DialogContent className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
+        <DialogContent
+          className="max-w-[calc(100%-2rem)] sm:max-w-lg rounded-2xl"
+          style={{
+            background: 'var(--ag-bg-elevated)',
+            boxShadow: '0 0 0 1px rgba(139,92,246,0.15), 0 24px 48px rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(20px)',
+            border: 'none',
+          }}
+        >
           <DialogHeader>
-            <DialogTitle className="font-heading flex items-center gap-2">
-              <Play size={18} className="text-[var(--ag-cyan)]" />
+            <DialogTitle className="font-heading flex items-center gap-2" style={{ color: 'var(--ag-text-primary)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.15)' }}>
+                <Play size={16} style={{ color: 'var(--ag-cyan)' }} className="ml-0.5" />
+              </div>
               Start Focus Session
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div>
-              <Label htmlFor="focus-goal" className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm">
+              <Label htmlFor="focus-goal" className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>
                 What are you working on?
               </Label>
               <Input
                 id="focus-goal"
                 value={goalInput}
                 onChange={e => setGoalInput(e.target.value)}
-                placeholder="e.g. Write report, Fix bug, Study..."
-                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] h-12 rounded-xl
-                  placeholder:text-[var(--ag-text-secondary)]/40 focus-visible:ring-[var(--ag-cyan)]/30"
+                placeholder="e.g. Write report, Fix bug, Study…"
+                className="mt-1.5 h-12 rounded-xl"
+                style={{
+                  background: 'var(--ag-bg-surface)',
+                  borderColor: 'var(--ag-border-subtle)',
+                  color: 'var(--ag-text-primary)',
+                }}
                 onKeyDown={e => { if (e.key === 'Enter') void handleStartFocus(); }}
               />
             </div>
             <div>
-              <Label className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm">Duration</Label>
+              <Label className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>Duration</Label>
               <div className="grid grid-cols-4 gap-2 mt-1.5">
                 {DURATIONS.map(d => (
-                  <button
+                  <motion.button
                     key={d.value}
                     onClick={() => setDurInput(d.value)}
-                    className={`
-                      rounded-xl p-3 text-center transition-all duration-200
-                      focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-                      min-h-[44px]
-                      ${durInput === d.value
-                        ? 'bg-[var(--ag-cyan)]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)]'
-                        : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)]'
-                      }
-                    `}
+                    whileTap={{ scale: 0.94 }}
+                    className="rounded-xl p-3 text-center transition-all duration-200 focus-visible:outline-none min-h-[44px]"
+                    style={{
+                      background: durInput === d.value ? 'rgba(139,92,246,0.12)' : 'var(--ag-bg-surface)',
+                      color: durInput === d.value ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                      boxShadow: durInput === d.value
+                        ? '0 0 0 1px rgba(139,92,246,0.3)'
+                        : SHADOW_CARD,
+                    }}
                   >
-                    <div className="text-base font-bold">{d.label}</div>
+                    <div className="text-base font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>{d.label}</div>
                     <div className="text-[10px] mt-0.5 opacity-60">{d.desc}</div>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setShowStartModal(false)}
-              className="text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleStartFocus}
-              disabled={loading}
-              className="bg-[#A78BFA] text-black hover:bg-[#00d4e0] min-h-[44px] px-6 font-semibold"
-            >
-              {loading ? 'Starting...' : 'Start'}
-            </Button>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                variant="ghost"
+                onClick={() => setShowStartModal(false)}
+                className="min-h-[44px] rounded-xl"
+                style={{ color: 'var(--ag-text-secondary)' }}
+              >
+                Cancel
+              </Button>
+            </motion.div>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                onClick={handleStartFocus}
+                disabled={loading}
+                className="min-h-[44px] px-6 font-semibold rounded-xl"
+                style={{
+                  background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-cyan))',
+                  color: '#0d0d1a',
+                  border: 'none',
+                }}
+              >
+                {loading ? 'Starting…' : 'Start'}
+              </Button>
+            </motion.div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ======== Add Habit Modal ======== */}
       <Dialog open={showAddHabit} onOpenChange={setShowAddHabit}>
-        <DialogContent className="border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] max-w-[calc(100%-2rem)] sm:max-w-lg rounded-xl">
+        <DialogContent
+          className="max-w-[calc(100%-2rem)] sm:max-w-lg rounded-2xl"
+          style={{
+            background: 'var(--ag-bg-elevated)',
+            boxShadow: '0 0 0 1px rgba(139,92,246,0.15), 0 24px 48px rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(20px)',
+            border: 'none',
+          }}
+        >
           <DialogHeader>
-            <DialogTitle className="font-heading flex items-center gap-2">
-              <Plus size={18} className="text-[var(--ag-cyan)]" />
+            <DialogTitle className="font-heading flex items-center gap-2" style={{ color: 'var(--ag-text-primary)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.15)' }}>
+                <Plus size={16} style={{ color: 'var(--ag-cyan)' }} />
+              </div>
               Add Habit
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div>
-              <Label className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm">Habit Name</Label>
+              <Label className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>Habit Name</Label>
               <Input
                 value={newHabitName}
                 onChange={e => setNewHabitName(e.target.value)}
-                placeholder="e.g. Morning Workout, Read 30 mins..."
-                className="mt-1.5 bg-[var(--ag-bg-surface)] border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] h-12 rounded-xl
-                  placeholder:text-[var(--ag-text-secondary)]/40 focus-visible:ring-[var(--ag-cyan)]/30"
+                placeholder="e.g. Morning Workout, Read 30 mins…"
+                className="mt-1.5 h-12 rounded-xl"
+                style={{
+                  background: 'var(--ag-bg-surface)',
+                  borderColor: 'var(--ag-border-subtle)',
+                  color: 'var(--ag-text-primary)',
+                }}
                 onKeyDown={e => { if (e.key === 'Enter') void handleAddHabit(); }}
               />
             </div>
 
             <div>
-              <Label className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm">Icon</Label>
+              <Label className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>Icon</Label>
               <div className="flex gap-1.5 mt-1.5 flex-wrap">
                 {HABIT_ICONS.map(ic => (
-                  <button
+                  <motion.button
                     key={ic}
                     onClick={() => setNewHabitIcon(ic)}
-                    className={`text-xl p-2 rounded-lg transition-all min-h-[44px] min-w-[44px]
-                      flex items-center justify-center
-                      focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-                      ${newHabitIcon === ic
-                        ? 'bg-[#A78BFA]/15 ring-1 ring-[#A78BFA]/40 scale-110'
-                        : 'hover:bg-[var(--ag-bg-surface)]'
-                      }`}
+                    whileTap={{ scale: 0.9 }}
+                    className="text-xl p-2 rounded-xl transition-all min-h-[44px] min-w-[44px]
+                      flex items-center justify-center focus-visible:outline-none"
+                    style={{
+                      background: newHabitIcon === ic ? 'rgba(139,92,246,0.12)' : 'transparent',
+                      boxShadow: newHabitIcon === ic ? '0 0 0 1px rgba(139,92,246,0.3)' : 'none',
+                      transform: newHabitIcon === ic ? 'scale(1.1)' : 'scale(1)',
+                    }}
                   >
                     {ic}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
 
             <div>
-              <Label className="text-[var(--ag-text-secondary,#9CA3AF)] text-sm">Frequency</Label>
+              <Label className="text-sm" style={{ color: 'var(--ag-text-secondary)' }}>Frequency</Label>
               <div className="grid grid-cols-3 gap-2 mt-1.5">
                 {FREQUENCY_OPTIONS.map(f => (
-                  <button
+                  <motion.button
                     key={f.value}
                     onClick={() => setNewHabitFreq(f.value)}
-                    className={`
-                      rounded-xl p-3 text-center text-sm transition-all duration-200
-                      focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50 focus-visible:outline-none
-                      min-h-[44px]
-                      ${newHabitFreq === f.value
-                        ? 'bg-[var(--ag-cyan)]/15 border border-[var(--ag-cyan)]/40 text-[var(--ag-cyan)] font-medium'
-                        : 'bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)]'
-                      }
-                    `}
+                    whileTap={{ scale: 0.94 }}
+                    className="rounded-xl p-3 text-center text-sm transition-all duration-200
+                      focus-visible:outline-none min-h-[44px] font-medium"
+                    style={{
+                      background: newHabitFreq === f.value ? 'rgba(139,92,246,0.12)' : 'var(--ag-bg-surface)',
+                      color: newHabitFreq === f.value ? 'var(--ag-cyan)' : 'var(--ag-text-secondary)',
+                      boxShadow: newHabitFreq === f.value
+                        ? '0 0 0 1px rgba(139,92,246,0.3)'
+                        : SHADOW_CARD,
+                    }}
                   >
                     {f.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setShowAddHabit(false)}
-              className="text-[var(--ag-text-secondary,#9CA3AF)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddHabit}
-              className="bg-[#A78BFA] text-black hover:bg-[#00d4e0] min-h-[44px] px-6 font-semibold"
-              disabled={!newHabitName.trim() || loading}
-            >
-              {loading ? 'Adding...' : 'Add Habit'}
-            </Button>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                variant="ghost"
+                onClick={() => setShowAddHabit(false)}
+                className="min-h-[44px] rounded-xl"
+                style={{ color: 'var(--ag-text-secondary)' }}
+              >
+                Cancel
+              </Button>
+            </motion.div>
+            <motion.div whileTap={{ scale: 0.96 }}>
+              <Button
+                onClick={handleAddHabit}
+                className="min-h-[44px] px-6 font-semibold rounded-xl"
+                disabled={!newHabitName.trim() || loading}
+                style={{
+                  background: 'linear-gradient(135deg, var(--ag-violet), var(--ag-cyan))',
+                  color: '#0d0d1a',
+                  border: 'none',
+                }}
+              >
+                {loading ? 'Adding…' : 'Add Habit'}
+              </Button>
+            </motion.div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

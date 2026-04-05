@@ -299,12 +299,12 @@ export function BillingPage() {
     return (
       <div
         key={plan.id}
-        className={`relative overflow-hidden rounded-xl border bg-[var(--ag-bg-surface)] backdrop-blur-xl transition-all ${
+        className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl transition-[box-shadow,transform] duration-300 ${
           isCurrent
-            ? 'border-[var(--ag-violet)] ring-1 ring-[var(--ag-border-active)]'
+            ? 'shadow-[0_0_0_2px_rgba(139,92,246,0.6),0_8px_32px_rgba(0,0,0,0.3)] ring-0'
             : isHighlighted
-              ? 'border-[var(--ag-nova)] ring-1 ring-[var(--ag-nova)]/20 shadow-[0_0_20px_rgba(236,72,153,0.15)] hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]'
-              : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
+              ? 'shadow-[0_0_0_1px_rgba(236,72,153,0.4),0_0_24px_rgba(236,72,153,0.2),0_8px_32px_rgba(0,0,0,0.25)] hover:shadow-[0_0_0_1px_rgba(236,72,153,0.6),0_0_40px_rgba(236,72,153,0.3),0_12px_48px_rgba(0,0,0,0.35)]'
+              : 'shadow-[0_0_0_1px_rgba(139,92,246,0.1),0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_8px_32px_rgba(0,0,0,0.25)]'
         } ${isFree && !isCurrent ? 'opacity-60' : ''} ${extraClass}`}
       >
         {/* Badge */}
@@ -346,7 +346,7 @@ export function BillingPage() {
         <div className="px-5 pb-5 space-y-4">
           {/* Price with slashed old price */}
           <div className="flex items-baseline flex-wrap gap-2">
-            <span className={`${isMobile ? 'text-4xl' : 'text-3xl'} font-bold text-[var(--ag-text-primary)]`}>{price(plan)}</span>
+            <span className={`${isMobile ? 'text-4xl' : 'text-3xl'} font-bold text-[var(--ag-text-primary)] tabular-nums`}>{price(plan)}</span>
             {display.oldPrice > 0 && (
               <span className="text-sm text-[var(--ag-text-secondary)] line-through">{oldPrice(plan)}</span>
             )}
@@ -468,7 +468,7 @@ export function BillingPage() {
                 <button
                   key={c}
                   onClick={() => setCurrency(c)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-h-[44px] ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-[background,box-shadow,transform] duration-150 active:scale-[0.96] min-h-[44px] ${
                     currency === c
                       ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-pink)] text-white shadow-[0_0_16px_rgba(139,92,246,0.4)]'
                       : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
@@ -511,9 +511,9 @@ export function BillingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+            <div className="p-5 rounded-lg shadow-[0_0_0_1px_rgba(191,95,255,0.18),0_4px_16px_rgba(0,0,0,0.18)] hover:shadow-[0_0_0_1px_rgba(191,95,255,0.35),0_8px_32px_rgba(0,0,0,0.28)] transition-[box-shadow] duration-300">
               <div className="font-bold text-[var(--ag-text-primary)] mb-1">Basic</div>
-              <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '\u20B999' : '$1.19'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
+              <div className="text-3xl font-bold text-[var(--ag-text-primary)] tabular-nums mb-3">{currency === 'INR' ? '\u20B999' : '$1.19'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
               <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Image generation</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Voice transcription</li>
@@ -534,9 +534,9 @@ export function BillingPage() {
                 </Button>
               )}
             </div>
-            <div className="p-5 rounded-xl border border-[#BF5FFF]/20 hover:border-[#BF5FFF]/40 transition-all">
+            <div className="p-5 rounded-lg shadow-[0_0_0_1px_rgba(191,95,255,0.18),0_4px_16px_rgba(0,0,0,0.18)] hover:shadow-[0_0_0_1px_rgba(191,95,255,0.35),0_8px_32px_rgba(0,0,0,0.28)] transition-[box-shadow] duration-300">
               <div className="font-bold text-[var(--ag-text-primary)] mb-1">Pro</div>
-              <div className="text-3xl font-bold text-[var(--ag-text-primary)] mb-3">{currency === 'INR' ? '\u20B9299' : '$3.59'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
+              <div className="text-3xl font-bold text-[var(--ag-text-primary)] tabular-nums mb-3">{currency === 'INR' ? '\u20B9299' : '$3.59'}<span className="text-sm font-normal text-[var(--ag-text-muted)]">/month</span></div>
               <ul className="text-sm text-[var(--ag-text-muted)] space-y-1 mb-4">
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> Everything in Basic</li>
                 <li className="flex items-center gap-2"><Check className="w-3 h-3 text-[#00FF88]" /> 100 voice calls/day</li>
@@ -602,32 +602,32 @@ export function BillingPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-2">
-              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+              <div className="p-4 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl shadow-[0_0_0_1px_rgba(139,92,246,0.1),0_2px_8px_rgba(0,0,0,0.12)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-4 h-4 text-[var(--ag-violet)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Credits Remaining</span>
                 </div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono tabular-nums">
                   {formatCredits(subscription.credits_remaining)}
                 </div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">of {formatCredits(subscription.monthly_credits)}</div>
               </div>
-              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+              <div className="p-4 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl shadow-[0_0_0_1px_rgba(139,92,246,0.1),0_2px_8px_rgba(0,0,0,0.12)]">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[var(--ag-amber)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Credits Used</span>
                 </div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] font-mono tabular-nums">
                   {formatCredits(subscription.credits_used_this_cycle)}
                 </div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">this cycle</div>
               </div>
-              <div className="p-4 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)]">
+              <div className="p-4 rounded-lg bg-[var(--ag-bg-surface)] backdrop-blur-xl shadow-[0_0_0_1px_rgba(139,92,246,0.1),0_2px_8px_rgba(0,0,0,0.12)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-[var(--ag-green)]" />
                   <span className="text-xs text-[var(--ag-text-secondary)]">Cycle Ends</span>
                 </div>
-                <div className="text-2xl font-bold text-[var(--ag-text-primary)]">
+                <div className="text-2xl font-bold text-[var(--ag-text-primary)] tabular-nums">
                   {formatDate(subscription.billing_cycle_end)}
                 </div>
                 <div className="text-xs text-[var(--ag-text-secondary)]">{subscription.billing_interval_days} day cycle</div>
@@ -638,7 +638,7 @@ export function BillingPage() {
             <div className="mt-6 px-2 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-[var(--ag-text-secondary)]">Credit usage</span>
-                <span className="text-xs text-[var(--ag-text-secondary)] font-mono">{usedPercent.toFixed(1)}%</span>
+                <span className="text-xs text-[var(--ag-text-secondary)] font-mono tabular-nums">{usedPercent.toFixed(1)}%</span>
               </div>
               <div className="h-3 sm:h-2 rounded-full bg-[var(--ag-border-subtle)] overflow-hidden">
                 <div

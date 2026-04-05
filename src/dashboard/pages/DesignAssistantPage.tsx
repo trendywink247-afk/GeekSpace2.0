@@ -409,7 +409,7 @@ export function DesignAssistantPage() {
               <button
                 onClick={isGenerating ? handleCancel : handleGenerate}
                 disabled={!prompt.trim() && !isGenerating}
-                className="min-w-[44px] min-h-[44px] px-4 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white hover:opacity-90 active:scale-95"
+                className="min-w-[44px] min-h-[44px] px-4 rounded-lg font-medium text-sm transition-[transform,opacity] duration-200 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white hover:opacity-90 active:scale-[0.96]"
               >
                 {isGenerating ? (
                   <>
@@ -431,7 +431,7 @@ export function DesignAssistantPage() {
                 <button
                   key={s.id}
                   onClick={() => setStyle(s.id)}
-                  className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-medium transition-[transform,background-color,color,border-color] duration-200 active:scale-[0.96] ${
                     style === s.id
                       ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30'
                       : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-transparent hover:border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)]'
@@ -455,7 +455,7 @@ export function DesignAssistantPage() {
               <button
                 key={dt.id}
                 onClick={() => setActiveType(dt.id)}
-                className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                className={`flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-[transform,background-color,color,border-color] duration-200 active:scale-[0.96] ${
                   isActive
                     ? 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] border border-[var(--ag-violet)]/25'
                     : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-default)]'
@@ -509,7 +509,7 @@ export function DesignAssistantPage() {
                     <button
                       key={c.hex}
                       onClick={() => handleCopyColor(c.hex)}
-                      className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all min-h-[44px]"
+                      className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-[transform,border-color] active:scale-[0.96] min-h-[44px]"
                     >
                       <div
                         className="w-full h-16 rounded-lg border border-white/10 shadow-md transition-shadow group-hover:shadow-lg"
@@ -613,7 +613,7 @@ export function DesignAssistantPage() {
                       <button
                         key={hex}
                         onClick={() => handleCopyColor(hex)}
-                        className="group flex flex-col items-center gap-1.5 min-w-[64px] min-h-[44px] transition-transform hover:scale-105 active:scale-95"
+                        className="group flex flex-col items-center gap-1.5 min-w-[64px] min-h-[44px] transition-transform hover:scale-105 active:scale-[0.96]"
                       >
                         <div
                           className="w-12 h-12 rounded-lg border border-white/10 shadow-md transition-shadow group-hover:shadow-lg"
@@ -697,7 +697,7 @@ export function DesignAssistantPage() {
                         <button
                           key={c.hex}
                           onClick={() => handleCopyColor(c.hex)}
-                          className="group/swatch flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--ag-bg-deep)] hover:bg-[var(--ag-bg-elevated)] transition-colors min-h-[32px]"
+                          className="group/swatch flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--ag-bg-deep)] hover:bg-[var(--ag-bg-elevated)] transition-[transform,background-color] active:scale-[0.96] min-h-[32px]"
                         >
                           <div
                             className="w-5 h-5 rounded border border-white/10"
@@ -747,7 +747,7 @@ export function DesignAssistantPage() {
                   <button
                     key={example}
                     onClick={() => setPrompt(example)}
-                    className="text-xs min-h-[44px] px-3 py-1.5 rounded-full bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/20 transition-colors"
+                    className="text-xs min-h-[44px] px-3 py-1.5 rounded-full bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/20 transition-[transform,color,border-color] active:scale-[0.96]"
                   >
                     {example}
                   </button>

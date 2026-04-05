@@ -764,7 +764,7 @@ export function VideoGenPage() {
               <button
                 key={preset.label}
                 onClick={() => setDuration(preset.val)}
-                className={`px-3 py-2 min-h-[44px] rounded-lg text-xs transition-all ${
+                className={`px-3 py-2 min-h-[44px] rounded-lg text-xs transition-all active:scale-[0.96] ${
                   duration === preset.val
                     ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
                     : 'bg-[var(--ag-bg-base)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30'
@@ -799,7 +799,7 @@ export function VideoGenPage() {
           <button
             onClick={handleGenerate}
             disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
-            className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-semibold text-sm hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-semibold text-sm hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 transition-all active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ag-violet)]/20"
             title={isProviderBroken ? "Video generation is temporarily unavailable from this server region" : ""}
           >
             {isProviderBroken ? (
@@ -890,7 +890,7 @@ export function VideoGenPage() {
             }).map((vid, index) => (
               <BlurFade key={vid.id} delay={0.5 + index * 0.05}>
                 <div
-                  className="group rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-violet)]/30 transition-all bg-[var(--ag-bg-surface)] backdrop-blur-xl"
+                  className="group rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_4px_20px_rgba(139,92,246,0.1)] overflow-hidden transition-[box-shadow,transform] duration-200 bg-[var(--ag-bg-surface)] backdrop-blur-xl"
                 >
                 {/* Video / Processing placeholder */}
                 <div
@@ -925,7 +925,7 @@ export function VideoGenPage() {
                   )}
 
                   {/* Duration badge */}
-                  <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-xs text-white font-mono">
+                  <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-xs text-white font-mono tabular-nums">
                     {vid.duration}s
                   </div>
                 </div>
@@ -1010,7 +1010,7 @@ export function VideoGenPage() {
               onClick={() => void handleExpandIdea()}
               disabled={!directorIdea.trim() || expandingIdea}
               title="Expand idea with AI"
-              className="flex items-center gap-1.5 px-3 py-3 min-h-[44px] rounded-xl bg-[#8B5CF6]/10 border border-[rgba(139,92,246,0.15)] hover:bg-[#8B5CF6]/20 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--ag-violet)] text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3 py-3 min-h-[44px] rounded-xl bg-[#8B5CF6]/10 border border-[rgba(139,92,246,0.15)] hover:bg-[#8B5CF6]/20 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--ag-violet)] text-xs transition-colors active:scale-[0.96]"
             >
               {expandingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
               {expandingIdea ? '' : 'Expand'}
@@ -1018,7 +1018,7 @@ export function VideoGenPage() {
             <button
               onClick={() => void handleDirectorSubmit()}
               disabled={!directorIdea.trim()}
-              className="flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] hover:from-[var(--ag-violet-dark)] hover:to-[var(--ag-gold-dark)] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-all shadow-lg"
+              className="flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-all active:scale-[0.96] shadow-lg shadow-[var(--ag-violet)]/20"
             >
               {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {directorRunning ? 'Queue' : 'Direct'}

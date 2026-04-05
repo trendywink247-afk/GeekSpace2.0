@@ -366,7 +366,7 @@ export function ImageCreatorPage() {
             <img
               src={previewImage.image_url}
               alt={previewImage.prompt}
-              className="w-full rounded-2xl border border-[var(--ag-border-glow)]"
+              className="w-full rounded-2xl shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_8px_32px_rgba(0,0,0,0.5)] outline outline-1 -outline-offset-1 outline-white/10"
               loading="lazy"
             />
             <div className="flex items-center justify-between mt-3">
@@ -503,7 +503,7 @@ export function ImageCreatorPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-[0.96] min-h-[44px] ${
               activeTab === tab.id
                 ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/30 shadow-sm'
                 : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
@@ -555,7 +555,7 @@ export function ImageCreatorPage() {
                 <button
                   key={card.id}
                   onClick={() => setMode(card.id)}
-                  className={`relative p-6 rounded-2xl border text-left transition-all group cursor-pointer overflow-hidden ${
+                  className={`relative p-6 rounded-2xl border text-left transition-all active:scale-[0.98] group cursor-pointer overflow-hidden ${
                     isActive ? 'border-[var(--ag-violet)]/40' : 'border-[var(--ag-border-default)] hover:border-[var(--ag-violet)]/30'
                   }`}
                   style={{
@@ -678,7 +678,7 @@ export function ImageCreatorPage() {
                       <button
                         key={preset.label}
                         onClick={() => { setWidth(preset.w); setHeight(preset.h); }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] ${
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.96] min-h-[44px] ${
                           width === preset.w && height === preset.h
                             ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
                             : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30'
@@ -745,7 +745,7 @@ export function ImageCreatorPage() {
                 <div className="flex items-center gap-3 mt-2">
                   <button
                     onClick={handleEnhancePrompt}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/20 text-xs text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/20 text-xs text-[var(--ag-violet)] hover:bg-[#8B5CF6]/20 transition-colors active:scale-[0.96]"
                   >
                     <Sparkles className="w-3 h-3" />
                     Enhance Prompt
@@ -803,7 +803,7 @@ export function ImageCreatorPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={generating || !prompt.trim() || imageCount >= maxImages}
-                  className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-bright)] text-white font-semibold text-sm hover:from-[#7C3AED] hover:to-[#8B5CF6] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ag-violet)]/25"
+                  className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-bright)] text-white font-semibold text-sm hover:from-[#7C3AED] hover:to-[#8B5CF6] transition-all active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ag-violet)]/25"
                 >
                   {generating ? (
                     <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
@@ -842,10 +842,10 @@ export function ImageCreatorPage() {
                   {images.slice(0, 5).map(img => (
                     <div
                       key={img.id}
-                      className="group relative rounded-2xl border border-[var(--ag-border-subtle)] overflow-hidden hover:border-[var(--ag-violet)]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all bg-[var(--ag-bg-surface)]"
+                      className="group relative rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.25),0_4px_20px_rgba(139,92,246,0.12)] overflow-hidden transition-[box-shadow,transform] duration-200 active:scale-[0.98] bg-[var(--ag-bg-surface)]"
                     >
                       <div className="aspect-square cursor-pointer relative" onClick={() => setPreviewImage(img)}>
-                        <img src={img.image_url} alt={img.prompt} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={img.image_url} alt={img.prompt} className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-white/10" loading="lazy" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                           <ZoomIn className="w-5 h-5 text-white" />
                         </div>
@@ -1072,7 +1072,7 @@ export function ImageCreatorPage() {
               {filteredImages.map((img) => (
                 <div
                   key={img.id}
-                  className="group relative rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-deep)] hover:border-[var(--ag-violet)]/40 hover:shadow-[0_0_12px_rgba(139,92,246,0.1)] transition-all cursor-pointer mb-4"
+                  className="group relative rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.25),0_4px_20px_rgba(139,92,246,0.12)] transition-[box-shadow,transform] duration-200 active:scale-[0.98] cursor-pointer mb-4"
                   style={{ breakInside: 'avoid' }}
                   onClick={() => setPreviewImage(img)}
                 >
@@ -1080,7 +1080,7 @@ export function ImageCreatorPage() {
                     <img
                       src={img.image_url}
                       alt={img.prompt || 'Generated image'}
-                      className="w-full h-auto object-cover transition-transform group-hover:scale-[1.03]"
+                      className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.03] outline outline-1 -outline-offset-1 outline-white/10"
                       loading="lazy"
                     />
                   </div>

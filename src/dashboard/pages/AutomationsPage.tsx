@@ -644,7 +644,7 @@ export function AutomationsPage() {
           actions={
             <Button
               onClick={handleOpenAdd}
-              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white font-semibold min-h-[44px] px-5 transition-all duration-200 hover:scale-105 active:scale-95"
+              className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white font-semibold min-h-[44px] px-5 transition-[transform,box-shadow,opacity] duration-150 active:scale-[0.96] shadow-[0_4px_16px_rgba(139,92,246,0.3)]"
             >
               <Plus className="w-4 h-4 mr-2" />New Automation
             </Button>
@@ -663,11 +663,11 @@ export function AutomationsPage() {
             ].map(s => (
               <div
                 key={s.label}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--ag-border-subtle)] shrink-0"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--ag-border-subtle)] shrink-0 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_2px_8px_rgba(0,0,0,0.3)]"
                 style={{ background: `color-mix(in srgb, ${s.color} 8%, transparent)` }}
               >
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
-                <span className="text-lg font-bold tabular-nums font-heading" style={{ color: s.color }}>{s.value}</span>
+                <span className="text-xl font-bold tabular-nums font-heading" style={{ color: s.color }}>{s.value}</span>
                 <span className="text-xs text-[var(--ag-text-secondary)]">{s.label}</span>
               </div>
             ))}
@@ -687,7 +687,7 @@ export function AutomationsPage() {
                   <button
                     type="button"
                     onClick={() => handleUseTemplate(t)}
-                    className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30 transition-all duration-200 text-left group min-h-[44px] hover:scale-105 active:scale-95"
+                    className="snap-start flex-shrink-0 w-[180px] md:w-auto p-4 rounded-2xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30 transition-[transform,box-shadow,border-color] duration-150 text-left group min-h-[44px] active:scale-[0.96] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_2px_8px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_4px_16px_rgba(0,0,0,0.4)]"
                   >
                     <div className="text-2xl mb-2">{t.icon}</div>
                     <h3 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)] mb-1 group-hover:text-[var(--ag-accent)] transition-colors">{t.name}</h3>
@@ -751,7 +751,7 @@ export function AutomationsPage() {
             return (
               <BlurFade key={auto.id} delay={0.6 + index * 0.1} inView>
                 <div
-                  className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30 transition-all duration-300 p-4 md:p-5 ${!auto.enabled ? 'opacity-60' : ''}`}
+                  className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30 transition-[box-shadow,border-color,opacity] duration-200 p-4 md:p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_4px_16px_rgba(0,0,0,0.35)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_8px_24px_rgba(0,0,0,0.45)] ${!auto.enabled ? 'opacity-60' : ''}`}
                   style={{ borderLeftWidth: '3px', borderLeftColor: leftBorder }}
                 >
                   {/* Main card row */}
@@ -800,7 +800,7 @@ export function AutomationsPage() {
                           <Clock className="w-3 h-3" />
                           Last run: {fmtRelativeTime(lastRun)}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 tabular-nums">
                           <Play className="w-3 h-3" />
                           {runCount} run{runCount !== 1 ? 's' : ''}
                         </span>
@@ -822,7 +822,7 @@ export function AutomationsPage() {
                         onClick={() => handleRun(auto.id)}
                         disabled={runningId === auto.id}
                         title="Run now"
-                        className="text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] min-w-[44px] p-0 transition-colors hover:scale-105 active:scale-95"
+                        className="text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] min-w-[44px] p-0 transition-[transform,background-color] duration-150 active:scale-[0.96]"
                       >
                         {runningId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                       </Button>
@@ -833,7 +833,7 @@ export function AutomationsPage() {
                         onClick={() => handleTestFire(auto.id)}
                         disabled={testingId === auto.id}
                         title="Test fire (dry run)"
-                        className="text-[var(--ag-warning)] hover:bg-[var(--ag-warning)]/10 min-h-[44px] min-w-[44px] p-0 transition-colors hover:scale-105 active:scale-95"
+                        className="text-[var(--ag-warning)] hover:bg-[var(--ag-warning)]/10 min-h-[44px] min-w-[44px] p-0 transition-[transform,background-color] duration-150 active:scale-[0.96]"
                       >
                         {testingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
                       </Button>
@@ -843,7 +843,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleOpenEdit(auto.id)}
                         title="Edit"
-                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 min-h-[44px] min-w-[44px] p-0 transition-colors hover:scale-105 active:scale-95"
+                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 min-h-[44px] min-w-[44px] p-0 transition-[transform,color,background-color] duration-150 active:scale-[0.96]"
                       >
                         <Edit3 className="w-4 h-4" />
                       </Button>
@@ -854,7 +854,7 @@ export function AutomationsPage() {
                         onClick={() => handleDuplicate(auto.id)}
                         disabled={duplicatingId === auto.id}
                         title="Duplicate"
-                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 min-h-[44px] min-w-[44px] p-0 transition-colors hover:scale-105 active:scale-95"
+                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 min-h-[44px] min-w-[44px] p-0 transition-[transform,color,background-color] duration-150 active:scale-[0.96]"
                       >
                         {duplicatingId === auto.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
                       </Button>
@@ -864,7 +864,7 @@ export function AutomationsPage() {
                         size="sm"
                         onClick={() => handleDelete(auto.id, auto.name)}
                         title="Delete"
-                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-danger)] hover:bg-[var(--ag-danger)]/10 min-h-[44px] min-w-[44px] p-0 transition-colors hover:scale-105 active:scale-95"
+                        className="text-[var(--ag-text-secondary)] hover:text-[var(--ag-danger)] hover:bg-[var(--ag-danger)]/10 min-h-[44px] min-w-[44px] p-0 transition-[transform,color,background-color] duration-150 active:scale-[0.96]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -952,7 +952,7 @@ export function AutomationsPage() {
                     : 'Create one from a template or build your own.'}
                 </p>
                 {!searchQuery && filter === 'all' && (
-                  <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white min-h-[44px] transition-all duration-200 hover:scale-105 active:scale-95">
+                  <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white min-h-[44px] transition-[transform,opacity] duration-150 active:scale-[0.96] shadow-[0_4px_16px_rgba(139,92,246,0.3)]">
                     <Plus className="w-4 h-4 mr-2" /> Create Automation
                   </Button>
                 )}
@@ -1009,7 +1009,7 @@ export function AutomationsPage() {
                       key={key}
                       type="button"
                       onClick={() => setForm({ ...form, triggerType: key })}
-                      className={`flex flex-col items-start gap-1.5 p-3 rounded-xl border transition-all duration-200 text-left min-h-[44px] ${
+                      className={`flex flex-col items-start gap-1.5 p-3 rounded-xl border transition-[transform,border-color,background-color] duration-150 active:scale-[0.96] text-left min-h-[44px] ${
                         isSelected
                           ? 'border-[var(--ag-violet)]/50 bg-[#8B5CF6]/5'
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
@@ -1117,7 +1117,7 @@ export function AutomationsPage() {
                       key={key}
                       type="button"
                       onClick={() => setForm({ ...form, actionType: key })}
-                      className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all duration-200 text-left min-h-[44px] ${
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border transition-[transform,border-color,background-color] duration-150 active:scale-[0.96] text-left min-h-[44px] ${
                         isSelected
                           ? 'border-[var(--ag-violet)]/50 bg-[#8B5CF6]/5'
                           : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
@@ -1268,14 +1268,14 @@ export function AutomationsPage() {
               <Button
                 variant="outline"
                 onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                className="flex-1 border-white/10 hover:bg-white/5 min-h-[44px] press-scale"
+                className="flex-1 border-white/10 hover:bg-white/5 min-h-[44px] transition-[transform,background-color] duration-150 active:scale-[0.96]"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={!!validationError}
-                className="flex-1 bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white font-semibold min-h-[44px] transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
+                className="flex-1 bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-violet-soft)] hover:opacity-90 text-white font-semibold min-h-[44px] transition-[transform,opacity] duration-150 active:scale-[0.96] disabled:opacity-40 shadow-[0_4px_16px_rgba(139,92,246,0.3)]"
               >
                 {editingId ? 'Save Changes' : 'Create Automation'}
               </Button>
@@ -1385,7 +1385,7 @@ export function AutomationsPage() {
                   size="sm"
                   onClick={handleLoadMoreLogs}
                   disabled={logsLoadingMore}
-                  className="text-[var(--ag-accent)] hover:text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] transition-colors hover:scale-105 active:scale-95"
+                  className="text-[var(--ag-accent)] hover:text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] transition-[transform,background-color] duration-150 active:scale-[0.96]"
                 >
                   {logsLoadingMore ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -1423,7 +1423,7 @@ export function AutomationsPage() {
                           size="sm"
                           onClick={() => handleRetryDeadLetter(dl.id)}
                           disabled={retryingDeadLetterId === dl.id}
-                          className="text-xs text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] min-w-[44px] px-3 transition-colors hover:scale-105 active:scale-95"
+                          className="text-xs text-[var(--ag-accent)] hover:bg-[var(--ag-accent)]/10 min-h-[44px] min-w-[44px] px-3 transition-[transform,background-color] duration-150 active:scale-[0.96]"
                         >
                           {retryingDeadLetterId === dl.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
                           {retryingDeadLetterId === dl.id ? '' : 'Retry'}

@@ -101,7 +101,7 @@ function TonePills({ selected, onChange }: { selected: Tone; onChange: (t: Tone)
         <button
           key={t.value}
           onClick={() => onChange(t.value)}
-          className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
+          className={`px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-[transform,background-color,color,box-shadow] active:scale-[0.96] ${
             selected === t.value
               ? 'bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] border border-[var(--ag-violet)]/40 shadow-[0_0_8px_var(--ag-violet-glow)]'
               : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/20 hover:text-[var(--ag-text-primary)]'
@@ -123,10 +123,10 @@ function PlatformBadges({ selected, onChange }: { selected: Platform; onChange: 
         <button
           key={p.value}
           onClick={() => onChange(p.value)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full text-xs font-medium transition-[transform,background-color,color,box-shadow] active:scale-[0.96] ${
             selected === p.value
               ? 'border shadow-[0_0_8px_rgba(0,0,0,0.2)]'
-              : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 hover:text-[var(--ag-text-primary)]'
+              : 'bg-[var(--ag-bg-deep)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-aria)]/20 hover:text-[var(--ag-text-primary)]'
           }`}
           style={selected === p.value ? { background: `${p.color}20`, color: p.color, borderColor: `${p.color}60` } : undefined}
         >
@@ -374,7 +374,7 @@ function CopyButton({
     <Button
       size="sm"
       disabled={!text.trim()}
-      className={`transition-all duration-200 min-h-[44px] ${
+      className={`transition-[transform,background-color,color,box-shadow] duration-200 active:scale-[0.96] min-h-[44px] ${
         copied
           ? 'bg-[var(--ag-success)]/20 text-[var(--ag-success)] border border-[var(--ag-success)]/40'
           : 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90'
@@ -628,7 +628,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[var(--ag-text-muted)]">Connect your social media accounts for automated posting.</p>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px]">
+        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px] transition-[transform,opacity] active:scale-[0.96]">
           <Plus className="w-4 h-4 mr-1" /> Add Account
         </Button>
       </div>
@@ -690,7 +690,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
             )}
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => { setShowForm(false); setSaveError(''); }}>Cancel</Button>
-              <Button size="sm" onClick={handleCreate} disabled={saving || !accountName} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px]">
+              <Button size="sm" onClick={handleCreate} disabled={saving || !accountName} className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px] transition-[transform,opacity] active:scale-[0.96]">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
                 Create
               </Button>
@@ -712,7 +712,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
           <Button
             size="sm"
             onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px]"
+            className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px] transition-[transform,opacity] active:scale-[0.96]"
           >
             <Plus className="w-4 h-4 mr-1" /> Connect Account
           </Button>
@@ -721,7 +721,7 @@ function AccountsTab({ onAccountCreated }: { onAccountCreated?: () => void }) {
 
       <div className="grid gap-3">
         {accounts.map((account) => (
-          <SectionCard key={account.id} className="hover:border-[#FF6B9D]/20">
+          <SectionCard key={account.id} className="hover:border-[var(--ag-aria)]/20">
             <div className="flex items-center gap-3">
               {/* Platform icon */}
               <div
@@ -1042,7 +1042,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
               <Button
                 size="sm"
                 onClick={() => setShowComposer(true)}
-                className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px]"
+                className="bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px] transition-[transform,opacity] active:scale-[0.96]"
               >
                 <Wand2 className="w-4 h-4 mr-1" /> Quick Post
               </Button>
@@ -1097,7 +1097,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
                     size="sm"
                     onClick={handleAiGenerate}
                     disabled={aiGenerating || !composerTopic.trim()}
-                    className="bg-[#8B5CF6] hover:bg-[#7C3AED] whitespace-nowrap min-h-[44px]"
+                    className="bg-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/90 whitespace-nowrap min-h-[44px] transition-[transform,background-color] active:scale-[0.96]"
                   >
                     {aiGenerating ? (
                       <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Generating...</>
@@ -1172,7 +1172,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
               <label className="text-xs text-[var(--ag-text-muted)] mb-1 block">Niche</label>
               <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g., Tech startups" className="bg-[var(--ag-bg-deep)] border-[var(--ag-border-subtle)]" />
             </div>
-            <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px]">
+            <Button onClick={handleGenerate} disabled={generating || !topic || !niche} className="w-full bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white border-0 hover:opacity-90 min-h-[44px] transition-[transform,opacity] active:scale-[0.96]">
               {generating ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating...</>
               ) : (
@@ -1188,7 +1188,7 @@ function ContentPlanTab({ onPostScheduled }: { onPostScheduled?: () => void }) {
             <h3 className="text-sm font-medium font-heading text-[var(--ag-text-primary)] mb-2">Existing Plans</h3>
             <div className="grid gap-2">
               {plans.map((plan) => (
-                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[#FF6B9D]/20 transition-colors">
+                <button key={plan.id} onClick={() => selectPlan(plan)} className="w-full text-left p-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-aria)]/20 transition-[transform,border-color,background-color] active:scale-[0.98]">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[var(--ag-text-primary)]">{plan.title}</span>
                     <StatusBadge status={plan.status} />

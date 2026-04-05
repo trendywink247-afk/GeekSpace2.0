@@ -252,7 +252,7 @@ function FeaturedBanner({ specialist, onActivate }: { specialist: Specialist; on
         </div>
         <Button
           onClick={onActivate}
-          className="bg-gradient-to-r from-[var(--ag-violet-500)] to-[var(--ag-amber-500)] hover:from-[var(--ag-violet-600)] hover:to-[var(--ag-amber-600)] text-white font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center transition-all duration-300"
+          className="bg-gradient-to-r from-[var(--ag-violet-500)] to-[var(--ag-amber-500)] hover:from-[var(--ag-violet-600)] hover:to-[var(--ag-amber-600)] text-white font-medium min-h-[44px] px-6 flex-shrink-0 self-start sm:self-center transition-[transform,opacity] duration-200 active:scale-[0.96]"
         >
           <Zap className="w-4 h-4 mr-1" />
           Activate
@@ -274,7 +274,7 @@ function SpecialistCard({
   const catColor = CATEGORY_COLORS[specialist.category] ?? 'var(--ag-violet-500)';
 
   return (
-    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-5 transition-all duration-300 hover:border-[var(--ag-violet-500)]/25 hover:shadow-[0_0_24px_var(--ag-violet-500-rgb)/0.08]">
+    <div className="group relative flex flex-col bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl p-5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--ag-violet-500)]/25 hover:shadow-[0_0_24px_rgba(139,92,246,0.08)]">
       {/* Category badge */}
       <Badge
         className="absolute top-3 right-3 text-[10px] uppercase tracking-wider border-0"
@@ -317,7 +317,7 @@ function SpecialistCard({
           <button
             key={prompt}
             onClick={() => onPromptClick(prompt)}
-            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[var(--ag-violet-500)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--ag-violet-500)]/5 truncate min-h-[30px] flex items-center"
+            className="text-left text-[11px] text-[var(--ag-text-muted)] hover:text-[var(--ag-violet-500)] transition-[transform,background-color,color] active:scale-[0.96] px-2.5 py-1.5 rounded-lg hover:bg-[var(--ag-violet-500)]/5 truncate min-h-[30px] flex items-center"
             title={prompt}
           >
             <span className="truncate">&ldquo;{prompt}&rdquo;</span>
@@ -328,7 +328,7 @@ function SpecialistCard({
       {/* Activate button */}
       <Button
         onClick={onActivate}
-        className="mt-4 w-full bg-gradient-to-r from-[var(--ag-violet-500)]/10 to-[var(--ag-amber-500)]/10 text-[var(--ag-violet-500)] hover:from-[var(--ag-violet-500)]/20 hover:to-[var(--ag-amber-500)]/20 border border-[var(--ag-violet-500)]/20 hover:border-[var(--ag-violet-500)]/40 font-medium min-h-[44px] transition-all duration-300"
+        className="mt-4 w-full bg-gradient-to-r from-[var(--ag-violet-500)]/10 to-[var(--ag-amber-500)]/10 text-[var(--ag-violet-500)] hover:from-[var(--ag-violet-500)]/20 hover:to-[var(--ag-amber-500)]/20 border border-[var(--ag-violet-500)]/20 hover:border-[var(--ag-violet-500)]/40 font-medium min-h-[44px] transition-[transform,background-color,border-color] duration-200 active:scale-[0.96]"
       >
         <Zap className="w-4 h-4 mr-1" />
         Activate
@@ -582,7 +582,7 @@ export function AISpecialistPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] flex-shrink-0 ${
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-[transform,background-color,color,border-color] active:scale-[0.96] min-h-[44px] flex-shrink-0 ${
                       isActive
                         ? 'bg-[var(--ag-violet-500)]/15 text-[var(--ag-violet-500)] border border-[var(--ag-violet-500)]/30'
                         : 'bg-[var(--ag-bg-surface)] text-[var(--ag-text-muted)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet-500)]/20 hover:text-[var(--ag-text-primary)]'

@@ -284,7 +284,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
         actions={
           <button
             onClick={() => onNavigate?.('templates')}
-            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-[transform,opacity,box-shadow] duration-150 font-medium text-sm active:scale-[0.96]"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
@@ -315,7 +315,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               <button
                 key={type}
                 onClick={() => setTypeFilter(type)}
-                className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] ${
                   typeFilter === type
                     ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] shadow-sm'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
@@ -330,7 +330,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
           {/* Sort toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] ${
               showFilters
                 ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)]'
                 : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
@@ -354,7 +354,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
               <button
                 key={opt.value}
                 onClick={() => setSortBy(opt.value)}
-                className={`px-3 py-1.5 min-h-[36px] rounded-md text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 min-h-[36px] rounded-md text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] ${
                   sortBy === opt.value
                     ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)]'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface-hover)]'
@@ -389,7 +389,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             </p>
             <button
               onClick={() => onNavigate?.('templates')}
-              className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
+              className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-[transform,opacity,box-shadow] duration-150 font-medium text-sm active:scale-[0.96]"
             >
               Browse Templates
                 </button>
@@ -408,7 +408,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
             </p>
             <button
               onClick={() => { setSearchQuery(''); setTypeFilter('all'); }}
-              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+              className="mt-4 px-4 py-2 min-h-[44px] text-sm text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-[transform,background-color] duration-150 active:scale-[0.96]"
             >
               Clear filters
                 </button>
@@ -420,7 +420,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredArtifacts.map((artifact, index) => (
               <BlurFade key={artifact.id} delay={0.1 + (index * 0.05)}>
-                <div className="rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-sm)] transition-all duration-300 group">
+                <div className="rounded-xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl overflow-hidden hover:border-[var(--ag-border-default)] hover:-translate-y-1 hover:shadow-[var(--ag-glow-sm)] transition-[transform,box-shadow,border-color] duration-300 group">
                   {/* Preview thumbnail */}
                   <div className="aspect-video bg-gradient-to-br from-[var(--ag-bg-deep)] to-[var(--ag-bg-base)] relative cursor-pointer" onClick={() => handleOpenPreview(artifact)}>
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -458,7 +458,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <div className="p-3 flex flex-wrap gap-2">
                     <button
                       onClick={() => handleOpenPreview(artifact)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg transition-colors text-sm font-medium ${
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg transition-[transform,background-color] duration-150 text-sm font-medium active:scale-[0.96] ${
                         previewArtifact?.id === artifact.id
                           ? 'bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white'
                           : 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/20'
@@ -470,7 +470,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                     <button
                       onClick={() => handleCopyUrl(artifact.previewUrl, artifact.id)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
                   title="Copy URL"
                   aria-label="Copy URL"
                 >
@@ -479,7 +479,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                     <button
                       onClick={() => handleEdit(artifact)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
                   title="Edit"
                   aria-label="Edit project"
                 >
@@ -488,7 +488,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                     <button
                       onClick={() => handleExportZip(artifact)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
                   title="Download ZIP"
                   aria-label="Download ZIP"
                 >
@@ -508,7 +508,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
 
                     <button
                       onClick={() => handleDomainSetup(artifact)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-violet)]/10 rounded-lg transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
                   title="Custom Domain"
                   aria-label="Custom Domain"
                 >
@@ -520,7 +520,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                     setSelectedArtifact(artifact);
                     setShowDeleteConfirm(true);
                   }}
-                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-[transform,background-color,color] duration-150 active:scale-[0.96]"
                   title="Delete"
                   aria-label="Delete project"
                 >
@@ -650,13 +650,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                 <div className="flex justify-end gap-3 p-4 border-t border-[var(--ag-border-subtle)]">
                   <button
                     onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
+                    className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,color] duration-150 rounded-lg active:scale-[0.96]"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveEdit}
-                    className="px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 font-medium text-sm"
+                    className="px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-[transform,opacity,box-shadow] duration-150 font-medium text-sm active:scale-[0.96]"
                   >
                     Save Changes
                   </button>
@@ -711,7 +711,7 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <button
                     onClick={handleSaveDomain}
                     disabled={!domainInput || domainInput.length < 2}
-                    className="mt-3 w-full px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-none font-medium text-sm"
+                    className="mt-3 w-full px-4 py-2.5 min-h-[44px] bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-cyan)] text-white rounded-lg hover:opacity-90 hover:shadow-[var(--ag-glow-md)] transition-[transform,opacity,box-shadow] duration-150 disabled:opacity-50 disabled:hover:shadow-none font-medium text-sm active:scale-[0.96]"
                   >
                     Set Domain
                   </button>
@@ -740,13 +740,13 @@ export function ArtifactsPage({ onNavigate }: ArtifactsPageProps) {
                   <div className="flex justify-end gap-3">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-colors rounded-lg"
+                      className="px-4 py-2.5 min-h-[44px] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-[transform,color] duration-150 rounded-lg active:scale-[0.96]"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => handleDelete(selectedArtifact.id)}
-                      className="px-4 py-2.5 min-h-[44px] bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                      className="px-4 py-2.5 min-h-[44px] bg-red-500 text-white rounded-lg hover:bg-red-600 transition-[transform,background-color] duration-150 font-medium text-sm active:scale-[0.96]"
                     >
                       Delete
                     </button>

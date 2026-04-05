@@ -21,7 +21,7 @@ const paddingClasses: Record<string, string> = {
 export function SectionCard({ children, title, subtitle, className = '', padding = 'md' }: SectionCardProps) {
   const paddingClass = paddingClasses[padding] ?? 'p-4 md:p-5';
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] hover:shadow-[var(--ag-glow-sm)] hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-300 ${paddingClass} ${className}`}>
+    <div className={`relative overflow-hidden rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_4px_16px_rgba(0,0,0,0.18),0_1px_3px_rgba(0,0,0,0.1)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.22),0_8px_32px_rgba(0,0,0,0.28),0_2px_6px_rgba(0,0,0,0.16)] transition-[box-shadow] duration-300 ${paddingClass} ${className}`}>
       {(title || subtitle) && (
         <div className="mb-4">
           {title && <h2 className="text-base font-semibold font-heading text-[var(--ag-text-primary,#F4F6FF)]">{title}</h2>}

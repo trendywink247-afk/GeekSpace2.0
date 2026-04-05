@@ -196,7 +196,7 @@ function MessageCard({
   return (
     <div
       className={
-        "rounded-xl border p-4 space-y-3 transition-all duration-300 hover:bg-[var(--ag-bg-surface-hover)] backdrop-blur-xl " +
+        "rounded-xl border p-4 space-y-3 transition-[background-color,border-color,box-shadow] duration-300 hover:bg-[var(--ag-bg-surface-hover)] backdrop-blur-xl " +
         config.borderColor + " bg-[var(--ag-bg-surface)]"
       }
     >
@@ -231,7 +231,7 @@ function MessageCard({
         <button
           onClick={() => onFeedback(msg.id, true)}
           className={
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-[transform,background-color,color] active:scale-[0.96] min-w-[44px] min-h-[44px] " +
             "focus-visible:ring-2 focus-visible:ring-[var(--ag-green)]/50 " +
             (feedback === true
               ? "bg-[var(--ag-green)]/20 text-[var(--ag-green)] border border-[var(--ag-green)]/30"
@@ -245,7 +245,7 @@ function MessageCard({
         <button
           onClick={() => onFeedback(msg.id, false)}
           className={
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-w-[44px] min-h-[44px] " +
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-[transform,background-color,color] active:scale-[0.96] min-w-[44px] min-h-[44px] " +
             "focus-visible:ring-2 focus-visible:ring-red-400/50 " +
             (feedback === false
               ? "bg-red-500/20 text-red-400 border border-red-500/30"
@@ -280,7 +280,7 @@ function FrequencyCard({
     <button
       onClick={() => onSelect(level)}
       className={
-        "w-full text-left rounded-xl border p-3 transition-all min-h-[44px] " +
+        "w-full text-left rounded-xl border p-3 transition-[transform,background-color,border-color] active:scale-[0.98] min-h-[44px] " +
         "focus-visible:ring-2 focus-visible:ring-[var(--ag-jarvis)]/50 " +
         (selected
           ? "border-[var(--ag-jarvis)]/40 bg-[var(--ag-jarvis)]/5"
@@ -583,7 +583,7 @@ export function ProactivePage() {
               variant="ghost"
               size="icon"
               onClick={() => setShowConfig(!showConfig)}
-              className="lg:hidden min-w-[44px] min-h-[44px]"
+              className="lg:hidden min-w-[44px] min-h-[44px] transition-[transform,background-color] active:scale-[0.96]"
               aria-label="Toggle settings"
             >
               <Settings2 className="h-4 w-4" />
@@ -594,7 +594,7 @@ export function ProactivePage() {
               onClick={() => void fetchData(true)}
               disabled={refreshing}
               aria-label="Refresh"
-              className="min-w-[44px] min-h-[44px]"
+              className="min-w-[44px] min-h-[44px] transition-[transform,background-color] active:scale-[0.96]"
             >
               <RefreshCw className={"h-4 w-4 " + spinCls} />
             </Button>
@@ -647,8 +647,8 @@ export function ProactivePage() {
                 aria-label={enabled ? "Disable proactive messages" : "Enable proactive messages"}
                 className={
                   "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent " +
-                  "transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-jarvis)]/50 " +
-                  "disabled:opacity-50 min-w-[44px] min-h-[44px] items-center " +
+                  "transition-[background-color,transform] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ag-jarvis)]/50 " +
+                  "disabled:opacity-50 active:scale-[0.96] min-w-[44px] min-h-[44px] items-center " +
                   (enabled ? "bg-[var(--ag-jarvis)]" : "bg-gray-600")
                 }
               >

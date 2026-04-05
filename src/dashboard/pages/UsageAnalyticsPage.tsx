@@ -100,7 +100,7 @@ function CreditCircle({ used, total }: { used: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold text-[var(--ag-text-primary)] font-mono">{fmt(remaining)}</span>
+        <span className="text-lg font-bold text-[var(--ag-text-primary)] font-mono tabular-nums">{fmt(remaining)}</span>
         <span className="text-[10px] text-[var(--ag-text-secondary)]">left</span>
       </div>
     </div>
@@ -315,7 +315,7 @@ export function UsageAnalyticsPage() {
               <button
                 key={r}
                 onClick={() => handleSummaryRange(r)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-[background,box-shadow,transform] duration-150 active:scale-[0.96] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                   summaryRange === r
                     ? 'bg-[#8B5CF6] text-white'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
@@ -366,13 +366,13 @@ export function UsageAnalyticsPage() {
                   <DollarSign className="w-5 h-5" style={{ color: KPI_COLORS.cost }} />
                 </div>
                 {summary?.forecastUSD !== undefined && (
-                  <div className="flex items-center gap-1 text-xs font-mono text-[#FFB800]">
+                  <div className="flex items-center gap-1 text-xs font-mono tabular-nums text-[#FFB800]">
                     <TrendingUp className="w-3 h-3" />
                     ~${summary.forecastUSD.toFixed(2)}
                   </div>
                 )}
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#10B981] transition-colors font-mono">
+              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#10B981] transition-colors font-mono tabular-nums">
                 ${(summary?.totalCostUSD ?? 0).toFixed(2)}
               </div>
               <div className="text-xs sm:text-sm text-[var(--ag-text-secondary)]">Total Cost</div>
@@ -385,7 +385,7 @@ export function UsageAnalyticsPage() {
                   <MessageSquare className="w-5 h-5" style={{ color: KPI_COLORS.messages }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[var(--ag-violet)] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[var(--ag-violet)] transition-colors tabular-nums">
                 {fmt(summary?.totalMessages ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[var(--ag-text-secondary)]">Messages</div>
@@ -398,7 +398,7 @@ export function UsageAnalyticsPage() {
                   <Coins className="w-5 h-5" style={{ color: KPI_COLORS.tokens }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FFB800] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FFB800] transition-colors tabular-nums">
                 {fmt(summary?.totalTokensIn ?? 0)} / {fmt(summary?.totalTokensOut ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[var(--ag-text-secondary)]">Tokens In / Out</div>
@@ -411,7 +411,7 @@ export function UsageAnalyticsPage() {
                   <Wrench className="w-5 h-5" style={{ color: KPI_COLORS.tools }} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FF2D78] transition-colors">
+              <div className="text-xl sm:text-2xl font-bold text-[var(--ag-text-primary)] group-hover:text-[#FF2D78] transition-colors tabular-nums">
                 {fmt(summary?.totalToolCalls ?? 0)}
               </div>
               <div className="text-xs sm:text-sm text-[var(--ag-text-secondary)]">Tool Calls</div>
@@ -436,7 +436,7 @@ export function UsageAnalyticsPage() {
               <CreditCircle used={todayUsage.tokenUsed} total={todayUsage.tokenBudget} />
               <div className="text-center">
                 <div className="text-xs text-[var(--ag-text-secondary)]">Token Budget</div>
-                <div className="text-xs font-mono text-[var(--ag-text-primary)]">
+                <div className="text-xs font-mono tabular-nums text-[var(--ag-text-primary)]">
                   {fmt(todayUsage.tokenUsed)} / {fmt(todayUsage.tokenBudget)}
                 </div>
               </div>
@@ -446,7 +446,7 @@ export function UsageAnalyticsPage() {
               <CreditCircle used={todayUsage.messages.used} total={todayUsage.messages.limit} />
               <div className="text-center">
                 <div className="text-xs text-[var(--ag-text-secondary)]">Messages</div>
-                <div className="text-xs font-mono text-[var(--ag-text-primary)]">
+                <div className="text-xs font-mono tabular-nums text-[var(--ag-text-primary)]">
                   {todayUsage.messages.used} / {todayUsage.messages.limit}
                 </div>
               </div>
@@ -456,7 +456,7 @@ export function UsageAnalyticsPage() {
               <CreditCircle used={todayUsage.voice.used} total={todayUsage.voice.limit} />
               <div className="text-center">
                 <div className="text-xs text-[var(--ag-text-secondary)]">Voice</div>
-                <div className="text-xs font-mono text-[var(--ag-text-primary)]">
+                <div className="text-xs font-mono tabular-nums text-[var(--ag-text-primary)]">
                   {todayUsage.voice.used} / {todayUsage.voice.limit}
                 </div>
               </div>
@@ -466,7 +466,7 @@ export function UsageAnalyticsPage() {
               <CreditCircle used={todayUsage.images.used} total={todayUsage.images.limit} />
               <div className="text-center">
                 <div className="text-xs text-[var(--ag-text-secondary)]">Images</div>
-                <div className="text-xs font-mono text-[var(--ag-text-primary)]">
+                <div className="text-xs font-mono tabular-nums text-[var(--ag-text-primary)]">
                   {todayUsage.images.used} / {todayUsage.images.limit}
                 </div>
               </div>
@@ -501,7 +501,7 @@ export function UsageAnalyticsPage() {
               <button
                 key={r}
                 onClick={() => handleChartRange(r)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-[background,box-shadow,transform] duration-150 active:scale-[0.96] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 ${
                   chartRange === r
                     ? 'bg-[#8B5CF6] text-white'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)]'
@@ -710,7 +710,7 @@ export function UsageAnalyticsPage() {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between text-sm">
                   <span className="text-[var(--ag-text-secondary)]">{item.label}</span>
-                  <span className="text-[var(--ag-text-primary)] font-mono">{item.value}</span>
+                  <span className="text-[var(--ag-text-primary)] font-mono tabular-nums">{item.value}</span>
                 </div>
               ))}
 

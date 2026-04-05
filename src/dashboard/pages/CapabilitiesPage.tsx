@@ -590,7 +590,7 @@ function CapabilityCard({
             <button
               key={i}
               onClick={() => handleCopy(ex)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 min-h-[44px] rounded-lg bg-white/4 hover:bg-white/8 text-left transition-colors group/prompt"
+              className="w-full flex items-center justify-between gap-2 px-2.5 min-h-[44px] rounded-lg bg-white/4 hover:bg-white/8 text-left transition-[transform,background-color] duration-150 group/prompt active:scale-[0.96]"
             >
               <span className="text-[11px] text-[var(--ag-text-secondary,#9CA3AF)] group-hover/prompt:text-[var(--ag-text-primary)] truncate transition-colors">
                 {ex}
@@ -608,7 +608,7 @@ function CapabilityCard({
         <div className="flex gap-2 mt-auto">
           <button
             onClick={() => { handleCopy(cap.examples[0]); onTry(cap.examples[0]); }}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium text-[#05050A] transition-all duration-200 hover:opacity-90 active:scale-95"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium text-[#05050A] transition-[transform,opacity,box-shadow] duration-150 hover:opacity-90 active:scale-[0.96]"
             style={{ background: cap.color, boxShadow: `0 0 0 0 ${cap.color}00` }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 16px ${cap.color}40`; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 0 0 ${cap.color}00`; }}
@@ -619,7 +619,7 @@ function CapabilityCard({
           {cap.navigateTo && (
             <button
               onClick={() => onNavigate?.(cap.navigateTo!)}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border)] hover:text-[var(--ag-text-primary)] transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border)] hover:text-[var(--ag-text-primary)] transition-[transform,border-color,color] duration-150 active:scale-[0.96]"
             >
               Open
             </button>
@@ -627,7 +627,7 @@ function CapabilityCard({
           {cap.needsSetup && (
             <button
               onClick={() => onNavigate?.('connections')}
-              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-gold)]/30 text-[var(--ag-gold)] hover:bg-[var(--ag-gold)]/10 transition-all"
+              className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium border border-[var(--ag-gold)]/30 text-[var(--ag-gold)] hover:bg-[var(--ag-gold)]/10 transition-[transform,background-color] duration-150 active:scale-[0.96]"
             >
               Connect
             </button>
@@ -657,7 +657,7 @@ function PipelineVisualizer() {
           {pipelineSteps.map((step, i) => (
             <div key={i} className="flex items-center flex-1">
               <button
-                className={`flex-1 flex flex-col items-center gap-2 p-3 min-h-[44px] rounded-xl border transition-all cursor-pointer group ${
+                className={`flex-1 flex flex-col items-center gap-2 p-3 min-h-[44px] rounded-xl border transition-[transform,border-color,background-color,box-shadow] duration-150 cursor-pointer group active:scale-[0.96] ${
                   activeStep === i
                     ? 'border-opacity-60 bg-opacity-20'
                     : 'border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)]'
@@ -693,7 +693,7 @@ function PipelineVisualizer() {
           {pipelineSteps.map((step, i) => (
             <div key={i}>
               <button
-                className="w-full flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-all text-left"
+                className="w-full flex items-center gap-3 p-3 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] transition-[transform,border-color] duration-150 text-left active:scale-[0.96]"
                 onClick={() => setActiveStep(activeStep === i ? null : i)}
               >
                 <div
@@ -757,7 +757,7 @@ function HiddenPowers() {
         {!expanded && hiddenPowers.length > 4 && (
           <button
             onClick={() => setExpanded(true)}
-            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-all flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(139,92,246,0.08)] text-xs text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.15)] hover:text-[var(--ag-text-primary,#F4F6FF)] transition-[transform,border-color,color] duration-150 flex items-center justify-center gap-2 active:scale-[0.96]"
           >
             Show {hiddenPowers.length - 4} more hidden powers
             <ChevronRight className="w-3.5 h-3.5" />
@@ -903,7 +903,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`flex-none flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`flex-none flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-[transform,background-color,box-shadow] duration-150 whitespace-nowrap active:scale-[0.96] ${
                 isActive ? 'shadow-lg' : 'hover:bg-white/8'
               }`}
               style={
@@ -960,7 +960,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={() => onOpenChat?.()}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold px-6 min-h-[44px] transition-all duration-200"
+              className="bg-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/90 text-white font-semibold px-6 min-h-[44px] transition-[transform,background-color,box-shadow] duration-150 active:scale-[0.96]"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Open Agent Chat
@@ -968,7 +968,7 @@ export function CapabilitiesPage({ onNavigate, onOpenChat }: CapabilitiesPagePro
             <Button
               variant="outline"
               onClick={() => onNavigate?.('connections')}
-              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px]"
+              className="border-[rgba(139,92,246,0.15)] text-[var(--ag-text-secondary,#9CA3AF)] hover:border-[rgba(139,92,246,0.3)] hover:text-[var(--ag-text-primary,#F4F6FF)] min-h-[44px] transition-[transform,border-color,color] duration-150 active:scale-[0.96]"
             >
               <Link2 className="w-4 h-4 mr-2" />
               Set Up Integrations

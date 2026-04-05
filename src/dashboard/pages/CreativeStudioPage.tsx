@@ -17,6 +17,7 @@ import { MediaGallery, type MediaItem } from '@/components/MediaGallery';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { BlurFade } from '@/components/magicui/blur-fade';
 
 // ---- Style presets for image generation ----
 const STYLE_OPTIONS = [
@@ -376,7 +377,7 @@ export function CreativeStudioPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[44px] ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-[0.96] min-h-[44px] ${
                   isActive
                     ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] shadow-sm'
                     : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-[var(--ag-bg-surface)]/50'
@@ -418,7 +419,7 @@ export function CreativeStudioPage() {
                   <button
                     key={style}
                     onClick={() => setImgStyle(imgStyle === style ? '' : style)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all min-h-[32px] ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all active:scale-[0.96] min-h-[32px] ${
                       imgStyle === style
                         ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)]'
                         : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)]'
@@ -433,7 +434,7 @@ export function CreativeStudioPage() {
               <button
                 onClick={handleImageGenerate}
                 disabled={!imgPrompt.trim() || imgGenerating}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-medium text-sm transition-all active:scale-[0.96] shadow-lg shadow-[var(--ag-violet)]/20 hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {imgGenerating ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
@@ -467,25 +468,25 @@ export function CreativeStudioPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {images.map(img => (
+                {images.map((img, idx) => (
+                  <BlurFade key={img.id} delay={idx * 0.04} inView>
                   <div
-                    key={img.id}
-                    className="group relative aspect-square rounded-xl overflow-hidden border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl cursor-pointer"
+                    className="group relative aspect-square rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.25),0_4px_20px_rgba(139,92,246,0.12)] bg-[var(--ag-bg-surface)] backdrop-blur-xl cursor-pointer transition-[box-shadow,transform] duration-200 active:scale-[0.98]"
                     onClick={() => setPreviewImage(img)}
                   >
                     <img
                       src={img.image_url}
                       alt={img.prompt || 'Generated image'}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 outline outline-1 -outline-offset-1 outline-white/10"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <p className="text-xs text-white/80 line-clamp-2">{img.prompt}</p>
+                        <p className="text-xs text-white/80 line-clamp-2" style={{ textWrap: 'pretty' }}>{img.prompt}</p>
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             onClick={e => { e.stopPropagation(); handleImageDelete(img.id); }}
-                            className="p-2 rounded-lg bg-[var(--ag-error)]/20 text-[var(--ag-error)] hover:bg-[var(--ag-error)]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg bg-[var(--ag-error)]/20 text-[var(--ag-error)] hover:bg-[var(--ag-error)]/30 transition-colors active:scale-[0.96] min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -494,7 +495,7 @@ export function CreativeStudioPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            className="p-2 rounded-lg bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/30 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg bg-[var(--ag-violet)]/20 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/30 transition-colors active:scale-[0.96] min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Download className="w-3.5 h-3.5" />
                           </a>
@@ -502,6 +503,7 @@ export function CreativeStudioPage() {
                       </div>
                     </div>
                   </div>
+                  </BlurFade>
                 ))}
               </div>
             )}
@@ -523,7 +525,7 @@ export function CreativeStudioPage() {
                 {/* Director mode toggle */}
                 <button
                   onClick={() => setDirectorMode(!directorMode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.96] min-h-[44px] ${
                     directorMode
                       ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)] border border-[rgba(139,92,246,0.15)]'
                       : 'bg-[rgba(12,12,30,0.6)] text-[var(--ag-text-secondary)] border border-transparent hover:text-[var(--ag-text-primary)]'
@@ -558,7 +560,7 @@ export function CreativeStudioPage() {
               <button
                 onClick={handleVideoGenerate}
                 disabled={!vidPrompt.trim() || vidGenerating || directorRunning}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-medium text-sm transition-all active:scale-[0.96] shadow-lg shadow-[var(--ag-violet)]/20 hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 {vidGenerating || directorRunning ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> {directorRunning ? 'Directing...' : 'Generating...'}</>
@@ -592,14 +594,14 @@ export function CreativeStudioPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {videos.map(vid => (
+                {videos.map((vid, idx) => (
+                  <BlurFade key={vid.id} delay={idx * 0.04} inView>
                   <div
-                    key={vid.id}
-                    className="group relative rounded-xl overflow-hidden border border-[rgba(139,92,246,0.08)] bg-[rgba(12,12,30,0.6)]"
+                    className="group relative rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_4px_20px_rgba(139,92,246,0.1)] bg-[var(--ag-bg-surface)] backdrop-blur-xl transition-[box-shadow] duration-200"
                   >
                     <div className="aspect-video relative">
                       {vid.status === 'processing' ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[rgba(12,12,30,0.6)]">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--ag-bg-surface)]">
                           <Loader2 className="w-8 h-8 text-[var(--ag-violet)] animate-spin mb-2" />
                           <span className="text-xs text-[var(--ag-text-secondary)]">Processing...</span>
                         </div>
@@ -614,24 +616,26 @@ export function CreativeStudioPage() {
                       )}
                       {vid.status === 'ready' && (
                         <div
-                          className="absolute inset-0 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity bg-black/30"
+                          className="absolute inset-0 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity bg-black/40"
                           onClick={() => setPreviewVideo(vid)}
                         >
-                          <Play className="w-10 h-10 text-white/90" />
+                          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <Play className="w-6 h-6 text-white ml-0.5" />
+                          </div>
                         </div>
                       )}
                     </div>
                     <div className="p-3">
                       <p className="text-xs text-[var(--ag-text-secondary)] line-clamp-2 mb-2">{vid.prompt}</p>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)] font-variant-numeric tabular-nums">
                           <Clock className="w-3 h-3" />
                           {new Date(vid.created_at).toLocaleDateString()}
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleVideoDelete(vid.id)}
-                            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[#FF6161] hover:bg-[#FF6161]/10 transition-colors active:scale-[0.96] min-w-[44px] min-h-[44px] flex items-center justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -640,7 +644,7 @@ export function CreativeStudioPage() {
                               href={vid.video_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                              className="p-2 rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors active:scale-[0.96] min-w-[44px] min-h-[44px] flex items-center justify-center"
                             >
                               <Download className="w-3.5 h-3.5" />
                             </a>
@@ -649,6 +653,7 @@ export function CreativeStudioPage() {
                       </div>
                     </div>
                   </div>
+                  </BlurFade>
                 ))}
               </div>
             )}
@@ -716,15 +721,16 @@ export function CreativeStudioPage() {
               </SectionCard>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {templates.map(tpl => (
-                  <SectionCard key={tpl.id} padding="sm" className="!p-0 overflow-hidden">
+                {templates.map((tpl, idx) => (
+                  <BlurFade key={tpl.id} delay={idx * 0.04} inView>
+                  <SectionCard padding="sm" className="!p-0 overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_4px_16px_rgba(139,92,246,0.1)] transition-[box-shadow] duration-200">
                     {/* Thumbnail */}
                     <div className="aspect-video bg-[var(--ag-bg-surface)] backdrop-blur-xl relative overflow-hidden">
                       {tpl.thumbnail ? (
                         <img
                           src={tpl.thumbnail}
                           alt={tpl.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover outline outline-1 -outline-offset-1 outline-white/10"
                           loading="lazy"
                         />
                       ) : (
@@ -749,7 +755,7 @@ export function CreativeStudioPage() {
                         <button
                           onClick={() => handleTemplateClone(tpl)}
                           disabled={cloningId === tpl.id}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.96] min-h-[44px] ${
                             clonedId === tpl.id
                               ? 'bg-[var(--ag-success)]/15 text-[var(--ag-success)]'
                               : 'bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/25'
@@ -766,6 +772,7 @@ export function CreativeStudioPage() {
                       </div>
                     </div>
                   </SectionCard>
+                  </BlurFade>
                 ))}
               </div>
             )}
@@ -781,7 +788,7 @@ export function CreativeStudioPage() {
               <span className="px-2 py-1 rounded bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] text-xs">
                 {galleryItems.filter(i => i.type === 'image').length} images
               </span>
-              <span className="px-2 py-1 rounded bg-[var(--ag-violet-light)]/10 text-[var(--ag-violet-light)] text-xs">
+              <span className="px-2 py-1 rounded bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] text-xs">
                 {galleryItems.filter(i => i.type === 'video').length} videos
               </span>
             </div>
@@ -809,7 +816,7 @@ export function CreativeStudioPage() {
                 </p>
                 <button
                   onClick={() => setActiveTab('images')}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white font-medium text-sm transition-all hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-gold)]/90 min-h-[44px]"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-medium text-sm transition-all active:scale-[0.96] shadow-lg shadow-[var(--ag-violet)]/20 hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 min-h-[44px]"
                 >
                   Start Creating
                 </button>
@@ -855,7 +862,7 @@ export function CreativeStudioPage() {
             <img
               src={previewImage.image_url}
               alt={previewImage.prompt || 'Generated image'}
-              className="w-full rounded-2xl border border-[rgba(139,92,246,0.15)]"
+              className="w-full rounded-2xl shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_8px_32px_rgba(0,0,0,0.5)] outline outline-1 -outline-offset-1 outline-white/10"
               loading="lazy"
             />
             <div className="flex items-center gap-3 mt-3 text-xs text-[var(--ag-text-secondary)]">

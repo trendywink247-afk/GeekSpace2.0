@@ -320,7 +320,7 @@ function StatsBar({ stats }: { stats: ActivityStats }) {
       {items.map(({ label, value, icon: Icon }) => (
         <div
           key={label}
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)] transition-all"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--ag-bg-surface)] backdrop-blur-xl shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_2px_6px_rgba(0,0,0,0.15)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.18),0_4px_12px_rgba(0,0,0,0.25)] transition-[box-shadow] duration-200"
         >
           <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--ag-bg-subtle)] flex-shrink-0">
             <Icon className="w-3.5 h-3.5 text-[var(--ag-green)]" />
@@ -619,7 +619,7 @@ export function ActivityPage() {
               <button
                 key={chip}
                 onClick={() => setActiveFilter(chip)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all min-h-[44px] border backdrop-blur-xl ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-[transform,border-color,background-color] duration-150 active:scale-[0.96] min-h-[44px] border backdrop-blur-xl ${
                   isActive
                     ? 'border-current bg-[var(--ag-bg-surface)]'
                     : 'border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-default)] bg-[var(--ag-bg-surface)]/50'
@@ -728,7 +728,7 @@ export function ActivityPage() {
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white text-sm hover:opacity-90 disabled:opacity-50 transition-all min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 backdrop-blur-xl"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-gold)] text-white text-sm hover:opacity-90 disabled:opacity-50 transition-[transform,opacity] duration-150 active:scale-[0.96] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50 backdrop-blur-xl"
             >
               {loadingMore ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

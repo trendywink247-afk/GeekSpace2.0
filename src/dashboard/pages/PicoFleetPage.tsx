@@ -652,13 +652,13 @@ export function PicoFleetPage() {
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)]">
+                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_4px_rgba(0,0,0,0.18)]">
                           <div className="text-xs text-[var(--ag-text-muted)] mb-1">Completed</div>
-                          <div className="text-xl font-bold text-[#00FF88] font-mono">{agent.tasks_completed}</div>
+                          <div className="text-xl font-bold text-[#00FF88] font-mono tabular-nums">{agent.tasks_completed}</div>
                         </div>
-                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] border border-[rgba(139,92,246,0.08)]">
+                        <div className="p-3 rounded-lg bg-[var(--ag-bg-deep)] shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_4px_rgba(0,0,0,0.18)]">
                           <div className="text-xs text-[var(--ag-text-muted)] mb-1">Failed</div>
-                          <div className="text-xl font-bold text-[#FF6161] font-mono">{agent.tasks_failed}</div>
+                          <div className="text-xl font-bold text-[#FF6161] font-mono tabular-nums">{agent.tasks_failed}</div>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
@@ -790,7 +790,7 @@ export function PicoFleetPage() {
                 <Button
                   onClick={handlePlanTask}
                   disabled={!taskInput.trim() || planning}
-                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[100px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50"
+                  className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white min-w-[100px] min-h-[44px] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 active:scale-[0.96] transition-transform"
                 >
                   {planning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
