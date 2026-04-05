@@ -792,79 +792,84 @@ export function ChatPage() {
             {/* ── Main Chat Area ── */}
             <div className='flex-1 flex flex-col rounded-xl border min-w-0 relative' style={{ background: 'var(--ag-bg-deep)', borderColor: 'var(--ag-border-subtle)' }}>
               {/* Header */}
-              <ChatHeader
-                agentName={agentName}
-                meta={meta}
-                isTyping={isTyping}
-                isStreamActive={isStreamActive}
-                streamHealth={streamHealth}
-                voiceMode={voiceMode}
-                onToggleVoice={toggleVoiceMode}
-                onClear={clearChat}
-                sidebarOpen={sidebarOpen}
-                onToggleSidebar={() => setSidebarOpen(true)}
-                tts={tts}
-              />
-
-              {/* Messages — Virtualized or Empty State */}
-              {messages.length === 0 ? (
-                <ChatEmptyState
+              <div className='flex-shrink-0'>
+                <ChatHeader
+                  agentName={agentName}
                   meta={meta}
-                  timeContext={timeContext}
-                  onStarterPrompt={handleStarterPrompt}
-                  onResume={(text) => { setInput(text); setTimeout(() => formRef.current?.requestSubmit(), 100); }}
-                  personality={personality}
-                  voiceMode={voiceMode}
-                />
-              ) : (
-                <ChatMessageList
-                  ref={virtuosoRef}
-                  messages={messages}
-                  timestampVisible={timestampVisible}
-                  feedback={feedback}
-                  copiedMsgId={copiedMsgId}
-                  editingMsgId={editingMsgId}
-                  editText={editText}
                   isTyping={isTyping}
                   isStreamActive={isStreamActive}
-                  meta={meta}
-                  personalityMeta={personalityMeta}
-                  formatRelativeTime={formatRelativeTime}
-                  formatDateTime={luxonFormatDateTime}
-                  onRegenerate={handleRegenerate}
-                  onPinToNotes={handlePinToNotes}
-                  onCopyMessage={handleCopyMessage}
-                  onFeedback={handleFeedback}
-                  onStartEdit={handleStartEdit}
-                  onConfirmEdit={handleConfirmEdit}
-                  onCancelEdit={handleCancelEdit}
-                  onEditTextChange={setEditText}
-                  onAtBottomStateChange={handleAtBottomStateChange}
-                  sseToolSteps={sseToolSteps}
-                  sseActive={sseActive}
-                  activeDelegation={activeDelegation}
-                  agentName={agentName}
-                  ratingNudgeDismissed={ratingNudgeDismissed}
-                  sessionRating={sessionRating}
-                  ratingHover={ratingHover}
-                  onSetRatingHover={setRatingHover}
-                  onSetSessionRating={setSessionRating}
-                  onSetRatingNudgeDismissed={setRatingNudgeDismissed}
                   streamHealth={streamHealth}
-                  reconnectCount={reconnectCountRef.current}
-                  reconnectDelaysLength={RECONNECT_DELAYS.length}
-                  interimText={interimText}
-                  onStopGeneration={() => {
-                    abortControllerRef.current?.abort();
-                    abortControllerRef.current = null;
-                    setIsStreamActive(false);
-                    if (rafRef.current) {
-                      cancelAnimationFrame(rafRef.current);
-                      rafRef.current = 0;
-                    }
-                  }}
+                  voiceMode={voiceMode}
+                  onToggleVoice={toggleVoiceMode}
+                  onClear={clearChat}
+                  sidebarOpen={sidebarOpen}
+                  onToggleSidebar={() => setSidebarOpen(true)}
+                  tts={tts}
                 />
-              )}
+              </div>
+
+              {/* Messages — Virtualized or Empty State */}
+              <div className='flex-1 overflow-y-auto min-h-0'>
+                {messages.length === 0 ? (
+                  <ChatEmptyState
+                    meta={meta}
+                    timeContext={timeContext}
+                    onStarterPrompt={handleStarterPrompt}
+                    onResume={(text) => { setInput(text); setTimeout(() => formRef.current?.requestSubmit(), 100); }}
+                    personality={personality}
+                    voiceMode={voiceMode}
+                  />
+                ) : (
+                  <ChatMessageList
+                    ref={virtuosoRef}
+                    messages={messages}
+                    timestampVisible={timestampVisible}
+                    feedback={feedback}
+                    copiedMsgId={copiedMsgId}
+                    editingMsgId={editingMsgId}
+                    editText={editText}
+                    isTyping={isTyping}
+                    isStreamActive={isStreamActive}
+                    meta={meta}
+                    personalityMeta={personalityMeta}
+                    formatRelativeTime={formatRelativeTime}
+                    formatDateTime={luxonFormatDateTime}
+                    onRegenerate={handleRegenerate}
+                    onPinToNotes={handlePinToNotes}
+                    onCopyMessage={handleCopyMessage}
+                    onFeedback={handleFeedback}
+                    onStartEdit={handleStartEdit}
+                    onConfirmEdit={handleConfirmEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onEditTextChange={setEditText}
+                    onAtBottomStateChange={handleAtBottomStateChange}
+                    sseToolSteps={sseToolSteps}
+                    sseActive={sseActive}
+                    activeDelegation={activeDelegation}
+                    agentName={agentName}
+                    ratingNudgeDismissed={ratingNudgeDismissed}
+                    sessionRating={sessionRating}
+                    ratingHover={ratingHover}
+                    onSetRatingHover={setRatingHover}
+                    onSetSessionRating={setSessionRating}
+                    onSetRatingNudgeDismissed={setRatingNudgeDismissed}
+                    streamHealth={streamHealth}
+                    reconnectCount={reconnectCountRef.current}
+                    reconnectDelaysLength={RECONNECT_DELAYS.length}
+                    interimText={interimText}
+                    onStopGeneration={() => {
+                      abortControllerRef.current?.abort();
+                      abortControllerRef.current = null;
+                      setIsStreamActive(false);
+                      if (rafRef.current) {
+                        cancelAnimationFrame(rafRef.current);
+                        rafRef.current = 0;
+                      }
+                    }}
+                  />
+                )}
+              </div>
+              
               {/* Scroll to bottom button */}
               {showScrollToBottom && (
                 <div className='absolute bottom-20 right-4 z-10'>
@@ -883,25 +888,27 @@ export function ChatPage() {
               )}
 
               {/* Input */}
-              <ChatInput
-                input={input}
-                onInputChange={handleInputChange}
-                onSubmit={handleSubmit}
-                isTyping={isTyping}
-                voice={voice}
-                showMentionPopup={showMentionPopup}
-                mentionQuery={mentionQuery}
-                onMentionSelect={handleMentionSelect}
-                mentionedAgent={mentionedAgent}
-                onClearMention={clearMention}
-                councilMode={councilMode}
-                onToggleCouncil={() => setCouncilMode(!councilMode)}
-                textareaRef={textareaRef}
-                formRef={formRef}
-                selectedAgent={selectedAgent}
-                onAgentSelect={setSelectedAgent}
-                onTranscript={handleTranscript}
-              />
+              <div className='flex-shrink-0'>
+                <ChatInput
+                  input={input}
+                  onInputChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  isTyping={isTyping}
+                  voice={voice}
+                  showMentionPopup={showMentionPopup}
+                  mentionQuery={mentionQuery}
+                  onMentionSelect={handleMentionSelect}
+                  mentionedAgent={mentionedAgent}
+                  onClearMention={clearMention}
+                  councilMode={councilMode}
+                  onToggleCouncil={() => setCouncilMode(!councilMode)}
+                  textareaRef={textareaRef}
+                  formRef={formRef}
+                  selectedAgent={selectedAgent}
+                  onAgentSelect={setSelectedAgent}
+                  onTranscript={handleTranscript}
+                />
+              </div>
             </div>
           </div>
         </BlurFade>

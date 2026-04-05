@@ -109,7 +109,15 @@ export function ChatHeader({
             {isStreamActive && <div data-testid="chat-stream-health"><StreamHealthDot health={streamHealth} /></div>}
           </div>
           <p className='text-xs text-[var(--ag-text-secondary)]'>
-            {isTyping ? <span className='text-shimmer'>Thinking...</span> : 'AI Assistant'}
+            {isTyping ? (
+              streamHealth === 'disconnected' ? (
+                <span className='text-shimmer text-[var(--ag-pink)]'>Reconnecting...</span>
+              ) : (
+                <span className='text-shimmer'>Thinking...</span>
+              )
+            ) : (
+              streamHealth === 'disconnected' && !isTyping ? 'Connection lost' : 'AI Assistant'
+            )}
           </p>
         </div>
       </div>

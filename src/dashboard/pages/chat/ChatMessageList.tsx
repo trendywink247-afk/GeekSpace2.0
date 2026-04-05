@@ -96,7 +96,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
         ref={ref}
         data={messages}
         data-testid="chat-message-list"
-        className='flex-1 scrollbar-hide'
+        className='h-full scrollbar-hide'
         style={{ overflowX: 'hidden' }}
         followOutput='smooth'
         alignToBottom
@@ -111,7 +111,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
           const isEditingMsg = editingMsgId === msg.id;
 
           return (
-            <div className='px-4 py-1.5'>
+            <div className='px-4 py-0.5'>
               <ChatMessageBubble
                 msg={msg}
                 isStreaming={isStreaming}

@@ -207,6 +207,11 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
   onCancelEdit,
   onEditTextChange,
 }: ChatMessageBubbleProps) {
+  // Bug 1 fix: Don't render empty completed agent messages
+  if (msg.role === 'agent' && !msg.content && !isStreaming && !isTyping) {
+    return null; // Don't render empty completed messages
+  }
+
   return (
     <motion.div
       id={`msg-${msg.id}`}
@@ -234,7 +239,8 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
       )}
       <div
         className={[
-          'max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
+          msg.role === 'user' ? 'max-w-[85%] md:max-w-[70%]' : 'max-w-[85%] md:max-w-[70%]',
+          'px-3 py-2 rounded-xl text-sm leading-relaxed group/msg relative',
           msg.role === 'user'
             ? 'bg-[var(--ag-violet)]/15 text-[var(--ag-text-primary)] rounded-tr-sm'
             : 'bg-[var(--ag-bg-surface)] backdrop-blur-xl text-[var(--ag-text-primary)] border border-[var(--ag-border-subtle)] rounded-tl-sm',
@@ -288,16 +294,36 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
                 ))}
               </div>
             )}
-            {msg.role === 'agent' ? renderMessageContent(msg.content) : (
-              <>
-                {msg.mentionedAgent && (
-                  <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] mb-1'>
-                    <span>{msg.mentionedAgent.emoji}</span>
-                    <span>{msg.mentionedAgent.name}</span>
-                  </span>
-                )}
-                <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-              </>
+            {/* Typing indicator for streaming messages with no content yet */}
+            {msg.role === 'agent' && !msg.content && (isStreaming || isTyping) && (
+              <div className='flex items-center gap-1 py-2'>
+                <span className='w-2 h-2 rounded-full bg-[var(--ag-text-muted)] animate-bounce' style={{ animationDelay: '0ms' }} />
+                <span className='w-2 h-2 rounded-full bg-[var(--ag-text-muted)] animate-bounce' style={{ animationDelay: '150ms' }} />
+                <span className='w-2 h-2 rounded-full bg-[var(--ag-text-muted)] animate-bounce' style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
+            {msg.content ? (
+              msg.role === 'agent' ? renderMessageContent(msg.content) : (
+                <>
+                  {msg.mentionedAgent && (
+                    <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--ag-cyan)]/10 text-[var(--ag-cyan)] mb-1'>
+                      <span>{msg.mentionedAgent.emoji}</span>
+                      <span>{msg.mentionedAgent.name}</span>
+                    </span>
+                  )}
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                </>
+              )
+            ) : (
+              // Show typing indicator for empty agent messages that are streaming/typing
+              msg.role === 'agent' && (isStreaming || isTyping) ? (
+                <div className='flex items-center gap-1.5 py-1'>
+                  <span className='text-xs text-[var(--ag-text-secondary)]'>Typing</span>
+                  <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
+                  <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
+                  <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
+                </div>
+              ) : null
             )}
           </>
         )}
