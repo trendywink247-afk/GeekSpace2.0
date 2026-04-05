@@ -157,7 +157,6 @@ export async function executeDelegation(req: DelegationRequest): Promise<Delegat
     logger.info({ delegationId, durationMs, success: true }, 'delegation:complete');
 
     // Generate in-character narration for the handoff
-    const fromP = getPersonality(req.fromAgent);
     const toP = getPersonality(req.toAgent);
     let narration = '';
     switch (req.fromAgent) {

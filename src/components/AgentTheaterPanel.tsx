@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Pin, PinOff, X, Loader2, CheckCircle2, MessageSquare } from 'lucide-react';
 
@@ -33,20 +33,33 @@ interface AgentTheaterPanelProps {
 
 export function AgentTheaterPanel({ events, isActive, onClose }: AgentTheaterPanelProps) {
   const [pinned, setPinned] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [manuallyHidden, setManuallyHidden] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Derived visibility — purely from props + pinned + manuallyHidden
+  const visible = useMemo(() => {
+    if (manuallyHidden) return false;
+    return events.length > 0 || isActive;
+  }, [events.length, isActive, manuallyHidden]);
+
+  // Auto-hide 3s after delegation completes; reset hidden on new activity
   useEffect(() => {
-    if (events.length > 0 || isActive) {
-      setVisible(true);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    // New events or active → un-hide (callback inside setTimeout is allowed)
+    if (isActive || events.length > 0) {
+      if (manuallyHidden) {
+        // Use timeout(0) to avoid direct setState in effect body
+        hideTimerRef.current = setTimeout(() => setManuallyHidden(false), 0);
+        return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
+      }
     }
+    // Not active + has events → auto-hide after 3s
     if (!isActive && !pinned && events.length > 0) {
-      hideTimerRef.current = setTimeout(() => setVisible(false), 3000);
+      hideTimerRef.current = setTimeout(() => setManuallyHidden(true), 3000);
     }
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [events, isActive, pinned]);
+  }, [isActive, pinned, events.length, manuallyHidden]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -85,7 +98,7 @@ export function AgentTheaterPanel({ events, isActive, onClose }: AgentTheaterPan
               >
                 {pinned ? <PinOff className="w-3 h-3" style={{ color: 'var(--ag-text-muted)' }} /> : <Pin className="w-3 h-3" style={{ color: 'var(--ag-text-muted)' }} />}
               </button>
-              <button onClick={() => { setVisible(false); onClose?.(); }} className="p-1 rounded-lg hover:bg-white/5 transition-colors">
+              <button onClick={() => { setManuallyHidden(true); onClose?.(); }} className="p-1 rounded-lg hover:bg-white/5 transition-colors">
                 <X className="w-3 h-3" style={{ color: 'var(--ag-text-muted)' }} />
               </button>
             </div>

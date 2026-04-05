@@ -382,7 +382,7 @@ export function useChatStream(options: UseChatStreamOptions) {
       }
       abortControllerRef.current = null;
     }
-  }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent, connectAgentStateSSE, disconnectAgentStateSSE, notifyStart, notifyDone, notifyFail]);
+  }, [messages, personality, voiceMode, tts, selectedAgent, mentionedAgent, connectAgentStateSSE, disconnectAgentStateSSE, notifyStart, notifyDone, notifyFail, conversationId]);
 
   // Load conversation history on mount
   useEffect(() => {

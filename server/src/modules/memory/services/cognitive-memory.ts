@@ -165,7 +165,7 @@ function scoreMemory(memory: AgentMemoryRow, messageKeywords: Set<string>, now: 
  * @param currentMessage - The user's current message (for relevance scoring)
  * @returns A markdown string to inject into the system prompt
  */
-export function buildCognitiveContext(userId: string, currentMessage: string, agentId?: string): string {
+export function buildCognitiveContext(userId: string, currentMessage: string, _agentId?: string): string {
   const sections: string[] = [];
   const now = Date.now();
 

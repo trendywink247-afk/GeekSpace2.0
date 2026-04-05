@@ -207,26 +207,29 @@ export function ChatPage() {
     activeDelegation,
   } = agentState;
 
-  // Track delegation events for Agent Theater
-  useEffect(() => {
-    if (activeDelegation) {
-      const evt: TheaterEvent = {
-        id: `deleg-${Date.now()}`,
-        type: activeDelegation.status === 'done' ? 'done' : 'delegation',
-        fromAgent: activeDelegation.from,
-        toAgent: activeDelegation.to,
-        content: activeDelegation.reason || `Delegating to ${activeDelegation.to}`,
-        timestamp: new Date().toISOString(),
-        status: activeDelegation.status === 'done' ? 'done' : 'active',
-      };
-      setTheaterEvents(prev => [...prev.slice(-20), evt]);
-    }
-  }, [activeDelegation]);
+  // Track delegation events for Agent Theater (use ref to avoid setState-in-effect)
+  const prevDelegationRef = useRef(activeDelegation);
+  if (activeDelegation && activeDelegation !== prevDelegationRef.current) {
+    prevDelegationRef.current = activeDelegation;
+    const evt: TheaterEvent = {
+      id: `deleg-${Date.now()}`,
+      type: activeDelegation.status === 'done' ? 'done' : 'delegation',
+      fromAgent: activeDelegation.from,
+      toAgent: activeDelegation.to,
+      content: activeDelegation.reason || `Delegating to ${activeDelegation.to}`,
+      timestamp: new Date().toISOString(),
+      status: activeDelegation.status === 'done' ? 'done' : 'active',
+    };
+    // Schedule state update for next render to avoid cascading
+    queueMicrotask(() => setTheaterEvents(prev => [...prev.slice(-20), evt]));
+  }
 
-  // Clear theater events on new conversation
-  useEffect(() => {
-    setTheaterEvents([]);
-  }, [conversationId]);
+  // Clear theater events on new conversation (use ref comparison)
+  const prevConvIdRef = useRef(conversationId);
+  if (conversationId !== prevConvIdRef.current) {
+    prevConvIdRef.current = conversationId;
+    queueMicrotask(() => setTheaterEvents([]));
+  }
 
   // Feedback handler
   const handleMessageFeedback = useCallback((messageId: string, rating: 'up' | 'down', comment?: string) => {
@@ -374,6 +377,7 @@ export function ChatPage() {
       }
     };
     void loadHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildConversationList]);
 
 

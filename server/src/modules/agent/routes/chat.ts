@@ -36,7 +36,6 @@ import { emitThinking, emitDone } from '../services/agent-state-bus.js';
 import { routeDelegation, canDelegate, decrementDelegation } from '../../../services/delegation.js';
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
 import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
-import { uploadMiddleware } from '../middleware/file-upload.js';
 import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
 
 const router = Router();
