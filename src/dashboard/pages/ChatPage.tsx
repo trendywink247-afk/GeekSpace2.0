@@ -449,7 +449,7 @@ export function ChatPage() {
             ? { ...m, content: 'Response timed out. Tap to retry.', failed: true }
             : m
         ));
-      }, 30_000);
+      }, 60_000);
 
       // RAF flush loop — activeMsgId tracks which bubble we're streaming into
       let activeMsgId = retryCount === 0 ? assistantMsgId : messages[messages.length - 1]?.id || assistantMsgId;

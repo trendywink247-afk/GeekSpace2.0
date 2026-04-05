@@ -22,8 +22,8 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       # Set to your actual Ollama container name/address
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
-      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-qwen3:14b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-gemma4:e4b}
+      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-gemma4:e4b}
       - OLLAMA_TIMEOUT_MS=90000
       - OLLAMA_MAX_TOKENS=4096
       - OLLAMA_THINKING_ENABLED=true
@@ -381,8 +381,8 @@ services:
       - DB_PATH=/app/data/geekspace.db
       - REDIS_URL=redis://:${REDIS_PASSWORD}@staging-redis:6379
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama-qtzz-ollama-1:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:8b}
-      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-qwen3:14b}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-gemma4:e4b}
+      - OLLAMA_COMPLEX_MODEL=${OLLAMA_COMPLEX_MODEL:-gemma4:e4b}
       - OLLAMA_TIMEOUT_MS=90000
       - OLLAMA_MAX_TOKENS=4096
       - PICOCLAW_URL=${PICOCLAW_URL:-http://picoclaw:8080}
