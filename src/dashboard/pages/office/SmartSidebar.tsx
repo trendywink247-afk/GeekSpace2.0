@@ -16,7 +16,7 @@ import { GoalsTab } from './GoalsTab';
 // Helpers (mirror what useOfficeData uses)
 // ---------------------------------------------------------------------------
 function apiBase(): string {
-  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 }
 
 function getToken(): string | null {
@@ -180,7 +180,7 @@ export default function SmartSidebar({ officeData, sseEvents, onCreateTask, spot
     setSending(true);
     try {
       const token = getToken();
-      await fetch(`${apiBase()}/api/agent/chat`, {
+      await fetch(`${apiBase()}/agent/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

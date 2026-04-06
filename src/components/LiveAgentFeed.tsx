@@ -51,7 +51,7 @@ const AGENT_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 function apiBase(): string {
-  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 }
 
 function getToken(): string | null {
@@ -145,7 +145,7 @@ export function LiveAgentFeed({ onNavigate }: LiveAgentFeedProps) {
 
     (async () => {
       try {
-        const res = await fetch(`${apiBase()}/api/agent-state/stream`, {
+        const res = await fetch(`${apiBase()}/agent-state/stream`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'text/event-stream',

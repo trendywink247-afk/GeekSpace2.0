@@ -72,16 +72,16 @@ export interface ProactiveSuggestion {
  * - Production: empty string (use current domain)
  * - Can be overridden via `VITE_API_URL` environment variable
  *
- * @returns API base URL (e.g., 'http://localhost:3001' or '')
+ * @returns API base URL ending in `/api` (e.g., 'http://localhost:3001/api' or '/api')
  * @example
  * ```typescript
- * const url = `${apiBase()}/api/reminders`;
+ * const url = `${apiBase()}/reminders`;
  * // Dev: 'http://localhost:3001/api/reminders'
  * // Prod: '/api/reminders'
  * ```
  */
 function apiBase(): string {
-  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 }
 
 /**
@@ -199,12 +199,12 @@ export async function generateSuggestions(): Promise<ProactiveSuggestion[]> {
 
   // Fetch data in parallel from available endpoints
   const [reminders, inbox, activity, habits, goals, workspace] = await Promise.all([
-    safeFetch<ReminderData>('/api/reminders'),
-    safeFetch<InboxData>('/api/inbox/count'),
-    safeFetch<ActivityData>('/api/activity'),
-    safeFetch<HabitData>('/api/habits'),
-    safeFetch<GoalData>('/api/agent/goals?status=active'),
-    safeFetch<WorkspaceData>('/api/agent/workspace?limit=5'),
+    safeFetch<ReminderData>('/reminders'),
+    safeFetch<InboxData>('/inbox/count'),
+    safeFetch<ActivityData>('/activity'),
+    safeFetch<HabitData>('/habits'),
+    safeFetch<GoalData>('/agent/goals?status=active'),
+    safeFetch<WorkspaceData>('/agent/workspace?limit=5'),
   ]);
 
   // Cal: Reminder suggestions
