@@ -31,11 +31,16 @@ test.describe('Health Endpoints', () => {
 
 test.describe('Auth Endpoints', () => {
   test('POST /api/auth/signup creates a new user', async ({ request }) => {
-    const email = `smoke-test-${Date.now()}@example.com`;
+    const ts = Date.now();
+    const email = `smoke-test-${ts}@example.com`;
     const response = await request.post(`${API_BASE}/api/auth/signup`, {
       data: {
         email,
         password: 'TestPass123!',
+        // 2026-04-06: signupSchema (server/src/middleware/validate.ts) requires
+        // a `username` field; the test was written before that schema was
+        // tightened. Generate a unique alphanumeric handle here.
+        username: `smoke${ts}`,
         name: 'Smoke Test User',
       },
     });
@@ -152,21 +157,39 @@ test.describe('Module Route Availability', () => {
   // Verify that each module's route prefix responds (not 404 from Express)
   // Unauthenticated requests should get 401 (not 404), confirming the module is mounted
 
+  // 2026-04-06: paths updated to match the actual mounted module routes after
+  // the modular refactor. The previous list referenced legacy paths like
+  // /api/media/status, /api/users/me/usage, /api/comms/briefings, /api/office/docs
+  // which were never re-mounted at those URLs (media is split into /api/images,
+  // /api/videos, /api/voice, /api/image; users mounts /api/users + /api/usage;
+  // comms mounts /api/briefings + /api/suggestions; office mounts /api/office +
+  // /api/docs + /api/files + ...).
+  //
+  // The point of this test is to verify each module is REGISTERED at startup,
+  // so we hit one canonical path per module instead of guessing sub-routes.
+  // Each non-public path must be GET-friendly with a real handler so we get
+  // 401 (auth required) instead of 404 (no such route or no GET method).
   const moduleRoutes = [
+    // Public
     { path: '/api/health', expectPublic: true },
+    { path: '/api/billing/plans', expectPublic: true },
+    // Auth-protected (must return 401, never 404)
     { path: '/api/auth/me', expectPublic: false },
     { path: '/api/reminders', expectPublic: false },
-    { path: '/api/media/status', expectPublic: false },
-    { path: '/api/billing/plans', expectPublic: true },
     { path: '/api/integrations', expectPublic: false },
-    { path: '/api/memory/search', expectPublic: false },
     { path: '/api/agent/status', expectPublic: false },
-    { path: '/api/users/me/usage', expectPublic: false },
     { path: '/api/automations', expectPublic: false },
-    { path: '/api/dashboard', expectPublic: false },
-    { path: '/api/focus/sessions', expectPublic: false },
-    { path: '/api/comms/briefings', expectPublic: false },
-    { path: '/api/office/docs', expectPublic: false },
+    // Modules — one canonical GET path per module
+    { path: '/api/images', expectPublic: false },             // media
+    { path: '/api/videos', expectPublic: false },             // media
+    { path: '/api/memory', expectPublic: false },             // memory
+    { path: '/api/search', expectPublic: false },             // memory (search router)
+    { path: '/api/usage/summary', expectPublic: false },      // users (usage router)
+    { path: '/api/dashboard/overview', expectPublic: false }, // dashboard
+    { path: '/api/focus/active', expectPublic: false },       // focus
+    { path: '/api/briefings', expectPublic: false },          // comms (briefings router)
+    { path: '/api/office/state', expectPublic: false },       // office
+    { path: '/api/docs', expectPublic: false },               // office (docs router)
   ];
 
   for (const route of moduleRoutes) {
