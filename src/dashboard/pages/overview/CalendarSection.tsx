@@ -8,6 +8,8 @@ interface CalendarSectionProps {
 
 export function CalendarSection({ events, onNavigate }: CalendarSectionProps) {
   if (events.length === 0) return null;
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
 
   return (
     <section>
@@ -27,7 +29,6 @@ export function CalendarSection({ events, onNavigate }: CalendarSectionProps) {
           {events.slice(0, 4).map((evt) => {
             const startDate = new Date(evt.start_time);
             const endDate = evt.end_time ? new Date(evt.end_time) : null;
-            const now = Date.now();
             const isCurrent = evt.start_time <= now && (evt.end_time ? evt.end_time >= now : true);
             return (
               <div

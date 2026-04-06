@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 // ============================================================
 // Memory Hub — Entity/category graph + stats visualisation
 // ============================================================

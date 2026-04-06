@@ -463,6 +463,4 @@ export function PlanView(props: PlanViewProps) {
   );
 }
 
-// Re-export helpers for consumers that only need PlanView
-export type { TimeBlock, BacklogItem } from './helpers';
-export { TYPE_COLORS, generateId, localBlockToApi, apiBlockToLocal } from './helpers';
+

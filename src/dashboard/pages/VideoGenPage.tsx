@@ -148,7 +148,6 @@ export function VideoGenPage() {
       } catch { /* */ }
     }, 4000);
     return () => { if (directorPollRef.current) clearInterval(directorPollRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorJobId, loadDirectorJobs]);
 
   // Auto-stitch when all clips succeed
@@ -167,7 +166,6 @@ export function VideoGenPage() {
       }, 1500);
       return () => clearTimeout(tid);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorJob, stitchResult, stitching, directorJobId]);
 
   // Auto-start queued job

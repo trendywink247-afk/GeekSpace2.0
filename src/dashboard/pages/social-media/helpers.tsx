@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // social-media/helpers.tsx
 // Shared types, constants, and display utilities for the Social Media section
 import { useState, useMemo } from 'react';

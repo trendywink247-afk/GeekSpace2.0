@@ -1,5 +1,5 @@
 // ─── QuickAdd — natural-language quick-add widget (self-contained) ────────────
-import { useState, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Mic, Wand2, Calendar, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -15,20 +15,17 @@ interface QuickAddProps {
 export function QuickAdd({ onAdd }: QuickAddProps) {
   const inputRef       = useRef<HTMLInputElement>(null);
   const [input,         setInput]         = useState('');
-  const [parsed,        setParsed]        = useState<ParsedReminder | null>(null);
+  const parsed = useMemo(
+    () => input.trim() ? parseNaturalLanguageReminder(input) : null,
+    [input],
+  );
   const [isListening,   setIsListening]   = useState(false);
   const [showExamples,  setShowExamples]  = useState(false);
-
-  useEffect(() => {
-    if (input.trim()) setParsed(parseNaturalLanguageReminder(input));
-    else setParsed(null);
-  }, [input]);
 
   const handleAdd = async () => {
     if (!parsed) return;
     await onAdd(parsed);
     setInput('');
-    setParsed(null);
   };
 
   const handleVoiceInput = () => {

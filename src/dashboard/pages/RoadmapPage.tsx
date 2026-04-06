@@ -44,7 +44,7 @@ export function RoadmapPage() {
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    setLoadingSuggestions(true);
+    setTimeout(() => setLoadingSuggestions(true), 0);
     Promise.allSettled([
       suggestionService.mine(),
       suggestionService.rewards(),

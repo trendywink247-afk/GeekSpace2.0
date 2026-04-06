@@ -2,7 +2,8 @@
 // Memory Hub — Single memory entry card (view + inline edit)
 // ============================================================
 
-import { Clock, Pencil, Trash2, MessageSquare, Check, X, Loader2 } from 'lucide-react';
+import { Clock, Pencil, Trash2, MessageSquare, Check, X, Loader2, Tag } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,9 +14,13 @@ import {
 import { motion } from 'framer-motion';
 import type { MemoryEntry } from '@/types';
 import {
-  CATEGORY_OPTIONS, CARD_SHADOW, CARD_SHADOW_HOVER,
-  formatRelativeDate, getSourceStyle, getCategoryIcon,
+  CATEGORY_OPTIONS, CATEGORY_TABS, CARD_SHADOW, CARD_SHADOW_HOVER,
+  formatRelativeDate, getSourceStyle,
 } from './helpers';
+
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = Object.fromEntries(
+  CATEGORY_TABS.map(t => [t.id, t.icon as LucideIcon]),
+);
 
 export interface MemoryCardProps {
   memory: MemoryEntry;
@@ -47,7 +52,7 @@ export function MemoryCard({
   onDeleteRequest,
 }: MemoryCardProps) {
   const sourceStyle  = getSourceStyle(memory.source);
-  const CategoryIcon = getCategoryIcon(memory.category);
+  const CategoryIcon = CATEGORY_ICON_MAP[memory.category] ?? Tag;
 
   return (
     <motion.div

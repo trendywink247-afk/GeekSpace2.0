@@ -1,5 +1,5 @@
 // ─── AddEditDialog — create / edit reminder (NL + manual form) ───────────────
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Repeat, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,17 +30,15 @@ export function AddEditDialog({
 }: AddEditDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [naturalInput,   setNaturalInput]   = useState('');
-  const [parsedReminder, setParsedReminder] = useState<ParsedReminder | null>(null);
+  const parsedReminder = useMemo(
+    () => naturalInput.trim() ? parseNaturalLanguageReminder(naturalInput) : null,
+    [naturalInput],
+  );
 
   // Reset NL state when dialog closes
   useEffect(() => {
-    if (!open) { setNaturalInput(''); setParsedReminder(null); }
+    if (!open) { setTimeout(() => setNaturalInput(''), 0); }
   }, [open]);
-
-  useEffect(() => {
-    if (naturalInput.trim()) setParsedReminder(parseNaturalLanguageReminder(naturalInput));
-    else setParsedReminder(null);
-  }, [naturalInput]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

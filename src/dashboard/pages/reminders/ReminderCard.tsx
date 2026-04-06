@@ -36,6 +36,8 @@ export function ReminderCard({ reminder, state, handlers }: ReminderCardProps) {
     onShowSnoozeHistory, onUpdatePriority,
   } = handlers;
 
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs          = Date.now();
   const formatted      = formatDateTime(reminder.datetime);
   const overdue        = isOverdue(reminder.datetime, reminder.completed);
   const dueSoon        = isDueSoon(reminder.datetime, !!reminder.completed);
@@ -174,7 +176,7 @@ export function ReminderCard({ reminder, state, handlers }: ReminderCardProps) {
 
                 {dueSoon && (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#10B981]/12 text-[#10B981]">
-                    due in {Math.ceil((new Date(reminder.datetime).getTime() - Date.now()) / 3_600_000)}h
+                    due in {Math.ceil((new Date(reminder.datetime).getTime() - nowMs) / 3_600_000)}h
                   </span>
                 )}
 

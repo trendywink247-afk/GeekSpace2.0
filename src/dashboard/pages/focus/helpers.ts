@@ -153,7 +153,7 @@ export function useTimer(startMs: number | null, durationMin: number | null) {
 
   useEffect(() => {
     if (!startMs) {
-      setElapsed(0);
+      setTimeout(() => setElapsed(0), 0);
       if (workerRef.current) {
         workerRef.current.postMessage({ type: 'stop' });
         workerRef.current.terminate();

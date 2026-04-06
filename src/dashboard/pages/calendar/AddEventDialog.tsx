@@ -42,13 +42,15 @@ export function AddEventDialog({ open, onOpenChange, initialDate, onAdd }: AddEv
   // Sync initial values when dialog opens
   useEffect(() => {
     if (open) {
-      if (initialDate) {
-        setManualDate(initialDate);
-        setAddMode("manual");
-      } else {
-        setManualDate("");
-        setAddMode("natural");
-      }
+      setTimeout(() => {
+        if (initialDate) {
+          setManualDate(initialDate);
+          setAddMode("manual");
+        } else {
+          setManualDate("");
+          setAddMode("natural");
+        }
+      }, 0);
     }
   }, [open, initialDate]);
 

@@ -11,6 +11,7 @@ import {
   Bell,
   Send,
   ExternalLink,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +24,7 @@ import {
   fadeUp,
   slideDown,
   timeAgo,
-  getIcon,
+  iconMap,
   getColor,
   type CustomBotStatus,
   type CustomBotInfo,
@@ -135,7 +136,7 @@ export function IntegrationCard({
   onCustomBotConnect,
   onCustomBotDisconnect,
 }: IntegrationCardProps) {
-  const Icon = getIcon(connection.type);
+  const Icon = iconMap[connection.type] ?? Zap;
   const color = getColor(connection.type);
   const isTelegram = connection.type === 'telegram';
   const isExpanded = !isMobile || expandedId === connection.id;
