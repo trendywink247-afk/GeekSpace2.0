@@ -57,6 +57,12 @@ COPY package.json ./package.json
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
+# Copy Mission Control admin dashboard (single static HTML, served at
+# /admin on api.* domains by server/src/routes/admin.ts -> serveAdminDashboard).
+# Resolved via path.join(__dirname, "../../../admin-dashboard/index.html")
+# from server/dist/routes/admin.js -> /app/admin-dashboard/index.html.
+COPY --from=builder /app/admin-dashboard ./admin-dashboard
+
 # Create data directories for SQLite + image cache
 RUN mkdir -p /app/data /app/server/data && chown -R node:node /app/data /app/server/data
 

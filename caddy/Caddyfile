@@ -2,6 +2,15 @@
 	email admin@agentin.chat
 }
 
+# ---- agentin.chat apex + www → redirect to ai.agentin.chat ----
+# Added 2026-04-06: previously the apex pointed at a stale 2.57.91.91.
+# Once Hostinger DNS A records for `agentin.chat` and `www.agentin.chat`
+# are pointed at this VPS (72.61.253.224), Caddy will provision certs
+# automatically and 308-redirect both to https://ai.agentin.chat.
+agentin.chat, www.agentin.chat {
+	redir https://ai.agentin.chat{uri} permanent
+}
+
 (common_headers) {
 	header {
 		X-Frame-Options "DENY"
