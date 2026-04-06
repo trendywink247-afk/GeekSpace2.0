@@ -22,4 +22,4 @@ export { VoiceTab } from './VoiceTab';
 export type { VoiceSettings } from './VoiceTab';
 
 export { ShortcutsModal } from './ShortcutsModal';
-export { useSettingsExports } from './useSettingsExports';
+export { useSettingsExports } from './use-settings-exports';

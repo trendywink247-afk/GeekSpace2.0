@@ -35,7 +35,7 @@ import { notify } from '@/services/notifications';
 
 import { useLogoutBlocker } from '@/hooks/use-logout-blocker';
 
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation } from '@/i18n/use-translation';
 import { DashboardRouter } from './DashboardRouter';
 import { DashboardSidebar } from './DashboardSidebar';
 import { MobileTabBar } from './MobileTabBar';

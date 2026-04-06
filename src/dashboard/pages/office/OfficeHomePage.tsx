@@ -10,7 +10,7 @@ import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import { InsightToast } from './InsightToast';
-import { useOfficeData } from './useOfficeData';
+import { useOfficeData } from './use-office-data';
 import { useOverviewData } from '@/hooks/use-overview-data';
 import type { OverviewReminder, OverviewHabit, OverviewCalendarEvent, OverviewWeeklyStats } from '@/hooks/use-overview-data';
 import {
@@ -19,7 +19,7 @@ import {
   CORE_AGENTS,
 } from './constants';
 import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEEvent, ConnectionMode } from './types';
-import type { OfficeData } from './useOfficeData';
+import type { OfficeData } from './use-office-data';
 import { agentService, agentTasksService } from '@/services/api';
 import { useAuthStore } from '@/stores/auth-store';
 import SmartSidebar from './SmartSidebar';

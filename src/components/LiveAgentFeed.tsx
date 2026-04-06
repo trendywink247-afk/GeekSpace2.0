@@ -130,7 +130,7 @@ export function LiveAgentFeed({ onNavigate }: LiveAgentFeedProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // SSE connection (mirrors useOfficeData.ts pattern)
+  // SSE connection (mirrors use-office-data.ts pattern)
   const connectSSE = useCallback(() => {
     if (!mountedRef.current) return;
 

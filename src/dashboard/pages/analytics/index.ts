@@ -3,4 +3,4 @@ export * from './StatsCards';
 export * from './TimeRangeSelector';
 export * from './UsageChart';
 export * from './ProviderBreakdown';
-export { useAnalytics } from './useAnalytics';
+export { useAnalytics } from './use-analytics';

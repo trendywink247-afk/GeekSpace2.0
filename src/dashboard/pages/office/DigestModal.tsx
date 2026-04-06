@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bell } from 'lucide-react';
 import { AGENT_META, AGENT_COLORS } from './constants';
 import type { AgentId } from './types';
-import type { OfficeData } from './useOfficeData';
+import type { OfficeData } from './use-office-data';
 
 const AWAY_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
 const LAST_ACTIVE_KEY = 'gs_office_last_active';

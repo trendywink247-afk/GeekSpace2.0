@@ -1,7 +1,7 @@
 import { LayoutDashboard, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/agentin';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation } from '@/i18n/use-translation';
 
 interface GreetingSectionProps {
   greeting: string;

@@ -1,4 +1,4 @@
-// src/hooks/useOverviewData.ts
+// src/hooks/use-overview-data.ts
 // Extracted from OverviewPage — fetches GET /api/dashboard/overview data.
 
 import { useState, useEffect, useCallback } from 'react';
