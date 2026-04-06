@@ -87,6 +87,11 @@ export function DashboardApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
+  const openChat = useCallback((initialMessage?: string) => {
+    if (initialMessage) setChatInitialMessage(initialMessage);
+    setChatOpen(true);
+  }, []);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -489,7 +494,7 @@ export function DashboardApp() {
           <DashboardRouter 
             currentPage={currentPage}
             navigate={navigate}
-            onOpenChat={() => setChatOpen(true)}
+            onOpenChat={openChat}
           />
           </ErrorBoundary>
         </div>
@@ -508,7 +513,7 @@ export function DashboardApp() {
       {/* Floating Alex orb — higher on mobile to clear bottom tabs */}
       {currentPage !== 'chat' && (
         <div className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40">
-          <AgentChatButton context="dashboard" onOpenChat={() => setChatOpen(true)} />
+          <AgentChatButton context="dashboard" onOpenChat={() => openChat()} />
         </div>
       )}
 
@@ -525,7 +530,12 @@ export function DashboardApp() {
       )}
 
       {/* Slide-out agent chat */}
-      <AgentChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      <AgentChatPanel
+        isOpen={chatOpen}
+        onClose={() => { setChatOpen(false); setChatInitialMessage(undefined); }}
+        initialMessage={chatInitialMessage}
+        onInitialMessageConsumed={() => setChatInitialMessage(undefined)}
+      />
 
       {/* Agent design wizard */}
       <AgentDesignWizard isOpen={wizardOpen} onClose={() => setWizardOpen(false)} />
@@ -568,4 +578,3 @@ export function DashboardApp() {
     </div>
   );
 }
-
