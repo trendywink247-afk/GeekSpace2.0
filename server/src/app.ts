@@ -222,16 +222,29 @@ export function createApp(): express.Application {
     };
 
     // Global rate limiting
+    // 2026-04-06: bumped from 500 -> 2000 per window. The dashboard has
+    // multiple polling endpoints (office state every 3s, dashboard overview,
+    // reminders, agent state SSE, etc.) and 500/15min was being saturated
+    // within ~2 minutes of normal use, breaking every other API call. Polling
+    // hot-paths are also explicitly excluded below — they have their own
+    // per-route limits where appropriate.
     const globalLimiter = rateLimit({
       windowMs: config.rateLimitWindowMs,
-      max: 500,
+      max: 2000,
       standardHeaders: true,
       legacyHeaders: false,
       message: { error: 'Too many requests. Please slow down.' },
       handler: rateLimitHandler,
       skip: (req) =>
         req.path === '/health/stream' ||
-        req.path === '/health',
+        req.path === '/health' ||
+        // Polling endpoints — already gated by auth + cheap to serve.
+        // Excluding from the global window prevents a single user's open
+        // dashboard from burning the shared per-IP budget.
+        req.path === '/office/state' ||
+        req.path === '/dashboard/overview' ||
+        req.path === '/agent-state/stream' ||
+        req.path === '/activity/stream',
     });
     app.use('/api/', globalLimiter);
 

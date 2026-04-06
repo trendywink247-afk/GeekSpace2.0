@@ -175,9 +175,20 @@ export function useOfficeData(): UseOfficeDataReturn {
   // -------------------------------------------------------------------------
   // Poll /api/office/state for sidebar data
   // -------------------------------------------------------------------------
+  // 2026-04-06: backoff state. Previously this hook polled every 3s with zero
+  // backoff and silently dropped 429s, which after ~2 minutes of normal use
+  // would saturate the global 500-req/15min rate limiter and break every
+  // other API call on the dashboard (the navigation bug).
+  const backoffMsRef = useRef(0); // 0 = use base interval; >0 = wait N ms before next poll
+  const consecutiveErrorsRef = useRef(0);
+
   const pollOfficeState = useCallback(async () => {
     const token = getToken();
     if (!token) return;
+
+    // Pause polling entirely when the tab is in the background — saves ~50%
+    // of requests for users who leave the dashboard open in another tab.
+    if (typeof document !== 'undefined' && document.hidden) return;
 
     try {
       const res = await fetch(`${apiBase()}/api/office/state`, {
@@ -191,7 +202,26 @@ export function useOfficeData(): UseOfficeDataReturn {
         return;
       }
 
-      if (!res.ok) return;
+      // 429: respect Retry-After if present, otherwise exponential backoff
+      // capped at 60s. Cleared on the next successful response.
+      if (res.status === 429) {
+        consecutiveErrorsRef.current += 1;
+        const retryAfterHeader = res.headers.get('Retry-After');
+        const retryAfterMs = retryAfterHeader ? Math.max(0, Number(retryAfterHeader) * 1000) : 0;
+        const expBackoffMs = Math.min(60_000, 3_000 * Math.pow(2, consecutiveErrorsRef.current));
+        backoffMsRef.current = Math.max(retryAfterMs, expBackoffMs);
+        return;
+      }
+
+      if (!res.ok) {
+        consecutiveErrorsRef.current += 1;
+        backoffMsRef.current = Math.min(60_000, 3_000 * Math.pow(2, consecutiveErrorsRef.current));
+        return;
+      }
+
+      // Success — clear backoff state
+      consecutiveErrorsRef.current = 0;
+      backoffMsRef.current = 0;
 
       const data = (await res.json()) as Record<string, unknown>;
 
@@ -244,7 +274,10 @@ export function useOfficeData(): UseOfficeDataReturn {
         }
       }
     } catch {
-      // Network error — don't change connectionMode here; SSE handler owns that
+      // Network error — back off the same as a 5xx, don't change
+      // connectionMode (SSE handler owns that).
+      consecutiveErrorsRef.current += 1;
+      backoffMsRef.current = Math.min(60_000, 3_000 * Math.pow(2, consecutiveErrorsRef.current));
     }
   }, []);
 
@@ -374,15 +407,40 @@ export function useOfficeData(): UseOfficeDataReturn {
     // Start SSE
     connectSSE();
 
-    // Start polling for sidebar data
-    pollOfficeState();
-    pollIntervalRef.current = setInterval(pollOfficeState, SIDEBAR_POLL_INTERVAL_MS);
+    // Self-rescheduling poll loop. 2026-04-06: replaced setInterval with
+    // setTimeout chaining so we can honor 429 backoff (Retry-After +
+    // exponential) and pause when the tab is hidden — see pollOfficeState.
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = (delay: number) => {
+      if (!mountedRef.current) return;
+      pollTimer = setTimeout(async () => {
+        if (!mountedRef.current) return;
+        await pollOfficeState();
+        const nextDelay = backoffMsRef.current > 0 ? backoffMsRef.current : SIDEBAR_POLL_INTERVAL_MS;
+        schedule(nextDelay);
+      }, delay);
+    };
+
+    // Start SSE + first poll immediately
+    connectSSE();
+    schedule(0);
+
+    // Resume polling immediately when tab becomes visible again
+    const onVisibilityChange = () => {
+      if (!document.hidden && mountedRef.current) {
+        backoffMsRef.current = 0;
+        consecutiveErrorsRef.current = 0;
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       mountedRef.current = false;
       if (sseAbortRef.current) sseAbortRef.current.abort();
       if (sseRetryTimerRef.current) clearTimeout(sseRetryTimerRef.current);
+      if (pollTimer) clearTimeout(pollTimer);
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [connectSSE, pollOfficeState]);
 
