@@ -1689,6 +1689,69 @@ async function handleLinkCode(
 // N8N CALLBACK WEBHOOK
 // ================================================================
 
+/**
+ * Prometheus Alertmanager webhook receiver
+ * Receives alerts from alertmanager and forwards to the admin Telegram bot.
+ * Alertmanager sends POST with JSON: { alerts: [{ status, labels, annotations, startsAt, ... }] }
+ */
+webhooksRouter.post('/prometheus-alert', async (req, res) => {
+  try {
+    const payload = req.body as {
+      alerts?: Array<{
+        status: 'firing' | 'resolved';
+        labels: { alertname?: string; severity?: string; [k: string]: string | undefined };
+        annotations: { summary?: string; description?: string };
+        startsAt: string;
+        endsAt?: string;
+      }>;
+    };
+    const alerts = payload?.alerts || [];
+    if (alerts.length === 0) {
+      return res.json({ ok: true, processed: 0 });
+    }
+
+    // Find admin users with Telegram connected
+    const { db } = await import('../db/index.js');
+    const admins = db.prepare(`
+      SELECT DISTINCT cl.external_id as chat_id
+      FROM users u
+      JOIN channel_links cl ON cl.user_id = u.id
+      WHERE cl.channel = 'telegram' AND u.plan IN ('pro', 'team', 'admin')
+      LIMIT 5
+    `).all() as Array<{ chat_id: string }>;
+
+    if (admins.length === 0) {
+      logger.warn('prometheus-alert: no admin Telegram users found');
+      return res.json({ ok: true, processed: 0, reason: 'no_admins' });
+    }
+
+    // Format alerts for Telegram
+    for (const alert of alerts.slice(0, 5)) {
+      const icon = alert.status === 'firing'
+        ? (alert.labels.severity === 'critical' ? '🔥' : '⚠️')
+        : '✅';
+      const name = alert.labels.alertname || 'Alert';
+      const summary = alert.annotations.summary || '';
+      const description = alert.annotations.description || '';
+      const msg = `${icon} <b>${escapeTelegramHtml(name)}</b> [${alert.status.toUpperCase()}]\n\n${escapeTelegramHtml(summary)}${description ? '\n\n' + escapeTelegramHtml(description) : ''}`;
+
+      for (const admin of admins) {
+        try {
+          await sendTelegramNotification(admin.chat_id, msg);
+        } catch (err) {
+          logger.debug({ err, chatId: admin.chat_id }, 'prometheus-alert: telegram send failed');
+        }
+      }
+    }
+
+    logger.info({ alerts: alerts.length, admins: admins.length }, 'prometheus-alert: forwarded to telegram');
+    res.json({ ok: true, processed: alerts.length, sent_to: admins.length });
+  } catch (err) {
+    logger.error({ err }, 'prometheus-alert: webhook failed');
+    res.status(500).json({ error: 'webhook processing failed' });
+  }
+});
+
 webhooksRouter.post('/n8n/callback', async (req, res) => {
   // Require n8n webhook secret — reject if not configured or mismatch
   if (!config.n8nWebhookSecret) {
