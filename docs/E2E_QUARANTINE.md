@@ -1,7 +1,7 @@
 # E2E Test Quarantine
 
 **Last updated:** 2026-04-06
-**Status:** 17 tests quarantined with `test.fixme()`. CI is green.
+**Status:** 14 tests quarantined with `test.fixme()`. CI is green.
 
 ## Background
 
@@ -49,18 +49,6 @@ When you fix one, **delete its row from this file and remove the
 
 Each row: spec file, test name, observed symptom (from CI run `24044078360`),
 likely root cause to start debugging from. **Fix one at a time, in any order.**
-
-### `e2e/reminders.spec.ts` — 3 tests
-
-| Line | Test | Symptom | Likely cause |
-|---|---|---|---|
-| 55 | `should create a new reminder via manual form` | 12.6s timeout | Submit click does not trigger reminder creation, OR dialog does not close, OR list does not refresh. Check `submit-reminder-btn` click flow + `Enter reminder text...` placeholder. |
-| 78 | `should mark a reminder as complete` | 12.8s timeout | Same root probably — depends on the previous test passing OR the `Mark as complete` button selector. |
-| 139 | `should show Select All and Delete Selected for completed reminders` | 12.1s timeout | Same root + bulk-checkbox aria-name match. |
-
-**Start here:** run `npx playwright test e2e/reminders.spec.ts --headed --debug`
-locally with the staging or test server running, and see exactly which assertion
-hangs. All 3 are likely the same bug.
 
 ### `e2e/portfolio-agent.spec.ts` — 5 tests
 

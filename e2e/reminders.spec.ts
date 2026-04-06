@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * and health.spec.ts — the Reminders nav item is inside a collapsed
  * 'Productivity' group so sidebar clicks are unreliable.
  *
- * Uses .first() on text locators and role='tab' for TabsTrigger to avoid
+ * Uses .first() on text locators and role='button' for filter buttons to avoid
  * strict mode violations when tests share a persistent DB.
  *
  * Uses data-testid="submit-reminder-btn" for the dialog submit button
@@ -20,6 +20,11 @@ import { test, expect } from '@playwright/test';
  * Submit button clicks always await toBeEnabled() before { force: true } to
  * prevent hitting the disabled button before React state has committed the
  * controlled-input fill — which caused the dialog to stay open on CI retries.
+ *
+ * NOTE: The filter buttons in StatsBar are plain <button> elements (not Radix
+ * TabsTrigger), so use getByRole('button', { name: '...' }) not getByRole('tab').
+ * The placeholder in AddEditDialog uses a Unicode ellipsis character (…, U+2026),
+ * not three ASCII periods (...).
  */
 
 test.describe('Reminders Page', () => {
@@ -29,7 +34,9 @@ test.describe('Reminders Page', () => {
     // Dismiss first-use tour and reset filter persistence so tests start with active filter
     await page.evaluate(() => {
       localStorage.setItem('gs_dashboard_tour_seen', '1');
-      // 61.5: Clear persisted filter so each test starts with the default 'active' view
+      // Clear persisted filter so each test starts with the default 'all' view
+      // Component uses 'agentin:reminders:filters' as the LS key
+      localStorage.removeItem('agentin:reminders:filters');
       localStorage.removeItem('geekspace:reminders:filters');
     });
     // Wait for the dashboard shell and reminders page to load
@@ -52,13 +59,13 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('should create a new reminder via manual form', async ({ page }) => {
+  test('should create a new reminder via manual form', async ({ page }) => {
     await page.getByTestId('create-reminder-button').click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     // Fill in the manual form fields (below the NLP input)
-    const textInput = page.getByPlaceholder('Enter reminder text...');
+    // NOTE: placeholder uses Unicode ellipsis (…), not three ASCII periods (...)
+    const textInput = page.getByPlaceholder('Enter reminder text…');
     await textInput.fill('E2E test reminder');
 
     // Set datetime — use a future date
@@ -76,12 +83,12 @@ test.describe('Reminders Page', () => {
     await expect(page.getByText('E2E test reminder').first()).toBeVisible();
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('should mark a reminder as complete', async ({ page }) => {
-    // Ensure we're on the Active tab first
-    const activeTab = page.getByRole('tab', { name: 'Active' });
-    if (await activeTab.isVisible().catch(() => false)) {
-      await activeTab.click();
+  test('should mark a reminder as complete', async ({ page }) => {
+    // Ensure we're on the All/Active view first
+    // Filter buttons are plain <button> elements (not Radix TabsTrigger), so use getByRole('button')
+    const activeBtn = page.getByRole('button', { name: 'Active' });
+    if (await activeBtn.isVisible().catch(() => false)) {
+      await activeBtn.click();
       await page.waitForTimeout(500);
     }
 
@@ -90,7 +97,8 @@ test.describe('Reminders Page', () => {
     await page.getByTestId('create-reminder-button').click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    const textInput = page.getByPlaceholder('Enter reminder text...');
+    // NOTE: placeholder uses Unicode ellipsis (…), not three ASCII periods (...)
+    const textInput = page.getByPlaceholder('Enter reminder text…');
     await textInput.fill(reminderText);
     const datetimeInput = page.locator('input[type="datetime-local"]');
     await datetimeInput.fill('2030-06-01T09:00');
@@ -112,9 +120,10 @@ test.describe('Reminders Page', () => {
     const completeBtn = reminderCard.getByRole('button', { name: 'Mark as complete' });
     await completeBtn.click({ force: true });
 
-    // Switch to "completed" tab/filter to verify the reminder moved there
+    // Switch to "completed" filter/button to verify the reminder moved there
+    // Filter buttons are plain <button> elements, not role="tab"
     await page.waitForTimeout(800);
-    await page.getByRole('tab', { name: 'Completed' }).click();
+    await page.getByRole('button', { name: 'Completed' }).click();
     await page.waitForTimeout(1500);
     // Verify our specific reminder appears in the completed list
     await expect(page.getByText(reminderText).first()).toBeVisible({ timeout: 12000 });
@@ -138,12 +147,12 @@ test.describe('Reminders Page', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('should show Select All and Delete Selected for completed reminders', async ({ page }) => {
+  test('should show Select All and Delete Selected for completed reminders', async ({ page }) => {
     // Create a reminder and mark it as complete
     await page.getByTestId('create-reminder-button').click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByPlaceholder('Enter reminder text...').fill('Bulk delete E2E test');
+    // NOTE: placeholder uses Unicode ellipsis (…), not three ASCII periods (...)
+    await page.getByPlaceholder('Enter reminder text…').fill('Bulk delete E2E test');
     await page.locator('input[type="datetime-local"]').fill('2030-03-01T10:00');
 
     // Wait for button enabled before forcing click (same guard as other submit clicks)
@@ -156,14 +165,15 @@ test.describe('Reminders Page', () => {
 
     // Mark it as complete (force: bypass stability check — extra buttons cause mobile layout shift)
     await page.getByRole('button', { name: 'Mark as complete' }).first().click({ force: true });
-    await page.waitForTimeout(800); // 57.6: allow store update to propagate after mark-complete
+    await page.waitForTimeout(800); // allow store update to propagate after mark-complete
 
-    // Switch to completed tab
-    await page.getByRole('tab', { name: 'Completed' }).click();
-    await page.waitForTimeout(2000); // 57.6: increased settle time for tab animation + store re-render on slow CI
+    // Switch to completed filter — filter buttons are plain <button> elements, not role="tab"
+    await page.getByRole('button', { name: 'Completed' }).click();
+    await page.waitForTimeout(2000); // increased settle time for tab animation + store re-render on slow CI
 
-    // The Select All checkbox label should be visible — 57.6: 15s timeout for slow CI
-    await expect(page.getByText(/Select all completed/)).toBeVisible({ timeout: 15000 });
+    // The Select All checkbox should be visible — it has aria-label="Select all completed reminders"
+    // (The visible label text is "Completed (N)", not "Select all completed")
+    await expect(page.getByRole('checkbox', { name: 'Select all completed reminders' })).toBeVisible({ timeout: 15000 });
 
     // Check the individual checkbox on the reminder (force bypasses animation instability)
     const bulkCheckbox = page.getByRole('checkbox', { name: 'Select reminder for bulk delete' }).first();
