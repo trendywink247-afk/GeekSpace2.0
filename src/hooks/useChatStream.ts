@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { agentService, memoryService } from '@/services/api';
+import { agentService, memoryService, confirmService } from '@/services/api';
 import { type ChatMessage, type ToolStep } from '@/components/ChatMessageBubble';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
 
@@ -91,6 +91,9 @@ export function useChatStream(options: UseChatStreamOptions) {
   const [isTyping, setIsTyping] = useState(false);
   const [isStreamActive, setIsStreamActive] = useState(false);
   const [streamHealth, setStreamHealth] = useState<StreamHealth>('connected');
+  const [pendingConfirmations, setPendingConfirmations] = useState<Array<{
+    id: string; tool: string; params: Record<string, unknown>; expiresAt: string;
+  }>>([]);
 
   // Refs
   const streamBufferRef = useRef('');
@@ -241,7 +244,29 @@ export function useChatStream(options: UseChatStreamOptions) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
           try {
-            const parsed = JSON.parse(data) as { text?: string; done?: boolean; newBubble?: boolean; agentId?: string; agentName?: string; agentEmoji?: string };
+            const parsed = JSON.parse(data) as {
+              text?: string;
+              done?: boolean;
+              newBubble?: boolean;
+              agentId?: string;
+              agentName?: string;
+              agentEmoji?: string;
+              confirm_needed?: boolean;
+              confirmId?: string;
+              tool?: string;
+              params?: Record<string, unknown>;
+              expiresAt?: string;
+            };
+
+            // Human-in-the-loop confirmation request
+            if (parsed.confirm_needed && parsed.confirmId && parsed.tool && parsed.params && parsed.expiresAt) {
+              setPendingConfirmations((prev) => [
+                ...prev,
+                { id: parsed.confirmId!, tool: parsed.tool!, params: parsed.params!, expiresAt: parsed.expiresAt! },
+              ]);
+              continue;
+            }
+
             if (parsed.done) continue;
 
             // Multi-agent: newBubble starts a new message bubble for a different agent
@@ -406,6 +431,22 @@ export function useChatStream(options: UseChatStreamOptions) {
     void loadHistory();
   }, []);
 
+  const resolvePendingConfirmation = useCallback(async (
+    confirmId: string,
+    approved: boolean,
+    editedParams?: Record<string, unknown>,
+    rejectReason?: string,
+  ) => {
+    try {
+      await confirmService.resolve(confirmId, approved, editedParams, rejectReason);
+    } catch (err) {
+      toast.error('Failed to resolve confirmation');
+      console.error(err);
+    }
+    // Remove from pending list locally (the ReAct loop will see it resolved via DB poll)
+    setPendingConfirmations((prev) => prev.filter(c => c.id !== confirmId));
+  }, []);
+
   return {
     messages,
     setMessages,
@@ -414,5 +455,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     isStreamActive,
     streamHealth,
     clearChat,
+    pendingConfirmations,
+    resolvePendingConfirmation,
   };
 }

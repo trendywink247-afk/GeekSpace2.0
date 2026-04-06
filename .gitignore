@@ -123,3 +123,20 @@ bridge/
 # Turborepo
 .turbo
 .a0proj/
+
+# Generated UI captures / screenshots (local-only)
+ui-captures/
+tmp-screenshots/
+screenshots/
+reports/
+apminsightdata/
+
+# Experimental / scratch directories
+.superpowers/
+.gstack/
+.worktrees/
+
+# Backup files
+*.bak
+*.backup
+*.old.tsx

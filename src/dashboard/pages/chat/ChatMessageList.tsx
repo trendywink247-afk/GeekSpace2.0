@@ -8,6 +8,7 @@ import { ToolStepIndicator, type ToolStep as SSEToolStep } from '@/components/To
 import { DelegationLiveIndicator } from '@/components/DelegationLiveIndicator';
 import { FeedbackButtons } from '@/components/FeedbackButtons';
 import { ChannelBadge } from '@/components/ChannelBadge';
+import { ConfirmActionCard } from '@/components/ConfirmActionCard';
 import type { AgentPersonality } from '@/types';
 
 // ── Types ──
@@ -51,6 +52,8 @@ interface ChatMessageListProps {
   interimText: string;
   onStopGeneration: () => void;
   onMessageFeedback?: (messageId: string, rating: 'up' | 'down', comment?: string) => void;
+  pendingConfirmations?: Array<{ id: string; tool: string; params: Record<string, unknown>; expiresAt: string }>;
+  onResolveConfirmation?: (confirmId: string, approved: boolean, editedParams?: Record<string, unknown>, rejectReason?: string) => void;
 }
 
 // ── Main Component ──
@@ -94,6 +97,8 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
     interimText,
     onStopGeneration,
     onMessageFeedback,
+    pendingConfirmations,
+    onResolveConfirmation,
   }, ref) => {
     return (
       <Virtuoso
@@ -210,6 +215,22 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                   status={activeDelegation.status}
                   showCapabilities={activeDelegation.status === 'delegating'}
                 />
+              )}
+
+              {/* Pending confirmation cards (human-in-the-loop) */}
+              {pendingConfirmations && pendingConfirmations.length > 0 && onResolveConfirmation && (
+                <div className="mb-2 space-y-2">
+                  {pendingConfirmations.map((conf) => (
+                    <ConfirmActionCard
+                      key={conf.id}
+                      confirmId={conf.id}
+                      tool={conf.tool}
+                      params={conf.params}
+                      expiresAt={conf.expiresAt}
+                      onResolve={onResolveConfirmation}
+                    />
+                  ))}
+                </div>
               )}
 
               {/* SSE Tool Step Indicator */}

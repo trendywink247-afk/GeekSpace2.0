@@ -34,6 +34,7 @@ import { buildSystemPrompt } from './chat.js';
 import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
 import { touchSession } from '../../memory/services/session-summary.js';
 import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
+import { createPendingConfirmation, waitForConfirmation } from '../services/confirm-action.js';
 import { isAmbiguous, generateHypotheses, formatHypothesesForPrompt } from '../services/hypothesis-service.js';
 
 const router = Router();
@@ -191,6 +192,31 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
           agentId: personalityId,
           onStep: (step) => {
             try { res.write(`data: ${JSON.stringify({ step, done: false })}\n\n`); } catch { /* client disconnected */ }
+          },
+          onConfirmNeeded: async (tool, params) => {
+            // Human-in-the-loop: pause ReAct, ask user via SSE, wait for response
+            const confirmId = createPendingConfirmation(userId, tool, params, conversationId);
+            const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+            try {
+              res.write(`data: ${JSON.stringify({
+                confirm_needed: true,
+                confirmId,
+                tool,
+                params,
+                expiresAt,
+                done: false,
+              })}\n\n`);
+            } catch { /* disconnected */ }
+            // Poll DB for user's response (max 2 minutes)
+            const resolved = await waitForConfirmation(confirmId, userId, 120_000);
+            if (!resolved || resolved.status !== 'approved') {
+              return {
+                approved: false,
+                rejectReason: resolved?.reject_reason || (resolved?.status === 'expired' ? 'timed out' : 'user declined'),
+              };
+            }
+            const editedParams = resolved.edited_params ? JSON.parse(resolved.edited_params) : undefined;
+            return { approved: true, editedParams };
           },
         },
       );

@@ -245,6 +245,8 @@ export function ChatPage() {
     isStreamActive,
     streamHealth,
     clearChat,
+    pendingConfirmations,
+    resolvePendingConfirmation,
   } = useChatStream({
     personality,
     selectedAgent,
@@ -635,6 +637,8 @@ export function ChatPage() {
                       // Stop generation handled by the hook
                     }}
                     onMessageFeedback={handleMessageFeedback}
+                    pendingConfirmations={pendingConfirmations}
+                    onResolveConfirmation={resolvePendingConfirmation}
                   />
                 )}
               </div>

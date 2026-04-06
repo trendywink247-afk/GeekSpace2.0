@@ -194,7 +194,7 @@ describe('D: AgentMail service', () => {
 
 // ─── E+F: Scripts ─────────────────────────────────────────────
 
-describe('E+F: Autonomous runner scripts', () => {
+describe.skip('E+F: Autonomous runner scripts (removed in cleanup)', () => {
   it('openclaw-auto.sh exists and is executable', () => {
     const p = path.join(root, 'scripts/openclaw-auto.sh');
     expect(fs.existsSync(p)).toBe(true);

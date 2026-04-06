@@ -28,11 +28,9 @@ describe('Phase 75 — Production Hardening + E2E', () => {
     expect(content).toContain("import { ErrorBoundary } from './components/ErrorBoundary'");
   });
 
-  it('prod.sh validates frontend sync and bumps SW cache', () => {
-    const content = readFileSync(resolve(ROOT, 'scripts/prod.sh'), 'utf-8');
-    expect(content).toContain('docker cp geekspace-app:/app/dist/.');
-    expect(content).toContain('CACHE_NAME');
-    expect(content).toContain('caddy reload');
+  it.skip('prod.sh validates frontend sync and bumps SW cache (removed in cleanup)', () => {
+    // prod.sh was removed during repo cleanup — deployment now handled by CI workflow directly
+    expect(true).toBe(true);
   });
 
   it('E2E chat spec exists', () => {
