@@ -3,8 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { type VirtuosoHandle } from 'react-virtuoso';
 
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useAuthStore } from '@/stores/authStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useVoice } from '@/hooks/useVoice';
 import { useTTS } from '@/hooks/useTTS';
 import { useChatStream } from '@/hooks/useChatStream';

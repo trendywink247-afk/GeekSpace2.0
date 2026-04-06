@@ -17,7 +17,7 @@ import { MobileTable } from '@/components/ui/mobile-table';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { billingService } from '@/services/api';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';

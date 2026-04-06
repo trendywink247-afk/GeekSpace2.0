@@ -26,9 +26,9 @@ import { LiveNotificationToast } from '@/components/LiveNotificationToast';
 
 
 
-import { useAuthStore } from '@/stores/authStore';
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useThemeStore } from '@/stores/themeStore';
+import { useAuthStore } from '@/stores/auth-store';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useThemeStore } from '@/stores/theme-store';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { agentService } from '@/services/api';
 import { notify } from '@/services/notifications';

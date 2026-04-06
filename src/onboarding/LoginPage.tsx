@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Github, User, Chrome, Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import { MiniOfficeScene } from './components/MiniOfficeScene';
 import { LoginMagicCard } from './components/LoginMagicCard';
 import { MobileConstellationHero } from './components/MobileConstellationHero';

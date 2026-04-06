@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { LogoSVG } from '../LogoEngine';
 import { MagicCard } from '@/components/magicui/magic-card';
 import { useFreeTrial } from '@/hooks/useFreeTrial';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import type { LogoParams } from '../types';
 
 /* ---------- types ---------- */

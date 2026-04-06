@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface BrandKitColor { hex: string; usage: string }
 interface BrandKitFont { name: string; category: string; googleUrl: string }

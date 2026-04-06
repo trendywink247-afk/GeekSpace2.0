@@ -7,7 +7,7 @@ import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useSearchParams } from 'react-router-dom';
 import { Bell, Plus, Calendar, AlarmClock, CheckCheck, X, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { reminderService } from '@/services/api';
 import type { ParsedReminder } from '@/utils/reminder-parser';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';

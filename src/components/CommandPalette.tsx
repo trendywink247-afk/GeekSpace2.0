@@ -37,7 +37,7 @@ import {
   BookOpen,
   Activity,
 } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import type { SearchResult } from '@/components/GlobalSearch';
 
 const RECENT_SEARCHES_KEY = 'agentin_recent_searches';

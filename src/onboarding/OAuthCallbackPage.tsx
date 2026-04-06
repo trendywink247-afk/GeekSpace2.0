@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthStore, defaultOnboarding } from '@/stores/authStore';
+import { useAuthStore, defaultOnboarding } from '@/stores/auth-store';
 
 export default function OAuthCallbackPage() {
   const navigate = useNavigate();

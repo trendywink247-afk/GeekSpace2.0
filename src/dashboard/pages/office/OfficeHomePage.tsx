@@ -21,7 +21,7 @@ import {
 import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEEvent, ConnectionMode } from './types';
 import type { OfficeData } from './useOfficeData';
 import { agentService, agentTasksService } from '@/services/api';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import SmartSidebar from './SmartSidebar';
 import { GoalsTab } from './GoalsTab';
 import { DigestModal } from './DigestModal';

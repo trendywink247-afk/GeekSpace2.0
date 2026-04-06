@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, Shield, Plus, Link, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';

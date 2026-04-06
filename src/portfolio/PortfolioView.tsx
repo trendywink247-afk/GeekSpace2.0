@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   Sparkles, MessageSquare, Github, Twitter, Linkedin, Globe,
   Mail, ArrowLeft, Send, Bot, MapPin, Briefcase, Award, X, Loader2, Eye

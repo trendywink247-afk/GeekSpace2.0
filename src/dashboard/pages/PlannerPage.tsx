@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import api from '@/services/api';
 import { plannerService } from '@/services/api';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
 import type { Reminder } from '@/types';
