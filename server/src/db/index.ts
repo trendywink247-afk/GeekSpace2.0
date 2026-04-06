@@ -2613,3 +2613,51 @@ try {
     CREATE INDEX IF NOT EXISTS idx_tool_chains_hash ON tool_chains(user_id, pattern_hash);
   `);
 } catch { /* exists */ }
+
+// ── Phase: World Model — structured user understanding ───────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS world_models (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      roles TEXT DEFAULT '[]',
+      expertise TEXT DEFAULT '[]',
+      active_goals TEXT DEFAULT '[]',
+      blockers TEXT DEFAULT '[]',
+      energy_level INTEGER DEFAULT 50,
+      mood TEXT DEFAULT 'neutral',
+      productive_hours TEXT DEFAULT '[]',
+      decision_style TEXT DEFAULT 'unknown',
+      communication_pref TEXT DEFAULT 'balanced',
+      important_people TEXT DEFAULT '[]',
+      daily_routines TEXT DEFAULT '[]',
+      weekly_routines TEXT DEFAULT '[]',
+      learned_preferences TEXT DEFAULT '[]',
+      confidence_score REAL DEFAULT 0.0,
+      last_full_reflection TEXT DEFAULT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+} catch { /* exists */ }
+
+// ── Phase: Temporal anchors — follow-ups, deadlines, time-sensitive context ───
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS temporal_anchors (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      conversation_id TEXT,
+      message_id TEXT,
+      type TEXT NOT NULL,
+      trigger_at TEXT NOT NULL,
+      context TEXT NOT NULL DEFAULT '',
+      original_message TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      surfaced_at TEXT DEFAULT NULL,
+      resolved_at TEXT DEFAULT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_temporal_anchors_user ON temporal_anchors(user_id, status, trigger_at);
+    CREATE INDEX IF NOT EXISTS idx_temporal_anchors_pending ON temporal_anchors(status, trigger_at) WHERE status = 'pending';
+  `);
+} catch { /* exists */ }
