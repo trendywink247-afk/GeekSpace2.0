@@ -1,5 +1,7 @@
 # Agentin Developer Guide
 
+> Last refreshed: 2026-04-06 (chore/repo-cleanup-2026-04)
+>
 > From zero to first PR -- everything you need to build, test, and ship features on the Agentin platform.
 
 ---
@@ -47,8 +49,8 @@ GeekSpace2.0/
 │   ├── App.tsx                 # Root router — BrowserRouter with all top-level routes
 │   ├── main.tsx                # Entry point
 │   ├── dashboard/              # Authenticated dashboard shell
-│   │   ├── DashboardApp.tsx    # Dashboard layout, sidebar, lazy-loaded pages
-│   │   └── pages/              # ~40 dashboard page components (one per feature)
+│   │   ├── DashboardRouter.tsx # Dashboard layout, sidebar, lazy-loaded routes
+│   │   └── pages/              # 41 dashboard page components (one per feature)
 │   ├── landing/                # Public marketing / landing pages
 │   ├── onboarding/             # Post-signup onboarding flow
 │   ├── portfolio/              # Public portfolio viewer
@@ -66,24 +68,43 @@ GeekSpace2.0/
 │
 ├── server/                     # Backend (Express + TypeScript + SQLite)
 │   ├── src/
-│   │   ├── app.ts              # Express app factory (createApp)
+│   │   ├── app.ts              # Express app factory (createApp) — wires 18 modules
 │   │   ├── index.ts            # Server entry — starts HTTP listener
 │   │   ├── config.ts           # Validated env config — crashes on missing required vars
 │   │   ├── logger.ts           # Pino structured logger + request ID middleware
-│   │   ├── routes/             # ~65 route files (one per domain)
-│   │   ├── services/           # ~100 service modules (business logic)
-│   │   ├── middleware/         # auth.ts, validate.ts, errors.ts, metrics.ts
-│   │   ├── db/                 # SQLite schema (index.ts) + migrations/
+│   │   ├── tracing.ts          # OpenTelemetry tracing bootstrap
+│   │   ├── modules/            # 18 domain modules (canonical layout — see below)
+│   │   ├── routes/             # Legacy flat route files (being migrated into modules/)
+│   │   ├── services/           # Legacy flat services (being migrated into modules/)
+│   │   ├── middleware/         # auth, validate, errors, error-handler, metrics, ai-security
+│   │   ├── db/                 # SQLite schema (index.ts, ~2300 lines) + migrations/
 │   │   ├── repositories/       # Data access layer (UserRepository, etc.)
 │   │   ├── errors/             # AgentinError hierarchy
 │   │   ├── prompts/            # LLM system prompts and templates
 │   │   ├── skills/             # Agent skill definitions
+│   │   ├── shared/             # Cross-module helpers
 │   │   ├── utils/              # Server utilities
 │   │   ├── test/               # Test files + setup.ts
-│   │   └── __tests__/          # Additional test files
+│   │   └── __tests__/          # Additional focused test files
 │   ├── ecosystem.config.cjs    # PM2 production config
 │   └── package.json            # Server deps + scripts
 │
+```
+
+### server/src/modules/ — 18 domain modules
+
+New code is organised into self-contained modules. Each module exports an `index.ts` whose router is registered in `server/src/app.ts`.
+
+```
+admin       agent        auth      automation  billing
+comms       content      dashboard focus       geekos
+health      integrations media     memory      office
+portfolio   reminders    users
+```
+
+The largest module is **agent** (`server/src/modules/agent/`) which owns the LLM router (`services/llm.ts`), ReAct loop (`services/react-loop.ts`), goals, delegation, conversation threading, file upload, feedback, and human-in-the-loop confirmation.
+
+```
 ├── e2e/                        # Playwright end-to-end tests
 ├── ops/                        # DevOps scripts (brand_guard, deploy helpers)
 ├── docs/                       # Project documentation
@@ -209,6 +230,9 @@ Once both servers are running, open http://localhost:5173 in your browser. You s
 | `cd server && npm run build` | Compile TypeScript to `server/dist/` |
 | `cd server && npm start` | Run compiled JS from `server/dist/index.js` |
 | `cd server && npm run typecheck` | TypeScript check (`tsc --noEmit`) |
+| `cd server && npm test` | Run server test suite (sets `TEST_MODE=true`) |
+| `cd server && npm run test:watch` | Watch mode |
+| `cd server && npm run test:coverage` | With coverage |
 | `cd server && npm run migrate` | Run database migrations (`tsx src/db/migrate.ts`) |
 
 ### Production (PM2)
@@ -541,14 +565,14 @@ cd server && npm run migrate
 The server uses **Vitest** with **Supertest** for HTTP-level integration tests.
 
 ```bash
-# Run all server tests
-cd server && npx vitest run
+# Run all server tests (sets TEST_MODE=true)
+cd server && npm test
 
 # Watch mode (re-runs on file change)
-cd server && npx vitest
+cd server && npm run test:watch
 
 # With coverage report
-cd server && npx vitest run --coverage
+cd server && npm run test:coverage
 ```
 
 **Test location:** Tests live in two directories:
@@ -671,7 +695,7 @@ curl -H "Authorization: Bearer <token>" \
      http://localhost:3001/api/debug/routing
 ```
 
-The `getRoutingTraces()` function in `server/src/services/llm.ts` records which model was selected, why, and fallback decisions.
+The `getRoutingTraces()` function in `server/src/modules/agent/services/llm.ts` records which model was selected, why, and fallback decisions.
 
 ### TEST_MODE Environment Variable
 
@@ -863,8 +887,8 @@ These files are the largest and most critical in the codebase. Changes here requ
 | File | Lines | Risk | Notes |
 |------|-------|------|-------|
 | `server/src/db/index.ts` | **2295** | Schema changes affect everything | All tables defined inline. Adding/removing columns requires careful migration planning. |
-| `server/src/services/message-router.ts` | **2050** | Core chat routing logic | Routes messages to correct LLM provider, handles fallbacks, context injection. A bug here breaks all AI chat. |
-| `server/src/services/llm.ts` | **1351** | Multi-provider LLM abstraction | Manages Ollama, OpenRouter, Groq, Gemini, Moonshot, Together AI. Provider-specific quirks and retry logic live here. |
+| `server/src/modules/agent/services/message-router.ts` | **~2000** | Core chat routing logic | Routes messages to correct LLM provider, handles fallbacks, context injection. A bug here breaks all AI chat. |
+| `server/src/modules/agent/services/llm.ts` | **~1350** | 7-tier LLM waterfall | Manages Ollama, OpenRouter (free + paid), Groq, Gemini, Kimi, Together, PicoClaw. Provider-specific quirks and retry logic live here. |
 
 **Guidelines for high-risk changes:**
 
@@ -877,20 +901,34 @@ These files are the largest and most critical in the codebase. Changes here requ
 
 ## 14. Agentic Experience — Developer Guide
 
-The agentic experience (v3.3) adds goal-driven autonomy. Here's what you need to know when working on these services.
+The agentic experience adds goal-driven autonomy plus the v2 features below. All code lives under `server/src/modules/agent/`.
+
+### 14.0 Agentic v2 Features
+
+| Feature | Key files |
+|---------|-----------|
+| **Conversation Threading** | `services/conversation-threads.ts`, plus `modules/memory/services/memory.ts` for long-term storage |
+| **Human-in-the-Loop (HITL)** | `services/confirm-action.ts`, integrated into `services/react-loop.ts` |
+| **File Upload** | `middleware/file-upload.ts`, `services/file-processor.ts` |
+| **Feedback System** | `services/feedback-service.ts`, `modules/memory/services/cognitive-memory.ts` |
+| **Agent Theater (UI)** | `src/components/AgentTheaterPanel.tsx` |
+| **7-tier LLM Waterfall** | `services/llm.ts` — sequential cascade across `ollama → openrouter-free → groq → picoclaw → openrouter → kimi/gemini/together → builtin`. Intent-based routing chooses the entry tier (simple chat → Groq 70B; complex/coding → local Ollama). See `docs/adr/ADR-001-llm-waterfall-phase111.md`. |
+| **Prometheus Metrics** | `server/src/middleware/metrics.ts` exposes counters/histograms; scraped at `GET /api/metrics` (mounted in `app.ts`) |
 
 ### 14.1 Key Files
 
-| File | LOC | Purpose |
-|------|-----|---------|
-| `modules/agent/services/goal-service.ts` | 500 | Goal CRUD, AI planning, step execution |
-| `modules/agent/services/delegation-pipeline.ts` | 325 | Inter-agent handoff |
-| `modules/agent/services/deep-reasoning.ts` | 350 | Enhanced ReAct with reflection |
-| `modules/agent/services/proactive-goals.ts` | 200 | Background goal pursuit |
-| `modules/agent/services/agent-notifications.ts` | 175 | Push notifications |
-| `modules/agent/routes/goals.ts` | 275 | Goals + workspace REST API |
-| `modules/agent/routes/notifications.ts` | 55 | Notification bell API |
-| `modules/agent/types/goals.ts` | 115 | All agentic types |
+| File | Purpose |
+|------|---------|
+| `modules/agent/services/goal-service.ts` | Goal CRUD, AI planning, step execution |
+| `modules/agent/services/delegation-pipeline.ts` | Inter-agent handoff |
+| `modules/agent/services/deep-reasoning.ts` | Enhanced ReAct with reflection |
+| `modules/agent/services/react-loop.ts` | Core ReAct executor (with HITL hooks) |
+| `modules/agent/services/proactive-goals.ts` | Background goal pursuit |
+| `modules/agent/services/agent-notifications.ts` | Push notifications |
+| `modules/agent/services/llm.ts` | 7-tier LLM waterfall + provider abstraction |
+| `modules/agent/services/message-router.ts` | Top-level chat message routing |
+| `modules/agent/routes/goals.ts` | Goals + workspace REST API |
+| `modules/agent/routes/notifications.ts` | Notification bell API |
 
 ### 14.2 Security Patterns
 
