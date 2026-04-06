@@ -137,9 +137,10 @@ export function useAgentState() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const timers = sseStepTimersRef.current;
     return () => {
       eventSourceRef.current?.close();
-      sseStepTimersRef.current.clear();
+      timers.clear();
     };
   }, []);
 
