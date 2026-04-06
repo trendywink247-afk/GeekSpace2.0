@@ -1,5 +1,20 @@
-# docker-compose.staging.yml — Staging environment for staging.agentin.chat
-# Usage: docker compose -f docker-compose.staging.yml up -d --build
+# docker-compose.staging.yml — LEGACY isolated-project staging deploy
+#
+# WARNING: NOT the canonical staging path. The canonical path is the
+# `staging` service in docker-compose.yml (root), which is what CI uses
+# in .github/workflows/ci.yml -> deploy-staging and what
+# ./scripts/staging.sh uses by default. Use this file only if you
+# explicitly need an isolated compose project (different container
+# names / volumes).
+#
+# Usage:
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build
+#
+# WARNING: The `--env-file .env.staging` flag is REQUIRED. Without it,
+# variable interpolation (e.g. ${STAGING_REDIS_PASSWORD}) falls through
+# to an empty string and redis crashes with `wrong number of arguments`
+# on `requirepass`. `./scripts/staging.sh --file staging` handles this
+# for you.
 #
 # Shares: Caddy (routes via geekspace-net), PicoClaw, Ollama, OpenClaw, Edith Bridge
 # Isolates: staging app container, staging Redis, staging DB volume
