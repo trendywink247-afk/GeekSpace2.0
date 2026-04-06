@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { userService, activityService, type ActivityEntry } from '@/services/api';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
-import { formatDateTime as luxonFormatDateTime } from '@/utils/dateFormat';
+import { formatDateTime as luxonFormatDateTime } from '@/utils/date-format';
 
 // Map icon field values to event categories
 function getCategory(icon: string): string {

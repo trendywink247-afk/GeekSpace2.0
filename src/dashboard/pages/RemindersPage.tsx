@@ -9,7 +9,7 @@ import { Bell, Plus, Calendar, AlarmClock, CheckCheck, X, Flame } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { reminderService } from '@/services/api';
-import type { ParsedReminder } from '@/utils/reminderParser';
+import type { ParsedReminder } from '@/utils/reminder-parser';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderPriority, Reminder } from '@/types';
 import {

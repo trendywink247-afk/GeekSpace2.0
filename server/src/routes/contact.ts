@@ -16,7 +16,7 @@ import {
   isInQuietHours,
   type ContactRequest,
   type ContactChannel,
-} from '../services/contactRouter.js';
+} from '../services/contact-router.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();

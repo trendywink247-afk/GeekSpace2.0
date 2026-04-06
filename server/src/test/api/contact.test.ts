@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 
 // Mock contactRouter service BEFORE any other imports
-vi.mock('../../services/contactRouter.js', () => ({
+vi.mock('../../services/contact-router.js', () => ({
   notifyUserOfContactRequest: vi.fn(async () => ({ success: true, channel: 'in_app' as const })),
   handleAcceptRequest: vi.fn(async () => ({ success: true, conversationId: 'test-conv-id' })),
   handleDeclineRequest: vi.fn(async () => ({ success: true })),

@@ -79,7 +79,7 @@ vi.mock('../../src/db/index', () => ({
 global.fetch = vi.fn();
 
 // Import after mocks
-const contactRouter = await import('../../src/services/contactRouter');
+const contactRouter = await import('../../src/services/contact-router');
 
 describe('Contact Router', () => {
   beforeEach(() => {

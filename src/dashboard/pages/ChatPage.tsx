@@ -13,7 +13,7 @@ import { memoryService } from '@/services/api';
 import { type ChatMessage } from '@/components/ChatMessageBubble';
 import type { AgentPersonality } from '@/types';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
-import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
+import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/date-format';
 
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useChatActions } from '@/hooks/useChatActions';

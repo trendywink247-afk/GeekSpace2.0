@@ -9,7 +9,7 @@ import { validateBody, signupSchema, loginSchema, onboardingSchema } from '../..
 import { cacheGet, cacheSet, cacheDel } from '../../../services/cache.js';
 import { logSecurityEvent } from '../../../services/security-log.js';
 import { encrypt } from '../../../utils/encryption.js';
-import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/passwordReset.js';
+import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services/password-reset.js';
 import { logger } from '../../../logger.js';
 import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
 import { issueRefreshToken, rotateRefreshToken } from '../services/refresh-token.js';
