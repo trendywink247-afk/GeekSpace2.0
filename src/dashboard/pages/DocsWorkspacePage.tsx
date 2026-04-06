@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageShell } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

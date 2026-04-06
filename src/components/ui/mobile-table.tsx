@@ -1,4 +1,4 @@
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { type ReactNode } from 'react';
 
 interface Column<T> {

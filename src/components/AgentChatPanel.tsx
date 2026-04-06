@@ -11,7 +11,7 @@ import type { AgentPersonality, PremiumSession } from '@/types';
 import { CodePreviewCard } from './CodePreviewCard';
 import { ActionResultCard } from './ActionResultCard';
 import { MessageReactions } from './MessageReactions';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

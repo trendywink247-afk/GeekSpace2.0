@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Inbox, Mail } from 'lucide-react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { InboxPage } from './InboxPage';
 import { GmailPage } from './GmailPage';

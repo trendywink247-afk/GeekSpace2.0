@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { Loader2 } from 'lucide-react';
 
 interface Props {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   BookOpen,

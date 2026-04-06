@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Terminal, ChevronUp } from 'lucide-react';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 
 const SNAP = { collapsed: 12, half: 50, full: 92 } as const;
 type SheetState = keyof typeof SNAP;

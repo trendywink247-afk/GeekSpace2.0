@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bot, MessageSquare, Code, Briefcase, Check, ChevronDown, Key } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useTilt } from '@/hooks/useTilt';
+import { useTilt } from '@/hooks/use-tilt';
 import type { AgentMode } from '@/types';
 
 const personalities = [

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   AlertCircle, RefreshCw, Check, Inbox, Keyboard,
 } from 'lucide-react';

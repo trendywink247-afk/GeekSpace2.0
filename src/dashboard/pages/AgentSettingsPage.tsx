@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useDashboardStore } from '@/stores/dashboard-store';
 import { confirmAction, showSuccess, showError } from '@/utils/alerts';
 import { agentService, memoryService, integrationService } from '@/services/api';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type { Personality, AgentPersonality } from '@/types';
 import {
   PersonalityTab,

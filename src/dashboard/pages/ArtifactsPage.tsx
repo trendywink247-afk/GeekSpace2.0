@@ -15,7 +15,7 @@ import { artifactService } from '@/services/api';
 import type { Artifact, ArtifactDomain } from '@/types';
 import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 
 // ---- Filter types ----
 type TypeFilter = 'all' | 'code' | 'template';

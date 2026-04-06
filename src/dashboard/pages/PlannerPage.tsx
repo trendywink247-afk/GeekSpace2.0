@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   Clock, Calendar as CalendarIcon, CalendarCheck, Sparkles,
 } from 'lucide-react';

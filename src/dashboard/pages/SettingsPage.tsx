@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { PageShell, PageHeader } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   User,
   Bell,

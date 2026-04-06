@@ -11,8 +11,8 @@ import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import { InsightToast } from './InsightToast';
 import { useOfficeData } from './useOfficeData';
-import { useOverviewData } from '@/hooks/useOverviewData';
-import type { OverviewReminder, OverviewHabit, OverviewCalendarEvent, OverviewWeeklyStats } from '@/hooks/useOverviewData';
+import { useOverviewData } from '@/hooks/use-overview-data';
+import type { OverviewReminder, OverviewHabit, OverviewCalendarEvent, OverviewWeeklyStats } from '@/hooks/use-overview-data';
 import {
   CELL, AGENT_META, AGENT_COLORS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,

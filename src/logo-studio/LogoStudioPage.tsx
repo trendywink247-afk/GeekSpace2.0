@@ -22,7 +22,7 @@ import {
   SectionHeader,
   StatusBadge,
 } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type { LogoParams } from './types';
 import type { WizardResult } from './components/LogoWizard';
 

@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/stores/auth-store';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { portfolioService, type PortfolioContact } from '@/services/api';
 import type { Portfolio, PortfolioProject, PortfolioMilestone, PortfolioLayout } from '@/types';
 import {

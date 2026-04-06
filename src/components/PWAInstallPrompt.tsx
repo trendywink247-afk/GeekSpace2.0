@@ -3,8 +3,8 @@
 // ============================================================
 
 import { X, Download, Smartphone } from 'lucide-react';
-import { useInstallPrompt, usePWA } from '@/hooks/usePWA';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useInstallPrompt, usePWA } from '@/hooks/use-pwa';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 
 export function PWAInstallPrompt() {
   const { showPrompt, dismiss, install, canInstall } = useInstallPrompt();

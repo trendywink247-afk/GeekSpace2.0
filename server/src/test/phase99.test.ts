@@ -55,10 +55,10 @@ beforeAll(() => {
 // =============================================================================
 describe("99.1 File existence: new voice files", () => {
   it("useVoice.ts hook exists", () => {
-    expect(fileExists("src/hooks/useVoice.ts")).toBe(true);
+    expect(fileExists("src/hooks/use-voice.ts")).toBe(true);
   });
   it("useTTS.ts hook exists", () => {
-    expect(fileExists("src/hooks/useTTS.ts")).toBe(true);
+    expect(fileExists("src/hooks/use-tts.ts")).toBe(true);
   });
   it("VoiceButton.tsx component exists", () => {
     expect(fileExists("src/components/VoiceButton.tsx")).toBe(true);

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { Film, AlertCircle, AlertTriangle, ImageIcon, Sparkles, Trash2 } from 'lucide-react';
 import { videoService, picoService, agentService } from '@/services/api';
 import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';

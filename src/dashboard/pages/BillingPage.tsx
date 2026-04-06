@@ -15,12 +15,12 @@ import { Button } from '@/components/ui/button';
 import { PageProgress } from '@/components/ui/page-progress';
 import { MobileTable } from '@/components/ui/mobile-table';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { billingService } from '@/services/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type { Subscription, PlanDefinition, DailyUsage, UsageEvent } from '@/types';
 
 // ---- constants -----------------------------------------------------------

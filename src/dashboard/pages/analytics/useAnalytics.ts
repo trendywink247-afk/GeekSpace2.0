@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/services/api';
 import { activityService } from '@/services/api';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { computeTrend } from './helpers';
 import type { AnalyticsData, TimePeriod, AIInsight } from './helpers';
 
