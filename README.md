@@ -24,7 +24,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.3.0 · Agentic Experience · Goals + Delegation + Deep Reasoning · 2552 tests · Security-hardened · 15+ Docker services · PR-based CI/CD
+> v3.3.0 · Agentic Experience v2 · Threading + Human-in-the-Loop + Feedback + Agent Theater · 22 Docker containers (4 stacks) · Prometheus-monitored · Security-hardened · PR-based CI/CD
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -40,11 +40,17 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 
 ### What makes it different
 
-- **Local-first AI** — Ollama runs on your hardware. Cloud is optional fallback, not the default.
+- **Local-first AI** — Ollama (gemma4, nomic-embed-text) runs on your hardware. Cloud is optional fallback, not the default.
+- **Intent-based LLM routing** — simple/automation hits Groq 70B (0.2s, free) first; complex/coding hits local Ollama first; both fall through to OpenRouter-free as a safety net.
 - **One platform, not 10 tools** — Agent, portfolio, reminders, automations, billing, terminal — unified.
 - **9 AI personalities** — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova — switch mid-message.
 - **Auto-delegation** — Weebo detects intent and routes to the right specialist agent automatically.
 - **Multi-agent council** — Fan-out to parallel specialists for complex queries.
+- **Conversation threading** — Long conversations are clustered into threads with per-thread memory and summaries.
+- **Human-in-the-loop** — Sensitive tool calls (deletes, sends, payments) surface a ConfirmActionCard before executing.
+- **File upload to chat** — Drag PDFs/images/text into chat; the agent extracts, indexes, and reasons over them.
+- **Feedback loop** — Thumbs up/down on responses feeds the cognitive memory layer and reshapes routing.
+- **Agent Theater** — Live panel that shows every agent's current step, tool call, and delegation in real time.
 - **Goal-driven autonomy** — Set goals, agents decompose into steps, pursue them autonomously, report progress.
 - **Inter-agent delegation** — Agents hand off work to specialists mid-conversation with full audit trail.
 - **Deep reasoning** — Complex queries get 10-iteration reasoning with self-reflection and plan-then-execute.
@@ -66,8 +72,13 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 **AI Agent & Chat**
 - 9 Personalities — Weebo, Edith, Jarvis, Aria, Forge, Pulse, Echo, Cal, Nova
 - Named agent routing: "hey Aria", "@Nova", "Forge:" switches mid-message
-- Cloud-first LLM waterfall: OpenRouter-free → PicoClaw → Ollama → Groq → Together → Maverick → Kimi → Edith
-- PicoClaw circuit breaker (1 failure → 5min cooldown)
+- Intent-based LLM routing: simple/automation → Groq 70B → Ollama → OpenRouter-free; complex/coding → Ollama gemma4 → Groq → OpenRouter-free
+- PicoClaw (qwen2.5-coder:3b) as local triage sidecar with circuit breaker (1 failure → 5min cooldown)
+- Conversation threading + per-thread summaries wired through `memory/services/memory.ts`
+- Human-in-the-loop `ConfirmActionCard` gating dangerous tool calls (`agent/services/confirm-action.ts`)
+- File upload pipeline (`agent/middleware/file-upload.ts` → `file-processor.ts`) for PDFs, images, text
+- Feedback + cognitive memory (`feedback-service.ts`, `memory/services/cognitive-memory.ts`)
+- Agent Theater UI (`src/components/AgentTheaterPanel.tsx`) streaming ReAct steps live
 - Auto-delegation: Weebo routes to Cal/Echo/Forge/Aria/Pulse/Nova/Jarvis by intent
 - Multi-Agent Council — "launch mode" fan-out to 3 parallel specialists
 - ReAct loop with 23 tools (notes, habits, reminders, expenses, focus, briefings, goals, artifacts, etc.)
@@ -182,6 +193,19 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 
 ---
 
+## Infrastructure at a Glance
+
+22 containers across 4 stacks running on a single VPS:
+
+| Stack | Count | Containers |
+|-------|-------|------------|
+| **GeekSpace** | 10 | app, staging, redis ×2, picoclaw, browser, meilisearch, qdrant, searxng, uptime-kuma |
+| **Monitoring** | 5 | grafana, prometheus, loki, promtail, cadvisor |
+| **External AI + Automation** | 4 | ollama, agent-zero, claude-bridge, cronicle |
+| **Utility** | 3 | crawl4ai, healthchecks, healthchecks-postgres |
+
+Production exposes Prometheus scrape at `/api/metrics`, Grafana dashboards at `monitor.geekspace.space`, Uptime Kuma at `status.agentin.chat`, and Agent Zero at `agent.agentin.chat`.
+
 ## Architecture
 
 ```mermaid
@@ -193,7 +217,7 @@ graph TB
     Caddy -->|staging.agentin.chat| Staging
     Caddy -->|status.agentin.chat| UptimeKuma
 
-    subgraph Docker["Docker Compose — 15+ Services"]
+    subgraph Docker["Docker Compose — 22 Containers (4 stacks)"]
         App["Agentin :3001<br/>Express + React"]
         Staging["Staging :3002"]
         Redis[(Redis :6379)]
@@ -219,13 +243,11 @@ graph TB
     App --> SQLite[(SQLite<br/>WAL mode)]
     App --> Router{"AI Router"}
 
-    Router -->|"T1 free"| ORFree["OpenRouter<br/>Free Tier"]
-    Router -->|"T2 sidecar"| PicoClaw["PicoClaw<br/>qwen2.5-coder"]
-    Router -->|"T3 local"| Ollama["Ollama<br/>hermes3:8b"]
-    Router -->|"T4 free"| Groq["Groq<br/>Llama 3.3 70B"]
-    Router -->|"T5 paid"| Together["Together AI"]
-    Router -->|"T6 free"| Kimi["Kimi K2"]
-    Router -->|"T7 premium"| EdithLLM["Edith Premium"]
+    Router -->|"simple/auto"| Groq["Groq Llama 3.3 70B<br/>~0.2s free"]
+    Router -->|"complex/code"| Ollama["Ollama gemma4<br/>local free"]
+    Router -->|"triage"| PicoClaw["PicoClaw<br/>qwen2.5-coder:3b"]
+    Router -->|"fallback"| ORFree["OpenRouter Free<br/>25-model rotation"]
+    Router -->|"embeddings"| Embed["nomic-embed-text"]
 
     style App fill:#7B61FF,stroke:#7B61FF,color:#fff
     style Router fill:#FF61DC,stroke:#FF61DC,color:#fff
@@ -260,40 +282,39 @@ graph LR
 ```
 
 <details>
-<summary><strong>Services (15+)</strong></summary>
+<summary><strong>Containers (22 across 4 stacks)</strong></summary>
+
+**GeekSpace stack (10)**
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| **geekspace** | 3001 | Main application (Express + React) |
-| **staging** | 3002 | Staging environment (isolated DB + Redis) |
-| **redis** | 6379 | Cache, rate limiting, sessions |
-| **staging-redis** | 6380 | Staging cache (64MB cap) |
-| **picoclaw** | -- | Automation sidecar (qwen2.5-coder) |
-| **edith-bridge** | -- | Premium LLM bridge |
-| **n8n** | 5678 | Workflow automation (localhost-bound) |
-| **uptime-kuma** | 3001 | Status monitoring (status.agentin.chat) |
-| **searxng** | 8080 | Self-hosted metasearch |
-| **meilisearch** | 7700 | Instant typo-tolerant search |
-| **qdrant** | 6333 | Vector DB for semantic memory |
-| **browser** | 3000 | Headless browser for screenshots |
-| **geekos-postgres** | 5432 | PostgreSQL + pgvector |
-| **ollama** | 11434 | Local LLM (external, systemd) |
-| **caddy** | 443 | Reverse proxy + auto-HTTPS (standalone) |
+| geekspace-app | 3001 | Production app (Express + React, Node 20 alpine) |
+| geekspace-staging | 3002 | Staging instance (isolated DB + Redis) |
+| geekspace-redis | 6379 | Cache, rate limiting, sessions |
+| geekspace-staging-redis | 6380 | Staging cache (64MB cap) |
+| geekspace-picoclaw | 8080 | Triage sidecar (qwen2.5-coder:3b) |
+| geekspace-browser | 3010 | Playwright browser for screenshots |
+| geekspace-meilisearch | 7700 | Typo-tolerant full-text search |
+| geekspace-qdrant | 6333 | Vector DB for semantic memory |
+| geekspace-searxng | 8888 | Self-hosted metasearch |
+| geekspace-uptime-kuma | 3003 | Status monitoring (status.agentin.chat) |
 
-### AI Routing (Cloud-First Waterfall)
+**Monitoring stack (5)** — grafana, prometheus, loki, promtail, cadvisor. Grafana at `monitor.geekspace.space` scrapes `/api/metrics` on the app; Prometheus routes alerts to Telegram via Alertmanager.
 
-| Priority | Backend | Cost | Use Case |
-|----------|---------|------|----------|
-| **1** | OpenRouter Free (25 models) | 2 credits | Primary cloud, model rotation |
-| **2** | PicoClaw (qwen2.5-coder) | 1 credit | Fast sidecar, circuit breaker (1 fail = 5min cooldown) |
-| **3** | Ollama (hermes3:8b) | 1 credit | Local fallback, private, 20s timeout |
-| **4** | Groq (Llama 3.3 70B) | 2 credits | Free cloud fallback |
-| **5** | Together AI (Llama 4 Maverick) | 5 credits | Paid cloud |
-| **6** | Kimi K2 (Moonshot) | 3 credits | Complex reasoning |
-| **7** | Edith Premium | 10 cr/1K tokens | Specialist sessions |
-| **Multi-Agent** | 3x parallel agents | 6 credits | Council mode / parallel brainstorm |
+**External AI + automation (4)** — ollama (systemd-managed, gemma4 + nomic-embed-text), agent-zero (browser-accessible AI agent at `agent.agentin.chat`, full VPS access), claude-bridge (HTTP wrapper around Claude Code CLI at `:8787`), cronicle (job scheduler at `:3012`, runs nightly docker reports / smoke tests / autonomy audits).
 
-Local-pref users bypass the waterfall and route directly to Ollama.
+**Utility (3)** — crawl4ai, healthchecks, healthchecks-postgres.
+
+### LLM Routing (Intent-Based)
+
+| Intent | Primary | Fallback chain |
+|--------|---------|----------------|
+| Simple / automation | Groq Llama 3.3 70B (~0.2s, free) | Ollama → OpenRouter free |
+| Complex / coding | Ollama gemma4 (local, free) | Groq → OpenRouter free |
+| Triage / classification | PicoClaw qwen2.5-coder:3b (local) | — |
+| Embeddings | nomic-embed-text (local) | — |
+
+Routing logic lives in `server/src/modules/agent/services/llm.ts`. Local-preference users pin directly to Ollama.
 
 </details>
 
@@ -345,12 +366,14 @@ Three-layer memory protection for the 32GB VPS:
 
 ## Environments
 
-| Domain | Container | Purpose |
-|--------|-----------|---------|
-| ai.agentin.chat | geekspace:3001 | Production |
-| api.agentin.chat | geekspace:3001 | Production API |
-| staging.agentin.chat | staging:3002 | Staging / Preview |
-| status.agentin.chat | uptime-kuma:3001 | Uptime monitoring |
+| Domain | Target | Purpose |
+|--------|--------|---------|
+| ai.agentin.chat | geekspace-app :3001 | Production |
+| api.agentin.chat | geekspace-app :3001 | Production API |
+| staging.agentin.chat | geekspace-staging :3002 | Staging / Preview |
+| status.agentin.chat | uptime-kuma | Uptime monitoring |
+| monitor.geekspace.space | grafana | Metrics + dashboards |
+| agent.agentin.chat | agent-zero | Browser-accessible AI agent |
 
 Staging has isolated Redis (64MB cap) and a separate DB volume.
 
@@ -360,32 +383,33 @@ Staging has isolated Redis (64MB cap) and a separate DB volume.
 
 ```
 GeekSpace2.0/
-├── src/                        # React 19 frontend (TypeScript)
-│   ├── components/             #   Reusable UI components (shadcn/ui)
-│   ├── dashboard/pages/        #   38 dashboard pages (chat, reminders, billing, etc.)
+├── src/                        # React 19 + Vite 7 + Tailwind 3.4 frontend
+│   ├── components/             #   shadcn/ui + Radix + Framer Motion
+│   │   └── AgentTheaterPanel.tsx  # Live ReAct step / delegation viewer
+│   ├── dashboard/              #   DashboardRouter + 41 lazy-loaded pages
+│   │   ├── DashboardRouter.tsx
+│   │   └── pages/              #   41 dashboard pages (chat, reminders, billing, ...)
 │   ├── services/api.ts         #   Axios API client with JWT interceptor
 │   ├── stores/                 #   Zustand state management
-│   ├── hooks/                  #   14 custom React hooks
+│   ├── hooks/                  #   Custom React hooks (useChatStream, ...)
 │   ├── i18n/                   #   Internationalization (Hindi, English)
 │   └── landing/                #   Public landing page
 ├── server/                     # Express 4 backend (TypeScript)
 │   └── src/
 │       ├── app.ts              #   Express app factory + middleware stack
 │       ├── config.ts           #   Validated env configuration (100+ vars)
-│       ├── db/index.ts         #   SQLite schema (60+ tables, WAL mode)
-│       ├── routes/             #   65+ API endpoints by domain
-│       │   ├── agent/          #     AI chat, streaming, memory, workflows
-│       │   ├── auth.ts         #     Signup, login, OAuth, password reset
-│       │   ├── billing.ts      #     Stripe/Razorpay checkout + webhooks
-│       │   └── ...             #     reminders, portfolio, automations, admin
-│       ├── services/           #   98 business logic services
-│       │   ├── llm.ts          #     7-tier LLM router + intent classification
-│       │   ├── message-router.ts #   Unified message handling (web/Telegram)
-│       │   ├── react-loop.ts   #     ReAct loop with 17 tools
-│       │   └── ...             #     memory, billing, scheduling, media, etc.
-│       ├── middleware/         #   Auth (JWT), validation (Zod), errors, metrics
-│       ├── repositories/      #   Data access (User, Conversation, Subscription, etc.)
-│       └── test/              #   2552 unit tests (Vitest)
+│       ├── db/index.ts         #   SQLite schema (synchronous better-sqlite3, WAL)
+│       ├── modules/            #   18 domain modules (modular monolith)
+│       │   ├── agent/          #     LLM routing, ReAct, goals, delegation, theater (42 files)
+│       │   ├── auth/           #     JWT, OAuth, sessions, password reset
+│       │   ├── billing/        #     Stripe/Razorpay, credits, subscriptions
+│       │   ├── memory/         #     Qdrant, Meilisearch, cognitive + graph memory
+│       │   ├── reminders/      #     Scheduling + multi-channel delivery
+│       │   └── ...             #     admin, automation, comms, content, dashboard,
+│       │                       #     focus, geekos, health, integrations, media,
+│       │                       #     office, portfolio, users
+│       ├── middleware/         #   Auth (JWT), validation (Zod), Prometheus metrics
+│       └── test/               #   Unit tests (Vitest, TEST_MODE=true)
 ├── e2e/                       # Playwright E2E tests (22 specs)
 ├── docs/                      # Technical documentation
 ├── ops/                       # Operational docs and audit reports
@@ -394,7 +418,7 @@ GeekSpace2.0/
 ├── openapi/                   # OpenAPI 3.1 specification
 ├── picoclaw/                  # PicoClaw AI triage sidecar
 ├── caddy/                     # Reverse proxy configuration
-├── docker-compose.yml         # 15+ service orchestration
+├── docker-compose.yml         # GeekSpace stack (10 containers)
 ├── Dockerfile                 # Multi-stage production build (Node 20)
 └── .github/workflows/         # CI/CD (lint, test, build, deploy)
 ```
@@ -434,9 +458,10 @@ cd server && npm run dev
 ### Run Tests
 
 ```bash
-cd server && npm test              # 2552 tests, 0 fail (Vitest)
-npx playwright test                # E2E tests (needs dev servers)
-npm run lint                       # ESLint
+cd server && npm test              # Backend unit tests (Vitest, TEST_MODE=true)
+npm test                           # Frontend unit tests
+npx playwright test                # E2E tests (also runs in CI)
+npm run lint                       # ESLint (CI enforces --max-warnings=0 on changed files)
 ```
 
 ### Deploy to Production
@@ -473,14 +498,14 @@ curl localhost:3002/api/health
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | React 19, TypeScript, Vite 7, Tailwind CSS, shadcn/ui, Zustand, Recharts, Lucide Icons |
-| **Backend** | Express 4, TypeScript, SQLite (better-sqlite3, WAL), JWT (HS256), Zod, Pino, Helmet |
-| **AI** | Ollama + Groq + Together AI + Kimi K2 + OpenRouter Free + PicoClaw + Edith |
-| **Search** | SearXNG (metasearch), Meilisearch (instant), Qdrant (vector/semantic) |
-| **Infra** | Docker (Node 20 Alpine), Caddy (auto-HTTPS, standalone), Redis 7, PostgreSQL + pgvector |
-| **Monitoring** | Uptime Kuma (status.agentin.chat), n8n (workflow automation) |
-| **Testing** | Vitest (2552 tests), Playwright, supertest |
-| **CI/CD** | GitHub Actions (lint, unit, E2E, smoke tests, npm audit) |
+| **Frontend** | React 19, TypeScript, Vite 7, Tailwind CSS 3.4, shadcn/ui + Radix UI, Zustand, Framer Motion, Recharts, Lucide |
+| **Backend** | Express 4, TypeScript (ES modules), better-sqlite3 (synchronous, WAL), Redis 7, JWT (HS256), Zod, Pino, Helmet |
+| **AI** | Ollama (gemma4 + nomic-embed-text), Groq Llama 3.3 70B, OpenRouter free tier, PicoClaw (qwen2.5-coder:3b) |
+| **Search / Memory** | Meilisearch (instant), Qdrant (semantic), SearXNG (metasearch), cognitive memory layer |
+| **Infra** | Docker Compose, Caddy (auto-HTTPS, standalone), Cloudflare, litestream (SQLite replication) |
+| **Observability** | Prometheus `/api/metrics`, Grafana, Loki + Promtail, cAdvisor, Uptime Kuma, Telegram alert routing |
+| **Testing** | Vitest (backend + frontend unit), Playwright (E2E in CI), load-test baseline |
+| **CI/CD** | GitHub Actions — lint, typecheck, build, unit tests, E2E, security scans, npm audit |
 
 ---
 
@@ -634,4 +659,3 @@ Built with obsession by [@trendywink247](https://github.com/trendywink247-afk)
 </sub>
 
 </div>
-

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> Master orchestrator brief lives in [`AGENTS.md`](AGENTS.md) — read it for execution model, sub-agent roster, hard rules, and session bootstrap. This file is the deeper architecture reference.
+
 ## Architecture
 
 Modular monolith with 18 domain modules in `server/src/modules/`. Each module has:
@@ -44,7 +46,9 @@ Plus standalone routers: directory, webhooks, pico, artifacts preview.
 
 ## Frontend
 
-**Stack:** React 19 + TypeScript + Vite 7 + Tailwind CSS 3.4
+**Stack:** React 19 + TypeScript + Vite 7 + Tailwind CSS 3.4 + Zustand + Radix UI + Framer Motion
+
+Entry: `src/App.tsx` → `src/dashboard/DashboardRouter.tsx` (lazy-loaded; 41 dashboard pages, all decomposed into sub-components after the April 2026 refactor).
 
 **Key directories in `src/`:**
 - `components/` — Radix UI + shadcn/ui components
@@ -60,9 +64,21 @@ Plus standalone routers: directory, webhooks, pico, artifacts preview.
 
 **UI libraries:** Radix UI (20+ components), Framer Motion, Recharts, Chart.js, Three.js + React Three Fiber, BlockNote (rich text editor), React Hook Form + Zod validation, Sonner (toasts), SweetAlert2, Vaul (drawer)
 
-## Agentic Experience (v3.3)
+## Agentic Experience (v3.3 + Agentic v2)
 
-The agent module (`server/src/modules/agent/`) is the core. Key subsystems:
+The agent module (`server/src/modules/agent/`) is the core — 42 files covering LLM routing, ReAct loops, goals, delegation, proactive engine, notifications, and the Agentic v2 additions below.
+
+### Agentic v2 (April 2026)
+
+| Feature | Key files |
+|---------|-----------|
+| Conversation threading | `agent/services/conversation-threads.ts`, `memory/services/memory.ts` |
+| Human-in-the-loop confirmations | `agent/services/confirm-action.ts`, `agent/services/react-loop.ts`, `src/components/ConfirmActionCard.tsx` |
+| File upload to chat | `agent/middleware/file-upload.ts`, `agent/services/file-processor.ts` |
+| Feedback + cognitive memory | `agent/services/feedback-service.ts`, `memory/services/cognitive-memory.ts` |
+| Agent Theater (live ReAct viewer) | `src/components/AgentTheaterPanel.tsx` |
+| World model + temporal anchors (v3) | `agent/services/world-model.ts`, DB tables `world_models`, `temporal_anchors` |
+| Agentic v3 (uncertainty, inference, learning, recovery, trust, vision) | `agent/services/` — see commit `82fe95a` |
 
 ### Goal System
 - `services/goal-service.ts` — CRUD + AI planning + autonomous step execution
@@ -90,35 +106,33 @@ The agent module (`server/src/modules/agent/`) is the core. Key subsystems:
 - `routes/notifications.ts` — REST API at `/api/agent/notifications`
 - Honors `notif_agents` preference + quiet hours (timezone-aware)
 
-### LLM 7-Tier Routing (`services/llm.ts`)
+### LLM Intent-Based Routing (`agent/services/llm.ts`)
 
-Fallback chain in order:
-1. **Ollama** — Local (qwen3:8b, qwen3:14b for complex)
-2. **OpenRouter** — claude-sonnet-4-6 + free llama-3.3-70b
-3. **Groq** — llama-3.3-70b-versatile (free tier)
-4. **Moonshot/Kimi** — kimi-k2-thinking (reasoning tasks)
-5. **Gemini** — Flash 2.0 (1M tokens/day free)
-6. **Together AI** — Llama 4 Maverick + Qwen3.5
-7. **Anthropic/OpenAI** — Final fallback
+Routing is **intent-classified** (not a flat waterfall). `classifyIntent()` splits into simple/automation vs complex/coding, then walks an intent-specific chain:
+
+| Intent | Primary | Fallback |
+|--------|---------|----------|
+| Simple / automation | Groq Llama 3.3 70B (~0.2s, free) | Ollama → OpenRouter free |
+| Complex / coding | Ollama `gemma4` (local, free) | Groq → OpenRouter free |
+| Triage / classification | PicoClaw `qwen2.5-coder:3b` (local sidecar) | — |
+| Embeddings | `nomic-embed-text` (Ollama, local) | — |
+
+See ADR-001 and commit `ddb0e84` ("perf(llm): intent-based provider routing — Groq first for simple, Ollama for complex"). Local-pref users pin to Ollama.
 
 ## Infrastructure
 
-### Docker Services (`docker-compose.yml`)
+### 22 Containers Across 4 Stacks
 
-| Service | Purpose | Port | Memory |
-|---------|---------|------|--------|
-| **geekspace** | Main API + frontend (Node 22 alpine) | 3001 | 1G |
-| **redis** | Job queue + caching | 6379 | 256M |
-| **picoclaw** | Weebo triage engine | 8080 | 64M |
-| **searxng** | Free metasearch (replaces Tavily) | 8888 | 256M |
-| **meilisearch** | Full-text search (v1.12) | 7700 | 128M |
-| **qdrant** | Vector DB for semantic memory (v1.13.2) | 6333 | 256M |
-| **browser** | Browser automation sidecar (Playwright) | 3010 | 1.5G |
-| **n8n** | Workflow automation (optional profile) | 5678 | — |
-| **uptime-kuma** | Status monitoring | 3003 | 128M |
-| **staging** | Staging API instance | 3002 | — |
+Full inventory in [`AGENTS.md`](AGENTS.md) §3 and [`.pi/FULL_AUDIT.md`](.pi/FULL_AUDIT.md). Summary:
 
-Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama/Moonshot)
+- **GeekSpace stack (10)** — app (:3001), staging (:3002), redis ×2, picoclaw (:8080), browser (:3010), meilisearch (:7700), qdrant (:6333), searxng (:8888), uptime-kuma (:3003)
+- **Monitoring stack (5)** — grafana, prometheus, loki, promtail, cadvisor. Prometheus scrapes the app at `/api/metrics` and routes alerts to Telegram via Alertmanager.
+- **External AI + automation (4)** — ollama (systemd, gemma4 + nomic-embed-text), agent-zero (`agent.agentin.chat`), claude-bridge (`:8787`), cronicle (`:3012`, nightly jobs).
+- **Utility (3)** — crawl4ai, healthchecks, healthchecks-postgres.
+
+Domains: `ai.agentin.chat` (prod), `staging.agentin.chat` (staging), `status.agentin.chat` (Uptime Kuma), `monitor.geekspace.space` (Grafana), `agent.agentin.chat` (Agent Zero).
+
+Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama).
 
 ### Sidecar Services (separate directories at root)
 
@@ -213,7 +227,14 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 - `server/src/index.ts` — Server startup, scheduler init, graceful shutdown
 - `server/src/config.ts` — Environment config (all env vars + LLM provider keys)
 - `server/src/db/index.ts` — SQLite schema (centralized, not split per module)
-- `server/src/modules/agent/services/llm.ts` — 7-tier LLM router
+- `server/src/modules/agent/services/llm.ts` — Intent-based LLM router (Groq ↔ Ollama ↔ OpenRouter-free)
+- `server/src/modules/agent/services/conversation-threads.ts` — Conversation threading (Agentic v2)
+- `server/src/modules/agent/services/confirm-action.ts` — Human-in-the-loop tool confirmations
+- `server/src/modules/agent/services/feedback-service.ts` — User feedback loop feeding cognitive memory
+- `server/src/modules/memory/services/cognitive-memory.ts` — Cognitive memory layer
+- `server/src/modules/agent/middleware/file-upload.ts` + `services/file-processor.ts` — Chat file uploads
+- `src/components/AgentTheaterPanel.tsx` — Live ReAct / delegation viewer
+- `server/src/middleware/metrics.ts` — Prometheus `/api/metrics` scrape endpoint
 - `server/src/modules/agent/services/react-loop.ts` — Standard ReAct loop (5 iterations)
 - `server/src/modules/agent/services/deep-reasoning.ts` — Deep reasoning (10 iterations)
 - `server/src/modules/agent/services/goal-service.ts` — Goal system core
@@ -267,6 +288,7 @@ Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram.
 | Single test file | `cd server && npx vitest run src/modules/agent/__tests__/foo.test.ts` |
 | Single test name | `cd server && npx vitest run -t "test name"` |
 | DB migration | `cd server && npm run migrate` |
+| Prometheus scrape | `curl -sf localhost:3001/api/metrics \| head` |
 | Focus module | `./scripts/focus-module.sh <module>` |
 | Health check | `./scripts/health-check.sh` |
 | Smoke test (dev) | `./scripts/smoke-dev.sh` |
@@ -280,6 +302,8 @@ Tests run with `TEST_MODE=true` which mocks LLM calls and Telegram.
 | `ci.yml` | Push/PR to main, manual dispatch | Lint changed files → typecheck → build → unit tests → deploy |
 | `deploy.yml` | Manual dispatch (commit SHA) | Emergency rollback to specific commit |
 | `lint-full.yml` | Nightly 3 AM UTC, manual | Full repo lint (non-blocking, tracks lint debt) |
+
+E2E Playwright specs also run in CI (added April 2026, commit `3e28ba8`) alongside a load-test baseline and security scans. Backup verification drills run nightly via Cronicle; litestream replicates SQLite off-box (see `docs/LITESTREAM.md`).
 
 ### Pipeline Flow (`ci.yml`)
 
