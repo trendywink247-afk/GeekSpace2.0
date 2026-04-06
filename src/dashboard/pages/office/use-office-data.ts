@@ -20,7 +20,7 @@ import {
  * @returns The API base URL (e.g., 'http://localhost:3001' or '')
  */
 function apiBase(): string {
-  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+  return import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 }
 
 /**
@@ -190,7 +190,7 @@ export function useOfficeData(): UseOfficeDataReturn {
     if (typeof document !== 'undefined' && document.hidden) return;
 
     try {
-      const res = await fetch(`${apiBase()}/api/office/state`, {
+      const res = await fetch(`${apiBase()}/office/state`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -304,7 +304,7 @@ export function useOfficeData(): UseOfficeDataReturn {
     (async () => {
       try {
         // ─── Establish SSE connection with JWT auth ────────────────────────
-        const res = await fetch(`${apiBase()}/api/agent-state/stream`, {
+        const res = await fetch(`${apiBase()}/agent-state/stream`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'text/event-stream',
