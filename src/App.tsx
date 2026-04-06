@@ -44,7 +44,16 @@ function App() {
   useEffect(() => { applyTheme(); }, [applyTheme]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      // 2026-04-06 — FIX for stale useLocation bug:
+      // BrowserRouter v7 wraps location updates in React.startTransition by
+      // default, which gets canceled by frequent high-priority re-renders
+      // from Zustand stores in DashboardApp. The result was useLocation()
+      // returning a stale path while window.location was correct, so
+      // sidebar clicks updated the URL bar but never re-rendered the page.
+      // See debug session 2026-04-06 for full reproduction.
+      unstable_useTransitions={false}
+    >
       <HashScroller />
       {/* Skip to main content — accessibility for keyboard users */}
       <a
