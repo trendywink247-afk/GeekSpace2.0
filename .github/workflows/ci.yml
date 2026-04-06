@@ -276,6 +276,18 @@ jobs:
             git checkout main
             git pull origin main
 
+            echo "=== Building frontend bundle into dist/ ==="
+            # 2026-04-06: Caddy serves the SPA from /srv on the host,
+            # NOT from /app/dist inside the container. We must build the
+            # frontend on the host and rsync to /srv before (or after)
+            # rebuilding the container, otherwise frontend changes never
+            # reach users even though the API container has new code.
+            # See commit 0742e04b for the debug session that found this.
+            npm ci
+            npx vite build
+            echo "=== Syncing dist/ -> /srv (Caddy static root) ==="
+            rsync -a --delete dist/ /srv/
+
             echo "=== Building & deploying staging container ==="
             DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
               docker compose up -d --build staging

@@ -96,3 +96,31 @@ Caddy on the host can reach:
 
 If a `reverse_proxy` block can't reach its upstream after a deploy, that
 attachment is the first thing to check.
+
+
+## ⚠️ Critical: where the SPA bundle lives
+
+**Caddy serves the static frontend from `/srv` on the host filesystem.**
+NOT from `/app/dist` inside the staging or production Docker containers.
+
+This means:
+
+- `docker compose up -d --build staging` rebuilds the API server in the
+  container but does **not** update the static frontend bundle Caddy
+  serves to users. Users keep hitting the previous bundle from `/srv`.
+- After every frontend build you MUST do:
+  ```bash
+  npx vite build
+  rsync -a --delete dist/ /srv/
+  ```
+- `./scripts/staging.sh` and the CI deploy workflow do this automatically
+  (since 2026-04-06 — see commit history). If you write a new deploy
+  path, replicate the rsync step.
+
+How this happened: Caddy runs as a host-level systemd service (not in
+Docker), and the staging/production containers were originally set up
+to serve their own `/app/dist` via Express's static middleware as a
+backup, but the actual user-facing path is Caddy → /srv. The two diverged
+silently and a 30-hour-stale bundle was being served on staging while
+"fixes" were being shipped to the API container with no visible effect.
+Found during the navigation-bug debug session 2026-04-06.

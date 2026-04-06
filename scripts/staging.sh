@@ -46,7 +46,20 @@ fi
 export GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 if [ "$MODE" = "canonical" ]; then
-  echo ">> Building + starting staging from root docker-compose.yml..."
+  echo ">> Building frontend (vite) into ./dist ..."
+  # 2026-04-06: This is the crucial step that was missing for months.
+  # Caddy serves the static SPA from /srv on the HOST, not from inside
+  # the Docker container. `docker compose up -d --build staging` only
+  # rebuilds the container's /app/dist — it does NOT touch /srv. As a
+  # result, every "deploy" was shipping API-server changes to staging
+  # while the user kept hitting a stale frontend bundle (sometimes 30+
+  # hours old). This was the root cause of "the fix didn't work" being
+  # repeated multiple times during the 2026-04-06 nav-bug debug session.
+  npx vite build
+  echo ">> Syncing ./dist -> /srv (Caddy static root) ..."
+  rsync -a --delete dist/ /srv/
+
+  echo ">> Building + starting staging container from root docker-compose.yml..."
   DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
     docker compose up -d --build staging
   CONTAINER="geekspace-staging"
