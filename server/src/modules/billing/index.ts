@@ -38,8 +38,8 @@ export {
 export type { CreditBalance, UsageReport } from './services/credit-service.js';
 
 // ── Repositories ────────────────────────────────────────────────────
-export { SubscriptionRepository } from './repositories/SubscriptionRepository.js';
-export type { SubscriptionRow } from './repositories/SubscriptionRepository.js';
+export { SubscriptionRepository } from './repositories/subscription.repository.js';
+export type { SubscriptionRow } from './repositories/subscription.repository.js';
 
 // ── Types ──────────────────────────────────────────────────────────
 export type { Subscription, Plan, DayPass, UsageEvent } from './types.js';
