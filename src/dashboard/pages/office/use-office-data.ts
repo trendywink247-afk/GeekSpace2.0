@@ -169,7 +169,6 @@ export function useOfficeData(): UseOfficeDataReturn {
   const mountedRef = useRef(true);
   const sseAbortRef = useRef<AbortController | null>(null);
   const sseRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const seenEventIds = useRef(new Set<string>());
 
   // -------------------------------------------------------------------------
@@ -439,7 +438,6 @@ export function useOfficeData(): UseOfficeDataReturn {
       if (sseAbortRef.current) sseAbortRef.current.abort();
       if (sseRetryTimerRef.current) clearTimeout(sseRetryTimerRef.current);
       if (pollTimer) clearTimeout(pollTimer);
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [connectSSE, pollOfficeState]);

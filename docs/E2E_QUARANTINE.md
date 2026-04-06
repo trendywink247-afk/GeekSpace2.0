@@ -51,22 +51,6 @@ Each row: spec file, test name, observed symptom (from CI run `24044078360`),
 likely root cause to start debugging from. **Fix one at a time, in any order.**
 
 
-### `e2e/design-consistency.spec.ts` — 6 tests
-
-| Line | Test | Symptom |
-|---|---|---|
-| 37 | `CSS variables are defined in :root` | 2.4s |
-| 117 | `hero section renders with key elements` | 1.2s |
-| 145 | `renders with correct structure` (login) | 11.6s timeout |
-| 184 | `OAuth buttons are present` | 1.2s |
-| 194 | `demo login button is available` | 11.6s timeout |
-| 304 | `login page adapts for mobile` | 11.3s timeout |
-
-**Start here:** the CSS-variable test goes to `/` and reads `--layer-void`,
-`--layer-base`, etc. They ARE defined in `src/index.css`, but maybe inside a
-class scope rather than `:root`. Login-page tests hitting 11.6s suggest the
-test is waiting for an element/route that isn't there post-redesign.
-
 ---
 
 ## Re-enabling a quarantined test

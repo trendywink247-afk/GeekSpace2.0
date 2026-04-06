@@ -34,8 +34,7 @@ async function getComputedStyleProp(
 }
 
 test.describe('Design Token Consistency', () => {
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('CSS variables are defined in :root', async ({ page }) => {
+  test('CSS variables are defined in :root', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -60,10 +59,13 @@ test.describe('Design Token Consistency', () => {
     expect(spaceBlock).toBeTruthy();
 
     // Motion tokens must be defined
+    // Root cause fix: Chromium serialises CSS <time> values in seconds
+    // (.15s / .3s) even when authored as milliseconds (150ms / 300ms).
+    // Accept either canonical representation.
     const durationFast = await getCSSVariable(page, '--duration-fast');
     const durationNormal = await getCSSVariable(page, '--duration-normal');
-    expect(durationFast).toBe('150ms');
-    expect(durationNormal).toBe('300ms');
+    expect(durationFast).toMatch(/^(150ms|\.15s|0\.15s)$/);
+    expect(durationNormal).toMatch(/^(300ms|\.3s|0\.3s)$/);
   });
 
   test('dark mode class is applied by default', async ({ page }) => {
@@ -115,8 +117,7 @@ test.describe('Landing Page Design', () => {
     }
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('hero section renders with key elements', async ({ page }) => {
+  test('hero section renders with key elements', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -144,8 +145,18 @@ test.describe('Landing Page Design', () => {
 });
 
 test.describe('Login Page Design', () => {
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('renders with correct structure', async ({ page }) => {
+  test('renders with correct structure', async ({ page }) => {
+    // Root cause fix: tests run with auth state loaded (playwright/.auth/user.json).
+    // When authenticated, LoginPage shows the "already signed in" modal — the actual
+    // form elements are not rendered. Clear localStorage so the page shows the real
+    // login form instead.
+    // The test project pre-loads playwright/.auth/user.json (authenticated state).
+    // addInitScript runs before any page JS — the auth store initialises with no
+    // persisted data, so LoginPage renders the actual form instead of the modal.
+    await page.addInitScript(() => {
+      localStorage.removeItem('gs-auth');
+      localStorage.removeItem('gs_token');
+    });
     await page.goto('/login');
     await page.waitForLoadState('domcontentloaded');
 
@@ -184,8 +195,15 @@ test.describe('Login Page Design', () => {
     }
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('OAuth buttons are present', async ({ page }) => {
+  test('OAuth buttons are present', async ({ page }) => {
+    // Root cause fix: clear auth so the full login form renders (see above).
+    // The test project pre-loads playwright/.auth/user.json (authenticated state).
+    // addInitScript runs before any page JS — the auth store initialises with no
+    // persisted data, so LoginPage renders the actual form instead of the modal.
+    await page.addInitScript(() => {
+      localStorage.removeItem('gs-auth');
+      localStorage.removeItem('gs_token');
+    });
     await page.goto('/login');
     await page.waitForLoadState('domcontentloaded');
 
@@ -195,8 +213,15 @@ test.describe('Login Page Design', () => {
     expect(hasOAuth).toBeTruthy();
   });
 
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('demo login button is available', async ({ page }) => {
+  test('demo login button is available', async ({ page }) => {
+    // Root cause fix: clear auth so the full login form renders (see above).
+    // The test project pre-loads playwright/.auth/user.json (authenticated state).
+    // addInitScript runs before any page JS — the auth store initialises with no
+    // persisted data, so LoginPage renders the actual form instead of the modal.
+    await page.addInitScript(() => {
+      localStorage.removeItem('gs-auth');
+      localStorage.removeItem('gs_token');
+    });
     await page.goto('/login');
     await page.waitForLoadState('domcontentloaded');
 
@@ -306,9 +331,16 @@ test.describe('Cross-Page Consistency', () => {
 });
 
 test.describe('Responsive Design', () => {
-    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
-  test.fixme('login page adapts for mobile', async ({ page }) => {
+  test('login page adapts for mobile', async ({ page }) => {
     // This test runs in both desktop and pixel5 projects via Playwright config
+    // Root cause fix: clear auth so the full login form renders (see above).
+    // The test project pre-loads playwright/.auth/user.json (authenticated state).
+    // addInitScript runs before any page JS — the auth store initialises with no
+    // persisted data, so LoginPage renders the actual form instead of the modal.
+    await page.addInitScript(() => {
+      localStorage.removeItem('gs-auth');
+      localStorage.removeItem('gs_token');
+    });
     await page.goto('/login');
     await page.waitForLoadState('domcontentloaded');
 
