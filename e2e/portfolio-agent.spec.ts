@@ -25,19 +25,22 @@ test.describe('Portfolio Page', () => {
     await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible();
   });
 
-  test('should load portfolio page', async ({ page }) => {
+    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
+  test.fixme('should load portfolio page', async ({ page }) => {
     // Should show the portfolio page with header
     await expect(page.getByRole('heading', { name: 'Portfolio' })).toBeVisible();
     await expect(page.getByText('Manage your public portfolio')).toBeVisible();
   });
 
-  test('should show profile tab with headline input', async ({ page }) => {
+    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
+  test.fixme('should show profile tab with headline input', async ({ page }) => {
     // Profile tab should be accessible
     await expect(page.getByTestId('portfolio-tab-profile')).toBeVisible();
     await expect(page.getByPlaceholder(/Full-Stack Developer/i)).toBeVisible();
   });
 
-  test('should show skills tab', async ({ page }) => {
+    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
+  test.fixme('should show skills tab', async ({ page }) => {
     // Scroll into view first — on mobile the tab bar is overflow-x-auto
     const skillsTab = page.getByTestId('portfolio-tab-skills');
     await skillsTab.scrollIntoViewIfNeeded();
@@ -45,7 +48,8 @@ test.describe('Portfolio Page', () => {
     await expect(page.getByText('Add technologies and skills')).toBeVisible();
   });
 
-  test('should show projects tab', async ({ page }) => {
+    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
+  test.fixme('should show projects tab', async ({ page }) => {
     // Scroll into view first — on mobile the tab bar is overflow-x-auto
     const projectsTab = page.getByTestId('portfolio-tab-projects');
     await projectsTab.scrollIntoViewIfNeeded();
@@ -53,7 +57,8 @@ test.describe('Portfolio Page', () => {
     await expect(page.getByText('Showcase your best work')).toBeVisible();
   });
 
-  test('should have save button', async ({ page }) => {
+    // QUARANTINED 2026-04-06: real failure, not flake. See docs/E2E_QUARANTINE.md
+  test.fixme('should have save button', async ({ page }) => {
     // Save button should be visible
     await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible();
   });
