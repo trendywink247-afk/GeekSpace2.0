@@ -20,6 +20,9 @@ import { logger } from '../../../logger.js';
 import { getUserEntities, recallEntity, extractEntitiesFromText } from './graph-memory.js';
 import { getTopUserMemories, type UserMemory } from './memory.js';
 import { getUserFeedbackPatterns } from '../../agent/services/feedback-service.js';
+import { formatLearnedRulesForPrompt } from '../../agent/services/meta-learning.js';
+import { formatInferredGoalsForPrompt } from '../../agent/services/goal-inference.js';
+import { formatSuggestedChainsForPrompt } from '../../agent/services/tool-chain-service.js';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -381,6 +384,24 @@ export function buildCognitiveContext(userId: string, currentMessage: string, _a
     const feedbackBlock = getUserFeedbackPatterns(userId);
     if (feedbackBlock) sections.push(feedbackBlock);
   } catch { /* feedback service may not be ready */ }
+
+  // ── Inject inferred goals (behaviour-detected, not explicitly stated) ──────
+  try {
+    const inferredGoalsBlock = formatInferredGoalsForPrompt(userId);
+    if (inferredGoalsBlock) sections.push(inferredGoalsBlock);
+  } catch { /* non-fatal */ }
+
+  // ── Inject meta-learned rules (nightly reflection output) ──────────────
+  try {
+    const learnedRulesBlock = formatLearnedRulesForPrompt(userId);
+    if (learnedRulesBlock) sections.push(learnedRulesBlock);
+  } catch { /* non-fatal */ }
+
+  // ── Inject tool composition suggestions ─────────────────────────────────
+  try {
+    const chainsBlock = formatSuggestedChainsForPrompt(userId, currentMessage);
+    if (chainsBlock) sections.push(chainsBlock);
+  } catch { /* non-fatal */ }
 
   if (sections.length === 0) return '';
 

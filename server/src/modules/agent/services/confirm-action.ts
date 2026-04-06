@@ -9,6 +9,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
+import { recordTrustEvent, getAutonomyLevel } from './trust-gradient.js';
 
 // ── Dangerous tools that require confirmation ────────────────
 
@@ -104,6 +105,16 @@ export function resolveConfirmation(
   );
 
   logger.info({ userId, confirmId, status, tool: existing.tool }, 'confirm:resolved');
+
+  // Update trust gradient based on user action
+  try {
+    const params = JSON.parse(existing.params) as Record<string, unknown>;
+    const action: 'approved' | 'edited' | 'rejected' = approved
+      ? (editedParams ? 'edited' : 'approved')
+      : 'rejected';
+    recordTrustEvent(userId, existing.tool, params, action);
+  } catch { /* non-fatal */ }
+
   return getPendingConfirmation(confirmId, userId);
 }
 
@@ -125,11 +136,21 @@ export function listPendingConfirmations(userId: string): PendingConfirmation[] 
 /**
  * Check if a tool+params combination needs confirmation.
  * Special case: delete_reminder with deleteAll needs confirmation.
+ * Backward-compat static check (no userId).
  */
 export function needsConfirmation(tool: string, params: Record<string, unknown>): boolean {
   if (CONFIRM_REQUIRED.has(tool)) return true;
   if (tool === 'delete_reminder' && params.deleteAll) return true;
   return false;
+}
+
+/**
+ * Smarter confirmation check that uses learned trust.
+ * Use this when userId is available.
+ */
+export function needsConfirmationForUser(userId: string, tool: string, params: Record<string, unknown>): boolean {
+  const level = getAutonomyLevel(userId, tool, params);
+  return level === 'confirm' || level === 'warn';
 }
 
 /**

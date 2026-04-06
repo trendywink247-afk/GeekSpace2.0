@@ -2499,6 +2499,45 @@ try {
   `);
 } catch { /* table already exists */ }
 
+// ── Phase: Meta-learning — nightly reflections + learned patterns ──────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS meta_reflections (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reflection_date TEXT NOT NULL,
+      summary TEXT NOT NULL DEFAULT '',
+      what_worked TEXT DEFAULT '[]',
+      what_failed TEXT DEFAULT '[]',
+      learned_rules TEXT DEFAULT '[]',
+      messages_analyzed INTEGER DEFAULT 0,
+      positive_feedback INTEGER DEFAULT 0,
+      negative_feedback INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_meta_reflections_user ON meta_reflections(user_id, reflection_date);
+  `);
+} catch { /* exists */ }
+
+// ── Phase: Inferred goals — patterns the agent detects but user hasn't explicitly stated ────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inferred_goals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      reasoning TEXT NOT NULL DEFAULT '',
+      confidence REAL DEFAULT 0.5,
+      evidence TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'suggested',
+      suggested_at TEXT DEFAULT (datetime('now')),
+      user_response TEXT DEFAULT NULL,
+      converted_goal_id TEXT DEFAULT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_inferred_goals_user ON inferred_goals(user_id, status);
+  `);
+} catch { /* exists */ }
+
 // Retroactive conversation threading — group old messages by 30-min time gaps
 try {
   const hasConversations = (db.prepare('SELECT COUNT(*) as cnt FROM conversations').get() as { cnt: number }).cnt;
@@ -2537,3 +2576,40 @@ try {
 } catch (err) {
   logger.debug({ err }, 'Retroactive conversation threading skipped (non-fatal)');
 }
+
+// ── Phase: Autonomy gradient — learned trust per tool per context ───────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tool_trust (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      tool TEXT NOT NULL,
+      context_hash TEXT NOT NULL,
+      trust_score REAL DEFAULT 0.5,
+      approval_count INTEGER DEFAULT 0,
+      edit_count INTEGER DEFAULT 0,
+      reject_count INTEGER DEFAULT 0,
+      last_updated TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, tool, context_hash)
+    );
+    CREATE INDEX IF NOT EXISTS idx_tool_trust_user ON tool_trust(user_id, tool);
+  `);
+} catch { /* exists */ }
+
+// ── Phase: Tool composition learning — remember successful tool chains ───────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tool_chains (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      pattern TEXT NOT NULL,
+      pattern_hash TEXT NOT NULL,
+      tool_sequence TEXT NOT NULL DEFAULT '[]',
+      success_count INTEGER DEFAULT 0,
+      failure_count INTEGER DEFAULT 0,
+      last_used TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_tool_chains_user ON tool_chains(user_id, last_used DESC);
+    CREATE INDEX IF NOT EXISTS idx_tool_chains_hash ON tool_chains(user_id, pattern_hash);
+  `);
+} catch { /* exists */ }

@@ -137,6 +137,33 @@ const httpServer = app.listen(config.port, () => {
     safeStart('calendar-sync', startCalendarSyncScheduler);
     safeStart('session-summary', startSessionSummaryScheduler);
 
+    // Agentic v3 schedulers — world model, goal inference, meta-learning, temporal cleanup
+    safeStart('agentic-nightly', async () => {
+      const { runNightlyReflectionForAllUsers } = await import('./modules/agent/services/world-model.js');
+      const { runNightlyReflection } = await import('./modules/agent/services/meta-learning.js');
+      const { runNightlyGoalInference } = await import('./modules/agent/services/goal-inference.js');
+      const { expireStaleAnchors } = await import('./modules/agent/services/temporal-service.js');
+
+      // Run every 6 hours (agentic reflection cycle)
+      const runCycle = async () => {
+        try {
+          logger.info('agentic: starting nightly cycle (world model + meta-learning + goal inference)');
+          await runNightlyReflection();
+          await runNightlyReflectionForAllUsers();
+          await runNightlyGoalInference();
+          const expired = expireStaleAnchors();
+          if (expired > 0) logger.info({ expired }, 'temporal: expired stale anchors');
+          logger.info('agentic: nightly cycle complete');
+        } catch (err) {
+          logger.error({ err }, 'agentic: nightly cycle failed');
+        }
+      };
+
+      // First run in 5 min (let server settle), then every 6 hours
+      setTimeout(() => { void runCycle(); }, 5 * 60_000);
+      setInterval(() => { void runCycle(); }, 6 * 3600_000);
+    });
+
     // Initialize Meilisearch + Qdrant (non-blocking, graceful if unavailable)
     safeStart('meilisearch-init', async () => {
       const { initMeilisearch, bulkIndexExistingData } = await import('./services/search-index.js');

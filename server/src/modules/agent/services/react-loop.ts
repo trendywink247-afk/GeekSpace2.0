@@ -26,10 +26,11 @@
 
 import { routeChat, type ChatMessage, type Provider } from './llm.js';
 import { parseActions, type ParsedAction } from '../../../services/action-parser.js';
-import { executeAction, type ActionResult } from './action-executor.js';
+import { executeActionWithRecovery, type ActionResult } from './action-executor.js';
 import { logger } from '../../../logger.js';
 import { emitThinking, emitToolCall, emitToolResult, emitResponding, emitDone } from './agent-state-bus.js';
-import { needsConfirmation } from './confirm-action.js';
+import { needsConfirmationForUser } from './confirm-action.js';
+import { recordToolChain } from './tool-chain-service.js';
 
 const MAX_REACT_ITERATIONS = 5;
 
@@ -89,6 +90,7 @@ export async function runReactLoop(
   const workingMessages = [...messages];
   const allActionResults: ActionResult[] = [];
   const allDeferredActions: ParsedAction[] = [];
+  const toolSequenceLog: Array<{ tool: string; success: boolean }> = [];
 
   let finalText = '';
   let totalTokensIn = 0;
@@ -142,7 +144,7 @@ export async function runReactLoop(
       }
 
       // Human-in-the-loop: check if this tool needs confirmation
-      if (opts.onConfirmNeeded && needsConfirmation(action.tool, action.params)) {
+      if (opts.onConfirmNeeded && needsConfirmationForUser(opts.userId, action.tool, action.params)) {
         opts.onStep?.({ type: 'tool_call', content: `Requesting confirmation for ${action.tool}...`, tool: action.tool, iteration: i + 1 });
         const confirmation = await opts.onConfirmNeeded(action.tool, action.params);
         if (!confirmation.approved) {
@@ -165,8 +167,9 @@ export async function runReactLoop(
       opts.onStep?.({ type: 'tool_call', content: toolDesc, tool: action.tool, iteration: i });
       if (opts.agentId) emitToolCall(opts.userId, opts.agentId, action.tool, toolDesc);
 
-      const actionResult = await executeAction(opts.userId, action);
+      const actionResult = await executeActionWithRecovery(opts.userId, action);
       allActionResults.push(actionResult);
+      toolSequenceLog.push({ tool: action.tool, success: actionResult.success });
 
       // Emit tool result step
       const resultSummary = actionResult.success
@@ -211,6 +214,16 @@ export async function runReactLoop(
   }
 
   if (opts.agentId) emitDone(opts.userId, opts.agentId);
+
+  // Record tool chain for future suggestions
+  if (toolSequenceLog.length > 0) {
+    const userMsg = messages.find((m) => m.role === 'user')?.content || '';
+    recordToolChain(
+      opts.userId,
+      typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg),
+      toolSequenceLog,
+    );
+  }
 
   return {
     text: finalText,

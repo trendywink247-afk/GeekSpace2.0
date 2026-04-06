@@ -29,6 +29,7 @@ import goalsRouter from './goals.js';
 import notificationsRouter from './notifications.js';
 import confirmRouter from './confirm.js';
 import feedbackRouter from './feedback.js';
+import inferredGoalsRouter from './inferred-goals.js';
 
 export const agentRouter = Router();
 
@@ -44,5 +45,6 @@ agentRouter.use(goalsRouter);
 agentRouter.use(notificationsRouter);
 agentRouter.use('/confirm', confirmRouter);
 agentRouter.use('/feedback', feedbackRouter);
+agentRouter.use('/inferred-goals', inferredGoalsRouter);
 
 export default agentRouter;

@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../../../logger.js';
+import { config } from '../../../config.js';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ export interface ProcessedFile {
   isImage: boolean;
   base64Preview?: string;
   filePath: string;
+  visionAnalysis?: string;  // Set by describeImageWithVision() for images
 }
 
 // ── Constants ────────────────────────────────────────────────
@@ -50,11 +52,28 @@ export async function processUploadedFile(file: { originalname: string; mimetype
   
   try {
     if (isImage) {
-      // For images: create base64 preview for vision models
+      // For images: create base64 preview AND run vision analysis if Gemini available
       const buffer = file.buffer || fs.readFileSync(file.path);
       result.base64Preview = buffer.toString('base64');
       result.description = `[Image: ${file.originalname} (${formatSize(file.size)})]`;
-      result.extractedText = result.description;
+      
+      // Run vision analysis if Gemini is configured
+      if (config.geminiApiKey) {
+        try {
+          const analysis = await describeImageWithVision(result.base64Preview, file.mimetype);
+          if (analysis) {
+            result.visionAnalysis = analysis;
+            result.extractedText = `${result.description}\n\nVision analysis: ${analysis}`;
+          } else {
+            result.extractedText = result.description;
+          }
+        } catch (err) {
+          logger.debug({ err, file: file.originalname }, 'Vision analysis failed');
+          result.extractedText = result.description;
+        }
+      } else {
+        result.extractedText = result.description;
+      }
     } else if (file.mimetype === 'application/pdf') {
       // PDF: extract text
       try {
@@ -112,4 +131,62 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+/**
+ * Describe an image using Gemini Flash 2.0 (free tier, 1M tokens/day).
+ * Returns a detailed description of what's in the image.
+ */
+async function describeImageWithVision(base64: string, mimeType: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${config.geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: `Analyze this image comprehensively. Describe:
+1. What's in it (objects, text, people, scene)
+2. Any visible text (transcribe exactly)
+3. Code/UI elements if it's a screenshot
+4. Error messages if visible
+5. Context/purpose
+
+Be thorough but concise. If it's a code screenshot, extract the code. If it's an error, extract the error text.`
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64,
+                },
+              },
+            ],
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 800,
+          },
+        }),
+        signal: AbortSignal.timeout(30000),
+      }
+    );
+    
+    if (!response.ok) {
+      logger.debug({ status: response.status }, 'Gemini vision API error');
+      return null;
+    }
+    
+    const data = await response.json() as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text || null;
+  } catch (err) {
+    logger.debug({ err }, 'Vision analysis failed');
+    return null;
+  }
 }

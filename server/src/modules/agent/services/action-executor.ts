@@ -23,6 +23,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+import { getRecoveryStrategy, applyRecoveryStrategy, getRetryDelay } from './error-recovery.js';
 import { db } from '../../../db/index.js';
 import { logger } from '../../../logger.js';
 import { sendAgentEmail, resolveEmailAddress } from '../../../services/email.js';
@@ -2048,4 +2049,57 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
       message: `Action "${tool}" failed: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
+}
+
+/**
+ * Execute an action with automatic error recovery.
+ * Tries fallback tools when the primary tool fails.
+ */
+export async function executeActionWithRecovery(
+  userId: string,
+  action: ParsedAction,
+  maxAttempts = 2,
+): Promise<ActionResult> {
+  let currentAction = action;
+  let lastResult: ActionResult | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    lastResult = await executeAction(userId, currentAction);
+
+    if (lastResult.success) {
+      return lastResult;
+    }
+
+    // Failed — check if we should recover
+    const strategy = getRecoveryStrategy(currentAction.tool, lastResult.message, attempt);
+    if (!strategy || !strategy.shouldRetry) {
+      break;
+    }
+
+    logger.info(
+      { userId, original: currentAction.tool, alternative: strategy.alternativeTool, reason: strategy.reason },
+      'error-recovery: trying alternative',
+    );
+
+    if (strategy.alternativeTool) {
+      currentAction = applyRecoveryStrategy(currentAction, strategy);
+    } else {
+      // Just wait (rate limit case)
+      await new Promise(r => setTimeout(r, getRetryDelay(attempt)));
+    }
+  }
+
+  // All attempts failed — add recovery context to message
+  if (lastResult) {
+    return {
+      ...lastResult,
+      message: `${lastResult.message} (tried ${maxAttempts} alternative${maxAttempts > 1 ? 's' : ''})`,
+    };
+  }
+
+  return {
+    tool: action.tool,
+    success: false,
+    message: 'All recovery attempts failed',
+  };
 }

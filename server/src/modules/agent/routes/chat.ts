@@ -37,6 +37,7 @@ import { routeDelegation, canDelegate, decrementDelegation } from '../../../serv
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
 import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
 import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
+import { isAmbiguous, generateHypotheses, formatHypothesesForPrompt } from '../services/hypothesis-service.js';
 
 const router = Router();
 
@@ -1021,6 +1022,17 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
     const isLocalRoute = !resolvedProvider || resolvedProvider === 'ollama' || resolvedProvider === 'picoclaw';
     const history = getConversationContext(userId, isLocalRoute ? 1500 : 4096, conversationId);
     const messages: ChatMessage[] = [...history, { role: 'user', content: augmentedMessage }];
+
+    // Multi-hypothesis check: inject clarification context if the message is ambiguous
+    if (isAmbiguous(message)) {
+      try {
+        const recentText = history.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n');
+        const hypResult = await generateHypotheses(userId, message, recentText);
+        if (hypResult.shouldClarify) {
+          effectiveSystemPrompt += formatHypothesesForPrompt(hypResult);
+        }
+      } catch { /* non-fatal */ }
+    }
 
     // Route complex queries through deep reasoning engine (10 iterations + self-reflection + delegation)
     const complexity = classifyMessageComplexity(message);

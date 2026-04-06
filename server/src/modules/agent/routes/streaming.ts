@@ -34,6 +34,7 @@ import { buildSystemPrompt } from './chat.js';
 import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
 import { touchSession } from '../../memory/services/session-summary.js';
 import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
+import { isAmbiguous, generateHypotheses, formatHypothesesForPrompt } from '../services/hypothesis-service.js';
 
 const router = Router();
 
@@ -168,6 +169,17 @@ router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: A
       logActivity(String(userId), 'Council complete', `${orchResult.totalAgents} agents responded`, 'sparkles');
       res.end();
       return;
+    }
+
+    // Multi-hypothesis check: inject clarification context if the message is ambiguous
+    if (isAmbiguous(message)) {
+      try {
+        const recentText = history.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n');
+        const hypResult = await generateHypotheses(String(userId), message, recentText);
+        if (hypResult.shouldClarify) {
+          systemPrompt += formatHypothesesForPrompt(hypResult);
+        }
+      } catch { /* non-fatal */ }
     }
 
     // For complex/coding/planning/automation intents, use ReAct loop with visible thinking steps
