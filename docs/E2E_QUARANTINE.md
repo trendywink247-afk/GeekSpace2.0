@@ -1,7 +1,7 @@
 # E2E Test Quarantine
 
 **Last updated:** 2026-04-06
-**Status:** 14 tests quarantined with `test.fixme()`. CI is green.
+**Status:** 9 tests quarantined with `test.fixme()`. CI is green.
 
 ## Background
 
@@ -50,20 +50,6 @@ When you fix one, **delete its row from this file and remove the
 Each row: spec file, test name, observed symptom (from CI run `24044078360`),
 likely root cause to start debugging from. **Fix one at a time, in any order.**
 
-### `e2e/portfolio-agent.spec.ts` — 5 tests
-
-| Line | Test | Symptom |
-|---|---|---|
-| 28 | `should load portfolio page` | 11.8s timeout |
-| 34 | `should show profile tab with headline input` | 11.9s timeout |
-| 40 | `should show skills tab` | 12.3s timeout |
-| 48 | `should show projects tab` | 12.0s timeout |
-| 56 | `should have save button` | 11.9s timeout |
-
-**Start here:** every test in this file times out at the action timeout.
-Almost certainly the portfolio page no longer loads at the URL the test
-expects, OR a tab/element selector changed in the redesign. One fix likely
-unblocks all 5.
 
 ### `e2e/design-consistency.spec.ts` — 6 tests
 
@@ -80,26 +66,6 @@ unblocks all 5.
 `--layer-base`, etc. They ARE defined in `src/index.css`, but maybe inside a
 class scope rather than `:root`. Login-page tests hitting 11.6s suggest the
 test is waiting for an element/route that isn't there post-redesign.
-
-### `e2e/health.spec.ts` — 1 test
-
-| Line | Test | Symptom |
-|---|---|---|
-| 15 | `should load health dashboard page` | 2.0s |
-
-**Start here:** the health dashboard is part of the SPA shell. Likely a
-selector or route change.
-
-### `e2e/stream.spec.ts` — 2 tests
-
-| Line | Test | Symptom |
-|---|---|---|
-| 9 | `health endpoint should return valid JSON` | 35ms (fast fail) |
-| 33 | `stream should handle connection gracefully in UI` | 3.1s |
-
-**Start here:** the 35ms fast-fail is an HTTP error or content-type mismatch.
-Probably 200 with `text/html` instead of `application/json`, or a 404. Run
-`curl -i http://localhost:3001/api/health/stream` to see what comes back.
 
 ---
 

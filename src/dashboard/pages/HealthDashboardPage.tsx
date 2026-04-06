@@ -155,10 +155,17 @@ export function HealthDashboardPage() {
       const res = await fetch(`${apiBase}/api/health`);
       if (res.ok) {
         const data = await res.json();
-        setSnapshot({ ...data, topEndpoints: data.topEndpoints ?? [] });
-        setConnected(false);
-        setError(null);
-        notifyDone('Health data fetched via REST').catch(() => {});
+        // /api/health is a lightweight liveness probe returning { status: 'ok' | 'degraded' }.
+        // Only update the snapshot when the response carries the full dashboard payload
+        // (components, metrics, system). Without this guard, spreading the simple probe
+        // response leaves snapshot.components undefined and causes a render crash.
+        if (data && typeof data.components === 'object' && data.components !== null) {
+          setSnapshot({ ...data, topEndpoints: data.topEndpoints ?? [] });
+          setConnected(false);
+          setError(null);
+          notifyDone('Health data fetched via REST').catch(() => {});
+        }
+        // Simple liveness probe (no components) — keep spinner; SSE will populate
       } else {
         setError('Health API returned an error. Click retry to try again.');
         notifyFail('Health API error').catch(() => {});
