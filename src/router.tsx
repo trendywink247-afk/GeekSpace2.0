@@ -10,18 +10,17 @@
  *  • Silences React Router v7 future-flag warnings
  *
  * Route paths, components, lazy-loading, and auth guards are preserved 1:1.
+ * Auth-guard wrapper components live in src/routeGuards.tsx (separate file
+ * required by react-refresh/only-export-components — this file exports a
+ * non-component constant).
  */
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { RootLayout } from './RootLayout';
-import { LandingPage } from './landing/LandingPage';
-import { DashboardApp } from './dashboard/DashboardApp';
-import { PortfolioView } from './portfolio/PortfolioView';
-import { OnboardingPage } from './onboarding/OnboardingPage';
 import { ExplorePage } from './explore/ExplorePage';
-import { LoginPage } from './onboarding/LoginPage';
 import { ForgotPasswordPage } from './onboarding/ForgotPasswordPage';
+import { PortfolioView } from './portfolio/PortfolioView';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { StatusPage } from './pages/StatusPage';
@@ -29,7 +28,13 @@ import { DocsPage } from './pages/DocsPage';
 import { ConnectPage } from './pages/ConnectPage';
 import { InvitePage } from './pages/InvitePage';
 import OAuthCallbackPage from './onboarding/OAuthCallbackPage';
-import { useAuthStore } from './stores/auth-store';
+import {
+  HomeRoute,
+  LoginRoute,
+  OnboardingRoute,
+  DashboardRoute,
+  RouteErrorFallback,
+} from './routeGuards';
 
 // ---------------------------------------------------------------------------
 // Lazy pages
@@ -46,74 +51,6 @@ const LazySpinner = (
     <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
   </div>
 );
-
-// ---------------------------------------------------------------------------
-// Auth-guard route elements
-//
-// These thin wrapper components replicate the inline auth conditionals that
-// previously lived in the JSX-tree <Route element={…}> props.  They call
-// Zustand store hooks at render time — no loaders needed.
-// ---------------------------------------------------------------------------
-
-/** / — redirect authenticated users to /dashboard */
-function HomeRoute() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
-}
-
-/** /login — redirect authenticated users to /dashboard */
-function LoginRoute() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />;
-}
-
-/** /onboarding — only reachable when signed-in but onboarding incomplete */
-function OnboardingRoute() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const onboardingCompleted = useAuthStore((s) => s.onboarding.completed);
-  if (isAuthenticated && !onboardingCompleted) return <OnboardingPage />;
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
-}
-
-/** /dashboard/* — protected; requires auth + completed onboarding */
-function DashboardRoute() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const onboardingCompleted = useAuthStore((s) => s.onboarding.completed);
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!onboardingCompleted) return <Navigate to="/onboarding" replace />;
-  return <DashboardApp />;
-}
-
-// ---------------------------------------------------------------------------
-// Top-level error element (data-router error boundary)
-//
-// Shown when a loader/action throws or the router itself errors.  React
-// rendering errors are still caught by the <ErrorBoundary> class component
-// inside RootLayout.
-// ---------------------------------------------------------------------------
-function RouteErrorFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-screen p-8 bg-[#05050A]">
-      <div className="text-center max-w-sm">
-        <div className="w-12 h-12 rounded-xl bg-[#FF2D78]/10 border border-[#FF2D78]/20 flex items-center justify-center mx-auto mb-4">
-          <span className="text-xl">⚡</span>
-        </div>
-        <p
-          className="text-[#E8E8F0] text-base font-semibold mb-2"
-          style={{ fontFamily: 'Syne, sans-serif' }}
-        >
-          Something went wrong
-        </p>
-        <button
-          onClick={() => { window.location.href = '/'; }}
-          className="px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-medium text-[#A78BFA] border border-[#A78BFA]/30 hover:bg-[#A78BFA]/10 transition-colors"
-        >
-          Go home
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Router
