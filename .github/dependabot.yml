@@ -1,11 +1,26 @@
 version: 2
 
 updates:
+  # ── Frontend (root npm) ─────────────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # Block major version bumps — these need manual migration
       - dependency-name: "eslint"
@@ -28,27 +43,48 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
-    groups:
-      production-deps:
-        dependency-type: "production"
-      dev-deps:
-        dependency-type: "development"
 
+  # ── Backend (server npm) ────────────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/server"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps-server)"
+    groups:
+      server-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
+      # Block all major version bumps — server deps need careful manual review
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-    groups:
-      production-deps:
-        dependency-type: "production"
-      dev-deps:
-        dependency-type: "development"
 
+  # ── CI / GitHub Actions ─────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
