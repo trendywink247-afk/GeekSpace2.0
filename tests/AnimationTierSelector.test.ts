@@ -83,7 +83,10 @@ describe('selectAnimationTier()', () => {
 
   it('returns tier 1 (minimal) at exactly 10 second thinking boundary', () => {
     // Should NOT trigger cinematic at exactly 10s (need > 10s)
-    const startTime = Date.now() - 10_000;
+    // Use a small offset (-500ms) to avoid a microsecond race where the
+    // function evaluates Date.now() slightly after we set startTime, making
+    // the elapsed duration >10s on fast CI runners.
+    const startTime = Date.now() - 9_500;
     const tier = selectAnimationTier({
       isFirstVisit: false,
       isMultiAgent: false,

@@ -42,7 +42,7 @@ import { directoryRouter } from './routes/directory.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { picoRouter } from './routes/pico.js';
 import { artifactsRouter } from './modules/content/index.js';
-import { metricsMiddleware } from './middleware/metrics.js';
+import { metricsMiddleware, getPrometheusMetrics } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
 import { setupSwagger } from './shared/swagger.js';
 import {
@@ -394,6 +394,15 @@ export function createApp(): express.Application {
     } catch {
       res.json({ users: 0, conversations: 0, messages_today: 0, reminders_created: 0, automations_active: 0, countries: 0, uptime_pct: 99.9 });
     }
+  });
+
+  // ---- Prometheus metrics endpoint — scraped by Prometheus ----
+  // Unauthenticated (internal-only — Prometheus runs in a private Docker network).
+  // Exposes: process stats, HTTP request counts, per-endpoint errors,
+  // SSE connection count, and app-level gauges (users, conversations, goals, etc.)
+  app.get('/api/metrics', (_req, res) => {
+    res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    res.send(getPrometheusMetrics());
   });
 
   // ---- 47.9: Version endpoint — app version + git SHA + env ----
