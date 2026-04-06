@@ -3,10 +3,9 @@
 }
 
 # ---- agentin.chat apex + www → redirect to ai.agentin.chat ----
-# Added 2026-04-06: previously the apex pointed at a stale 2.57.91.91.
-# Once Hostinger DNS A records for `agentin.chat` and `www.agentin.chat`
-# are pointed at this VPS (72.61.253.224), Caddy will provision certs
-# automatically and 308-redirect both to https://ai.agentin.chat.
+# Added 2026-04-06. Once Hostinger DNS A records for `agentin.chat` and
+# `www.agentin.chat` are pointed at this VPS (72.61.253.224), Caddy will
+# provision certs automatically and 308-redirect both to ai.agentin.chat.
 agentin.chat, www.agentin.chat {
 	redir https://ai.agentin.chat{uri} permanent
 }
@@ -33,33 +32,24 @@ ai.geekspace.space {
 
 	# SSE streams — no compression
 	handle /api/agent-state/stream* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
 	}
 	handle /api/activity/stream* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
 	}
 
 	# API calls
 	handle /api/* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
 	}
 	handle /preview/* {
-		reverse_proxy staging:3001
-	}
-
-	# Public pages
-	@staging_public path / /privacy /terms /login /explore /gate.html
-	handle @staging_public {
-		root * /srv
-		header Cache-Control "no-cache"
-		try_files {path} /index.html
-		file_server
+		reverse_proxy localhost:3002
 	}
 
 	# Assets — no long cache for staging (always fresh)
@@ -70,23 +60,17 @@ ai.geekspace.space {
 		file_server
 	}
 
-	# Authenticated users
-	@geekspace_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
-	handle @geekspace_authed {
+	# All other requests → SPA
+	handle {
 		root * /srv
 		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}
-
-	# Everyone else → gate
-	handle {
-		redir * /gate.html
-	}
 }
 
 api.geekspace.space {
-	reverse_proxy staging:3001 {
+	reverse_proxy localhost:3002 {
 		flush_interval -1
 	}
 }
@@ -94,6 +78,14 @@ api.geekspace.space {
 # ---- Production (agentin.chat) ----
 ai.agentin.chat {
 	import common_headers
+
+	# Logo picker — static files, relaxed CSP for external JS
+	handle /logo-picker/* {
+		root * /srv
+		header Cache-Control "no-cache"
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'"
+		file_server
+	}
 
 	# Admin is api-domain only — block on frontend domain
 	# Use route (not handle) so it evaluates in order before auth handlers
@@ -128,15 +120,6 @@ ai.agentin.chat {
 		reverse_proxy geekspace:3001
 	}
 
-	# Public pages — accessible without auth (for Google verification + SEO)
-	@public_pages path / /privacy /terms /login /explore /gate.html
-	handle @public_pages {
-		root * /srv
-		header Cache-Control "no-cache"
-		try_files {path} /index.html
-		file_server
-	}
-
 	# Assets: long-lived cache + compression
 	handle /assets/* {
 		root * /srv
@@ -145,18 +128,12 @@ ai.agentin.chat {
 		file_server
 	}
 
-	# Authenticated users get the SPA directly from Caddy (no Express redirect issues)
-	@agentin_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
-	handle @agentin_authed {
+	# All other requests → SPA
+	handle {
 		root * /srv
 		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
-	}
-
-	# Everyone else → gate
-	handle {
-		redir * /gate.html
 	}
 }
 
@@ -184,30 +161,21 @@ staging.agentin.chat {
 
 	# SSE streams
 	handle /api/agent-state/stream* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
 	}
 	handle /api/activity/stream* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
 	}
 
 	# API calls
 	handle /api/* {
-		reverse_proxy staging:3001 {
+		reverse_proxy localhost:3002 {
 			flush_interval -1
 		}
-	}
-
-	# Public pages
-	@staging2_public path / /privacy /terms /login /explore /gate.html
-	handle @staging2_public {
-		root * /srv
-		header Cache-Control "no-cache"
-		try_files {path} /index.html
-		file_server
 	}
 
 	# Assets
@@ -218,17 +186,23 @@ staging.agentin.chat {
 		file_server
 	}
 
-	# Authenticated users
-	@staging2_authed expression `{http.request.cookie.gs_auth} == "{$GATE_COOKIE_VALUE}"`
-	handle @staging2_authed {
+	# All other requests → SPA
+	handle {
 		root * /srv
 		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}
-
-	# Everyone else → gate
-	handle {
-		redir * /gate.html
-	}
 }
+
+# ---- Claude Code Agent ----
+agent.agentin.chat {
+	reverse_proxy 127.0.0.1:32769
+}
+
+# ---- Grafana Monitoring ----
+monitor.geekspace.space {
+	import common_headers
+	reverse_proxy localhost:3000
+}
+

@@ -88,6 +88,21 @@ jobs:
       - name: Build server
         run: npm --prefix server run build
 
+      - name: Validate Caddyfile (only if changed)
+        run: |
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" 2>/dev/null | grep -q '^caddy/Caddyfile$'; then
+            echo "caddy/Caddyfile changed — validating..."
+            curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz" \
+              | tar -xz -C /tmp caddy
+            sudo install /tmp/caddy /usr/local/bin/caddy
+            caddy validate --config caddy/Caddyfile --adapter caddyfile
+          else
+            echo "caddy/Caddyfile not changed — skipping validation."
+          fi
+        env:
+          BEFORE_SHA: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+          AFTER_SHA: ${{ github.event_name == 'pull_request' && 'HEAD' || github.sha }}
+
       - name: Validate OpenAPI spec
         run: npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components
         continue-on-error: true
@@ -176,6 +191,21 @@ jobs:
 
       - name: Build server
         run: npm --prefix server run build
+
+      - name: Validate Caddyfile (only if changed)
+        run: |
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" 2>/dev/null | grep -q '^caddy/Caddyfile$'; then
+            echo "caddy/Caddyfile changed — validating..."
+            curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz" \
+              | tar -xz -C /tmp caddy
+            sudo install /tmp/caddy /usr/local/bin/caddy
+            caddy validate --config caddy/Caddyfile --adapter caddyfile
+          else
+            echo "caddy/Caddyfile not changed — skipping validation."
+          fi
+        env:
+          BEFORE_SHA: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+          AFTER_SHA: ${{ github.event_name == 'pull_request' && 'HEAD' || github.sha }}
 
       - name: Build frontend
         run: npm run build
