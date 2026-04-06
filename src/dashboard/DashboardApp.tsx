@@ -28,6 +28,7 @@ import { LiveNotificationToast } from '@/components/LiveNotificationToast';
 
 import { useAuthStore } from '@/stores/auth-store';
 import { useDashboardStore } from '@/stores/dashboard-store';
+import { useChatPanelStore } from '@/stores/chat-panel-store';
 import { useThemeStore } from '@/stores/theme-store';
 import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import { agentService } from '@/services/api';
@@ -92,6 +93,17 @@ export function DashboardApp() {
     if (initialMessage) setChatInitialMessage(initialMessage);
     setChatOpen(true);
   }, []);
+
+  // Allow any descendant (e.g. OfficeHomePage's ChatInputBar) to request the
+  // slide-out chat panel via the chat-panel-store, with optional pre-filled text.
+  const pendingChatMessage = useChatPanelStore((s) => s.pendingMessage);
+  const pendingChatNonce = useChatPanelStore((s) => s.nonce);
+  const consumePendingChat = useChatPanelStore((s) => s.consume);
+  useEffect(() => {
+    if (pendingChatNonce === 0) return;
+    openChat(pendingChatMessage ?? undefined);
+    consumePendingChat();
+  }, [pendingChatNonce, pendingChatMessage, openChat, consumePendingChat]);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);

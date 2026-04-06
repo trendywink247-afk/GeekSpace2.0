@@ -391,6 +391,9 @@ export function ChatPage() {
     // Council mode: prefix triggers multi-agent orchestration
     const finalText = councilMode ? `agent council: ${text}` : text;
     if (councilMode) setCouncilMode(false); // auto-off after sending
+    // Clear the input synchronously so the user gets immediate feedback that
+    // their message was accepted, even before the SSE stream starts.
+    setInput('');
     await sendMessage(finalText);
   }, [input, isTyping, sendMessage, councilMode]);
 

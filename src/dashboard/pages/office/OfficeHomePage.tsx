@@ -22,6 +22,7 @@ import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEE
 import type { OfficeData } from './use-office-data';
 import { agentService, agentTasksService } from '@/services/api';
 import { useAuthStore } from '@/stores/auth-store';
+import { useChatPanelStore } from '@/stores/chat-panel-store';
 import SmartSidebar from './SmartSidebar';
 import { GoalsTab } from './GoalsTab';
 import { DigestModal } from './DigestModal';
@@ -351,29 +352,26 @@ function InsightsTab({ weeklyStats }: { weeklyStats: OverviewWeeklyStats | null 
 
 function ChatInputBar() {
   const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasText = input.trim().length > 0;
+  const requestOpenChat = useChatPanelStore((s) => s.requestOpen);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(() => {
     const text = input.trim();
-    if (!text || sending) return;
-    setSending(true);
-    try {
-      await agentService.chat(text, 'web');
-      setInput('');
-      inputRef.current?.focus();
-    } catch {
-      // SSE stream surfaces the response
-    } finally {
-      setSending(false);
-    }
-  }, [input, sending]);
+    if (!text) return;
+    // Open the slide-out AgentChatPanel and have it auto-send this message,
+    // so the user actually sees both their message and the streaming response.
+    // Previously this fired agentService.chat() and dropped the response on
+    // the floor — leaving the spinner stuck and the feed empty.
+    requestOpenChat(text);
+    setInput('');
+    inputRef.current?.focus();
+  }, [input, requestOpenChat]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      void handleSend();
+      handleSend();
     }
   };
 
@@ -392,7 +390,6 @@ function ChatInputBar() {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask an agent..."
-        disabled={sending}
         className="flex-1 text-xs rounded-lg px-3 py-2 outline-none placeholder:text-[var(--ag-text-muted)] disabled:opacity-50 min-h-[36px] transition-shadow duration-200 focus:shadow-[0_0_0_1px_var(--ag-cyan),var(--ag-glow-sm)]"
         style={{
           background: 'rgba(12, 12, 30, 0.8)',
@@ -401,21 +398,17 @@ function ChatInputBar() {
         }}
       />
       <button
-        onClick={() => void handleSend()}
-        disabled={!hasText || sending}
+        onClick={handleSend}
+        disabled={!hasText}
         className="flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 disabled:opacity-40 flex-shrink-0"
         style={{
-          background: hasText && !sending ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
+          background: hasText ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
           color: 'var(--ag-cyan)',
-          boxShadow: hasText && !sending ? 'var(--ag-glow-sm)' : 'none',
+          boxShadow: hasText ? 'var(--ag-glow-sm)' : 'none',
         }}
         aria-label="Send message"
       >
-        {sending ? (
-          <div className="w-3.5 h-3.5 border-2 border-[var(--ag-cyan)]/30 border-t-[var(--ag-cyan)] rounded-full animate-spin" />
-        ) : (
-          <Send className="w-3.5 h-3.5" />
-        )}
+        <Send className="w-3.5 h-3.5" />
       </button>
     </div>
   );
