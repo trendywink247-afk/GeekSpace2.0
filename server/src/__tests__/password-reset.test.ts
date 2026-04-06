@@ -73,7 +73,7 @@ vi.mock('../../src/db/index', () => ({
 global.fetch = vi.fn();
 
 // Import after mocks
-const passwordReset = await import('../../src/services/passwordReset');
+const passwordReset = await import('../../src/services/password-reset');
 
 describe('Password Reset Service', () => {
   beforeEach(() => {

@@ -8,7 +8,7 @@ import {
   StaggeredList,
   LoadingState,
 } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 
 /* ---------- lazy tool imports ---------- */
 const CompressTool = lazy(() =>

@@ -11,9 +11,9 @@ import { InboxCard } from '@/components/dashboard/InboxCard';
 import { GoalsSummaryCard } from '@/components/dashboard/GoalsSummaryCard';
 import { PageShell } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
-import { useAuthStore } from '@/stores/authStore';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
+import { useAuthStore } from '@/stores/auth-store';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { activityService, memoryService, reminderService, dashboardService } from '@/services/api';
 import type { ConversationEntry } from '@/types';
 

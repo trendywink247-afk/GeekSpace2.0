@@ -11,7 +11,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, User, Ticket, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import { authService } from '@/services/api';
 import { PublicPageShell, SectionCard } from '@/components/agentin';
 

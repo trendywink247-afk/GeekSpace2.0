@@ -1,4 +1,4 @@
-// src/dashboard/pages/office/useOfficeData.ts
+// src/dashboard/pages/office/use-office-data.ts
 // Unified office data hook — real-time SSE canvas events + polled sidebar data.
 // Falls back to polling-only if SSE fails, retries SSE every 15s.
 

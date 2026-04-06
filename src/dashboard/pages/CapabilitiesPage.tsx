@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { MessageSquare, Sparkles, Check, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CapabilityCard, PipelineVisualizer, HiddenPowers } from './capabilities';

@@ -21,7 +21,7 @@ import {
   C,
 } from './constants';
 import type { AgentId, SpecialistId } from './types';
-import type { OfficeData } from './useOfficeData';
+import type { OfficeData } from './use-office-data';
 import { createTask, TASK_TYPE_LABELS } from './taskQueue';
 import type { TaskType } from './taskQueue';
 import { agentService } from '@/services/api';

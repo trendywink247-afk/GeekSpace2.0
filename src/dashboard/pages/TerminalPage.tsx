@@ -5,10 +5,10 @@ import { DashboardPageWrapper, SectionCard } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { Terminal as TerminalIcon, Copy, Check, Trash2, Bot, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useAuthStore } from '@/stores/authStore';
-import { useTerminalStore } from '@/stores/terminalStore';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { useTerminalStore } from '@/stores/terminal-store';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { agentService, reminderService, dashboardService, usageService, memoryService } from '@/services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');

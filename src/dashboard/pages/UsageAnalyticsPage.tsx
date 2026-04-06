@@ -41,7 +41,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { usageService } from '@/services/api';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type {
   UsageSummary,
   UsageEvent,

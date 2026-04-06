@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Mic, Wand2, Calendar, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
-import type { ParsedReminder } from '@/utils/reminderParser';
+import { parseNaturalLanguageReminder } from '@/utils/reminder-parser';
+import type { ParsedReminder } from '@/utils/reminder-parser';
 import { NL_EXAMPLES } from './helpers';
 
 interface QuickAddProps {

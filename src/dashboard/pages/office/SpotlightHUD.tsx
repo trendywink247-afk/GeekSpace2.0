@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AGENT_COLORS } from './constants';
 import type { CanvasAgent } from './types';
-import type { OfficeData } from './useOfficeData';
+import type { OfficeData } from './use-office-data';
 
 interface Props {
   agent: CanvasAgent;

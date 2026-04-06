@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   Zap,
   Plus,
@@ -14,7 +14,7 @@ import {
   FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { automationLogService, automationService } from '@/services/api';
 import { confirmAction } from '@/utils/alerts';
 import type { AutomationLog } from '@/types';

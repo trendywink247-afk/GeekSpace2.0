@@ -8,10 +8,10 @@ import { Mic, MicOff, Settings2, MessageSquare, Trash2, Loader2, AlertCircle, Ch
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { toast } from 'sonner';
 import { agentService } from '@/services/api';
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useVoice } from '@/hooks/useVoice';
-import { useTTS } from '@/hooks/useTTS';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useVoice } from '@/hooks/use-voice';
+import { useTTS } from '@/hooks/use-tts';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 
 // -- Types --
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Check, Loader2, Clock, SkipForward, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import { ProfileStep } from './steps/ProfileStep';
 import { BioStep } from './steps/BioStep';
 import { UseCaseStep } from './steps/UseCaseStep';

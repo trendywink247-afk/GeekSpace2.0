@@ -82,7 +82,7 @@ export const EXPAND = {
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-import { timeAgo as luxonTimeAgo } from '@/utils/dateFormat';
+import { timeAgo as luxonTimeAgo } from '@/utils/date-format';
 
 export function formatTime(ms: number): string {
   return luxonTimeAgo(new Date(ms));

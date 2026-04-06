@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, CalendarCheck, Target, Sparkles, Image as ImageIcon, Mic, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { BlurFade } from '@/components/magicui/blur-fade';
 
 interface Suggestion {

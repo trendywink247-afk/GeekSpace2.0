@@ -10,7 +10,7 @@ import {
 
 import { AgentinLogo } from '@/components/AgentinLogo';
 import { SmartSuggestions } from '@/components/SmartSuggestions';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import type { AgentPersonality } from '@/types';
 import type { PageType, MenuGroup } from './types';
 

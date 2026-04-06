@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   BookOpen,
@@ -23,7 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { recipeService } from '@/services/api';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 
 // ----- Echo agent colour ----------------------------------------
 const ECHO = '#6366F1';

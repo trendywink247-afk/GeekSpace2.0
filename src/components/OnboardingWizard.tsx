@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Bell, Zap, Brain, Shield, Wand2, PartyPopper } from 'lucide-react';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { goalsService } from '@/services/api';
 import api from '@/services/api';
 import type { AgentPersonality } from '@/types';

@@ -3,21 +3,21 @@ import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { type VirtuosoHandle } from 'react-virtuoso';
 
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useAuthStore } from '@/stores/authStore';
-import { useVoice } from '@/hooks/useVoice';
-import { useTTS } from '@/hooks/useTTS';
-import { useChatStream } from '@/hooks/useChatStream';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { useVoice } from '@/hooks/use-voice';
+import { useTTS } from '@/hooks/use-tts';
+import { useChatStream } from '@/hooks/use-chat-stream';
 import { memoryService } from '@/services/api';
 
 import { type ChatMessage } from '@/components/ChatMessageBubble';
 import type { AgentPersonality } from '@/types';
 import type { MentionAgent } from '@/components/AgentMentionPopup';
-import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/dateFormat';
+import { timeAgo as luxonTimeAgo, formatDateTime as luxonFormatDateTime, formatDate as luxonFormatDate } from '@/utils/date-format';
 
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
-import { useChatActions } from '@/hooks/useChatActions';
-import { useAgentState } from '@/hooks/useAgentState';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
+import { useChatActions } from '@/hooks/use-chat-actions';
+import { useAgentState } from '@/hooks/use-agent-state';
 import { feedbackService, conversationThreadsService } from '@/services/api';
 import { AgentTheaterPanel, type TheaterEvent } from '@/components/AgentTheaterPanel';
 

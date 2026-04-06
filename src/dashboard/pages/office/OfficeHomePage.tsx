@@ -10,18 +10,18 @@ import OfficeStage from './OfficeStage';
 import { SpotlightHUD } from './SpotlightHUD';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import { InsightToast } from './InsightToast';
-import { useOfficeData } from './useOfficeData';
-import { useOverviewData } from '@/hooks/useOverviewData';
-import type { OverviewReminder, OverviewHabit, OverviewCalendarEvent, OverviewWeeklyStats } from '@/hooks/useOverviewData';
+import { useOfficeData } from './use-office-data';
+import { useOverviewData } from '@/hooks/use-overview-data';
+import type { OverviewReminder, OverviewHabit, OverviewCalendarEvent, OverviewWeeklyStats } from '@/hooks/use-overview-data';
 import {
   CELL, AGENT_META, AGENT_COLORS,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
   CORE_AGENTS,
 } from './constants';
 import type { CanvasAgent, AgentId, CoreAgentId, SpecialistId, InsightCard, SSEEvent, ConnectionMode } from './types';
-import type { OfficeData } from './useOfficeData';
+import type { OfficeData } from './use-office-data';
 import { agentService, agentTasksService } from '@/services/api';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth-store';
 import SmartSidebar from './SmartSidebar';
 import { GoalsTab } from './GoalsTab';
 import { DigestModal } from './DigestModal';

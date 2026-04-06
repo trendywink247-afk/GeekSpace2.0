@@ -140,11 +140,11 @@ describe('88.7 Modals properly sized on mobile', () => {
 
 describe('Mobile infrastructure completeness', () => {
   it('useMobileDetect hook exists', () => {
-    expect(fs.existsSync(path.join(root, 'src', 'hooks', 'useMobileDetect.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(root, 'src', 'hooks', 'use-mobile-detect.ts'))).toBe(true);
   });
 
   it('usePullToRefresh hook exists', () => {
-    expect(fs.existsSync(path.join(root, 'src', 'hooks', 'usePullToRefresh.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(root, 'src', 'hooks', 'use-pull-to-refresh.ts'))).toBe(true);
   });
 
   it('DashboardApp has safe area handling for notch devices', () => {

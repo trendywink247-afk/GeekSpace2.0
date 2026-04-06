@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { PageSkeleton } from '@/components/PageSkeleton';
-import { lazyRetry } from '@/utils/lazyRetry';
+import { lazyRetry } from '@/utils/lazy-retry';
 import type { PageType } from './types';
 
 // ---- Lazy loaded pages for code splitting (with chunk-load retry) ----

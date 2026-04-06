@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 
 interface BottomSheetProps {
   open: boolean;

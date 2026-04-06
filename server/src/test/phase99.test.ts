@@ -54,11 +54,11 @@ beforeAll(() => {
 // 99.1  File existence checks
 // =============================================================================
 describe("99.1 File existence: new voice files", () => {
-  it("useVoice.ts hook exists", () => {
-    expect(fileExists("src/hooks/useVoice.ts")).toBe(true);
+  it("use-voice.ts hook exists", () => {
+    expect(fileExists("src/hooks/use-voice.ts")).toBe(true);
   });
-  it("useTTS.ts hook exists", () => {
-    expect(fileExists("src/hooks/useTTS.ts")).toBe(true);
+  it("use-tts.ts hook exists", () => {
+    expect(fileExists("src/hooks/use-tts.ts")).toBe(true);
   });
   it("VoiceButton.tsx component exists", () => {
     expect(fileExists("src/components/VoiceButton.tsx")).toBe(true);
@@ -71,44 +71,44 @@ describe("99.1 File existence: new voice files", () => {
 // =============================================================================
 // 99.2  useVoice hook: source content checks
 // =============================================================================
-describe("99.2 useVoice.ts source checks", () => {
+describe("99.2 use-voice.ts source checks", () => {
   it("exports useVoice function", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("export function useVoice");
   });
   it("has isSupported check for SpeechRecognition", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("SpeechRecognition");
     expect(src).toContain("isSupported");
   });
   it("returns isListening, isSupported, startListening, stopListening, error", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("isListening");
     expect(src).toContain("startListening");
     expect(src).toContain("stopListening");
     expect(src).toContain("error");
   });
   it("uses continuous: false and interimResults: true", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("continuous = false");
     expect(src).toContain("interimResults = true");
   });
   it("handles onTranscript callback with final transcript", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("onTranscript");
     expect(src).toContain("isFinal");
   });
   it("handles microphone access denied error", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("not-allowed");
     expect(src).toContain("Microphone access denied");
   });
   it("aborts recognition on unmount cleanup", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("abort");
   });
   it("uses webkit fallback for SpeechRecognition", () => {
-    const src = readFrontend("hooks", "useVoice.ts");
+    const src = readFrontend("hooks", "use-voice.ts");
     expect(src).toContain("webkitSpeechRecognition");
   });
 });
@@ -116,32 +116,32 @@ describe("99.2 useVoice.ts source checks", () => {
 // =============================================================================
 // 99.3  useTTS hook: source content checks
 // =============================================================================
-describe("99.3 useTTS.ts source checks", () => {
+describe("99.3 use-tts.ts source checks", () => {
   it("exports useTTS function", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("export function useTTS");
   });
   it("exports stripMarkdown helper", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("stripMarkdown");
   });
   it("uses window.speechSynthesis", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("speechSynthesis");
   });
   it("returns speak, stop, isSpeaking, isSupported", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("speak");
     expect(src).toContain("stop");
     expect(src).toContain("isSpeaking");
     expect(src).toContain("isSupported");
   });
   it("cancels current speech before starting new one", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("cancel");
   });
   it("strips markdown before speaking", () => {
-    const src = readFrontend("hooks", "useTTS.ts");
+    const src = readFrontend("hooks", "use-tts.ts");
     expect(src).toContain("stripMarkdown");
     expect(src).toContain("SpeechSynthesisUtterance");
   });
@@ -250,7 +250,7 @@ describe("99.6 ChatPage.tsx source checks", () => {
   });
   it("auto-reads response when voice mode is on", () => {
     // tts.speak is called in useChatStream hook, not ChatPage directly
-    const src = readFrontend("hooks", "useChatStream.ts");
+    const src = readFrontend("hooks", "use-chat-stream.ts");
     expect(src).toContain("tts.speak");
   });
   it("exports ChatPage", () => {

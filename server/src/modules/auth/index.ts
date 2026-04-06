@@ -41,8 +41,8 @@ export {
   verifyResetOTP,
   resetPassword,
   getUserResetChannels,
-} from './services/passwordReset.js';
-export type { ResetChannel, ResetRequestResult, VerifyOTPResult } from './services/passwordReset.js';
+} from './services/password-reset.js';
+export type { ResetChannel, ResetRequestResult, VerifyOTPResult } from './services/password-reset.js';
 
 export {
   isLoginBlocked,

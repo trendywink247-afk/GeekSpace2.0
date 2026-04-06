@@ -17,8 +17,8 @@ export { renderWebsiteTemplate } from './services/website-templates.js';
 export type { WebsiteParams } from './services/website-templates.js';
 
 // Re-export repository
-export { ArtifactRepository } from './repositories/ArtifactRepository.js';
-export type { ArtifactRow } from './repositories/ArtifactRepository.js';
+export { ArtifactRepository } from './repositories/artifact.repository.js';
+export type { ArtifactRow } from './repositories/artifact.repository.js';
 
 // Types
 export type {

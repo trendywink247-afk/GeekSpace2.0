@@ -7,14 +7,14 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, PageHeader, DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   Clock, Calendar as CalendarIcon, CalendarCheck, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/services/api';
 import { plannerService } from '@/services/api';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
 import type { Reminder } from '@/types';

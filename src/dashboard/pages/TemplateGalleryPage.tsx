@@ -1,7 +1,7 @@
 // Revamped: design tokens, PageShell + PageHeader + SectionCard, forge ownership, useAgentCanvas, mobile 44px
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardPageWrapper, PageHeader, SectionCard } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import {
   Search, Copy, Check, Code, LayoutTemplate,

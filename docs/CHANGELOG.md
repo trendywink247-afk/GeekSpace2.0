@@ -6,6 +6,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-04
+
+### Added
+- **Agentic v2**: conversation threading, human-in-the-loop `ConfirmActionCard` for sensitive tool calls, file upload pipeline (PDF / image / text) into chat, thumbs-up/down feedback loop feeding cognitive memory, and an Agent Theater UI streaming live ReAct steps and delegations (`df77d5a`).
+- **Agentic v3**: world model, uncertainty tracking, temporal anchors, inference, learning, recovery, trust, and vision subsystems in the agent module (`82fe95a`). New DB tables `world_models` and `temporal_anchors` (`640c2d3`).
+- **Prometheus `/api/metrics`** endpoint with full request / LLM / SSE instrumentation (`3ac06ee`). Grafana dashboards wired at `monitor.geekspace.space`.
+- **Backup verification drills** plus Cloudflare runbook and Prometheus → Telegram alert routing via Alertmanager (`2297978`).
+- **E2E Playwright suite in CI**, load-test baseline, security scans, and litestream documentation for SQLite off-box replication (`3e28ba8`).
+- **Multi-agent coordination system** and Office command-center hub (`7d9d5c1`, `e0a4169`).
+- **Cognitive memory + agent observer + per-agent tools** (`63530f3`), agent-initiated notifications, autonomy levels, and a transparent multi-agent delegation UI (`11d359d`, `b9641d0`).
+- **AI Security Layer** middleware with typed guards and monitoring hooks (`63a2c9a`).
+- Claude Bridge sidecar (`:8787`) wrapping Claude Code CLI; Cronicle (`:3012`) running nightly docker reports, smoke tests, and autonomy audits.
+- Agent Zero container exposed at `agent.agentin.chat` for browser-accessible ad-hoc agent work.
+- Design System v2.0: `DashboardPageWrapper`, violet-first tokens, light mode support, new 3D isometric "A" brand mark, and `agentin-tokens.css` design variables (`9e8abcf`, `e1268d4`, `aa391af`, `474d1e3`, `e77b37c`).
+- Frontend design skills + ui-ux-pro-max intelligence installed (`e2188cb`, `4fa9d53`).
+
+### Changed
+- **LLM routing is now intent-based** rather than a flat waterfall: simple/automation hits Groq Llama 3.3 70B first (~0.2s, free), complex/coding hits local Ollama `gemma4` first; both fall through to OpenRouter-free as a safety net (`ddb0e84`). PicoClaw (`qwen2.5-coder:3b`) remains the local triage sidecar. Ollama now runs `gemma4` — legacy `qwen3` models removed (`725f900`).
+- **All 24 large dashboard pages decomposed into sub-components** (`087af4e`, `23fc2d6`); all 39/40 dashboard pages redesigned with the new design intelligence (`109bab4`, `e1268d4`).
+- **ChatPage refactor**: split into 7 modules, fixed mobile layout, added test IDs, added `useChatStream` hook, markdown rendering, conversation sidebar, 15s stream fallback to cloud, 30s timeout, tight message bubbles (`e7077d3`, `cef9df6`, `d03ade6`, `8cde073`, `0ce89ab`, `5cc3a23`).
+- **Office canvas**: lively agent animations, delegation walks, meeting huddles, SSE event pipeline + intent classifier reactivity, mobile fixes (`a515673`, `1ded153`, `ee11dbd`, `cb2fa0e`).
+- **Repo cleanup**: surgical cleanup, archived 13 completed plans/specs/audits, removed orphan scripts, moved `.pi/skills/` → global `~/.pi/agent/skills/` (`d921705`, `fd7d206`, `a013774`, `7394d5e`).
+- `AGENTS.md` rewritten as a master orchestrator brief (v2) with a fresh `.pi/FULL_AUDIT.md` (`bb060a4`).
+
+### Fixed
+- Missing `world_models` and `temporal_anchors` tables (`640c2d3`).
+- Flaky animation test in `ChatPage`/`SpriteTeaser` ref cleanup (`3ac06ee`, `ca0399a`).
+- 18 lint errors across decomposed sub-components; all lint errors from AI security middleware, Design System merge, and staging build failures (`23fc2d6`, `a4b50bd`, `ccb011a`, `8821164`, `64e8426`, `ecf3a80`).
+- Chat 401 on stream endpoint redirects to login; empty messages, typing indicator, state cleanup, disconnect state, mobile bloat, box-in-box layout (`dee5593`, `5cc3a23`, `1957a83`, `0ce89ab`).
+- Dashboard navigation, mobile office layout, telegram bot, canvas layout, feed scroll, duplicate chat input, `/dashboard` URL handling (`cb2fa0e`, `9a99682`).
+- `noUnusedLocals` lint errors (`buildMemoryContext`, `formatMemoryContext`) that were breaking Docker builds (`910288a`).
+- TypeScript errors in the AI security layer; `any` → proper typing (`ddf7349`, `105a29b`).
+- Server tests re-aligned with extracted Dashboard components and `DashboardRouter.tsx` page routing (`427f6fe`, `f41da98`, `9237c8d`).
+
+### Security
+- Full AI Security Layer landed (`63a2c9a`) — middleware, monitoring, typed guards.
+- Nightly security scans + `npm audit` wired into CI (`3e28ba8`).
+- Backup verification drills with off-box replication via litestream; Prometheus alerting to Telegram for drift detection (`2297978`, `3e28ba8`).
+
+### Removed
+- Legacy `qwen3:8b` / `qwen3:14b` Ollama models; replaced by `gemma4` (`725f900`).
+- Orphan `scripts/write_files.py`; 13 completed plans/specs/audits archived out of the live docs tree (`a013774`, `fd7d206`).
+
+---
+
 ## [3.3.0] — 2026-03-28
 
 ### Added

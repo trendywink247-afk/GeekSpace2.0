@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { memoryService } from '@/services/api';
 import { notify } from '@/services/notifications';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type { MemoryEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

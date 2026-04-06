@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { useSearchParams } from 'react-router-dom';
 import { Bell, Plus, Calendar, AlarmClock, CheckCheck, X, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore } from '@/stores/dashboard-store';
 import { reminderService } from '@/services/api';
-import type { ParsedReminder } from '@/utils/reminderParser';
+import type { ParsedReminder } from '@/utils/reminder-parser';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import type { ReminderPriority, Reminder } from '@/types';
 import {

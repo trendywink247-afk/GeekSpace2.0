@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useFeatureFlagStore, useFeatureFlag, useFeatureFlags } from '../useFeatureFlag';
+import { useFeatureFlagStore, useFeatureFlag, useFeatureFlags } from '../use-feature-flag';
 import { featureService } from '@/services/api';
 
 vi.mock('@/services/api', () => ({

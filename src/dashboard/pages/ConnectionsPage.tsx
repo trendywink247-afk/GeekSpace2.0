@@ -9,12 +9,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, Shield, Plus, Link, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { integrationService } from '@/services/api';
 import type { IntegrationType } from '@/types';
 import { notify } from '@/services/notifications';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import {
   fadeUp,
   type TelegramStep,

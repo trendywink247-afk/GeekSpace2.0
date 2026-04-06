@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
+import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
 import {
   Hexagon,
   X, Menu, Clock,
@@ -26,16 +26,16 @@ import { LiveNotificationToast } from '@/components/LiveNotificationToast';
 
 
 
-import { useAuthStore } from '@/stores/authStore';
-import { useDashboardStore } from '@/stores/dashboardStore';
-import { useThemeStore } from '@/stores/themeStore';
-import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { useAuthStore } from '@/stores/auth-store';
+import { useDashboardStore } from '@/stores/dashboard-store';
+import { useThemeStore } from '@/stores/theme-store';
+import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import { agentService } from '@/services/api';
 import { notify } from '@/services/notifications';
 
-import { useLogoutBlocker } from '@/hooks/useLogoutBlocker';
+import { useLogoutBlocker } from '@/hooks/use-logout-blocker';
 
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation } from '@/i18n/use-translation';
 import { DashboardRouter } from './DashboardRouter';
 import { DashboardSidebar } from './DashboardSidebar';
 import { MobileTabBar } from './MobileTabBar';

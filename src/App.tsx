@@ -17,8 +17,8 @@ import { InvitePage } from './pages/InvitePage';
 import OAuthCallbackPage from './onboarding/OAuthCallbackPage';
 const LogoStudioPage = lazy(() => import('./logo-studio/LogoStudioPage').then(m => ({ default: m.LogoStudioPage })));
 const ImageToolsPage = lazy(() => import('./image-tools/ImageToolsPage').then(m => ({ default: m.ImageToolsPage })));
-import { useAuthStore } from './stores/authStore';
-import { useThemeStore } from '@/stores/themeStore';
+import { useAuthStore } from './stores/auth-store';
+import { useThemeStore } from '@/stores/theme-store';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 /** Scroll to #hash on navigation (React Router doesn't do this for SPAs) */

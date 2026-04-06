@@ -12,7 +12,7 @@ import type { Template, TemplateCategory } from '@/types';
 import { type MediaItem } from '@/components/MediaGallery';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { ToolGrid, RecentCreations, TABS } from './creative-studio';
 import type { TabId } from './creative-studio';
 

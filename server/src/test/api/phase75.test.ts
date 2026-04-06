@@ -11,12 +11,12 @@ const ROOT = resolve(__dirname, '../../../..');
 
 describe('Phase 75 — Production Hardening + E2E', () => {
   it('lazyRetry utility exists', () => {
-    expect(existsSync(resolve(ROOT, 'src/utils/lazyRetry.ts'))).toBe(true);
+    expect(existsSync(resolve(ROOT, 'src/utils/lazy-retry.ts'))).toBe(true);
   });
 
   it('DashboardRouter uses lazyRetry instead of bare lazy', () => {
     const content = readFileSync(resolve(ROOT, 'src/dashboard/DashboardRouter.tsx'), 'utf-8');
-    expect(content).toContain("import { lazyRetry } from '@/utils/lazyRetry'");
+    expect(content).toContain("import { lazyRetry } from '@/utils/lazy-retry'");
     expect(content).toContain('lazyRetry(');
     // Should not import lazy from react (Suspense is still imported)
     expect(content).not.toMatch(/import\s*\{[^}]*\blazy\b[^}]*\}\s*from\s*'react'/);

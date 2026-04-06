@@ -1,122 +1,107 @@
-# Agentin — Documentation Map
+# GeekSpace 2.0 — Documentation Map
 
-> Master index of all project documentation. Updated 2026-03-28.
+> Master index of all project documentation. Refreshed 2026-04-06 as part of `chore/repo-cleanup-2026-04`.
+>
+> The `docs/plans/`, `docs/superpowers/`, and `docs/internal/` trees were archived in this cleanup. Historical context now lives in git history; only the canonical, current documents below are tracked.
 
 ---
 
-## Start Here
-
-```mermaid
-graph LR
-    README[README.md] --> DOC_MAP[DOC_MAP.md]
-    DOC_MAP --> DEV[DEVELOPER_GUIDE]
-    DOC_MAP --> ARCH[SOLUTION_ARCHITECTURE]
-    DOC_MAP --> API[API_REFERENCE]
-    DOC_MAP --> OPS[DEVOPS]
-    DOC_MAP --> TEST[TESTING]
-    DOC_MAP --> BIZ[BUSINESS_FEATURES]
-    DOC_MAP --> CHANGE[CHANGELOG]
-    DEV --> CONTRIB[CONTRIBUTING]
-    ARCH --> ADR[ADR-001]
-    ARCH --> DDD[domains.md]
-
-    style README fill:#7B61FF,stroke:#7B61FF,color:#fff
-    style DOC_MAP fill:#FF61DC,stroke:#FF61DC,color:#fff
-```
+## Quick Start by Role
 
 | You are a... | Start with |
 |--------------|-----------|
-| **New developer** | [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) then [CONTRIBUTING](../CONTRIBUTING.md) |
-| **Product / QA** | [BUSINESS_FEATURES](BUSINESS_FEATURES.md) |
-| **DevOps / SRE** | [DEVOPS](DEVOPS.md) then [DEPLOYMENT](DEPLOYMENT.md) |
-| **Architect** | [SOLUTION_ARCHITECTURE](SOLUTION_ARCHITECTURE.md) then [MICROSERVICES_ROADMAP](MICROSERVICES_ROADMAP.md) |
-| **API integrator** | [API_REFERENCE](API_REFERENCE.md) + [openapi.yaml](../openapi/openapi.yaml) |
+| **New developer** | [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) → [REPO_WORKFLOW](REPO_WORKFLOW.md) |
+| **Architect** | [SOLUTION_ARCHITECTURE](SOLUTION_ARCHITECTURE.md) → [../ARCHITECTURE.md](../ARCHITECTURE.md) → [MICROSERVICES_ROADMAP](MICROSERVICES_ROADMAP.md) |
+| **API integrator** | [API_REFERENCE](API_REFERENCE.md) |
+| **DevOps / SRE** | [DEVOPS](DEVOPS.md) → [DEPLOYMENT](DEPLOYMENT.md) → [TROUBLESHOOTING](TROUBLESHOOTING.md) |
+| **Product / QA** | [BUSINESS_FEATURES](BUSINESS_FEATURES.md) → [TESTING](TESTING.md) |
+| **Billing / payments** | [INTEGRATIONS](INTEGRATIONS.md) → [BUSINESS_FEATURES](BUSINESS_FEATURES.md) |
 
 ---
 
-## Core Documentation
-
-These are the primary documents for understanding, operating, and contributing to the platform.
-
-| Document | Path | Audience | Status |
-|----------|------|----------|--------|
-| **Project README** | [`README.md`](../README.md) | Everyone | Active |
-| **Solution Architecture** | [`docs/SOLUTION_ARCHITECTURE.md`](SOLUTION_ARCHITECTURE.md) | Engineers, Architects | Active |
-| **Developer Guide** | [`docs/DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) | Engineers | Active |
-| **API Reference** | [`docs/API_REFERENCE.md`](API_REFERENCE.md) | Engineers, Integrators | Active |
-| **OpenAPI Specification** | [`openapi/openapi.yaml`](../openapi/openapi.yaml) | Engineers, Integrators | Active |
-| **Business Features** | [`docs/BUSINESS_FEATURES.md`](BUSINESS_FEATURES.md) | PMs, BAs, QA | Active |
-| **Testing Guide** | [`docs/TESTING.md`](TESTING.md) | Engineers, QA | Active |
-| **DevOps Guide** | [`docs/DEVOPS.md`](DEVOPS.md) | DevOps, SREs | Active |
-| **Microservices Roadmap** | [`docs/MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) | Architects, Leads | Active |
-| **Infrastructure** | [`infra/README.md`](../infra/README.md) | DevOps, SREs | Active |
-| **Changelog** | [`docs/CHANGELOG.md`](CHANGELOG.md) | Everyone | Active |
-
-## Operational Documentation
+## Getting Started
 
 | Document | Path | Purpose |
 |----------|------|---------|
-| Environment Variables | [`docs/ENV_VARS.md`](ENV_VARS.md) | Complete env var reference with defaults |
-| Deployment Guide | [`docs/DEPLOYMENT.md`](DEPLOYMENT.md) | Production deployment procedures |
-| Troubleshooting | [`docs/TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | Common issues and solutions |
+| Project README | [`../README.md`](../README.md) | Overview, install, quick start |
+| Developer Guide ⭐ | [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) | Zero-to-first-PR walkthrough (refreshed 2026-04-06) |
+| Repo Workflow | [`REPO_WORKFLOW.md`](REPO_WORKFLOW.md) | Branching, PR, pre-push hook conventions |
+| Naming Conventions | [`NAMING_CONVENTIONS.md`](NAMING_CONVENTIONS.md) | File / symbol / route naming standards |
+| Changelog ⭐ | [`CHANGELOG.md`](CHANGELOG.md) | Release history (refreshed 2026-04-06) |
+
+⭐ = recently refreshed in this cleanup pass.
+
+## Architecture
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| Architecture (root) | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | Top-level system diagram & module map |
+| Solution Architecture | [`SOLUTION_ARCHITECTURE.md`](SOLUTION_ARCHITECTURE.md) | Detailed component design and data flow |
+| Microservices Roadmap | [`MICROSERVICES_ROADMAP.md`](MICROSERVICES_ROADMAP.md) | Path from monolith to extracted services |
+| Bounded Contexts (DDD) | [`ddd/domains.md`](ddd/domains.md) | 13 bounded contexts and extraction guidance |
+| Design System | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) | UI tokens, components, accessibility rules |
+
+## API & Integrations
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| API Reference | [`API_REFERENCE.md`](API_REFERENCE.md) | REST endpoints, request/response schemas |
+| Integrations | [`INTEGRATIONS.md`](INTEGRATIONS.md) | Third-party services (Stripe, Razorpay, Telegram, LLMs) |
+| Business Features | [`BUSINESS_FEATURES.md`](BUSINESS_FEATURES.md) | Functional capability inventory |
+
+## Operations
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| DevOps Guide | [`DEVOPS.md`](DEVOPS.md) | Docker stack, CI/CD, monitoring |
+| Deployment Guide | [`DEPLOYMENT.md`](DEPLOYMENT.md) | Production deploy procedures |
+| Backend Config | [`BACKEND_CONFIG.md`](BACKEND_CONFIG.md) | Server runtime configuration |
+| Environment Variables | [`ENV_VARS.md`](ENV_VARS.md) | Complete env var reference with defaults |
+| Troubleshooting | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | Common issues and fixes |
+
+## Testing
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| Testing Guide | [`TESTING.md`](TESTING.md) | Vitest, Supertest, Playwright workflows |
 
 ## Architecture Decision Records
 
+ADRs are immutable historical records of significant technical decisions.
+
 | ADR | Path | Decision |
 |-----|------|----------|
-| ADR-001 | [`docs/adr/ADR-001-llm-waterfall-phase111.md`](adr/ADR-001-llm-waterfall-phase111.md) | 7-tier LLM waterfall with intent-based routing |
+| ADR-001 | [`adr/ADR-001-llm-waterfall-phase111.md`](adr/ADR-001-llm-waterfall-phase111.md) | 7-tier LLM waterfall with intent-based routing |
 
-## Domain-Driven Design
+## Assets
 
-| Document | Path | Purpose |
-|----------|------|---------|
-| Bounded Context Map | [`docs/ddd/domains.md`](ddd/domains.md) | 13 bounded contexts with extraction guidance |
-
-## Internal / Historical
-
-These are development-time documents preserved for context. Not authoritative for current state.
-
-| Category | Path | Contents |
-|----------|------|----------|
-| Active Plans | `docs/plans/` | Current phase plans (react-loop, full-site-audit, revamp-p0) |
-| Superpowers Plans | `docs/superpowers/plans/` | Agent office redesign (Mar 2026) |
-| Superpowers Specs | `docs/superpowers/specs/` | 3 design specs (agent office, activity stream) |
-| Audit Reports | `docs/internal/audit/` | Integrity baselines, final reports |
-| Internal Audits | `docs/internal/` | Routing audit, sandbox security/integration, benchmark findings |
-
-## Operations (ops/)
-
-| Document | Path | Purpose |
-|----------|------|---------|
-| AI Handoff | `ops/AI_HANDOFF.md` | Session-by-session development history (Sessions 1-10) |
-| AI Phase Plan | `ops/AI_PHASE_PLAN.md` | Master phase roadmap (Phases 1-89+) |
-| AI Lessons | `ops/AI_LESSONS.md` | Lessons learned across development sessions |
-| Feature Matrix | `ops/AI_FEATURE_MATRIX.md` | Feature availability by subscription tier |
-| Risk Register | `ops/AI_RISK_REGISTER.md` | Known risks and mitigations |
-| Master Audit | `ops/MASTER_AUDIT_2026.md` | Comprehensive component audit |
-| Capabilities Audit | `ops/CAPABILITIES_AUDIT.md` | Feature capability assessment |
-| Launch Checklist | `ops/LAUNCH_CHECKLIST.md` | Production launch verification |
-| Mobile Audit | `ops/MOBILE_AUDIT.md` | Mobile responsiveness audit |
-| VPS Audit | `ops/VPS_AUDIT.md` | VPS infrastructure audit |
-| Decisions Log | `ops/DECISIONS.md` | Architecture/product decisions |
-| Test Reports | `ops/TEST_REPORT_20260319.md` | Test execution results |
-| Cronicle Config | `ops/cronicle/README.md` | Scheduled job configuration |
+| Path | Purpose |
+|------|---------|
+| [`assets/banner.svg`](assets/banner.svg) | Project banner image used in README |
 
 ---
 
 ## Cross-Linking Conventions
 
-All documents in this project follow these conventions:
+1. **Paths** — Use repo-root-relative links (e.g. `docs/SOLUTION_ARCHITECTURE.md`).
+2. **Section anchors** — Use Markdown heading anchors for deep links.
+3. **Related Documents** — Every long-form doc ends with a "Related Documents" section.
+4. **Bidirectional** — If doc A links to doc B, doc B should link back.
+5. **No dead links** — Run `grep -r "docs/plans\|docs/superpowers\|docs/internal" docs/` should return zero results after the cleanup.
 
-1. **Paths** — Use repo-root-relative paths (e.g., `docs/SOLUTION_ARCHITECTURE.md`)
-2. **Section links** — Use Markdown heading anchors (e.g., `docs/DEVOPS.md#docker-services`)
-3. **Related docs** — Every document ends with a "Related Documents" section
-4. **Bidirectional** — If doc A links to doc B, doc B links back to doc A
+## Recently Archived (2026-04-06)
+
+The following directories were removed from `docs/` and now live only in git history. Do not re-create them — propose a focused doc in `docs/` instead.
+
+- `docs/plans/` — phase plans (react-loop, full-site-audit, revamp-p0)
+- `docs/superpowers/` — agent office redesign specs and plans
+- `docs/internal/` — routing audit, sandbox security, benchmark findings
 
 ## Related Documents
 
-- [README.md](../README.md) — Project overview and quick start
-- [docs/SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md) — System architecture
-- [docs/API_REFERENCE.md](API_REFERENCE.md) — API endpoint documentation
-- [docs/ENV_VARS.md](ENV_VARS.md) — Environment variable reference
-- [docs/DEPLOYMENT.md](DEPLOYMENT.md) — Deployment procedures
+- [README.md](../README.md) — Project overview
+- [ARCHITECTURE.md](../ARCHITECTURE.md) — Top-level architecture
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) — Build, test, ship
+- [SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md) — System design
+- [API_REFERENCE.md](API_REFERENCE.md) — REST API
+- [DEVOPS.md](DEVOPS.md) — Operations

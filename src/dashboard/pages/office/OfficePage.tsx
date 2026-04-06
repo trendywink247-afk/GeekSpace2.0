@@ -10,8 +10,8 @@ import SmartSidebar from './SmartSidebar';
 import { InsightToast } from './InsightToast';
 import { DigestModal } from './DigestModal';
 import { generateSuggestions } from './proactiveSuggestions';
-import { useOfficeData } from './useOfficeData';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useOfficeData } from './use-office-data';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { isFirstVisit, markVisited } from './AnimationTierSelector';
 import { agentService, agentTasksService } from '@/services/api';
 import {

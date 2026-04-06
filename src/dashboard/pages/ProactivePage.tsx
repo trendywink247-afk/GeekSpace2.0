@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import api from "@/services/api";
 import { PageShell, PageHeader, SectionCard, DashboardPageWrapper } from "@/components/agentin";
 import { BlurFade } from "@/components/magicui/blur-fade";
-import { useAgentCanvas } from "@/hooks/useAgentCanvas";
+import { useAgentCanvas } from "@/hooks/use-agent-canvas";
 import { MessageList } from "./proactive/MessageList";
 import { SettingsPanel } from "./proactive/SettingsPanel";
 import {

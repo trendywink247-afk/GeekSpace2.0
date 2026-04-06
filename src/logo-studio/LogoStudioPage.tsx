@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Palette, Sparkles, ChevronDown } from 'lucide-react';
-import { useLogoStudio } from './useLogoStudio';
+import { useLogoStudio } from './use-logo-studio';
 import { LogoPreview } from './components/LogoPreview';
 import { LogoControls } from './components/LogoControls';
 import { VariantGrid } from './components/VariantGrid';
@@ -22,7 +22,7 @@ import {
   SectionHeader,
   StatusBadge,
 } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import type { LogoParams } from './types';
 import type { WizardResult } from './components/LogoWizard';
 

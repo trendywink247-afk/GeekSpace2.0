@@ -2,12 +2,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageShell, PageHeader } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useAgentCanvas } from '@/hooks/useAgentCanvas';
+import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { Zap, RefreshCw, Settings2, Timer, CheckCircle, XCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
-import { useMobileDetect } from '@/hooks/useMobileDetect';
+import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { picoService } from '@/services/api';
 import type { PicoAgentFull, PicoCronJob } from '@/services/api';
 import {

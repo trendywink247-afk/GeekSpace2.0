@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Reminder, ReminderCategory } from '@/types';
-import { parseNaturalLanguageReminder } from '@/utils/reminderParser';
-import type { ParsedReminder } from '@/utils/reminderParser';
+import { parseNaturalLanguageReminder } from '@/utils/reminder-parser';
+import type { ParsedReminder } from '@/utils/reminder-parser';
 import { humanDue, priorityConfig } from './helpers';
 import type { NewReminderForm } from './types';
 
