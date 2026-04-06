@@ -1,108 +1,76 @@
 # GeekSpace 2.0 — Full System Audit
-**Date**: 2026-04-05T23:02Z
-**VPS**: 8 cores, 31GB RAM (17GB used, 13GB available), 387GB disk (27% used — 284GB free)
-**Reclaimed**: 127GB Docker build cache this session
+
+**Date:** 2026-04-06
+**Branch:** `chore/repo-cleanup-2026-04` (9 commits ahead of main)
+**VPS:** 8 cores, 31GB RAM, ~284GB free disk
+**Refreshed by:** Master orchestrator (post-cleanup audit)
 
 ---
 
-## KNOWN BUGS
+## 1. VPS state
 
-### BUG 1: Ollama gemma4 slow on CPU (33-45s for tool-use)
-- **Mitigated**: Simple intents now route to Groq 70B first (0.2s)
-- Complex/coding still uses Ollama (10-45s) — acceptable with streaming
-- **Fully fixed when**: GPU inference or faster local model
+- **Containers:** 23 running (was 22; includes alertmanager separately)
+  - GeekSpace stack (10): app, staging, redis ×2, picoclaw, browser, meilisearch, qdrant, searxng, uptime-kuma
+  - Monitoring (6): grafana, prometheus, alertmanager, loki, promtail, cadvisor
+  - External (4): ollama, agent-zero, claude-bridge, cronicle
+  - Utility (3): crawl4ai, healthchecks, healthchecks-postgres
+- **All healthy:** yes ✅
 
-### BUG 2: Docker sandbox unavailable on staging
-- Docker socket not mounted (by design — security)
-- Sandbox features disabled in staging
-- **Status**: Won't fix (security tradeoff)
+## 2. Repo state (after cleanup)
 
-### BUG 3: Prometheus node-exporter networking broken
-- Container can serve metrics on localhost but unreachable from other containers on bridge network
-- **Mitigated**: Using cAdvisor for all host+container metrics (provides 4800+ metrics)
-- Node-exporter removed from stack
+- **Source files:** ~1,977 tracked (excluding node_modules/.git/dist)
+- **Server modules:** 18 in `server/src/modules/`
+- **Server .ts files:** 504
+- **Dashboard pages:** 202 .tsx files in `src/dashboard/`
+- **Frontend .tsx total:** 399
+- **Root docs:** AGENTS, CLAUDE, README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, **ARCHITECTURE** (new)
+- **docs/:** 19 files (down from 32 — 13 stale archived off-repo)
+- **Archive location:** `/root/geekspace-archives/2026-04/` (off-repo, on VPS)
 
----
+## 3. Recent work
 
-## Infrastructure — 22 Containers
+- **Main latest:** `7394d5e chore: move .pi/skills/ to global`
+- **Branch:** `chore/repo-cleanup-2026-04` — 9 commits:
+  1. Remove orphan scripts/write_files.py + on-disk junk
+  2. Archive 13 completed plans/specs/audits → VPS
+  3. Refresh README, CLAUDE.md, CHANGELOG
+  4. Refresh DEVELOPER_GUIDE, regenerate DOC_MAP
+  5. Add ARCHITECTURE.md and NAMING_CONVENTIONS.md
+  6. Kebab-case low-risk files (utils + server routes/services) — 8 files
+  7. Kebab-case src/stores — 4 files, 43 importers
+  8. Kebab-case src/hooks — 16 files, 70 files touched
+  9. Kebab-case server repositories — 6 files
 
-| Service | Container | Port | Status | Purpose |
-|---------|-----------|------|--------|---------|
-| **Production** | geekspace-app | 127.0.0.1:3001 | ✅ healthy | Main API + frontend |
-| **Staging** | geekspace-staging | 127.0.0.1:3002 | ✅ healthy | Staging (auto-deploy on main push) |
-| **Redis (prod)** | geekspace-redis | 127.0.0.1:6379 | ✅ healthy | Cache + sessions + queue |
-| **Redis (staging)** | geekspace-staging-redis | internal | ✅ healthy | Staging cache (isolated) |
-| **PicoClaw** | geekspace-picoclaw | 127.0.0.1:8080 | ✅ healthy | AI triage (qwen2.5-coder:3b) |
-| **Browser** | geekspace-browser | internal:3010 | ✅ healthy | Playwright automation |
-| **Meilisearch** | geekspace-meilisearch | internal:7700 | ✅ healthy | Full-text search |
-| **Qdrant** | geekspace-qdrant | internal:6333 | ✅ healthy | Vector DB (semantic memory) |
-| **SearXNG** | geekspace-searxng | internal:8080 | ✅ healthy | Metasearch engine |
-| **Uptime Kuma** | geekspace-uptime-kuma | 127.0.0.1:3100 | ✅ healthy | Status monitoring |
-| **Ollama** | ollama-qtzz-ollama-1 | 127.0.0.1:11434 | ✅ healthy | LLM (gemma4:e4b, nomic-embed-text, qwen2.5-coder:3b) |
-| **Grafana** | grafana | 127.0.0.1:3000 | ✅ running | Dashboards (2 datasources, 2 dashboards) |
-| **Prometheus** | prometheus | 127.0.0.1:9090 | ✅ running | Metrics (2/2 targets up) |
-| **Loki** | loki | 127.0.0.1:3101 | ✅ running | Log aggregation |
-| **Promtail** | promtail | — | ✅ running | Log shipping |
-| **cAdvisor** | cadvisor | 127.0.0.1:8081 | ✅ healthy | Container + host metrics |
-| **Agent Zero** | agent-zero-e5ng | 127.0.0.1:32769 | ✅ running | AI agent (browser UI) |
-| **Claude Bridge** | claude-bridge | 127.0.0.1:8787 | ✅ running | Claude Code HTTP sidecar |
-| **Cronicle** | cronicle-ngym | 127.0.0.1:3012 | ✅ running | Job scheduler (3 active jobs) |
-| **Crawl4AI** | crawl4ai-ykgs | 127.0.0.1:11235 | ✅ healthy | Web scraping (v0.5.1) |
-| **Healthchecks** | healthchecks-kraj | 127.0.0.1:63730 | ✅ healthy | Cron monitoring |
-| **Postgres (HC)** | healthchecks-postgres | internal:5432 | ✅ healthy | Healthchecks DB |
+## 4. Naming standard
 
-## Networks
-| Network | Type | Connects |
-|---------|------|----------|
-| geekspace-net | internal bridge | All GeekSpace services |
-| geekspace-shared | external bridge | GeekSpace ↔ Ollama ↔ external stacks |
-| monitoring_monitoring | internal bridge | Grafana, Prometheus, Loki, Promtail, cAdvisor |
+See `docs/NAMING_CONVENTIONS.md`. Now enforced across:
+- ✅ src/utils/, src/stores/, src/hooks/
+- ✅ server/src/routes/ (api-keys.ts)
+- ✅ server/src/services/ (contact-router, password-reset)
+- ✅ server/src/repositories/ + server/src/modules/*/repositories/
+- Shadcn primitives under src/components/ui/ intentionally stay kebab-case
+- Remaining camelCase/PascalCase in the codebase is limited to React component files (correct)
 
-## Domains (Caddy)
-| Domain | Target | Purpose |
-|--------|--------|---------|
-| ai.agentin.chat | geekspace:3001 | Production |
-| api.agentin.chat | geekspace:3001 | Production API |
-| staging.agentin.chat | localhost:3002 | Staging |
-| ai.geekspace.space | localhost:3002 | Staging (alt) |
-| status.agentin.chat | localhost:3100 | Uptime Kuma |
-| agent.agentin.chat | localhost:32769 | Agent Zero |
-| monitor.geekspace.space | localhost:3000 | Grafana |
+## 5. Build health
 
-## Cron Jobs
-| Source | Schedule | What |
-|--------|----------|------|
-| crontab | 0 3 * * * | geekspace-backup.sh |
-| crontab | 0 */4 * * * | health-check.sh |
-| Cronicle | Sun 9:30 | Docker space report |
-| Cronicle | Daily 9:10 | Staging smoke test |
-| Cronicle | Daily 3:30 | Autonomy audit |
+- Frontend `npx tsc -b --noEmit`: ✅ clean
+- Server `npx tsc --noEmit`: ✅ clean
+- `npx vite build`: ✅ builds (same chunk-size warnings as before, pre-existing)
+- Tests: not re-run this audit (last known green)
 
-## Security
-- ✅ UFW active: only 22, 80, 443 open
-- ✅ All Docker ports bound to 127.0.0.1
-- ✅ SSH: PermitRootLogin prohibit-password (key only)
-- ✅ fail2ban active
-- ⚠️ Agent Zero: privileged + Docker socket + full host mount (by design)
-- ⚠️ 4 containers mount Docker socket (Agent Zero, Promtail, cAdvisor, Cronicle)
+## 6. Open action items
 
-## Git State
-- Branch: main
-- Last commits: b14fb80 (monitoring/skills/sidebar) ← ddb0e84 (LLM routing) ← 029915d (test fixes) ← df77d5a (agentic v2)
-- CI: ✅ Green — staging deployed
-- Production: ready for manual deploy
+- **Chunk size:** `ConvertTool`, `blocknote`, `ChatPage` > 600 kB — consider manualChunks (pre-existing, tracked separately).
+- **Repository consolidation:** `server/src/repositories/` still exists alongside `server/src/modules/*/repositories/`. Legacy location has only 2 files (now kebab'd). Future refactor: move into modules.
+- **DEVELOPER_GUIDE §5 + §7:** recipes still reference legacy `server/src/routes/bookmarks.ts` and `DashboardApp.tsx`. Flagged by refresh agent; update when the module migration completes.
+- **Lint filename rule:** recommend adding `unicorn/filename-case` to ESLint in a follow-up PR to enforce kebab-case automatically.
+- **Secrets rotation:** user scheduled for next 2-3 days (`.env`, `.env.staging`).
 
-## Ollama Models
-| Model | Size | Purpose |
-|-------|------|---------|
-| gemma4:e4b | 9.6GB | Complex/coding (local Tier 1) |
-| qwen2.5-coder:3b | 1.9GB | PicoClaw triage |
-| nomic-embed-text | 0.3GB | Embeddings |
+## 7. Files archived off-repo
 
-## LLM Routing (current)
-```
-Simple/automation → Groq 70B (0.2s, free) → Ollama → OpenRouter-free
-Complex/coding    → Ollama gemma4 (local) → Groq → OpenRouter-free
-Triage           → PicoClaw (qwen2.5-coder:3b)
-Embeddings       → nomic-embed-text (local)
-```
+`/root/geekspace-archives/2026-04/` (13 files + README):
+- `plans/` — 3 phase plans (Mar 5–7)
+- `superpowers/` — 6 Agent Office + Visual Feedback specs (Mar 19–20)
+- `internal/` — 4 sandbox/routing audits (Mar 28)
+
+Restore procedure documented in the archive README.
