@@ -97,7 +97,7 @@ describe('84.8 ImageGallery: download button touch-accessible', () => {
   });
 
   it('images use lazy loading', () => {
-    const content = readSrc('dashboard/pages/ImageCreatorPage.tsx');
+    const content = readSrc('dashboard/pages/image-creator/ImageCard.tsx');
     expect(content).toContain('loading="lazy"');
   });
 });

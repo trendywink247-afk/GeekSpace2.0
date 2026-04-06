@@ -122,7 +122,7 @@ describe('B3: Memory Hub card overflow (successor to MemoryManager)', () => {
 
   it('memory hub uses shared components', () => {
     const content = readSrc('dashboard/pages/MemoryHubPage.tsx');
-    expect(content).toContain('MemoryHubComponents');
+    expect(content).toContain("from './memory-hub'");
   });
 });
 
@@ -145,12 +145,12 @@ describe('B4: Website Builder tab scrollability', () => {
 
 describe('C4: Connections WhatsApp Coming Soon card', () => {
   it('WhatsApp shows Coming Soon badge instead of QR', () => {
-    const content = readSrc('dashboard/pages/ConnectionsPage.tsx');
+    const content = readSrc('dashboard/pages/connections/IntegrationCard.tsx');
     expect(content).toContain('Coming Soon');
   });
 
   it('WhatsApp connect button is replaced with Coming Soon for whatsapp type', () => {
-    const content = readSrc('dashboard/pages/ConnectionsPage.tsx');
+    const content = readSrc('dashboard/pages/connections/IntegrationCard.tsx');
     expect(content).toContain("connection.type === 'whatsapp'");
   });
 });
@@ -159,13 +159,13 @@ describe('C4: Connections WhatsApp Coming Soon card', () => {
 
 describe('C5: Settings API keys text overflow', () => {
   it('API key label has truncate to prevent overflow', () => {
-    const content = readSrc('dashboard/pages/SettingsPage.tsx');
+    const content = readSrc('dashboard/pages/settings/ApiKeysTab.tsx');
     // Should have truncate on the key label
     expect(content).toContain('truncate');
   });
 
   it('API key text container has min-w-0', () => {
-    const content = readSrc('dashboard/pages/SettingsPage.tsx');
+    const content = readSrc('dashboard/pages/settings/ApiKeysTab.tsx');
     expect(content).toContain('min-w-0');
   });
 });

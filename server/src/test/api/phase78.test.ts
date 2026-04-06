@@ -85,17 +85,20 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.5: WhatsApp Coming Soon (QR/disclaimer flow removed) ──────────────
   describe('78.5: WhatsApp Coming Soon state in ConnectionsPage', () => {
     it('shows Coming Soon badge for WhatsApp (QR/disclaimer flow removed)', () => {
-      const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
+      // WhatsApp Coming Soon UI extracted to connections/IntegrationCard.tsx
+      const src = readFile('src/dashboard/pages/connections/IntegrationCard.tsx');
       expect(src).toContain('Coming Soon');
     });
 
     it('WhatsApp card renders Coming Soon badge not a connect button', () => {
-      const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
+      // WhatsApp type check extracted to connections/IntegrationCard.tsx
+      const src = readFile('src/dashboard/pages/connections/IntegrationCard.tsx');
       expect(src).toContain("connection.type === 'whatsapp'");
     });
 
     it('WhatsApp is still listed as an integration type', () => {
-      const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
+      // WhatsApp integration check in connections/IntegrationCard.tsx
+      const src = readFile('src/dashboard/pages/connections/IntegrationCard.tsx');
       expect(src).toContain('whatsapp');
     });
   });
@@ -113,7 +116,8 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
     });
 
     it('displays last message time for Telegram connections', () => {
-      const src = readFile('src/dashboard/pages/ConnectionsPage.tsx');
+      // Last message display extracted to connections/IntegrationCard.tsx
+      const src = readFile('src/dashboard/pages/connections/IntegrationCard.tsx');
       expect(src).toContain('Last message:');
     });
   });

@@ -1,355 +1,38 @@
 // ============================================================
-// PlannerPage — Sunsama-inspired daily time-block planner
-// HTML5 drag-and-drop, API persistence with localStorage cache
+// PlannerPage — state, data fetching, and event orchestration
+// Visual rendering delegated to planner/PlanView
 // ============================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
-import { DashboardPageWrapper } from '@/components/agentin';
+import { useNavigate } from 'react-router-dom';
+import { PageShell, PageHeader, DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
-import { useNavigate } from 'react-router-dom';
 import {
-  Bell, Flame, Plus, ChevronLeft, ChevronRight, Clock,
-  GripVertical, Trash2, X, CalendarCheck, LayoutGrid,
-  Calendar as CalendarIcon, Sparkles,
+  Clock, Calendar as CalendarIcon, CalendarCheck, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import api from '@/services/api';
-import { plannerService, type PlannerBlock } from '@/services/api';
+import { plannerService } from '@/services/api';
 import { useDashboardStore } from '@/stores/dashboardStore';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
 import type { Reminder } from '@/types';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+import {
+  PlanView,
+  TYPE_COLORS, LS_KEY, generateId, dateKey, isSameDay,
+  apiBlockToLocal, localBlockToApi, formatHour,
+} from './planner';
+import type { TimeBlock, HabitItem, BacklogItem } from './planner';
 
-interface TimeBlock {
-  id: string;
-  title: string;
-  startHour: number;  // 6–23, decimal for sub-hour (e.g. 6.5 = 6:30)
-  duration: number;    // hours (0.25, 0.5, 1, 2)
-  type: 'reminder' | 'habit' | 'custom';
-  color: string;
-  reminderId?: string;
-  habitId?: number;
-}
-
-interface HabitItem {
-  id: number;
-  name: string;
-  icon: string;
-  description: string | null;
-  frequency: string;
-  current_streak: number;
-  longest_streak: number;
-  logged_today: boolean;
-}
-
-interface BacklogItem {
-  id: string;
-  title: string;
-  type: 'reminder' | 'habit';
-  priority?: string;
-  icon: 'bell' | 'flame';
-  sourceId: string | number;
-}
-
-// ── Constants ──────────────────────────────────────────────────────────────
-
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
-const LS_KEY = 'agentin:planner:blocks';
-const DURATION_OPTIONS = [
-  { label: '15m', value: 0.25 },
-  { label: '30m', value: 0.5 },
-  { label: '1h', value: 1 },
-  { label: '2h', value: 2 },
-];
-
-const TYPE_COLORS: Record<string, string> = {
-  reminder: '#A78BFA',
-  habit: '#22C55E',
-  custom: '#8B5CF6',
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  urgent: '#EF4444',
-  high: '#F97316',
-  normal: '#A78BFA',
-  low: '#6B7280',
-};
-
-function formatHour(h: number): string {
-  const hour = Math.floor(h);
-  const min = Math.round((h - hour) * 60);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:${min.toString().padStart(2, '0')} ${ampm}`;
-}
-
-function formatDate(d: Date): string {
-  return DateTime.fromJSDate(d).toLocaleString({ weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function dateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function isSameDay(d1: Date, d2: Date): boolean {
-  return dateKey(d1) === dateKey(d2);
-}
-
-// ── API ↔ Local conversion helpers ──────────────────────────────────────
-
-function apiBlockToLocal(b: PlannerBlock): TimeBlock {
-  // sort_order encodes startHour * 100 (e.g. 950 = 9.5 = 9:30 AM)
-  const startHour = b.sort_order > 0 ? b.sort_order / 100 : 9;
-  const category = b.category as TimeBlock['type'];
-  const type = (['reminder', 'habit', 'custom'].includes(category)) ? category : 'custom';
-  return {
-    id: b.id,
-    title: b.title,
-    startHour,
-    duration: b.duration / 60, // minutes → hours
-    type,
-    color: b.color,
-    reminderId: b.source === 'reminder' ? (b.source_id ?? undefined) : undefined,
-    habitId: b.source === 'habit' && b.source_id ? Number(b.source_id) : undefined,
-  };
-}
-
-function localBlockToApi(b: TimeBlock, date: string): {
-  title: string; date: string; duration: number; color: string;
-  category: string; sort_order: number; source: string; source_id?: string;
-} {
-  return {
-    title: b.title,
-    date,
-    duration: Math.round(b.duration * 60), // hours → minutes
-    color: b.color,
-    category: b.type,
-    sort_order: Math.round(b.startHour * 100),
-    source: b.reminderId ? 'reminder' : b.habitId ? 'habit' : 'manual',
-    source_id: b.reminderId ?? (b.habitId ? String(b.habitId) : undefined),
-  };
-}
-
-function generateId(): string {
-  return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────
-
-function StatBadge({
-  label, value, suffix, accent,
-}: {
-  label: string;
-  value: number;
-  suffix: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline gap-1">
-      <span className={`text-lg font-bold font-heading tabular-nums ${accent ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
-        {value}{suffix}
-      </span>
-      <span className="text-[10px] text-[var(--ag-text-secondary)] uppercase tracking-wider">{label}</span>
-    </div>
-  );
-}
-
-function BacklogCard({
-  item,
-  onDragStart,
-}: {
-  item: BacklogItem;
-  onDragStart: (item: BacklogItem) => void;
-}) {
-  const borderColor = item.type === 'reminder' ? '#A78BFA' : '#22C55E';
-  const priorityColor = item.priority ? PRIORITY_COLORS[item.priority] || '#6B7280' : undefined;
-
-  return (
-    <div
-      draggable
-      onDragStart={() => onDragStart(item)}
-      className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-grab active:cursor-grabbing active:scale-[0.96]
-        shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_4px_rgba(0,0,0,0.18)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.18),0_4px_12px_rgba(0,0,0,0.28)]
-        bg-[var(--ag-active-bg)] hover:bg-[var(--ag-bg-surface-hover)]
-        transition-[transform,box-shadow] duration-150 select-none min-h-[44px]"
-      style={{
-        borderLeftWidth: 3,
-        borderLeftColor: `${borderColor}60`,
-      }}
-    >
-      <GripVertical className="w-3 h-3 text-[var(--ag-text-secondary)]/40 flex-shrink-0 group-hover:text-[var(--ag-text-secondary)]" />
-
-      <div
-        className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: `${borderColor}15` }}
-      >
-        {item.icon === 'bell' ? (
-          <Bell className="w-3.5 h-3.5" style={{ color: borderColor }} />
-        ) : (
-          <Flame className="w-3.5 h-3.5" style={{ color: borderColor }} />
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-[var(--ag-text-primary)] truncate leading-relaxed">{item.title}</p>
-      </div>
-
-      {priorityColor && item.priority && item.priority !== 'normal' && (
-        <span
-          className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0"
-          style={{
-            color: priorityColor,
-            backgroundColor: `${priorityColor}18`,
-            border: `1px solid ${priorityColor}30`,
-          }}
-        >
-          {item.priority}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function TimeBlockCard({
-  block,
-  onRemove,
-}: {
-  block: TimeBlock;
-  onRemove: (id: string) => void;
-}) {
-  const durationLabel =
-    block.duration < 1
-      ? `${Math.round(block.duration * 60)}m`
-      : block.duration === 1
-        ? '1h'
-        : `${block.duration}h`;
-
-  return (
-    <div
-      className="group relative rounded-lg px-3 py-2 mb-1 shadow-[0_0_0_1px_rgba(139,92,246,0.10),0_1px_3px_rgba(0,0,0,0.15)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.20),0_4px_10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow] duration-150 hover:scale-[1.01] active:scale-[0.96]"
-      style={{
-        backgroundColor: `${block.color}0A`,
-        borderColor: `${block.color}35`,
-        borderLeftWidth: 3,
-        borderLeftColor: block.color,
-      }}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${block.color}20` }}
-          >
-            {block.type === 'reminder' ? (
-              <Bell className="w-3 h-3" style={{ color: block.color }} />
-            ) : block.type === 'habit' ? (
-              <Flame className="w-3 h-3" style={{ color: block.color }} />
-            ) : (
-              <LayoutGrid className="w-3 h-3" style={{ color: block.color }} />
-            )}
-          </div>
-
-          <span className="text-xs font-medium text-[var(--ag-text-primary)] truncate">{block.title}</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="flex items-center gap-0.5 text-[10px] text-[var(--ag-text-secondary)] tabular-nums">
-            <Clock className="w-3 h-3" />
-            {durationLabel}
-          </span>
-
-          <button
-            onClick={() => onRemove(block.id)}
-            className="w-11 h-11 sm:w-6 sm:h-6 rounded flex items-center justify-center text-[var(--ag-text-secondary)]/40 hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors opacity-0 group-hover:opacity-100"
-            title="Remove block"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuickAddForm({
-  inputRef,
-  title,
-  duration,
-  onTitleChange,
-  onDurationChange,
-  onSubmit,
-  onCancel,
-}: {
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  title: string;
-  duration: number;
-  onTitleChange: (v: string) => void;
-  onDurationChange: (v: number) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="rounded-lg p-2.5 border border-[var(--ag-violet)]/30 bg-[#8B5CF6]/[0.06] space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-      <div className="flex items-center gap-2">
-        <Input
-          ref={inputRef}
-          value={title}
-          onChange={e => onTitleChange(e.target.value)}
-          placeholder="What are you working on?"
-          className="h-9 sm:h-7 text-xs bg-white/5 border-[rgba(139,92,246,0.08)] text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 flex-1"
-          onKeyDown={e => {
-            if (e.key === 'Enter') onSubmit();
-            if (e.key === 'Escape') onCancel();
-          }}
-        />
-        <Button
-          size="sm"
-          className="h-9 sm:h-7 px-2 text-xs bg-gradient-to-r from-[var(--ag-violet)] to-[#F59E0B] hover:opacity-90 text-white min-w-[44px] shadow-lg shadow-[var(--ag-violet)]/25 hover:shadow-[var(--ag-violet)]/40 transition-all"
-          onClick={onSubmit}
-          disabled={!title.trim()}
-        >
-          Add
-        </Button>
-        <button
-          onClick={onCancel}
-          className="w-11 h-11 sm:w-7 sm:h-7 rounded flex items-center justify-center text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-[var(--ag-text-secondary)] mr-1">Duration:</span>
-        {DURATION_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => onDurationChange(opt.value)}
-            className={`
-              px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded text-[10px] font-medium border transition-colors min-h-[44px] sm:min-h-0
-              ${duration === opt.value
-                ? 'bg-[var(--ag-active-bg)] border-[var(--ag-border-active)] text-[var(--ag-violet)]'
-                : 'bg-[var(--ag-active-bg)] border-[var(--ag-border-subtle)] text-[var(--ag-text-secondary)] hover:border-[var(--ag-border-default)] hover:text-[var(--ag-text-primary)]'}
-            `}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────
+// ── PlannerPage ────────────────────────────────────────────────────────────
 
 export function PlannerPage() {
   const navigate = useNavigate();
   const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'jarvis', page: 'planner' });
+
+  // ── State ────────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [blocks, setBlocks] = useState<Record<string, TimeBlock[]>>({});
@@ -364,7 +47,7 @@ export function PlannerPage() {
 
   const { reminders, loadReminders } = useDashboardStore();
 
-  // --- Load blocks from localStorage cache first, then API ---
+  // ── localStorage cache ───────────────────────────────────────────────────
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LS_KEY);
@@ -372,25 +55,21 @@ export function PlannerPage() {
     } catch { /* ignore corrupt data */ }
   }, []);
 
-  // Persist to localStorage as optimistic cache
   useEffect(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(blocks));
-    } catch { /* storage full */ }
+    try { localStorage.setItem(LS_KEY, JSON.stringify(blocks)); }
+    catch { /* storage full */ }
   }, [blocks]);
 
-  // Fetch from API whenever date changes
+  // ── API fetch ────────────────────────────────────────────────────────────
   const fetchBlocksForDate = useCallback(async (date: string) => {
     try {
       const res = await plannerService.getByDate(date);
       const apiBlocks = (res.data.blocks || []).map(apiBlockToLocal);
       setBlocks(prev => ({ ...prev, [date]: apiBlocks }));
-    } catch {
-      // API unavailable — rely on localStorage cache
-    }
+    } catch { /* rely on localStorage cache */ }
   }, []);
 
-  // --- Data loading ---
+  // ── Data loading ─────────────────────────────────────────────────────────
   useEffect(() => {
     loadReminders();
     loadHabits();
@@ -407,19 +86,17 @@ export function PlannerPage() {
     }
   }, []);
 
-  // --- Derived data ---
+  // ── Derived data ─────────────────────────────────────────────────────────
   const dk = dateKey(currentDate);
 
-  // Fetch blocks for current date (day view)
   useEffect(() => {
     fetchBlocksForDate(dk);
   }, [dk, fetchBlocksForDate]);
 
-  // Fetch blocks for the full week (week view)
   const weekDates = useMemo(() => {
     const start = new Date(currentDate);
     const dayOfWeek = start.getDay();
-    start.setDate(start.getDate() - dayOfWeek); // Start on Sunday
+    start.setDate(start.getDate() - dayOfWeek);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
@@ -444,35 +121,17 @@ export function PlannerPage() {
         if (r.completed) return false;
         if (todayBlocks.some(b => b.reminderId === r.id)) return false;
         if (!r.datetime) return isSameDay(currentDate, now);
-        const rd = new Date(r.datetime);
-        return isSameDay(rd, currentDate);
+        return isSameDay(new Date(r.datetime), currentDate);
       })
       .forEach((r: Reminder) => {
-        items.push({
-          id: `rem_${r.id}`,
-          title: r.text,
-          type: 'reminder',
-          priority: r.priority || 'normal',
-          icon: 'bell',
-          sourceId: r.id,
-        });
+        items.push({ id: `rem_${r.id}`, title: r.text, type: 'reminder', priority: r.priority || 'normal', icon: 'bell', sourceId: r.id });
       });
 
     if (isSameDay(currentDate, now)) {
       habits
-        .filter(h => {
-          if (h.logged_today) return false;
-          if (todayBlocks.some(b => b.habitId === h.id)) return false;
-          return true;
-        })
+        .filter(h => !h.logged_today && !todayBlocks.some(b => b.habitId === h.id))
         .forEach(h => {
-          items.push({
-            id: `hab_${h.id}`,
-            title: `${h.icon} ${h.name}`,
-            type: 'habit',
-            icon: 'flame',
-            sourceId: h.id,
-          });
+          items.push({ id: `hab_${h.id}`, title: `${h.icon} ${h.name}`, type: 'habit', icon: 'flame', sourceId: h.id });
         });
     }
 
@@ -482,57 +141,35 @@ export function PlannerPage() {
   const stats = useMemo(() => {
     const planned = todayBlocks.length;
     const hoursBlocked = todayBlocks.reduce((s, b) => s + b.duration, 0);
-    const totalHours = 17;
-    const pct = Math.round((hoursBlocked / totalHours) * 100);
+    const pct = Math.round((hoursBlocked / 17) * 100);
     return { planned, hoursBlocked, pct };
   }, [todayBlocks]);
 
-  // --- Block operations (optimistic UI + API sync) ---
+  // ── Block operations ─────────────────────────────────────────────────────
   const addBlock = useCallback((block: TimeBlock) => {
     notifyStart('Adding block');
-    // Optimistic: update state immediately
-    setBlocks(prev => {
-      const existing = prev[dk] || [];
-      return { ...prev, [dk]: [...existing, block] };
-    });
+    setBlocks(prev => ({ ...prev, [dk]: [...(prev[dk] || []), block] }));
 
-    // Persist to API in background
-    const payload = localBlockToApi(block, dk);
-    plannerService.create(payload).then(res => {
-      // Replace optimistic block with server-assigned one
+    plannerService.create(localBlockToApi(block, dk)).then(res => {
       const serverBlock = apiBlockToLocal(res.data.block);
-      setBlocks(prev => {
-        const existing = prev[dk] || [];
-        return { ...prev, [dk]: existing.map(b => b.id === block.id ? serverBlock : b) };
-      });
+      setBlocks(prev => ({
+        ...prev,
+        [dk]: (prev[dk] || []).map(b => b.id === block.id ? serverBlock : b),
+      }));
       notifyDone(`Scheduled "${block.title}"`);
-    }).catch(() => {
-      // API failed — local block stays via localStorage cache
-      notifyFail('Failed to save block to server');
-    });
+    }).catch(() => notifyFail('Failed to save block to server'));
   }, [dk, notifyStart, notifyDone, notifyFail]);
 
   const removeBlock = useCallback((blockId: string) => {
     notifyStart('Removing block');
-    // Optimistic: remove from state immediately
-    setBlocks(prev => {
-      const existing = prev[dk] || [];
-      return { ...prev, [dk]: existing.filter(b => b.id !== blockId) };
-    });
-
-    // Delete from API in background
-    plannerService.delete(blockId).then(() => {
-      notifyDone('Block removed');
-    }).catch(() => {
-      // API failed — block is already removed from UI
-      notifyFail('Failed to delete block from server');
-    });
+    setBlocks(prev => ({ ...prev, [dk]: (prev[dk] || []).filter(b => b.id !== blockId) }));
+    plannerService.delete(blockId)
+      .then(() => notifyDone('Block removed'))
+      .catch(() => notifyFail('Failed to delete block from server'));
   }, [dk, notifyStart, notifyDone, notifyFail]);
 
-  // --- Drag and Drop ---
-  const handleDragStart = useCallback((item: BacklogItem) => {
-    setDragItem(item);
-  }, []);
+  // ── Drag & drop (day view) ───────────────────────────────────────────────
+  const handleDragStart = useCallback((item: BacklogItem) => setDragItem(item), []);
 
   const handleDragOver = useCallback((e: React.DragEvent, hour: number) => {
     e.preventDefault();
@@ -540,44 +177,54 @@ export function PlannerPage() {
     setDropTarget(hour);
   }, []);
 
-  const handleDragLeave = useCallback(() => {
-    setDropTarget(null);
-  }, []);
+  const handleDragLeave = useCallback(() => setDropTarget(null), []);
 
   const handleDrop = useCallback((e: React.DragEvent, hour: number) => {
     e.preventDefault();
     setDropTarget(null);
     if (!dragItem) return;
-
     const block: TimeBlock = {
-      id: generateId(),
-      title: dragItem.title,
-      startHour: hour,
-      duration: 1,
-      type: dragItem.type,
-      color: TYPE_COLORS[dragItem.type],
+      id: generateId(), title: dragItem.title, startHour: hour, duration: 1,
+      type: dragItem.type, color: TYPE_COLORS[dragItem.type],
       reminderId: dragItem.type === 'reminder' ? String(dragItem.sourceId) : undefined,
       habitId: dragItem.type === 'habit' ? Number(dragItem.sourceId) : undefined,
     };
-
     addBlock(block);
     setDragItem(null);
     toast.success(`Scheduled "${dragItem.title}" at ${formatHour(hour)}`);
   }, [dragItem, addBlock]);
 
-  // --- Quick Add ---
+  // ── Drag & drop (week view) ──────────────────────────────────────────────
+  const handleWeekDrop = useCallback((e: React.DragEvent, hour: number, date: Date) => {
+    e.preventDefault();
+    if (!dragItem) return;
+    const dk2 = dateKey(date);
+    const block: TimeBlock = {
+      id: generateId(), title: dragItem.title, startHour: hour, duration: 1,
+      type: dragItem.type, color: TYPE_COLORS[dragItem.type],
+      reminderId: dragItem.type === 'reminder' ? String(dragItem.sourceId) : undefined,
+      habitId: dragItem.type === 'habit' ? Number(dragItem.sourceId) : undefined,
+    };
+    setBlocks(prev => ({ ...prev, [dk2]: [...(prev[dk2] || []), block] }));
+    plannerService.create(localBlockToApi(block, dk2)).then(res => {
+      const serverBlock = apiBlockToLocal(res.data.block);
+      setBlocks(prev => ({
+        ...prev,
+        [dk2]: (prev[dk2] || []).map(b => b.id === block.id ? serverBlock : b),
+      }));
+    }).catch(() => { /* optimistic block stays */ });
+    setDragItem(null);
+    toast.success(`Scheduled at ${formatHour(hour)} on ${DateTime.fromJSDate(date).toLocaleString({ weekday: 'short' })}`);
+  }, [dragItem]);
+
+  // ── Quick add ────────────────────────────────────────────────────────────
   const handleQuickAdd = useCallback(() => {
     if (!quickAddTitle.trim() || quickAddHour === null) return;
-
     const block: TimeBlock = {
-      id: generateId(),
-      title: quickAddTitle.trim(),
-      startHour: quickAddHour,
-      duration: quickAddDuration,
-      type: 'custom',
-      color: TYPE_COLORS.custom,
+      id: generateId(), title: quickAddTitle.trim(),
+      startHour: quickAddHour, duration: quickAddDuration,
+      type: 'custom', color: TYPE_COLORS.custom,
     };
-
     addBlock(block);
     const hour = quickAddHour;
     setQuickAddHour(null);
@@ -587,460 +234,115 @@ export function PlannerPage() {
   }, [quickAddTitle, quickAddHour, quickAddDuration, addBlock]);
 
   useEffect(() => {
-    if (quickAddHour !== null && quickAddRef.current) {
-      quickAddRef.current.focus();
-    }
+    if (quickAddHour !== null && quickAddRef.current) quickAddRef.current.focus();
   }, [quickAddHour]);
 
-  // --- Date navigation ---
+  // ── Date navigation ───────────────────────────────────────────────────────
   const goToday = useCallback(() => setCurrentDate(new Date()), []);
-  const goPrev = useCallback(() => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() - 1);
-      return d;
-    });
-  }, []);
-  const goNext = useCallback(() => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + 1);
-      return d;
-    });
-  }, []);
+  const goPrev = useCallback(() => setCurrentDate(prev => {
+    const d = new Date(prev); d.setDate(d.getDate() - 1); return d;
+  }), []);
+  const goNext = useCallback(() => setCurrentDate(prev => {
+    const d = new Date(prev); d.setDate(d.getDate() + 1); return d;
+  }), []);
 
   const isToday = isSameDay(currentDate, new Date());
   const now = new Date();
   const currentHourFraction = now.getHours() + now.getMinutes() / 60;
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <DashboardPageWrapper>
-    <PageShell>
-    <div className="space-y-6">
-      {/* Header with jarvis ownership dot */}
-      <BlurFade delay={0}>
-        <PageHeader
-        icon={CalendarCheck}
-        title={`${viewMode === 'day' ? 'Daily' : 'Weekly'} Planner`}
-        subtitle={viewMode === 'day' ? 'Drag tasks from backlog into your timeline' : 'See your full week at a glance'}
-        badge={
-          <span className="relative flex h-3 w-3" title="Owned by Jarvis">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#ADFF2F]" />
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* View toggle */}
-            <div className="flex items-center rounded-lg border border-[rgba(139,92,246,0.08)] overflow-hidden">
-              <button
-                onClick={() => setViewMode('day')}
-                className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
-                  viewMode === 'day'
-                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 inline mr-1.5" />Day
-              </button>
-              <button
-                onClick={() => setViewMode('week')}
-                className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
-                  viewMode === 'week'
-                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
-                    : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
-                }` }
-              >
-                <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
-              </button>
-            </div>
-
-            {/* Ask Cal CTA */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs active:scale-[0.96] transition-transform"
-              onClick={() => navigate('/dashboard/chat?agent=cal&prompt=Plan+my+week')}
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-              Ask Cal
-            </Button>
-          </div>
-        }
-      />
-      </BlurFade>
-
-      {/* Stats row */}
-      <BlurFade delay={0.1}>
-        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-          <StatBadge label="planned" value={stats.planned} suffix=" items" />
-          <StatBadge label="blocked" value={stats.hoursBlocked} suffix="h" />
-          <StatBadge label="of day" value={stats.pct} suffix="%" accent />
-        </div>
-      </BlurFade>
-
-      {/* Week View */}
-      {viewMode === 'week' && (
-        <BlurFade delay={0.2}>
-          <SectionCard 
-            padding="sm" 
-            className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
-          >
-          {/* Week header with nav */}
-          <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
-                onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">
-                {DateTime.fromJSDate(weekDates[0]).toLocaleString({ month: 'short', day: 'numeric' })}
-                {' - '}
-                {DateTime.fromJSDate(weekDates[6]).toLocaleString({ month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 sm:h-9 sm:w-9 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
-                onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 min-h-[44px] sm:min-h-0 sm:h-7"
-              onClick={goToday}
-            >
-              This Week
-            </Button>
-          </div>
-
-          {/* Week grid */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              {/* Day headers */}
-              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--ag-border-subtle)]">
-                <div className="p-2" />
-                {weekDates.map(d => {
-                  const isDateToday = isSameDay(d, new Date());
-                  return (
+      <PageShell>
+        <div className="space-y-6">
+          {/* Header */}
+          <BlurFade delay={0}>
+            <PageHeader
+              icon={CalendarCheck}
+              title={`${viewMode === 'day' ? 'Daily' : 'Weekly'} Planner`}
+              subtitle={viewMode === 'day' ? 'Drag tasks from backlog into your timeline' : 'See your full week at a glance'}
+              badge={
+                <span className="relative flex h-3 w-3" title="Owned by Jarvis">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ADFF2F] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#ADFF2F]" />
+                </span>
+              }
+              actions={
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  {/* View toggle */}
+                  <div className="flex items-center rounded-lg border border-[rgba(139,92,246,0.08)] overflow-hidden">
                     <button
-                      key={dateKey(d)}
-                      onClick={() => { setCurrentDate(d); setViewMode('day'); }}
-                      className={`p-2 text-center transition-colors min-h-[44px] ${
-                        isDateToday ? 'bg-[#A78BFA]/[0.05]' : 'hover:bg-white/[0.02]'
+                      onClick={() => setViewMode('day')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
+                        viewMode === 'day'
+                          ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
+                          : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
                       }`}
                     >
-                      <span className={`text-[10px] uppercase tracking-wider ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-secondary)]'}`}>
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}
-                      </span>
-                      <span className={`block text-lg font-bold font-heading mt-0.5 ${isDateToday ? 'text-[var(--ag-cyan)]' : 'text-[var(--ag-text-primary)]'}`}>
-                        {d.getDate()}
-                      </span>
+                      <Clock className="w-3.5 h-3.5 inline mr-1.5" />Day
                     </button>
-                  );
-                })}
-              </div>
-
-              {/* Hour rows — show every 2 hours for compactness */}
-              <div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
-                {HOURS.filter((_, i) => i % 2 === 0).map(hour => (
-                  <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.03]">
-                    <div className="p-1.5 text-right text-[10px] text-[var(--ag-text-secondary)] font-mono border-r border-[var(--ag-border-subtle)]">
-                      {formatHour(hour)}
-                    </div>
-                    {weekDates.map(d => {
-                      const dk2 = dateKey(d);
-                      const dayBlocks = (blocks[dk2] || []).filter(b => Math.floor(b.startHour) === hour || Math.floor(b.startHour) === hour + 1);
-                      const isDateToday = isSameDay(d, new Date());
-                      const isCurrent = isDateToday && Math.floor(currentHourFraction) >= hour && Math.floor(currentHourFraction) < hour + 2;
-                      return (
-                        <div
-                          key={dk2}
-                          className={`p-0.5 min-h-[48px] border-r border-white/[0.03] transition-colors ${
-                            isCurrent ? 'bg-[#A78BFA]/[0.03]' : ''
-                          } ${isDateToday ? 'bg-white/[0.01]' : ''}`}
-                          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-                          onDrop={e => {
-                            e.preventDefault();
-                            if (!dragItem) return;
-                            const block: TimeBlock = {
-                              id: generateId(),
-                              title: dragItem.title,
-                              startHour: hour,
-                              duration: 1,
-                              type: dragItem.type,
-                              color: TYPE_COLORS[dragItem.type],
-                              reminderId: dragItem.type === 'reminder' ? String(dragItem.sourceId) : undefined,
-                              habitId: dragItem.type === 'habit' ? Number(dragItem.sourceId) : undefined,
-                            };
-                            setBlocks(prev => ({
-                              ...prev,
-                              [dk2]: [...(prev[dk2] || []), block],
-                            }));
-                            const payload = localBlockToApi(block, dk2);
-                            plannerService.create(payload).then(res => {
-                              const serverBlock = apiBlockToLocal(res.data.block);
-                              setBlocks(prev => ({
-                                ...prev,
-                                [dk2]: (prev[dk2] || []).map(b => b.id === block.id ? serverBlock : b),
-                              }));
-                            }).catch(() => { /* optimistic block stays */ });
-                            setDragItem(null);
-                            toast.success(`Scheduled at ${formatHour(hour)} on ${DateTime.fromJSDate(d).toLocaleString({ weekday: 'short' })}`);
-                          }}
-                        >
-                          {dayBlocks.map(block => (
-                            <div
-                              key={block.id}
-                              className="rounded px-1 py-0.5 mb-0.5 text-[10px] truncate border-l-2 cursor-pointer hover:opacity-80"
-                              style={{
-                                backgroundColor: `${block.color}0A`,
-                                borderLeftColor: block.color,
-                                color: block.color,
-                              }}
-                              onClick={() => { setCurrentDate(d); setViewMode('day'); }}
-                              title={`${block.title} (${formatHour(block.startHour)})`}
-                            >
-                              {block.title}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+                    <button
+                      onClick={() => setViewMode('week')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.96] min-h-[44px] min-w-[44px] ${
+                        viewMode === 'week'
+                          ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
+                          : 'text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5'
+                      }`}
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Week
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-        </BlurFade>
-      )}
 
-      {/* Main Layout (Day View) */}
-      {viewMode === 'day' && <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
-        {/* Left: Backlog Panel */}
-        <BlurFade delay={0.2}>
-          <div className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-            <SectionCard 
-              padding="sm" 
-              className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
-            >
-            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <LayoutGrid className="w-4 h-4 text-[var(--ag-text-secondary)]" />
-                <span className="text-sm font-semibold font-heading text-[var(--ag-text-primary)]">Backlog</span>
-                <Badge
-                  variant="outline"
-                  className="text-xs border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] bg-[#A78BFA]/10"
-                >
-                  {backlogItems.length}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="p-2 space-y-1.5 max-h-[40vh] lg:max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
-              {backlogItems.length === 0 && !habitsLoading ? (
-                <div className="py-8 text-center">
-                  <div className="w-10 h-10 rounded-full bg-[#A78BFA]/5 border border-[var(--ag-cyan)]/10 flex items-center justify-center mx-auto mb-3">
-                    <CalendarCheck className="w-5 h-5 text-[var(--ag-cyan)]/40" />
-                  </div>
-                  <p className="text-xs text-[var(--ag-text-secondary)]">
-                    {isToday ? 'All caught up!' : 'No items for this day'}
-                  </p>
-                  <p className="text-[10px] text-[var(--ag-text-secondary)]/60 mt-1">
-                    Reminders and habits appear here
-                  </p>
-                </div>
-              ) : habitsLoading ? (
-                <div className="py-8 text-center">
-                  <div className="w-5 h-5 border-2 border-[var(--ag-cyan)]/30 border-t-[#A78BFA] rounded-full animate-spin mx-auto" />
-                  <p className="text-xs text-[var(--ag-text-secondary)] mt-2">Loading...</p>
-                </div>
-              ) : (
-                backlogItems.map(item => (
-                  <BacklogCard
-                    key={item.id}
-                    item={item}
-                    onDragStart={handleDragStart}
-                  />
-                ))
-              )}
-            </div>
-
-            <div className="px-4 py-2.5 border-t border-[var(--ag-border-subtle)]">
-              <div className="flex items-center gap-3 text-[10px] text-[var(--ag-text-secondary)]">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[var(--ag-cyan)]" />
-                  Reminders
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[var(--ag-green)]" />
-                  Habits
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[var(--ag-violet)]" />
-                  Custom
-                </span>
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-        </BlurFade>
-
-        {/* Right: Timeline */}
-        <BlurFade delay={0.3}>
-          <div className="flex-1 min-w-0">
-            <SectionCard 
-              padding="sm" 
-              className="overflow-hidden !p-0 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl"
-            >
-            {/* Date header */}
-            <div className="px-4 py-3 border-b border-[var(--ag-border-subtle)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
-                  onClick={goPrev}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <button
-                  onClick={goToday}
-                  className="text-sm font-semibold font-heading text-[var(--ag-text-primary)] hover:text-[var(--ag-cyan)] transition-colors min-h-[44px] px-2"
-                >
-                  {formatDate(currentDate)}
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 sm:h-9 sm:w-9 text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:bg-white/5"
-                  onClick={goNext}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-              {!isToday && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-[var(--ag-cyan)] hover:text-[var(--ag-cyan)] hover:bg-[#A78BFA]/10 min-h-[44px] sm:min-h-0 sm:h-7"
-                  onClick={goToday}
-                >
-                  Today
-                </Button>
-              )}
-            </div>
-
-            {/* Time grid */}
-            <div className="relative max-h-[65vh] sm:max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar">
-              {HOURS.map(hour => {
-                const isCurrentHour = isToday && Math.floor(currentHourFraction) === hour;
-                const isDrop = dropTarget === hour;
-                const slotBlocks = todayBlocks.filter(b => Math.floor(b.startHour) === hour);
-
-                return (
-                  <div
-                    key={hour}
-                    className={`
-                      flex border-b border-white/[0.03] min-h-[64px] transition-colors duration-150
-                      ${isCurrentHour ? 'bg-[#A78BFA]/[0.03]' : ''}
-                      ${isDrop ? 'bg-[#A78BFA]/[0.06]' : ''}
-                    `}
-                    onDragOver={e => handleDragOver(e, hour)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={e => handleDrop(e, hour)}
+                  {/* Ask Cal CTA */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#ADFF2F]/30 text-[#ADFF2F] hover:bg-[#ADFF2F]/10 min-h-[44px] text-xs active:scale-[0.96] transition-transform"
+                    onClick={() => navigate('/dashboard/chat?agent=cal&prompt=Plan+my+week')}
                   >
-                    {/* Time label */}
-                    <div className={`
-                      w-16 sm:w-20 flex-shrink-0 py-2 px-2 sm:px-3 text-right
-                      border-r transition-colors duration-150
-                      ${isCurrentHour
-                        ? 'border-r-2 border-r-[#A78BFA] text-[var(--ag-cyan)]'
-                        : 'border-r-white/5 text-[var(--ag-text-secondary)]'}
-                    `}>
-                      <span className="font-mono text-xs sm:text-sm tabular-nums">
-                        {formatHour(hour)}
-                      </span>
-                    </div>
-
-                    {/* Drop zone / blocks area */}
-                    <div className={`
-                      flex-1 py-1.5 px-2 sm:px-3 relative min-h-[64px]
-                      ${isDrop ? 'ring-1 ring-inset ring-[#A78BFA]/30 rounded-r-lg' : ''}
-                    `}>
-                      {slotBlocks.map(block => (
-                        <TimeBlockCard
-                          key={block.id}
-                          block={block}
-                          onRemove={removeBlock}
-                        />
-                      ))}
-
-                      {isDrop && slotBlocks.length === 0 && (
-                        <div className="absolute inset-1 border border-dashed border-[var(--ag-cyan)]/40 rounded-lg flex items-center justify-center">
-                          <span className="text-[10px] text-[var(--ag-cyan)]/60">Drop here</span>
-                        </div>
-                      )}
-
-                      {!dragItem && slotBlocks.length === 0 && quickAddHour !== hour && (
-                        <button
-                          onClick={() => setQuickAddHour(hour)}
-                          className="absolute top-1 right-1 w-11 h-11 sm:w-7 sm:h-7 rounded-md bg-white/5 hover:bg-[#8B5CF6]/20 border border-[rgba(139,92,246,0.08)] hover:border-[rgba(139,92,246,0.15)] flex items-center justify-center transition-all opacity-30 hover:opacity-100"
-                          title="Add custom block"
-                        >
-                          <Plus className="w-3.5 h-3.5 text-[var(--ag-violet)]" />
-                        </button>
-                      )}
-
-                      {quickAddHour === hour && (
-                        <QuickAddForm
-                          inputRef={quickAddRef}
-                          title={quickAddTitle}
-                          duration={quickAddDuration}
-                          onTitleChange={setQuickAddTitle}
-                          onDurationChange={setQuickAddDuration}
-                          onSubmit={handleQuickAdd}
-                          onCancel={() => {
-                            setQuickAddHour(null);
-                            setQuickAddTitle('');
-                            setQuickAddDuration(1);
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Current time indicator line */}
-              {isToday && currentHourFraction >= 6 && currentHourFraction <= 23 && (
-                <div
-                  className="absolute left-0 right-0 pointer-events-none z-10"
-                  style={{
-                    top: `${((currentHourFraction - 6) / 17) * 100}%`,
-                  }}
-                >
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-[var(--ag-pink)] -ml-1" />
-                    <div className="flex-1 h-[2px] bg-[var(--ag-pink)]/60" />
-                  </div>
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    Ask Cal
+                  </Button>
                 </div>
-              )}
-            </div>
-          </SectionCard>
+              }
+            />
+          </BlurFade>
+
+          {/* Plan view (stats + week/day grid) */}
+          <PlanView
+            currentDate={currentDate}
+            viewMode={viewMode}
+            weekDates={weekDates}
+            isToday={isToday}
+            currentHourFraction={currentHourFraction}
+            blocks={blocks}
+            todayBlocks={todayBlocks}
+            backlogItems={backlogItems}
+            habitsLoading={habitsLoading}
+            stats={stats}
+            dragItem={dragItem}
+            dropTarget={dropTarget}
+            quickAddHour={quickAddHour}
+            quickAddTitle={quickAddTitle}
+            quickAddDuration={quickAddDuration}
+            setCurrentDate={setCurrentDate}
+            onGoToday={goToday}
+            onGoPrev={goPrev}
+            onGoNext={goNext}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onWeekDrop={handleWeekDrop}
+            onRemoveBlock={removeBlock}
+            onQuickAddHourSet={setQuickAddHour}
+            onQuickAddTitleChange={setQuickAddTitle}
+            onQuickAddDurationChange={setQuickAddDuration}
+            onQuickAddSubmit={handleQuickAdd}
+            onQuickAddCancel={() => { setQuickAddHour(null); setQuickAddTitle(''); setQuickAddDuration(1); }}
+          />
         </div>
-        </BlurFade>
-      </div>}
-    </div>
-    </PageShell>
+      </PageShell>
     </DashboardPageWrapper>
   );
 }

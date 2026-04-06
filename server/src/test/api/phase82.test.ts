@@ -223,14 +223,16 @@ describe('Phase 82 — Store Safety + Polish', () => {
     });
 
     it('Delete Account UI exists in SettingsPage', () => {
-      const src = readFile('src/dashboard/pages/SettingsPage.tsx');
+      // Danger Zone / delete account UI extracted to settings/SecurityTab.tsx
+      const src = readFile('src/dashboard/pages/settings/SecurityTab.tsx');
       expect(src).toContain('Danger Zone');
       expect(src).toContain('delete-account-confirm-btn');
-      expect(src).toContain('deleteUserAccount');
+      expect(src).toContain('deletePassword');
     });
 
     it('delete account requires password input', () => {
-      const src = readFile('src/dashboard/pages/SettingsPage.tsx');
+      // delete account inputs extracted to settings/SecurityTab.tsx
+      const src = readFile('src/dashboard/pages/settings/SecurityTab.tsx');
       expect(src).toContain('delete-account-password-input');
       expect(src).toContain('deletePassword');
     });

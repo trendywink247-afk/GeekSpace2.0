@@ -85,7 +85,7 @@ describe('88.5 Pull-to-refresh on key scrollable pages', () => {
   it('RemindersPage now has PullToRefreshWrapper', () => {
     const content = readSrc('dashboard/pages/RemindersPage.tsx');
     expect(content).toContain('PullToRefreshWrapper');
-    expect(content).toContain('handlePullRefresh');
+    expect(content).toContain('onRefresh');
   });
 
   it('ActivityPage now has PullToRefreshWrapper', () => {

@@ -1,103 +1,43 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Bell,
-  Target,
-  Timer,
-  Plus,
-  Sparkles,
-  FileText,
-  RefreshCw,
-  ArrowRight,
-  AlertTriangle,
-  CheckCircle2,
-  X,
-  Send,
-  Link2,
-  Clock,
-  Mic,
-  Brain,
-  CheckSquare,
-  CalendarDays,
-  Check,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Bell, MessageSquare, Timer, Clock, AlertTriangle, X } from 'lucide-react';
 import { PullToRefreshWrapper } from '@/components/PullToRefreshWrapper';
 import { AgentStatusStrip } from '@/components/AgentStatusStrip';
 import { LiveAgentFeed } from '@/components/LiveAgentFeed';
-import { DiscoverCard } from '@/components/DiscoverCard';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { RecentGenerations } from '@/components/dashboard/RecentGenerations';
 import { StreakCard } from '@/components/dashboard/StreakCard';
 import { InboxCard } from '@/components/dashboard/InboxCard';
 import { GoalsSummaryCard } from '@/components/dashboard/GoalsSummaryCard';
-import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
+import { PageShell } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
-import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
 import { useAuthStore } from '@/stores/authStore';
 import { useDashboardStore } from '@/stores/dashboardStore';
-import {
-  activityService,
-  memoryService,
-  reminderService,
-  dashboardService,
-} from '@/services/api';
+import { activityService, memoryService, reminderService, dashboardService } from '@/services/api';
 import type { ConversationEntry } from '@/types';
 
-// ---------------------------------------------------------------------------
-// Overview API types (matches GET /api/dashboard/overview response)
-// ---------------------------------------------------------------------------
-
-interface OverviewReminder {
-  id: string;
-  text: string;
-  datetime: string;
-  category: string;
-  recurring: string;
-  priority: string;
-  overdue: boolean;
-}
-
-interface OverviewHabit {
-  id: number;
-  name: string;
-  icon: string;
-  streak: number;
-  loggedToday: boolean;
-}
-
-interface OverviewCalendarEvent {
-  id: number;
-  title: string;
-  start_time: number;
-  end_time: number | null;
-}
-
-interface OverviewWeeklyStats {
-  messagesThisWeek: number;
-  remindersCompleted: number;
-  habitsLogged: number;
-}
-
-interface OverviewRecentConversation {
-  id: string;
-  content: string;
-  created_at: string;
-}
-
-interface OverviewData {
-  greeting: string;
-  remindersDueToday: OverviewReminder[];
-  habitsToday: OverviewHabit[];
-  calendarEventsToday: OverviewCalendarEvent[];
-  weeklyStats: OverviewWeeklyStats;
-  recentConversations: OverviewRecentConversation[];
-}
+import {
+  GreetingSection,
+  GlanceCards,
+  ActivityFeed,
+  QuickActions,
+  SparklineCard,
+  RemindersSection,
+  HabitsSection,
+  CalendarSection,
+  WeeklyStats,
+  OnboardingChecklist,
+  EmptyState,
+  QuickChatInput,
+  getGreeting,
+  getFestivalGreeting,
+  computeTimeSaved,
+  isNewUser,
+  shouldShowIOSBanner,
+  IOS_DISMISS_KEY,
+} from './overview';
+import type { OverviewData, GlanceCard } from './overview';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,248 +50,9 @@ interface OverviewPageProps {
   onOpenChat?: () => void;
 }
 
-interface GlanceCard {
-  key: string;
-  label: string;
-  value: string;
-  sub: string;
-  icon: typeof Bell;
-  color: string;
-  bgColor: string;
-}
-
 // ---------------------------------------------------------------------------
-// Helpers
+// iOS Install Banner (page-level — reads from navigator)
 // ---------------------------------------------------------------------------
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
-/** Detect Indian festivals and notable holidays (approximate fixed dates, 2026 calendar) */
-function getFestivalGreeting(): string | null {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-  const day = now.getDate();
-
-  // Fixed-date festivals
-  if (month === 1 && day === 1) return 'Happy New Year!';
-  if (month === 1 && day === 14) return 'Happy Makar Sankranti / Pongal!';
-  if (month === 1 && day === 26) return 'Happy Republic Day!';
-  if (month === 3 && day >= 9 && day <= 11) return 'Happy Maha Shivaratri!';
-  if (month === 3 && day >= 14 && day <= 16) return 'Happy Holi!';
-  if (month === 4 && day === 2) return 'Happy Ugadi / Gudi Padwa!';
-  if (month === 4 && day === 6) return 'Happy Ram Navami!';
-  if (month === 4 && day === 14) return 'Happy Baisakhi!';
-  if (month === 5 && day === 1) return 'Happy May Day!';
-  if (month === 5 && day === 12) return 'Happy Buddha Purnima!';
-  if (month === 6 && day >= 26 && day <= 28) return 'Happy Eid al-Adha!';
-  if (month === 7 && day >= 17 && day <= 19) return 'Happy Muharram!';
-  if (month === 8 && day === 12) return 'Happy Raksha Bandhan!';
-  if (month === 8 && day === 14) return 'Happy Janmashtami!';
-  if (month === 8 && day === 15) return 'Happy Independence Day!';
-  if (month === 8 && day >= 22 && day <= 31) return 'Happy Ganesh Chaturthi!';
-  if (month === 9 && day >= 17 && day <= 26) return 'Happy Navratri!';
-  if (month === 10 && day >= 2 && day <= 3) return 'Happy Dussehra!';
-  if (month === 10 && day >= 20 && day <= 22) return 'Happy Diwali!';
-  if (month === 10 && day === 23) return 'Happy Bhai Dooj!';
-  if (month === 11 && day >= 1 && day <= 3) return 'Happy Diwali!';
-  if (month === 11 && day >= 12 && day <= 15) return 'Happy Chhath Puja!';
-  if (month === 11 && day === 24) return 'Happy Guru Nanak Jayanti!';
-  if (month === 12 && day === 25) return 'Merry Christmas!';
-  if (month === 12 && day === 31) return 'Happy New Year Eve!';
-  return null;
-}
-
-/** Calculate estimated hours saved by AI: each message interaction saves ~2 minutes on avg */
-function computeTimeSaved(totalMessages: number): { hours: number; minutes: number } {
-  const totalMinutes = totalMessages * 2; // 2 min saved per message
-  return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
-}
-
-/** Check if user account is less than 7 days old */
-function isNewUser(createdAt?: string): boolean {
-  if (!createdAt) return false;
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-  return diffDays <= 7;
-}
-
-function relativeTime(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-/** Pure SVG sparkline with hover tooltips */
-function ActivitySparkline({
-  data,
-  labels,
-  color = '#A78BFA',
-}: {
-  data: number[];
-  labels?: string[];
-  color?: string;
-}) {
-  const w = 200;
-  const h = 48;
-  const pad = 4;
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-  if (data.length < 2) {
-    return (
-      <div className="flex items-center justify-center h-12 text-xs text-[var(--ag-text-secondary)]">
-        Not enough data yet
-      </div>
-    );
-  }
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data, 0);
-  const range = max - min || 1;
-  const points = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return { x, y };
-  });
-  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
-  // Fill area path
-  const areaPath =
-    `M${points[0].x},${h} ` +
-    points.map((p) => `L${p.x},${p.y}`).join(' ') +
-    ` L${points[points.length - 1].x},${h} Z`;
-
-  // Compute hit zone width per point for hover detection
-  const hitZoneWidth = (w - pad * 2) / Math.max(data.length - 1, 1);
-
-  return (
-    <div ref={containerRef} className="relative">
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        className="w-full h-12"
-        preserveAspectRatio="none"
-        aria-label="Activity sparkline over the last 7 days"
-        onMouseLeave={() => setHoveredIdx(null)}
-      >
-        <defs>
-          <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#spark-fill)" />
-        <polyline
-          points={polyline}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Vertical hover guide line */}
-        {hoveredIdx !== null && points[hoveredIdx] && (
-          <line
-            x1={points[hoveredIdx].x}
-            y1={0}
-            x2={points[hoveredIdx].x}
-            y2={h}
-            stroke={color}
-            strokeWidth="0.8"
-            strokeDasharray="3 2"
-            opacity={0.4}
-          />
-        )}
-        {/* Dots */}
-        {points.map((p, i) => (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r={hoveredIdx === i ? 4 : 3}
-            fill={hoveredIdx === i ? '#F4F6FF' : color}
-            stroke={hoveredIdx === i ? color : '#0C0C18'}
-            strokeWidth={hoveredIdx === i ? 2 : 1.5}
-            className="transition-all duration-150"
-          />
-        ))}
-        {/* Invisible hit zones for hover */}
-        {points.map((p, i) => (
-          <rect
-            key={`hit-${i}`}
-            x={p.x - hitZoneWidth / 2}
-            y={0}
-            width={hitZoneWidth}
-            height={h}
-            fill="transparent"
-            onMouseEnter={() => setHoveredIdx(i)}
-            onTouchStart={() => setHoveredIdx(i)}
-            style={{ cursor: 'crosshair' }}
-          />
-        ))}
-      </svg>
-      {/* Tooltip */}
-      {hoveredIdx !== null && points[hoveredIdx] && (
-        <div
-          className="absolute -top-9 pointer-events-none z-10 rounded-md px-2 py-1 text-xs font-mono whitespace-nowrap border border-[var(--ag-border-glow)]"
-          style={{
-            left: `${(points[hoveredIdx].x / w) * 100}%`,
-            transform: 'translateX(-50%)',
-            background: 'var(--ag-bg-elevated)',
-            color: 'var(--ag-text-primary)',
-          }}
-        >
-          {labels?.[hoveredIdx] ? `${labels[hoveredIdx]}: ` : ''}
-          <span style={{ color }}>{data[hoveredIdx]}</span>
-          {' msg'}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Skeleton placeholder for a glance card */
-function GlanceCardSkeleton() {
-  return (
-    <div className="min-w-[160px] flex-shrink-0 snap-start rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4">
-      <Skeleton className="w-10 h-10 rounded-xl mb-3" />
-      <Skeleton className="h-7 w-12 mb-1" />
-      <Skeleton className="h-4 w-20 mb-1" />
-      <Skeleton className="h-3 w-24" />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// iOS Install Banner
-// ---------------------------------------------------------------------------
-
-const IOS_DISMISS_KEY = 'ios-install-dismissed-at';
-const IOS_DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-function shouldShowIOSBanner(): boolean {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isSafari =
-    /Safari/i.test(navigator.userAgent) &&
-    !/Chrome|CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent);
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true;
-  if (!isIOS || !isSafari || isStandalone) return false;
-
-  const dismissedAt = localStorage.getItem(IOS_DISMISS_KEY);
-  if (dismissedAt) {
-    const elapsed = Date.now() - parseInt(dismissedAt, 10);
-    if (elapsed < IOS_DISMISS_TTL_MS) return false;
-  }
-  return true;
-}
 
 function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -381,18 +82,17 @@ function IOSInstallBanner({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// OverviewPage — data fetching + layout orchestration only
 // ---------------------------------------------------------------------------
 
 export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPageProps) {
-  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { stats, reminders } = useDashboardStore();
   const loadErrors = useDashboardStore((s) => s.loadErrors);
   const loadDashboard = useDashboardStore((s) => s.loadDashboard);
   const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'weebo', page: 'overview' });
 
-  // Data states
+  // ── State ──────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationEntry[]>([]);
@@ -400,151 +100,50 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loadErrDismissed, setLoadErrDismissed] = useState(false);
-  // iOS install banner — shown after 3s delay
   const [showIOSBanner, setShowIOSBanner] = useState(false);
-  // Day labels for sparkline
   const [dayLabels, setDayLabels] = useState<string[]>([]);
-
-  // GAP-1: Overview endpoint data
   const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [completingReminder, setCompletingReminder] = useState<string | null>(null);
 
-  // Derived: today's reminders
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
 
-  const todaysReminders = reminders.filter((r) => {
-    if (!r.datetime) return false;
-    const dt = new Date(r.datetime);
-    return dt >= todayStart && dt <= todayEnd;
-  });
-  const pendingReminders = todaysReminders.filter((r) => !r.completed);
-  const nextReminder = pendingReminders
-    .filter((r) => new Date(r.datetime) >= new Date())
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0];
+  const pendingReminders = useMemo(() => {
+    return reminders.filter((r) => {
+      if (!r.datetime) return false;
+      const dt = new Date(r.datetime);
+      return dt >= todayStart && dt <= todayEnd && !r.completed;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminders]);
 
-  // Messages today count from stats
+  const nextReminder = useMemo(() =>
+    pendingReminders
+      .filter((r) => new Date(r.datetime) >= new Date())
+      .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0],
+    [pendingReminders]
+  );
+
   const messagesToday = stats.messagesSent || 0;
-
-  // "AI saved you X hours" — calculate from total weekly activity
-  const weeklyMessages = activityData.reduce((a, b) => a + b, 0);
+  const weeklyMessages = useMemo(() => activityData.reduce((a, b) => a + b, 0), [activityData]);
   const timeSaved = useMemo(() => computeTimeSaved(weeklyMessages), [weeklyMessages]);
 
-  // Quick chat input state
-  const [quickChatInput, setQuickChatInput] = useState('');
-  const quickChatRef = useRef<HTMLInputElement>(null);
-
-  // Onboarding: detect new user (first 7 days)
+  const greeting = getGreeting();
+  const firstName = user?.name?.split(' ')[0] || 'there';
+  const festivalGreeting = getFestivalGreeting();
   const showOnboarding = isNewUser(user?.createdAt);
+  const isEmptyState =
+    !loading &&
+    conversations.length === 0 &&
+    reminders.length === 0 &&
+    messagesToday === 0 &&
+    activityData.every((v) => v === 0);
 
-  // GAP-1: Fetch unified overview endpoint
-  const fetchOverview = useCallback(async () => {
-    setOverviewLoading(true);
-    try {
-      const res = await dashboardService.overview();
-      setOverviewData(res.data as OverviewData);
-    } catch {
-      // Non-fatal: overview sections show empty state
-    } finally {
-      setOverviewLoading(false);
-    }
-  }, []);
+  const completedRemindersCount = reminders.filter((r) => r.completed).length;
 
-  // GAP-1: Complete a reminder via the overview card
-  const handleCompleteReminder = useCallback(async (id: string) => {
-    setCompletingReminder(id);
-    void notifyStart('complete-reminder');
-    try {
-      await reminderService.update(id, { completed: true });
-      // Optimistically remove from overview
-      setOverviewData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          remindersDueToday: prev.remindersDueToday.filter((r) => r.id !== id),
-          weeklyStats: {
-            ...prev.weeklyStats,
-            remindersCompleted: prev.weeklyStats.remindersCompleted + 1,
-          },
-        };
-      });
-      void notifyDone('Reminder completed');
-    } catch {
-      void notifyFail('Failed to complete reminder');
-    } finally {
-      setCompletingReminder(null);
-    }
-  }, [notifyStart, notifyDone, notifyFail]);
-
-  // Load data
-  const fetchOverviewData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const results = await Promise.allSettled([
-        memoryService.conversations(5),
-        activityService.getStats(),
-      ]);
-
-      // Conversations
-      if (results[0].status === 'fulfilled') {
-        const convos = results[0].value.data;
-        // Get only user messages to show as conversation previews
-        setConversations(Array.isArray(convos) ? convos.filter((c) => c.role === 'user').slice(0, 3) : []);
-      }
-
-      // Activity stats for sparkline
-      if (results[1].status === 'fulfilled') {
-        const days = results[1].value.data.days || [];
-        setActivityData(days.map((d: { messages: number }) => d.messages));
-        setDayLabels(days.map((d: { date: string }) => {
-          const dt = new Date(d.date);
-          return dt.toLocaleDateString(undefined, { weekday: 'short' });
-        }));
-      }
-    } catch {
-      setError('Failed to load overview data');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    setMounted(true);
-    fetchOverviewData();
-    fetchOverview();
-  }, [fetchOverviewData, fetchOverview]);
-
-  // Show iOS install banner after 3s if applicable
-  useEffect(() => {
-    if (!shouldShowIOSBanner()) return;
-    const timer = setTimeout(() => setShowIOSBanner(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = useCallback(() => {
-    setIsRefreshing(true);
-    onRefresh?.();
-    Promise.all([fetchOverviewData(), fetchOverview()]).finally(() => setIsRefreshing(false));
-  }, [onRefresh, fetchOverviewData, fetchOverview]);
-
-  const handleIOSDismiss = useCallback(() => {
-    localStorage.setItem(IOS_DISMISS_KEY, String(Date.now()));
-    setShowIOSBanner(false);
-  }, []);
-
-  const handlePullRefresh = async () => {
-    handleRefresh();
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-  };
-
-  // ---------------------------------------------------------------------------
-  // Glance cards data
-  // ---------------------------------------------------------------------------
-
+  // ── Glance cards ───────────────────────────────────────────────────────────
   const glanceCards: GlanceCard[] = [
     {
       key: 'time-saved',
@@ -586,959 +185,205 @@ export function OverviewPage({ onNavigate, onRefresh, onOpenChat }: OverviewPage
     },
   ];
 
-  // ---------------------------------------------------------------------------
-  // Quick actions
-  // ---------------------------------------------------------------------------
-
-  const quickActions = [
-    { label: 'New Reminder', icon: Bell, color: 'var(--ag-cyan)', bgColor: 'rgba(139,92,246,0.1)', page: 'reminders?openAdd=true' },
-    { label: 'Chat with Weebo', icon: MessageSquare, color: '#ADFF2F', bgColor: 'rgba(173,255,47,0.1)', action: () => { void notifyStart('open-chat'); onOpenChat?.(); } },
-    { label: 'Start Focus', icon: Timer, color: 'var(--ag-violet)', bgColor: 'rgba(139,92,246,0.1)', page: 'focus' },
-    { label: 'Log Habit', icon: Target, color: '#FF2D78', bgColor: 'rgba(255,45,120,0.1)', page: 'reminders' },
-    { label: 'New Note', icon: FileText, color: '#FFB800', bgColor: 'rgba(255,184,0,0.1)', page: 'docs' },
-  ];
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
-  const greeting = getGreeting();
-  const firstName = user?.name?.split(' ')[0] || 'there';
-  const festivalGreeting = getFestivalGreeting();
-
-  // Determine if user is in an empty/new state (no data at all)
-  const isEmptyState =
-    !loading &&
-    conversations.length === 0 &&
-    reminders.length === 0 &&
-    messagesToday === 0 &&
-    activityData.every((v) => v === 0);
-
-  // Touch handlers for mobile stat drag on glance cards
-  const touchStartRef = useRef<{ x: number; scrollLeft: number } | null>(null);
-  const glanceScrollRef = useRef<HTMLDivElement>(null);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    const container = glanceScrollRef.current;
-    if (!container) return;
-    touchStartRef.current = {
-      x: e.touches[0].clientX,
-      scrollLeft: container.scrollLeft,
-    };
+  // ── Data fetching ──────────────────────────────────────────────────────────
+  const fetchOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const res = await dashboardService.overview();
+      setOverviewData(res.data as OverviewData);
+    } catch { /* non-fatal */ } finally {
+      setOverviewLoading(false);
+    }
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    const container = glanceScrollRef.current;
-    const start = touchStartRef.current;
-    if (!container || !start) return;
-    const dx = start.x - e.touches[0].clientX;
-    container.scrollLeft = start.scrollLeft + dx;
+  const handleCompleteReminder = useCallback(async (id: string) => {
+    setCompletingReminder(id);
+    void notifyStart('complete-reminder');
+    try {
+      await reminderService.update(id, { completed: true });
+      setOverviewData((prev) => prev ? {
+        ...prev,
+        remindersDueToday: prev.remindersDueToday.filter((r) => r.id !== id),
+        weeklyStats: { ...prev.weeklyStats, remindersCompleted: prev.weeklyStats.remindersCompleted + 1 },
+      } : prev);
+      void notifyDone('Reminder completed');
+    } catch {
+      void notifyFail('Failed to complete reminder');
+    } finally {
+      setCompletingReminder(null);
+    }
+  }, [notifyStart, notifyDone, notifyFail]);
+
+  const fetchOverviewData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [convRes, actRes] = await Promise.allSettled([
+        memoryService.conversations(5),
+        activityService.getStats(),
+      ]);
+      if (convRes.status === 'fulfilled') {
+        const convos = convRes.value.data;
+        setConversations(Array.isArray(convos) ? convos.filter((c) => c.role === 'user').slice(0, 3) : []);
+      }
+      if (actRes.status === 'fulfilled') {
+        const days = actRes.value.data.days || [];
+        setActivityData(days.map((d: { messages: number }) => d.messages));
+        setDayLabels(days.map((d: { date: string }) =>
+          new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' })
+        ));
+      }
+    } catch {
+      setError('Failed to load overview data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    touchStartRef.current = null;
+  useEffect(() => {
+    setMounted(true);
+    fetchOverviewData();
+    fetchOverview();
+  }, [fetchOverviewData, fetchOverview]);
+
+  useEffect(() => {
+    if (!shouldShowIOSBanner()) return;
+    const t = setTimeout(() => setShowIOSBanner(true), 3000);
+    return () => clearTimeout(t);
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    onRefresh?.();
+    Promise.all([fetchOverviewData(), fetchOverview()]).finally(() => setIsRefreshing(false));
+  }, [onRefresh, fetchOverviewData, fetchOverview]);
+
+  const handleIOSDismiss = useCallback(() => {
+    localStorage.setItem(IOS_DISMISS_KEY, String(Date.now()));
+    setShowIOSBanner(false);
+  }, []);
+
+  const handlePullRefresh = async () => {
+    handleRefresh();
+    await new Promise((r) => setTimeout(r, 1200));
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <DashboardPageWrapper>
-    <PullToRefreshWrapper onRefresh={handlePullRefresh}>
-      <PageShell maxWidth="6xl" spacing={6}>
-      <div
-        data-testid="dashboard-overview"
-        className="space-y-6"
-      >
-        {/* ─── iOS Install Banner ─── */}
-        {showIOSBanner && (
-          <IOSInstallBanner onDismiss={handleIOSDismiss} />
-        )}
+      <PullToRefreshWrapper onRefresh={handlePullRefresh}>
+        <PageShell maxWidth="6xl" spacing={6}>
+          <div data-testid="dashboard-overview" className="space-y-6">
 
-        {/* ─── Personalized Greeting Header ─── */}
-        <PageHeader
-          icon={LayoutDashboard}
-          title={`${t(greeting)}, ${firstName}`}
-          subtitle={
-            pendingReminders.length > 0
-              ? `${pendingReminders.length} reminder${pendingReminders.length !== 1 ? 's' : ''} today`
-              : messagesToday > 0
-                ? `${messagesToday} messages sent today`
-                : 'All clear — ready to start your day'
-          }
-          badge={
-            <span className="relative flex h-3 w-3" title="Owned by Weebo">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-weebo)] opacity-50" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--ag-weebo)]" />
-            </span>
-          }
-          actions={
-            <>
-              {festivalGreeting && (
-                <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-[var(--ag-amber)]/20 animate-pulse"
-                  style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--ag-amber)' }}
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {festivalGreeting}
-                </span>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-border-glow)] min-h-[44px]"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </>
-          }
-        />
+            {showIOSBanner && <IOSInstallBanner onDismiss={handleIOSDismiss} />}
 
-        {/* ─── Agent Status Strip ─── */}
-        <BlurFade delay={0.05}>
-          <AgentStatusStrip
-            onAgentClick={(agentId) => onNavigate?.(`chat?agent=${agentId}`)}
-          />
-        </BlurFade>
+            <GreetingSection
+              greeting={greeting}
+              firstName={firstName}
+              pendingRemindersCount={pendingReminders.length}
+              messagesToday={messagesToday}
+              festivalGreeting={festivalGreeting}
+              isRefreshing={isRefreshing}
+              onRefresh={handleRefresh}
+            />
 
-        {/* ─── Live Agent Feed ─── */}
-        <BlurFade delay={0.10}>
-          <LiveAgentFeed onNavigate={onNavigate} />
-        </BlurFade>
+            <BlurFade delay={0.05}>
+              <AgentStatusStrip onAgentClick={(id) => onNavigate?.(`chat?agent=${id}`)} />
+            </BlurFade>
 
-        {/* ─── Goals Summary ─── */}
-        <BlurFade delay={0.15}>
-          <GoalsSummaryCard onNavigate={onNavigate} />
-        </BlurFade>
+            <BlurFade delay={0.10}><LiveAgentFeed onNavigate={onNavigate} /></BlurFade>
 
-        {/* ─── Sprint 4: Quick Actions Grid ─── */}
-        <BlurFade delay={0.20}>
-          <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
-        </BlurFade>
+            <BlurFade delay={0.15}><GoalsSummaryCard onNavigate={onNavigate} /></BlurFade>
 
-        {/* ─── Sprint 4: Creations + Streak row ─── */}
-        <BlurFade delay={0.25} className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <RecentGenerations onNavigate={onNavigate} />
-          </div>
-          <div className="lg:col-span-1">
-            <StreakCard onNavigate={onNavigate} />
-          </div>
-        </BlurFade>
+            <BlurFade delay={0.20}>
+              <QuickActionsGrid onNavigate={onNavigate} onOpenChat={onOpenChat} />
+            </BlurFade>
 
-        {/* ─── Sprint 4: Inbox Card ─── */}
-        <BlurFade delay={0.30}>
-          <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
-        </BlurFade>
+            <BlurFade delay={0.25} className="grid gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2"><RecentGenerations onNavigate={onNavigate} /></div>
+              <div className="lg:col-span-1"><StreakCard onNavigate={onNavigate} /></div>
+            </BlurFade>
 
-        {/* ─── Load error banner ─── */}
-        {loadErrors > 0 && !loadErrDismissed && (
-          <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-amber)]/30 bg-[var(--ag-amber)]/10 px-4 py-3 text-sm text-[var(--ag-amber)]">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1">
-              {loadErrors} section{loadErrors > 1 ? 's' : ''} failed to load.
-            </span>
-            <button
-              onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }}
-              className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              Retry
-            </button>
-            <button
-              onClick={() => setLoadErrDismissed(true)}
-              aria-label="Dismiss"
-              className="p-1 rounded hover:bg-[var(--ag-amber)]/20 min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
+            <BlurFade delay={0.30}>
+              <InboxCard onNavigate={onNavigate} onOpenChat={onOpenChat} />
+            </BlurFade>
 
-        {/* ─── Error state ─── */}
-        {error && (
-          <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-pink)]/30 bg-[var(--ag-pink)]/10 px-4 py-3 text-sm text-[var(--ag-pink)]">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1">{error}</span>
-            <button
-              onClick={handleRefresh}
-              className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* ─── Today At A Glance ─── */}
-        <section>
-          <h2
-            className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-          >
-            Today at a glance
-          </h2>
-          <div
-            ref={glanceScrollRef}
-            className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-4 md:overflow-visible"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {loading
-              ? Array.from({ length: 4 }).map((_, i) => <GlanceCardSkeleton key={i} />)
-              : glanceCards.map((card, idx) => (
-                  <div
-                    key={card.key}
-                    className={`min-w-[160px] flex-shrink-0 snap-start bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl p-4 transition-all duration-500 hover:scale-[1.02] cursor-pointer ${
-                      mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                    }`}
-                    style={{
-                      transitionDelay: `${idx * 80}ms`,
-                      boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 20px ${card.color}08`,
-                    }}
-                    onClick={() => {
-                      if (card.key === 'reminders') onNavigate?.('reminders');
-                      else if (card.key === 'messages') onOpenChat?.();
-                      else if (card.key === 'focus') onNavigate?.('focus');
-                      else if (card.key === 'time-saved') onNavigate?.('activity');
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (card.key === 'reminders') onNavigate?.('reminders');
-                        else if (card.key === 'messages') onOpenChat?.();
-                        else if (card.key === 'focus') onNavigate?.('focus');
-                        else if (card.key === 'time-saved') onNavigate?.('activity');
-                      }
-                    }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                      style={{ backgroundColor: card.bgColor }}
-                    >
-                      <card.icon className="w-5 h-5" style={{ color: card.color }} />
-                    </div>
-                    <div
-                      className="text-2xl font-bold"
-                      style={{ color: card.color }}
-                    >
-                      {card.value}
-                    </div>
-                    <div className="text-sm font-medium text-[var(--ag-text-primary)] mt-0.5">{card.label}</div>
-                    <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">{card.sub}</div>
-                  </div>
-                ))}
-          </div>
-        </section>
-
-        {/* ─── Quick Actions Strip ─── */}
-        <BlurFade delay={0.40}>
-          <section>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading">
-              Quick actions
-            </h2>
-          <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-none">
-            {quickActions.map((action) => (
-              <button
-                key={action.label}
-                onClick={() => {
-                  if (action.action) action.action();
-                  else if (action.page) onNavigate?.(action.page);
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium text-[var(--ag-text-primary)] whitespace-nowrap snap-start transition-all hover:scale-[1.03] active:scale-95 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--ag-cyan)]/50"
-                style={{
-                  background: action.bgColor,
-                  borderColor: `${action.color}20`,
-                }}
-              >
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{ background: action.bgColor }}
-                >
-                  <action.icon className="w-3.5 h-3.5" style={{ color: action.color }} />
-                </div>
-                {action.label}
-              </button>
-            ))}
-          </div>
-          </section>
-        </BlurFade>
-
-        {/* ─── Two-column layout: Conversations + Sparkline ─── */}
-        <BlurFade delay={0.50} className="grid gap-4 lg:grid-cols-5">
-          {/* Recent Conversations */}
-          <section className="lg:col-span-3">
-            <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                Recent conversations
-              </h2>
-              <button
-                onClick={() => onNavigate?.('chat')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
-              >
-                View all
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
-              <CardContent className="p-0">
-                {loading ? (
-                  <div className="divide-y divide-[var(--ag-border-subtle)]">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="p-4 flex items-start gap-3">
-                        <Skeleton className="w-9 h-9 rounded-lg flex-shrink-0" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : conversations.length > 0 ? (
-                  <div className="divide-y divide-[var(--ag-border-subtle)]">
-                    {conversations.map((convo) => {
-                      // Pick agent color by content hash for visual variety
-                      const agentColors = ['#A78BFA', '#ADFF2F', '#8B5CF6', '#FF2D78', '#FFB800'];
-                      const colorIdx = convo.id.charCodeAt(0) % agentColors.length;
-                      const agentColor = agentColors[colorIdx];
-                      return (
-                        <button
-                          key={convo.id}
-                          onClick={() => onOpenChat?.()}
-                          className="w-full p-4 flex items-start gap-3 text-left hover:bg-[var(--ag-cyan)]/[0.03] transition-colors group"
-                        >
-                          {/* Agent avatar — colored circle with initial */}
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
-                            style={{
-                              background: `${agentColor}15`,
-                              color: agentColor,
-                              border: `1.5px solid ${agentColor}30`,
-                            }}
-                          >
-                            W
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[var(--ag-text-primary)] truncate group-hover:text-[var(--ag-cyan)] transition-colors leading-snug">
-                              {convo.content.length > 80
-                                ? convo.content.slice(0, 77) + '...'
-                                : convo.content}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs font-medium" style={{ color: agentColor }}>
-                                Weebo
-                              </span>
-                              <span className="text-[var(--ag-text-secondary)]/40">|</span>
-                              <span className="text-xs text-[var(--ag-text-secondary)]">
-                                {relativeTime(convo.createdAt)}
-                              </span>
-                            </div>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-[var(--ag-text-secondary)]/40 group-hover:text-[var(--ag-cyan)] transition-colors flex-shrink-0 mt-1" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <MessageSquare className="w-8 h-8 text-[var(--ag-text-secondary)]/30 mx-auto mb-2" />
-                    <p className="text-sm text-[var(--ag-text-secondary)]">No conversations yet</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 min-h-[44px]"
-                      onClick={() => onOpenChat?.()}
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />
-                      Start a chat
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Activity Sparkline */}
-          <section className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                7-day activity
-              </h2>
-              <button
-                onClick={() => onNavigate?.('activity')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
-              >
-                Details
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl">
-              <CardContent className="p-4">
-                {loading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
-                    <div className="flex justify-between">
-                      {Array.from({ length: 7 }).map((_, i) => (
-                        <Skeleton key={i} className="h-3 w-6" />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <ActivitySparkline data={activityData} labels={dayLabels} color="#A78BFA" />
-                    {/* Day labels */}
-                    {dayLabels.length > 0 && (
-                      <div className="flex justify-between mt-2 px-1">
-                        {dayLabels.map((label, i) => (
-                          <span key={i} className="text-xs text-[var(--ag-text-secondary)] font-mono">
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {/* Summary stats */}
-                    <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-[var(--ag-border-subtle)]">
-                      <div>
-                        <div className="text-xs text-[var(--ag-text-secondary)]">Total this week</div>
-                        <div className="text-lg font-bold text-[var(--ag-cyan)] font-mono">
-                          {activityData.reduce((a, b) => a + b, 0)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-[var(--ag-text-secondary)]">Today</div>
-                        <div className="text-lg font-bold text-[var(--ag-jarvis)] font-mono">
-                          {activityData.length > 0 ? activityData[activityData.length - 1] : 0}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Completion badge */}
-            {!loading && reminders.length > 0 && (
-              <div
-                className="mt-3 rounded-2xl border border-[var(--ag-border-subtle)] bg-[var(--ag-bg-surface)] backdrop-blur-xl p-4 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[var(--ag-text-primary)]">
-                    {reminders.filter((r) => r.completed).length} of {reminders.length} tasks done
-                  </div>
-                  <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
-                    {reminders.filter((r) => r.completed).length === reminders.length
-                      ? 'All caught up!'
-                      : `${reminders.length - reminders.filter((r) => r.completed).length} remaining`}
-                  </div>
-                </div>
+            {/* Load error banner */}
+            {loadErrors > 0 && !loadErrDismissed && (
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-amber)]/30 bg-[var(--ag-amber)]/10 px-4 py-3 text-sm text-[var(--ag-amber)]">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">{loadErrors} section{loadErrors > 1 ? 's' : ''} failed to load.</span>
+                <button onClick={() => { setLoadErrDismissed(true); void loadDashboard(); }} className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center">Retry</button>
+                <button onClick={() => setLoadErrDismissed(true)} aria-label="Dismiss" className="p-1 rounded hover:bg-[var(--ag-amber)]/20 min-h-[44px] min-w-[44px] flex items-center justify-center"><X className="w-3.5 h-3.5" /></button>
               </div>
             )}
 
-            {/* ─── Discover Card ─── */}
-            <div className="mt-3">
-              <DiscoverCard
-                onNavigate={(path) => onNavigate?.(path)}
-                onOpenChat={() => onOpenChat?.()}
-              />
-            </div>
-          </section>
-        </BlurFade>
-
-        {/* ─── GAP-1: Today's Reminders Card ─── */}
-        <BlurFade delay={0.55}>
-          <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-            >
-              Today&apos;s Reminders
-            </h2>
-            <button
-              onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
-            >
-              All reminders
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <SectionCard padding="sm" className="overflow-hidden">
-              {overviewLoading ? (
-                <div className="divide-y divide-[var(--ag-border-subtle)]">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="p-4 flex items-center gap-3">
-                      <Skeleton className="w-8 h-8 rounded-lg flex-shrink-0" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/3" />
-                      </div>
-                      <Skeleton className="w-14 h-7 rounded-md" />
-                    </div>
-                  ))}
-                </div>
-              ) : overviewData && overviewData.remindersDueToday.length > 0 ? (
-                <div className="divide-y divide-[var(--ag-border-subtle)]">
-                  {overviewData.remindersDueToday.map((rem) => (
-                    <div
-                      key={rem.id}
-                      className={`p-4 flex items-center gap-3 ${rem.overdue ? 'bg-[var(--ag-pink)]/[0.04]' : ''}`}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{
-                          background: rem.overdue ? 'rgba(255,45,120,0.12)' : 'rgba(139,92,246,0.08)',
-                        }}
-                      >
-                        <Bell className="w-4 h-4" style={{ color: rem.overdue ? 'var(--ag-pink)' : 'var(--ag-cyan)' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[var(--ag-text-primary)] truncate">{rem.text}</p>
-                        <span className={`text-xs ${rem.overdue ? 'text-[var(--ag-pink)]' : 'text-[var(--ag-text-secondary)]'}`}>
-                          {rem.overdue ? 'Overdue - ' : ''}
-                          {new Date(rem.datetime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={completingReminder === rem.id}
-                        onClick={() => handleCompleteReminder(rem.id)}
-                        className="text-[var(--ag-jarvis)] hover:bg-[var(--ag-jarvis)]/10 text-xs px-3 min-h-[44px] rounded-md"
-                      >
-                        {completingReminder === rem.id ? (
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <>
-                            <Check className="w-3 h-3 mr-1" />
-                            Done
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6 text-center">
-                  <CheckCircle2 className="w-6 h-6 text-[var(--ag-jarvis)]/40 mx-auto mb-1.5" />
-                  <p className="text-sm text-[var(--ag-jarvis)]">No reminders for today</p>
-                </div>
-              )}
-          </SectionCard>
-          </section>
-        </BlurFade>
-
-        {/* ─── GAP-1: Habits Today Card ─── */}
-        <BlurFade delay={0.60}>
-          <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-            >
-              Habits Today
-            </h2>
-            <button
-              onClick={() => onNavigate?.('reminders')}
-              className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
-            >
-              Manage
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <SectionCard padding="sm" className="overflow-hidden">
-              {overviewLoading ? (
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-3 w-24 mb-2" />
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="w-8 h-8 rounded-lg" />
-                      <div className="flex-1 space-y-1">
-                        <Skeleton className="h-4 w-1/2" />
-                        <Skeleton className="h-3 w-1/4" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : overviewData && overviewData.habitsToday.length > 0 ? (
-                <>
-                  {/* Progress bar */}
-                  <div className="px-4 pt-4 pb-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-[var(--ag-text-secondary)]">
-                        {overviewData.habitsToday.filter((h) => h.loggedToday).length}/{overviewData.habitsToday.length} habits done
-                      </span>
-                      <span className="text-xs font-mono text-[var(--ag-jarvis)]">
-                        {Math.round((overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[var(--ag-bg-elevated)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[var(--ag-jarvis)] to-[var(--ag-cyan)] transition-all duration-500"
-                        style={{
-                          width: `${(overviewData.habitsToday.filter((h) => h.loggedToday).length / overviewData.habitsToday.length) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="divide-y divide-[var(--ag-border-subtle)]">
-                    {overviewData.habitsToday.map((habit) => (
-                      <div
-                        key={habit.id}
-                        className="px-4 py-3 flex items-center gap-3"
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
-                          style={{ background: habit.loggedToday ? 'rgba(173,255,47,0.1)' : 'rgba(139,92,246,0.08)' }}
-                        >
-                          {habit.icon === 'star' ? <Target className="w-4 h-4 text-[var(--ag-violet)]" /> : habit.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${habit.loggedToday ? 'text-[var(--ag-jarvis)]' : 'text-[var(--ag-text-primary)]'}`}>
-                            {habit.name}
-                          </p>
-                          <span className="text-xs text-[var(--ag-text-secondary)]">
-                            {habit.streak > 0 ? `${habit.streak} day streak` : 'No streak yet'}
-                          </span>
-                        </div>
-                        {habit.loggedToday ? (
-                          <div className="w-7 h-7 rounded-full bg-[var(--ag-jarvis)]/15 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-4 h-4 text-[var(--ag-jarvis)]" />
-                          </div>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onNavigate?.('reminders')}
-                            className="text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 text-xs px-3 min-h-[44px] rounded-md"
-                          >
-                            Log
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="p-6 text-center">
-                  <Target className="w-6 h-6 text-[var(--ag-text-secondary)]/30 mx-auto mb-1.5" />
-                  <p className="text-sm text-[var(--ag-text-secondary)]">No habits set up yet</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-1.5 bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 min-h-[44px]"
-                    onClick={() => onNavigate?.('reminders')}
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    Create a habit
-                  </Button>
-                </div>
-              )}
-          </SectionCard>
-          </section>
-        </BlurFade>
-
-        {/* ─── GAP-1: Calendar Today Card ─── */}
-        {overviewData && overviewData.calendarEventsToday.length > 0 && (
-          <BlurFade delay={0.65}>
-            <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2
-                className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider font-heading"
-              >
-                Calendar Today
-              </h2>
-              <button
-                onClick={() => onNavigate?.('calendar')}
-                className="flex items-center gap-1 text-xs text-[var(--ag-text-secondary)] hover:text-[var(--ag-cyan)] transition-colors"
-              >
-                Full calendar
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <SectionCard padding="sm" className="overflow-hidden">
-                <div className="divide-y divide-[var(--ag-border-subtle)]">
-                  {overviewData.calendarEventsToday.slice(0, 4).map((evt) => {
-                    const startDate = new Date(evt.start_time);
-                    const endDate = evt.end_time ? new Date(evt.end_time) : null;
-                    const now = Date.now();
-                    const isCurrent = evt.start_time <= now && (evt.end_time ? evt.end_time >= now : true);
-                    return (
-                      <div
-                        key={evt.id}
-                        className={`p-4 flex items-center gap-3 ${isCurrent ? 'bg-[var(--ag-cyan)]/[0.04] border-l-2 border-l-[var(--ag-cyan)]' : ''}`}
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: isCurrent ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)' }}
-                        >
-                          <CalendarDays className="w-4 h-4" style={{ color: isCurrent ? 'var(--ag-cyan)' : 'var(--ag-violet)' }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[var(--ag-text-primary)] truncate">{evt.title}</p>
-                          <span className="text-xs text-[var(--ag-text-secondary)]">
-                            {startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                            {endDate ? ` - ${endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
-                          </span>
-                        </div>
-                        {isCurrent && (
-                          <span className="text-xs font-medium text-[var(--ag-cyan)] bg-[var(--ag-cyan)]/10 px-2 py-0.5 rounded-full">
-                            NOW
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-            </SectionCard>
-            </section>
-          </BlurFade>
-        )}
-
-        {/* ─── GAP-1: Weekly Stats Card ─── */}
-        {overviewData && (
-          <BlurFade delay={0.70}>
-            <section>
-            <h2
-              className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading"
-            >
-              This Week
-            </h2>
-            <div className="grid grid-cols-3 gap-3">
-              <SectionCard className="text-center" padding="sm">
-                <MessageSquare className="w-5 h-5 text-[var(--ag-cyan)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-cyan)] font-mono">
-                  {overviewData.weeklyStats.messagesThisWeek}
-                </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Messages</div>
-              </SectionCard>
-              <SectionCard className="text-center" padding="sm">
-                <CheckCircle2 className="w-5 h-5 text-[var(--ag-jarvis)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-jarvis)] font-mono">
-                  {overviewData.weeklyStats.remindersCompleted}
-                </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Reminders Done</div>
-              </SectionCard>
-              <SectionCard className="text-center" padding="sm">
-                <Target className="w-5 h-5 text-[var(--ag-violet)] mx-auto mb-1.5" />
-                <div className="text-xl font-bold text-[var(--ag-violet)] font-mono">
-                  {overviewData.weeklyStats.habitsLogged}
-                </div>
-                <div className="text-xs text-[var(--ag-text-secondary)] mt-0.5">Habits Logged</div>
-              </SectionCard>
-            </div>
-            </section>
-          </BlurFade>
-        )}
-
-        {/* ─── Onboarding Checklist (new users, first 7 days) ─── */}
-        {showOnboarding && (
-          <BlurFade delay={0.40}>
-            <h2 className="text-sm font-semibold text-[var(--ag-text-secondary)] uppercase tracking-wider mb-3 font-heading">
-              Get started
-            </h2>
-            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-3 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(173,255,47,0.1))' }}
-                  >
-                    <Sparkles className="w-5 h-5 text-[var(--ag-cyan)]" />
-                  </div>
-                  <div>
-                    <h3
-                      className="text-base font-bold text-[var(--ag-text-primary)] font-heading"
-                    >
-                      Welcome to Agentin!
-                    </h3>
-                    <p className="text-xs text-[var(--ag-text-secondary)] mt-0.5">
-                      Complete these steps to unlock your full AI experience.
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {[
-                    {
-                      label: 'Connect Telegram',
-                      desc: 'Chat with your AI on the go',
-                      icon: Link2,
-                      color: 'var(--ag-violet)',
-                      done: false,
-                      action: () => onNavigate?.('connections'),
-                    },
-                    {
-                      label: 'Set up habits',
-                      desc: 'Track your daily goals',
-                      icon: Target,
-                      color: '#ADFF2F',
-                      done: reminders.length > 0,
-                      action: () => onNavigate?.('reminders'),
-                    },
-                    {
-                      label: 'Try voice input',
-                      desc: 'Talk to Weebo hands-free',
-                      icon: Mic,
-                      color: '#FF2D78',
-                      done: false,
-                      action: () => onOpenChat?.(),
-                    },
-                    {
-                      label: 'Add a memory',
-                      desc: 'Teach your AI about you',
-                      icon: Brain,
-                      color: 'var(--ag-cyan)',
-                      done: false,
-                      action: () => onNavigate?.('memory'),
-                    },
-                  ].map((step) => (
-                    <button
-                      key={step.label}
-                      onClick={step.action}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01] active:scale-[0.99] min-h-[44px] ${
-                        step.done
-                          ? 'border-[var(--ag-jarvis)]/20 bg-[var(--ag-jarvis)]/5'
-                          : 'border-[var(--ag-border-subtle)] hover:border-[var(--ag-border-default)]'
-                      }`}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${step.color}15` }}
-                      >
-                        {step.done ? (
-                          <CheckSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
-                        ) : (
-                          <step.icon className="w-4 h-4" style={{ color: step.color }} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium ${step.done ? 'text-[var(--ag-jarvis)] line-through' : 'text-[var(--ag-text-primary)]'}`}>
-                          {step.label}
-                        </div>
-                        <div className="text-xs text-[var(--ag-text-secondary)]">{step.desc}</div>
-                      </div>
-                      {!step.done && (
-                        <ArrowRight className="w-4 h-4 text-[var(--ag-text-secondary)]/40 flex-shrink-0" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </BlurFade>
-        )}
-
-        {/* ─── Onboarding Card (empty state, no-data fallback) ─── */}
-        {isEmptyState && !showOnboarding && (
-          <BlurFade delay={0.45}>
-            <Card className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl overflow-hidden">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-start gap-4 mb-5">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(173,255,47,0.1))' }}
-                  >
-                    <Sparkles className="w-6 h-6 text-[var(--ag-cyan)]" />
-                  </div>
-                  <div>
-                    <h3
-                      className="text-lg font-bold text-[var(--ag-text-primary)] font-heading"
-                    >
-                      Welcome to Agentin!
-                    </h3>
-                    <p className="text-sm text-[var(--ag-text-secondary)] mt-1 leading-relaxed">
-                      Start by chatting with Weebo, setting a reminder, or connecting Telegram.
-                      Your dashboard will light up as you go.
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => onOpenChat?.()}
-                    className="flex items-center gap-3 p-3 rounded-xl border-0 transition-all hover:scale-[1.02] active:scale-95 min-h-[44px] bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90"
-                  >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0">
-                      <Send className="w-4 h-4 text-[var(--ag-jarvis)]" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-white">Chat with Weebo</div>
-                      <div className="text-xs text-white/80">Ask anything</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => onNavigate?.('reminders?openAdd=true')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-border-default)] transition-all hover:border-[var(--ag-border-glow)] hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(139,92,246,0.06)' }}
-                  >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-cyan)]/10 flex-shrink-0">
-                      <Bell className="w-4 h-4 text-[var(--ag-cyan)]" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Set a Reminder</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Stay on track</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => onNavigate?.('connections')}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--ag-violet)]/15 transition-all hover:border-[var(--ag-violet)]/30 hover:scale-[1.02] active:scale-95 min-h-[44px]"
-                    style={{ background: 'rgba(139,92,246,0.06)' }}
-                  >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ag-violet)]/10 flex-shrink-0">
-                      <Link2 className="w-4 h-4 text-[var(--ag-violet)]" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">Connect Telegram</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">Chat on the go</div>
-                    </div>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </BlurFade>
-        )}
-
-        {/* ─── Quick Chat Input ─── */}
-        <BlurFade delay={0.35}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (quickChatInput.trim()) {
-                onOpenChat?.();
-                setQuickChatInput('');
-              }
-            }}
-            className="relative"
-          >
-            <div className="flex items-center gap-2 bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)] rounded-xl p-2 transition-all focus-within:shadow-[var(--ag-glow-sm)]">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[var(--ag-jarvis)]/10 flex-shrink-0 ml-1">
-                <MessageSquare className="w-4 h-4 text-[var(--ag-jarvis)]" />
+            {/* Error state */}
+            {error && (
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--ag-pink)]/30 bg-[var(--ag-pink)]/10 px-4 py-3 text-sm text-[var(--ag-pink)]">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">{error}</span>
+                <button onClick={handleRefresh} className="text-sm underline hover:no-underline min-h-[44px] min-w-[44px] flex items-center justify-center">Retry</button>
               </div>
-              <input
-                ref={quickChatRef}
-                type="text"
-                value={quickChatInput}
-                onChange={(e) => setQuickChatInput(e.target.value)}
-                placeholder="Ask Weebo anything..."
-                className="flex-1 bg-transparent text-sm text-[var(--ag-text-primary)] placeholder:text-[var(--ag-text-secondary)]/60 outline-none min-h-[44px] px-1"
+            )}
+
+            <GlanceCards loading={loading} glanceCards={glanceCards} mounted={mounted} onNavigate={onNavigate} onOpenChat={onOpenChat} />
+
+            <QuickActions onNavigate={onNavigate} onOpenChat={onOpenChat} onNotifyStart={(n) => void notifyStart(n)} />
+
+            {/* Two-column: conversations + sparkline */}
+            <BlurFade delay={0.50} className="grid gap-4 lg:grid-cols-5">
+              <ActivityFeed loading={loading} conversations={conversations} onNavigate={onNavigate} onOpenChat={onOpenChat} />
+              <SparklineCard
+                loading={loading}
+                activityData={activityData}
+                dayLabels={dayLabels}
+                totalReminders={reminders.length}
+                completedReminders={completedRemindersCount}
+                onNavigate={onNavigate}
+                onOpenChat={onOpenChat}
               />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!quickChatInput.trim()}
-                className="rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#F59E0B] text-white hover:opacity-90 border-0 disabled:opacity-30 min-h-[44px] min-w-[44px] px-3"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </form>
-        </BlurFade>
-      </div>
-      </PageShell>
-    </PullToRefreshWrapper>
+            </BlurFade>
+
+            <BlurFade delay={0.55}>
+              <RemindersSection overviewData={overviewData} overviewLoading={overviewLoading} completingReminder={completingReminder} onCompleteReminder={handleCompleteReminder} onNavigate={onNavigate} />
+            </BlurFade>
+
+            <BlurFade delay={0.60}>
+              <HabitsSection overviewData={overviewData} overviewLoading={overviewLoading} onNavigate={onNavigate} />
+            </BlurFade>
+
+            {overviewData && overviewData.calendarEventsToday.length > 0 && (
+              <BlurFade delay={0.65}>
+                <CalendarSection events={overviewData.calendarEventsToday} onNavigate={onNavigate} />
+              </BlurFade>
+            )}
+
+            {overviewData && (
+              <BlurFade delay={0.70}>
+                <WeeklyStats stats={overviewData.weeklyStats} />
+              </BlurFade>
+            )}
+
+            {showOnboarding && (
+              <BlurFade delay={0.40}>
+                <OnboardingChecklist hasReminders={reminders.length > 0} onNavigate={onNavigate} onOpenChat={onOpenChat} />
+              </BlurFade>
+            )}
+
+            {isEmptyState && !showOnboarding && (
+              <BlurFade delay={0.45}>
+                <EmptyState onNavigate={onNavigate} onOpenChat={onOpenChat} />
+              </BlurFade>
+            )}
+
+            <BlurFade delay={0.35}>
+              <QuickChatInput onOpenChat={onOpenChat} />
+            </BlurFade>
+
+          </div>
+        </PageShell>
+      </PullToRefreshWrapper>
     </DashboardPageWrapper>
   );
 }

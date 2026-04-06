@@ -309,18 +309,18 @@ describe("99.8 SettingsPage: Voice tab", () => {
     expect(src).toContain("voiceSettings");
   });
   it("has speech rate slider", () => {
-    const src = readFrontend("dashboard/pages", "SettingsPage.tsx");
+    const src = readFrontend("dashboard/pages/settings", "VoiceTab.tsx");
     expect(src).toContain("Speech Rate");
   });
   it("has language selector", () => {
-    const src = readFrontend("dashboard/pages", "SettingsPage.tsx");
+    const src = readFrontend("dashboard/pages/settings", "VoiceTab.tsx");
     expect(src).toContain("en-US");
     expect(src).toContain("en-GB");
     expect(src).toContain("hi-IN");
     expect(src).toContain("es-ES");
   });
   it("has Test Voice button", () => {
-    const src = readFrontend("dashboard/pages", "SettingsPage.tsx");
+    const src = readFrontend("dashboard/pages/settings", "VoiceTab.tsx");
     expect(src).toContain("Test Voice");
   });
   it("saves to localStorage with agentin_voice_settings key", () => {
@@ -328,7 +328,7 @@ describe("99.8 SettingsPage: Voice tab", () => {
     expect(src).toContain("agentin_voice_settings");
   });
   it("has Alt+V tip in voice tab", () => {
-    const src = readFrontend("dashboard/pages", "SettingsPage.tsx");
+    const src = readFrontend("dashboard/pages/settings", "VoiceTab.tsx");
     expect(src).toContain("Alt + V");
   });
 });

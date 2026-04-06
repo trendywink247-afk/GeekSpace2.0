@@ -1,171 +1,94 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { useAgentCanvas } from '@/hooks/useAgentCanvas';
-import {
-  Film, Sparkles, Send, Loader2, Trash2, Copy, Check,
-  Clock, Bot, Wifi, WifiOff, Wand2, ChevronDown,
-  Download, X, Play, AlertCircle, RefreshCw, AlertTriangle, ImageIcon
-} from 'lucide-react';
+import { Film, AlertCircle, AlertTriangle, ImageIcon, Sparkles, Trash2 } from 'lucide-react';
 import { videoService, picoService, agentService } from '@/services/api';
 import type { UserVideo, VideoModel, DirectorJob } from '@/services/api';
-
-// ---- Fleet agent type ----
-interface FleetAgent {
-  id: string;
-  slot: number;
-  name: string;
-  personality: string;
-  status: string;
-  tasks_completed: number;
-}
-
-const statusColor: Record<string, string> = {
-  active: '#00FF88',
-  idle: '#6B7280',
-  disabled: '#FF6161',
-};
-
-// 61.7: Lazy-load video thumbnails via IntersectionObserver
-function LazyVideo({ src, className }: { src: string; className?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !el.src) {
-          el.src = src;
-          setLoaded(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [src]);
-
-  return (
-    <div className="relative w-full h-full">
-      {!loaded && (
-        <div className="absolute inset-0 bg-[var(--ag-bg-surface)] animate-pulse" />
-      )}
-      <video
-        ref={videoRef}
-        className={className}
-        muted
-        preload="none"
-      />
-    </div>
-  );
-}
-
-function timeLeft(expiresAt: string): string {
-  const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return 'Expired';
-  const hrs = Math.floor(diff / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  if (hrs > 0) return `${hrs}h ${mins}m left`;
-  return `${mins}m left`;
-}
+import {
+  GenerateForm, VideoGallery, DirectorMode,
+  VideoPreviewModal, VideoModelsPanel, AgentPickerDropdown,
+  type FleetAgent, BROKEN_VIDEO_PROVIDERS,
+} from './video-gen';
 
 export function VideoGenPage() {
-  // Video generation state
+  // ── Video generation ────────────────────────────────────────
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [selectedModel, setSelectedModel] = useState('auto');
   const [models, setModels] = useState<VideoModel[]>([]);
-  const [showModelPicker, setShowModelPicker] = useState(false);
   const [duration, setDuration] = useState(5);
 
-  // Gallery state
+  // ── Gallery ─────────────────────────────────────────────────
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [videoCount, setVideoCount] = useState(0);
   const [maxVideos, setMaxVideos] = useState(5);
   const [galleryLoading, setGalleryLoading] = useState(true);
-  // 58.9: gallery sort
   const [gallerySort, setGallerySort] = useState<'newest' | 'status'>('newest');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<UserVideo | null>(null);
-
-  // Polling for processing videos
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── 55.13: Director Mode state ─────────────────────────────
+  // ── Director Mode ────────────────────────────────────────────
   const [directorIdea, setDirectorIdea] = useState('');
   const [directorRunning, setDirectorRunning] = useState(false);
-  // 65.13: Expand idea — AI enrichment of the director idea
   const [expandingIdea, setExpandingIdea] = useState(false);
-  // 59.13: Multi-job queue — holds next idea to auto-start when current job finishes
   const [queuedIdea, setQueuedIdea] = useState<string | null>(null);
   const [directorJobId, setDirectorJobId] = useState<string | null>(null);
   const [directorJob, setDirectorJob] = useState<DirectorJob | null>(null);
   const [directorJobs, setDirectorJobs] = useState<DirectorJob[]>([]);
-  // 66.11: Job history status filter
   const [jobHistoryFilter, setJobHistoryFilter] = useState<'all' | 'done' | 'failed'>('all');
   const [directorError, setDirectorError] = useState<string | null>(null);
   const directorPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // 58.13: prevent double-triggering auto-stitch
   const autoStitchFiredRef = useRef(false);
-  // 56.13: Clip preview modal
-  const [previewClip, setPreviewClip] = useState<{ url: string; index: number } | null>(null);
-  const [copiedClipUrl, setCopiedClipUrl] = useState(false);
-  // 57.13: stitch progress + result
   const [stitching, setStitching] = useState(false);
-  const [stitchResult, setStitchResult] = useState<{ url: string | null; clipUrls: string[]; softStitch: boolean } | null>(null);
+  const [stitchResult, setStitchResult] = useState<{
+    url: string | null; clipUrls: string[]; softStitch: boolean;
+  } | null>(null);
 
-  // Agent state
+  // ── Fleet agent ──────────────────────────────────────────────
   const [assignedAgent, setAssignedAgent] = useState<FleetAgent | null>(null);
   const [fleetAgents, setFleetAgents] = useState<FleetAgent[]>([]);
   const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [agentLoading, setAgentLoading] = useState(true);
 
-  // Forge agent canvas integration
-  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'forge', page: 'video-gen' });
+  // ── Video models panel ───────────────────────────────────────
+  const [videoModels, setVideoModels] = useState<Array<{
+    id: string; name: string; description: string; cost: string; credits: number; tier: string;
+  }>>([]);
+  const [videoModelStatuses, setVideoModelStatuses] = useState<Record<string, 'ok' | 'down' | 'unknown'>>({});
+  const [preferredVideoModel, setPreferredVideoModel] = useState('auto');
+  const [savingVideoModel, setSavingVideoModel] = useState<string | null>(null);
+  const [showVideoModelsPanel, setShowVideoModelsPanel] = useState(false);
 
-  // Toast
+  // ── Misc UI ──────────────────────────────────────────────────
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [videoModels, setVideoModels] = useState<Array<{ id: string; name: string; description: string; cost: string; credits: number; tier: string }>>([]);
-  const [videoModelStatuses, setVideoModelStatuses] = useState<Record<string, 'ok' | 'down' | 'unknown'>>({});
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('auto');
-  const [savingVideoModel, setSavingVideoModel] = useState<string | null>(null);
-  const [showVideoModelsPanel, setShowVideoModelsPanel] = useState(false);
+
+  const { notifyStart, notifyDone, notifyFail } = useAgentCanvas({ agent: 'forge', page: 'video-gen' });
+
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Load gallery
+  const isProviderBroken =
+    !selectedModel || BROKEN_VIDEO_PROVIDERS.some((p) => selectedModel === p || selectedModel.includes(p));
+
+  // ── Data loading ─────────────────────────────────────────────
   const loadGallery = useCallback(async () => {
     try {
       const res = await videoService.list();
-      setVideos(res.data.videos);
-      setVideoCount(res.data.count);
-      setMaxVideos(res.data.max);
-    } catch {
-      // silently fail — UI shows empty gallery
-    } finally {
-      setGalleryLoading(false);
-    }
+      setVideos(res.data.videos); setVideoCount(res.data.count); setMaxVideos(res.data.max);
+    } catch { /* silently fail */ } finally { setGalleryLoading(false); }
   }, []);
 
-  // Load models
   const loadModels = useCallback(async () => {
-    try {
-      const res = await videoService.getModels();
-      setModels(res.data.models);
-    } catch {
-      // silently fail — model picker stays hidden
-    }
+    try { const res = await videoService.getModels(); setModels(res.data.models); } catch { /* */ }
   }, []);
 
-  // Load fleet agent
   const loadFleet = useCallback(async () => {
     try {
       const res = await picoService.getAgents();
@@ -175,73 +98,41 @@ export function VideoGenPage() {
         const agent = res.data.find((a: FleetAgent) => a.slot === parseInt(savedSlot, 10));
         if (agent) setAssignedAgent(agent);
       }
-    } catch {
-      // silently fail — agent section shows empty state
-    } finally {
-      setAgentLoading(false);
-    }
+    } catch { /* */ } finally { setAgentLoading(false); }
+  }, []);
+
+  const loadDirectorJobs = useCallback(async () => {
+    try { const res = await videoService.directorList(); setDirectorJobs(res.data.jobs); } catch { /* */ }
   }, []);
 
   useEffect(() => {
-    loadGallery();
-    loadModels();
-    loadFleet();
-    videoService.getModels().then(res => setVideoModels(res.data.models)).catch(() => {});
-    videoService.getModelStatus().then(res => setVideoModelStatuses(res.data.statuses)).catch(() => {});
-    agentService.getConfig().then(res => {
-      const pref = res.data.preferred_video_model;
-      if (pref) setPreferredVideoModel(pref);
-    }).catch(() => {});
-  }, [loadGallery, loadModels, loadFleet]);
+    loadGallery(); loadModels(); loadFleet();
+    videoService.getModels().then((r) => setVideoModels(r.data.models)).catch(() => {});
+    videoService.getModelStatus().then((r) => setVideoModelStatuses(r.data.statuses)).catch(() => {});
+    agentService.getConfig().then((r) => { if (r.data.preferred_video_model) setPreferredVideoModel(r.data.preferred_video_model); }).catch(() => {});
+    void loadDirectorJobs();
+  }, [loadGallery, loadModels, loadFleet, loadDirectorJobs]);
 
-  // Save assigned agent to localStorage
   useEffect(() => {
-    if (assignedAgent) {
-      localStorage.setItem('vg_assigned_agent', String(assignedAgent.slot));
-    } else {
-      localStorage.removeItem('vg_assigned_agent');
-    }
+    if (assignedAgent) localStorage.setItem('vg_assigned_agent', String(assignedAgent.slot));
+    else localStorage.removeItem('vg_assigned_agent');
   }, [assignedAgent]);
 
-  // Poll for processing videos
+  // Poll processing videos
   useEffect(() => {
-    const processingVideos = videos.filter(v => v.status === 'processing');
-    if (processingVideos.length === 0) {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-      return;
-    }
-
+    const processing = videos.filter((v) => v.status === 'processing');
+    if (!processing.length) { if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; } return; }
     pollingRef.current = setInterval(async () => {
       let changed = false;
-      for (const vid of processingVideos) {
-        try {
-          const res = await videoService.checkStatus(vid.id);
-          if (res.data.status === 'ready') changed = true;
-        } catch { /* non-fatal */ }
+      for (const vid of processing) {
+        try { const r = await videoService.checkStatus(vid.id); if (r.data.status === 'ready') changed = true; } catch { /* */ }
       }
       if (changed) loadGallery();
     }, 10000);
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, [videos, loadGallery]);
 
-  // ── 55.13: Director Mode logic ─────────────────────────────
-
-  const loadDirectorJobs = useCallback(async () => {
-    try {
-      const res = await videoService.directorList();
-      setDirectorJobs(res.data.jobs);
-    } catch { /* non-fatal */ }
-  }, []);
-
-  useEffect(() => { void loadDirectorJobs(); }, [loadDirectorJobs]);
-
-  // Poll active job
+  // Poll active director job
   useEffect(() => {
     if (!directorJobId) return;
     if (directorPollRef.current) clearInterval(directorPollRef.current);
@@ -250,31 +141,20 @@ export function VideoGenPage() {
         const res = await videoService.directorGet(directorJobId);
         setDirectorJob(res.data);
         if (res.data.status === 'done' || res.data.status === 'failed') {
-          clearInterval(directorPollRef.current!);
-          directorPollRef.current = null;
-          setDirectorRunning(false);
-          if (res.data.status === 'done') showToast('Director Mode complete! All clips generated.');
-          else showToast(res.data.error || 'Director Mode failed', 'error');
+          clearInterval(directorPollRef.current!); directorPollRef.current = null; setDirectorRunning(false);
+          showToast(res.data.status === 'done' ? 'Director Mode complete!' : (res.data.error || 'Director Mode failed'), res.data.status === 'done' ? 'success' : 'error');
           void loadDirectorJobs();
         }
-      } catch { /* non-fatal */ }
+      } catch { /* */ }
     }, 4000);
     return () => { if (directorPollRef.current) clearInterval(directorPollRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorJobId, loadDirectorJobs]);
 
-  // 58.13: Auto-stitch when all clips complete successfully
+  // Auto-stitch when all clips succeed
   useEffect(() => {
-    if (
-      directorJob?.status === 'done' &&
-      directorJob.clips.length > 0 &&
-      directorJob.clips.every((c) => c.success) &&
-      !stitchResult &&
-      !stitching &&
-      !autoStitchFiredRef.current &&
-      directorJobId
-    ) {
+    if (directorJob?.status === 'done' && directorJob.clips.length > 0 && directorJob.clips.every((c) => c.success) && !stitchResult && !stitching && !autoStitchFiredRef.current && directorJobId) {
       autoStitchFiredRef.current = true;
-      // Defer slightly so UI settles after polling update
       const tid = setTimeout(() => {
         void (async () => {
           setStitching(true);
@@ -282,1176 +162,282 @@ export function VideoGenPage() {
             const res = await videoService.directorStitch(directorJobId);
             setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
             if (res.data.stitchedUrl) showToast('Auto-stitch complete! Download your video below.');
-          } catch { /* non-fatal — user can stitch manually */ } finally {
-            setStitching(false);
-          }
+          } catch { /* */ } finally { setStitching(false); }
         })();
       }, 1500);
       return () => clearTimeout(tid);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorJob, stitchResult, stitching, directorJobId]);
 
-  // 59.13: Auto-start queued job when current job finishes
+  // Auto-start queued job
   useEffect(() => {
     if (!directorRunning && queuedIdea) {
-      const idea = queuedIdea;
-      setQueuedIdea(null);
-      setDirectorIdea(idea);
-      // Small delay so state settles before starting
+      const idea = queuedIdea; setQueuedIdea(null); setDirectorIdea(idea);
       const tid = setTimeout(() => { void handleDirectorSubmit(idea); }, 800);
       return () => clearTimeout(tid);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directorRunning]);
 
-  // 65.13: Expand idea via AI before submitting to Director Mode
-  const handleExpandIdea = async () => {
-    if (!directorIdea.trim() || expandingIdea) return;
-    setExpandingIdea(true);
+  // ── Handlers ─────────────────────────────────────────────────
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    if (isProviderBroken) { showToast('Video generation temporarily unavailable — credits not charged.', 'error'); return; }
+    setGenerating(true); void notifyStart('Video generation');
     try {
-      const res = await videoService.directorExpandIdea(directorIdea.trim());
-      setDirectorIdea(res.data.expanded);
-    } catch { /* ignore — keep original idea */ } finally {
-      setExpandingIdea(false);
-    }
+      const res = await videoService.generate(prompt, selectedModel, 1280, 720, duration);
+      showToast(`Video generating! Est. ${res.data.estimated_time || 30}s.`);
+      setPrompt(''); await loadGallery(); void notifyDone(`Video generation started (${selectedModel})`);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Video generation failed';
+      showToast(`${msg} — credits not charged.`, 'error'); void notifyFail(msg);
+    } finally { setGenerating(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      await videoService.delete(id); showToast('Video deleted'); await loadGallery();
+      if (previewVideo?.id === id) setPreviewVideo(null); void notifyDone('Video deleted');
+    } catch { showToast('Failed to delete', 'error'); void notifyFail('Failed to delete video');
+    } finally { setIsDeleting(false); setDeleteConfirmId(null); }
+  };
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleRefreshStatus = async (id: string) => {
+    try {
+      const res = await videoService.checkStatus(id);
+      if (res.data.status === 'ready') { showToast('Video is ready!'); await loadGallery(); }
+      else showToast('Still processing... please wait.', 'error');
+    } catch { showToast('Failed to check status', 'error'); }
   };
 
   const handleDirectorSubmit = async (overrideIdea?: string) => {
     const idea = overrideIdea ?? directorIdea.trim();
     if (!idea) return;
-    // 59.13: If a job is already running, queue the new idea instead of starting immediately
-    if (directorRunning) {
-      setQueuedIdea(idea);
-      setDirectorIdea('');
-      showToast('Queued! Will start automatically when the current job finishes.');
-      return;
-    }
-    setDirectorRunning(true);
-    setDirectorError(null);
-    setDirectorJob(null);
-    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
+    if (directorRunning) { setQueuedIdea(idea); setDirectorIdea(''); showToast('Queued! Starts when current job finishes.'); return; }
+    setDirectorRunning(true); setDirectorError(null); setDirectorJob(null); autoStitchFiredRef.current = false;
     void notifyStart('Director Mode pipeline');
     try {
       const res = await videoService.directorCreate(idea);
-      setDirectorJobId(res.data.jobId);
-      showToast('Director Mode pipeline started — generating 6 clips…');
-      void notifyDone('Director Mode pipeline started');
+      setDirectorJobId(res.data.jobId); showToast('Director Mode started — generating 6 clips…'); void notifyDone('Director Mode pipeline started');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Director Mode failed to start';
-      setDirectorError(msg);
-      setDirectorRunning(false);
-      showToast(msg, 'error');
-      void notifyFail(msg);
+      setDirectorError(msg); setDirectorRunning(false); showToast(msg, 'error'); void notifyFail(msg);
     }
   };
 
-  // 57.13: Stitch clips into a single video
   const handleStitch = async () => {
     if (!directorJobId) return;
-    setStitching(true);
-    setStitchResult(null);
+    setStitching(true); setStitchResult(null);
     try {
       const res = await videoService.directorStitch(directorJobId);
       setStitchResult({ url: res.data.stitchedUrl, clipUrls: res.data.clipUrls, softStitch: res.data.softStitch });
-      if (res.data.stitchedUrl) showToast('Stitch complete! Download your video below.');
-      else showToast('Soft stitch: individual clip URLs ready for download.');
-    } catch {
-      showToast('Stitch failed — try again', 'error');
-    } finally {
-      setStitching(false);
-    }
+      showToast(res.data.stitchedUrl ? 'Stitch complete!' : 'Soft stitch: clip URLs ready.');
+    } catch { showToast('Stitch failed — try again', 'error');
+    } finally { setStitching(false); }
   };
 
-  // 57.13: Rerun director job with same idea
   const handleRerun = () => {
     if (!directorIdea.trim()) return;
-    setDirectorJob(null);
-    setDirectorJobId(null);
-    setStitchResult(null);
-    autoStitchFiredRef.current = false; // 58.13: allow auto-stitch for new job
+    setDirectorJob(null); setDirectorJobId(null); setStitchResult(null); autoStitchFiredRef.current = false;
     void handleDirectorSubmit();
   };
 
-  const handleSetDefaultVideoModel = async (modelId: string) => {
-    setSavingVideoModel(modelId);
-    try {
-      await agentService.setVideoModel(modelId);
-      setPreferredVideoModel(modelId);
-    } catch {
-      // ignore silently
-    } finally {
-      setSavingVideoModel(null);
-    }
+  const handleSetDefaultVideoModel = async (id: string) => {
+    setSavingVideoModel(id);
+    try { await agentService.setVideoModel(id); setPreferredVideoModel(id); } catch { /* */ } finally { setSavingVideoModel(null); }
   };
 
-  // Handle video generation — pre-flight check: never deduct credits on failure
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-
-    // Pre-flight: block generation if all known providers are unavailable
-    if (isProviderBroken) {
-      showToast('Video generation is temporarily unavailable — your credits were not charged.', 'error');
-      return;
-    }
-
-    setGenerating(true);
-    void notifyStart('Video generation');
-    try {
-      const res = await videoService.generate(prompt, selectedModel, 1280, 720, duration);
-      const est = res.data.estimated_time || 30;
-      showToast(`Video generating! Estimated ${est}s. It will appear below.`);
-      setPrompt('');
-      await loadGallery();
-      void notifyDone(`Video generation started (${selectedModel})`);
-    } catch (err: unknown) {
-      // Show honest error — credits are NOT deducted for failed generation attempts
-      const apiMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      const msg = apiMsg || 'Video generation failed';
-      showToast(`${msg} — your credits were not charged.`, 'error');
-      void notifyFail(msg);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // Handle delete (called after confirmation)
-  const handleDelete = async (id: string) => {
-    setIsDeleting(true);
-    try {
-      await videoService.delete(id);
-      showToast('Video deleted');
-      await loadGallery();
-      if (previewVideo?.id === id) setPreviewVideo(null);
-      void notifyDone('Video deleted');
-    } catch {
-      showToast('Failed to delete', 'error');
-      void notifyFail('Failed to delete video');
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmId(null);
-    }
-  };
-
-  // Copy video ID
-  const handleCopyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // Manually refresh a processing video
-  const handleRefreshStatus = async (id: string) => {
-    try {
-      const res = await videoService.checkStatus(id);
-      if (res.data.status === 'ready') {
-        showToast('Video is ready!');
-        await loadGallery();
-      } else {
-        showToast('Still processing... please wait.', 'error');
-      }
-    } catch {
-      showToast('Failed to check status', 'error');
-    }
-  };
-
-  const currentModel = models.find(m => m.id === selectedModel) || models[0];
-
-  // Duration presets
-  const durationPresets = [
-    { label: '3s', val: 3 },
-    { label: '5s', val: 5 },
-    { label: '8s', val: 8 },
-    { label: '10s', val: 10 },
-  ];
-
-  // 64.10: Estimated runtime based on duration + model tier
-  const estimatedSeconds = (() => {
-    const base = duration * 6; // ~6s per second of footage
-    const multiplier = currentModel?.tier === 'premium' ? 1.5 : currentModel?.tier === 'standard' ? 1.1 : 1.0;
-    const est = Math.round(base * multiplier);
-    return Math.max(20, Math.min(est, 120));
-  })();
-
-  // Provider availability — all free video providers are currently blocked from Hostinger
-  const BROKEN_VIDEO_PROVIDERS = ['pollinations-video', 'seedance-lite', 'veo2', 'veo2-openrouter', 'pollinations', 'auto', ''];
-  const isProviderBroken = !selectedModel || BROKEN_VIDEO_PROVIDERS.some(p => selectedModel === p || selectedModel.includes(p));
-
+  // ── Render ───────────────────────────────────────────────────
   return (
     <DashboardPageWrapper>
-    <PageShell>
-    <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
-          toast.type === 'success' ? 'bg-[#ADFF2F]/10 text-[#ADFF2F] border border-[#ADFF2F]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-        }`}>
-          {toast.text}
-        </div>
-      )}
+      <PageShell>
+        <div className="space-y-6 pb-24 md:pb-6 overflow-x-hidden">
 
-      {/* Video Preview Modal */}
-      {previewVideo && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setPreviewVideo(null)}
-        >
-          <div className="max-w-4xl w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-[var(--ag-text-muted)] truncate flex-1 mr-4">
-                {previewVideo.prompt}
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={previewVideo.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
-                  aria-label="Download video"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
-                <button
-                  onClick={() => setPreviewVideo(null)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50"
-                  aria-label="Close preview"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            {previewVideo.status === 'ready' ? (
-              <video
-                src={previewVideo.video_url}
-                controls
-                autoPlay
-                className="w-full rounded-2xl border border-[var(--ag-cyan)]/20 bg-[var(--ag-bg-base)] shadow-[0_0_30px_rgba(139,92,246,0.08)]"
-                style={{ colorScheme: 'dark' }}
-              />
-            ) : (
-              <div className="w-full aspect-video rounded-2xl border border-[var(--ag-cyan)]/20 bg-[var(--ag-bg-base)] flex flex-col items-center justify-center gap-4 p-6">
-                <Loader2 className="w-8 h-8 text-[var(--ag-cyan)] animate-spin" />
-                {/* 62.8: step indicator for processing state */}
-                <div className="flex items-center gap-1.5 text-xs">
-                  {(['Queued', 'Generating', 'Rendering', 'Ready'] as const).map((step, i) => (
-                    <React.Fragment key={step}>
-                      <span className={i === 1 ? 'text-[var(--ag-cyan)] font-semibold' : i < 1 ? 'text-[#00FF88]' : 'text-[var(--ag-text-muted)]'}>{step}</span>
-                      {i < 3 && <span className="text-[var(--ag-text-muted)]">→</span>}
-                    </React.Fragment>
-                  ))}
-                </div>
-                <p className="text-xs text-[var(--ag-text-muted)]">30–120s depending on model &amp; duration</p>
-              </div>
-            )}
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-[var(--ag-text-muted)]">{previewVideo.width}x{previewVideo.height}</span>
-                <span className="text-xs text-[var(--ag-text-muted)]">{previewVideo.duration}s</span>
-                <span className="text-xs text-[var(--ag-text-muted)]">{previewVideo.model}</span>
-              </div>
-              <button
-                onClick={() => handleCopyId(previewVideo.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-cyan)]/20 text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors"
-              >
-                {copiedId === previewVideo.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copiedId === previewVideo.id ? 'Copied!' : previewVideo.id}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <BlurFade delay={0.1}>
-        <PageHeader
-          icon={Film}
-          title="Video Generator"
-          subtitle={`Create AI-powered short clips \u00b7 ${videoCount}/${maxVideos} saved`}
-          badge={
-            <span className="relative flex h-2.5 w-2.5" title="Forge agent">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-gold)] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-gold)]" />
-            </span>
-          }
-        actions={
-          <div className="relative">
-          {assignedAgent ? (
-            <button
-              onClick={() => setShowAgentPicker(!showAgentPicker)}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-[var(--ag-violet)]/20 bg-[#8B5CF6]/5 hover:border-[var(--ag-violet)]/40 transition-colors"
-            >
-              <span className="text-lg">
-                {assignedAgent.personality === 'edith' ? '⚡' : assignedAgent.personality === 'jarvis' ? '🎩' : '🤖'}
-              </span>
-              <div className="text-left">
-                <div className="text-sm font-medium text-[var(--ag-text-primary)]">{assignedAgent.name}</div>
-                <div className="text-xs text-[var(--ag-text-muted)]">Assigned agent</div>
-              </div>
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: statusColor[assignedAgent.status] || '#6B7280' }}
-              />
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--ag-text-muted)]" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowAgentPicker(!showAgentPicker)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-[var(--ag-violet)]/20 hover:border-[var(--ag-violet)]/40 text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors text-sm"
-            >
-              <Bot className="w-4 h-4" />
-              {agentLoading ? 'Loading...' : 'Assign Agent'}
-            </button>
-          )}
-
-          {/* Agent Picker Dropdown */}
-          {showAgentPicker && (
-            <div className="absolute top-full right-0 mt-2 w-72 rounded-xl border border-[var(--ag-cyan)]/20 bg-[var(--ag-bg-surface)] shadow-2xl z-30 overflow-hidden">
-              <div className="p-3 border-b border-[var(--ag-cyan)]/10">
-                <p className="text-xs text-[var(--ag-text-muted)]">Choose an agent from your fleet</p>
-              </div>
-              {fleetAgents.length === 0 ? (
-                <div className="p-4 text-center text-sm text-[var(--ag-text-muted)]">
-                  No agents in your fleet. Deploy one from the Fleet page.
-                </div>
-              ) : (
-                <div className="max-h-64 overflow-y-auto">
-                  {assignedAgent && (
-                    <button
-                      onClick={() => { setAssignedAgent(null); setShowAgentPicker(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FF6161]/5 transition-colors text-left border-b border-[var(--ag-cyan)]/10"
-                    >
-                      <X className="w-4 h-4 text-[#FF6161]" />
-                      <span className="text-sm text-[#FF6161]">Unassign agent</span>
-                    </button>
-                  )}
-                  {fleetAgents.map(agent => {
-                    const isAssigned = assignedAgent?.id === agent.id;
-                    const color = statusColor[agent.status] || '#6B7280';
-                    return (
-                      <button
-                        key={agent.id}
-                        onClick={() => { setAssignedAgent(agent); setShowAgentPicker(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-[#A78BFA]/5 transition-colors text-left ${
-                          isAssigned ? 'bg-[#8B5CF6]/5' : ''
-                        }`}
-                      >
-                        <span className="text-lg">
-                          {agent.personality === 'edith' ? '⚡' : agent.personality === 'jarvis' ? '🎩' : '🤖'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[var(--ag-text-primary)]">{agent.name}</div>
-                          <div className="text-xs text-[var(--ag-text-muted)]">Slot {agent.slot} &middot; {agent.tasks_completed} tasks done</div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {agent.status === 'active' ? (
-                            <Wifi className="w-3 h-3" style={{ color }} />
-                          ) : (
-                            <WifiOff className="w-3 h-3" style={{ color }} />
-                          )}
-                          <span className="text-xs capitalize" style={{ color }}>
-                            {agent.status}
-                          </span>
-                        </div>
-                        {isAssigned && <Check className="w-4 h-4 text-[var(--ag-violet)]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+          {/* Toast */}
+          {toast && (
+            <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium animate-page-enter ${
+              toast.type === 'success' ? 'bg-[#ADFF2F]/10 text-[#ADFF2F] border border-[#ADFF2F]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}>
+              {toast.text}
             </div>
           )}
-        </div>
-        }
-        />
-      </BlurFade>
 
-      {/* Honest unavailability notice — shown when all video providers are blocked */}
-      {isProviderBroken && (
-        <BlurFade delay={0.2}>
-          <div className="relative overflow-hidden rounded-2xl border border-[var(--ag-amber)]/30 bg-gradient-to-br from-[var(--ag-amber)]/5 via-[var(--ag-bg-base)] to-[var(--ag-amber)]/3 p-6 bg-[var(--ag-bg-surface)] backdrop-blur-xl">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[var(--ag-amber)]/6 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--ag-amber)]/15 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-8 h-8 text-[var(--ag-amber)]" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Video generation is temporarily unavailable</h3>
-                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-amber)]/20 text-[var(--ag-amber)] border border-[var(--ag-amber)]/30 font-semibold">Service Notice</span>
-              </div>
-              <p className="text-sm text-[var(--ag-text-secondary)] font-medium">
-                Your credits were not charged. No generation was attempted.
-              </p>
-              <p className="text-sm text-[var(--ag-text-secondary)] mt-2">
-                Free video providers (Pollinations, SeedAnce, Veo2) are currently unavailable from this server region.
-                Paid generation via OpenRouter is available if you add your API key.
-              </p>
-              <div className="flex flex-wrap items-center gap-3 mt-4">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-text-secondary)]">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--ag-amber)]" />
-                  <span>OpenRouter video models available with API key</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-xs text-[#00FF88]">
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>Image generation works fine — try that instead!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        </BlurFade>
-      )}
-
-      {/* Generation Panel */}
-      <BlurFade delay={0.3}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-        <div className="flex items-center gap-2 mb-4">
-          <Wand2 className="w-5 h-5 text-[var(--ag-gold)]" />
-          <h3 className="text-[var(--ag-text-primary)] font-heading font-semibold">Create Video</h3>
-        </div>
-
-        {/* Model selector + Duration */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          {/* Model */}
-          <div className="relative">
-            <button
-              onClick={() => setShowModelPicker(!showModelPicker)}
-              className="flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-primary)] hover:border-[var(--ag-violet)]/30 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[var(--ag-violet)]" />
-              {currentModel?.name || 'Select Model'}
-              {currentModel?.tier === 'auto' ? (
-                <span className="text-xs text-[var(--ag-violet)] ml-1">Auto</span>
-              ) : currentModel?.credits ? (
-                <span className="text-xs text-[#FFB800] ml-1">{currentModel.credits}cr</span>
-              ) : (
-                <span className="text-xs text-[#00FF88] ml-1">Free</span>
-              )}
-              <ChevronDown className="w-3 h-3 text-[var(--ag-text-muted)]" />
-            </button>
-
-            {showModelPicker && (
-              <div className="absolute top-full left-0 mt-2 w-80 rounded-xl border border-[rgba(139,92,246,0.15)] bg-[rgba(12,12,30,0.6)] backdrop-blur-xl shadow-2xl z-20 overflow-hidden">
-                {models.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setSelectedModel(m.id); setShowModelPicker(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 min-h-[44px] hover:bg-[#8B5CF6]/5 transition-colors text-left ${
-                      selectedModel === m.id ? 'bg-[#8B5CF6]/10' : ''
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-[var(--ag-text-primary)]">{m.name}</div>
-                      <div className="text-xs text-[var(--ag-text-secondary)]">{m.description}</div>
-                    </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                      m.tier === 'auto' ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]' :
-                      m.tier === 'free' ? 'bg-[#00FF88]/10 text-[#00FF88]' :
-                      m.tier === 'premium' ? 'bg-[#FFB800]/10 text-[#FFB800]' :
-                      'bg-[#A78BFA]/10 text-[var(--ag-cyan)]'
-                    }`}>
-                      {m.cost}
-                    </span>
-                    {selectedModel === m.id && <Check className="w-4 h-4 text-[var(--ag-violet)] shrink-0" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Duration presets */}
-          <div className="flex gap-1.5">
-            {durationPresets.map(preset => (
-              <button
-                key={preset.label}
-                onClick={() => setDuration(preset.val)}
-                className={`px-3 py-2 min-h-[44px] rounded-lg text-xs transition-all active:scale-[0.96] ${
-                  duration === preset.val
-                    ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border border-[var(--ag-cyan)]/40 shadow-[0_0_8px_rgba(139,92,246,0.2)]'
-                    : 'bg-[var(--ag-bg-base)] text-[var(--ag-text-secondary)] border border-[var(--ag-border-subtle)] hover:border-[var(--ag-violet)]/30'
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Prompt input */}
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the video you want to generate... (e.g. 'A drone flying over a city skyline at sunset, cinematic')"
-          rows={3}
-          className="w-full bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] rounded-xl px-4 py-3 text-[var(--ag-text-primary)] placeholder-[var(--ag-text-muted)]/70 resize-none focus:border-[var(--ag-violet)]/30 outline-none text-sm"
-        />
-
-        {/* Generate button */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-xs">
-            {videoCount >= maxVideos ? (
-              <span className="px-2.5 py-1 rounded-lg bg-[#FF6161]/10 border border-[#FF6161]/20 text-[#FF6161] font-medium">Video limit reached ({maxVideos}/{maxVideos})</span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-lg bg-[#A78BFA]/10 border border-[var(--ag-cyan)]/15 text-[var(--ag-cyan)]">
-                <strong>{maxVideos - videoCount}</strong> credits remaining &middot; {duration}s &middot; 1280x720
-              </span>
-            )}
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !prompt.trim() || videoCount >= maxVideos || isProviderBroken}
-            className="glow-hover flex items-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] text-white font-semibold text-sm hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 transition-all active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ag-violet)]/20"
-            title={isProviderBroken ? "Video generation is temporarily unavailable from this server region" : ""}
-          >
-            {isProviderBroken ? (
-              <>
-                <AlertTriangle className="w-4 h-4" />
-                Unavailable
-              </>
-            ) : generating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Generate Video
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Unavailable notice — credits not charged */}
-        {isProviderBroken && (
-          <p className="text-xs text-[var(--ag-amber)] mt-3 flex items-center gap-1.5">
-            <AlertTriangle className="w-3 h-3" />
-            Video generation is temporarily unavailable — your credits will not be charged.
-          </p>
-        )}
-
-        {/* 64.10: Estimated runtime display */}
-        {!isProviderBroken && (
-          <p className="text-xs text-[var(--ag-text-muted)] mt-3 flex items-center gap-1.5">
-            <AlertCircle className="w-3 h-3" />
-            Est. ~{estimatedSeconds}s for {duration}s clip · The video will appear below once ready.
-          </p>
-        )}
-      </SectionCard>
-      </BlurFade>
-
-      {/* Gallery */}
-      <BlurFade delay={0.4}>
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-heading font-semibold text-[var(--ag-text-primary)] flex items-center gap-2">
-            <Film className="w-5 h-5 text-[var(--ag-gold)]" />
-            Your Videos
-            <span className="text-xs text-[var(--ag-text-muted)] font-normal ml-1">
-              {videoCount}/{maxVideos}
-            </span>
-          </h2>
-          <div className="flex items-center gap-2">
-            {/* 58.9: Sort toggle */}
-            <div className="flex items-center rounded-lg border border-[var(--ag-cyan)]/15 bg-[var(--ag-bg-surface)] p-0.5 gap-0.5">
-              <button
-                onClick={() => setGallerySort('newest')}
-                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'newest' ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
-              >Newest</button>
-              <button
-                onClick={() => setGallerySort('status')}
-                className={`text-xs px-2.5 py-1 rounded transition-all ${gallerySort === 'status' ? 'bg-[#A78BFA]/15 text-[var(--ag-cyan)] border-b-2 border-[var(--ag-cyan)]' : 'text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)]'}`}
-              >Status</button>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)]">
-              <Clock className="w-3 h-3" />
-              Expire 24h
-            </div>
-          </div>
-        </div>
-
-        {galleryLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : videos.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[rgba(139,92,246,0.08)] p-12 text-center">
-            <Film className="w-10 h-10 text-[#F59E0B]/30 mx-auto mb-3" />
-            <p className="text-[var(--ag-text-muted)] text-sm">No videos yet.</p>
-            <p className="text-[var(--ag-text-muted)] text-xs mt-1">Describe what you want above and start generating!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...videos].sort((a, b) => {
-              if (gallerySort === 'status') {
-                const order = { ready: 0, processing: 1 };
-                return (order[a.status] ?? 2) - (order[b.status] ?? 2);
-              }
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            }).map((vid, index) => (
-              <BlurFade key={vid.id} delay={0.5 + index * 0.05}>
-                <div
-                  className="group rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_10px_rgba(0,0,0,0.3)] hover:shadow-[0_0_0_1px_rgba(139,92,246,0.2),0_4px_20px_rgba(139,92,246,0.1)] overflow-hidden transition-[box-shadow,transform] duration-200 bg-[var(--ag-bg-surface)] backdrop-blur-xl"
-                >
-                {/* Video / Processing placeholder */}
-                <div
-                  className="aspect-video cursor-pointer relative bg-[var(--ag-bg-base)]"
-                  onClick={() => setPreviewVideo(vid)}
-                >
-                  {vid.status === 'ready' ? (
-                    <>
-                      <LazyVideo
-                        src={vid.video_url}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Play overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <Play className="w-6 h-6 text-white ml-0.5" />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 text-[var(--ag-cyan)] animate-spin" />
-                      <span className="text-xs text-[var(--ag-text-muted)]">Processing...</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleRefreshStatus(vid.id); }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[var(--ag-violet)] hover:bg-[#8B5CF6]/10 transition-colors"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                        Check status
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Duration badge */}
-                  <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-xs text-white font-mono tabular-nums">
-                    {vid.duration}s
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-3">
-                  <p className="text-xs text-[var(--ag-text-primary)] truncate mb-1.5">{vid.prompt}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-[var(--ag-text-muted)]" />
-                      <span className="text-xs text-[var(--ag-text-muted)]">{timeLeft(vid.expires_at)}</span>
-                    </div>
-                    <div className="flex gap-1">
-                      {/* Copy ID */}
-                      <button
-                        onClick={() => handleCopyId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-secondary)] hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
-                        aria-label={`Copy ID: ${vid.id}`}
-                      >
-                        {copiedId === vid.id ? (
-                          <Check className="w-3.5 h-3.5 text-[#00FF88]" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      {/* Delete */}
-                      <button
-                        onClick={() => setDeleteConfirmId(vid.id)}
-                        className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-text-muted)] hover:text-[var(--ag-error)] hover:bg-[var(--ag-error)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
-                        aria-label="Delete video"
-                        data-testid={`delete-video-${vid.id}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Model & status badge */}
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      vid.status === 'ready' ? 'bg-[#00FF88]/10 text-[#00FF88]' : 'bg-[#8B5CF6]/10 text-[var(--ag-violet)]'
-                    }`}>
-                      {vid.status === 'ready' ? 'Ready' : 'Processing'}
-                    </span>
-                    <span className="text-xs text-[var(--ag-text-muted)]">{vid.model}</span>
-                  </div>
-                </div>
-                </div>
-              </BlurFade>
-            ))}
-          </div>
-        )}
-      </div>
-      </BlurFade>
-
-      {/* ── 55.13: Director Mode ─────────────────────────────────── */}
-      <BlurFade delay={0.6}>
-        <SectionCard className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-[var(--ag-gold)]/15 flex items-center justify-center">
-            <Wand2 className="w-4 h-4 text-[var(--ag-gold)]" />
-          </div>
-          <div>
-            <h2 className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Director Mode <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--ag-violet)]/15 text-[var(--ag-violet)] ml-1">fal.ai Seedance</span></h2>
-            <p className="text-xs text-[var(--ag-text-secondary)]">One idea → AI director packet → 6 clips × 5s (750 credits)</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {/* Idea input */}
-          <div className="flex gap-3">
-            <input
-              value={directorIdea}
-              onChange={(e) => setDirectorIdea(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && void handleDirectorSubmit()}
-              placeholder="e.g. A lone astronaut discovering an alien city at sunset"
-              maxLength={500}
-              className="flex-1 px-4 py-3 min-h-[44px] rounded-xl bg-[var(--ag-bg-base)] border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-sm placeholder-[var(--ag-text-muted)]/60 focus:outline-none focus:border-[var(--ag-violet)]/30"
+          {/* Video Preview Modal */}
+          {previewVideo && (
+            <VideoPreviewModal
+              video={previewVideo}
+              copiedId={copiedId}
+              onCopyId={handleCopyId}
+              onClose={() => setPreviewVideo(null)}
             />
-            {/* 65.13: Expand idea with AI */}
-            <button
-              onClick={() => void handleExpandIdea()}
-              disabled={!directorIdea.trim() || expandingIdea}
-              title="Expand idea with AI"
-              className="flex items-center gap-1.5 px-3 py-3 min-h-[44px] rounded-xl bg-[#8B5CF6]/10 border border-[rgba(139,92,246,0.15)] hover:bg-[#8B5CF6]/20 disabled:opacity-40 disabled:cursor-not-allowed text-[var(--ag-violet)] text-xs transition-colors active:scale-[0.96]"
-            >
-              {expandingIdea ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-              {expandingIdea ? '' : 'Expand'}
-            </button>
-            <button
-              onClick={() => void handleDirectorSubmit()}
-              disabled={!directorIdea.trim()}
-              className="flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[var(--ag-violet)] to-[var(--ag-amber)] hover:from-[var(--ag-violet)]/90 hover:to-[var(--ag-amber)]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-all active:scale-[0.96] shadow-lg shadow-[var(--ag-violet)]/20"
-            >
-              {directorRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {directorRunning ? 'Queue' : 'Direct'}
-            </button>
-          </div>
-          {/* 59.13: Queued job indicator */}
-          {queuedIdea && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#8B5CF6]/10 border border-[var(--ag-violet)]/20 text-xs text-[var(--ag-violet)]" data-testid="queued-idea-banner">
-              <span className="truncate flex-1 mr-2">⏳ Queued: <span className="text-[#D8B4FE]">{queuedIdea}</span></span>
-              <button onClick={() => setQueuedIdea(null)} className="shrink-0 hover:text-[var(--ag-text-primary)] transition-colors" title="Cancel queued job">✕</button>
-            </div>
           )}
 
-          {directorError && (
-            <div className="flex items-center gap-2 text-xs text-[#FF6161] bg-[#FF6161]/10 border border-[#FF6161]/20 px-3 py-2 rounded-lg">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              {directorError}
-            </div>
-          )}
+          {/* Header */}
+          <BlurFade delay={0.1}>
+            <PageHeader
+              icon={Film}
+              title="Video Generator"
+              subtitle={`Create AI-powered short clips · ${videoCount}/${maxVideos} saved`}
+              badge={
+                <span className="relative flex h-2.5 w-2.5" title="Forge agent">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--ag-gold)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--ag-gold)]" />
+                </span>
+              }
+              actions={
+                <AgentPickerDropdown
+                  assignedAgent={assignedAgent}
+                  fleetAgents={fleetAgents}
+                  agentLoading={agentLoading}
+                  showPicker={showAgentPicker}
+                  onToggle={() => setShowAgentPicker((p) => !p)}
+                  onAssign={(agent) => { setAssignedAgent(agent); setShowAgentPicker(false); }}
+                  onUnassign={() => { setAssignedAgent(null); setShowAgentPicker(false); }}
+                />
+              }
+            />
+          </BlurFade>
 
-          {/* Active job progress */}
-          {directorJob && (
-            <div className="rounded-xl border border-[var(--ag-violet)]/15 bg-[var(--ag-violet)]/5 p-4 space-y-3">
-              {directorJob.packet && (
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-[var(--ag-text-primary)]">{directorJob.packet.title}</p>
-                  <p className="text-xs text-[var(--ag-violet)]">{directorJob.packet.genre}</p>
-                  <p className="text-xs text-[var(--ag-text-muted)]">{directorJob.packet.styleGuide}</p>
-                </div>
-              )}
-              {directorJob.status === 'running' && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-[var(--ag-violet)]">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    {/* 62.13: live clip count progress */}
-                    {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 ? (
-                      <span>
-                        Clips: <strong>{directorJob.clips.length}</strong>/{directorJob.packet.shotlist.length} complete
-                        {directorJob.clips.length === 0 && ' — waiting for first clip…'}
-                      </span>
-                    ) : (
-                      <span>Generating clips… this takes 2-4 minutes</span>
-                    )}
+          {/* Provider unavailability notice */}
+          {isProviderBroken && (
+            <BlurFade delay={0.2}>
+              <div className="relative overflow-hidden rounded-2xl border border-[var(--ag-amber)]/30 bg-gradient-to-br from-[var(--ag-amber)]/5 via-[var(--ag-bg-base)] to-[var(--ag-amber)]/3 p-6 bg-[var(--ag-bg-surface)] backdrop-blur-xl">
+                <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[var(--ag-amber)]/6 blur-3xl pointer-events-none" />
+                <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+                  <div className="w-16 h-16 rounded-2xl bg-[var(--ag-amber)]/15 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-8 h-8 text-[var(--ag-amber)]" />
                   </div>
-                  {directorJob.packet?.shotlist && directorJob.packet.shotlist.length > 0 && (
-                    <div className="w-full bg-[#8B5CF6]/10 rounded-full h-1.5">
-                      <div
-                        className="bg-[#8B5CF6] h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.round((directorJob.clips.length / directorJob.packet.shotlist.length) * 100)}%` }}
-                      />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="text-lg font-semibold text-[var(--ag-text-primary)]">Video generation is temporarily unavailable</h3>
+                      <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--ag-amber)]/20 text-[var(--ag-amber)] border border-[var(--ag-amber)]/30 font-semibold">Service Notice</span>
                     </div>
-                  )}
-                </div>
-              )}
-              {directorJob.clips.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {directorJob.clips.map((clip, i) => {
-                    // 64.13: shot prompt for this clip index
-                    const shot = directorJob.packet?.shotlist?.[i];
-                    return (
-                    <div key={i} className="flex flex-col gap-1">
-                    <div
-                      className={`relative rounded-lg overflow-hidden aspect-video bg-[var(--ag-bg-surface)] border transition-all ${
-                        clip.success ? 'border-[var(--ag-violet)]/10 cursor-pointer hover:border-[var(--ag-violet)]/40 hover:scale-[1.02]' : 'border-[var(--ag-error)]/20'
-                      }`}
-                      onClick={() => clip.success && clip.url && setPreviewClip({ url: clip.url, index: i })}
-                      title={shot ? `${shot.cameraMove} — ${shot.prompt}` : (clip.success ? 'Click to preview' : undefined)}
-                    >
-                      {clip.success ? (
-                        <>
-                          <video src={clip.url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
-                          <div className="absolute bottom-1 left-1 text-xs text-white/60 bg-black/40 px-1 rounded">
-                            {i + 1}
-                          </div>
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
-                            <Play className="w-6 h-6 text-white drop-shadow" />
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#FF6161]">
-                          <AlertCircle className="w-4 h-4" />
-                          <span className="text-xs">Failed</span>
-                          {/* 60.13: per-clip retry */}
-                          {directorJob.status === 'done' && directorJobId && (
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  await videoService.directorRetryClip(directorJobId, i);
-                                  showToast(`Retrying clip ${i + 1}…`);
-                                } catch { showToast('Retry failed — try again'); }
-                              }}
-                              className="text-xs px-1.5 py-0.5 rounded bg-[#FF6161]/20 hover:bg-[#FF6161]/40 text-[#FF6161] transition-colors"
-                              data-testid={`retry-clip-${i}`}
-                            >
-                              ↻ Retry
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {/* 64.13: shot prompt label */}
-                    {shot && (
-                      <p className="text-xs text-[var(--ag-text-muted)] leading-tight truncate px-0.5" title={shot.prompt}>
-                        <span className="text-[var(--ag-violet)]/60">{shot.cameraMove}</span> {shot.prompt}
-                      </p>
-                    )}
-                    </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* 63.13: Failed job restart button */}
-              {(directorJob.status as string) === 'failed' && (
-                <div className="flex items-center gap-3 rounded-lg border border-[#FF6161]/30 bg-[#FF6161]/5 px-3 py-2.5">
-                  <AlertCircle className="w-4 h-4 text-[#FF6161] flex-shrink-0" />
-                  <span className="text-xs text-[#FF6161] flex-1">Director job failed</span>
-                  <button
-                    onClick={handleRerun}
-                    disabled={directorRunning}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#FF6161]/30 text-[#FF6161] hover:bg-[#FF6161]/10 disabled:opacity-50 transition-colors"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Restart Job
-                  </button>
-                </div>
-              )}
-
-              {/* 57.13: Stitch bar + Rerun — shown when job is done */}
-              {directorJob.status === 'done' && directorJob.clips.length > 0 && (
-                <div className="space-y-2">
-                  {stitchResult ? (
-                    <div className="rounded-xl border border-[var(--ag-violet)]/30 bg-[var(--ag-violet)]/5 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-[var(--ag-violet)]">
-                        {stitchResult.url ? 'Stitched Video Ready' : 'Clip URLs Ready (soft stitch)'}
-                      </p>
-                      {stitchResult.url ? (
-                        <div className="space-y-2">
-                          {/* 63.8: Inline video player for stitched result */}
-                          <video
-                            src={stitchResult.url}
-                            controls
-                            className="w-full rounded-lg border border-[var(--ag-violet)]/30 max-h-48 bg-black"
-                            preload="metadata"
-                          />
-                          <a
-                            href={stitchResult.url}
-                            download="stitched.mp4"
-                            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors w-fit"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Download Stitched Video
-                          </a>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1">
-                          {stitchResult.clipUrls.map((u, idx) => (
-                            <a key={idx} href={u} download={`clip-${idx + 1}.mp4`} className="text-xs text-[var(--ag-violet)]/70 hover:text-[var(--ag-violet)] underline truncate">
-                              Clip {idx + 1}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {/* 60.13: show partial clip count when some failed */}
-                      {directorJob.clips.some((c) => !c.success) && (
-                        <p className="text-xs text-amber-400">
-                          {directorJob.clips.filter((c) => c.success).length}/{directorJob.clips.length} clips succeeded — stitch will use successful clips only
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => void handleStitch()}
-                          disabled={stitching || !directorJob.clips.some((c) => c.success)}
-                          data-testid="stitch-btn"
-                          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 disabled:opacity-50 transition-colors"
-                        >
-                          {stitching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
-                          {stitching ? 'Stitching…' : directorJob.clips.some((c) => !c.success) ? 'Partial Stitch' : 'Stitch Clips'}
-                        </button>
-                        {stitching && (
-                          <div className="flex-1 h-1.5 rounded-full bg-[var(--ag-bg-surface)] overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] animate-pulse rounded-full" style={{ width: '60%' }} />
-                          </div>
-                        )}
+                    <p className="text-sm text-[var(--ag-text-secondary)] font-medium">Your credits were not charged.</p>
+                    <p className="text-sm text-[var(--ag-text-secondary)] mt-2">
+                      Free video providers (Pollinations, SeedAnce, Veo2) are currently unavailable from this server region.
+                      Paid generation via OpenRouter is available if you add your API key.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-4">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--ag-bg-surface)] border border-[var(--ag-border-subtle)] text-xs text-[var(--ag-text-secondary)]">
+                        <Sparkles className="w-3.5 h-3.5 text-[var(--ag-amber)]" />
+                        <span>OpenRouter video models available with API key</span>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00FF88]/10 border border-[#00FF88]/20 text-xs text-[#00FF88]">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Image generation works fine — try that instead!</span>
                       </div>
                     </div>
-                  )}
-                  <button
-                    onClick={handleRerun}
-                    disabled={directorRunning}
-                    data-testid="rerun-director-btn"
-                    className="flex items-center gap-1.5 text-xs text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] disabled:opacity-50 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Rerun with same idea
-                  </button>
-                </div>
-              )}
-
-              {/* 56.13: Clip preview modal */}
-              {previewClip && (
-                <div
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-                  onClick={(e) => { if (e.target === e.currentTarget) setPreviewClip(null); }}
-                >
-                  <div className="relative w-full max-w-2xl bg-[var(--ag-bg-surface)] rounded-2xl border border-[var(--ag-violet)]/30 overflow-hidden shadow-2xl">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ag-violet)]/15">
-                      <p className="text-sm font-medium text-[var(--ag-text-primary)]">
-                        Clip {previewClip.index + 1} — {directorJob.packet?.shotlist?.[previewClip.index]?.prompt ?? 'Director Mode clip'}
-                      </p>
-                      <button onClick={() => setPreviewClip(null)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--ag-text-muted)] hover:text-[var(--ag-text-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-[#A78BFA]/50" aria-label="Close clip preview">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <video
-                      key={previewClip.url}
-                      src={previewClip.url}
-                      className="w-full aspect-video bg-black"
-                      controls
-                      autoPlay
-                      loop
-                    />
-                    <div className="flex items-center gap-2 px-4 py-3 border-t border-[var(--ag-violet)]/15">
-                      <button
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(previewClip.url).catch(() => {});
-                          setCopiedClipUrl(true);
-                          setTimeout(() => setCopiedClipUrl(false), 2000);
-                        }}
-                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-violet)]/30 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors"
-                      >
-                        {copiedClipUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        {copiedClipUrl ? 'Copied!' : 'Copy URL'}
-                      </button>
-                      <a
-                        href={previewClip.url}
-                        download={`clip-${previewClip.index + 1}.mp4`}
-                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-border-subtle)] text-[var(--ag-text-muted)] hover:border-[var(--ag-border-subtle)]/80 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Download className="w-3 h-3" />
-                        Download
-                      </a>
-                      {previewClip.index > 0 && (
-                        <button
-                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index - 1].url!, index: previewClip.index - 1 })}
-                          className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-cyan)]/20 text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] transition-colors"
-                        >← Prev</button>
-                      )}
-                      {previewClip.index < directorJob.clips.length - 1 && (
-                        <button
-                          onClick={() => setPreviewClip({ url: directorJob.clips[previewClip.index + 1].url!, index: previewClip.index + 1 })}
-                          className={`text-xs px-3 py-1.5 rounded-lg border border-[var(--ag-cyan)]/20 text-[var(--ag-cyan)]/70 hover:text-[var(--ag-cyan)] transition-colors ${previewClip.index === 0 ? 'ml-auto' : ''}`}
-                        >Next →</button>
-                      )}
-                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+            </BlurFade>
+          )}
+
+          {/* Generate Form */}
+          <BlurFade delay={0.3}>
+            <GenerateForm
+              prompt={prompt} onPromptChange={setPrompt}
+              generating={generating}
+              selectedModel={selectedModel} onModelChange={setSelectedModel}
+              models={models}
+              duration={duration} onDurationChange={setDuration}
+              videoCount={videoCount} maxVideos={maxVideos}
+              isProviderBroken={isProviderBroken}
+              onGenerate={handleGenerate}
+            />
+          </BlurFade>
+
+          {/* Gallery */}
+          <VideoGallery
+            videos={videos} videoCount={videoCount} maxVideos={maxVideos}
+            galleryLoading={galleryLoading}
+            gallerySort={gallerySort} onSortChange={setGallerySort}
+            copiedId={copiedId}
+            onPreview={setPreviewVideo} onCopyId={handleCopyId}
+            onRequestDelete={setDeleteConfirmId} onRefreshStatus={handleRefreshStatus}
+          />
+
+          {/* Director Mode */}
+          <BlurFade delay={0.6}>
+            <DirectorMode
+              directorIdea={directorIdea} onIdeaChange={setDirectorIdea}
+              directorRunning={directorRunning} expandingIdea={expandingIdea}
+              queuedIdea={queuedIdea} onCancelQueue={() => setQueuedIdea(null)}
+              directorJob={directorJob} directorJobs={directorJobs}
+              directorError={directorError}
+              jobHistoryFilter={jobHistoryFilter} onJobHistoryFilterChange={setJobHistoryFilter}
+              stitching={stitching} stitchResult={stitchResult}
+              onExpandIdea={async () => {
+                if (!directorIdea.trim() || expandingIdea) return;
+                setExpandingIdea(true);
+                try { const r = await videoService.directorExpandIdea(directorIdea.trim()); setDirectorIdea(r.data.expanded); }
+                catch { /* keep original */ } finally { setExpandingIdea(false); }
+              }}
+              onSubmit={() => void handleDirectorSubmit()} onStitch={handleStitch} onRerun={handleRerun}
+              onSelectJob={(job) => { setDirectorJob(job); setDirectorJobId(job.id); }}
+              onReuseIdea={setDirectorIdea}
+              onRetryClip={(i) => showToast(`Retrying clip ${i + 1}…`)}
+              directorJobId={directorJobId}
+            />
+          </BlurFade>
+
+          {/* Available Video Models */}
+          <BlurFade delay={0.7}>
+            <VideoModelsPanel
+              videoModels={videoModels} videoModelStatuses={videoModelStatuses}
+              preferredVideoModel={preferredVideoModel} savingVideoModel={savingVideoModel}
+              showPanel={showVideoModelsPanel} onToggle={() => setShowVideoModelsPanel((p) => !p)}
+              onSetDefault={handleSetDefaultVideoModel}
+            />
+          </BlurFade>
+
+          {/* Usage info */}
+          <BlurFade delay={0.8}>
+            <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
+              <div className="flex items-start gap-3 p-1">
+                <AlertCircle className="w-4 h-4 text-[var(--ag-text-secondary)] shrink-0 mt-0.5" />
+                <div className="text-xs text-[var(--ag-text-secondary)] space-y-1">
+                  <p>Videos are saved for <strong className="text-[var(--ag-text-primary)]">24 hours</strong> then automatically deleted.</p>
+                  <p>Generation takes <strong className="text-[var(--ag-text-primary)]">30-120 seconds</strong>. The page auto-polls for readiness.</p>
+                  <p>Maximum <strong className="text-[var(--ag-text-primary)]">{maxVideos} videos</strong> at a time. Delete old ones to make room.</p>
+                  <p>Use <strong className="text-[var(--ag-text-primary)]">Copy ID</strong> to reference videos in other tools.</p>
+                </div>
+              </div>
+            </SectionCard>
+          </BlurFade>
+
+          {/* Delete confirmation modal */}
+          {deleteConfirmId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" data-testid="delete-confirm-modal">
+              <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-error)]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--ag-error)]/10 flex items-center justify-center shrink-0">
+                    <Trash2 className="w-5 h-5 text-[var(--ag-error)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-heading font-semibold text-[var(--ag-text-primary)]">Delete video?</h3>
+                    <p className="text-xs text-[var(--ag-text-muted)]">This action cannot be undone.</p>
+                  </div>
+                </div>
+                <p className="text-sm text-[var(--ag-text-muted)] mb-5">The video will be permanently removed from your gallery.</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setDeleteConfirmId(null)} disabled={isDeleting} className="flex-1 py-2 px-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-muted)] hover:bg-[var(--ag-bg-surface)] transition-colors disabled:opacity-50" data-testid="delete-confirm-cancel">Cancel</button>
+                  <button onClick={() => void handleDelete(deleteConfirmId)} disabled={isDeleting} className="flex-1 py-2 px-4 min-h-[44px] rounded-xl bg-[var(--ag-error)]/15 border border-[var(--ag-error)]/30 text-sm text-[var(--ag-error)] hover:bg-[var(--ag-error)]/25 transition-colors disabled:opacity-50 font-medium" data-testid="delete-confirm-ok">
+                    {isDeleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Past director jobs */}
-          {directorJobs.length > 0 && !directorJob && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-[var(--ag-text-muted)] font-medium">Recent Director Jobs</p>
-                {/* 66.11: Status filter for job history */}
-                <div className="flex items-center gap-1">
-                  {(['all', 'done', 'failed'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setJobHistoryFilter(f)}
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-all ${jobHistoryFilter === f ? 'bg-[#8B5CF6]/15 border-[var(--ag-violet)]/50 text-[var(--ag-violet)]' : 'border-[var(--ag-violet)]/10 text-[var(--ag-text-muted)] hover:text-[var(--ag-violet)]'}`}
-                    >
-                      {f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {directorJobs.filter(j => jobHistoryFilter === 'all' || j.status === jobHistoryFilter).slice(0, 3).map((job) => (
-                <div
-                  key={job.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--ag-violet)]/10 bg-[var(--ag-violet)]/5"
-                >
-                  <button
-                    onClick={() => { setDirectorJob(job); setDirectorJobId(job.id); }}
-                    className="flex-1 text-left hover:opacity-80 transition-opacity"
-                  >
-                    <p className="text-xs font-medium text-[var(--ag-text-primary)]">{job.packet?.title ?? job.idea.slice(0, 50)}</p>
-                    <p className="text-xs text-[var(--ag-text-muted)]">{job.clips.filter(c => c.success).length}/{job.clips.length} clips · {new Date(job.created_at).toLocaleDateString()}</p>
-                  </button>
-                  {/* 64.13: Re-use idea button */}
-                  <button
-                    onClick={() => setDirectorIdea(job.idea)}
-                    className="flex-shrink-0 p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--ag-violet)]/50 hover:text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/10 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--ag-violet)]/50"
-                    aria-label="Use this idea again"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-      </SectionCard>
-      </BlurFade>
-
-      {/* Available Video Models */}
-      <BlurFade delay={0.7}>
-        <SectionCard padding="sm" className="overflow-hidden bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-        <button
-          onClick={() => setShowVideoModelsPanel(p => !p)}
-          className="w-full flex items-center justify-between p-3 min-h-[44px] hover:bg-[#8B5CF6]/5 transition-colors text-left"
-        >
-          <div className="flex items-center gap-2">
-            <Film className="w-4 h-4 text-[var(--ag-gold)]" />
-            <span className="text-sm font-heading font-semibold text-[var(--ag-text-primary)]">Available Video Models</span>
-          </div>
-          <ChevronDown className={`w-4 h-4 text-[var(--ag-text-muted)] transition-transform ${showVideoModelsPanel ? 'rotate-180' : ''}`} />
-        </button>
-
-        {showVideoModelsPanel && (
-          <div className="border-t border-[rgba(139,92,246,0.08)] divide-y divide-[rgba(139,92,246,0.05)]">
-            {videoModels.map(model => {
-              const status = videoModelStatuses[model.id] ?? 'unknown';
-              const isDefault = preferredVideoModel === model.id;
-              const isSaving = savingVideoModel === model.id;
-
-              return (
-                <div key={model.id} className={`flex items-center gap-4 px-4 py-3 ${isDefault ? 'bg-[#8B5CF6]/5' : ''}`}>
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${
-                    status === 'ok' ? 'bg-[#00FF88]' :
-                    status === 'down' ? 'bg-[#FF6161]' :
-                    'bg-[#6B7280]'
-                  }`} title={status} />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-[var(--ag-text-primary)]">{model.name}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                        model.tier === 'auto' ? 'bg-[#8B5CF6]/15 text-[var(--ag-violet)]' :
-                        model.tier === 'free' ? 'bg-[#00FF88]/15 text-[#00FF88]' :
-                        model.tier === 'premium' ? 'bg-[#FFB800]/15 text-[#FFB800]' :
-                        'bg-[#A78BFA]/15 text-[var(--ag-cyan)]'
-                      }`}>
-                        {model.cost}
-                      </span>
-                      {isDefault && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[var(--ag-violet)] font-medium">
-                          Your default
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--ag-text-muted)] mt-0.5 truncate">{model.description}</p>
-                  </div>
-
-                  <button
-                    onClick={() => handleSetDefaultVideoModel(model.id)}
-                    disabled={isDefault || isSaving}
-                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      isDefault
-                        ? 'bg-[#8B5CF6]/10 text-[var(--ag-violet)] cursor-default'
-                        : 'bg-[var(--ag-violet)]/10 text-[var(--ag-violet)] hover:bg-[var(--ag-violet)]/20 disabled:opacity-50'
-                    }`}
-                  >
-                    {isSaving ? '...' : isDefault ? '✓ Default' : 'Set default'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </SectionCard>
-      </BlurFade>
-
-      {/* Usage info */}
-      <BlurFade delay={0.8}>
-        <SectionCard padding="sm" className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border-[var(--ag-border-subtle)]">
-        <div className="flex items-start gap-3 p-1">
-          <AlertCircle className="w-4 h-4 text-[var(--ag-text-secondary)] shrink-0 mt-0.5" />
-          <div className="text-xs text-[var(--ag-text-secondary)] space-y-1">
-            <p>Videos are saved for <strong className="text-[var(--ag-text-primary)]">24 hours</strong> and then automatically deleted.</p>
-            <p>Generation takes <strong className="text-[var(--ag-text-primary)]">30-120 seconds</strong> depending on duration and model. The page auto-polls for readiness.</p>
-            <p>Maximum <strong className="text-[var(--ag-text-primary)]">{maxVideos} videos</strong> at a time. Delete old ones to make room for new ones.</p>
-            <p>Use <strong className="text-[var(--ag-text-primary)]">Copy ID</strong> to reference videos in other tools.</p>
-          </div>
-        </div>
-      </SectionCard>
-      </BlurFade>
-      {/* Delete confirmation modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" data-testid="delete-confirm-modal">
-          <div className="bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-error)]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--ag-error)]/10 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-[var(--ag-error)]" />
-              </div>
-              <div>
-                <h3 className="text-base font-heading font-semibold text-[var(--ag-text-primary)]">Delete video?</h3>
-                <p className="text-xs text-[var(--ag-text-muted)]">This action cannot be undone.</p>
-              </div>
-            </div>
-            <p className="text-sm text-[var(--ag-text-muted)] mb-5">
-              The video will be permanently removed from your gallery.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                disabled={isDeleting}
-                className="flex-1 py-2 px-4 min-h-[44px] rounded-xl border border-[var(--ag-border-subtle)] text-sm text-[var(--ag-text-muted)] hover:bg-[var(--ag-bg-surface)] transition-colors disabled:opacity-50"
-                data-testid="delete-confirm-cancel"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void handleDelete(deleteConfirmId)}
-                disabled={isDeleting}
-                className="flex-1 py-2 px-4 min-h-[44px] rounded-xl bg-[var(--ag-error)]/15 border border-[var(--ag-error)]/30 text-sm text-[var(--ag-error)] hover:bg-[var(--ag-error)]/25 transition-colors disabled:opacity-50 font-medium"
-                data-testid="delete-confirm-ok"
-              >
-                {isDeleting ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-    </PageShell>
+      </PageShell>
     </DashboardPageWrapper>
   );
 }

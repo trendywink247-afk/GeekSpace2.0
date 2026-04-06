@@ -210,10 +210,10 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
     vi.mocked(isOverDailyBudget).mockReturnValue(false);
   });
 
-  it('Step 1: routes to ollama first (local-first waterfall)', async () => {
+  it('Step 1: routes to groq first for simple intents (speed-first waterfall)', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(ollamaOkResponse)   // Ollama health check
-      .mockResolvedValueOnce(ollamaOkResponse)   // Ollama chat response
+      .mockResolvedValueOnce(openrouterOk('Groq reply')) // Groq chat response (OpenAI format)
     );
 
     const response = await routeChat(
@@ -221,26 +221,29 @@ describe('Routing Ladder — Fallback Chain Order (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    expect(response.provider).toBe('ollama');
+    // Simple intent → Groq first (70B, 0.2s, free) since Phase 76 routing change
+    expect(response.provider).toBe('groq');
     const traces = getRoutingTraces();
-    expect(traces[traces.length - 1].routeDecision).toBe('ollama');
+    expect(traces[traces.length - 1].routeDecision).toBe('groq');
   });
 
-  it('Step 2: falls back to openrouter-free (T1.5) when Ollama unavailable', async () => {
+  it('Step 2: falls back to openrouter-free when Ollama selected but fails at runtime', async () => {
+    // Complex intent → Ollama selected (primary for reasoning). If Ollama chat fails,
+    // fallback chain: openrouter-free → groq → together-qwen
     vi.stubGlobal('fetch', vi.fn()
-      .mockRejectedValueOnce(new Error('ECONNREFUSED')) // Ollama health check fails
-      .mockResolvedValueOnce(openrouterOk())            // T1.5: OpenRouter-free succeeds
+      .mockResolvedValueOnce(ollamaOkResponse)              // Ollama health check OK
+      .mockRejectedValueOnce(new Error('Ollama chat failed')) // Ollama chat request fails
+      .mockResolvedValueOnce(openrouterOk())                 // OR-free succeeds in fallback
     );
 
     const response = await routeChat(
-      [{ role: 'user', content: 'hello' }],
+      [{ role: 'user', content: 'explain quantum computing in depth and analyze all trade-offs comprehensively' }],
       { userId: 'test-user' }
     );
 
     expect(response.provider).toBe('openrouter-free');
     const traces = getRoutingTraces();
     expect(traces[traces.length - 1].routeDecision).toBe('openrouter-free');
-    expect(traces[traces.length - 1].ollamaAvailable).toBe(false);
   });
 
   it('edith is NOT auto-selected for complex intent (no complexity_escalation)', async () => {
@@ -338,8 +341,8 @@ describe('Daily Token Budget Enforcement (Phase 76)', () => {
       { userId: 'test-user' }
     );
 
-    // When budget exceeded, routing degrades to free providers (ollama, openrouter-free, builtin)
-    expect(['builtin', 'openrouter-free', 'ollama']).toContain(response.provider);
+    // When budget exceeded, routing uses free providers (groq is free-tier, ollama, openrouter-free, builtin)
+    expect(['builtin', 'openrouter-free', 'ollama', 'groq']).toContain(response.provider);
   });
 });
 

@@ -102,7 +102,8 @@ describe('Phase 77 — Per-User Limits + Usage Dashboard', () => {
     });
 
     it('OverviewPage has greeting based on time of day', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/OverviewPage.tsx'), 'utf-8');
+      // getHours logic extracted to overview/helpers.ts
+      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/overview/helpers.ts'), 'utf-8');
       // Greeting uses hour to determine morning/afternoon/evening
       expect(content).toContain('getHours');
     });
@@ -131,14 +132,16 @@ describe('Phase 77 — Per-User Limits + Usage Dashboard', () => {
   // ---- 77.6: SettingsPage dynamic plan badge ----
   describe('77.6 SettingsPage dynamic plan badge', () => {
     it('SettingsPage badge uses user.plan instead of hardcoded "Pro Plan"', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/SettingsPage.tsx'), 'utf-8');
+      // Plan badge logic extracted to settings/ProfileTab.tsx
+      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/settings/ProfileTab.tsx'), 'utf-8');
       expect(content).toContain('user?.plan');
       expect(content).toContain('Free Plan');
       expect(content).not.toMatch(/<Badge[^>]*>Pro Plan<\/Badge>/);
     });
 
     it('SettingsPage badge shows Premium for paid plans', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/SettingsPage.tsx'), 'utf-8');
+      // Plan badge logic extracted to settings/ProfileTab.tsx
+      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/settings/ProfileTab.tsx'), 'utf-8');
       expect(content).toContain("'yearly'");
       expect(content).toContain('Premium');
     });
@@ -147,12 +150,14 @@ describe('Phase 77 — Per-User Limits + Usage Dashboard', () => {
   // ---- 77.7: OverviewPage has interactive elements ----
   describe('77.7 OverviewPage interactive elements', () => {
     it('OverviewPage has Button components for actions', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/OverviewPage.tsx'), 'utf-8');
+      // Button components extracted to overview sub-components (e.g. RemindersSection.tsx)
+      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/overview/RemindersSection.tsx'), 'utf-8');
       expect(content).toContain('Button');
     });
 
     it('OverviewPage has Card components for stats', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/OverviewPage.tsx'), 'utf-8');
+      // Card/CardContent extracted to overview/SparklineCard.tsx
+      const content = readFileSync(resolve(SRC_ROOT, 'dashboard/pages/overview/SparklineCard.tsx'), 'utf-8');
       expect(content).toContain('Card');
       expect(content).toContain('CardContent');
     });
