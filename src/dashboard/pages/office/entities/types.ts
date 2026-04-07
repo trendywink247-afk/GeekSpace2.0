@@ -23,7 +23,9 @@ export type AgentStateType =
   | 'idle' | 'thinking' | 'typing' | 'tool_call' | 'tool_result'
   | 'responding' | 'done'
   | 'delegating' | 'comm_sent' | 'comm_received'
-  | 'task_started' | 'task_completed' | 'task_failed';
+  | 'task_started' | 'task_completed' | 'task_failed'
+  | 'error' | 'message_in' | 'message_out'
+  | 'goal_started' | 'goal_completed' | 'streak_milestone';
 
 /**
  * Real-time agent event delivered over SSE from `/api/agent-state/stream`.
@@ -96,6 +98,10 @@ export interface CanvasAgent {
     bounceStart?: number;
     /** Date.now() when a glow pulse started (delegation). */
     glowStart?: number;
+    /** Date.now() when an error reaction started (red tint + shake). */
+    errorStart?: number;
+    /** Pending desk target reached after walk-to-user completes (GS-011). */
+    pendingDeskTarget?: { x: number; y: number };
   };
 }
 
@@ -135,6 +141,8 @@ export interface SpeechBubble {
   interactive?: boolean;
   /** true = character-by-character typewriter reveal on canvas */
   typewriter?: boolean;
+  /** Priority for bubble priority queue. Higher = wins (default: 1 social). */
+  priority?: number;
 }
 
 /** Animation state for an office door (currently unused but reserved for future use). */
