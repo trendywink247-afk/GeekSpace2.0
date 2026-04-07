@@ -22,6 +22,23 @@ import { isPointOccupied } from '../../entities/occupancy';
 import { getAgentSprites, drawSpriteFrame } from '../../systems/animation/sprites';
 import { getAgentBehaviorMode, getAgentPose } from '../../systems/behavior/agentBehavior';
 import type { CanvasEffectState } from '../../systems/effects/CanvasEffects';
+import { drawAmbientLayer } from './ambientLayer';
+import { initAmbientState } from '../../systems/ambient/state';
+import type { AmbientState } from '../../systems/ambient/state';
+
+// ---------------------------------------------------------------------------
+// Module-level ambient state — updated by Lane 2 (OfficeStage.tsx) each RAF frame
+// via setAmbientState() after calling tickAmbientState().
+// ---------------------------------------------------------------------------
+let _ambientState: AmbientState = initAmbientState();
+
+/**
+ * Update the module-level ambient state used by renderFrame.
+ * Lane 2 (OfficeStage.tsx) should call this every RAF tick after tickAmbientState().
+ */
+export function setAmbientState(state: AmbientState): void {
+  _ambientState = state;
+}
 
 // ---------------------------------------------------------------------------
 // Background / Foreground image loading (pixel art office)
@@ -1479,7 +1496,10 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
     ctx.fillRect(17 * CELL, 13 * CELL, 8 * CELL, 4 * CELL);
   }
 
-  // 10. Debug overlay — collision grid visualization (only when enabled)
+  // 10. Ambient layer — weather particles, wall clock HUD, day/night tint
+  drawAmbientLayer(ctx, _ambientState, CANVAS_W, CANVAS_H, CELL);
+
+  // 11. Debug overlay — collision grid visualization (only when enabled)
   if (showDebug && collisionMap) {
     drawDebugOverlay(ctx, collisionMap);
   }
