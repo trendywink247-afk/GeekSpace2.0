@@ -248,10 +248,22 @@ export async function routeDelegationAsync(
   if (!regexTarget) {
     const wordCount = message.trim().split(/\s+/).length;
     if (wordCount > 5) {
-      const llmResult = await classifyDelegationLLM(message);
-      if (llmResult.agent && llmResult.confidence >= 0.5) {
-        target = { agent: llmResult.agent, reason: llmResult.reason };
-        source = 'llm';
+      // 500ms outer hard timeout — if the classifier stalls (e.g. ollama
+      // fallback), chat must NOT be blocked. Fall through to weebo.
+      try {
+        const llmResult = await Promise.race([
+          classifyDelegationLLM(message),
+          new Promise<never>((_, rej) =>
+            setTimeout(() => rej(new Error('delegation-llm-outer-timeout')), 500),
+          ),
+        ]);
+        if (llmResult.agent && llmResult.confidence >= 0.5) {
+          target = { agent: llmResult.agent, reason: llmResult.reason };
+          source = 'llm';
+        }
+      } catch (err) {
+        // Timeout or classifier error — silently fall through to regex/weebo.
+        // The error is already logged inside classifyDelegationLLM.
       }
     }
   }
