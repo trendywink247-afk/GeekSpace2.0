@@ -352,7 +352,7 @@ export async function resetPassword(
 
     // Update password and set password_changed_at for JWT invalidation
     const nowSec = Math.floor(Date.now() / 1000);
-    db.prepare('UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = datetime("now") WHERE id = ?').run(
+    db.prepare(`UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = datetime('now') WHERE id = ?`).run(
       passwordHash,
       nowSec,
       token.user_id

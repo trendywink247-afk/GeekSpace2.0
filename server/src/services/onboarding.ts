@@ -80,7 +80,7 @@ export function updateOnboarding(
   if (updates.step !== undefined) { sets.push('step = ?'); values.push(updates.step); }
   if (updates.data) { sets.push('data = ?'); values.push(JSON.stringify(updates.data)); }
 
-  sets.push('updated_at = datetime("now")');
+  sets.push(`updated_at = datetime('now')`);
   values.push(chatId);
 
   db.prepare(`UPDATE telegram_onboarding SET ${sets.join(', ')} WHERE telegram_chat_id = ?`)
