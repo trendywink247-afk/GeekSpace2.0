@@ -23,3 +23,11 @@ export type { VoiceSettings } from './VoiceTab';
 
 export { ShortcutsModal } from './ShortcutsModal';
 export { useSettingsExports } from './use-settings-exports';
+
+// Phase 1 — settings primitives
+export { SettingsRow } from './SettingsRow';
+export type { SettingsRowProps } from './SettingsRow';
+export { SettingsGroup } from './SettingsGroup';
+export { SettingsNav } from './SettingsNav';
+export type { SettingsNavItem } from './SettingsNav';
+export { SettingsMobileMenu } from './SettingsMobileMenu';
