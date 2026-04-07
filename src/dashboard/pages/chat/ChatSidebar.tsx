@@ -77,7 +77,7 @@ export function ChatSidebar({ conversations, conversationSearch, onSearchChange,
     <>
       <div className={['md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity duration-300 ease-out', isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'].join(' ')}
         onClick={onClose} aria-hidden='true' />
-      <div className={['w-72 flex-shrink-0 flex flex-col overflow-hidden fixed inset-y-0 left-0 z-50 md:relative md:inset-auto md:z-auto transition-transform duration-300 ease-out', isOpen ? 'translate-x-0' : '-translate-x-full', !isOpen ? 'md:hidden' : ''].join(' ')}
+      <div className={['w-72 flex-shrink-0 flex flex-col overflow-hidden fixed inset-y-0 left-0 z-50 md:relative md:inset-auto md:z-auto transition-transform duration-300 ease-out', isOpen ? 'translate-x-0' : '-translate-x-full'].join(' ')}
         data-testid='chat-sidebar'
         style={{ background: 'var(--ag-bg-chrome)', borderRight: '1px solid rgba(255,255,255,0.06)', boxShadow: isOpen ? '4px 0 40px rgba(139,92,246,0.08)' : 'none' }}>
         <div className='flex items-center justify-between px-4 py-3.5' style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
