@@ -6,6 +6,7 @@
 import type { CanvasAgent, AgentId, SpeechBubble } from '../../entities/types';
 import {
   AGENT_COLORS,
+  CELL,
 } from '../../constants';
 import {
   isWalkable, validateTarget, findFullPath,
@@ -390,15 +391,17 @@ export function notifyAgentActive(): void {
 // ── Personality-staggered sitting durations ──────────────────────────────────
 // Each agent sits for different durations based on personality
 const PERSONALITY_SIT_DURATION: Record<string, { min: number; max: number }> = {
-  edith:  { min: 20, max: 35 },  // focused, sits longest
-  jarvis: { min: 15, max: 25 },  // balanced
-  weebo:  { min: 8, max: 15 },   // energetic, wanders sooner
-  aria:   { min: 10, max: 18 },  // creative, moderate
-  forge:  { min: 18, max: 28 },  // deliberate
-  pulse:  { min: 14, max: 22 },  // analytical
-  echo:   { min: 12, max: 20 },  // reflective
-  cal:    { min: 15, max: 24 },  // balanced
-  nova:   { min: 6, max: 12 },   // restless, wanders most
+  // Rebalanced (GS-010 bug 7): agents spend MORE time at desks and move with intention.
+  // Values are ticks at 200ms each (multiply by 0.2s to get seconds).
+  edith:  { min: 60, max: 120 }, // 12–24 seconds — focused, strategic
+  forge:  { min: 50, max: 100 }, // 10–20 seconds — deliberate, deep focus
+  pulse:  { min: 45, max: 90  }, // 9–18 seconds — analytical
+  jarvis: { min: 45, max: 90  }, // 9–18 seconds — steady ops
+  cal:    { min: 45, max: 90  }, // 9–18 seconds — scheduled, balanced
+  aria:   { min: 35, max: 70  }, // 7–14 seconds — creative energy
+  echo:   { min: 40, max: 80  }, // 8–16 seconds — reflective, wellness
+  weebo:  { min: 30, max: 60  }, // 6–12 seconds — energetic but purposeful
+  nova:   { min: 25, max: 50  }, // 5–10 seconds — most active, not chaotic
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -657,6 +660,10 @@ export function cancelIdleBehavior(agentId: AgentId): void {
   bState.groupId = null;
   bState.facing = 'down';
   bState.wanderCount = 0;
+  // Bug 6 fix: reset speed to personality baseline — SSE cancel may arrive while
+  // agent is in 'resting' mode (speed *= 0.8). Without reset, agent walks to desk
+  // at 80% speed indefinitely.
+  bState.speed = AGENT_SPEED[agentId] ?? 1.0;
 }
 
 // ── Group meeting logic ─────────────────────────────────────────────────────
@@ -1033,14 +1040,15 @@ export function tickBehaviors(
         // Ambient awareness: idle agents occasionally glance toward working agents
         const glance = glanceState.get(agent.id);
         if (glance) {
-          // Active glance — override facing
-          bState.facing = glance.savedFacing === 'down' ? glance.savedFacing : glance.savedFacing; // keep override via below
+          // Active glance — face toward the target working agent (Bug 8 fix: removed
+          // the no-op ternary that returned savedFacing === savedFacing on both branches)
           glance.timer--;
           if (glance.timer <= 0) {
+            // Glance complete — restore saved facing
             bState.facing = glance.savedFacing;
             glanceState.delete(agent.id);
           } else {
-            // Compute facing toward the working agent
+            // Compute facing toward the working agent during glance
             const glanceTarget = agents.find(a => a.id === glance.targetId);
             if (glanceTarget) {
               bState.facing = computeFacing(agent.x, agent.y, glanceTarget.x, glanceTarget.y);
@@ -1129,10 +1137,13 @@ export function tickBehaviors(
               bState.timer = randomInt(10, 25); // try again quickly
             }
           } else if (roll < 0.96) {
-            // Social visit -- find any non-dormant agent (office-wide, not proximity-gated)
+            // Social visit — Bug 5 fix: only approach agents within Manhattan distance ≤ 10 tiles.
+            // Previously picked ANY office-wide agent, causing cross-office treks for brief chats.
+            const SOCIAL_VISIT_RADIUS = 10;
             const nearby = agents.filter((a) =>
               a.id !== agent.id && !a.isDormant
-              && (a.state === 'idle' || a.state === 'done'),
+              && (a.state === 'idle' || a.state === 'done')
+              && Math.abs(a.x - agent.x) + Math.abs(a.y - agent.y) <= SOCIAL_VISIT_RADIUS,
             );
             if (nearby.length > 0) {
               const target = pick(nearby);
@@ -1253,7 +1264,21 @@ export function tickBehaviors(
                   const repath = findFullPath(agent.x, agent.y, target.x, target.y);
                   if (repath.length > 0) {
                     updated.path = repath;
-                    updated.pathIndex = 0;
+                    // Bug 4 fix: instead of blindly resetting pathIndex to 0,
+                    // find the path step closest to current render position so
+                    // interpolation stays forward — no backward lurches.
+                    const _rX = agent.renderX ?? agent.x * CELL + CELL / 2;
+                    const _rY = agent.renderY ?? agent.y * CELL + CELL / 2;
+                    let _bestIdx = 0;
+                    let _bestDist = Infinity;
+                    for (let _i = 0; _i < repath.length; _i++) {
+                      const _d = Math.hypot(
+                        repath[_i].x * CELL + CELL / 2 - _rX,
+                        repath[_i].y * CELL + CELL / 2 - _rY,
+                      );
+                      if (_d < _bestDist) { _bestDist = _d; _bestIdx = _i; }
+                    }
+                    updated.pathIndex = _bestIdx;
                     changed = true;
                   }
                 }
