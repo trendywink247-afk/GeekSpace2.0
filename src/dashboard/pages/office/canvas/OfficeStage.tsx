@@ -284,10 +284,15 @@ export default function OfficeStage({ events, selectedAgentId, onAgentSelect, on
   const thinkingTimers = useRef(new Map<string, number>());
 
   const idleChatterRef = useRef({
-    lastEventTime: Date.now(),
+    lastEventTime: 0,
     lastChatterTime: 0,
-    nextChatterDelay: IDLE_CHATTER_MIN_MS + Math.random() * (IDLE_CHATTER_MAX_MS - IDLE_CHATTER_MIN_MS),
+    nextChatterDelay: IDLE_CHATTER_MIN_MS,
   });
+  // Initialize with stable time values after mount (useRef init must be pure)
+  useEffect(() => {
+    idleChatterRef.current.lastEventTime = Date.now();
+    idleChatterRef.current.nextChatterDelay = IDLE_CHATTER_MIN_MS + Math.random() * (IDLE_CHATTER_MAX_MS - IDLE_CHATTER_MIN_MS);
+  }, []);
 
   useEffect(() => {
     const target = isMobile ? 5 : 15;

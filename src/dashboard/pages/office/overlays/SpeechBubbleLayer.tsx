@@ -40,7 +40,8 @@ function deduplicateByPriority(bubbles: SpeechBubble[]): SpeechBubble[] {
 }
 
 export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }: Props) {
-  const visible = deduplicateByPriority(bubbles.filter((b) => Date.now() < b.expiresAt)).slice(0, 5);
+  // Parent prunes expired bubbles every ~200ms in the behavior tick; no need for Date.now() here
+  const visible = deduplicateByPriority(bubbles).slice(0, 5);
   const [mounted, setMounted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
