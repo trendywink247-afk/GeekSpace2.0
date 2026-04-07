@@ -7,7 +7,7 @@ export default defineConfig({
     env: {
       TEST_MODE: 'true',
     },
-    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts'],
+    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/services/__tests__/**/*.test.ts'],
     exclude: ['src/__tests__/**'],
     setupFiles: [],
     testTimeout: 30000,  // LLM calls can be slow; 30s global timeout prevents false flakiness

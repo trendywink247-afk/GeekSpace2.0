@@ -19,6 +19,7 @@
 
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
+import { classifyDelegationLLM } from './delegation-llm.js';
 
 // ── Tier limits (delegations per day) ────────────────────────
 
@@ -209,5 +210,97 @@ export function routeDelegation(
     delegationCount: newCount,
     delegationLimit: limit,
     remaining: limit - newCount,
+  };
+}
+
+/**
+ * Async version of routeDelegation() that falls back to an LLM classifier
+ * when the regex router returns null and the message is substantive (> 5 words).
+ *
+ * Use this in the main chat handler (chat.ts). routeDelegation() is preserved
+ * unchanged for synchronous callers.
+ *
+ * Flow:
+ *  1. detectDelegationTarget() — fast regex path
+ *  2. If null AND > 5 words, call classifyDelegationLLM()
+ *  3. If LLM confidence >= 0.5, use LLM result
+ *  4. Otherwise fall through to null (Weebo handles)
+ */
+export async function routeDelegationAsync(
+  userId: string,
+  userPlan: string,
+  message: string,
+): Promise<{
+  agent: string;
+  reason: string;
+  delegationCount: number;
+  delegationLimit: number;
+  remaining: number;
+  source: 'regex' | 'llm';
+} | null> {
+  // Step 1: fast regex path
+  const regexTarget = detectDelegationTarget(message);
+
+  // Step 2: LLM fallback (only when regex misses + message is substantive)
+  let target: { agent: string; reason: string } | null = regexTarget;
+  let source: 'regex' | 'llm' = 'regex';
+
+  if (!regexTarget) {
+    const wordCount = message.trim().split(/\s+/).length;
+    if (wordCount > 5) {
+      const llmResult = await classifyDelegationLLM(message);
+      if (llmResult.agent && llmResult.confidence >= 0.5) {
+        target = { agent: llmResult.agent, reason: llmResult.reason };
+        source = 'llm';
+      }
+    }
+  }
+
+  if (!target) return null;
+
+  const limit = getDelegationLimit(userPlan);
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Atomic check-and-increment
+  const result = db
+    .prepare(
+      `INSERT INTO delegation_counts (user_id, date, count) VALUES (?, ?, 1)
+    ON CONFLICT(user_id, date) DO UPDATE SET count = count + 1
+    WHERE delegation_counts.count < ?`,
+    )
+    .run(userId, today, limit);
+
+  if (result.changes === 0) {
+    logger.info(
+      { userId, userPlan, limit, targetAgent: target.agent, source },
+      'Delegation limit reached — Weebo handling directly',
+    );
+    return null;
+  }
+
+  const row = db
+    .prepare('SELECT count FROM delegation_counts WHERE user_id = ? AND date = ?')
+    .get(userId, today) as { count: number };
+  const newCount = row.count;
+
+  logger.info(
+    {
+      userId,
+      targetAgent: target.agent,
+      reason: target.reason,
+      count: newCount,
+      limit,
+      source,
+    },
+    'Auto-delegating to specialist agent',
+  );
+
+  return {
+    agent: target.agent,
+    reason: target.reason,
+    delegationCount: newCount,
+    delegationLimit: limit,
+    remaining: limit - newCount,
+    source,
   };
 }
