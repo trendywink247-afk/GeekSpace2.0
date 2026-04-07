@@ -549,7 +549,7 @@ function EnhancedSidebar({
         {/* Timeline and Tasks delegate to SmartSidebar internals.
             We render SmartSidebar only for these tabs, hiding its own tab bar. */}
         {(activeTab === 'timeline' || activeTab === 'tasks') && (
-          <div className="h-full [&>div>div:first-child]:hidden">
+          <div className="h-full min-h-0 flex-1 overflow-hidden [&>div>div:first-child]:hidden [&_>div]:!h-full [&_>div]:!max-h-full">
             <SmartSidebar
               officeData={officeData}
               sseEvents={sseEvents}
