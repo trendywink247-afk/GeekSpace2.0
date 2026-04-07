@@ -99,7 +99,7 @@ export function getConversationMessages(userId: string, conversationId: string, 
 
 export function updateConversationTitle(userId: string, conversationId: string, title: string): void {
   db.prepare(
-    'UPDATE conversations SET title = ?, updated_at = datetime("now") WHERE id = ? AND user_id = ?'
+    `UPDATE conversations SET title = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
   ).run(title.slice(0, 200), conversationId, userId);
 }
 
@@ -116,7 +116,7 @@ export function updateConversationMeta(conversationId: string, lastMessage: stri
 
 export function closeConversation(conversationId: string): void {
   db.prepare(
-    'UPDATE conversations SET is_active = 0, updated_at = datetime("now") WHERE id = ?'
+    `UPDATE conversations SET is_active = 0, updated_at = datetime('now') WHERE id = ?`
   ).run(conversationId);
 }
 

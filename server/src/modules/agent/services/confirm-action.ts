@@ -71,7 +71,7 @@ export function getPendingConfirmation(confirmId: string, userId: string): Pendi
   // Check expiry
   if (row.status === 'pending' && new Date(row.expires_at) < new Date()) {
     db.prepare(
-      'UPDATE pending_confirmations SET status = ?, resolved_at = datetime("now") WHERE id = ?'
+      `UPDATE pending_confirmations SET status = ?, resolved_at = datetime('now') WHERE id = ?`
     ).run('expired', confirmId);
     return { ...row, status: 'expired', resolved_at: new Date().toISOString() };
   }
