@@ -25,7 +25,8 @@ export type ActivityEventType =
   | 'message_in' | 'message_out'
   | 'task_started' | 'task_completed' | 'task_failed'
   | 'delegating' | 'comm_sent' | 'comm_received'
-  | 'error';
+  | 'error'
+  | 'goal_started' | 'goal_completed' | 'streak_milestone';
 
 export type ActivityChannel = 'telegram' | 'web' | 'automation' | 'proactive';
 
@@ -417,6 +418,43 @@ export function emitTaskFailed(
   channel: ActivityChannel = 'web',
 ): void {
   emit({ userId, agentId, type: 'task_failed', channel, summary: `Failed: ${error}`, taskId });
+}
+
+
+export function emitError(
+  userId: string,
+  agentId: string,
+  errorMsg: string,
+  channel: ActivityChannel = 'web',
+): void {
+  emit({ userId, agentId, type: 'error', channel, summary: `Error: ${errorMsg}` });
+}
+
+export function emitGoalStarted(
+  userId: string,
+  agentId: string,
+  goalTitle: string,
+  channel: ActivityChannel = 'web',
+): void {
+  emit({ userId, agentId, type: 'goal_started', channel, summary: `Goal started: ${goalTitle}` });
+}
+
+export function emitGoalCompleted(
+  userId: string,
+  agentId: string,
+  goalTitle: string,
+  channel: ActivityChannel = 'web',
+): void {
+  emit({ userId, agentId, type: 'goal_completed', channel, summary: `Goal complete: ${goalTitle}` });
+}
+
+export function emitStreakMilestone(
+  userId: string,
+  agentId: string,
+  streakCount: number,
+  channel: ActivityChannel = 'web',
+): void {
+  emit({ userId, agentId, type: 'streak_milestone', channel, summary: `Streak milestone: ${streakCount} days` });
 }
 
 // ── Stats ─────────────────────────────────────────────────────
