@@ -31,6 +31,7 @@ import {
 	canDelegate,
 	decrementDelegation,
 	routeDelegation,
+	routeDelegationAsync,
 } from "../../../services/delegation.js";
 import { edithChat } from "../../../services/edith.js";
 import { getFestivalContext } from "../../../services/festival-calendar.js";
@@ -1256,8 +1257,9 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 			if (forceRoute === "bridge") {
 				try {
 					// Auto-delegation: detect specialist agent + enforce tier limits
+					// Uses async version to enable LLM fallback classifier for regex misses.
 					if (!forceAgent) {
-						const delegation = routeDelegation(userId, userPlan, message);
+						const delegation = await routeDelegationAsync(userId, userPlan, message);
 						if (delegation) {
 							delegatedAgent = delegation.agent as AgentRole;
 							delegationInfo = {
