@@ -106,7 +106,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
         data={messages}
         data-testid="chat-message-list"
         className='h-full scrollbar-hide'
-        style={{ overflowX: 'hidden' }}
+        style={{ overflowX: 'hidden', overscrollBehaviorY: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         followOutput='smooth'
         alignToBottom
         atBottomThreshold={120}
@@ -270,7 +270,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                       style={{ border: `1.5px solid ${meta.color}`, opacity: 0.35 }}
                     />
                   </div>
-                  <div className='bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-border-subtle)] rounded-xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1.5'>
+                  <div className='rounded-2xl rounded-tl-md px-3 py-2.5 flex items-center gap-1.5' style={{ background: 'rgba(255,255,255,0.06)' }}>
                     <span className='text-xs text-[var(--ag-text-secondary)] mr-1'>{agentName} is typing</span>
                     <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
                     <span className='w-1.5 h-1.5 rounded-full bg-[var(--ag-cyan)]/60' style={{ animation: 'typing-dot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
@@ -284,7 +284,7 @@ export const ChatMessageList = forwardRef<VirtuosoHandle, ChatMessageListProps>(
                 <div className='flex justify-center py-1'>
                   <button
                     onClick={onStopGeneration}
-                    className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--ag-bg-surface)] border border-[var(--ag-border-default)] text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] hover:border-[var(--ag-cyan)]/40 transition-all min-h-[36px]'
+                    className='flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border text-[var(--ag-text-secondary)] hover:text-[var(--ag-text-primary)] transition-all min-h-[36px]' style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}
                   >
                     <Square className='w-3 h-3' />
                     Stop generating

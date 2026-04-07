@@ -321,10 +321,15 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
         className={[
           isUser
             // User: subtle bubble, right-aligned
-            ? 'w-fit max-w-[80%] md:max-w-[70%] ml-auto px-4 py-2.5 rounded-2xl rounded-tr-sm bg-[var(--ag-violet)]/10 border border-[var(--ag-border-subtle)] text-[var(--ag-text-primary)] text-sm leading-[1.7]'
+            ? 'w-fit max-w-[85%] md:max-w-[70%] ml-auto px-4 py-2.5 rounded-2xl rounded-tr-md text-[var(--ag-text-primary)] text-sm leading-[1.7]'
             // Agent: no bubble — just text, document-style
-            : 'flex-1 min-w-0 text-sm leading-[1.7] text-[var(--ag-text-primary)]',
+            : 'flex-1 min-w-0 max-w-[85%] md:max-w-[78%] px-4 py-2.5 rounded-2xl rounded-tl-md text-sm leading-[1.7] text-[var(--ag-text-primary)]',
         ].join(' ')}
+        style={
+          isUser
+            ? { background: 'rgba(139,92,246,0.20)' }
+            : { background: 'rgba(255,255,255,0.06)' }
+        }
       >
         {/* ── Edit mode (user messages) ── */}
         {isEditing ? (
@@ -356,11 +361,25 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
           </div>
         ) : (
           <>
-            {/* Multi-agent: show which personality is speaking */}
-            {msg.agentName && isAgent && (
-              <div className='flex items-center gap-1.5 mb-1.5 -mt-0.5'>
-                <span className='text-[11px] font-semibold' style={{ color: meta.color }}>
-                  {msg.agentName}
+            {/* Sender label — mono eyebrow matching landing aesthetic */}
+            {isAgent && (
+              <div className='flex items-center gap-1.5 mb-1.5'>
+                <div
+                  className='w-1.5 h-1.5 rounded-full'
+                  style={{ background: meta.color, boxShadow: isStreaming ? `0 0 6px ${meta.color}` : 'none' }}
+                />
+                <span
+                  className='font-mono text-[10px] uppercase tracking-[0.08em]'
+                  style={{ color: meta.color, opacity: 0.8 }}
+                >
+                  {msg.agentName || 'Agentin'}
+                </span>
+              </div>
+            )}
+            {isUser && (
+              <div className='flex justify-end mb-1'>
+                <span className='font-mono text-[10px] uppercase tracking-[0.08em] text-[#94A3B8]/50'>
+                  You
                 </span>
               </div>
             )}

@@ -585,7 +585,7 @@ export function ChatPage() {
               </div>
 
               {/* Messages — Virtualized or Empty State */}
-              <div className='flex-1 overflow-y-auto min-h-0 max-w-3xl mx-auto w-full'>
+              <div className='flex-1 overflow-y-auto min-h-0 max-w-3xl mx-auto w-full' style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
                 {messages.length === 0 ? (
                   <ChatEmptyState
                     meta={meta}
@@ -655,7 +655,8 @@ export function ChatPage() {
                 <div className='absolute bottom-20 right-4 z-10'>
                   <button
                     onClick={scrollToBottom}
-                    className='flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--ag-bg-surface)] backdrop-blur-xl border border-[var(--ag-cyan)]/30 text-[var(--ag-cyan)] hover:bg-[var(--ag-cyan)]/10 transition-all shadow-lg shadow-[var(--ag-cyan)]/10 min-h-[44px] min-w-[44px] justify-center'
+                    className='flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-blur-xl transition-all min-h-[44px] min-w-[44px] justify-center'
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(139,92,246,0.3)', color: 'var(--ag-violet)', boxShadow: '0 0 20px rgba(139,92,246,0.15)' }}
                     aria-label='Scroll to bottom'
                     title='Scroll to bottom'
                   >
