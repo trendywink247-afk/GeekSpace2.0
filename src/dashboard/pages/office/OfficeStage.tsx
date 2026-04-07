@@ -9,21 +9,33 @@
 // Smooth movement: agents interpolate renderX/renderY toward their grid
 // position each tick, giving sub-pixel gliding instead of tile-snapping.
 
-import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type {
-  AgentId, SpecialistId,
-  AgentStateType, CanvasAgent, SSEEvent,
-  ParticleBeam, SpeechBubble,
-} from './types';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  CELL, CANVAS_W, CANVAS_H,
-  AGENT_COLORS, AGENT_META, SPECIALIST_PARENT,
-  CORE_AGENTS, SPECIALIST_AGENTS,
-  CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
-  MAX_PARTICLE_BEAMS, MAX_SPEECH_BUBBLES,
-  PARTICLE_BEAM_TTL, SPEECH_BUBBLE_TTL,
+  AGENT_COLORS,
+  AGENT_META,
+  CANVAS_H,
+  CANVAS_W,
+  CELL,
   CLICK_DOUBLE_THRESHOLD_MS,
+  CORE_AGENTS,
+  CORE_DESK_POSITIONS,
+  MAX_PARTICLE_BEAMS,
+  MAX_SPEECH_BUBBLES,
+  PARTICLE_BEAM_TTL,
+  SPECIALIST_AGENTS,
+  SPECIALIST_PARENT,
+  SPECIALIST_POSITIONS,
+  SPEECH_BUBBLE_TTL,
 } from './constants';
+import type {
+  AgentId,
+  AgentStateType,
+  CanvasAgent,
+  ParticleBeam,
+  SpecialistId,
+  SpeechBubble,
+  SSEEvent,
+} from './types';
 
 // ---------------------------------------------------------------------------
 // Corridor entrance spawn points — agents walk in from here on page load
@@ -31,15 +43,15 @@ import {
 // ---------------------------------------------------------------------------
 
 const OFFICE_ENTRANCE: Array<{ x: number; y: number }> = [
-  { x: 6, y: 8 },   // corridor left
-  { x: 7, y: 8 },   // corridor
-  { x: 8, y: 8 },   // corridor center
-  { x: 10, y: 8 },  // corridor right
-  { x: 12, y: 8 },  // corridor far
-  { x: 13, y: 8 },  // mid-office
-  { x: 14, y: 8 },  // near workspace
-  { x: 11, y: 8 },  // corridor
-  { x: 9, y: 8 },   // corridor center-right
+  { x: 6, y: 8 }, // corridor left
+  { x: 7, y: 8 }, // corridor
+  { x: 8, y: 8 }, // corridor center
+  { x: 10, y: 8 }, // corridor right
+  { x: 12, y: 8 }, // corridor far
+  { x: 13, y: 8 }, // mid-office
+  { x: 14, y: 8 }, // near workspace
+  { x: 11, y: 8 }, // corridor
+  { x: 9, y: 8 }, // corridor center-right
 ];
 
 // ---------------------------------------------------------------------------
@@ -64,7 +76,8 @@ const GREETING_PHRASES: Record<string, string> = {
 
 function getAgentDesk(id: AgentId): { x: number; y: number } {
   if (id in CORE_DESK_POSITIONS) return CORE_DESK_POSITIONS[id as keyof typeof CORE_DESK_POSITIONS];
-  if (id in SPECIALIST_POSITIONS) return SPECIALIST_POSITIONS[id as keyof typeof SPECIALIST_POSITIONS];
+  if (id in SPECIALIST_POSITIONS)
+    return SPECIALIST_POSITIONS[id as keyof typeof SPECIALIST_POSITIONS];
   return { x: 7, y: 14 }; // fallback
 }
 
@@ -88,7 +101,7 @@ const COLLAB_SEND_PHRASES: Record<string, string[]> = {
   weebo: ['Hey, need your help!', 'Passing this to you.', 'Tag team!'],
   edith: ['Delegating sub-task.', 'Your expertise needed.', 'Routing to you.'],
   jarvis: ['Over to you.', 'Requesting assist.', 'Your turn.'],
-  aria: ['Collab time!', 'Let\'s create together!', 'Ideas incoming!'],
+  aria: ['Collab time!', "Let's create together!", 'Ideas incoming!'],
   forge: ['Code review needed.', 'Build assist?', 'PR incoming.'],
   pulse: ['Data handoff.', 'Check these metrics.', 'Stats ready.'],
   echo: ['Can you help?', 'Teamwork time!', 'Sharing this.'],
@@ -103,7 +116,7 @@ const COLLAB_RECV_PHRASES: Record<string, string[]> = {
   aria: ['Love it!', 'Ooh yes!', 'Let me add magic!'],
   forge: ['Building now.', 'Compiling...', 'Running it.'],
   pulse: ['Crunching numbers.', 'Data received.', 'Analyzing.'],
-  echo: ['Happy to help!', 'I\'m here!', 'On it, friend!'],
+  echo: ['Happy to help!', "I'm here!", 'On it, friend!'],
   cal: ['Scheduling...', 'Booking it.', 'Time sorted.'],
   nova: ['Investigating!', 'Deep diving.', 'Searching...'],
 };
@@ -134,11 +147,14 @@ const FAILURE_PHRASES: Record<string, string[]> = {
 
 // ── Delegation reaction system ─────────────────────────────────────────────
 // Tracks active delegations so delegators react when specialists complete tasks.
-const delegationTracker = new Map<AgentId, {
-  delegatorId: AgentId;
-  taskSnippet: string;
-  timestamp: number;
-}>();
+const delegationTracker = new Map<
+  AgentId,
+  {
+    delegatorId: AgentId;
+    taskSnippet: string;
+    timestamp: number;
+  }
+>();
 
 const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
   weebo: ['Nice one, {name}!', '{name} crushed it!', 'Solid work, {name}!'],
@@ -146,16 +162,45 @@ const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
   jarvis: ['{name} nailed it!', 'Great work, {name}!', 'Smooth, {name}.'],
 };
 
-import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
-import { SMART_OBJECTS } from './smartObjects';
-import { SpeechBubbleLayer } from './SpeechBubbleLayer';
-import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive, trackAgentTool } from './agentBehavior';
 import {
-  isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath, getWalkableNeighbors,
+  clearRequest,
+  isFirstVisit,
+  markVisited,
+  selectAnimationTier,
+  trackToolCall,
+} from './AnimationTierSelector';
+import {
+  cancelIdleBehavior,
+  initBehavior,
+  notifyAgentActive,
+  resetAllBehaviors,
+  tickBehaviors,
+  trackAgentTool,
+} from './agentBehavior';
+import {
+  type CanvasEffectState,
+  clearEffects,
+  createEffectState,
+  startTierEffect,
+  tickEffects,
+} from './CanvasEffects';
+import {
+  findFullPath,
+  getWalkableNeighbors,
+  isBlocked,
+  nearestWalkable,
+  validateSpawnPosition,
+  validateTarget,
 } from './navigation';
+import {
+  emitTrailParticles,
+  initAmbientParticles,
+  loadOfficeAssets,
+  renderFrame,
+} from './OfficeCanvasRenderer';
+import { SpeechBubbleLayer } from './SpeechBubbleLayer';
+import { SMART_OBJECTS } from './smartObjects';
 import { loadSpriteSheets } from './sprites';
-import { selectAnimationTier, trackToolCall, clearRequest, isFirstVisit, markVisited } from './AnimationTierSelector';
-import { createEffectState, startTierEffect, clearEffects, tickEffects, type CanvasEffectState } from './CanvasEffects';
 
 // ---------------------------------------------------------------------------
 // Launch mode huddle — when isMultiAgent is true, agents gather at the meeting table
@@ -237,7 +282,10 @@ const AGENT_INITIAL_SPEED = 1.0; // default multiplier; behavior system override
 // Validates the position through navigation module.
 // ---------------------------------------------------------------------------
 
-function getSeatPosition(deskPos: { x: number; y: number }): { x: number; y: number } {
+function getSeatPosition(deskPos: { x: number; y: number }): {
+  x: number;
+  y: number;
+} {
   // Validate the desk position — find nearest walkable if blocked
   if (isBlocked(deskPos.x, deskPos.y)) {
     const valid = nearestWalkable(deskPos.x, deskPos.y);
@@ -305,7 +353,9 @@ function buildInitialAgents(): CanvasAgent[] {
       state: 'idle',
       isSpecialist: !isCoreAgent,
       isDormant: false,
-      parentAgent: isCoreAgent ? undefined : SPECIALIST_PARENT[id as keyof typeof SPECIALIST_PARENT],
+      parentAgent: isCoreAgent
+        ? undefined
+        : SPECIALIST_PARENT[id as keyof typeof SPECIALIST_PARENT],
       facing: seat.y === 20 ? 'up' : seat.x >= 20 ? 'up' : seat.x === 24 ? 'right' : 'down',
       path: [],
       pathIndex: 0,
@@ -382,7 +432,10 @@ export default function OfficeStage({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tickRef = useRef(0);
   const processedRef = useRef(0);
-  const [containerSize, setContainerSize] = useState({ w: CANVAS_W, h: CANVAS_H });
+  const [containerSize, setContainerSize] = useState({
+    w: CANVAS_W,
+    h: CANVAS_H,
+  });
 
   // ---- Mobile detection ----
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -419,8 +472,10 @@ export default function OfficeStage({
       effectStateRef.current.particles = effectStateRef.current.particles.slice(0, target);
     } else if (current < target) {
       const extra = Array.from({ length: target - current }, () => ({
-        x: Math.random() * 864, y: Math.random() * 800,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        x: Math.random() * 864,
+        y: Math.random() * 800,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
         alpha: Math.random() * 0.05,
       }));
       effectStateRef.current.particles = [...effectStateRef.current.particles, ...extra];
@@ -430,19 +485,20 @@ export default function OfficeStage({
   // ---- Load pixel art office assets + PNG sprite sheets on mount ----
 
   useEffect(() => {
-    Promise.all([
-      loadOfficeAssets(),
-      loadSpriteSheets(),
-    ]).then(() => {
-      // Initialize ambient floating particles (fewer on mobile)
-      const isMobile = window.innerWidth < 768;
-      initAmbientParticles(isMobile ? 5 : 15);
-      setAssetsReady(true);
-    }).catch(() => setAssetsReady(true)); // show even if assets fail
+    Promise.all([loadOfficeAssets(), loadSpriteSheets()])
+      .then(() => {
+        // Initialize ambient floating particles (fewer on mobile)
+        const isMobile = window.innerWidth < 768;
+        initAmbientParticles(isMobile ? 5 : 15);
+        setAssetsReady(true);
+      })
+      .catch(() => setAssetsReady(true)); // show even if assets fail
   }, []);
 
   // Keep assetsReadyRef in sync so the rAF closure can read it without stale capture
-  useEffect(() => { assetsReadyRef.current = assetsReady; }, [assetsReady]);
+  useEffect(() => {
+    assetsReadyRef.current = assetsReady;
+  }, [assetsReady]);
 
   // ---- Initialize idle behaviors for all agents on mount ----
 
@@ -458,9 +514,15 @@ export default function OfficeStage({
   const agentsRef = useRef(agents);
   const beamsRef = useRef(beams);
   const bubblesRef = useRef(bubbles);
-  useLayoutEffect(() => { agentsRef.current = agents; }, [agents]);
-  useLayoutEffect(() => { beamsRef.current = beams; }, [beams]);
-  useLayoutEffect(() => { bubblesRef.current = bubbles; }, [bubbles]);
+  useLayoutEffect(() => {
+    agentsRef.current = agents;
+  }, [agents]);
+  useLayoutEffect(() => {
+    beamsRef.current = beams;
+  }, [beams]);
+  useLayoutEffect(() => {
+    bubblesRef.current = bubbles;
+  }, [bubbles]);
 
   // ---- Particle beams ----
 
@@ -473,30 +535,33 @@ export default function OfficeStage({
       createdAt: Date.now(),
       duration: PARTICLE_BEAM_TTL,
     };
-    setBeams(prev => [...prev.slice(-(MAX_PARTICLE_BEAMS - 1)), beam]);
+    setBeams((prev) => [...prev.slice(-(MAX_PARTICLE_BEAMS - 1)), beam]);
   }, []);
 
   // ---- Speech bubbles ----
 
-  const addBubble = useCallback((agentId: AgentId, text: string, opts?: { interactive?: boolean }) => {
-    const now = Date.now();
-    // Snapshot the agent's current render position for the bubble
-    const agent = agentsRef.current.find(a => a.id === agentId);
-    const isInteractive = opts?.interactive ?? (text.length > 60);
-    const bubble: SpeechBubble = {
-      id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
-      agentId,
-      text: isInteractive ? text.slice(0, 200) : text.slice(0, 60),
-      color: AGENT_COLORS[agentId] || '#A78BFA',
-      createdAt: now,
-      expiresAt: now + SPEECH_BUBBLE_TTL,
-      pixelX: agent?.renderX,
-      pixelY: agent?.renderY,
-      interactive: isInteractive,
-      typewriter: !isInteractive,
-    };
-    setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
-  }, []);
+  const addBubble = useCallback(
+    (agentId: AgentId, text: string, opts?: { interactive?: boolean }) => {
+      const now = Date.now();
+      // Snapshot the agent's current render position for the bubble
+      const agent = agentsRef.current.find((a) => a.id === agentId);
+      const isInteractive = opts?.interactive ?? text.length > 60;
+      const bubble: SpeechBubble = {
+        id: `bub-${now}-${Math.random().toString(36).slice(2, 6)}`,
+        agentId,
+        text: isInteractive ? text.slice(0, 200) : text.slice(0, 60),
+        color: AGENT_COLORS[agentId] || '#A78BFA',
+        createdAt: now,
+        expiresAt: now + SPEECH_BUBBLE_TTL,
+        pixelX: agent?.renderX,
+        pixelY: agent?.renderY,
+        interactive: isInteractive,
+        typewriter: !isInteractive,
+      };
+      setBubbles((prev) => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), bubble]);
+    },
+    [],
+  );
 
   // ---- Greeting bubbles on first visit (staggered per agent) ----
 
@@ -506,17 +571,23 @@ export default function OfficeStage({
 
     const allIds: AgentId[] = [...CORE_AGENTS, ...SPECIALIST_AGENTS];
     allIds.forEach((id, i) => {
-      setTimeout(() => {
-        const phrase = GREETING_PHRASES[id] || 'Hello!';
-        setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), {
-          id: `greet-${id}-${Date.now()}`,
-          agentId: id,
-          text: phrase,
-          color: AGENT_COLORS[id] || '#A78BFA',
-          createdAt: Date.now(),
-          expiresAt: Date.now() + SPEECH_BUBBLE_TTL + 1000, // slightly longer for greetings
-        }]);
-      }, 1500 + i * 600); // stagger: 1.5s base + 600ms per agent
+      setTimeout(
+        () => {
+          const phrase = GREETING_PHRASES[id] || 'Hello!';
+          setBubbles((prev) => [
+            ...prev.slice(-(MAX_SPEECH_BUBBLES - 1)),
+            {
+              id: `greet-${id}-${Date.now()}`,
+              agentId: id,
+              text: phrase,
+              color: AGENT_COLORS[id] || '#A78BFA',
+              createdAt: Date.now(),
+              expiresAt: Date.now() + SPEECH_BUBBLE_TTL + 1000, // slightly longer for greetings
+            },
+          ]);
+        },
+        1500 + i * 600,
+      ); // stagger: 1.5s base + 600ms per agent
     });
   }, []);
 
@@ -528,12 +599,12 @@ export default function OfficeStage({
     const newEvents = events.slice(processedRef.current);
     processedRef.current = events.length;
 
-    setAgents(prev => {
+    setAgents((prev) => {
       const next = [...prev];
 
       for (const evt of newEvents) {
         const agentId = evt.agentId as AgentId;
-        const idx = next.findIndex(a => a.id === agentId);
+        const idx = next.findIndex((a) => a.id === agentId);
         if (idx === -1) continue;
 
         const agent = { ...next[idx] };
@@ -555,8 +626,7 @@ export default function OfficeStage({
               thinkingTimers.current.set(agentId, Date.now());
               // Compute preliminary tier and start spotlight/zoom
               {
-                const toolCount = evt.requestId
-                  ? (trackToolCall(evt.requestId) - 1) : 0;
+                const toolCount = evt.requestId ? trackToolCall(evt.requestId) - 1 : 0;
                 // Re-track: trackToolCall incremented, undo for read-only peek
                 if (evt.requestId) clearRequest(evt.requestId);
                 let tier = selectAnimationTier({
@@ -580,14 +650,17 @@ export default function OfficeStage({
               {
                 const phrases = THINKING_PHRASES[agentId] || THINKING_PHRASES.weebo;
                 const phrase = phrases[Math.floor(Math.random() * phrases.length)];
-                setBubbles(prev => [...prev.slice(-(MAX_SPEECH_BUBBLES - 1)), {
-                  id: `think-${Date.now()}`,
-                  agentId: agentId as AgentId,
-                  text: phrase,
-                  color: AGENT_COLORS[agentId as AgentId] || '#A78BFA',
-                  createdAt: Date.now(),
-                  expiresAt: Date.now() + SPEECH_BUBBLE_TTL,
-                }]);
+                setBubbles((prev) => [
+                  ...prev.slice(-(MAX_SPEECH_BUBBLES - 1)),
+                  {
+                    id: `think-${Date.now()}`,
+                    agentId: agentId as AgentId,
+                    text: phrase,
+                    color: AGENT_COLORS[agentId as AgentId] || '#A78BFA',
+                    createdAt: Date.now(),
+                    expiresAt: Date.now() + SPEECH_BUBBLE_TTL,
+                  },
+                ]);
               }
 
               // Launch mode huddle: gather agents at meeting table
@@ -611,8 +684,10 @@ export default function OfficeStage({
                 } else if (!activeLaunchHuddle.agents.has(agentId)) {
                   // Add this agent to the existing huddle
                   activeLaunchHuddle.agents.add(agentId);
-                  const usedSeats = new Set([...activeLaunchHuddle.seatAssignments.values()].map(s => `${s.x},${s.y}`));
-                  const freeSeat = MEETING_TABLE_SEATS.find(s => !usedSeats.has(`${s.x},${s.y}`));
+                  const usedSeats = new Set(
+                    [...activeLaunchHuddle.seatAssignments.values()].map((s) => `${s.x},${s.y}`),
+                  );
+                  const freeSeat = MEETING_TABLE_SEATS.find((s) => !usedSeats.has(`${s.x},${s.y}`));
                   if (freeSeat) {
                     activeLaunchHuddle.seatAssignments.set(agentId, freeSeat);
                     agent.targetX = freeSeat.x;
@@ -659,12 +734,15 @@ export default function OfficeStage({
               // Delegation reaction: if this specialist was delegated to, the delegator reacts
               const delegation = delegationTracker.get(agentId);
               if (delegation) {
-                const delegatorIdx = next.findIndex(a => a.id === delegation.delegatorId);
+                const delegatorIdx = next.findIndex((a) => a.id === delegation.delegatorId);
                 if (delegatorIdx !== -1) {
                   const delegator = { ...next[delegatorIdx] };
-                  const reactionPhrases = DELEGATION_REACTION_PHRASES[delegation.delegatorId] || ['{name} finished!'];
-                  const phrase = reactionPhrases[Math.floor(Math.random() * reactionPhrases.length)]
-                    .replace('{name}', agentId.charAt(0).toUpperCase() + agentId.slice(1));
+                  const reactionPhrases = DELEGATION_REACTION_PHRASES[delegation.delegatorId] || [
+                    '{name} finished!',
+                  ];
+                  const phrase = reactionPhrases[
+                    Math.floor(Math.random() * reactionPhrases.length)
+                  ].replace('{name}', agentId.charAt(0).toUpperCase() + agentId.slice(1));
                   addBubble(delegation.delegatorId, phrase);
                   // Delegator bounces in appreciation
                   delegator.fx = { ...delegator.fx, bounceStart: Date.now() };
@@ -708,13 +786,15 @@ export default function OfficeStage({
             }
             // Show delegation context bubble on the delegator
             {
-              const targetName = targetId ? (targetId.charAt(0).toUpperCase() + targetId.slice(1)) : 'team';
+              const targetName = targetId
+                ? targetId.charAt(0).toUpperCase() + targetId.slice(1)
+                : 'team';
               const taskSnippet = evt.content ? evt.content.slice(0, 30) : 'task';
               addBubble(agentId, `${targetName}: ${taskSnippet}`);
             }
             if (targetId && SPECIALIST_AGENTS.includes(targetId as SpecialistId)) {
               // Physical delegation walk: specialist teleports near delegator, then walks to their desk
-              const specIdx = next.findIndex(a => a.id === targetId);
+              const specIdx = next.findIndex((a) => a.id === targetId);
               if (specIdx !== -1) {
                 const spec = { ...next[specIdx] };
                 spec.state = 'task_started';
@@ -725,9 +805,10 @@ export default function OfficeStage({
                 const delegatorNeighbors = getWalkableNeighbors(agent.x, agent.y);
                 if (delegatorNeighbors.length > 0) {
                   // Pick a neighbor not occupied by another agent
-                  const freeNeighbor = delegatorNeighbors.find(n =>
-                    !next.some(a => a.id !== targetId && a.x === n.x && a.y === n.y)
-                  ) || delegatorNeighbors[0];
+                  const freeNeighbor =
+                    delegatorNeighbors.find(
+                      (n) => !next.some((a) => a.id !== targetId && a.x === n.x && a.y === n.y),
+                    ) || delegatorNeighbors[0];
                   spec.x = freeNeighbor.x;
                   spec.y = freeNeighbor.y;
                   spec.renderX = freeNeighbor.x * CELL + CELL / 2;
@@ -797,8 +878,7 @@ export default function OfficeStage({
 
             // --- Finalize animation tier ---
             {
-              const toolCount = evt.requestId
-                ? (trackToolCall(evt.requestId) - 1) : 0;
+              const toolCount = evt.requestId ? trackToolCall(evt.requestId) - 1 : 0;
               // Undo the increment — we just want to read the count
               if (evt.requestId) clearRequest(evt.requestId);
 
@@ -846,10 +926,17 @@ export default function OfficeStage({
             // After 3s, reset to idle — behavior system will pick next destination
             const doneId = agentId;
             setTimeout(() => {
-              setAgents(p =>
-                p.map(a => {
+              setAgents((p) =>
+                p.map((a) => {
                   if (a.id !== doneId) return a;
-                  return { ...a, state: 'idle' as AgentStateType, path: [], pathIndex: 0, targetX: a.x, targetY: a.y };
+                  return {
+                    ...a,
+                    state: 'idle' as AgentStateType,
+                    path: [],
+                    pathIndex: 0,
+                    targetX: a.x,
+                    targetY: a.y,
+                  };
                 }),
               );
             }, 3000);
@@ -871,8 +958,12 @@ export default function OfficeStage({
   // ---- rAF game loop: smooth movement every frame, behavior at ~5fps ----
   const selectedRef = useRef(selectedAgentId);
   const themeRef = useRef(theme);
-  useLayoutEffect(() => { selectedRef.current = selectedAgentId; }, [selectedAgentId]);
-  useLayoutEffect(() => { themeRef.current = theme; }, [theme]);
+  useLayoutEffect(() => {
+    selectedRef.current = selectedAgentId;
+  }, [selectedAgentId]);
+  useLayoutEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   useEffect(() => {
     let lastTime = 0;
@@ -899,9 +990,9 @@ export default function OfficeStage({
         }
 
         // Compute full BFS paths for agents that need them
-        setAgents(prev => {
+        setAgents((prev) => {
           let changed = false;
-          const next = prev.map(agent => {
+          const next = prev.map((agent) => {
             // If agent has a target but no path, compute the full path
             if (
               agent.path.length === 0 &&
@@ -953,10 +1044,17 @@ export default function OfficeStage({
         });
 
         // Idle behavior — wandering, socializing, fidgeting
-        setAgents(prev => {
-          const { updatedAgents, newBubbles } = tickBehaviors(prev, tickRef.current, themeRef.current);
+        setAgents((prev) => {
+          const { updatedAgents, newBubbles } = tickBehaviors(
+            prev,
+            tickRef.current,
+            themeRef.current,
+          );
           if (newBubbles.length > 0) {
-            setBubbles(b => [...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)), ...newBubbles]);
+            setBubbles((b) => [
+              ...b.slice(-(MAX_SPEECH_BUBBLES - newBubbles.length)),
+              ...newBubbles,
+            ]);
           }
           return updatedAgents;
         });
@@ -968,21 +1066,21 @@ export default function OfficeStage({
         expireAccum -= BEHAVIOR_INTERVAL;
         const now = Date.now();
 
-        setBeams(prev => {
-          const filtered = prev.filter(b => now - b.createdAt < b.duration);
+        setBeams((prev) => {
+          const filtered = prev.filter((b) => now - b.createdAt < b.duration);
           return filtered.length === prev.length ? prev : filtered;
         });
 
-        setBubbles(prev => {
-          const filtered = prev.filter(b => now < b.expiresAt);
+        setBubbles((prev) => {
+          const filtered = prev.filter((b) => now < b.expiresAt);
           return filtered.length === prev.length ? prev : filtered;
         });
       }
 
       // ---- Smooth movement interpolation EVERY frame (60fps) ----
-      setAgents(prev => {
+      setAgents((prev) => {
         let changed = false;
-        const next = prev.map(agent => {
+        const next = prev.map((agent) => {
           // Determine the pixel target: current path step or grid cell center
           let targetPxX: number;
           let targetPxY: number;
@@ -1031,9 +1129,15 @@ export default function OfficeStage({
 
       // ---- RENDER every frame ----
       const canvas = canvasRef.current;
-      if (!canvas) { rafId = requestAnimationFrame(frame); return; }
+      if (!canvas) {
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
       const ctx = canvas.getContext('2d');
-      if (!ctx) { rafId = requestAnimationFrame(frame); return; }
+      if (!ctx) {
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
 
       // Skip full render until assets are loaded — show a loading indicator instead
       if (!assetsReadyRef.current) {
@@ -1051,13 +1155,20 @@ export default function OfficeStage({
       const tick = Math.floor(time / 200);
       // Emit trail particles for walking agents
       emitTrailParticles(agentsRef.current, tick);
-      renderFrame(ctx, {
-        agents: agentsRef.current,
-        beams: beamsRef.current,
-        canvasBubbles: bubblesRef.current.filter(b => !b.interactive),
-        tick, // tick counter for sprite animations
-        selectedAgentId: selectedRef.current,
-      }, undefined, undefined, effectStateRef.current, themeRef.current);
+      renderFrame(
+        ctx,
+        {
+          agents: agentsRef.current,
+          beams: beamsRef.current,
+          canvasBubbles: bubblesRef.current.filter((b) => !b.interactive),
+          tick, // tick counter for sprite animations
+          selectedAgentId: selectedRef.current,
+        },
+        undefined,
+        undefined,
+        effectStateRef.current,
+        themeRef.current,
+      );
 
       rafId = requestAnimationFrame(frame);
     };
@@ -1073,7 +1184,10 @@ export default function OfficeStage({
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       if (entry) {
-        setContainerSize({ w: entry.contentRect.width, h: entry.contentRect.height });
+        setContainerSize({
+          w: entry.contentRect.width,
+          h: entry.contentRect.height,
+        });
       }
     });
     ro.observe(el);
@@ -1110,8 +1224,8 @@ export default function OfficeStage({
       const cellY = (offsetY / CELL) | 0;
       for (const obj of SMART_OBJECTS) {
         // Check if click is on footprint or interaction points
-        const onFootprint = obj.footprint.some(f => f.x === cellX && f.y === cellY);
-        const onIP = obj.interactionPoints.some(ip => ip.x === cellX && ip.y === cellY);
+        const onFootprint = obj.footprint.some((f) => f.x === cellX && f.y === cellY);
+        const onIP = obj.interactionPoints.some((ip) => ip.x === cellX && ip.y === cellY);
         if (onFootprint || onIP) {
           return { id: obj.id, type: obj.type, label: obj.label };
         }
@@ -1191,7 +1305,7 @@ export default function OfficeStage({
         const oy = (clientY - rect.top) * scaleY;
         const agentHit = hitTestAgent(ox, oy);
         const objHit = !agentHit ? hitTestObject(ox, oy) : null;
-        canvas.style.cursor = (agentHit || objHit) ? 'pointer' : 'default';
+        canvas.style.cursor = agentHit || objHit ? 'pointer' : 'default';
       });
     },
     [hitTestAgent, hitTestObject],
@@ -1200,11 +1314,11 @@ export default function OfficeStage({
   // ---- Render ----
 
   return (
-    <div className="relative w-full h-full bg-[#05050A] overflow-hidden flex items-center justify-center">
+    /* Fix #1: outer fills square container from OfficeHomePage; inner tracks exact CSS size */
+    <div className="relative w-full h-full bg-[#05050A] overflow-hidden">
       <div
         ref={containerRef}
-        className="relative max-w-full"
-        style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, height: '100%' }}
+        className="absolute inset-0"
       >
         <canvas
           ref={canvasRef}

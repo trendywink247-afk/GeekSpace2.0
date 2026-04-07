@@ -143,7 +143,7 @@ export default function TimelineTab({ events, activityTimeline }: Props) {
       ref={containerRef}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex flex-col gap-0.5 max-h-[320px] md:max-h-[420px] overflow-y-auto p-3"
+      className="flex flex-col gap-0.5 overflow-y-auto p-3"
     >
       {sorted.map((ev, i) => {
         const min = minuteKey(ev.timestamp);
