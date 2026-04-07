@@ -2,7 +2,7 @@
 // Centralized navigation module — SINGLE source of truth for walkability.
 // All other office code imports from here; never checks COLLISION_MAP directly.
 
-import { COLLISION_MAP, CELL, COLS, ROWS } from '../../constants';
+import { CELL, COLLISION_MAP, COLS, ROWS } from '../../constants';
 
 // Re-export room lookup for convenience
 export { getRoomAt } from '../../entities/roomZones';
@@ -86,8 +86,10 @@ export function nearestWalkable(x: number, y: number): { x: number; y: number } 
  * @returns A guaranteed valid (or best-effort fallback) destination tile.
  */
 export function validateTarget(
-  x: number, y: number,
-  fallbackX: number, fallbackY: number,
+  x: number,
+  y: number,
+  fallbackX: number,
+  fallbackY: number,
 ): { x: number; y: number } {
   if (isValidAgentTarget(x, y)) return { x, y };
   const nearest = nearestWalkable(x, y);
@@ -106,82 +108,18 @@ export function validateTarget(
  */
 export function getWalkableNeighbors(x: number, y: number): Array<{ x: number; y: number }> {
   const neighbors: Array<{ x: number; y: number }> = [];
-  const dirs: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  const dirs: [number, number][] = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ];
   for (const [dx, dy] of dirs) {
     const nx = x + dx;
     const ny = y + dy;
     if (isWalkable(nx, ny)) neighbors.push({ x: nx, y: ny });
   }
   return neighbors;
-}
-
-// ── Random walkable tile within radius ───────────────────────────────────────
-
-/**
- * Tries random positions within `radius` tiles of (cx, cy).
- * Falls back to systematic scan if random attempts fail.
- * Returns null if nothing walkable exists in the area.
- * @param cx - Center tile column.
- * @param cy - Center tile row.
- * @param radius - Tile radius to search within.
- * @param maxAttempts - Number of random attempts before falling back to systematic scan (default 20).
- * @returns A walkable tile within `radius` of the center, or null if the area is fully blocked.
- */
-export function randomWalkableInRadius(
-  cx: number, cy: number,
-  radius: number,
-  maxAttempts = 20,
-): { x: number; y: number } | null {
-  for (let i = 0; i < maxAttempts; i++) {
-    const dx = Math.floor(Math.random() * (radius * 2 + 1)) - radius;
-    const dy = Math.floor(Math.random() * (radius * 2 + 1)) - radius;
-    const nx = cx + dx;
-    const ny = cy + dy;
-    if (isWalkable(nx, ny)) return { x: nx, y: ny };
-  }
-
-  // Fallback: systematic scan
-  for (let dy = -radius; dy <= radius; dy++) {
-    for (let dx = -radius; dx <= radius; dx++) {
-      if (isWalkable(cx + dx, cy + dy)) return { x: cx + dx, y: cy + dy };
-    }
-  }
-  return null;
-}
-
-// ── BFS reachability check ───────────────────────────────────────────────────
-
-/**
- * Returns true if a path exists from (fromX, fromY) to (toX, toY).
- * Both endpoints must be walkable. Uses standard BFS.
- * @param fromX - Source tile column.
- * @param fromY - Source tile row.
- * @param toX - Destination tile column.
- * @param toY - Destination tile row.
- * @returns True if a connected walkable path exists between the two tiles.
- */
-export function isReachable(fromX: number, fromY: number, toX: number, toY: number): boolean {
-  if (!isWalkable(fromX, fromY) || !isWalkable(toX, toY)) return false;
-  if (fromX === toX && fromY === toY) return true;
-
-  const visited = new Set<string>();
-  const queue: Array<{ x: number; y: number }> = [{ x: fromX, y: fromY }];
-  visited.add(`${fromX},${fromY}`);
-
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as [number, number][]) {
-      const nx = cur.x + dx;
-      const ny = cur.y + dy;
-      if (nx === toX && ny === toY) return true;
-      const key = `${nx},${ny}`;
-      if (!visited.has(key) && isWalkable(nx, ny)) {
-        visited.add(key);
-        queue.push({ x: nx, y: ny });
-      }
-    }
-  }
-  return false;
 }
 
 // ── Full BFS path ─────────────────────────────────────────────────────────────
@@ -210,8 +148,10 @@ export function isReachable(fromX: number, fromY: number, toX: number, toY: numb
  * ```
  */
 export function findFullPath(
-  sx: number, sy: number,
-  ex: number, ey: number,
+  sx: number,
+  sy: number,
+  ex: number,
+  ey: number,
 ): Array<{ x: number; y: number }> {
   if (sx === ex && sy === ey) return [];
   if (!isWalkable(ex, ey)) return [];
@@ -223,7 +163,12 @@ export function findFullPath(
   visited.set(startKey, ''); // root has no parent
 
   // 4-directional movement (no diagonals)
-  const dirs: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const dirs: [number, number][] = [
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+  ];
 
   while (queue.length > 0) {
     const cur = queue.shift()!;
@@ -250,61 +195,6 @@ export function findFullPath(
   return []; // no path found
 }
 
-// ── BFS next step ────────────────────────────────────────────────────────────
-
-/**
- * BFS pathfinding: returns the first step from (sx, sy) toward (ex, ey).
- * More efficient than `findFullPath` when only the immediate next move is needed.
- * Returns null if already at target or no path exists.
- * @param sx - Source tile column.
- * @param sy - Source tile row.
- * @param ex - Destination tile column.
- * @param ey - Destination tile row.
- * @returns The adjacent tile to step onto next, or null if at target / no path.
- */
-export function bfsNextStep(
-  sx: number, sy: number,
-  ex: number, ey: number,
-): { x: number; y: number } | null {
-  if (sx === ex && sy === ey) return null;
-  if (!isWalkable(ex, ey)) return null;
-
-  const visited = new Set<string>();
-  const queue: { x: number; y: number; firstX: number; firstY: number }[] = [];
-  visited.add(`${sx},${sy}`);
-
-  const dirs: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-
-  for (const [ddx, ddy] of dirs) {
-    const nx = sx + ddx;
-    const ny = sy + ddy;
-    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
-    if (COLLISION_MAP[ny][nx]) continue;
-    const key = `${nx},${ny}`;
-    if (visited.has(key)) continue;
-    visited.add(key);
-    if (nx === ex && ny === ey) return { x: nx, y: ny };
-    queue.push({ x: nx, y: ny, firstX: nx, firstY: ny });
-  }
-
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    for (const [ddx, ddy] of dirs) {
-      const nx = cur.x + ddx;
-      const ny = cur.y + ddy;
-      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
-      if (COLLISION_MAP[ny][nx]) continue;
-      const key = `${nx},${ny}`;
-      if (visited.has(key)) continue;
-      visited.add(key);
-      if (nx === ex && ny === ey) return { x: cur.firstX, y: cur.firstY };
-      queue.push({ x: nx, y: ny, firstX: cur.firstX, firstY: cur.firstY });
-    }
-  }
-
-  return null;
-}
-
 // ── Validate a spawn position ────────────────────────────────────────────────
 
 /**
@@ -318,7 +208,8 @@ export function bfsNextStep(
  */
 export function validateSpawnPosition(
   agentId: string,
-  x: number, y: number,
+  x: number,
+  y: number,
 ): { x: number; y: number; renderX: number; renderY: number } {
   if (isWalkable(x, y)) {
     return { x, y, renderX: x * CELL + CELL / 2, renderY: y * CELL + CELL / 2 };
