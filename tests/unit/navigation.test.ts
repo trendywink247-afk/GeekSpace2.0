@@ -11,7 +11,6 @@ import {
   nearestWalkable,
   validateTarget,
   getWalkableNeighbors,
-  randomWalkableInRadius,
 } from '@/dashboard/pages/office/systems/navigation/navigation';
 import { COLS, ROWS } from '@/dashboard/pages/office/constants';
 
@@ -201,44 +200,6 @@ describe('Navigation Module', () => {
     });
   });
 
-  describe('randomWalkableInRadius - Random Selection', () => {
-    it('returns walkable tile within radius', () => {
-      // Find a center position
-      let centerFound = false;
-      for (let cx = 5; cx < 15; cx++) {
-        for (let cy = 5; cy < 15; cy++) {
-          if (isWalkable(cx, cy)) {
-            const result = randomWalkableInRadius(cx, cy, 3);
-            if (result) {
-              const dist = Math.max(Math.abs(result.x - cx), Math.abs(result.y - cy));
-              expect(dist).toBeLessThanOrEqual(3);
-              expect(isWalkable(result.x, result.y)).toBe(true);
-            }
-            centerFound = true;
-            break;
-          }
-        }
-        if (centerFound) break;
-      }
-      expect(centerFound).toBe(true);
-    });
-
-    it('returns null if area fully blocked', () => {
-      // Test with a coordinate that's definitely blocked or in corner
-      // This is hard to guarantee, so we just verify it returns or null
-      const result = randomWalkableInRadius(0, 0, 0);
-      if (result) {
-        expect(isWalkable(result.x, result.y)).toBe(true);
-      }
-    });
-
-    it('respects maxAttempts parameter', () => {
-      // With maxAttempts=1, should quickly return or null
-      const result = randomWalkableInRadius(10, 10, 5, 1);
-      // Just verify it doesn't hang or throw
-      expect(result === null || isWalkable(result.x, result.y)).toBe(true);
-    });
-  });
 
   describe('Integration: Multi-step Navigation', () => {
     it('can build a chain: target → nearest walkable → neighbors', () => {

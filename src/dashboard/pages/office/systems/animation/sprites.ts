@@ -1448,3 +1448,38 @@ export function drawSpriteFrame(
   ctx.restore();
   return true;
 }
+
+// ── Bug 1 fix: smooth continuous bob offset ──────────────────────────────────
+
+/**
+ * Computes a smooth, continuous vertical bob offset for idle agents.
+ *
+ * **The problem (GS-010 bug 1):**
+ * `OfficeCanvasRenderer.ts` used `Math.round(Math.sin(tick * 0.3) * 1)` where
+ * `tick = Math.floor(time / 200)`. This creates a discrete 1-pixel jump every
+ * 200ms — visible as a stutter for all idle agents.
+ *
+ * **The fix:**
+ * Use continuous RAF time (milliseconds) instead of the discrete tick counter.
+ * The result is a smooth ±0.8px sine wave with no rounding. Amplitude is kept
+ * < 1px so the bob is subtle — just enough to signal "alive" without distracting.
+ *
+ * **Usage in OfficeCanvasRenderer.ts (Lane 3 rebases this):**
+ * ```typescript
+ * import { computeSmoothBobOffset } from '../systems/animation/sprites';
+ * // Replace:
+ * //   const bobOffset = isIdle ? Math.round(Math.sin(tick * 0.3) * 1) : 0;
+ * // With:
+ * const bobOffset = isIdle ? computeSmoothBobOffset(rafTimeMs) : 0;
+ * ```
+ *
+ * @param rafTimeMs - Current RAF timestamp in milliseconds (e.g. from `performance.now()`
+ *   or the `time` parameter passed to the RAF callback). NOT the discrete tick counter.
+ * @returns A smooth float in the range [-0.8, +0.8] suitable for use as a Y-axis offset.
+ *   No rounding is applied — let the canvas subpixel rendering handle it.
+ */
+export function computeSmoothBobOffset(rafTimeMs: number): number {
+  // Period: ~3.5s full cycle (ω = 2π / 3500ms ≈ 0.00180 rad/ms).
+  // Amplitude 0.8px — subtle, no rounding, no discrete steps.
+  return Math.sin(rafTimeMs * 0.0018) * 0.8;
+}

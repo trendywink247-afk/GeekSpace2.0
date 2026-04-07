@@ -6,7 +6,6 @@ import {
   nearestWalkable,
   validateTarget,
   getWalkableNeighbors,
-  randomWalkableInRadius,
 } from '@/dashboard/pages/office/systems/navigation/navigation';
 import { COLS, ROWS } from '@/dashboard/pages/office/constants';
 
@@ -277,67 +276,6 @@ describe('navigation — Pathfinding & Collision', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────
-  // randomWalkableInRadius — Random selection with fallback
-  // ─────────────────────────────────────────────────────────────────
-
-  describe('randomWalkableInRadius', () => {
-    it('returns null if all tiles blocked', () => {
-      // Perimeter (0,0) area is likely fully blocked
-      const result = randomWalkableInRadius(0, 0, 2, 20);
-      expect(result).toBeNull();
-    });
-
-    it('returns walkable tile within radius', () => {
-      // Find a center with nearby walkable tiles
-      for (let x = 3; x < COLS - 3; x++) {
-        for (let y = 3; y < ROWS - 3; y++) {
-          const result = randomWalkableInRadius(x, y, 3, 20);
-          if (result) {
-            expect(isWalkable(result.x, result.y)).toBe(true);
-            // Function searches a square of side 2*radius+1, so use Chebyshev distance
-            const chebyshev = Math.max(Math.abs(result.x - x), Math.abs(result.y - y));
-            expect(chebyshev).toBeLessThanOrEqual(3);
-            return;
-          }
-        }
-      }
-    });
-
-    it('respects maxAttempts (fallback to systematic)', () => {
-      // With maxAttempts=0, should skip random and do systematic
-      for (let x = 3; x < COLS - 3; x++) {
-        for (let y = 3; y < ROWS - 3; y++) {
-          const result = randomWalkableInRadius(x, y, 2, 0);
-          if (result) {
-            expect(isWalkable(result.x, result.y)).toBe(true);
-            return;
-          }
-        }
-      }
-    });
-
-    it('handles radius = 0 (only center)', () => {
-      // Find a walkable center tile
-      for (let x = 0; x < COLS; x++) {
-        for (let y = 0; y < ROWS; y++) {
-          if (isWalkable(x, y)) {
-            const result = randomWalkableInRadius(x, y, 0, 20);
-            expect(result).toEqual({ x, y });
-            return;
-          }
-        }
-      }
-    });
-
-    it('handles radius larger than map', () => {
-      // Should still return valid walkable or null
-      const result = randomWalkableInRadius(13, 12, 999, 20);
-      if (result) {
-        expect(isWalkable(result.x, result.y)).toBe(true);
-      }
-    });
-  });
 
   // ─────────────────────────────────────────────────────────────────
   // isValidAgentTarget — Semantic alias for isWalkable

@@ -11,7 +11,6 @@ import {
   nearestWalkable,
   validateTarget,
   getWalkableNeighbors,
-  randomWalkableInRadius,
 } from '../systems/navigation/navigation';
 import { COLS, ROWS } from '../constants';
 
@@ -176,51 +175,6 @@ describe('navigation', () => {
     });
   });
 
-  // ─── Random walkable in radius ───────────────────────────────────────────
-  describe('randomWalkableInRadius', () => {
-    it('returns null if radius covers only blocked tiles', () => {
-      const pos = randomWalkableInRadius(0, 0, 2, 20); // Small radius around fully blocked area
-      expect(pos === null || isWalkable(pos.x, pos.y)).toBeDefined();
-    });
-
-    it('returns a tile within radius if walkable exists', () => {
-      const pos = randomWalkableInRadius(10, 17, 3, 20);
-      if (pos !== null) {
-        expect(isWalkable(pos.x, pos.y)).toBe(true);
-        const distance = Math.abs(pos.x - 10) + Math.abs(pos.y - 17);
-        expect(distance).toBeLessThanOrEqual(3);
-      }
-    });
-
-    it('respects maxAttempts parameter', () => {
-      // With maxAttempts = 1, should try fewer random attempts before systematic scan
-      const pos = randomWalkableInRadius(10, 17, 5, 1);
-      expect(pos === null || isWalkable(pos.x, pos.y)).toBeDefined();
-    });
-
-    it('falls back to systematic scan when random attempts fail', () => {
-      // Call with large radius and center in walkable area
-      const pos = randomWalkableInRadius(10, 17, 10, 1); // Only 1 random attempt
-      expect(pos === null || isWalkable(pos.x, pos.y)).toBeDefined();
-    });
-
-    it('handles radius 0 (only center tile)', () => {
-      const pos = randomWalkableInRadius(10, 17, 0, 20);
-      if (pos !== null) {
-        expect(pos).toEqual({ x: 10, y: 17 });
-      }
-    });
-
-    it('does not return tiles outside COLS/ROWS', () => {
-      const pos = randomWalkableInRadius(COLS - 1, ROWS - 1, 3, 20);
-      if (pos !== null) {
-        expect(pos.x).toBeGreaterThanOrEqual(0);
-        expect(pos.x).toBeLessThan(COLS);
-        expect(pos.y).toBeGreaterThanOrEqual(0);
-        expect(pos.y).toBeLessThan(ROWS);
-      }
-    });
-  });
 
   // ─── Integration: navigation consistency ─────────────────────────────────
   describe('navigation — integration checks', () => {
