@@ -87,7 +87,7 @@ const DELEGATION_PATTERNS: Array<{ pattern: RegExp; agent: string; reason: strin
   { pattern: /\b(?:budget|expense|savings?|invest|stock|crypto|bitcoin|portfolio|finance|tax|bank|loan|mortgage)\b/i, agent: 'pulse', reason: 'finance & money' },
 
   // Image / visual generation
-  { pattern: /\b(?:generate\s+(?:an?\s+)?image|make\s+(?:an?\s+)?(?:image|picture|art)|draw|illustration|photo\s+of|create\s+(?:an?\s+)?(?:image|picture)|midjourney|dall[e\-]|stable\s+diffusion)\b/i, agent: 'aria', reason: 'image generation' },
+  { pattern: /\b(?:generate\s+(?:an?\s+)?image|make\s+(?:an?\s+)?(?:image|picture|art)|draw|illustration|photo\s+of|create\s+(?:an?\s+)?(?:image|picture)|midjourney|dall[e-]|stable\s+diffusion)\b/i, agent: 'aria', reason: 'image generation' },
 
   // Video generation / editing
   { pattern: /\b(?:make\s+(?:a\s+)?video|generate\s+(?:a\s+)?video|edit\s+(?:a\s+)?video|runway|sora)\b/i, agent: 'forge', reason: 'video generation' },
