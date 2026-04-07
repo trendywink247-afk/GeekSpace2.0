@@ -546,7 +546,7 @@ export function ChatPage() {
   const meta = personalityMeta[personality];
 
   return (
-    <div className='flex flex-col h-[calc(100dvh-60px)] md:h-[calc(100vh-60px)] bg-[var(--ag-bg-base)]'>
+    <div className='flex flex-row h-[calc(100dvh-56px-96px)] md:h-[calc(100vh-56px)] bg-[var(--ag-bg-base)]'>
             {/* ── Conversation Sidebar ── */}
             <ChatSidebar
               conversations={conversations}
