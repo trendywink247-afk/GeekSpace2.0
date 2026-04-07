@@ -2,7 +2,7 @@
 // DOM overlay for ALL speech bubbles (GS-011: consolidated from canvas+DOM to pure DOM).
 // Priority queue: task_failure (4) > task_complete (3) > tool (2) > social (1).
 
-import { useEffect, useState } from 'react';
+
 import { AGENT_COLORS, CANVAS_W, CANVAS_H } from '../constants';
 import type { SpeechBubble, CanvasAgent } from '../entities/types';
 
@@ -42,23 +42,18 @@ function deduplicateByPriority(bubbles: SpeechBubble[]): SpeechBubble[] {
 export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }: Props) {
   // Parent prunes expired bubbles every ~200ms in the behavior tick; no need for Date.now() here
   const visible = deduplicateByPriority(bubbles).slice(0, 5);
-  const [mounted, setMounted] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    setMounted(new Set(visible.map((b) => b.id)));
-  }, [visible]);
-
   if (visible.length === 0) return null;
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <style>{`@keyframes bubbleIn { from { opacity: 0; transform: translate(-50%, -90%); } to { opacity: 1; transform: translate(-50%, -100%); } }`}</style>
       {visible.map((bubble) => {
         const agent = agents.find((a) => a.id === bubble.agentId);
         const px = bubble.pixelX ?? agent?.renderX ?? 0;
         const py = bubble.pixelY ?? agent?.renderY ?? 0;
         const pos = pixelToScreen(px, py, canvasWidth, canvasHeight);
         const color = AGENT_COLORS[bubble.agentId] ?? '#A78BFA';
-        const isMounted = mounted.has(bubble.id);
+
         const isInteractive = bubble.interactive ?? false;
         const priority = bubble.priority ?? BUBBLE_PRIORITY.SOCIAL;
         const isUrgent = priority >= BUBBLE_PRIORITY.TASK_FAILURE;
@@ -80,8 +75,8 @@ export function SpeechBubbleLayer({ bubbles, agents, canvasWidth, canvasHeight }
               borderColor: isUrgent ? `${color}80` : `${color}30`,
               color: '#F4F6FF',
               backgroundColor: isUrgent ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.60)',
-              opacity: isMounted ? 1 : 0,
-              transition: 'opacity 150ms ease-in, left 50ms linear, top 50ms linear',
+              animation: 'bubbleIn 150ms ease forwards',
+              transition: 'left 50ms linear, top 50ms linear',
               zIndex: priority,
             }}
           >

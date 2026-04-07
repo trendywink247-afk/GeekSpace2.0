@@ -259,8 +259,11 @@ export default function OfficeStage({ events, selectedAgentId, onAgentSelect, on
 
   // agentsRef = primary store (mutated in-place for renderX/Y in RAF).
   // `agents` state = secondary (DOM overlay, updated only on behavior tick / SSE event).
-  const agentsRef = useRef<CanvasAgent[]>(buildInitialAgents());
-  const [agents, setAgents] = useState<CanvasAgent[]>(agentsRef.current);
+  // GS-011 perf / lint: agentsRef starts empty; the sync useLayoutEffect below
+  // (which runs before the RAF loop) populates it from agents state.
+  // This avoids reading .current during render (react-hooks/refs violation).
+  const agentsRef = useRef<CanvasAgent[]>([]);
+  const [agents, setAgents] = useState<CanvasAgent[]>(buildInitialAgents);
   const [beams, setBeams] = useState<ParticleBeam[]>([]);
   const [bubbles, setBubbles] = useState<SpeechBubble[]>([]);
   const beamsRef = useRef(beams);
