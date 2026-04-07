@@ -13,7 +13,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Module State Exports (CRITICAL GAP)', () => {
   // ─── BLOCKED: requestToolCounts Map not exported ──────────────────────

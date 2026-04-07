@@ -10,8 +10,8 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
-import type { AnimationTier } from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
+import type { AnimationTier } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector', () => {
   // ─── Rule 1: First-time visitors always get cinematic ─────────────────────

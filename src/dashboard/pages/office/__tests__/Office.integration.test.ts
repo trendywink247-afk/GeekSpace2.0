@@ -10,16 +10,16 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 import {
   createEffectState,
   startTierEffect,
   tickEffects,
   clearEffects,
   type CanvasEffectState,
-} from '../CanvasEffects';
-import { render } from '../OfficeCanvasRenderer';
-import type { CanvasAgent } from '../types';
+} from '../systems/effects/CanvasEffects';
+import { render } from '../canvas/renderer/OfficeCanvasRenderer';
+import type { CanvasAgent } from '../entities/types';
 import { TIER_CINEMATIC_ZOOM_MS, TIER_CINEMATIC_HOLD_MS, TIER_CINEMATIC_PULLBACK_MS } from '../constants';
 
 describe('Office Module — Integration: Tier → Effects → Render', () => {

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { AGENT_COLORS, AGENT_META } from './constants';
-import type { AgentId } from './types';
+import type { AgentId } from './entities/types';
 
 interface ChatMessage {
   fromAgent: string;

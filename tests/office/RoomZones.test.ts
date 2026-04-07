@@ -12,7 +12,7 @@ import {
   getRoomById,
   ROOMS,
   type RoomType,
-} from '@/dashboard/pages/office/roomZones';
+} from '@/dashboard/pages/office/entities/roomZones';
 
 describe('RoomZones', () => {
   describe('getRoomAt()', () => {

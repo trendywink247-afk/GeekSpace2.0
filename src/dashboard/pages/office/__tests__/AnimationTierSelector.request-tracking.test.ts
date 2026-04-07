@@ -8,7 +8,7 @@ import {
   selectAnimationTier,
   trackToolCall,
   clearRequest,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Request Tracking Edge Cases', () => {
   // Cleanup used IDs after each test

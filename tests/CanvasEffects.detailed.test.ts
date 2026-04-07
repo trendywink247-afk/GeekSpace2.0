@@ -6,7 +6,7 @@ import {
   tickEffects,
   type CanvasEffectState,
   type AnimationTier,
-} from '@/dashboard/pages/office/CanvasEffects';
+} from '@/dashboard/pages/office/systems/effects/CanvasEffects';
 import {
   TIER_CINEMATIC_ZOOM_MS,
   TIER_CINEMATIC_HOLD_MS,

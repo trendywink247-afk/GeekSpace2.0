@@ -13,7 +13,7 @@ import {
   cleanStaleRequests,
   getRequestCount,
   getRequestToolCount,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Module State & Cleanup', () => {
   beforeEach(() => {

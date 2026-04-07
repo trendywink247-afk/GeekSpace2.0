@@ -8,7 +8,7 @@ import {
   loadOfficeAssets,
   isBgLoaded,
   drawBackground,
-} from '../OfficeCanvasRenderer';
+} from '../canvas/renderer/OfficeCanvasRenderer';
 
 describe('OfficeCanvasRenderer — Asset Loading & Rendering', () => {
   let canvas: HTMLCanvasElement;

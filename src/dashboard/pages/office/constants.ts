@@ -1,5 +1,8 @@
 // src/dashboard/pages/office/constants.ts
-import type { AgentId, CoreAgentId, SpecialistId } from './types';
+import type { AgentId, CoreAgentId, SpecialistId } from './entities/types';
+
+// Re-export COLLISION_MAP from dedicated data file (extracted Phase 0b)
+export { COLLISION_MAP, T, F } from './entities/collisionData';
 
 /**
  * Tile size in pixels.
@@ -53,9 +56,15 @@ export const CANVAS_H = ROWS * CELL; // 800
  * @constant {Record<AgentId, string>}
  */
 export const AGENT_COLORS: Record<AgentId, string> = {
-  weebo: '#A78BFA', edith: '#8B5CF6', jarvis: '#ADFF2F',
-  aria: '#FF6B9D', forge: '#F59E0B', pulse: '#10B981',
-  echo: '#6366F1', cal: '#84CC16', nova: '#EC4899',
+  weebo: '#A78BFA',
+  edith: '#8B5CF6',
+  jarvis: '#ADFF2F',
+  aria: '#FF6B9D',
+  forge: '#F59E0B',
+  pulse: '#10B981',
+  echo: '#6366F1',
+  cal: '#84CC16',
+  nova: '#EC4899',
 };
 
 /**
@@ -88,9 +97,12 @@ export const AGENT_META: Record<AgentId, { emoji: string; role: string }> = {
  * @constant {Record<SpecialistId, CoreAgentId>}
  */
 export const SPECIALIST_PARENT: Record<SpecialistId, CoreAgentId> = {
-  aria: 'weebo', echo: 'weebo',
-  forge: 'edith', pulse: 'edith',
-  cal: 'jarvis', nova: 'jarvis',
+  aria: 'weebo',
+  echo: 'weebo',
+  forge: 'edith',
+  pulse: 'edith',
+  cal: 'jarvis',
+  nova: 'jarvis',
 };
 
 /**
@@ -107,55 +119,24 @@ export const CORE_AGENTS: CoreAgentId[] = ['weebo', 'edith', 'jarvis'];
  */
 export const SPECIALIST_AGENTS: SpecialistId[] = ['aria', 'forge', 'pulse', 'echo', 'cal', 'nova'];
 
-// Auto-generated from office_collision.webp — pixel-accurate collision map.
-// Each 32x32 tile sampled from the collision mask image (black=blocked, transparent=walkable).
-// 298 walkable tiles, all in single connected zone.
-const T = true, F = false;
-export const COLLISION_MAP: boolean[][] = [
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 0
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 1
-  [T, T, T, T, T, T, T, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 2
-  [T, F, T, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 3
-  [T, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, F, F, F, T, F, F, F, F, T, T],  // 4
-  [T, F, F, F, F, T, T, F, F, F, T, T, F, F, T, F, F, F, F, F, T, F, F, F, F, T, T],  // 5
-  [T, F, F, T, F, T, T, F, F, F, T, T, F, F, F, F, F, T, T, F, T, F, F, F, F, T, T],  // 6
-  [T, F, F, F, F, T, T, F, F, F, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T],  // 7
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T],  // 8
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 9
-  [T, T, T, T, T, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 10
-  [T, F, F, F, F, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 11
-  [T, T, T, F, F, T, F, F, F, F, F, F, F, F, F, T, T, T, T, T, F, F, F, F, F, T, T],  // 12
-  [T, T, F, F, F, T, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, T],  // 13
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, F, F, F, F, F, F, F, T],  // 14
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, T, T, T, T, T, F, F, T],  // 15
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, T, T, T, T, T, F, F, T],  // 16
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, T, T, T, T, T, F, F, T],  // 17
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 18
-  [T, F, T, T, T, T, T, F, T, T, T, T, T, F, F, F, F, F, F, F, F, F, F, F, F, F, T],  // 19
-  [T, F, T, F, F, F, T, F, T, F, F, F, T, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 20
-  [T, F, F, F, F, F, F, F, F, F, F, F, F, F, F, T, T, T, T, T, T, T, T, T, T, T, T],  // 21
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 22
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 23
-  [T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T],  // 24
-];
 
 // Desk positions — spread across rooms for visual variety
 // All verified walkable: COLLISION_MAP[y][x] === false
 export const CORE_DESK_POSITIONS: Record<CoreAgentId, { x: number; y: number }> = {
-  weebo: { x: 3, y: 20 },    // left desk cluster, chair facing up toward monitor
-  edith: { x: 9, y: 20 },    // right desk cluster, chair facing up toward monitor
-  jarvis: { x: 7, y: 18 },   // center aisle between clusters, facing right
+  weebo: { x: 3, y: 20 }, // left desk cluster, chair facing up toward monitor
+  edith: { x: 9, y: 20 }, // right desk cluster, chair facing up toward monitor
+  jarvis: { x: 7, y: 18 }, // center aisle between clusters, facing right
 };
 
 // Specialist desk positions — distributed across desk chairs + special locations
 // All verified walkable against COLLISION_MAP (row 20 cols 3-5,9-11 = chair tiles)
 export const SPECIALIST_POSITIONS: Record<SpecialistId, { x: number; y: number }> = {
-  aria: { x: 20, y: 13 },    // meeting-tv, facing up
-  forge: { x: 5, y: 20 },    // left desk cluster, chair facing up
-  pulse: { x: 11, y: 20 },   // right desk cluster, chair facing up
-  echo: { x: 4, y: 20 },     // left desk cluster, chair facing up
-  cal: { x: 24, y: 14 },     // whiteboard, meeting room, facing right
-  nova: { x: 10, y: 20 },    // right desk cluster, chair facing up
+  aria: { x: 20, y: 13 }, // meeting-tv, facing up
+  forge: { x: 5, y: 20 }, // left desk cluster, chair facing up
+  pulse: { x: 11, y: 20 }, // right desk cluster, chair facing up
+  echo: { x: 4, y: 20 }, // left desk cluster, chair facing up
+  cal: { x: 24, y: 14 }, // whiteboard, meeting room, facing right
+  nova: { x: 10, y: 20 }, // right desk cluster, chair facing up
 };
 
 // Design tokens
@@ -205,3 +186,23 @@ export const TOAST_MAX_AGE_MS = 60000;
 export const SIDEBAR_POLL_INTERVAL_MS = 3000;
 export const SSE_RETRY_INTERVAL_MS = 15000;
 export const TIMELINE_MAX_ITEMS = 50;
+
+// ---------------------------------------------------------------------------
+// Working Hours (moved from types.ts in Phase 0b)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-agent work schedules in 24h format.
+ * Outside these hours agents show as "off duty" in the status strip.
+ */
+export const AGENT_WORK_HOURS: Record<AgentId, { start: number; end: number }> = {
+  weebo:  { start: 8,  end: 20 },
+  edith:  { start: 9,  end: 18 },
+  jarvis: { start: 7,  end: 23 },
+  aria:   { start: 10, end: 22 },
+  forge:  { start: 9,  end: 19 },
+  pulse:  { start: 8,  end: 17 },
+  echo:   { start: 11, end: 21 },
+  cal:    { start: 7,  end: 18 },
+  nova:   { start: 10, end: 23 },
+};

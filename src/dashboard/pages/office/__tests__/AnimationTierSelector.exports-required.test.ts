@@ -24,7 +24,7 @@ import {
   selectAnimationTier,
   trackToolCall,
   clearRequest,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 // TODO: Uncomment these imports once exported from AnimationTierSelector.ts
 // import {
@@ -32,7 +32,7 @@ import {
 //   REQUEST_TTL_MS,
 //   cleanStaleRequests,
 //   getRequestCount,
-// } from '../AnimationTierSelector';
+// } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — EXPORTS REQUIRED (CRITICAL BLOCKER)', () => {
   // ─── BLOCKER #1: __resetModuleState() ──────────────────────────────────

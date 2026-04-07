@@ -11,7 +11,7 @@ import {
   tickEffects,
   clearEffects,
   type CanvasEffectState,
-} from '../CanvasEffects';
+} from '../systems/effects/CanvasEffects';
 import {
   TIER_CINEMATIC_ZOOM_MS,
   TIER_CINEMATIC_HOLD_MS,

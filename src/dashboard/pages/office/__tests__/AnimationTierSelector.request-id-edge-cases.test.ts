@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { trackToolCall, clearRequest } from '../AnimationTierSelector';
+import { trackToolCall, clearRequest } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Request ID Edge Cases', () => {
   afterEach(() => {

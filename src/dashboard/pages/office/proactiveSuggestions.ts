@@ -28,7 +28,7 @@
  * ```
  */
 
-import type { AgentId } from './types';
+import type { AgentId } from './entities/types';
 
 // ---------------------------------------------------------------------------
 // Types

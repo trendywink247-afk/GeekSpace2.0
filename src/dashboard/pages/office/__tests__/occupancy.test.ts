@@ -12,8 +12,8 @@ import {
   getOccupant,
   getReservationCount,
   findAvailablePoint,
-} from '../occupancy';
-import type { InteractionPoint } from '../smartObjects';
+} from '../entities/occupancy';
+import type { InteractionPoint } from '../entities/smartObjects';
 
 describe('occupancy', () => {
   beforeEach(() => {

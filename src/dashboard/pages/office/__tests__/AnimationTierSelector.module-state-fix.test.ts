@@ -21,7 +21,7 @@ import {
   // REQUEST_TTL_MS,
   // cleanStaleRequests,
   // getRequestCount,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Module State Reset (Post-Export)', () => {
   // afterEach(() => {

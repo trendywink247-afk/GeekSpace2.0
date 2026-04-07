@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { perceive, type AgentPerception } from '../perception';
-import type { CanvasAgent } from '../types';
+import { perceive, type AgentPerception } from '../world/perception';
+import type { CanvasAgent } from '../entities/types';
 
 describe('perception', () => {
   let agents: CanvasAgent[];

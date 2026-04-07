@@ -12,7 +12,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '@/dashboard/pages/office/AnimationTierSelector';
+} from '@/dashboard/pages/office/systems/animation/AnimationTierSelector';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // selectAnimationTier() — Tier selection decision tree

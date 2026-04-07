@@ -38,7 +38,7 @@ import {
   cleanStaleRequests,
   getRequestCount,
   __resetModuleState,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 // TODO: UNCOMMENT ONCE EXPORTS ARE ADDED TO AnimationTierSelector.ts
 // import {
@@ -46,7 +46,7 @@ import {
 //   cleanStaleRequests,
 //   getRequestCount,
 //   __resetModuleState,
-// } from '../AnimationTierSelector';
+// } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — CRITICAL FIXES (REQUIRED EXPORTS)', () => {
   // ═══════════════════════════════════════════════════════════════════════════

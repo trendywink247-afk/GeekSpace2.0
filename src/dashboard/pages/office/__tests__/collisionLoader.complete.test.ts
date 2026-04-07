@@ -8,7 +8,7 @@ import {
   isAuthoredMapLoaded,
   getAuthoredMap,
   loadCollisionFromImage,
-} from '../collisionLoader';
+} from '../systems/navigation/collisionLoader';
 import { CELL, COLS, ROWS } from '../constants';
 
 describe('collisionLoader — Complete Coverage', () => {

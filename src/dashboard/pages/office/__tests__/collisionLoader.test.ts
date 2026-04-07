@@ -8,7 +8,7 @@ import {
   isAuthoredMapLoaded,
   getAuthoredMap,
   loadCollisionFromImage,
-} from '../collisionLoader';
+} from '../systems/navigation/collisionLoader';
 
 describe('collisionLoader', () => {
   // ─── State queries ──────────────────────────────────────────────────────

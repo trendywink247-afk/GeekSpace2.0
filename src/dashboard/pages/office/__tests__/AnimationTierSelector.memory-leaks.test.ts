@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { trackToolCall, clearRequest } from '../AnimationTierSelector';
+import { trackToolCall, clearRequest } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Memory Leaks & Resource Cleanup', () => {
   // NOTE: All tests assume exports are added:

@@ -8,7 +8,7 @@ import {
   createEffectState,
   tickEffects,
   type CanvasEffectState,
-} from '../CanvasEffects';
+} from '../systems/effects/CanvasEffects';
 import { TIER_CINEMATIC_ZOOM_MS } from '../constants';
 
 describe('CanvasEffects — Easing Curve Shape (easeOutCubic)', () => {

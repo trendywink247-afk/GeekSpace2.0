@@ -8,8 +8,8 @@ import {
   selectAnimationTier,
   trackToolCall,
   clearRequest,
-} from '../AnimationTierSelector';
-import type { AnimationTier } from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
+import type { AnimationTier } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Thinking Time & Tier Selection', () => {
   // ─── 10-second thinking time threshold ─────────────────────────────────

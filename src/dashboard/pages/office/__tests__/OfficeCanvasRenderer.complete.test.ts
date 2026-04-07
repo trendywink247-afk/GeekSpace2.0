@@ -13,8 +13,8 @@ import {
   drawBeams,
   drawDebugGrid,
   render,
-} from '../OfficeCanvasRenderer';
-import type { CanvasAgent, ParticleBeam, RenderState } from '../types';
+} from '../canvas/renderer/OfficeCanvasRenderer';
+import type { CanvasAgent, ParticleBeam, RenderState } from '../entities/types';
 import { CANVAS_W, CANVAS_H, COLS, ROWS, AGENT_COLORS } from '../constants';
 
 describe('OfficeCanvasRenderer — Complete Coverage', () => {

@@ -12,7 +12,7 @@ import {
   validateTarget,
   getWalkableNeighbors,
   randomWalkableInRadius,
-} from '../navigation';
+} from '../systems/navigation/navigation';
 import { COLS, ROWS } from '../constants';
 
 describe('navigation', () => {

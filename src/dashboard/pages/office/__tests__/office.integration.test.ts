@@ -6,11 +6,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock modules
-import type { CanvasAgent } from '../types';
-import { perceive } from '../perception';
-import { isWalkable, validateTarget } from '../navigation';
-import { reservePoint, releasePoint, releaseAll } from '../occupancy';
-import { getRoomAt } from '../roomZones';
+import type { CanvasAgent } from '../entities/types';
+import { perceive } from '../world/perception';
+import { isWalkable, validateTarget } from '../systems/navigation/navigation';
+import { reservePoint, releasePoint, releaseAll } from '../entities/occupancy';
+import { getRoomAt } from '../entities/roomZones';
 import { getAllTasks, createTask, startTask, completeTask } from '../taskQueue';
 
 describe('Office Integration Tests', () => {

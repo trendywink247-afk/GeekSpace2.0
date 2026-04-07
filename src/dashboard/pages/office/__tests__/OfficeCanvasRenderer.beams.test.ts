@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { drawBeams } from '../OfficeCanvasRenderer';
-import type { ParticleBeam } from '../types';
+import { drawBeams } from '../canvas/renderer/OfficeCanvasRenderer';
+import type { ParticleBeam } from '../entities/types';
 import { AGENT_COLORS } from '../constants';
 
 describe('OfficeCanvasRenderer — Particle Beams', () => {

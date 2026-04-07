@@ -4,10 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { perceive, type AgentPerception } from '../perception';
-import type { CanvasAgent } from '../types';
-import { ROOMS } from '../roomZones';
-import { SMART_OBJECTS } from '../smartObjects';
+import { perceive, type AgentPerception } from '../world/perception';
+import type { CanvasAgent } from '../entities/types';
+import { ROOMS } from '../entities/roomZones';
+import { SMART_OBJECTS } from '../entities/smartObjects';
 
 describe('perception — Complete Coverage', () => {
   let agents: CanvasAgent[];

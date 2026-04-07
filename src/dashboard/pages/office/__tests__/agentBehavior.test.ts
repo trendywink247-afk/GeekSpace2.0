@@ -13,8 +13,8 @@ import {
   startSocializing,
   stopSocializing,
   type BehaviorState,
-} from '../agentBehavior';
-import type { CanvasAgent, AgentId } from '../types';
+} from '../systems/behavior/agentBehavior';
+import type { CanvasAgent, AgentId } from '../entities/types';
 
 describe('agentBehavior', () => {
   let agents: CanvasAgent[];

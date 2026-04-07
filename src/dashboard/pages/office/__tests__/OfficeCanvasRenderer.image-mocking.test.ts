@@ -9,7 +9,7 @@ import {
   isBgLoaded,
   drawBackground,
   drawForeground,
-} from '../OfficeCanvasRenderer';
+} from '../canvas/renderer/OfficeCanvasRenderer';
 import { CANVAS_W, CANVAS_H } from '../constants';
 
 describe('OfficeCanvasRenderer — Image Loading & Fallback', () => {

@@ -13,7 +13,7 @@ import {
   nearestWalkable,
   validateTarget,
   getWalkableNeighbors,
-} from '@/dashboard/pages/office/navigation';
+} from '@/dashboard/pages/office/systems/navigation/navigation';
 import { COLS, ROWS } from '@/dashboard/pages/office/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -8,8 +8,8 @@ import {
   drawAgents,
   getAgentSprites,
   drawSpriteFrame,
-} from '../OfficeCanvasRenderer';
-import type { CanvasAgent } from '../types';
+} from '../canvas/renderer/OfficeCanvasRenderer';
+import type { CanvasAgent } from '../entities/types';
 import { CELL } from '../constants';
 
 describe('OfficeCanvasRenderer — Sprite Frame Selection', () => {

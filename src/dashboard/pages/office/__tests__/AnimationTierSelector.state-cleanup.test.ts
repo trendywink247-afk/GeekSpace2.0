@@ -10,7 +10,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — State Cleanup & Module Isolation', () => {
   beforeEach(() => {

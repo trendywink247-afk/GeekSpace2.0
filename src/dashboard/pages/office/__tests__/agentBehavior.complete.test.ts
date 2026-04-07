@@ -13,8 +13,8 @@ import {
   startSocializing,
   stopSocializing,
   type BehaviorState,
-} from '../agentBehavior';
-import type { CanvasAgent, AgentId, FacingDirection } from '../types';
+} from '../systems/behavior/agentBehavior';
+import type { CanvasAgent, AgentId, FacingDirection } from '../entities/types';
 import { AGENT_COLORS } from '../constants';
 
 describe('agentBehavior — Complete Coverage', () => {

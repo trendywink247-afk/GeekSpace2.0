@@ -13,7 +13,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Module Reset (CRITICAL FIX NEEDED)', () => {
   // ─── ADD THIS EXPORT TO AnimationTierSelector.ts ──────────────────────

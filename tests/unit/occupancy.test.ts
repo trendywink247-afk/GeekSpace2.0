@@ -12,8 +12,8 @@ import {
   getOccupant,
   getReservationCount,
   findAvailablePoint,
-} from '@/dashboard/pages/office/occupancy';
-import type { InteractionPoint } from '@/dashboard/pages/office/smartObjects';
+} from '@/dashboard/pages/office/entities/occupancy';
+import type { InteractionPoint } from '@/dashboard/pages/office/entities/smartObjects';
 
 describe('Occupancy Module', () => {
   beforeEach(() => {

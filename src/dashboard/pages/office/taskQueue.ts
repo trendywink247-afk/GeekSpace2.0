@@ -2,7 +2,7 @@
 // Task queue system for the Agent Office — manages task creation, routing, and auto-assignment.
 // Pure TypeScript, no React dependencies. Called by OfficePage and AgentProfileFlyout.
 
-import type { AgentId } from './types';
+import type { AgentId } from './entities/types';
 
 // ---------------------------------------------------------------------------
 // Task Types & Interfaces

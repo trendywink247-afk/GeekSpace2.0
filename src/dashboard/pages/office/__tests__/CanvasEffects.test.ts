@@ -11,7 +11,7 @@ import {
   tickEffects,
   clearEffects,
   type CanvasEffectState,
-} from '../CanvasEffects';
+} from '../systems/effects/CanvasEffects';
 
 describe('CanvasEffects — Particle Pool & Animation State', () => {
   let state: CanvasEffectState;

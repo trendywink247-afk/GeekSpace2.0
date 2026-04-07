@@ -5,7 +5,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '@/dashboard/pages/office/AnimationTierSelector';
+} from '@/dashboard/pages/office/systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector', () => {
   describe('selectAnimationTier', () => {

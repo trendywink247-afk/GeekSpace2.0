@@ -7,7 +7,7 @@ import {
   validateTarget,
   getWalkableNeighbors,
   randomWalkableInRadius,
-} from '@/dashboard/pages/office/navigation';
+} from '@/dashboard/pages/office/systems/navigation/navigation';
 import { COLS, ROWS } from '@/dashboard/pages/office/constants';
 
 describe('navigation — Pathfinding & Collision', () => {

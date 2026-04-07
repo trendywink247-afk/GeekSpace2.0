@@ -37,7 +37,7 @@
  * }
  * ```
  */
-export { OfficePage } from './OfficePage';
+export { OfficePage } from './pages/OfficePage';
 
 /**
  * Office homepage view with intro, feature highlights, and quick navigation.
@@ -45,4 +45,4 @@ export { OfficePage } from './OfficePage';
  * @component
  * @returns Office intro page with onboarding elements
  */
-export { OfficeHomePage } from './OfficeHomePage';
+export { OfficeHomePage } from './pages/OfficeHomePage';

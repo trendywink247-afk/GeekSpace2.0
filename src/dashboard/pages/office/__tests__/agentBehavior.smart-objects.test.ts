@@ -8,8 +8,8 @@ import {
   reserveSmartObject,
   releaseSmartObject,
   type SmartObject,
-} from '../agentBehavior';
-import { SMART_OBJECTS } from '../smartObjects';
+} from '../systems/behavior/agentBehavior';
+import { SMART_OBJECTS } from '../entities/smartObjects';
 
 describe('agentBehavior — Smart Object Reservation', () => {
   const testAgentId = 'test-agent-1';

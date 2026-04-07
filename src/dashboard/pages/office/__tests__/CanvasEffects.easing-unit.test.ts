@@ -27,7 +27,7 @@ describe('CanvasEffects — easeOutCubic Direct Unit Test (BLOCKED: not exported
 
   describe('easeOutCubic(t) curve properties', () => {
     it('easeOutCubic(0) returns exactly 0', () => {
-      // TODO: import { easeOutCubic } from '../CanvasEffects';
+      // TODO: import { easeOutCubic } from '../systems/effects/CanvasEffects';
       // const result = easeOutCubic(0);
       // expect(result).toBe(0);
 

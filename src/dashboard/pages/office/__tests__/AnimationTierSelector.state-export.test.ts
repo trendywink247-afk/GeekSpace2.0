@@ -8,7 +8,7 @@ import {
   selectAnimationTier,
   trackToolCall,
   clearRequest,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 // TODO: Uncomment after exports are added
 // import {
@@ -16,7 +16,7 @@ import {
 //   REQUEST_TTL_MS,
 //   cleanStaleRequests,
 //   getRequestCount,
-// } from '../AnimationTierSelector';
+// } from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — State Management (REQUIRES EXPORTS)', () => {
   // ─── TEST #1: Atomic state reset ──────────────────────────────────────

@@ -24,7 +24,7 @@ import {
   clearRequest,
   isFirstVisit,
   markVisited,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — CRITICAL FIXES NEEDED', () => {
   beforeEach(() => {

@@ -10,7 +10,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { useOfficeData } from '@/dashboard/pages/office/useOfficeData';
+import { useOfficeData } from '@/dashboard/pages/office/state/use-office-data';
 
 describe('useOfficeData', () => {
   beforeEach(() => {

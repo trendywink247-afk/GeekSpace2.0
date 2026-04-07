@@ -9,7 +9,7 @@ import {
   returnEffectState,
   tickEffects,
   type CanvasEffectState,
-} from '../CanvasEffects';
+} from '../systems/effects/CanvasEffects';
 import { CANVAS_W, CANVAS_H } from '../constants';
 
 describe('CanvasEffects — Particle Physics (Comprehensive)', () => {

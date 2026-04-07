@@ -8,7 +8,7 @@ import {
   selectAnimationTier,
   trackToolCall,
   clearRequest,
-} from '../AnimationTierSelector';
+} from '../systems/animation/AnimationTierSelector';
 
 describe('AnimationTierSelector — Module State Leakage', () => {
   beforeEach(() => {

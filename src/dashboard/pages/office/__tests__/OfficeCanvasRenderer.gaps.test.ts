@@ -13,8 +13,8 @@ import {
   isBgLoaded,
   loadOfficeAssets,
   render,
-} from '../OfficeCanvasRenderer';
-import type { CanvasAgent, ParticleBeam } from '../types';
+} from '../canvas/renderer/OfficeCanvasRenderer';
+import type { CanvasAgent, ParticleBeam } from '../entities/types';
 import { CANVAS_W, CANVAS_H, COLS, ROWS, CELL } from '../constants';
 
 describe('OfficeCanvasRenderer — Rendering Pipeline', () => {

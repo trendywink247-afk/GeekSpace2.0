@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { getRoomAt, getRoomById, ROOMS, type RoomType } from '../roomZones';
+import { getRoomAt, getRoomById, ROOMS, type RoomType } from '../entities/roomZones';
 
 describe('roomZones', () => {
   // ─── getRoomAt: tile-based room detection ─────────────────────────────
