@@ -104,7 +104,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
               ? 'var(--lp-glass-bg-scrolled, rgba(6, 6, 26, 0.92))'
               : 'var(--lp-glass-bg, rgba(6, 6, 26, 0.7))',
             borderColor: scrolled
-              ? 'var(--lp-glass-border-scrolled, rgba(255, 255, 255, 0.1))'
+              ? 'var(--lp-glass-border-scrolled, rgba(255, 255, 255, 0.10))'
               : 'var(--lp-glass-border, rgba(255, 255, 255, 0.06))',
             boxShadow: scrolled
               ? 'var(--lp-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.4))'
@@ -118,7 +118,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
             style={{
               border: '1px solid',
               borderColor: scrolled
-                ? 'var(--lp-glass-border-scrolled, rgba(255, 255, 255, 0.1))'
+                ? 'var(--lp-glass-border-scrolled, rgba(255, 255, 255, 0.10))'
                 : 'var(--lp-glass-border, rgba(255, 255, 255, 0.06))',
               transition: 'border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
@@ -145,7 +145,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   className="hidden sm:inline text-lg font-bold"
                   style={{ fontFamily: 'Syne, sans-serif' }}
                 >
-                  <span className="text-[#E8E8F0]">Agent</span>
+                  <span style={{ color: "var(--lp-text-primary)" }}>Agent</span>
                   <span className="text-[var(--ag-violet)]">in</span>
                 </span>
               </a>
@@ -160,8 +160,8 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                       href={link.href}
                       className={`relative px-3 pb-1 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B] ${
                         isActive
-                          ? 'text-white/95'
-                          : 'text-white/75 hover:text-white/95'
+                          ? 'text-[var(--lp-text-primary)]'
+                          : 'opacity-70 hover:opacity-100 text-[var(--lp-text-primary)]'
                       }`}
                     >
                       {isActive && (
@@ -194,7 +194,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
 
                 {/* Mobile Menu Button */}
                 <button
-                  className="md:hidden p-3 text-[#E8E8F0] min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060B]"
+                  className="md:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]" style={{ color: "var(--lp-text-primary)" }}
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                 >
@@ -243,8 +243,8 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                 backdropFilter: 'blur(16px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(16px) saturate(180%)',
                 background: 'var(--lp-glass-bg-scrolled, rgba(6, 6, 26, 0.92))',
-                borderLeft: '1px solid var(--lp-glass-border, rgba(255, 255, 255, 0.06))',
-                boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.5)',
+                borderLeft: '1px solid var(--lp-glass-border-scrolled, rgba(255, 255, 255, 0.08))',
+                boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.4)',
               }}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -254,7 +254,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
               {/* Drawer header */}
               <div
                 className="flex items-center justify-between px-6 py-4"
-                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}
+                style={{ borderBottom: '1px solid var(--lp-glass-border)' }}
               >
                 <a
                   href="#"
@@ -266,12 +266,12 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                     className="text-lg font-bold"
                     style={{ fontFamily: 'Syne, sans-serif' }}
                   >
-                    <span className="text-[#E8E8F0]">Agent</span>
+                    <span style={{ color: "var(--lp-text-primary)" }}>Agent</span>
                     <span className="text-[var(--ag-violet)]">in</span>
                   </span>
                 </a>
                 <button
-                  className="p-2 text-white/75 hover:text-white/95 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6]" style={{ color: "var(--lp-text-secondary)" }}
                   onClick={closeMobileMenu}
                   aria-label="Close menu"
                 >
@@ -320,7 +320,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
                   </ShimmerButton>
                   <p
                     className="text-center text-sm mt-3"
-                    style={{ color: 'rgba(255, 255, 255, 0.4)' }}
+                    style={{ color: 'var(--lp-text-muted)' }}
                   >
                     Free Forever
                   </p>
@@ -330,7 +330,7 @@ export function Navigation({ onEnterDashboard }: NavigationProps) {
               {/* Drawer footer */}
               <div
                 className="px-6 py-4 flex items-center justify-center"
-                style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}
+                style={{ borderTop: '1px solid var(--lp-glass-border)' }}
               >
                 <ThemeToggle />
               </div>

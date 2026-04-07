@@ -211,7 +211,7 @@ export function ForgotPasswordPage() {
   return (
     <div
       className="min-h-dvh flex items-center justify-center px-4 py-8 pb-24 md:pb-8 relative overflow-hidden"
-      style={{ background: '#06061a' }}
+      style={{ background: 'var(--lp-bg)' }}
     >
       {/* Inline keyframes for AgentinAura effect */}
       <style>{`
@@ -347,7 +347,7 @@ export function ForgotPasswordPage() {
               <img src="/logo-agentin.webp" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-white">Agent</span><span className="text-[#8B5CF6]">in</span>
+              <span style={{ color: "var(--lp-text-primary)" }}>Agent</span><span className="text-[#8B5CF6]">in</span>
             </span>
           </button>
 
@@ -367,7 +367,7 @@ export function ForgotPasswordPage() {
                           ? 'text-white scale-110'
                           : isPast
                           ? 'bg-[#10B981]/20 text-[#10B981]'
-                          : 'bg-[#1A1A2E] text-[#6B7280]'
+                          : 'text-[var(--text-muted)]'
                       }`}
                       style={isCurrent ? { background: 'linear-gradient(135deg, #8B5CF6, #F59E0B, #F97316)' } : undefined}
                     >
@@ -385,7 +385,7 @@ export function ForgotPasswordPage() {
                   </div>
                   {i < 3 && (
                     <div className={`w-5 sm:w-8 h-0.5 mb-5 transition-colors duration-300 ${
-                      isPast ? 'bg-[#10B981]/40' : 'bg-[#1A1A2E]'
+                      isPast ? 'bg-[#10B981]/40' : 'bg-[var(--border-default)]'
                     }`} />
                   )}
                 </div>
@@ -393,22 +393,23 @@ export function ForgotPasswordPage() {
             })}
           </div>
 
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
+          <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif', color: 'var(--lp-text-primary)' }}>
             {stepConfig[step].title}
           </h1>
-          <p className="text-[#6B7280]">
+          <p style={{ color: "var(--text-muted)" }}>
             {stepConfig[step].subtitle}
           </p>
         </div>
 
         {/* Card */}
         <div
-          className="p-6 sm:p-8 rounded-2xl space-y-4 border border-white/[0.06]"
+          className="p-6 sm:p-8 rounded-2xl space-y-4"
           style={{
-            background: 'rgba(6, 6, 26, 0.9)',
+            background: 'var(--glass-bg)',
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            boxShadow: '0 20px 60px rgba(139,92,246,0.08), 0 8px 24px rgba(0,0,0,0.3)',
+            border: '1px solid var(--glass-border)',
+            boxShadow: '0 20px 60px rgba(139,92,246,0.06), var(--lp-card-shadow)',
           }}
         >
           {/* Step 1: Email */}
@@ -423,7 +424,7 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
+                    className="pl-10 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     autoFocus
                   />
@@ -467,11 +468,11 @@ export function ForgotPasswordPage() {
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
                       aria-label={`Digit ${i + 1} of 6`}
-                      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold rounded-xl bg-[#06061a]/60 border border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 outline-none transition-all"
+                      className="w-11 h-11 sm:w-12 sm:h-12 text-center text-xl font-bold rounded-xl focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6] focus-visible:ring-2 focus-visible:ring-[#8B5CF6]/50 outline-none transition-all" style={{ background: "var(--surface-2)", border: "1px solid var(--border-default)", color: "var(--text-primary)" }}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-[#6B7280] mt-3 text-center">
+                <p className="text-xs mt-3 text-center" style={{ color: "var(--text-muted)" }}>
                   Code expires in 10 minutes
                 </p>
               </div>
@@ -495,7 +496,7 @@ export function ForgotPasswordPage() {
               </Button>
 
               {resendCooldown > 0 ? (
-                <div className="flex items-center justify-center gap-1.5 text-sm text-[#6B7280] py-2">
+                <div className="flex items-center justify-center gap-1.5 text-sm py-2" style={{ color: "var(--text-muted)" }}>
                   <Timer className="w-3.5 h-3.5" />
                   Resend code in {resendCooldown}s
                 </div>
@@ -504,7 +505,7 @@ export function ForgotPasswordPage() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={isLoading}
-                  className="w-full text-sm text-[#6B7280] hover:text-[#8B5CF6] transition-colors py-2 min-h-[44px]"
+                  className="w-full text-sm hover:text-[#8B5CF6] transition-colors py-2 min-h-[44px]" style={{ color: "var(--text-muted)" }}
                 >
                   Didn't receive the code? <span className="text-[#8B5CF6] font-medium">Resend</span>
                 </button>
@@ -524,7 +525,7 @@ export function ForgotPasswordPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
+                    className="pl-10 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     minLength={8}
                     autoFocus
@@ -533,7 +534,7 @@ export function ForgotPasswordPage() {
                 {/* Password strength meter */}
                 {newPassword.length > 0 && (
                   <div className="mt-2 space-y-1.5">
-                    <div className="h-1.5 w-full bg-[#1A1A2E] rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "var(--surface-3)" }}>
                       <div
                         className="h-full rounded-full transition-all duration-300"
                         style={{
@@ -569,7 +570,7 @@ export function ForgotPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
+                    className="pl-10 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
                     required
                     minLength={8}
                   />
@@ -583,7 +584,7 @@ export function ForgotPasswordPage() {
                   { check: newPassword === confirmPassword && confirmPassword.length > 0, label: 'Passwords match' },
                 ].map(({ check, label }) => (
                   <div key={label} className="flex items-center gap-2 text-xs">
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#10B981]/20' : 'bg-[#1A1A2E]'}`}>
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${check ? 'bg-[#10B981]/20' : 'bg-[var(--surface-3)]'}`}>
                       {check && <CheckCircle2 className="w-3 h-3 text-[#10B981]" />}
                     </div>
                     <span className={check ? 'text-[#10B981]' : 'text-[#6B7280]'}>{label}</span>
@@ -617,10 +618,10 @@ export function ForgotPasswordPage() {
               <div className="w-16 h-16 rounded-full bg-[#10B981]/10 flex items-center justify-center mx-auto border border-[#10B981]/20">
                 <CheckCircle2 className="w-8 h-8 text-[#10B981]" />
               </div>
-              <p className="text-[#6B7280]">
+              <p style={{ color: "var(--text-muted)" }}>
                 Your password has been reset successfully. You can now sign in with your new credentials.
               </p>
-              <p className="text-xs text-[#6B7280]">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 Redirecting to login in {redirectCountdown}s...
               </p>
               <Button
@@ -637,7 +638,7 @@ export function ForgotPasswordPage() {
 
         {/* Back to login link */}
         {step !== 'success' && (
-          <p className="text-center text-sm text-[#6B7280] mt-6">
+          <p className="text-center text-sm mt-6" style={{ color: "var(--text-muted)" }}>
             <button
               onClick={() => navigate('/login')}
               className="text-[#8B5CF6] hover:underline font-medium py-2 px-1 -my-2 min-h-[44px] inline-flex items-center"

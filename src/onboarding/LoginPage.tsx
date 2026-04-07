@@ -113,17 +113,17 @@ export function LoginPage() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#06061a] relative overflow-hidden">
+      <div className="min-h-dvh flex items-center justify-center relative overflow-hidden" style={{ background: "var(--lp-bg)" }}>
         <AuthPageBackground />
         <div className="relative z-10 w-full max-w-sm mx-auto px-6 text-center">
-          <div className="border border-white/[0.06] rounded-2xl p-8 space-y-6" style={{ background: 'rgba(6, 6, 26, 0.9)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
+          <div className="rounded-2xl p-8 space-y-6" style={{ background: "var(--glass-bg)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: "1px solid var(--glass-border)", boxShadow: "var(--lp-card-shadow)" }}>
             <div className="w-14 h-14 rounded-full bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center mx-auto">
               <img src="/logo-agentin.webp" alt="Agentin" className="w-8 h-8 object-contain" />
             </div>
             <div>
-              <p className="text-white/50 text-sm mb-1">Signed in as</p>
-              <p className="text-white font-semibold">{user?.name || user?.username}</p>
-              <p className="text-white/40 text-sm">{user?.email}</p>
+              <p className="text-sm mb-1" style={{ color: "var(--text-muted)" }}>Signed in as</p>
+              <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{user?.name || user?.username}</p>
+              <p className="text-sm" style={{ color: "var(--text-dim)" }}>{user?.email}</p>
             </div>
             <p className="text-white/60 text-sm">Do you want to sign out?</p>
             <div className="flex flex-col gap-3">
@@ -148,7 +148,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex relative overflow-hidden pb-24 md:pb-0" style={{ background: '#06061a' }}>
+    <div className="min-h-dvh flex relative overflow-hidden pb-24 md:pb-0" style={{ background: "var(--lp-bg)" }}>
       <AuthPageBackground />
 
       {/* ─── Left Panel: Visual Showcase (desktop only) ─── */}
@@ -160,11 +160,11 @@ export function LoginPage() {
             <div className="flex items-center justify-center gap-3 mb-6">
               <img src="/logo-agentin.webp" alt="Agentin" className="w-12 h-12 object-contain" />
               <span className="text-4xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-                <span className="text-[#E8E8F0]">Agent</span><span className="text-[#8B5CF6]">in</span>
+                <span style={{ color: "var(--lp-text-primary)" }}>Agent</span><span className="text-[#8B5CF6]">in</span>
               </span>
             </div>
             <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
-              <span className="text-[#8B5CF6]">Your AI.</span> <span className="text-[#E8E8F0]">Your Rules.</span>
+              <span className="text-[#8B5CF6]">Your AI.</span> <span style={{ color: "var(--lp-text-primary)" }}>Your Rules.</span>
             </h2>
           </div>
         </div>
@@ -188,7 +188,7 @@ export function LoginPage() {
             <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Syne, sans-serif' }}>
               {isSignup ? 'Create your agent' : 'Welcome back'}
             </h1>
-            <p className="text-[#6B7280]">
+            <p style={{ color: "var(--text-muted)" }}>
               {isSignup
                 ? 'Join the network of autonomous agents'
                 : 'Sign in to your AI command center'}
@@ -202,7 +202,7 @@ export function LoginPage() {
               variant="outline"
               disabled={oauthLoading !== null}
               onClick={() => handleOAuth('google')}
-              className="w-full border-[#8B5CF6]/15 h-12 text-[#E8E8F0] hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 text-base"
+              className="w-full border-[#8B5CF6]/15 h-12 hover:border-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 text-base text-[var(--text-primary)]"
             >
               {oauthLoading === 'google' ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -230,7 +230,7 @@ export function LoginPage() {
                 <div className="w-full border-t border-[#8B5CF6]/10" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-3 text-xs text-[#4B5563]" style={{ background: '#06061a' }}>or use email</span>
+                <span className="px-3 text-xs" style={{ background: 'var(--lp-bg)', color: 'var(--text-secondary)' }}>or use email</span>
               </div>
             </div>
           </div>
@@ -247,11 +247,11 @@ export function LoginPage() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="your-username"
-                      className="pl-10 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
+                      className="pl-10 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10 text-[var(--text-primary)]"
                       required
                     />
                   </div>
-                  <p className="text-xs text-[#6B7280] mt-1">
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                     Your URL: <span className="text-[#8B5CF6]">{username || 'you'}.agentin.chat</span>
                   </p>
                 </div>
@@ -292,7 +292,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-10 pr-12 bg-[#06061a]/60 border-white/[0.08] text-[#E8E8F0] focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10"
+                    className="pl-10 pr-12 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/10 text-[var(--text-primary)]"
                     required
                     data-testid="login-password"
                   />
@@ -309,7 +309,7 @@ export function LoginPage() {
                 {isSignup && password.length > 0 && (
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--surface-3)" }}>
                         <div
                           className="h-full rounded-full transition-all duration-300 ease-out"
                           style={{
@@ -323,7 +323,7 @@ export function LoginPage() {
                       </span>
                     </div>
                     {pwStrength.hints.length > 0 && (
-                      <p className="text-xs text-[#6B7280]">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {pwStrength.hints.join(' · ')}
                       </p>
                     )}
