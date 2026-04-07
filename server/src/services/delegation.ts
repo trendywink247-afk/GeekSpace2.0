@@ -67,6 +67,29 @@ const DELEGATION_PATTERNS: Array<{ pattern: RegExp; agent: string; reason: strin
 
   // Tasks / productivity
   { pattern: /\b(?:plan\s+(?:my|the|a)|prioritize|todo|to-do|task\s+(?:list|manager)|organize|workflow|project\s+(?:plan|management)|deadline|sprint)\b/i, agent: 'jarvis', reason: 'productivity & planning' },
+
+  // Travel & trips
+  { pattern: /\b(?:travel|trip|vacation|holiday|flight|hotel|itinerary|book\s+(?:a\s+)?(?:flight|hotel|ticket|stay)|go\s+(?:to|on)\s+(?:a\s+)?(?:trip|vacation)|visit\s+[A-Z]|destination)\b/i, agent: 'cal', reason: 'travel planning' },
+  { pattern: /\b(?:las\s+vegas|new\s+york|paris|tokyo|london|europe|asia|beach|mountains|city\s+break)\b/i, agent: 'cal', reason: 'destination research' },
+
+  // Entertainment, movies, food, shopping (lifestyle)
+  { pattern: /\b(?:movie|film|watch|stream|netflix|series|tv\s+show|anime|show\s+me\s+movies|recommend\s+(?:a\s+)?(?:movie|show|series))\b/i, agent: 'nova', reason: 'entertainment recommendations' },
+  { pattern: /\b(?:restaurant|food|recipe|cook|eat|meal|dinner|lunch|breakfast|cuisine|menu|order\s+food)\b/i, agent: 'nova', reason: 'food & dining' },
+  { pattern: /\b(?:shop|buy|purchase|order\s+(?:a|some)|gift\s+for|product\s+recommendation|price\s+check|deal)\b/i, agent: 'nova', reason: 'shopping' },
+  { pattern: /\b(?:game|play|steam|xbox|playstation|nintendo|rpg|fps)\b/i, agent: 'nova', reason: 'gaming' },
+  { pattern: /\b(?:music|song|playlist|spotify|album|artist|listen\s+to|concert|tickets?\s+for)\b/i, agent: 'aria', reason: 'music & audio' },
+
+  // Health & wellness
+  { pattern: /\b(?:workout|exercise|fitness|gym|run|yoga|meditation|sleep|diet|nutrition|calories|weight\s+loss|health|wellness|hydrat)\b/i, agent: 'pulse', reason: 'health & wellness' },
+
+  // Finance (basic)
+  { pattern: /\b(?:budget|expense|savings?|invest|stock|crypto|bitcoin|portfolio|finance|tax|bank|loan|mortgage)\b/i, agent: 'pulse', reason: 'finance & money' },
+
+  // Image / visual generation
+  { pattern: /\b(?:generate\s+(?:an?\s+)?image|make\s+(?:an?\s+)?(?:image|picture|art)|draw|illustration|photo\s+of|create\s+(?:an?\s+)?(?:image|picture)|midjourney|dall[e\-]|stable\s+diffusion)\b/i, agent: 'aria', reason: 'image generation' },
+
+  // Video generation / editing
+  { pattern: /\b(?:make\s+(?:a\s+)?video|generate\s+(?:a\s+)?video|edit\s+(?:a\s+)?video|runway|sora)\b/i, agent: 'forge', reason: 'video generation' },
 ];
 
 // ── Core functions ───────────────────────────────────────────

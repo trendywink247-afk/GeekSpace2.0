@@ -531,7 +531,7 @@ function EnhancedSidebar({
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 min-h-0 relative overflow-y-auto">
         {activeTab === 'today' && (
           <TodayTab
             reminders={overviewReminders}
@@ -549,7 +549,7 @@ function EnhancedSidebar({
         {/* Timeline and Tasks delegate to SmartSidebar internals.
             We render SmartSidebar only for these tabs, hiding its own tab bar. */}
         {(activeTab === 'timeline' || activeTab === 'tasks') && (
-          <div className="h-full min-h-0 flex-1 overflow-hidden [&>div>div:first-child]:hidden [&_>div]:!h-full [&_>div]:!max-h-full">
+          <div className="absolute inset-0 flex flex-col [&>div>div:first-child]:hidden">
             <SmartSidebar
               officeData={officeData}
               sseEvents={sseEvents}
@@ -838,7 +838,7 @@ export function OfficeHomePage() {
       </BlurFade>
 
       {/* Main content: canvas (square) + sidebar */}
-      <div className="flex flex-col md:flex-row relative z-[1] md:overflow-hidden md:flex-1 md:min-h-0">
+      <div className="flex flex-col md:flex-row relative z-[1] flex-shrink-0 overflow-hidden h-[72vh] md:h-[calc(100dvh-160px)] max-h-[820px]">
         {/* Fix #1: Square canvas — w-full aspect-square mobile, 50% desktop with aspect-square */}
         <BlurFade delay={0.1} inView className="relative w-full md:w-[50%] flex-shrink-0">
           <div className="relative w-full aspect-square overflow-hidden">
@@ -998,9 +998,9 @@ export function OfficeHomePage() {
         </BlurFade>
 
         {/* Enhanced Sidebar — fills remaining space desktop, natural height mobile */}
-        <BlurFade delay={0.15} inView className="flex-1 md:min-h-0 md:overflow-hidden">
+        <BlurFade delay={0.15} inView className="flex-1 min-h-0 overflow-hidden flex flex-col">
           <div
-            className="md:h-full border-t md:border-t-0 md:border-l overflow-y-auto"
+            className="flex-1 min-h-0 border-t md:border-t-0 md:border-l flex flex-col overflow-hidden"
             style={{ borderColor: 'var(--ag-border-subtle)' }}
           >
             <EnhancedSidebar
