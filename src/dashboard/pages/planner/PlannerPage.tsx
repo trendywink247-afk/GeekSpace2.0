@@ -33,7 +33,7 @@ export function PlannerPage() {
   const handleDrop = useCallback((e: React.DragEvent, hour: number) => { e.preventDefault(); setDropTarget(null); const item = dragItemRef.current; if (!item) return; const block = scheduleBacklogItem(item, hour); dragItemRef.current = null; setDragItemId(null); toast.success(`Scheduled "${block.title}" at ${formatHour(hour)}`); }, [scheduleBacklogItem, setDragItemId]);
   const handleWeekDrop = useCallback((e: React.DragEvent, hour: number, date: Date) => { e.preventDefault(); const item = dragItemRef.current; if (!item) return; const block = scheduleBacklogItem(item, hour, date); dragItemRef.current = null; setDragItemId(null); toast.success(`Scheduled "${block.title}" at ${formatHour(hour)} on ${DateTime.fromJSDate(date).toLocaleString({ weekday: 'short' })}`); }, [scheduleBacklogItem, setDragItemId]);
   const handleQuickAdd = useCallback(() => { if (!quickAddTitle.trim() || quickAddHour === null) return; const block = addCustomBlock(quickAddTitle.trim(), quickAddHour, quickAddDuration); toast.success(`Added "${block.title}" at ${formatHour(quickAddHour)}`); resetQuickAdd(); }, [quickAddTitle, quickAddHour, quickAddDuration, addCustomBlock, resetQuickAdd]);
-  const dragItem = dragItemId ? dragItemRef.current : null;
+  const dragItem = dragItemId ? (backlogItems.find((item) => item.id === dragItemId) ?? null) : null;
   return (
     <DashboardPageWrapper>
       <PageShell spacing={4}>
