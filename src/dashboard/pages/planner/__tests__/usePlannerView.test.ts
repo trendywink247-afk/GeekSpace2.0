@@ -1,0 +1,20 @@
+import { renderHook } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { usePlannerView } from '../hooks/usePlannerView';
+import type { TimeBlock, HabitItem } from '../helpers';
+import type { Reminder } from '@/types';
+const TODAY = new Date('2026-04-08T09:00:00.000Z');
+const blk = (p: Partial<TimeBlock> = {}): TimeBlock => ({ id: 'b1', title: 'T', startHour: 9, duration: 1, type: 'custom', color: '#8B5CF6', ...p });
+const rem = (p: Partial<Reminder> = {}): Reminder => ({ id: 'r1', text: 'Buy groceries', completed: false, priority: 'normal', datetime: null, ...p } as unknown as Reminder);
+const hab = (p: Partial<HabitItem> = {}): HabitItem => ({ id: 1, name: 'Run', icon: 'running', description: null, frequency: 'daily', current_streak: 3, longest_streak: 7, logged_today: false, ...p });
+describe('usePlannerView', () => {
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(TODAY); });
+  afterEach(() => { vi.useRealTimers(); });
+  it('empty day stats', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [], habits: [], reminders: [] })); expect(result.current.stats.planned).toBe(0); });
+  it('sums durations', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [blk({ duration: 2 }), blk({ id: 'b2', duration: 1.5, startHour: 11 })], habits: [], reminders: [] })); expect(result.current.stats.hoursBlocked).toBe(3.5); });
+  it('weekDates[0] is Sunday', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [], habits: [], reminders: [] })); expect(result.current.weekDates[0].getDay()).toBe(0); });
+  it('includes unscheduled reminder', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [], habits: [], reminders: [rem()] })); expect(result.current.backlogItems).toHaveLength(1); });
+  it('excludes placed reminder', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [blk({ reminderId: 'r1' })], habits: [], reminders: [rem()] })); expect(result.current.backlogItems).toHaveLength(0); });
+  it('includes unlogged habit', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [], habits: [hab()], reminders: [] })); expect(result.current.backlogItems.filter(i => i.type === 'habit')).toHaveLength(1); });
+  it('topThree sorted by startHour', () => { const { result } = renderHook(() => usePlannerView({ currentDate: TODAY, todayBlocks: [blk({ id: 'a', startHour: 14 }), blk({ id: 'b', startHour: 8 }), blk({ id: 'c', startHour: 10 }), blk({ id: 'd', startHour: 16 })], habits: [], reminders: [] })); expect(result.current.topThree[0].startHour).toBe(8); expect(result.current.topThree).toHaveLength(3); });
+});
