@@ -1,6 +1,15 @@
-// Barrel export for focus sub-components
-export { FocusSessionTab } from './FocusSessionTab';
-export { CelebrationPulse } from './FocusSessionTab';
+// Barrel export for focus module (revamped)
+export { FocusPage } from './FocusPage';
+export { FocusTimer, TimerRing } from './components/FocusTimer';
+export { SessionStarter } from './components/SessionStarter';
+export { SessionHistory } from './components/SessionHistory';
+export { BreakReminder } from './components/BreakReminder';
+export { EmptyFocus } from './components/EmptyFocus';
+export { BlockedDistractions } from './components/BlockedDistractions';
+export { useFocusSession } from './hooks/useFocusSession';
+export { useFocusHistory } from './hooks/useFocusHistory';
+export { useFocusStore } from './state/focus-store';
+export { FocusSessionTab, CelebrationPulse } from './FocusSessionTab';
 export { HabitsTab } from './HabitsTab';
 export { StartSessionModal } from './StartSessionModal';
 export { AddHabitDialog } from './AddHabitDialog';
