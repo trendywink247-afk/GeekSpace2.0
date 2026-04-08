@@ -1357,6 +1357,89 @@ export function drawSpeechBubble(
   ctx.restore();
 }
 
+
+// ---------------------------------------------------------------------------
+// drawWorkstationGlow — violet/amber/red radial glow for active/degraded/down workstations
+// ---------------------------------------------------------------------------
+
+/** Tint colors per health status */
+const STATUS_COLORS: Record<string, string> = {
+  up: '#8B5CF6',
+  degraded: '#F59E0B',
+  down: '#FF2D78',
+};
+
+/**
+ * Draw a pulsing radial glow around active workstations.
+ * Called each frame BEFORE agents so it sits underneath sprites.
+ */
+function drawWorkstationGlow(
+  ctx: CanvasRenderingContext2D,
+  state: RenderState,
+): void {
+  const { activeStations = {}, serviceStatuses = {} } = state;
+  const now = Date.now();
+
+  for (const obj of SMART_OBJECTS) {
+    if (obj.type !== 'workstation') continue;
+
+    const fp = obj.footprint[0];
+    if (!fp) continue;
+    const centerX = (fp.x + 0.5) * CELL;
+    const centerY = (fp.y + 0.5) * CELL;
+
+    const status = serviceStatuses[obj.id];
+    const activeEntry = activeStations[obj.id];
+
+    // Determine tint: active station uses its status color (default violet)
+    const color = STATUS_COLORS[status ?? 'up'] ?? STATUS_COLORS.up;
+
+    let alpha = 0;
+
+    if (activeEntry) {
+      // Pulsing glow while active (fades over 4 seconds)
+      const age = now - activeEntry.startMs;
+      const GLOW_DURATION = 4000;
+      const decay = Math.max(0, 1 - age / GLOW_DURATION);
+      const pulse = 0.5 + 0.5 * Math.sin((now / 300) * Math.PI * 2);
+      alpha = decay * (0.25 + pulse * 0.25);
+    } else if (status === 'degraded') {
+      // Constant subtle amber shimmer for degraded stations
+      alpha = 0.08 + 0.04 * Math.sin((now / 800) * Math.PI * 2);
+    } else if (status === 'down') {
+      // Constant red tint for offline stations
+      alpha = 0.12;
+    } else {
+      continue; // nothing to draw
+    }
+
+    ctx.save();
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    const gradient = ctx.createRadialGradient(
+      centerX, centerY, 0,
+      centerX, centerY, CELL * 1.5,
+    );
+    gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+    gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, CELL * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // OFFLINE label for down stations
+    if (status === 'down') {
+      ctx.font = `bold 8px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = `rgba(${r},${g},${b},0.8)`;
+      ctx.fillText('OFFLINE', centerX, centerY + CELL + 6);
+    }
+    ctx.restore();
+  }
+}
+
 export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, showDebug?: boolean, collisionMap?: boolean[][], effectState?: CanvasEffectState, theme?: 'day' | 'night'): void {
   const { agents, beams, canvasBubbles, tick, selectedAgentId } = state;
   const activeTheme = theme ?? 'night';
@@ -1374,6 +1457,9 @@ export function renderFrame(ctx: CanvasRenderingContext2D, state: RenderState, s
   for (let i = 0; i < beams.length; i++) {
     drawParticleBeam(ctx, beams[i], agents);
   }
+
+  // 2d. Workstation health tint + active glow (before agents)
+  drawWorkstationGlow(ctx, state);
 
   // 3. Ambient effects (desk screen flickers, coffee steam, monitor glow, grid pulse, server rack)
   drawAmbientEffects(ctx, tick, agents, activeTheme);

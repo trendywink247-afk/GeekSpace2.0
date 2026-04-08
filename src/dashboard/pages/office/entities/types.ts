@@ -1,7 +1,16 @@
 // src/dashboard/pages/office/types.ts
 
 /** Union of all 9 agent identifiers used across the office module. */
-export type AgentId = 'weebo' | 'edith' | 'jarvis' | 'aria' | 'forge' | 'pulse' | 'echo' | 'cal' | 'nova';
+export type AgentId =
+  | 'weebo'
+  | 'edith'
+  | 'jarvis'
+  | 'aria'
+  | 'forge'
+  | 'pulse'
+  | 'echo'
+  | 'cal'
+  | 'nova';
 
 /** The three top-level agents that can receive direct user messages. */
 export type CoreAgentId = 'weebo' | 'edith' | 'jarvis';
@@ -20,12 +29,25 @@ export type SpecialistId = 'aria' | 'forge' | 'pulse' | 'echo' | 'cal' | 'nova';
  * - `task_started` / `task_completed` / `task_failed`: async task lifecycle
  */
 export type AgentStateType =
-  | 'idle' | 'thinking' | 'typing' | 'tool_call' | 'tool_result'
-  | 'responding' | 'done'
-  | 'delegating' | 'comm_sent' | 'comm_received'
-  | 'task_started' | 'task_completed' | 'task_failed'
-  | 'error' | 'message_in' | 'message_out'
-  | 'goal_started' | 'goal_completed' | 'streak_milestone';
+  | 'idle'
+  | 'thinking'
+  | 'typing'
+  | 'tool_call'
+  | 'tool_result'
+  | 'responding'
+  | 'done'
+  | 'delegating'
+  | 'comm_sent'
+  | 'comm_received'
+  | 'task_started'
+  | 'task_completed'
+  | 'task_failed'
+  | 'error'
+  | 'message_in'
+  | 'message_out'
+  | 'goal_started'
+  | 'goal_completed'
+  | 'streak_milestone';
 
 /**
  * Real-time agent event delivered over SSE from `/api/agent-state/stream`.
@@ -102,6 +124,10 @@ export interface CanvasAgent {
     errorStart?: number;
     /** Pending desk target reached after walk-to-user completes (GS-011). */
     pendingDeskTarget?: { x: number; y: number };
+    /** ID of the workstation this agent is currently walking to / working at. */
+    activeStation?: string;
+    /** Date.now() when the station glow animation started. */
+    stationGlowStart?: number;
   };
 }
 
@@ -170,7 +196,15 @@ export type ControlTab = 'tasks' | 'comms' | 'metrics' | 'timeline';
  */
 export interface TimelineEntry {
   id: string;
-  type: 'reply' | 'tool_call' | 'insight' | 'reminder' | 'automation' | 'multi_agent' | 'habit' | 'comm';
+  type:
+    | 'reply'
+    | 'tool_call'
+    | 'insight'
+    | 'reminder'
+    | 'automation'
+    | 'multi_agent'
+    | 'habit'
+    | 'comm';
   agentId?: AgentId;
   agentName?: string;
   agentColor?: string;

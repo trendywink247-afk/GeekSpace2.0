@@ -98,6 +98,10 @@ export interface SmartObject {
   footprint: Array<{ x: number; y: number }>;
   interactionPoints: InteractionPoint[];
   maxOccupants: number;
+  /** Optional human-readable description for UI tooltips. */
+  description?: string;
+  /** Agent IDs that prefer this workstation (used as a hint, not enforced). */
+  preferredAgents?: string[];
 }
 
 // All interaction points verified walkable against COLLISION_MAP[y][x] === false
@@ -318,6 +322,68 @@ export const SMART_OBJECTS: SmartObject[] = [
       { x: 13, y: 8, facing: 'down', behavior: 'relax' },
       { x: 6, y: 11, facing: 'right', behavior: 'chat' },
     ],
+    maxOccupants: 1,
+  },
+
+  // ── WORKSTATIONS (tool-call walk-to targets) ──────────────────────────────
+  {
+    id: 'search-terminal',
+    type: 'workstation',
+    room: 'workspace',
+    label: 'Search Terminal',
+    description: 'Web search and URL summarisation hub',
+    footprint: [{ x: 5, y: 13 }],
+    interactionPoints: [{ x: 6, y: 13, facing: 'left', behavior: 'work' }],
+    maxOccupants: 1,
+  },
+  {
+    id: 'crawl-booth',
+    type: 'workstation',
+    room: 'pantry',
+    label: 'Crawl Booth',
+    description: 'Web browsing, scraping, and screenshot station',
+    footprint: [{ x: 11, y: 6 }],
+    interactionPoints: [{ x: 12, y: 6, facing: 'left', behavior: 'work' }],
+    maxOccupants: 1,
+  },
+  {
+    id: 'memory-rack',
+    type: 'workstation',
+    room: 'utility_corridor',
+    label: 'Memory Rack',
+    description: 'Long-term memory storage and recall station',
+    footprint: [{ x: 5, y: 12 }],
+    interactionPoints: [{ x: 6, y: 12, facing: 'left', behavior: 'work' }],
+    maxOccupants: 1,
+  },
+  {
+    id: 'compute-forge',
+    type: 'workstation',
+    room: 'workspace',
+    label: 'Compute Forge',
+    description: 'Code generation, review, and DevOps station',
+    footprint: [{ x: 15, y: 14 }],
+    interactionPoints: [{ x: 14, y: 14, facing: 'right', behavior: 'work' }],
+    maxOccupants: 1,
+  },
+  {
+    id: 'creative-easel',
+    type: 'workstation',
+    room: 'lounge',
+    label: 'Creative Easel',
+    description: 'Image, avatar, and video generation station',
+    footprint: [{ x: 20, y: 5 }],
+    interactionPoints: [{ x: 19, y: 5, facing: 'right', behavior: 'work' }],
+    maxOccupants: 1,
+  },
+  {
+    id: 'scheduling-board',
+    type: 'workstation',
+    room: 'meeting_room',
+    label: 'Scheduling Board',
+    description: 'Calendar, reminders, and goal planning board',
+    footprint: [{ x: 15, y: 13 }],
+    interactionPoints: [{ x: 16, y: 13, facing: 'left', behavior: 'work' }],
     maxOccupants: 1,
   },
 ];
