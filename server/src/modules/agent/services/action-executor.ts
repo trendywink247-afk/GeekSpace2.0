@@ -41,6 +41,7 @@ import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from '../
 import { indexNote, indexReminder, indexHabit, indexMemory } from '../../../services/search-index.js';
 import { semanticSearch, upsertMemoryVector } from '../../../services/search-vector.js';
 import { eventBus } from '../../../services/event-bus.js';
+import { deductSubscriptionCredits } from './llm.js';
 
 export { needsConfirmation, CONFIRM_REQUIRED } from './confirm-action.js';
 
@@ -2029,6 +2030,24 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
  * @returns A structured result with `success`, `message`, and optional
  *          artifact/media IDs. Never throws.
  */
+/**
+ * Extra subscription credits deducted per successful tool call, in addition
+ * to the base LLM credit cost already billed by routeChat.
+ *
+ * These reflect the real infrastructure cost of each tool type — web scraping,
+ * screenshot capture, and video generation are all meaningful cost centres.
+ */
+export const TOOL_CREDIT_COSTS: Record<string, number> = {
+  web_search:      5,
+  crawl_url:       10,
+  web_fetch:       5,
+  take_screenshot: 10,
+  get_links:       3,
+  generate_code:   20,
+  generate_image:  100,
+  generate_video:  500,
+};
+
 export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
   const { tool, params } = action;
   const actionStart = Date.now();
@@ -2039,6 +2058,17 @@ export async function executeAction(userId: string, action: ParsedAction): Promi
     const result = await runAction(userId, tool, params);
     const duration = Date.now() - actionStart;
     logger.info({ actionType: tool, userId, duration, success: result.success }, 'action:completed');
+
+    // Tool metering: deduct extra credits for successful tool executions
+    // unless guardrails are disabled (DISABLE_RATE_LIMITS=1)
+    if (result.success && !config.disableRateLimits) {
+      const toolCredits = TOOL_CREDIT_COSTS[tool];
+      if (toolCredits) {
+        deductSubscriptionCredits(userId, toolCredits);
+        logger.info({ userId, tool, credits: toolCredits }, 'tool_metering: credits_deducted');
+      }
+    }
+
     return result;
   } catch (err) {
     const duration = Date.now() - actionStart;
