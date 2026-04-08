@@ -60,14 +60,11 @@ vi.mock("@/components/magicui/blur-fade", () => ({
 	BlurFade: ({ children }: { children: any }) => children,
 }));
 
-vi.mock("framer-motion", () => {
+vi.mock("framer-motion", async () => {
+	const React = await import("react");
 	// biome-ignore lint/suspicious/noExplicitAny: test mock
-	const fwd =
-		(tag: string) =>
-		({ children, ...p }: any) => {
-			const { createElement } = require("react");
-			return createElement(tag, p, children);
-		};
+	const fwd = (tag: string) => ({ children, ...p }: any) =>
+		React.createElement(tag as any, p, children);
 	return {
 		motion: { div: fwd("div"), button: fwd("button") },
 		// biome-ignore lint/suspicious/noExplicitAny: test mock

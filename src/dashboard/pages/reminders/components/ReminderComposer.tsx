@@ -38,7 +38,7 @@ function buildForm(r: Reminder): NewReminderForm {
 export function ReminderComposer({ open, editingReminder, recurringEditChoice, editAsOneOff, onOpenChange,
   onRecurringEditChoiceChange, onEditAsOneOffChange, onNaturalAdd, onLegacyAdd, onEditSave, onEditClick }: ReminderComposerProps) {
   const [form, setForm] = useState<NewReminderForm>(emptyForm);
-  useEffect(() => { setForm(editingReminder ? buildForm(editingReminder) : emptyForm); }, [editingReminder]);
+  useEffect(() => { setTimeout(() => setForm(editingReminder ? buildForm(editingReminder) : emptyForm), 0); }, [editingReminder]);
 
   return (
     <>

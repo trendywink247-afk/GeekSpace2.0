@@ -30,15 +30,15 @@ export function useReminderFilters(reminders: Reminder[]) {
     localStorage.setItem(LS_KEY, '{}');
   }, []);
 
-  const now = Date.now();
   const baseFiltered = reminders
     .filter(r => recurrenceFilter === 'recurring' ? !!r.recurrence : recurrenceFilter === 'one-off' ? !r.recurrence : true)
     .filter(r => categoryFilter !== 'all' ? r.category === categoryFilter : true)
     .filter(r => priorityFilter !== 'all' ? (r.priority ?? 'normal') === priorityFilter : true)
     .filter(r => r.text.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
-      const aOver = !a.completed && new Date(a.datetime).getTime() < now;
-      const bOver = !b.completed && new Date(b.datetime).getTime() < now;
+      const _now = Date.now();
+      const aOver = !a.completed && new Date(a.datetime).getTime() < _now;
+      const bOver = !b.completed && new Date(b.datetime).getTime() < _now;
       if (aOver && !bOver) return -1;
       if (!aOver && bOver) return 1;
       if (sortMode === 'due') return new Date(a.datetime).getTime() - new Date(b.datetime).getTime();
