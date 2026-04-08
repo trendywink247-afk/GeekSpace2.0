@@ -1995,6 +1995,137 @@ async function runAction(userId: string, tool: string, params: ParsedAction['par
         return { tool, success: true, message: `📎 Artifact saved: "${artifact.title}" (${artifact.artifact_type})` };
       }
 
+      // ── dev_task: real code-building via claude-bridge ─────────────────────
+      case 'dev_task': {
+        const { task, workspace, timeout } = params as {
+          task?: string;
+          workspace?: string;
+          timeout?: number;
+        };
+        if (!task) return { tool, success: false, message: 'dev_task: task is required' };
+
+        const bridgeUrl = config.claudeBridgeUrl;
+        const effectiveTimeout = Math.min(Number(timeout ?? 600), 1800);
+
+        // Create workspace dir
+        const workspacePath = workspace || `/tmp/claude-bridge-workspaces/${userId}/${uuid()}`;
+        const { mkdir } = await import('fs/promises');
+        await mkdir(workspacePath, { recursive: true });
+
+        logger.info({ userId, tool, workspacePath, timeout: effectiveTimeout }, 'dev_task:start');
+
+        const bridgeRes = await fetch(`${bridgeUrl}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: task, cwd: workspacePath, timeout: effectiveTimeout }),
+          signal: AbortSignal.timeout((effectiveTimeout + 30) * 1000),
+        });
+
+        if (!bridgeRes.ok) {
+          const errText = await bridgeRes.text().catch(() => '');
+          logger.warn({ userId, status: bridgeRes.status, errText }, 'dev_task:bridge_error');
+          return { tool, success: false, message: `dev_task: bridge returned ${bridgeRes.status}` };
+        }
+
+        const bridgeData = await bridgeRes.json() as {
+          ok: boolean;
+          stdout: string;
+          stderr: string;
+          code: number;
+          timed_out: boolean;
+        };
+
+        const output = bridgeData.stdout || bridgeData.stderr || '';
+        if (!bridgeData.ok) {
+          logger.warn({ userId, code: bridgeData.code, timed_out: bridgeData.timed_out }, 'dev_task:failed');
+          return {
+            tool,
+            success: false,
+            message: `dev_task failed (exit ${bridgeData.code}${bridgeData.timed_out ? ', timed out' : ''}): ${output.slice(0, 200)}`,
+          };
+        }
+
+        logger.info({ userId, workspacePath, outputLen: output.length }, 'dev_task:success');
+        return {
+          tool,
+          success: true,
+          message: `Built ${task.slice(0, 50)}`,
+          data: { output, workspace: workspacePath },
+        };
+      }
+
+      // ── analyze_image: Gemini 2.0 Flash vision ───────────────────────────────
+      case 'analyze_image': {
+        const { imageUrl, prompt: imagePrompt } = params as {
+          imageUrl?: string;
+          prompt?: string;
+        };
+        if (!imageUrl) return { tool, success: false, message: 'analyze_image: imageUrl is required' };
+
+        if (!config.geminiApiKey) {
+          // Warn only once per process startup
+          if (!(globalThis as Record<string, unknown>)._geminiWarnedOnce) {
+            logger.warn('analyze_image: GEMINI_API_KEY not configured — tool disabled');
+            (globalThis as Record<string, unknown>)._geminiWarnedOnce = true;
+          }
+          return { tool, success: false, message: 'Image analysis unavailable — GEMINI_API_KEY not configured' };
+        }
+
+        const effectivePrompt = String(imagePrompt || 'Describe this image in detail.');
+
+        // Fetch image (max 10MB, 10s timeout)
+        const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(10_000) });
+        if (!imgRes.ok) {
+          return { tool, success: false, message: `analyze_image: could not fetch image (${imgRes.status})` };
+        }
+        const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+        const imgBuffer = await imgRes.arrayBuffer();
+        if (imgBuffer.byteLength > 10 * 1024 * 1024) {
+          return { tool, success: false, message: 'analyze_image: image exceeds 10MB limit' };
+        }
+        const b64 = Buffer.from(imgBuffer).toString('base64');
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${config.geminiApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: effectivePrompt },
+                  { inline_data: { mime_type: contentType.split(';')[0].trim(), data: b64 } },
+                ],
+              }],
+              generationConfig: { maxOutputTokens: 500, temperature: 0.4 },
+            }),
+            signal: AbortSignal.timeout(30_000),
+          },
+        );
+
+        if (!geminiRes.ok) {
+          const errText = await geminiRes.text().catch(() => '');
+          logger.warn({ userId, status: geminiRes.status, errText }, 'analyze_image:gemini_error');
+          return { tool, success: false, message: `analyze_image: Gemini returned ${geminiRes.status}` };
+        }
+
+        const geminiData = await geminiRes.json() as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        const analysis = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!analysis) {
+          return { tool, success: false, message: 'analyze_image: no analysis returned from Gemini' };
+        }
+
+        logger.info({ userId, imageUrl, analysisLen: analysis.length }, 'analyze_image:success');
+        return {
+          tool,
+          success: true,
+          message: analysis.slice(0, 100),
+          data: { analysis, imageUrl, model: 'gemini-2.0-flash' },
+        };
+      }
+
       // ── Unknown tool — try GeekOS plugin bridge as fallback
       default: {
         try {
@@ -2046,6 +2177,8 @@ export const TOOL_CREDIT_COSTS: Record<string, number> = {
   generate_code:   20,
   generate_image:  100,
   generate_video:  500,
+  dev_task:        50,
+  analyze_image:   15,
 };
 
 export async function executeAction(userId: string, action: ParsedAction): Promise<ActionResult> {
