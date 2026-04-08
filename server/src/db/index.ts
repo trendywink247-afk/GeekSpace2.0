@@ -2661,3 +2661,17 @@ try {
     CREATE INDEX IF NOT EXISTS idx_temporal_anchors_pending ON temporal_anchors(status, trigger_at) WHERE status = 'pending';
   `);
 } catch { /* exists */ }
+
+// ── Migration 003: Daily message cap tracking ────────────────────────────────
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_message_counts (
+      user_id TEXT NOT NULL,
+      date    TEXT NOT NULL,
+      count   INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (user_id, date),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_daily_message_counts_date ON daily_message_counts (date);
+  `);
+} catch { /* exists */ }

@@ -23,6 +23,7 @@
 // ============================================================
 
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 function required(key: string): string {
@@ -274,6 +275,12 @@ export const config = {
   togetherMaxTokens: optionalInt('TOGETHER_MAX_TOKENS', 2048),
   // Daily spend cap across all Together AI calls (in USD cents, default $2.00)
   togetherDailyBudgetCents: optionalInt('TOGETHER_DAILY_BUDGET_CENTS', 200),
+
+  // Guardrails kill-switch — set DISABLE_RATE_LIMITS=1 in local dev / CI to skip
+  // daily message caps, tool metering, and response caching.
+  disableRateLimits:
+    process.env.DISABLE_RATE_LIMITS === '1' ||
+    process.env.DISABLE_RATE_LIMITS === 'true',
 } as const;
 
 // ---- Startup validation ----

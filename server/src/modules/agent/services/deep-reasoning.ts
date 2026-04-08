@@ -35,6 +35,8 @@ export interface DeepReasoningOptions {
   userId: string;
   userCredits?: number;
   forceProvider?: Provider;
+  /** User subscription plan slug — forwarded to routeChat for tier-based routing */
+  userPlan?: string;
   enableDelegation?: boolean;
   enableReflection?: boolean;
   maxIterations?: number;
@@ -143,6 +145,7 @@ export async function runDeepReasoning(
       agentName: opts.agentName,
       userCredits: opts.userCredits,
       forceProvider: opts.forceProvider,
+      userPlan: opts.userPlan,
       userId: opts.userId,
     });
 
@@ -189,6 +192,7 @@ export async function runDeepReasoning(
       agentName: opts.agentName,
       userCredits: opts.userCredits,
       forceProvider: opts.forceProvider,
+      userPlan: opts.userPlan,
       userId: opts.userId,
     });
 
@@ -262,6 +266,7 @@ export async function runDeepReasoning(
           agentName: opts.agentName,
           userCredits: opts.userCredits,
           forceProvider: opts.forceProvider,
+      userPlan: opts.userPlan,
         });
 
         totalTokensIn += reflectResult.tokensIn;
