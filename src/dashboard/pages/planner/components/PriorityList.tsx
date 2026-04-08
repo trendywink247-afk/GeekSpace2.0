@@ -3,11 +3,19 @@ import { SectionHeader } from "@/components/ui/agentin";
 import type { TimeBlock } from "../helpers";
 import { formatHour } from "../helpers";
 
+<<<<<<< HEAD
 const TA: Record<string, string> = {
+=======
+const TYPE_ACCENT: Record<string, string> = {
+>>>>>>> origin/ui/wave1-reminders
 	reminder: "var(--ag-violet-soft)",
 	habit: "var(--ag-emerald)",
 	custom: "var(--ag-amber)",
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 export function PriorityList({ blocks }: { blocks: TimeBlock[] }) {
 	if (blocks.length === 0) return null;
 	return (
@@ -20,7 +28,11 @@ export function PriorityList({ blocks }: { blocks: TimeBlock[] }) {
 			/>
 			<div className="flex flex-col gap-1.5">
 				{blocks.map((block, i) => {
+<<<<<<< HEAD
 					const accent = TA[block.type] ?? "var(--ag-violet)";
+=======
+					const accent = TYPE_ACCENT[block.type] ?? "var(--ag-violet)";
+>>>>>>> origin/ui/wave1-reminders
 					return (
 						<div
 							key={block.id}

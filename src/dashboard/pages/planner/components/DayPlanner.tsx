@@ -72,10 +72,18 @@ export function DayPlanner({
 	onQuickAddSubmit,
 	onQuickAddCancel,
 }: DayPlannerProps) {
+<<<<<<< HEAD
 	const qaRef = useRef<HTMLInputElement>(null);
 	return (
 		<div className="flex flex-col lg:flex-row gap-4">
 			{/* Left: backlog */}
+=======
+	const quickAddRef = useRef<HTMLInputElement>(null);
+
+	return (
+		<div className="flex flex-col lg:flex-row gap-4">
+			{/* Left: backlog + priority */}
+>>>>>>> origin/ui/wave1-reminders
 			<BlurFade delay={0.15}>
 				<div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
 					{isToday && topThree.length > 0 && (
@@ -83,6 +91,10 @@ export function DayPlanner({
 							<PriorityList blocks={topThree} />
 						</GlassCard>
 					)}
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 					<GlassCard className="overflow-hidden">
 						<div
 							className="px-4 py-3 flex items-center justify-between"
@@ -108,6 +120,10 @@ export function DayPlanner({
 								style={{ color: "var(--ag-text-muted)" }}
 							/>
 						</div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 						<div className="p-2 space-y-1 max-h-[35vh] lg:max-h-[calc(100vh-340px)] overflow-y-auto custom-scrollbar">
 							{habitsLoading ? (
 								<div className="py-8 text-center">
@@ -122,7 +138,11 @@ export function DayPlanner({
 										className="text-xs mt-2"
 										style={{ color: "var(--ag-text-muted)" }}
 									>
+<<<<<<< HEAD
 										Loading...
+=======
+										Loading…
+>>>>>>> origin/ui/wave1-reminders
 									</p>
 								</div>
 							) : backlogItems.length === 0 ? (
@@ -148,6 +168,10 @@ export function DayPlanner({
 								))
 							)}
 						</div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 						<div
 							className="px-4 py-2.5 flex items-center gap-3"
 							style={{ borderTop: "1px solid var(--ag-border-subtle)" }}
@@ -179,6 +203,10 @@ export function DayPlanner({
 			<BlurFade delay={0.25}>
 				<div className="flex-1 min-w-0">
 					<GlassCard className="overflow-hidden">
+<<<<<<< HEAD
+=======
+						{/* Date nav */}
+>>>>>>> origin/ui/wave1-reminders
 						<div
 							className="px-4 py-3 flex items-center justify-between"
 							style={{ borderBottom: "1px solid var(--ag-border-subtle)" }}
@@ -215,6 +243,10 @@ export function DayPlanner({
 									<ChevronRight className="w-4 h-4" />
 								</Button>
 							</div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 							{!isToday && (
 								<Button
 									variant="ghost"
@@ -226,6 +258,10 @@ export function DayPlanner({
 									Today
 								</Button>
 							)}
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 							{isToday && (
 								<div className="flex items-center gap-1.5">
 									<span
@@ -250,6 +286,11 @@ export function DayPlanner({
 								</div>
 							)}
 						</div>
+<<<<<<< HEAD
+=======
+
+						{/* Time grid */}
+>>>>>>> origin/ui/wave1-reminders
 						<div className="relative max-h-[65vh] sm:max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
 							{todayBlocks.length === 0 && !dragItem && (
 								<div className="py-4 px-4">
@@ -259,6 +300,7 @@ export function DayPlanner({
 									/>
 								</div>
 							)}
+<<<<<<< HEAD
 							{HOURS.map((hour) => {
 								const isCH =
 									isToday && Math.floor(currentHourFraction) === hour;
@@ -266,6 +308,17 @@ export function DayPlanner({
 								const sb = todayBlocks.filter(
 									(b) => Math.floor(b.startHour) === hour,
 								);
+=======
+
+							{HOURS.map((hour) => {
+								const isCurrentHour =
+									isToday && Math.floor(currentHourFraction) === hour;
+								const isDrop = dropTarget === hour;
+								const slotBlocks = todayBlocks.filter(
+									(b) => Math.floor(b.startHour) === hour,
+								);
+
+>>>>>>> origin/ui/wave1-reminders
 								return (
 									<div
 										key={hour}
@@ -273,7 +326,11 @@ export function DayPlanner({
 										style={{
 											borderBottomColor: "rgba(255,255,255,0.025)",
 											minHeight: 64,
+<<<<<<< HEAD
 											background: isCH
+=======
+											background: isCurrentHour
+>>>>>>> origin/ui/wave1-reminders
 												? "rgba(139,92,246,0.03)"
 												: isDrop
 													? "rgba(139,92,246,0.05)"
@@ -286,10 +343,17 @@ export function DayPlanner({
 										<div
 											className="w-16 sm:w-20 flex-shrink-0 py-2 px-2 sm:px-3 text-right"
 											style={{
+<<<<<<< HEAD
 												borderRight: isCH
 													? "2px solid var(--ag-violet)"
 													: "1px solid rgba(255,255,255,0.04)",
 												color: isCH
+=======
+												borderRight: isCurrentHour
+													? "2px solid var(--ag-violet)"
+													: "1px solid rgba(255,255,255,0.04)",
+												color: isCurrentHour
+>>>>>>> origin/ui/wave1-reminders
 													? "var(--ag-violet-soft)"
 													: "var(--ag-text-muted)",
 											}}
@@ -298,6 +362,10 @@ export function DayPlanner({
 												{formatHour(hour)}
 											</span>
 										</div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 										<div
 											className="flex-1 py-1.5 px-2 sm:px-3 relative"
 											style={{
@@ -309,14 +377,23 @@ export function DayPlanner({
 												borderRadius: isDrop ? "0 8px 8px 0" : undefined,
 											}}
 										>
+<<<<<<< HEAD
 											{sb.map((block) => (
+=======
+											{slotBlocks.map((block) => (
+>>>>>>> origin/ui/wave1-reminders
 												<TimeBlockCard
 													key={block.id}
 													block={block}
 													onRemove={onRemoveBlock}
 												/>
 											))}
+<<<<<<< HEAD
 											{isDrop && sb.length === 0 && (
+=======
+
+											{isDrop && slotBlocks.length === 0 && (
+>>>>>>> origin/ui/wave1-reminders
 												<div
 													className="absolute inset-1 rounded-xl flex items-center justify-center"
 													style={{ border: "1px dashed rgba(139,92,246,0.35)" }}
@@ -329,8 +406,14 @@ export function DayPlanner({
 													</span>
 												</div>
 											)}
+<<<<<<< HEAD
 											{!dragItem &&
 												sb.length === 0 &&
+=======
+
+											{!dragItem &&
+												slotBlocks.length === 0 &&
+>>>>>>> origin/ui/wave1-reminders
 												quickAddHour !== hour && (
 													<button
 														onClick={() => onQuickAddHourSet(hour)}
@@ -345,9 +428,16 @@ export function DayPlanner({
 														<Plus className="w-3.5 h-3.5" />
 													</button>
 												)}
+<<<<<<< HEAD
 											{quickAddHour === hour && (
 												<BlockComposer
 													inputRef={qaRef}
+=======
+
+											{quickAddHour === hour && (
+												<BlockComposer
+													inputRef={quickAddRef}
+>>>>>>> origin/ui/wave1-reminders
 													title={quickAddTitle}
 													duration={quickAddDuration}
 													onTitleChange={onQuickAddTitleChange}
@@ -360,6 +450,11 @@ export function DayPlanner({
 									</div>
 								);
 							})}
+<<<<<<< HEAD
+=======
+
+							{/* Current time line */}
+>>>>>>> origin/ui/wave1-reminders
 							{isToday &&
 								currentHourFraction >= 6 &&
 								currentHourFraction <= 23 && (

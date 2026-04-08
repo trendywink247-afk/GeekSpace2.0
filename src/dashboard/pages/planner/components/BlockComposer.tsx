@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DURATION_OPTIONS } from "../helpers";
 
+<<<<<<< HEAD
 interface P {
+=======
+interface BlockComposerProps {
+>>>>>>> origin/ui/wave1-reminders
 	inputRef: RefObject<HTMLInputElement | null>;
 	title: string;
 	duration: number;
@@ -13,6 +17,10 @@ interface P {
 	onSubmit: () => void;
 	onCancel: () => void;
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 export function BlockComposer({
 	inputRef,
 	title,
@@ -21,7 +29,11 @@ export function BlockComposer({
 	onDurationChange,
 	onSubmit,
 	onCancel,
+<<<<<<< HEAD
 }: P) {
+=======
+}: BlockComposerProps) {
+>>>>>>> origin/ui/wave1-reminders
 	return (
 		<div
 			className="rounded-xl p-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200"
@@ -54,6 +66,10 @@ export function BlockComposer({
 						background:
 							"linear-gradient(135deg, var(--ag-violet), var(--ag-coral))",
 						color: "#fff",
+<<<<<<< HEAD
+=======
+						boxShadow: "0 4px 14px rgba(139,92,246,0.3)",
+>>>>>>> origin/ui/wave1-reminders
 					}}
 					onClick={onSubmit}
 					disabled={!title.trim()}
@@ -62,7 +78,11 @@ export function BlockComposer({
 				</Button>
 				<button
 					onClick={onCancel}
+<<<<<<< HEAD
 					className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center"
+=======
+					className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors"
+>>>>>>> origin/ui/wave1-reminders
 					style={{ color: "var(--ag-text-muted)" }}
 				>
 					<X className="w-3.5 h-3.5" />

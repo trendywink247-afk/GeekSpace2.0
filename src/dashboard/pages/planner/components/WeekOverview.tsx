@@ -6,9 +6,16 @@ import { Button } from "@/components/ui/button";
 import type { TimeBlock } from "../helpers";
 import { dateKey, formatHour, HOURS, isSameDay } from "../helpers";
 
+<<<<<<< HEAD
 const DL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface WeekOverviewProps {
+=======
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+interface WeekOverviewProps {
+	/** Used for future highlighting of selected day */
+>>>>>>> origin/ui/wave1-reminders
 	currentDate: Date;
 	weekDates: Date[];
 	currentHourFraction: number;
@@ -32,9 +39,17 @@ export function WeekOverview({
 	onWeekDrop,
 }: WeekOverviewProps) {
 	const today = new Date();
+<<<<<<< HEAD
 	return (
 		<BlurFade delay={0.2}>
 			<GlassCard accent="indigo" className="overflow-hidden">
+=======
+
+	return (
+		<BlurFade delay={0.2}>
+			<GlassCard accent="indigo" className="overflow-hidden">
+				{/* Header */}
+>>>>>>> origin/ui/wave1-reminders
 				<div
 					className="px-4 py-3 flex items-center justify-between"
 					style={{ borderBottom: "1px solid var(--ag-border-subtle)" }}
@@ -60,7 +75,11 @@ export function WeekOverview({
 								month: "short",
 								day: "numeric",
 							})}
+<<<<<<< HEAD
 							{" \u2013 "}
+=======
+							{" – "}
+>>>>>>> origin/ui/wave1-reminders
 							{DateTime.fromJSDate(weekDates[6]).toLocaleString({
 								month: "short",
 								day: "numeric",
@@ -87,8 +106,16 @@ export function WeekOverview({
 						This Week
 					</Button>
 				</div>
+<<<<<<< HEAD
 				<div className="overflow-x-auto">
 					<div style={{ minWidth: 700 }}>
+=======
+
+				{/* Grid */}
+				<div className="overflow-x-auto">
+					<div style={{ minWidth: 700 }}>
+						{/* Day headers */}
+>>>>>>> origin/ui/wave1-reminders
 						<div
 							className="grid"
 							style={{
@@ -98,7 +125,11 @@ export function WeekOverview({
 						>
 							<div className="p-2" />
 							{weekDates.map((d) => {
+<<<<<<< HEAD
 								const iDT = isSameDay(d, today);
+=======
+								const isDateToday = isSameDay(d, today);
+>>>>>>> origin/ui/wave1-reminders
 								return (
 									<button
 										key={dateKey(d)}
@@ -106,25 +137,43 @@ export function WeekOverview({
 										onClick={() => onSelectDate(d)}
 										className="p-2 text-center transition-colors min-h-[44px]"
 										style={{
+<<<<<<< HEAD
 											background: iDT ? "rgba(99,102,241,0.05)" : undefined,
+=======
+											background: isDateToday
+												? "rgba(99,102,241,0.05)"
+												: undefined,
+>>>>>>> origin/ui/wave1-reminders
 										}}
 									>
 										<span
 											className="text-[10px] uppercase tracking-wider block"
 											style={{
+<<<<<<< HEAD
 												color: iDT
+=======
+												color: isDateToday
+>>>>>>> origin/ui/wave1-reminders
 													? "var(--ag-indigo)"
 													: "var(--ag-text-muted)",
 												fontFamily: "JetBrains Mono, monospace",
 											}}
 										>
+<<<<<<< HEAD
 											{DL[d.getDay()]}
+=======
+											{DAY_LABELS[d.getDay()]}
+>>>>>>> origin/ui/wave1-reminders
 										</span>
 										<span
 											className="text-lg font-bold block mt-0.5"
 											style={{
 												fontFamily: "Syne, sans-serif",
+<<<<<<< HEAD
 												color: iDT
+=======
+												color: isDateToday
+>>>>>>> origin/ui/wave1-reminders
 													? "var(--ag-indigo)"
 													: "var(--ag-text-primary)",
 											}}
@@ -135,6 +184,11 @@ export function WeekOverview({
 								);
 							})}
 						</div>
+<<<<<<< HEAD
+=======
+
+						{/* Hour rows */}
+>>>>>>> origin/ui/wave1-reminders
 						<div className="max-h-[65vh] overflow-y-auto custom-scrollbar">
 							{HOURS.filter((_, i) => i % 2 === 0).map((hour) => (
 								<div
@@ -156,25 +210,44 @@ export function WeekOverview({
 									</div>
 									{weekDates.map((d) => {
 										const dk = dateKey(d);
+<<<<<<< HEAD
 										const db = (blocks[dk] || []).filter(
+=======
+										const dayBlocks = (blocks[dk] || []).filter(
+>>>>>>> origin/ui/wave1-reminders
 											(b) =>
 												Math.floor(b.startHour) === hour ||
 												Math.floor(b.startHour) === hour + 1,
 										);
+<<<<<<< HEAD
 										const iDT = isSameDay(d, today);
 										const iC =
 											iDT &&
 											Math.floor(currentHourFraction) >= hour &&
 											Math.floor(currentHourFraction) < hour + 2;
+=======
+										const isDateToday = isSameDay(d, today);
+										const isCurrent =
+											isDateToday &&
+											Math.floor(currentHourFraction) >= hour &&
+											Math.floor(currentHourFraction) < hour + 2;
+
+>>>>>>> origin/ui/wave1-reminders
 										return (
 											<div
 												key={dk}
 												className="p-0.5 min-h-[48px] transition-colors"
 												style={{
 													borderRight: "1px solid rgba(255,255,255,0.03)",
+<<<<<<< HEAD
 													background: iC
 														? "rgba(99,102,241,0.04)"
 														: iDT
+=======
+													background: isCurrent
+														? "rgba(99,102,241,0.04)"
+														: isDateToday
+>>>>>>> origin/ui/wave1-reminders
 															? "rgba(255,255,255,0.008)"
 															: undefined,
 												}}
@@ -184,7 +257,11 @@ export function WeekOverview({
 												}}
 												onDrop={(e) => onWeekDrop(e, hour, d)}
 											>
+<<<<<<< HEAD
 												{db.map((block) => (
+=======
+												{dayBlocks.map((block) => (
+>>>>>>> origin/ui/wave1-reminders
 													<button
 														key={block.id}
 														type="button"

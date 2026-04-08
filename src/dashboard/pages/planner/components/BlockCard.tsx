@@ -9,7 +9,11 @@ import {
 import type { BacklogItem, TimeBlock } from "../helpers";
 import { PRIORITY_COLORS } from "../helpers";
 
+<<<<<<< HEAD
 const TA: Record<string, string> = {
+=======
+const TYPE_ACCENT: Record<string, string> = {
+>>>>>>> origin/ui/wave1-reminders
 	reminder: "var(--ag-violet-soft)",
 	habit: "var(--ag-emerald)",
 	custom: "var(--ag-violet)",
@@ -22,13 +26,22 @@ export function TimeBlockCard({
 	block: TimeBlock;
 	onRemove: (id: string) => void;
 }) {
+<<<<<<< HEAD
 	const accent = TA[block.type] ?? "var(--ag-violet)";
 	const dl =
+=======
+	const accent = TYPE_ACCENT[block.type] ?? "var(--ag-violet)";
+	const durationLabel =
+>>>>>>> origin/ui/wave1-reminders
 		block.duration < 1
 			? `${Math.round(block.duration * 60)}m`
 			: block.duration === 1
 				? "1h"
 				: `${block.duration}h`;
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/ui/wave1-reminders
 	return (
 		<div
 			className="group relative rounded-xl px-3 py-2.5 mb-1.5 transition-all duration-150 hover:scale-[1.01] active:scale-[0.97]"
@@ -66,7 +79,11 @@ export function TimeBlockCard({
 						style={{ color: "var(--ag-text-muted)" }}
 					>
 						<Clock className="w-3 h-3" />
+<<<<<<< HEAD
 						{dl}
+=======
+						{durationLabel}
+>>>>>>> origin/ui/wave1-reminders
 					</span>
 					<button
 						onClick={() => onRemove(block.id)}
@@ -89,11 +106,20 @@ export function BacklogCard({
 	item: BacklogItem;
 	onDragStart: (item: BacklogItem) => void;
 }) {
+<<<<<<< HEAD
 	const bc =
 		item.type === "reminder" ? "var(--ag-violet-soft)" : "var(--ag-emerald)";
 	const pc = item.priority
 		? PRIORITY_COLORS[item.priority] || "#6B7280"
 		: undefined;
+=======
+	const borderColor =
+		item.type === "reminder" ? "var(--ag-violet-soft)" : "var(--ag-emerald)";
+	const priorityColor = item.priority
+		? PRIORITY_COLORS[item.priority] || "#6B7280"
+		: undefined;
+
+>>>>>>> origin/ui/wave1-reminders
 	return (
 		<div
 			draggable
@@ -120,9 +146,15 @@ export function BacklogCard({
 				}}
 			>
 				{item.icon === "bell" ? (
+<<<<<<< HEAD
 					<Bell className="w-3.5 h-3.5" style={{ color: bc }} />
 				) : (
 					<Flame className="w-3.5 h-3.5" style={{ color: bc }} />
+=======
+					<Bell className="w-3.5 h-3.5" style={{ color: borderColor }} />
+				) : (
+					<Flame className="w-3.5 h-3.5" style={{ color: borderColor }} />
+>>>>>>> origin/ui/wave1-reminders
 				)}
 			</div>
 			<div className="flex-1 min-w-0">
@@ -133,6 +165,7 @@ export function BacklogCard({
 					{item.title}
 				</p>
 			</div>
+<<<<<<< HEAD
 			{pc && item.priority && item.priority !== "normal" && (
 				<span
 					className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0"
@@ -140,6 +173,15 @@ export function BacklogCard({
 						color: pc,
 						backgroundColor: `${pc}18`,
 						border: `1px solid ${pc}30`,
+=======
+			{priorityColor && item.priority && item.priority !== "normal" && (
+				<span
+					className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0"
+					style={{
+						color: priorityColor,
+						backgroundColor: `${priorityColor}18`,
+						border: `1px solid ${priorityColor}30`,
+>>>>>>> origin/ui/wave1-reminders
 					}}
 				>
 					{item.priority}

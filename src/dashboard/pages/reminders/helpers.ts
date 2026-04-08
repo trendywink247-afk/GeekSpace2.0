@@ -143,3 +143,15 @@ export function groupRemindersByDate(reminders: Reminder[]) {
   }
   return groups.filter(g => g.items.length > 0);
 }
+
+export function sortRemindersByPriorityAndOverdue(reminders: Reminder[], sortMode: 'priority' | 'due'): Reminder[] {
+  const now = Date.now();
+  return [...reminders].sort((a, b) => {
+    const aOver = !a.completed && new Date(a.datetime).getTime() < now;
+    const bOver = !b.completed && new Date(b.datetime).getTime() < now;
+    if (aOver && !bOver) return -1;
+    if (!aOver && bOver) return 1;
+    if (sortMode === 'due') return new Date(a.datetime).getTime() - new Date(b.datetime).getTime();
+    return (priorityOrder[a.priority ?? 'normal'] ?? 2) - (priorityOrder[b.priority ?? 'normal'] ?? 2);
+  });
+}

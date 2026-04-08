@@ -1,3 +1,4 @@
+// Barrel export for focus module (revamped)
 export { FocusPage } from './FocusPage';
 export { FocusTimer, TimerRing } from './components/FocusTimer';
 export { SessionStarter } from './components/SessionStarter';

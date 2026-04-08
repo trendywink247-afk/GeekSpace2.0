@@ -3,11 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader, PillButton } from "@/components/ui/agentin";
 import type { ViewMode } from "../state/planner-store";
 
+<<<<<<< HEAD
 interface P {
 	viewMode: ViewMode;
 	onViewChange: (mode: ViewMode) => void;
 }
 export function PlannerHeader({ viewMode, onViewChange }: P) {
+=======
+interface PlannerHeaderProps {
+	viewMode: ViewMode;
+	onViewChange: (mode: ViewMode) => void;
+}
+
+export function PlannerHeader({ viewMode, onViewChange }: PlannerHeaderProps) {
+>>>>>>> origin/ui/wave1-reminders
 	const navigate = useNavigate();
 	return (
 		<PageHeader
