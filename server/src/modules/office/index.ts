@@ -10,6 +10,7 @@ import type { AppModule } from '../../shared/module.js';
 
 // ── Routes ──────────────────────────────────────────────────
 export { officeRouter } from '../../routes/office.js';
+export { officeServicesRouter } from './routes/services.js';
 export { docsRouter } from '../../routes/docs.js';
 export { filesRouter } from '../../routes/files.js';
 export { sandboxRouter } from '../../routes/sandbox.js';
@@ -30,6 +31,7 @@ export type {
 // ── Module registration ─────────────────────────────────────
 
 import { officeRouter } from '../../routes/office.js';
+import { officeServicesRouter } from './routes/services.js';
 import { docsRouter } from '../../routes/docs.js';
 import { filesRouter } from '../../routes/files.js';
 import { sandboxRouter } from '../../routes/sandbox.js';
@@ -41,6 +43,7 @@ export const officeModule: AppModule = {
 
   registerRoutes(app: Application) {
     app.use('/api/office', officeRouter);
+    app.use('/api/office/services', officeServicesRouter);
     app.use('/api/docs', docsRouter);
     app.use('/api/files', filesRouter);
     app.use('/api/sandbox', sandboxRouter);
