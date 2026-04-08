@@ -14,8 +14,8 @@ import type { Portfolio, PortfolioProject, PortfolioMilestone, PortfolioLayout }
 import {
   ProfileTab, SkillsTab, ProjectsTab, MilestonesTab, SocialTab,
   AITab, SuggestionsTab, AnalyticsTab, PreviewTab, MessagesTab,
-} from './portfolio';
-import type { PortfolioSuggestion } from './portfolio';
+} from './';
+import type { PortfolioSuggestion } from './';
 
 /** Normalize social URL: don't prepend https:// if protocol already present. */
 function normalizeSocialUrl(url: string): string {
