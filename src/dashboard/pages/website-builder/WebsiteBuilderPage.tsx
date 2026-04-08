@@ -8,7 +8,7 @@ import {
   Code, LayoutTemplate, Wand2, Wrench, Loader2,
   Terminal, Bot,
 } from 'lucide-react';
-import { ArtifactsPage } from './ArtifactsPage';
+import { ArtifactsPage } from '../ArtifactsPage';
 import { artifactService, picoService, agentService } from '@/services/api';
 import type { Artifact } from '@/types';
 import {

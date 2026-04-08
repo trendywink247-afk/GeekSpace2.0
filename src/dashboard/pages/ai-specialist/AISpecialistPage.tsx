@@ -4,7 +4,7 @@ import { Search, Star, MessageCircle, Sparkles, Braces, Wrench, FileText, Palett
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { JsonFormatterPage } from './tools/JsonFormatterPage';
+import { JsonFormatterPage } from '../tools/JsonFormatterPage';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
