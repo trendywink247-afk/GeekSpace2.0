@@ -23,18 +23,10 @@ export function usePlannerBlocks({
 	weekDates,
 	viewMode,
 }: UsePlannerBlocksOptions) {
-	const [blocks, setBlocks] = useState<Record<string, TimeBlock[]>>({});
+	const [blocks, setBlocks] = useState<Record<string, TimeBlock[]>>(() => {
+		try { const s = localStorage.getItem(LS_KEY); return s ? (JSON.parse(s) as Record<string, TimeBlock[]>) : {}; } catch { return {}; }
+	});
 	const dk = dateKey(currentDate);
-
-	// localStorage hydration
-	useEffect(() => {
-		try {
-			const saved = localStorage.getItem(LS_KEY);
-			if (saved) setBlocks(JSON.parse(saved));
-		} catch {
-			/* ignore */
-		}
-	}, []);
 
 	useEffect(() => {
 		try {
@@ -55,15 +47,11 @@ export function usePlannerBlocks({
 		}
 	}, []);
 
-	useEffect(() => {
-		fetchBlocksForDate(dk);
-	}, [dk, fetchBlocksForDate]);
+	// eslint-disable-next-line react-hooks/set-state-in-effect -- async function, setState is in .then() callback
+	useEffect(() => { void fetchBlocksForDate(dk); }, [dk, fetchBlocksForDate]);
 
-	useEffect(() => {
-		if (viewMode === "week") {
-			weekDates.forEach((d) => fetchBlocksForDate(dateKey(d)));
-		}
-	}, [viewMode, weekDates, fetchBlocksForDate]);
+	// eslint-disable-next-line react-hooks/set-state-in-effect -- async function, setState is in .then() callback
+	useEffect(() => { if (viewMode === "week") weekDates.forEach((d) => void fetchBlocksForDate(dateKey(d))); }, [viewMode, weekDates, fetchBlocksForDate]);
 
 	const todayBlocks = useMemo(() => blocks[dk] || [], [blocks, dk]);
 
