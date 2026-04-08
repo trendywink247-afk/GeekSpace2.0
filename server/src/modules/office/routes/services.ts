@@ -58,7 +58,7 @@ officeServicesRouter.get("/", requireAuth, async (req: AuthRequest, res) => {
 	try {
 		const result = await getServicesHealth();
 		res.json(result);
-	} catch (err) {
+	} catch (_err) {
 		res.status(500).json({ error: "Failed to check service health" });
 	}
 });
