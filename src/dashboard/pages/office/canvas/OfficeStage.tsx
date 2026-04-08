@@ -32,6 +32,8 @@ import {
 	SPEECH_BUBBLE_TTL,
 } from "../constants";
 import { SMART_OBJECTS } from "../entities/smartObjects";
+import { getToolStation } from "../shared/toolStationMap";
+import { useOfficeServices } from "../state/use-office-services";
 import type {
 	AgentId,
 	AgentStateType,
@@ -350,6 +352,11 @@ export default function OfficeStage({
 	const confettiRef = useRef<ConfettiState>(createConfettiState());
 	const fireworksRef = useRef<FireworksState>(createFireworksState());
 	const thinkingTimers = useRef(new Map<string, number>());
+	/** Active workstation glows: station ID → { startMs, agentId } */
+	const activeStationsRef = useRef<Record<string, { startMs: number; agentId: string }>>({});
+	/** Service health statuses from /office/services poll — kept in ref for RAF access. */
+	const serviceStatusesRef = useRef<Record<string, 'up' | 'degraded' | 'down'>>({});
+	const serviceStatuses = useOfficeServices();
 
 	const idleChatterRef = useRef({
 		lastEventTime: 0,
@@ -598,13 +605,64 @@ export default function OfficeStage({
 								agentId,
 							);
 							if (evt.tool) {
-								const tl =
-									evt.tool.length > 25
-										? evt.tool.slice(0, 22) + "..."
-										: evt.tool;
-								addBubble(agentId, `Using ${tl}...`, {
-									priority: BUBBLE_PRIORITY.TOOL_CALL,
-								});
+								const stationMapping = getToolStation(evt.tool);
+								if (stationMapping) {
+									// Walk agent to the matching workstation
+									const stObj = SMART_OBJECTS.find((o) => o.id === stationMapping.station);
+									const ip = stObj?.interactionPoints[0];
+									if (ip) {
+										agent.path = findFullPath(agent.x, agent.y, ip.x, ip.y);
+										agent.pathIndex = 0;
+										agent.targetX = ip.x;
+										agent.targetY = ip.y;
+										agent.fx = {
+											...agent.fx,
+											activeStation: stationMapping.station,
+											stationGlowStart: Date.now(),
+										};
+										activeStationsRef.current[stationMapping.station] = {
+											startMs: Date.now(),
+											agentId,
+										};
+									}
+									addBubble(
+										agentId,
+										`${stationMapping.emoji} ${stationMapping.word}…`,
+										{ priority: BUBBLE_PRIORITY.TOOL_CALL },
+									);
+								} else {
+									const tl =
+										evt.tool.length > 25
+											? evt.tool.slice(0, 22) + "..."
+											: evt.tool;
+									addBubble(agentId, `Using ${tl}...`, {
+										priority: BUBBLE_PRIORITY.TOOL_CALL,
+									});
+								}
+							}
+						}
+
+						// tool_result: clear station glow, walk back to desk
+						if (evt.state === "tool_result") {
+							const prevStation = agent.fx?.activeStation;
+							if (prevStation) {
+								// Remove from active glow map
+								const { [prevStation]: _removed, ...restStations } = activeStationsRef.current;
+								void _removed;
+								activeStationsRef.current = restStations;
+								// Clear station from agent fx
+								agent.fx = { ...agent.fx, activeStation: undefined, stationGlowStart: undefined };
+								// Walk back to desk
+								const dkr = getAgentDesk(agentId);
+								const dkrv = validateTarget(dkr.x, dkr.y, agent.x, agent.y);
+								agent.path = findFullPath(agent.x, agent.y, dkrv.x, dkrv.y);
+								agent.pathIndex = 0;
+								agent.targetX = dkrv.x;
+								agent.targetY = dkrv.y;
+							}
+							if (evt.content) {
+								const snippet = evt.content.slice(0, 30);
+								addBubble(agentId, snippet, { priority: BUBBLE_PRIORITY.TOOL_CALL });
 							}
 						}
 
@@ -646,12 +704,19 @@ export default function OfficeStage({
 
 						cancelIdleBehavior(agentId);
 						notifyAgentActive();
-						const dk = getAgentDesk(agentId);
-						const dkv = validateTarget(dk.x, dk.y, agent.x, agent.y);
-						agent.targetX = dkv.x;
-						agent.targetY = dkv.y;
-						agent.path = [];
-						agent.pathIndex = 0;
+						// Skip the default desk-return when station navigation was already set
+						// (tool_call walk-to-station or tool_result walk-back-to-desk)
+						const hasStationNav =
+							(evt.state === 'tool_call' && !!agent.fx?.activeStation) ||
+							(evt.state === 'tool_result' && agent.path.length > 0);
+						if (!hasStationNav) {
+							const dk = getAgentDesk(agentId);
+							const dkv = validateTarget(dk.x, dk.y, agent.x, agent.y);
+							agent.targetX = dkv.x;
+							agent.targetY = dkv.y;
+							agent.path = [];
+							agent.pathIndex = 0;
+						}
 						break;
 					}
 
@@ -927,6 +992,9 @@ export default function OfficeStage({
 	useLayoutEffect(() => {
 		themeRef.current = theme;
 	}, [theme]);
+	useLayoutEffect(() => {
+		serviceStatusesRef.current = serviceStatuses;
+	}, [serviceStatuses]);
 
 	useEffect(() => {
 		let lastTime = 0,
@@ -1180,6 +1248,8 @@ export default function OfficeStage({
 					canvasBubbles: [],
 					tick,
 					selectedAgentId: selectedRef.current,
+					activeStations: activeStationsRef.current,
+					serviceStatuses: serviceStatusesRef.current,
 				},
 				undefined,
 				undefined,
