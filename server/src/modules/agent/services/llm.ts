@@ -31,6 +31,7 @@ import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel }
 import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from '../../../services/token-budget.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 import { isAgentFloAvailable, recordRoutingFeedback } from './agentflo-bridge.js';
+import { selectProviderForTier, isPaidTier } from '../../../services/tier-routing.js';
 
 // ---- Types ----
 
@@ -55,7 +56,7 @@ export type Intent = 'simple' | 'code-micro' | 'planning' | 'coding' | 'automati
  * Free tier: `ollama`, `openrouter-free`, `groq`, `picoclaw`, `builtin`
  * Paid tier: `openrouter`, `kimi`, `gemini`, `together`, `together-qwen`, `edith`
  */
-export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'together-qwen' | 'edith' | 'picoclaw' | 'builtin';
+export type Provider = 'ollama' | 'openrouter' | 'openrouter-free' | 'groq' | 'kimi' | 'gemini' | 'together' | 'together-qwen' | 'edith' | 'picoclaw' | 'builtin' | 'cache';
 
 /**
  * A single message in a chat conversation, matching the OpenAI-style
@@ -133,9 +134,9 @@ export function clearRoutingTraces(): void {
 
 // ---- In-Memory LLM Response Cache (L1) ----
 
-const LLM_CACHE_TTL_MS = 5 * 60 * 1000;
-const LLM_CACHE_TTL_SEC = 300;
-const LLM_CACHE_MAX = 100;
+const LLM_CACHE_TTL_MS = 10 * 60 * 1000; // 10-min TTL per spec
+const LLM_CACHE_TTL_SEC = 600;
+const LLM_CACHE_MAX = 1000; // 1000-entry LRU per spec
 const LLM_CACHE_KEY_PREFIX = 'llm:resp:';
 
 interface LLMCacheEntry {
@@ -145,9 +146,11 @@ interface LLMCacheEntry {
 
 const llmCache = new Map<string, LLMCacheEntry>();
 
-function makeCacheKey(messages: ChatMessage[], systemPrompt?: string, userId?: string): string {
-  return createHash('md5')
-    .update(JSON.stringify({ messages, systemPrompt: systemPrompt ?? '', userId: userId ?? '' }))
+function makeCacheKey(messages: ChatMessage[], systemPrompt?: string, _userId?: string): string {
+  // Key is sha256(systemPrompt + '::' + last user message) — simple content-based dedup
+  const lastMsg = messages[messages.length - 1]?.content ?? '';
+  return createHash('sha256')
+    .update((systemPrompt ?? '') + '::' + lastMsg)
     .digest('hex');
 }
 
@@ -1184,8 +1187,15 @@ export async function routeChat(
   // ---- Cache check ----
   const NEVER_CACHE = /^(hi+|hey|hello|test(?:ing)?|ok|okay|sup|yo|thanks|ty|yes|no|sure|nope)[\s!.?]*$/i;
   const lastMsgContent = (messages[messages.length - 1]?.content as string) || '';
+  // Skip cache if: guardrails disabled, has tools (<<<ACTION>>> in systemPrompt),
+  // free-tier (ollama is already local/cheap), or trivial greeting
+  const hasToolsBlock = opts?.systemPrompt?.includes('<<<ACTION>>>') ?? false;
+  const isFreeTier = !isPaidTier(opts?.userPlan) && !opts?.forceProvider;
   const isCacheable =
+    !config.disableRateLimits &&
     !opts?.forceProvider &&
+    !hasToolsBlock &&
+    !isFreeTier &&
     messages.length === 1 &&
     messages[0].role === 'user' &&
     !NEVER_CACHE.test(lastMsgContent.trim());
@@ -1196,14 +1206,14 @@ export async function routeChat(
     const memHit = getMemCached(cacheKey);
     if (memHit) {
       logger.debug({ cacheKey, intent, userId: opts?.userId, layer: 'memory' }, 'LLM cache hit');
-      return { reply: memHit, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+      return { reply: memHit, provider: 'cache', model: 'lru', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
     }
 
     const redisHit = await getRedisCached(cacheKey);
     if (redisHit) {
       logger.debug({ cacheKey, intent, userId: opts?.userId, layer: 'redis' }, 'LLM cache hit');
       setMemCached(cacheKey, redisHit);
-      return { reply: redisHit, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+      return { reply: redisHit, provider: 'cache', model: 'lru', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
     }
 
     const existing = inFlightRequests.get(cacheKey);
@@ -1212,7 +1222,7 @@ export async function routeChat(
       try {
         const deduped = await existing;
         if (deduped) {
-          return { reply: deduped, provider: 'builtin', model: 'cache', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
+          return { reply: deduped, provider: 'cache', model: 'lru', tokensIn: 0, tokensOut: 0, latencyMs: 0, costEstimate: 0, creditCost: 0, intent };
         }
       } catch {
         // In-flight failed — proceed with own request
@@ -1258,6 +1268,38 @@ export async function routeChat(
       logger.info({ userId: opts?.userId, provider, overBudget, overDailyBudget }, 'Budget exceeded — degrading from paid provider');
       provider = 'openrouter-free';
       routingReason = overDailyBudget ? 'daily_budget_exceeded' : 'budget_degradation';
+    }
+
+  } else if (isPaidTier(opts?.userPlan) && !manualOverride) {
+    // Tier-based routing for paid users — derive preferred provider from subscription plan
+    const tierIntent = (intent === 'complex' || intent === 'coding' || intent === 'planning') ? 'complex' : 'simple';
+    const tierProvider = selectProviderForTier(opts?.userPlan, tierIntent);
+    // Validate the tier provider is actually available; if not, fall through to normal waterfall
+    const tierAvailable =
+      (tierProvider === 'groq' && isGroqAvailable()) ||
+      (tierProvider === 'openrouter' && isOpenRouterAvailable()) ||
+      (tierProvider === 'openrouter-free' && isOpenRouterFreeAvailable()) ||
+      (tierProvider === 'ollama' && ollamaOk) ||
+      (tierProvider === 'together' && isTogetherAvailable()) ||
+      tierProvider === 'picoclaw';
+    if (tierAvailable) {
+      provider = tierProvider;
+      routingReason = 'ollama_healthy'; // intentional cloud routing for paid tier
+      logger.debug({ userPlan: opts?.userPlan, tierProvider, intent, tierIntent }, 'llm:tier_routing_selected');
+    } else {
+      // Tier provider unavailable — fall back to normal waterfall below
+      logger.debug({ userPlan: opts?.userPlan, tierProvider, intent }, 'llm:tier_provider_unavailable_fallback');
+      // Fall into legacy logic
+      if ((intent === 'simple' || intent === 'automation' || intent === 'code-micro') && isGroqAvailable()) {
+        provider = 'groq';
+        routingReason = 'fallback_chain';
+      } else if (ollamaOk) {
+        provider = 'ollama';
+        routingReason = 'ollama_healthy';
+      } else if (isGroqAvailable()) {
+        provider = 'groq';
+        routingReason = 'fallback_chain';
+      }
     }
 
   } else if ((intent === 'simple' || intent === 'automation' || intent === 'code-micro') && isGroqAvailable()) {

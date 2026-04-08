@@ -90,6 +90,7 @@ import {
 	routeChat,
 } from "../services/llm.js";
 import { buildPersonalityInstructions } from "../services/message-router.js";
+import { dailyRateLimit } from "../../../middleware/daily-rate-limit.js";
 import { runReactLoop } from "../services/react-loop.js";
 import { classifyMessageComplexity } from "../services/unified-agent-router.js";
 
@@ -477,6 +478,7 @@ Rules:
 router.post(
 	"/chat",
 	requireAuth,
+	dailyRateLimit,
 	aiSecurityMiddleware,
 	validateBody(chatSchema),
 	async (req: AuthRequest, res) => {
@@ -1627,6 +1629,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 						agentId: (effectiveAgentConfig?.personality as any) || undefined,
 						userCredits,
 						forceProvider: resolvedProvider,
+						userPlan,
 						userId,
 						enableDelegation: true,
 						enableReflection: true,
@@ -1636,6 +1639,7 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 						agentName: (effectiveAgentConfig?.name as string) || "Geek",
 						userCredits,
 						forceProvider: resolvedProvider,
+						userPlan,
 						userId,
 					});
 

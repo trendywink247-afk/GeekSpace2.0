@@ -10,6 +10,7 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, optionalAuth, type AuthRequest } from '../../../middleware/auth.js';
+import { dailyRateLimit } from '../../../middleware/daily-rate-limit.js';
 import { validateBody, chatSchema } from '../../../middleware/validate.js';
 import { db } from '../../../db/index.js';
 import { routeChat, classifyIntent, streamOllama, type ChatMessage, type Provider } from '../services/llm.js';
@@ -43,7 +44,7 @@ const router = Router();
  * POST /api/agent/chat/stream
  * Streaming SSE endpoint for token-by-token LLM responses.
  */
-router.post('/chat/stream', requireAuth, validateBody(chatSchema), async (req: AuthRequest, res) => {
+router.post('/chat/stream', requireAuth, dailyRateLimit, validateBody(chatSchema), async (req: AuthRequest, res) => {
   const { message } = req.body as { message: string };
   const userId = req.userId!;
 
