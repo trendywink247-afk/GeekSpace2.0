@@ -50,7 +50,6 @@ export function usePlannerBlocks({
 	// eslint-disable-next-line react-hooks/set-state-in-effect -- async function, setState is in .then() callback
 	useEffect(() => { void fetchBlocksForDate(dk); }, [dk, fetchBlocksForDate]);
 
-	// eslint-disable-next-line react-hooks/set-state-in-effect -- async function, setState is in .then() callback
 	useEffect(() => { if (viewMode === "week") weekDates.forEach((d) => void fetchBlocksForDate(dateKey(d))); }, [viewMode, weekDates, fetchBlocksForDate]);
 
 	const todayBlocks = useMemo(() => blocks[dk] || [], [blocks, dk]);
