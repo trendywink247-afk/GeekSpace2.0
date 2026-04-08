@@ -51,7 +51,7 @@ const GoalsPage = lazyRetry(() => import('./pages/GoalsPage').then(m => ({ defau
 interface DashboardRouterProps {
   currentPage: PageType;
   navigate: (path: string) => void;
-  onOpenChat: () => void;
+  onOpenChat: (initialMessage?: string) => void;
 }
 
 export function DashboardRouter({ currentPage, navigate, onOpenChat }: DashboardRouterProps) {
