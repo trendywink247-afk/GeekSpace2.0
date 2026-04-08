@@ -265,7 +265,18 @@ title: Sprint plan
 content: ...
 type: plan
 <<<END>>>
-Use save_artifact to persist notes, research, drafts, code, or plans to the shared workspace.`;
+Use save_artifact to persist notes, research, drafts, code, or plans to the shared workspace.
+<<<ACTION>>>
+tool: dev_task
+task: describe the full task (e.g. "Build a React todo list with drag-and-drop")
+<<<END>>>
+Use dev_task for non-trivial code-building jobs that need a real workspace (full React/Node projects, complex refactors). Forge prefers this tool.
+<<<ACTION>>>
+tool: analyze_image
+imageUrl: https://example.com/image.png
+prompt: Describe this image in detail.
+<<<END>>>
+Use analyze_image to analyze, describe, or extract information from an image URL. Nova prefers this tool.`;
 
 	// Build personality instructions from slider values (uses shared function from message-router)
 	const personalityInstructions = buildPersonalityInstructions(
