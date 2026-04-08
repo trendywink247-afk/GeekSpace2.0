@@ -335,6 +335,17 @@ export const TOOL_SCHEMAS: Record<string, z.ZodTypeAny> = {
     goal_id: z.string().optional(),
     agent: z.string().optional(),
   }),
+  // ── dev_task: real code-building via claude-bridge ───────
+  dev_task: z.object({
+    task: z.string().min(1).max(4000),
+    workspace: z.string().optional(),
+    timeout: z.coerce.number().int().min(10).max(1800).optional(),
+  }),
+  // ── analyze_image: Gemini 2.0 Flash vision ───────────────
+  analyze_image: z.object({
+    imageUrl: z.string().url().max(1000),
+    prompt: z.string().max(500).default('Describe this image in detail.'),
+  }),
 };
 
 // ── Types ───────────────────────────────────────────────────

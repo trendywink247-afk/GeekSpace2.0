@@ -276,11 +276,13 @@ export const config = {
   // Daily spend cap across all Together AI calls (in USD cents, default $2.00)
   togetherDailyBudgetCents: optionalInt('TOGETHER_DAILY_BUDGET_CENTS', 200),
 
+  // ---- Claude Bridge (code-building sandbox via claude-bridge) ----
+  claudeBridgeUrl: optional('CLAUDE_BRIDGE_URL', 'http://127.0.0.1:8787'),
+
   // Guardrails kill-switch — set DISABLE_RATE_LIMITS=1 in local dev / CI to skip
   // daily message caps, tool metering, and response caching.
   disableRateLimits:
-    process.env.DISABLE_RATE_LIMITS === '1' ||
-    process.env.DISABLE_RATE_LIMITS === 'true',
+    process.env.DISABLE_RATE_LIMITS === '1' || process.env.DISABLE_RATE_LIMITS === 'true',
 } as const;
 
 // ---- Startup validation ----
