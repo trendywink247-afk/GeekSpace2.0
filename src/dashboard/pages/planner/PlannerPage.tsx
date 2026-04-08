@@ -47,7 +47,7 @@ export function PlannerPage() {
             </div>
           </BlurFade>
           {viewMode === 'week' ? (
-            <WeekOverview currentDate={currentDate} weekDates={weekDates} currentHourFraction={currentHourFraction} blocks={blocks} onSelectDate={(d) => { setCurrentDate(d); setViewMode('day'); }} onGoToday={goToday} onGoPrev={goPrev} onGoNext={goNext} onWeekDrop={handleWeekDrop} />
+            <WeekOverview currentDate={currentDate} weekDates={weekDates} currentHourFraction={currentHourFraction} blocks={blocks} onSelectDate={(d: any) => { setCurrentDate(d); setViewMode('day'); }} onGoToday={goToday} onGoPrev={goPrev} onGoNext={goNext} onWeekDrop={handleWeekDrop} />
           ) : (
             <DayPlanner currentDate={currentDate} isToday={isToday} currentHourFraction={currentHourFraction} todayBlocks={todayBlocks} backlogItems={backlogItems} topThree={topThree} habitsLoading={habitsLoading} dragItem={dragItem} dropTarget={dropTarget} quickAddHour={quickAddHour} quickAddTitle={quickAddTitle} quickAddDuration={quickAddDuration} onGoPrev={goPrev} onGoNext={goNext} onGoToday={goToday} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onRemoveBlock={removeBlock} onQuickAddHourSet={setQuickAddHour} onQuickAddTitleChange={setQuickAddTitle} onQuickAddDurationChange={setQuickAddDuration} onQuickAddSubmit={handleQuickAdd} onQuickAddCancel={resetQuickAdd} />
           )}
