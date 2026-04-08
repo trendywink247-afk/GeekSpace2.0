@@ -1,123 +1,195 @@
+/* ═══════════════════════════════════════════════════════════════
+   Agentin Aurora — Design Token System v2.0
+   Palette: violet + indigo + warm amber/coral
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Backgrounds */
-  --ag-bg-deep: #05050A;
-  --ag-bg-base: #06061a;
-  --ag-bg-surface: rgba(12, 12, 30, 0.6);
-  --ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
-  --ag-bg-elevated: rgba(30, 30, 50, 0.7);
-  /* Header/footer chrome — semi-opaque for backdrop-blur to be visible */
-  --ag-bg-chrome: rgba(6, 6, 26, 0.88);
+	/* ── Aurora palette — primary ── */
+	--ag-violet: #8b5cf6; /* primary (keep) */
+	--ag-violet-deep: #7c3aed; /* hover/active */
+	--ag-violet-soft: #a78bfa; /* highlight */
 
-  /* Borders */
-  --ag-border-subtle: rgba(139, 92, 246, 0.08);
-  --ag-border-default: rgba(139, 92, 246, 0.15);
-  --ag-border-glow: rgba(139, 92, 246, 0.2);
-  --ag-border-active: rgba(139, 92, 246, 0.4);
+	--ag-indigo: #6366f1; /* cool accent (replaces cyan) */
+	--ag-indigo-deep: #4f46e5;
 
-  /* Text */
-  --ag-text-primary: #F4F6FF;
-  --ag-text-secondary: #9CA3AF;
-  --ag-text-muted: #6B7280;
-  --ag-text-accent: #A78BFA;
+	--ag-emerald: #10b981; /* success (keep) */
+	--ag-emerald-deep: #059669;
 
-  /* Accents */
-  --ag-violet: #8B5CF6;
-  --ag-cyan: #A78BFA;
-  --ag-green: #10B981;
-  --ag-amber: #F59E0B;
-  --ag-pink: #FF2D78;
-  --ag-lime: #ADFF2F;
+	--ag-amber: #f59e0b; /* warning / warm accent */
+	--ag-amber-deep: #d97706;
 
-  /* Agent Colors */
-  --ag-weebo: #A78BFA;
-  --ag-edith: #8B5CF6;
-  --ag-jarvis: #ADFF2F;
-  --ag-aria: #FF6B9D;
-  --ag-forge: #F59E0B;
-  --ag-pulse: #10B981;
-  --ag-echo: #6366F1;
-  --ag-cal: #84CC16;
-  --ag-nova: #EC4899;
+	--ag-coral: #fb923c; /* CTA accent (replaces pink) */
+	--ag-coral-deep: #f97316;
 
-  /* Effects */
-  --ag-glow-sm: 0 0 10px rgba(139, 92, 246, 0.1);
-  --ag-glow-md: 0 0 20px rgba(139, 92, 246, 0.15);
-  --ag-glow-lg: 0 0 40px rgba(139, 92, 246, 0.2);
-  --ag-noise-opacity: 0.025;
+	--ag-rose: #e11d48; /* destructive only — NOT pink */
+	--ag-rose-deep: #be123c;
 
-  /* Spacing */
-  --ag-radius-sm: 8px;
-  --ag-radius-md: 12px;
-  --ag-radius-lg: 16px;
-  --ag-radius-xl: 24px;
+	--ag-chartreuse: #84cc16; /* highlights */
 
-  /* Motion — SUBTLE, entrance-only */
-  --ag-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --ag-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --ag-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	--ag-slate: #64748b;
+	--ag-slate-deep: #475569;
+	--ag-slate-soft: #94a3b8;
 
-  /* Glass morphism */
-  --ag-glass-bg: rgba(12, 12, 30, 0.4);
-  --ag-glass-border: rgba(139, 92, 246, 0.12);
-  --ag-glass-blur: 16px;
+	/* ── Backward-compat aliases so existing code doesn't break ── */
+	--ag-cyan: var(--ag-indigo); /* mask cyan → indigo */
+	--ag-pink: var(--ag-coral); /* mask pink → coral */
+	--ag-lime: var(--ag-chartreuse); /* lime alias */
+	--ag-gold: var(--ag-amber); /* gold alias */
+	--ag-green: var(--ag-emerald); /* green alias */
+	--ag-magenta: var(--ag-coral); /* magenta alias */
 
-  /* Active/focus states */
-  --ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.3);
-  --ag-active-bg: rgba(139, 92, 246, 0.08);
-  --ag-active-border: rgba(139, 92, 246, 0.25);
+	/* ── Agent brand colors (keep legacy names) ── */
+	--ag-weebo: #a78bfa;
+	--ag-edith: #8b5cf6;
+	--ag-jarvis: #84cc16;
+	--ag-aria: #fb923c;
+	--ag-forge: #f59e0b;
+	--ag-pulse: #10b981;
+	--ag-echo: #6366f1;
+	--ag-cal: #84cc16;
+	--ag-nova: #fb923c;
 
-  /* Gradients */
-  --ag-gradient-aurora: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.04) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.03) 0%, transparent 50%);
+	/* ── Background stack ── */
+	--ag-bg-deep: #05050a;
+	--ag-bg-base: #06061a;
+	--ag-bg-surface: rgba(12, 12, 30, 0.6);
+	--ag-bg-surface-hover: rgba(20, 20, 40, 0.8);
+	--ag-bg-elevated: rgba(30, 30, 50, 0.7);
+	--ag-bg-chrome: rgba(6, 6, 26, 0.88); /* Header/footer chrome */
 
-  /* Scrollbar */
-  --ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
-  --ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
+	/* ── Borders ── */
+	--ag-border-subtle: rgba(139, 92, 246, 0.08);
+	--ag-border-default: rgba(139, 92, 246, 0.15);
+	--ag-border-glow: rgba(139, 92, 246, 0.2);
+	--ag-border-active: rgba(139, 92, 246, 0.4);
+	--ag-border-warm: rgba(251, 146, 60, 0.25); /* coral border for CTAs */
+	--ag-border-success: rgba(16, 185, 129, 0.3);
+	--ag-border-danger: rgba(225, 29, 72, 0.35);
+
+	/* ── Text ── */
+	--ag-text-primary: #f4f6ff;
+	--ag-text-secondary: #9ca3af;
+	--ag-text-muted: #6b7280;
+	--ag-text-accent: var(--ag-violet-soft);
+
+	/* ── Glows ── */
+	--ag-glow-sm: 0 0 20px rgba(139, 92, 246, 0.15);
+	--ag-glow-md: 0 0 40px rgba(139, 92, 246, 0.2);
+	--ag-glow-lg: 0 0 80px rgba(139, 92, 246, 0.3);
+	--ag-glow-warm: 0 0 30px rgba(251, 146, 60, 0.25);
+	--ag-glow-success: 0 0 30px rgba(16, 185, 129, 0.25);
+
+	/* ── Spacing / Radius ── */
+	--ag-radius-sm: 8px;
+	--ag-radius-md: 12px;
+	--ag-radius-lg: 16px;
+	--ag-radius-xl: 24px;
+
+	/* ── Motion — SUBTLE, entrance-only ── */
+	--ag-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	--ag-transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+	--ag-transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	/* ── Glass morphism ── */
+	--ag-glass-bg: rgba(12, 12, 30, 0.4);
+	--ag-glass-border: rgba(139, 92, 246, 0.12);
+	--ag-glass-blur: 16px;
+
+	/* ── Active / focus states ── */
+	--ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.3);
+	--ag-active-bg: rgba(139, 92, 246, 0.08);
+	--ag-active-border: rgba(139, 92, 246, 0.25);
+
+	/* ── Gradients ── */
+	--ag-gradient-aurora:
+		radial-gradient(
+			ellipse at 20% 50%,
+			rgba(139, 92, 246, 0.06) 0%,
+			transparent 50%
+		),
+		radial-gradient(
+			ellipse at 80% 20%,
+			rgba(99, 102, 241, 0.04) 0%,
+			transparent 40%
+		),
+		radial-gradient(
+			ellipse at 50% 80%,
+			rgba(251, 146, 60, 0.03) 0%,
+			transparent 50%
+		);
+
+	/* ── Scrollbar ── */
+	--ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
+	--ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
+
+	/* ── Noise ── */
+	--ag-noise-opacity: 0.025;
 }
 
-/* ─── Light Mode ─── */
-.light, [data-theme='light'] {
-  /* Backgrounds */
-  --ag-bg-deep: #F8F9FC;
-  --ag-bg-base: #FFFFFF;
-  --ag-bg-surface: rgba(255, 255, 255, 0.8);
-  --ag-bg-surface-hover: rgba(248, 249, 252, 0.95);
-  --ag-bg-elevated: rgba(255, 255, 255, 0.95);
+/* ═══════════════════════════════════════════════════════════════
+   Light Mode Aurora — same palette, inverted backgrounds
+   ═══════════════════════════════════════════════════════════════ */
+html:not(.dark),
+.light,
+[data-theme="light"] {
+	--ag-bg-deep: #f7f7fb;
+	--ag-bg-base: #f2f2f8;
+	--ag-bg-surface: rgba(255, 255, 255, 0.7);
+	--ag-bg-surface-hover: rgba(255, 255, 255, 0.95);
+	--ag-bg-elevated: #ffffff;
+	--ag-bg-chrome: rgba(247, 247, 251, 0.85);
 
-  /* Borders */
-  --ag-border-subtle: rgba(139, 92, 246, 0.1);
-  --ag-border-default: rgba(139, 92, 246, 0.18);
-  --ag-border-glow: rgba(139, 92, 246, 0.15);
-  --ag-border-active: rgba(139, 92, 246, 0.3);
+	--ag-border-subtle: rgba(15, 15, 35, 0.08);
+	--ag-border-default: rgba(15, 15, 35, 0.14);
+	--ag-border-glow: rgba(124, 58, 237, 0.25);
+	--ag-border-active: rgba(124, 58, 237, 0.45);
 
-  /* Text */
-  --ag-text-primary: #1A1A2E;
-  --ag-text-secondary: #4B5563;
-  --ag-text-muted: #9CA3AF;
-  --ag-text-accent: #7C3AED;
+	--ag-text-primary: #0b0b1a;
+	--ag-text-secondary: #4b5563;
+	--ag-text-muted: #6b7280;
+	--ag-text-accent: #7c3aed;
 
-  /* Effects */
-  --ag-glow-sm: 0 1px 3px rgba(139, 92, 246, 0.08);
-  --ag-glow-md: 0 4px 12px rgba(139, 92, 246, 0.1);
-  --ag-glow-lg: 0 8px 24px rgba(139, 92, 246, 0.12);
-  --ag-noise-opacity: 0.015;
+	/* Light-adjusted accents */
+	--ag-violet: #7c3aed;
+	--ag-coral: #f97316;
+	--ag-amber: #d97706;
+	--ag-emerald: #059669;
 
-  /* Glass morphism */
-  --ag-glass-bg: rgba(255, 255, 255, 0.6);
-  --ag-glass-border: rgba(139, 92, 246, 0.12);
+	/* Light glows */
+	--ag-glow-sm: 0 1px 3px rgba(139, 92, 246, 0.08);
+	--ag-glow-md: 0 4px 12px rgba(139, 92, 246, 0.1);
+	--ag-glow-lg: 0 8px 24px rgba(139, 92, 246, 0.12);
+	--ag-glow-warm: 0 4px 12px rgba(249, 115, 22, 0.15);
+	--ag-glow-success: 0 4px 12px rgba(5, 150, 105, 0.15);
 
-  /* Active/focus states */
-  --ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.25);
-  --ag-active-bg: rgba(139, 92, 246, 0.06);
-  --ag-active-border: rgba(139, 92, 246, 0.2);
+	/* Light glass */
+	--ag-glass-bg: rgba(255, 255, 255, 0.6);
+	--ag-glass-border: rgba(139, 92, 246, 0.12);
 
-  /* Gradients */
-  --ag-gradient-aurora: radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.03) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, rgba(245,158,11,0.02) 0%, transparent 50%);
+	/* Light active/focus */
+	--ag-focus-ring: 0 0 0 2px rgba(139, 92, 246, 0.25);
+	--ag-active-bg: rgba(139, 92, 246, 0.06);
+	--ag-active-border: rgba(139, 92, 246, 0.2);
 
-  /* Scrollbar */
-  --ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
-  --ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
+	/* Light gradient */
+	--ag-gradient-aurora:
+		radial-gradient(
+			ellipse at 20% 50%,
+			rgba(139, 92, 246, 0.04) 0%,
+			transparent 50%
+		),
+		radial-gradient(
+			ellipse at 80% 20%,
+			rgba(99, 102, 241, 0.03) 0%,
+			transparent 40%
+		),
+		radial-gradient(
+			ellipse at 50% 80%,
+			rgba(251, 146, 60, 0.02) 0%,
+			transparent 50%
+		);
+
+	--ag-scrollbar-thumb: rgba(139, 92, 246, 0.15);
+	--ag-scrollbar-thumb-hover: rgba(139, 92, 246, 0.3);
+	--ag-noise-opacity: 0.015;
 }

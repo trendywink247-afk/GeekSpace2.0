@@ -36,7 +36,7 @@ const ImageToolsPage = lazy(() =>
 const UiShowcase = import.meta.env.DEV
 	? lazy(() =>
 			import("./dev/UiShowcase").then((m) => ({ default: m.UiShowcase })),
-	  )
+		)
 	: null;
 
 import { useThemeStore } from "@/stores/theme-store";
@@ -180,10 +180,29 @@ function App() {
 							}
 						/>
 
-						{/* Dev-only: mobile primitives showcase */}
+						{/* Dev-only: UI primitives showcase (Phase 0 + Aurora) */}
 						{import.meta.env.DEV && UiShowcase && (
 							<Route
 								path="/dev/ui"
+								element={
+									<Suspense
+										fallback={
+											<div className="flex items-center justify-center min-h-screen">
+												<div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+											</div>
+										}
+									>
+										<UiShowcase />
+									</Suspense>
+								}
+							/>
+						)}
+
+						
+						{/* Alias: /dev/ui-agentin also loads the Aurora showcase */}
+						{import.meta.env.DEV && UiShowcase && (
+							<Route
+								path="/dev/ui-agentin"
 								element={
 									<Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" /></div>}>
 										<UiShowcase />
