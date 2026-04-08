@@ -125,12 +125,12 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.7: Reminder dead-letter table ─────────────────────────────
   describe('78.7: Reminder dead-letter logging', () => {
     it('creates reminder_dead_letters table in db schema', () => {
-      const src = readFile('server/src/db/index.ts');
+      const src = readFile('server/src/db/migrations.ts');
       expect(src).toContain('reminder_dead_letters');
     });
 
     it('dead-letter table has required columns', () => {
-      const src = readFile('server/src/db/index.ts');
+      const src = readFile('server/src/db/migrations.ts');
       expect(src).toContain('reminder_id TEXT NOT NULL');
       expect(src).toContain('channel TEXT NOT NULL');
       expect(src).toContain('error TEXT DEFAULT');

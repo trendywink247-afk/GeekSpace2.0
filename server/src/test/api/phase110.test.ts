@@ -60,8 +60,8 @@ afterAll(() => {
 // ── 110.1  Timezone column and endpoint ─────────────────────────────────────
 
 describe('110.1 Timezone column and endpoint', () => {
-  it('db/index.ts adds timezone column to users table via ALTER TABLE', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db migrations adds timezone column to users table via ALTER TABLE', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('ALTER TABLE users ADD COLUMN timezone');
   });
 
@@ -128,8 +128,8 @@ describe('110.1 Timezone column and endpoint', () => {
     expect(src).toContain("timezone: user.timezone");
   });
 
-  it('action-executor.ts looks up users.timezone before calling parseReminderTime', () => {
-    const src = readSrc('modules', 'agent', 'services', 'action-executor.ts');
+  it('tools-executor.ts looks up users.timezone before calling parseReminderTime', () => {
+    const src = readSrc('modules', 'agent', 'services', 'executors', 'tools-executor.ts');
     expect(src).toContain('SELECT timezone FROM users WHERE id = ?');
     // parseReminderTime is called with userTimezone; bare params.datetime routes through it too
     expect(src).toContain('parseReminderTime(');
@@ -248,9 +248,9 @@ describe('110.2 parseReminderTime timezone correctness', () => {
     expect([13, 14]).toContain(utcHour);
   });
 
-  it('[hotfix] action-executor does NOT use params.datetime raw when it is a bare time', () => {
+  it('[hotfix] tools-executor does NOT use params.datetime raw when it is a bare time', () => {
     // Ensures the bypass path is gone: bare times must go through parseReminderTime
-    const src = readSrc('modules', 'agent', 'services', 'action-executor.ts');
+    const src = readSrc('modules', 'agent', 'services', 'executors', 'tools-executor.ts');
     // The old single-line bypass: "params.datetime as string || parseReminderTime(text"
     expect(src).not.toContain("params.datetime as string || parseReminderTime(text");
     // The new path guards for full ISO before trusting params.datetime
@@ -303,27 +303,27 @@ describe('110.3 Reminder notification — no memory leak (Bug 2 regression guard
 // ── 110.4  Image URL not sent as text (Bug 3 regression guard) ───────────────
 
 describe('110.4 Image/video URL not sent as raw text', () => {
-  it('message-router.ts buildActionChannelSuffix skips generate_image with imageUrl', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts buildActionChannelSuffix skips generate_image with imageUrl', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     // The guard that prevents raw URL text emission
     expect(src).toContain("ar.tool === 'generate_image' && ar.imageUrl");
     expect(src).toContain('continue');
   });
 
-  it('message-router.ts buildActionChannelSuffix skips generate_video with videoUrl', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts buildActionChannelSuffix skips generate_video with videoUrl', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     expect(src).toContain("ar.tool === 'generate_video' && ar.videoUrl");
   });
 
-  it('message-router.ts does NOT append imageUrl as raw text suffix', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts does NOT append imageUrl as raw text suffix', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     // No pattern like "\n🖼️ " + imageUrl or similar raw text appending
     expect(src).not.toMatch(/\\n.*imageUrl/);
     expect(src).not.toMatch(/Image.*:\s*\$\{.*imageUrl/);
   });
 
-  it('message-router.ts does NOT append videoUrl as raw text suffix', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts does NOT append videoUrl as raw text suffix', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     expect(src).not.toMatch(/\\n.*videoUrl/);
     expect(src).not.toMatch(/Video.*:\s*\$\{.*videoUrl/);
   });
@@ -465,8 +465,8 @@ describe('110.7 IST hardcode removed from message-router', () => {
     expect(src).not.toContain('.replace("GMT", "IST")');
   });
 
-  it('message-router.ts imports DateTime from luxon (timezone-aware time handling)', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts imports DateTime from luxon (timezone-aware time handling)', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     expect(src).toContain("from 'luxon'");
     expect(src).toContain('DateTime');
   });
@@ -585,14 +585,14 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
 
   // ---- system prompt language rule ----
 
-  it('message-router.ts buildChannelSystemPrompt has LANGUAGE RULE at top', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts buildChannelSystemPrompt has LANGUAGE RULE at top', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     expect(src).toContain('LANGUAGE RULE');
     expect(src).toContain('YOUR IDENTITY');
   });
 
-  it('message-router.ts system prompt names the agent explicitly at top', () => {
-    const src = readSrc('modules', 'agent', 'services', 'message-router.ts');
+  it('prompt-builder.ts system prompt names the agent explicitly at top', () => {
+    const src = readSrc('modules', 'agent', 'services', 'prompt-builder.ts');
     // Agent name is declared at top of prompt, not just in USER SESSION
     expect(src).toContain('YOUR IDENTITY: Your name is');
   });

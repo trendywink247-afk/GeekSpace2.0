@@ -66,13 +66,13 @@ describe('Phase 79 — Structured Memory Pipeline + Reminder Consistency', () =>
 
   // ── 79.3: Memory context injected into system prompt ────────────
   describe('79.3: Memory read — inject into system prompt', () => {
-    it('buildMemoryContext is called in message-router.ts with user message', () => {
-      const src = readFile('server/src/modules/agent/services/message-router.ts');
+    it('buildMemoryContext is called in prompt-builder.ts with user message', () => {
+      const src = readFile('server/src/modules/agent/services/prompt-builder.ts');
       expect(src).toContain('buildMemoryContext(userId, userMessage)');
     });
 
     it('memory block is included in channel system prompt', () => {
-      const src = readFile('server/src/modules/agent/services/message-router.ts');
+      const src = readFile('server/src/modules/agent/services/prompt-builder.ts');
       expect(src).toContain('memoryBlock');
     });
 

@@ -72,17 +72,17 @@ describe("102.1 File structure", () => {
   });
 
   it("db/index.ts defines focus_sessions table", () => {
-    const src = readSrc("db", "index.ts");
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("CREATE TABLE IF NOT EXISTS focus_sessions");
   });
 
   it("db/index.ts defines habit_logs table", () => {
-    const src = readSrc("db", "index.ts");
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("CREATE TABLE IF NOT EXISTS habit_logs");
   });
 
   it("db/index.ts defines notes table", () => {
-    const src = readSrc("db", "index.ts");
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("CREATE TABLE IF NOT EXISTS notes");
   });
 });
