@@ -7,8 +7,8 @@ import { PageShell, PageHeader, SectionCard } from '@/components/agentin';
 import { DashboardPageWrapper } from '@/components/agentin';
 import { useAgentCanvas } from '@/hooks/use-agent-canvas';
 import { BlurFade } from '@/components/magicui/blur-fade';
-import { InboxPage } from './InboxPage';
-import { GmailPage } from './GmailPage';
+import { InboxPage } from '../InboxPage';
+import { GmailPage } from '../GmailPage';
 
 type TabId = 'all' | 'gmail';
 
