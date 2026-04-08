@@ -425,14 +425,14 @@ describe('110.5 Two-user reminder isolation', () => {
 
 describe('110.6 Voice note handling', () => {
   it('webhooks.ts voice handler uses Groq Whisper transcription (fully implemented)', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     // Voice notes are now fully implemented via Groq Whisper + edge-tts
     expect(src).toContain('transcribeVoice(');
     expect(src).not.toContain('Voice notes are coming soon');
   });
 
   it('webhooks.ts handleVoiceMessage has error handling (try/catch)', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     const voiceHandlerStart = src.indexOf('handleVoiceMessage');
     const voiceHandlerSnippet = src.slice(voiceHandlerStart, voiceHandlerStart + 3000);
     expect(voiceHandlerSnippet).toContain('try {');
@@ -440,13 +440,13 @@ describe('110.6 Voice note handling', () => {
   });
 
   it('webhooks.ts voice path calls textToSpeech and sendTelegramVoice', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('textToSpeech(');
     expect(src).toContain('sendTelegramVoice(');
   });
 
   it('webhooks.ts checks isVoiceEnabled() before processing voice', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('isVoiceEnabled()');
   });
 });
@@ -566,19 +566,19 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   // ---- webhooks.ts voice handler multilingual fix ----
 
   it('webhooks.ts voice handler detects non-Latin script in transcript', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('transcriptHasNonLatin');
     expect(src).toContain('Script=Devanagari');
   });
 
   it('webhooks.ts voice handler detects Hinglish in transcript', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('HINGLISH_WORDS_VOICE');
     expect(src).toContain('transcriptIsHinglish');
   });
 
   it('webhooks.ts voice handler forces Groq for non-Latin transcripts', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('voiceNeedsGroq');
     expect(src).toContain("forceProvider: 'groq'");
   });
@@ -598,7 +598,7 @@ describe('110.8 Multilingual support — routing + TTS voice selection', () => {
   });
 
   it('webhooks.ts voice handler has language-match instruction in systemPromptWithLang', () => {
-    const src = readSrc('routes', 'webhooks.ts');
+    const src = readSrc('modules', 'integrations', 'routes', 'webhooks.ts');
     expect(src).toContain('systemPromptWithLang');
     expect(src).toContain('Always reply in the exact same language');
   });

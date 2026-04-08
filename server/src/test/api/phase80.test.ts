@@ -173,26 +173,26 @@ describe('Phase 80 — Voice Pipeline (STT + TTS)', () => {
 
   // ── 80.5/80.6/80.7: Frontend voice recorder + TTS ───────────────
   describe('80.5/80.6/80.7: Frontend voice + TTS', () => {
-    it('voiceService and jobsService are exported from api.ts', () => {
-      const src = readFile('src/services/api.ts');
+    it('voiceService and jobsService are exported from media-services.ts', () => {
+      const src = readFile('src/services/media-services.ts');
       expect(src).toContain('export const voiceService');
       expect(src).toContain('export const jobsService');
     });
 
     it('voiceService.transcribe calls POST /api/voice/transcribe', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const voiceService'));
       expect(section).toContain('/api/voice/transcribe');
     });
 
     it('voiceService.speak calls POST /voice/speak', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const voiceService'));
       expect(section).toContain('/voice/speak');
     });
 
     it('jobsService.pollUntilDone polls until done or failed', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const jobsService'));
       expect(section).toContain("status === 'done'");
       expect(section).toContain("status === 'failed'");

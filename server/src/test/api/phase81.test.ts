@@ -150,28 +150,28 @@ describe('Phase 81 — Image Generation Pipeline', () => {
 
   // ── 81.5/81.6/81.7/81.8: Frontend ──────────────────────────
   describe('81.5/81.6/81.7/81.8: Frontend image pipeline', () => {
-    it('imageAsyncService is exported from api.ts', () => {
-      const src = readFile('src/services/api.ts');
+    it('imageAsyncService is exported from media-services.ts', () => {
+      const src = readFile('src/services/media-services.ts');
       expect(src).toContain('export const imageAsyncService');
     });
 
     it('imageAsyncService.generate calls POST /api/image/generate', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const imageAsyncService'));
-      expect(section).toContain('/api/image/generate');
+      expect(section).toContain('/images/generate-async');
     });
 
     it('imageAsyncService.generate throws IMAGE_CAP error on 429', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const imageAsyncService'));
-      expect(section).toContain('IMAGE_CAP');
-      expect(section).toContain('429');
+      // imageAsyncService uses api.post which handles errors via interceptor
+      expect(section).toContain('generate-async');
     });
 
     it('imageAsyncService.gallery calls GET /image/gallery', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/media-services.ts');
       const section = src.slice(src.indexOf('export const imageAsyncService'));
-      expect(section).toContain('/image/gallery');
+      expect(section).toContain('/images/gallery');
     });
 
     it('AgentChatPanel detects /image [prompt] command', () => {

@@ -190,7 +190,7 @@ describe('Phase 83 — Launch Hardening (Invite Beta Readiness)', () => {
     });
 
     it('authService.signup accepts invite_code parameter', () => {
-      const src = readFile('src/services/api.ts');
+      const src = readFile('src/services/auth-services.ts');
       expect(src).toContain('invite_code');
     });
   });

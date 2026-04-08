@@ -37,10 +37,8 @@ import { focusModule } from './modules/focus/index.js';
 import { commsModule } from './modules/comms/index.js';
 import { geekosModule } from './modules/geekos/index.js';
 import { officeModule } from './modules/office/index.js';
-// Remaining direct route imports (not covered by modules)
-import { directoryRouter } from './routes/directory.js';
-import { webhooksRouter } from './routes/webhooks.js';
-import { picoRouter } from './routes/pico.js';
+// Routes now live inside their respective modules (re-exported for backward compat)
+// directoryRouter → portfolio module, webhooksRouter → integrations module, picoRouter → agent module
 import { artifactsRouter } from './modules/content/index.js';
 import { metricsMiddleware, getPrometheusMetrics } from './middleware/metrics.js';
 import { requireAuth } from './middleware/auth.js';
@@ -479,11 +477,6 @@ export function createApp(): express.Application {
   commsModule.registerRoutes(app);
   geekosModule.registerRoutes(app);
   officeModule.registerRoutes(app);
-
-  // ---- Remaining routes (standalone, not grouped into a module) ----
-  app.use('/api/directory', directoryRouter);
-  app.use('/api/webhooks', webhooksRouter);
-  app.use('/api/pico', picoRouter);
 
   // ---- Gate password verification (sets access cookie server-side) ----
   app.post('/api/gate-verify', (req, res) => {

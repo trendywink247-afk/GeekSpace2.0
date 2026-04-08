@@ -216,8 +216,8 @@ describe('Phase 82 — Store Safety + Polish', () => {
       expect(src).toContain('permanently deleted');
     });
 
-    it('authService.deleteUserAccount is in api.ts', () => {
-      const src = readFile('src/services/api.ts');
+    it('authService.deleteUserAccount is in auth-services.ts', () => {
+      const src = readFile('src/services/auth-services.ts');
       expect(src).toContain('deleteUserAccount');
       expect(src).toContain("'/auth/delete-account'");
     });

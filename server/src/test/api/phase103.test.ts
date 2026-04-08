@@ -111,14 +111,14 @@ describe('Phase 103: Plan cap fixes', () => {
 
   describe('webhooks.ts voice handling', () => {
     it('voice pipeline fully implemented with Groq Whisper + edge-tts', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/integrations/routes/webhooks.ts'), 'utf-8');
       // Voice notes are now fully implemented — no longer a stub
       expect(content).toContain('transcribeVoice(');
       expect(content).toContain('textToSpeech(');
       expect(content).not.toMatch(/[Vv]oice notes.*coming soon|coming soon.*[Vv]oice/);
     });
     it('voice handler has try/catch error handling', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'routes/webhooks.ts'), 'utf-8');
+      const content = readFileSync(resolve(SERVER_SRC, 'modules/integrations/routes/webhooks.ts'), 'utf-8');
       const handlerStart = content.indexOf('handleVoiceMessage');
       const handlerSnippet = content.slice(handlerStart, handlerStart + 3000);
       expect(handlerSnippet).toContain('try {');
