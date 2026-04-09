@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // ============================================================
 // Chat markdown renderer — extracted from AgentChatPanel.tsx
 // ============================================================

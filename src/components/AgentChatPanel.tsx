@@ -367,7 +367,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner, initialMessage, on
         setAgentMsg({ content: '🎨 Generating image…', isStreaming: true });
         (async () => {
           try {
-            const { jobId } = await imageAsyncService.generate(imagePrompt);
+            const { data: { jobId } } = await imageAsyncService.generate(imagePrompt);
             const job = await jobsService.pollUntilDone(jobId, 60, 2000);
             const result = job.result as { imageUrl: string; imageId: string; prompt: string } | undefined;
             if (job.status === 'done' && result?.imageUrl) {
