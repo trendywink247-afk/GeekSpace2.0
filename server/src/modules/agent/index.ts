@@ -10,6 +10,7 @@ export { default as agentRouter } from './routes/index.js';
 export { agentStateRouter } from './routes/agent-state.js';
 export { agentTasksRouter } from './routes/agent-tasks.js';
 export { agentCommsRouter } from './routes/agent-comms.js';
+export { picoRouter } from './routes/pico.js';
 
 // Re-export services from local module paths
 export { handleIncomingMessage, buildPersonalityInstructions } from './services/message-router.js';
@@ -62,6 +63,7 @@ import agentRouter from './routes/index.js';
 import { agentStateRouter } from './routes/agent-state.js';
 import { agentTasksRouter } from './routes/agent-tasks.js';
 import { agentCommsRouter } from './routes/agent-comms.js';
+import { picoRouter } from './routes/pico.js';
 
 export const agentModule: AppModule = {
   name: 'agent',
@@ -71,5 +73,6 @@ export const agentModule: AppModule = {
     app.use('/api/agent-state', agentStateRouter);
     app.use('/api/agent-tasks', agentTasksRouter);
     app.use('/api/agent-comms', agentCommsRouter);
+    app.use('/api/pico', picoRouter);
   },
 };

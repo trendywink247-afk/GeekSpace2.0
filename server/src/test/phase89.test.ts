@@ -335,7 +335,7 @@ describe('89.10 BillingPage Stripe UI', () => {
   });
 
   it('BillingPage calls getStripeStatus API', () => {
-    const content = readSrc('services/api.ts');
+    const content = readSrc('services/billing-services.ts');
     expect(content).toContain('getStripeStatus');
     expect(content).toContain('createCheckout');
   });

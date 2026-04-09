@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { notify } from '@/services/notifications';
-import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Copy, Check, Bookmark, BookmarkCheck, Volume2, Loader2, Flag } from 'lucide-react';
+import { X, Send, Sparkles, Mic, RotateCcw, Zap, Rocket, Square, Search, Download, CreditCard, ArrowDown, Bookmark, BookmarkCheck, Volume2, Loader2, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDashboardStore } from '@/stores/dashboard-store';
@@ -13,8 +13,19 @@ import { ActionResultCard } from './ActionResultCard';
 import { MessageReactions } from './MessageReactions';
 import { useMobileDetect } from '@/hooks/use-mobile-detect';
 import { Skeleton } from '@/components/ui/skeleton';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+
+// Extracted sub-components
+import { renderMessageContent } from './chat-panel/ChatMarkdown';
+import {
+  type ChatMessage,
+  type AgentChatPanelProps,
+  personalityMeta,
+  providerLabels,
+  formatModelName,
+  PLAN_DISPLAY,
+  suggestedPrompts,
+  USE_CASE_TIPS,
+} from './chat-panel/chat-types';
 
 // Browser SpeechRecognition (Chrome/Edge — not in @types/dom by default)
 declare global {
@@ -36,236 +47,6 @@ declare global {
     results: SpeechRecognitionResultList;
   }
 }
-
-// 42.3: CodeBlock — renders a fenced code block with a Copy button
-function CodeBlock({ code, lang }: { code: string; lang?: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <div className="relative my-2 rounded-lg overflow-hidden border border-[#A78BFA]/20">
-      <div className="flex items-center justify-between px-3 py-1 bg-[#0A0A1A]">
-        <span className="text-[10px] text-[var(--ag-text-muted)]">{lang || 'code'}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] text-[var(--ag-text-muted)] hover:text-[var(--ag-cyan)] transition-colors"
-          title="Copy code"
-        >
-          {copied ? <Check className="w-3 h-3 text-[#00FF88]" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <pre className="p-3 overflow-x-auto text-xs text-[#E8E8F0] bg-[var(--ag-bg-deep)] leading-relaxed whitespace-pre">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
-
-// 42.3: Render message content with full markdown support
-function renderMessageContent(content: string): React.ReactNode {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        // Code blocks with copy button
-        code({ className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          const codeStr = String(children).replace(/\n$/, '');
-          // Inline code
-          if (!match && !codeStr.includes('\n')) {
-            return (
-              <code className="px-1.5 py-0.5 rounded bg-[#1A1A2E] text-[var(--ag-cyan)] text-xs font-mono" {...props}>
-                {children}
-              </code>
-            );
-          }
-          // Fenced code block
-          return <CodeBlock lang={match?.[1] || ''} code={codeStr} />;
-        },
-        // Paragraphs
-        p({ children }) {
-          return <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>;
-        },
-        // Bold
-        strong({ children }) {
-          return <strong className="font-semibold text-[var(--ag-text-primary)]">{children}</strong>;
-        },
-        // Links
-        a({ href, children }) {
-          return (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--ag-cyan)] hover:underline">
-              {children}
-            </a>
-          );
-        },
-        // Lists
-        ul({ children }) {
-          return <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>;
-        },
-        ol({ children }) {
-          return <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>;
-        },
-        li({ children }) {
-          return <li className="text-sm">{children}</li>;
-        },
-        // Headings
-        h1({ children }) {
-          return <h1 className="text-lg font-bold text-[var(--ag-text-primary)] mb-2 mt-3">{children}</h1>;
-        },
-        h2({ children }) {
-          return <h2 className="text-base font-bold text-[var(--ag-text-primary)] mb-1.5 mt-2">{children}</h2>;
-        },
-        h3({ children }) {
-          return <h3 className="text-sm font-semibold text-[var(--ag-text-primary)] mb-1 mt-2">{children}</h3>;
-        },
-        // Blockquote
-        blockquote({ children }) {
-          return (
-            <blockquote className="border-l-2 border-[#A78BFA]/30 pl-3 my-2 text-[var(--ag-text-secondary)] italic">
-              {children}
-            </blockquote>
-          );
-        },
-        // Table
-        table({ children }) {
-          return (
-            <div className="overflow-x-auto my-2">
-              <table className="min-w-full text-xs border-collapse">{children}</table>
-            </div>
-          );
-        },
-        th({ children }) {
-          return <th className="px-3 py-1.5 text-left font-semibold text-[#E8E8F0] bg-[#1A1A2E] border border-white/10">{children}</th>;
-        },
-        td({ children }) {
-          return <td className="px-3 py-1.5 text-[#C0C0D0] border border-white/10">{children}</td>;
-        },
-        // Horizontal rule
-        hr() {
-          return <hr className="border-white/10 my-3" />;
-        },
-        // Task list items
-        input({ checked, ...props }) {
-          return (
-            <input
-              type="checkbox"
-              checked={checked}
-              readOnly
-              className="mr-1.5 rounded border-gray-600 text-[var(--ag-cyan)]"
-              {...props}
-            />
-          );
-        },
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
-}
-
-const personalityMeta: Record<AgentPersonality, { emoji: string; name: string; greeting: string }> = {
-  edith: { emoji: '🔷', name: 'Edith', greeting: "What do you need? I'm ready." },
-  jarvis: { emoji: '🟣', name: 'Jarvis', greeting: "Good day. How may I assist you?" },
-  weebo: { emoji: '💚', name: 'Weebo', greeting: "Hiii! What are we working on today?!" },
-  aria: { emoji: '🎨', name: 'Aria', greeting: "Hey! Let's create something amazing." },
-  forge: { emoji: '🔧', name: 'Forge', greeting: "Forge here. What are we building?" },
-  pulse: { emoji: '📊', name: 'Pulse', greeting: "Pulse online. What data do you need?" },
-  echo: { emoji: '💙', name: 'Echo', greeting: "Hey, Echo here. What are we working on?" },
-  cal: { emoji: '📅', name: 'Cal', greeting: "Cal here. Let's get organized." },
-  nova: { emoji: '🔭', name: 'Nova', greeting: "Nova here! Ready to explore." },
-};
-
-const providerLabels: Record<string, string> = {
-  picoclaw: 'Weebo Engine',
-  ollama: 'Local Engine',
-  openrouter: 'Cloud Engine',
-  'openrouter-free': 'Cloud Engine',
-  edith: 'Premium Engine',
-  builtin: 'Built-in',
-};
-
-function formatModelName(model: string): string {
-  if (!model || model === 'builtin-fallback' || model === 'error-fallback' || model === 'picoclaw-haiku') return '';
-  const base = model.replace(/:free$/, '').split('/').pop() || '';
-  return base.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
-}
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'agent' | 'system';
-  content: string;
-  timestamp: Date;
-  provider?: string;
-  model?: string;
-  isStreaming?: boolean;
-  retryContent?: string;
-  actions?: Array<{
-    tool: string;
-    success: boolean;
-    message: string;
-    artifactId?: string;
-    data?: Record<string, unknown>;
-    receipt?: { icon: string; text: string; details?: string; link?: string };
-  }>;
-  receipts?: Array<{ icon: string; text: string; details?: string; link?: string }>;
-  /** 81.7: URL of generated image to render as inline image bubble */
-  imageUrl?: string;
-  /** Visible thinking steps from ReAct loop */
-  thinkingSteps?: Array<{ type: string; content: string; tool?: string; iteration: number }>;
-  /** Multi-agent council responses */
-  agentResponses?: Array<{ agent: string; role: string; text: string }>;
-  isMultiAgent?: boolean;
-}
-
-interface AgentChatPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  /** Optional: agent belongs to another user (portfolio chat mode) */
-  agentOwner?: string;
-  /** Optional: message to auto-send when the panel opens (used by QuickChatInput on dashboard) */
-  initialMessage?: string;
-  /** Called once initialMessage has been consumed so the parent can clear it */
-  onInitialMessageConsumed?: () => void;
-}
-
-const PLAN_DISPLAY: Record<string, string> = {
-  free: 'Free', pilot: 'Pilot', intro: 'Intro', monthly: 'Monthly',
-  halfyear: 'Half-Year', yearly: 'Yearly', basic: 'Basic', pro: 'Pro',
-};
-
-const suggestedPrompts = [
-  "What's on my schedule today?",
-  "Show me my usage stats",
-  "Create a reminder for tomorrow",
-  "Help me with a code review",
-];
-
-const USE_CASE_TIPS: Record<string, string[]> = {
-  creator: [
-    '/image a futuristic city at sunset',
-    'Write a YouTube script for [your topic]',
-    'Remind me every day at 9am to post content',
-  ],
-  student: [
-    'Explain quantum entanglement simply',
-    'Quiz me on the French Revolution',
-    'Remind me to review notes at 8pm',
-  ],
-  developer: [
-    'Review this code: [paste snippet]',
-    'Write a Python script to parse a CSV',
-    'Remind me to push commits at 6pm',
-  ],
-  business: [
-    'Draft a follow-up email to a client about [project]',
-    'Summarize these meeting notes: [paste]',
-    'Remind me about my 3pm standup',
-  ],
-};
 
 export function AgentChatPanel({ isOpen, onClose, agentOwner, initialMessage, onInitialMessageConsumed }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
@@ -586,7 +367,7 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner, initialMessage, on
         setAgentMsg({ content: '🎨 Generating image…', isStreaming: true });
         (async () => {
           try {
-            const { jobId } = await imageAsyncService.generate(imagePrompt);
+            const { data: { jobId } } = await imageAsyncService.generate(imagePrompt);
             const job = await jobsService.pollUntilDone(jobId, 60, 2000);
             const result = job.result as { imageUrl: string; imageId: string; prompt: string } | undefined;
             if (job.status === 'done' && result?.imageUrl) {

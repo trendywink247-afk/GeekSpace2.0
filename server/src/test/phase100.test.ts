@@ -51,18 +51,18 @@ afterAll(() => {
 // 100.1  DB Schema
 // =============================================================================
 describe("100.1 DB schema", () => {
-  it("db/index.ts adds google_gmail_token column", () => {
-    const src = readSrc("db", "index.ts");
+  it("db migrations adds google_gmail_token column", () => {
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("google_gmail_token");
   });
 
-  it("db/index.ts defines gmail_messages table", () => {
-    const src = readSrc("db", "index.ts");
+  it("db schema defines gmail_messages table", () => {
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("CREATE TABLE IF NOT EXISTS gmail_messages");
   });
 
   it("gmail_messages has required columns", () => {
-    const src = readSrc("db", "index.ts");
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("gmail_message_id TEXT NOT NULL");
     expect(src).toContain("thread_id TEXT NOT NULL");
     expect(src).toContain("subject TEXT NOT NULL");
@@ -71,7 +71,7 @@ describe("100.1 DB schema", () => {
   });
 
   it("gmail_messages has unique index on (user_id, gmail_message_id)", () => {
-    const src = readSrc("db", "index.ts");
+    const src = readSrc("db", "migrations.ts");
     expect(src).toContain("idx_gmail_messages_gid");
   });
 

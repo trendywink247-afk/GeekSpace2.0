@@ -322,8 +322,8 @@ describe('94.5 static: memory routes and service files exist', () => {
     expect(src).toMatch(/extractMemoriesFromConversation/);
   });
 
-  it('db/index.ts has user_memories CREATE TABLE', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema has user_memories CREATE TABLE', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toMatch(/user_memories/);
     expect(src).toMatch(/key TEXT NOT NULL/);
   });

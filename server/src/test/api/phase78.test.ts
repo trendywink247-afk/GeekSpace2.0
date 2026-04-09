@@ -62,22 +62,22 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.4: /start command auto-registration ────────────────────────
   describe('78.4: Telegram /start command handling', () => {
     it('handles /start link_{code} deep link in webhooks.ts', () => {
-      const src = readFile('server/src/routes/webhooks.ts');
+      const src = readFile('server/src/modules/integrations/routes/webhooks.ts');
       expect(src).toContain("cmd.args.startsWith('link_')");
     });
 
     it('handleLinkCode creates channel_links entry on success', () => {
-      const src = readFile('server/src/routes/webhooks.ts');
+      const src = readFile('server/src/modules/integrations/routes/webhooks.ts');
       expect(src).toContain('INSERT INTO channel_links');
     });
 
     it('handleLinkCode updates integrations table after linking', () => {
-      const src = readFile('server/src/routes/webhooks.ts');
+      const src = readFile('server/src/modules/integrations/routes/webhooks.ts');
       expect(src).toContain("UPDATE integrations SET status = 'connected'");
     });
 
     it('handleLinkCode deletes used link code after success', () => {
-      const src = readFile('server/src/routes/webhooks.ts');
+      const src = readFile('server/src/modules/integrations/routes/webhooks.ts');
       expect(src).toContain('DELETE FROM link_codes WHERE code = ?');
     });
   });
@@ -125,12 +125,12 @@ describe('Phase 78 — Telegram/WhatsApp Stability + Connections Polish', () => 
   // ── 78.7: Reminder dead-letter table ─────────────────────────────
   describe('78.7: Reminder dead-letter logging', () => {
     it('creates reminder_dead_letters table in db schema', () => {
-      const src = readFile('server/src/db/index.ts');
+      const src = readFile('server/src/db/migrations.ts');
       expect(src).toContain('reminder_dead_letters');
     });
 
     it('dead-letter table has required columns', () => {
-      const src = readFile('server/src/db/index.ts');
+      const src = readFile('server/src/db/migrations.ts');
       expect(src).toContain('reminder_id TEXT NOT NULL');
       expect(src).toContain('channel TEXT NOT NULL');
       expect(src).toContain('error TEXT DEFAULT');

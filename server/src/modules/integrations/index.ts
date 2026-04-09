@@ -11,6 +11,7 @@ export { gmailRouter } from './routes/gmail.js';
 export { calendarRouter } from './routes/calendar.js';
 export { socialMediaRouter } from './routes/social-media.js';
 export { customBotRouter } from './routes/custom-bot.js';
+export { webhooksRouter } from './routes/webhooks.js';
 
 // Re-export services
 export { syncUserGmail, getGmailMessages, startGmailSyncScheduler } from './services/gmail-sync.js';
@@ -32,6 +33,7 @@ import { gmailRouter } from './routes/gmail.js';
 import { calendarRouter } from './routes/calendar.js';
 import { socialMediaRouter } from './routes/social-media.js';
 import { customBotRouter } from './routes/custom-bot.js';
+import { webhooksRouter } from './routes/webhooks.js';
 
 export const integrationsModule: AppModule = {
   name: 'integrations',
@@ -42,5 +44,6 @@ export const integrationsModule: AppModule = {
     app.use('/api/gmail', gmailRouter);
     app.use('/api/calendar', calendarRouter);
     app.use('/api/social-media', socialMediaRouter);
+    app.use('/api/webhooks', webhooksRouter);
   },
 };

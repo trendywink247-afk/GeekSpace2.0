@@ -238,7 +238,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
 authRouter.post('/demo', (req, res) => {
   // Seed demo data only in non-production or test mode (seedDemoData has its own real-user guard)
   if (!config.isProduction || config.isTestMode) {
-    seedDemoData();
+    seedDemoData(db);
   }
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get('demo-1') as Record<string, unknown> | undefined;

@@ -26,21 +26,21 @@ const readSrc = (...parts: string[]) => readFileSync(srcPath(...parts), 'utf-8')
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('95.1 DB schema: calendar_events and google_calendar_token', () => {
-  it('db/index.ts contains google_calendar_token ALTER TABLE', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db migrations contains google_calendar_token ALTER TABLE', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toMatch(/google_calendar_token/);
     expect(src).toMatch(/ALTER TABLE users ADD COLUMN google_calendar_token/);
   });
 
-  it('db/index.ts creates calendar_events table', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates calendar_events table', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toMatch(/CREATE TABLE IF NOT EXISTS calendar_events/);
     expect(src).toMatch(/gcal_event_id/);
     expect(src).toMatch(/synced_at/);
   });
 
-  it('db/index.ts creates UNIQUE INDEX on calendar_events(user_id, gcal_event_id)', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates UNIQUE INDEX on calendar_events(user_id, gcal_event_id)', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toMatch(/idx_calendar_events_gcal/);
   });
 

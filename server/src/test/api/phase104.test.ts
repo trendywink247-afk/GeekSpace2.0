@@ -44,14 +44,14 @@ describe('Phase 104 — ReAct Tool Loop', () => {
   });
 
   describe('104.2 Executors', () => {
-    it('action-executor.ts handles web_search', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/action-executor.ts'), 'utf-8');
+    it('web-executor.ts handles web_search', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/executors/web-executor.ts'), 'utf-8');
       expect(content).toContain("case 'web_search':");
       expect(content).toContain('tavilySearch');
     });
 
-    it('action-executor.ts handles send_telegram', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/action-executor.ts'), 'utf-8');
+    it('tools-executor.ts handles send_telegram', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/executors/tools-executor.ts'), 'utf-8');
       expect(content).toContain("case 'send_telegram':");
       expect(content).toContain('sendTelegramNotification');
     });
@@ -100,8 +100,8 @@ describe('Phase 104 — ReAct Tool Loop', () => {
       expect(content).toContain('<<<ACTION');
     });
 
-    it('message-router.ts buildChannelSystemPrompt mentions web_search tool', () => {
-      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/message-router.ts'), 'utf-8');
+    it('prompt-builder.ts buildChannelSystemPrompt mentions web_search tool', () => {
+      const content = readFileSync(path.resolve(SERVER_ROOT, 'src/modules/agent/services/prompt-builder.ts'), 'utf-8');
       expect(content).toContain('web_search');
     });
   });

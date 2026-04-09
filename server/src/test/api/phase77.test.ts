@@ -67,13 +67,13 @@ describe('Phase 77 — Per-User Limits + Usage Dashboard', () => {
   // ---- 77.2: Frontend usageService.today() ----
   describe('77.2 Frontend usageService.today', () => {
     it('api.ts usageService has today() method', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'services/api.ts'), 'utf-8');
+      const content = readFileSync(resolve(SRC_ROOT, 'services/billing-services.ts'), 'utf-8');
       expect(content).toContain('today:');
       expect(content).toContain('/usage/today');
     });
 
     it('api.ts today() return type includes messages, voice, images', () => {
-      const content = readFileSync(resolve(SRC_ROOT, 'services/api.ts'), 'utf-8');
+      const content = readFileSync(resolve(SRC_ROOT, 'services/billing-services.ts'), 'utf-8');
       const todaySection = content.slice(content.indexOf('/usage/today') - 300, content.indexOf('/usage/today') + 300);
       expect(todaySection).toContain('messages:');
       expect(todaySection).toContain('voice:');

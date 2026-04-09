@@ -91,20 +91,20 @@ describe('90.2 initProactiveEngine registered in server', () => {
 // ---- 90.3: DB schema ---------------------------------------------------
 
 describe('90.3 DB schema: proactive_messages + proactive_enabled', () => {
-  it('db/index.ts creates proactive_messages table', () => {
-    const src = readFile('server/src/db/index.ts');
+  it('db schema creates proactive_messages table', () => {
+    const src = readFile('server/src/db/migrations.ts');
     expect(src).toContain('proactive_messages');
   });
 
   it('proactive_messages has user_id, type, sent_at, message columns', () => {
-    const src = readFile('server/src/db/index.ts');
+    const src = readFile('server/src/db/migrations.ts');
     expect(src).toContain('user_id');
     expect(src).toContain('sent_at');
     expect(src).toContain('proactive_messages');
   });
 
   it('users table gets proactive_enabled column via ALTER TABLE', () => {
-    const src = readFile('server/src/db/index.ts');
+    const src = readFile('server/src/db/migrations.ts');
     expect(src).toContain('proactive_enabled');
     expect(src).toContain('ALTER TABLE users ADD COLUMN proactive_enabled');
   });

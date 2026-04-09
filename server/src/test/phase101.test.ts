@@ -47,24 +47,24 @@ afterAll(() => {
 // 101.1  DB Schema
 // =========================================================================
 describe('101.1 DB schema: new tables', () => {
-  it('db/index.ts creates focus_sessions table', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates focus_sessions table', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS focus_sessions');
   });
-  it('db/index.ts creates habits table', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates habits table', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS habits');
   });
-  it('db/index.ts creates habit_logs table', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates habit_logs table', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS habit_logs');
   });
-  it('db/index.ts creates notification_settings table', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db schema creates notification_settings table', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS notification_settings');
   });
-  it('db/index.ts adds deferred column to inbox_messages', () => {
-    const src = readSrc('db', 'index.ts');
+  it('db migrations adds deferred column to inbox_messages', () => {
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('ALTER TABLE inbox_messages ADD COLUMN deferred');
   });
   it('focus_sessions table has required columns', () => {

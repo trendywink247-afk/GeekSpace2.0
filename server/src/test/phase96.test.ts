@@ -33,42 +33,42 @@ function fileExists(rel: string): boolean {
 
 describe('96.1 DB schema: user_workflows and user_workflow_runs', () => {
   it('db/index.ts creates user_workflows table', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS user_workflows');
   });
 
   it('db/index.ts creates user_workflow_runs table', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('CREATE TABLE IF NOT EXISTS user_workflow_runs');
   });
 
   it('user_workflows table has steps column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('steps TEXT');
   });
 
   it('user_workflows table has trigger column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('trigger TEXT');
   });
 
   it('user_workflows table has enabled column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('enabled INTEGER');
   });
 
   it('user_workflows table has last_run column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('last_run INTEGER');
   });
 
   it('user_workflow_runs table has context column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('context TEXT');
   });
 
   it('user_workflow_runs table has status column', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('status TEXT');
   });
 
@@ -83,12 +83,12 @@ describe('96.1 DB schema: user_workflows and user_workflow_runs', () => {
   });
 
   it('user_workflow_runs has FK reference to user_workflows', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('REFERENCES user_workflows');
   });
 
   it('user_workflows has index on user_id', () => {
-    const src = readSrc('db', 'index.ts');
+    const src = readSrc('db', 'migrations.ts');
     expect(src).toContain('idx_user_workflows_user');
   });
 });

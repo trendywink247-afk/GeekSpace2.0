@@ -7,6 +7,7 @@ import type { AppModule } from '../../shared/module.js';
 
 // Re-export from module-local files
 export { portfolioRouter } from './routes.js';
+export { directoryRouter } from './directory-routes.js';
 export {
   generatePortfolioSuggestions,
   applySuggestion,
@@ -26,11 +27,13 @@ export type {
 
 // Import for module registration
 import { portfolioRouter } from './routes.js';
+import { directoryRouter } from './directory-routes.js';
 
 export const portfolioModule: AppModule = {
   name: 'portfolio',
 
   registerRoutes(app: Application) {
     app.use('/api/portfolio', portfolioRouter);
+    app.use('/api/directory', directoryRouter);
   },
 };
