@@ -3,7 +3,7 @@ import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface QuickChatInputProps {
-  onOpenChat?: () => void;
+  onOpenChat?: (initialMessage?: string) => void;
 }
 
 export function QuickChatInput({ onOpenChat }: QuickChatInputProps) {
@@ -13,8 +13,9 @@ export function QuickChatInput({ onOpenChat }: QuickChatInputProps) {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (value.trim()) {
-          onOpenChat?.();
+        const trimmed = value.trim();
+        if (trimmed) {
+          onOpenChat?.(trimmed);
           setValue('');
         }
       }}

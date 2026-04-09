@@ -47,7 +47,7 @@ interface OverviewPageProps {
   onViewPortfolio: (username: string) => void;
   onNavigate?: (page: string) => void;
   onRefresh?: () => void;
-  onOpenChat?: () => void;
+  onOpenChat?: (initialMessage?: string) => void;
 }
 
 // ---------------------------------------------------------------------------
