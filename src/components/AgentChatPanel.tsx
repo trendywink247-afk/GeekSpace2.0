@@ -226,6 +226,10 @@ interface AgentChatPanelProps {
   onClose: () => void;
   /** Optional: agent belongs to another user (portfolio chat mode) */
   agentOwner?: string;
+  /** Optional: message to auto-send when the panel opens (used by QuickChatInput on dashboard) */
+  initialMessage?: string;
+  /** Called once initialMessage has been consumed so the parent can clear it */
+  onInitialMessageConsumed?: () => void;
 }
 
 const PLAN_DISPLAY: Record<string, string> = {
@@ -263,7 +267,7 @@ const USE_CASE_TIPS: Record<string, string[]> = {
   ],
 };
 
-export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelProps) {
+export function AgentChatPanel({ isOpen, onClose, agentOwner, initialMessage, onInitialMessageConsumed }: AgentChatPanelProps) {
   const agent = useDashboardStore((s) => s.agent);
   const updateAgent = useDashboardStore((s) => s.updateAgent);
   const user = useAuthStore((s) => s.user);
@@ -836,6 +840,22 @@ export function AgentChatPanel({ isOpen, onClose, agentOwner }: AgentChatPanelPr
       }
     })();
   }, [input, isTyping, premiumSession, agentOwner, messages, replyTo]);
+
+  // Consume initialMessage from QuickChatInput when the panel opens.
+  // Uses a ref-flag to ensure each distinct initialMessage is auto-sent at most once.
+  const consumedInitialMessageRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isOpen) {
+      consumedInitialMessageRef.current = null;
+      return;
+    }
+    if (!initialMessage) return;
+    if (consumedInitialMessageRef.current === initialMessage) return;
+    if (isTyping) return;
+    consumedInitialMessageRef.current = initialMessage;
+    sendMessage(initialMessage);
+    onInitialMessageConsumed?.();
+  }, [isOpen, initialMessage, isTyping, sendMessage, onInitialMessageConsumed]);
 
   // ---- 8.3: Export conversations ----
   // 61.4: Save message content to agent memory
