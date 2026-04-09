@@ -55,8 +55,8 @@ describe('A1: Global CSS overflow and box-sizing', () => {
 // ─── A3/A5: Root overflow protection ──────────────────────────────────────
 
 describe('A3/A5: Root container overflow protection', () => {
-  it('App.tsx root div has overflow-x-hidden', () => {
-    const content = readSrc('App.tsx');
+  it('RootLayout.tsx root div has overflow-x-hidden', () => {
+    const content = readSrc('RootLayout.tsx');
     expect(content).toContain('overflow-x-hidden');
   });
 

@@ -22,8 +22,8 @@ describe('Phase 75 — Production Hardening + E2E', () => {
     expect(content).not.toMatch(/import\s*\{[^}]*\blazy\b[^}]*\}\s*from\s*'react'/);
   });
 
-  it('App.tsx wraps routes with ErrorBoundary', () => {
-    const content = readFileSync(resolve(ROOT, 'src/App.tsx'), 'utf-8');
+  it('RootLayout.tsx wraps routes with ErrorBoundary', () => {
+    const content = readFileSync(resolve(ROOT, 'src/RootLayout.tsx'), 'utf-8');
     expect(content).toContain('<ErrorBoundary>');
     expect(content).toContain("import { ErrorBoundary } from './components/ErrorBoundary'");
   });
