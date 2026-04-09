@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Data-router configuration for GeekSpace 2.0.
  *
@@ -10,7 +11,7 @@
  *  • Silences React Router v7 future-flag warnings
  *
  * Route paths, components, lazy-loading, and auth guards are preserved 1:1.
- * Auth-guard wrapper components live in src/routeGuards.tsx (separate file
+ * Auth-guard wrapper components live in src/route-guards.tsx (separate file
  * required by react-refresh/only-export-components — this file exports a
  * non-component constant).
  */
@@ -34,7 +35,7 @@ import {
   OnboardingRoute,
   DashboardRoute,
   RouteErrorFallback,
-} from './routeGuards';
+} from './route-guards';
 
 // ---------------------------------------------------------------------------
 // Lazy pages
