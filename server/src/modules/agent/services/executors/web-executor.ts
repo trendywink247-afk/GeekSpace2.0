@@ -4,7 +4,6 @@
 
 import { db } from '../../../../db/index.js';
 import { logger } from '../../../../logger.js';
-import { config } from '../../../../config.js';
 import { tavilySearch } from '../../../../services/tavily.js';
 import { searxngSearch } from '../../../../services/searxng.js';
 import { fetchAndExtract, fetchScreenshot, extractLinks, smartSearch } from '../../../../services/web-research.js';

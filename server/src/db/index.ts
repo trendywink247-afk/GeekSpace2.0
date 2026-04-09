@@ -23,7 +23,6 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { logger } from '../logger.js';
 import { applySchema } from './schema.js';
 import { applyMigrations } from './migrations.js';
 import { seedDemoData, runSeedIfNeeded } from './seed.js';

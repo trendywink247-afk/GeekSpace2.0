@@ -4,10 +4,9 @@
 
 import { db } from '../../../../db/index.js';
 import { logger } from '../../../../logger.js';
-import { config } from '../../../../config.js';
 import { v4 as uuid } from 'uuid';
-import { RECEIPT_TEMPLATES, type ReceiptItem } from '../../../../services/receipts.js';
-import { cacheSet, cacheGet, cacheDel } from '../../../../services/cache.js';
+import { RECEIPT_TEMPLATES } from '../../../../services/receipts.js';
+import { cacheDel } from '../../../../services/cache.js';
 import { generateImage, generateVideo, generateAvatar } from '../../../../services/media-generation.js';
 import type { ActionResult } from '../action-executor.js';
 

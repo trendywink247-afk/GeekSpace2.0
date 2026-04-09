@@ -4,13 +4,12 @@
  */
 
 import { db } from '../../../../db/index.js';
-import { logger } from '../../../../logger.js';
 import { config } from '../../../../config.js';
 import { v4 as uuid } from 'uuid';
 import { DateTime } from 'luxon';
 import { parseReminderTime } from '../pico-fleet.js';
-import { RECEIPT_TEMPLATES, type ReceiptItem } from '../../../../services/receipts.js';
-import { cacheSet, cacheGet, cacheDel } from '../../../../services/cache.js';
+import { RECEIPT_TEMPLATES } from '../../../../services/receipts.js';
+import { cacheSet, cacheGet } from '../../../../services/cache.js';
 import { sendAgentEmail, resolveEmailAddress } from '../../../../services/email.js';
 import { sendTelegramNotification, escapeTelegramHtml, sendTelegramButtons } from '../../../../services/telegram.js';
 import { indexNote, indexReminder, indexHabit, indexMemory } from '../../../../services/search-index.js';
