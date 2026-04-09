@@ -7,7 +7,7 @@ import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 
 const otelEnabled = process.env.OTEL_ENABLED === 'true';
@@ -24,7 +24,7 @@ if (otelEnabled) {
   const exporter = new OTLPTraceExporter({ url: endpoint });
 
   sdk = new NodeSDK({
-    resource: new Resource({
+    resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'agentin-api',
       [ATTR_SERVICE_VERSION]: process.env.npm_package_version ?? '0.0.0',
     }),
