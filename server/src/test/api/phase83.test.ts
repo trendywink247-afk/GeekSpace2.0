@@ -183,9 +183,9 @@ describe('Phase 83 — Launch Hardening (Invite Beta Readiness)', () => {
       expect(src).toContain('inviteCode');
     });
 
-    it('InvitePage is wired in App.tsx at /invite route', () => {
-      const src = readFile('src/App.tsx');
-      expect(src).toContain('/invite');
+    it('InvitePage is wired in router at /invite route', () => {
+      const src = readFile('src/router.tsx');
+      expect(src).toContain('invite');
       expect(src).toContain('InvitePage');
     });
 

@@ -17,6 +17,14 @@
 # ============================================================
 set -euo pipefail
 
+# 2026-04-06: Clear NODE_ENV so npm install behaves correctly. When NODE_ENV
+# is set to "production", npm silently omits dev dependencies (including vite,
+# typescript, eslint, etc.), which breaks frontend builds. This bit us hard
+# during the nav-bug debug session — every "rebuild" was producing broken
+# bundles. The host shell may have NODE_ENV=production set from systemd or a
+# parent process; clearing it here makes the script self-contained.
+unset NODE_ENV
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"

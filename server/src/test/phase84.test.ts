@@ -21,8 +21,8 @@ function readPublic(rel: string): string {
 // ─── 84.3: Global mobile overflow protection ──────────────────────────────
 
 describe('84.3 Global: overflow-x protection', () => {
-  it('App.tsx root div has overflow-x-hidden', () => {
-    const content = readSrc('App.tsx');
+  it('RootLayout.tsx root div has overflow-x-hidden', () => {
+    const content = readSrc('RootLayout.tsx');
     expect(content).toContain('overflow-x-hidden');
   });
 
