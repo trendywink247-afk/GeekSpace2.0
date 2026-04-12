@@ -13,7 +13,7 @@
 | Domain | A-record pointing to VPS IP | — |
 | Ollama | Running on host or Docker | With 7B+ model |
 
-> **RAM note**: Ollama's `qwen3:8b` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
+> **RAM note**: Ollama's `gemma4` model needs ~5-6 GB RAM on CPU. Budget 12-16 GB total for the full stack.
 
 ## Secrets Management
 

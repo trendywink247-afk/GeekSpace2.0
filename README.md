@@ -6,7 +6,7 @@
 <br />
 
 [![Live](https://img.shields.io/badge/LIVE-ai.agentin.chat-7B61FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTEyIDJMMTUuMDkgOC4yNiAyMiA5LjI3IDE3IDEzLjE0IDE4LjE4IDIxLjAyIDEyIDE3LjI3IDUuODIgMjEuMDIgNyAxMy4xNCAyIDkuMjcgOC45MSA4LjI2IDEyIDJaIi8+PC9zdmc+)](https://ai.agentin.chat)
-[![Version](https://img.shields.io/badge/v3.3.0-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
+[![Version](https://img.shields.io/badge/v3.4.0-platform-61FF7B?style=for-the-badge)](https://github.com/trendywink247-afk/GeekSpace2.0/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/trendywink247-afk/GeekSpace2.0/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/trendywink247-afk/GeekSpace2.0/actions)
 [![Status](https://img.shields.io/badge/Status-status.agentin.chat-61FF7B?style=for-the-badge)](https://status.agentin.chat)
 [![License](https://img.shields.io/badge/License-MIT-61FF7B?style=for-the-badge)](LICENSE)
@@ -24,7 +24,7 @@
 
 **A self-hosted AI OS — your agent, your dashboard, your portfolio.**
 
-> v3.3.0 · Agentic Experience v2 · Threading + Human-in-the-Loop + Feedback + Agent Theater · 22 Docker containers (4 stacks) · Prometheus-monitored · Security-hardened · PR-based CI/CD
+> v3.4.0 · Agentic v3 · MCP Server (10 tools) + Deep Reasoning HITL + Chat Feedback + WhatsApp Images · 22 Docker containers (4 stacks) · Prometheus + Alertmanager → Telegram · Security-hardened · PR-based CI/CD
 
 [Live Demo](https://ai.agentin.chat) · [Documentation](docs/) · [Report Bug](.github/ISSUE_TEMPLATE/bug_report.yml) · [Request Feature](.github/ISSUE_TEMPLATE/feature_request.yml)
 
@@ -55,6 +55,9 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - **Inter-agent delegation** — Agents hand off work to specialists mid-conversation with full audit trail.
 - **Deep reasoning** — Complex queries get 10-iteration reasoning with self-reflection and plan-then-execute.
 - **Proactive goal engine** — Agents auto-execute steps, nudge stale goals, send daily progress summaries.
+- **MCP protocol** — 10-tool MCP server for external agent integration; Claude Bridge as escalation path.
+- **WhatsApp images** — Generated content and screenshots delivered as image attachments.
+- **Prometheus alerting** — Alert rules + Alertmanager routing critical alerts to Telegram.
 - **Telegram-native** — Full AI on Telegram: voice notes, inline keyboards, receipt OCR, proactive nudges.
 - **Hinglish-first** — Built for Indian users. "swiggy pe 350 rupay" just works.
 - **Background agents** — Weebo Engine + proactive briefings, habit nudges, expense digests.
@@ -79,6 +82,9 @@ Agentin is a personal AI platform that gives every user their own intelligent ag
 - File upload pipeline (`agent/middleware/file-upload.ts` → `file-processor.ts`) for PDFs, images, text
 - Feedback + cognitive memory (`feedback-service.ts`, `memory/services/cognitive-memory.ts`)
 - Agent Theater UI (`src/components/AgentTheaterPanel.tsx`) streaming ReAct steps live
+- MCP server with 10 registered tools + Claude Bridge escalation
+- Chat feedback — thumbs up/down feeding cognitive memory layer
+- Stripe day pass — one-time premium access checkout
 - Auto-delegation: Weebo routes to Cal/Echo/Forge/Aria/Pulse/Nova/Jarvis by intent
 - Multi-Agent Council — "launch mode" fan-out to 3 parallel specialists
 - ReAct loop with 23 tools (notes, habits, reminders, expenses, focus, briefings, goals, artifacts, etc.)
