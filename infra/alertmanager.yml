@@ -1,0 +1,31 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'geekspace-webhook'
+  routes:
+    # Critical alerts also delivered to Telegram.
+    # NOTE: This route is activated after the container is recreated with
+    # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID env vars set (see docker-compose.yml).
+    # Until then the geekspace-webhook receiver handles all severities.
+    - match:
+        severity: critical
+      receiver: 'geekspace-webhook'
+
+receivers:
+  - name: 'geekspace-webhook'
+    webhook_configs:
+      - url: 'http://geekspace-app:3001/api/webhooks/prometheus-alert'
+        send_resolved: true
+        max_alerts: 10
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
