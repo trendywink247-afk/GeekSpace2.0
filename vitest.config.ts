@@ -20,15 +20,15 @@ export default defineConfig({
       'src/**/__tests__/**/*.test.{ts,tsx}',
       'src/**/*.test.{ts,tsx}',
       'tests/**/*.test.{ts,tsx}',
+      '/root/GeekSpace2.0/.claude/worktrees/agent-a0682731/src/**/__tests__/**/*.test.{ts,tsx}',
     ],
     exclude: [
       'node_modules',
       'dist',
       'server',
       'e2e',
-      'src/dashboard/pages/office/__tests__/**', // Hanging tests — need investigation
     ],
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['/root/GeekSpace2.0/.claude/worktrees/agent-a0682731/vitest.setup.ts'],
     testTimeout: 15000,
     coverage: {
       provider: 'v8',
