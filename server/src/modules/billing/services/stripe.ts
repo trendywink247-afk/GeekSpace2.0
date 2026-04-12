@@ -160,9 +160,47 @@ export async function handleWebhook(rawBody: Buffer, sig: string): Promise<void>
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.userId;
+      const metaType = session.metadata?.type;
       const plan = session.metadata?.plan;
-      if (!userId || !plan) {
-        logger.warn({ sessionId: session.id }, 'checkout.session.completed missing metadata');
+
+      if (!userId) {
+        logger.warn({ sessionId: session.id }, 'checkout.session.completed missing userId metadata');
+        break;
+      }
+
+      // ── Day pass fulfillment ──────────────────────────────
+      if (metaType === 'day_pass') {
+        // Idempotency: skip if this session was already processed
+        const existing = db.prepare(
+          'SELECT id FROM day_passes WHERE stripe_checkout_session_id = ? LIMIT 1',
+        ).get(session.id);
+        if (existing) {
+          logger.warn({ sessionId: session.id, userId }, 'Day pass checkout.session.completed already processed — skipping');
+          break;
+        }
+
+        const { v4: uuidv4 } = await import('uuid');
+        const passId = uuidv4();
+
+        const grantDayPass = db.transaction(() => {
+          db.prepare(`
+            INSERT INTO day_passes (id, user_id, expires_at, credits_granted, stripe_checkout_session_id)
+            VALUES (?, ?, datetime('now', '+1 day'), 2000, ?)
+          `).run(passId, userId, session.id);
+
+          db.prepare(
+            'UPDATE subscriptions SET credits_remaining = credits_remaining + 2000 WHERE user_id = ?',
+          ).run(userId);
+        });
+
+        grantDayPass();
+        logger.info({ userId, sessionId: session.id, passId }, 'Stripe day pass granted — 2000 credits + 24h access');
+        break;
+      }
+
+      // ── Subscription plan fulfillment ─────────────────────
+      if (!plan) {
+        logger.warn({ sessionId: session.id }, 'checkout.session.completed missing plan metadata');
         break;
       }
 
@@ -275,4 +313,83 @@ export function isPaidPlan(userId: string): boolean {
   const plan = user.subscription_plan;
   const status = user.subscription_status;
   return plan !== 'free' && status === 'active';
+}
+
+// ── createDayPassCheckoutSession ────────────────────────────
+
+/** Day pass price in USD cents (configurable via DAY_PASS_PRICE_CENTS env var, default $2.99) */
+const DAY_PASS_PRICE_CENTS = parseInt(process.env.DAY_PASS_PRICE_CENTS || '299', 10);
+
+/**
+ * Create a Stripe Checkout Session for a one-time 24-hour day pass ($2.99).
+ *
+ * Uses `mode: 'payment'` (not subscription). On success the Stripe webhook
+ * fires `checkout.session.completed` with `metadata.type === 'day_pass'`
+ * which {@link handleWebhook} processes to insert a row into `day_passes`
+ * and credit 2000 bonus credits to the user's subscription.
+ *
+ * @param userId - Authenticated user ID
+ * @returns The hosted Stripe Checkout URL to redirect the user to
+ * @throws If `STRIPE_SECRET_KEY` is not configured
+ * @throws If the user does not exist in the database
+ * @throws If Stripe does not return a checkout URL
+ */
+export async function createDayPassCheckoutSession(userId: string): Promise<string> {
+  const stripe = getStripe();
+
+  // Fetch user info
+  const user = db.prepare(
+    'SELECT email, name, stripe_customer_id FROM users WHERE id = ?',
+  ).get(userId) as { email: string; name: string; stripe_customer_id: string | null } | undefined;
+  if (!user) throw new Error('User not found');
+
+  // Get or create Stripe customer
+  let customerId = user.stripe_customer_id;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name || user.email,
+      metadata: { userId },
+    });
+    customerId = customer.id;
+    db.prepare('UPDATE users SET stripe_customer_id = ? WHERE id = ?').run(customerId, userId);
+    logger.info({ userId, customerId }, 'Stripe customer created for day pass');
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Agentin Day Pass - 24h Premium Access' },
+          unit_amount: DAY_PASS_PRICE_CENTS,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${config.publicUrl}/dashboard?billing=day_pass_success`,
+    cancel_url: `${config.publicUrl}/dashboard?billing=cancelled`,
+    metadata: { userId, type: 'day_pass' },
+  });
+
+  if (!session.url) throw new Error('Stripe did not return a checkout URL');
+  logger.info({ userId, sessionId: session.id }, 'Stripe day pass checkout session created');
+  return session.url;
+}
+
+// ── hasActiveDayPass ────────────────────────────────────────
+
+/**
+ * Check if a user currently has an active (non-expired) day pass.
+ *
+ * @param userId - User ID to check
+ * @returns `true` if the user has a day pass that has not yet expired
+ */
+export function hasActiveDayPass(userId: string): boolean {
+  const row = db.prepare(
+    "SELECT id FROM day_passes WHERE user_id = ? AND expires_at > datetime('now') LIMIT 1",
+  ).get(userId);
+  return row !== undefined;
 }

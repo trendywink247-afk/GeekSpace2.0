@@ -319,6 +319,90 @@ export function getDelegationStats(userId: string): {
   };
 }
 
+// ── External Escalation (Claude Bridge at :8787) ───────────
+//
+// When internal delegation fails or a task is explicitly complex,
+// escalate to the claude-bridge sidecar which wraps Claude Code CLI.
+// API: POST http://localhost:8787/run { prompt, cwd, timeout }
+// Only available when BRIDGE_ENABLED=true (config.bridgeEnabled).
+
+const CLAUDE_BRIDGE_URL = process.env.EDITH_GATEWAY_URL || 'http://localhost:8787';
+const CLAUDE_BRIDGE_TIMEOUT = 120_000; // 2 minutes
+
+export async function escalateToBridge(
+  userId: string,
+  fromAgent: AnyAgentId,
+  task: string,
+  context?: string,
+): Promise<DelegationResult> {
+  const delegationId = uuid();
+  const startTime = Date.now();
+
+  logger.info({ delegationId, from: fromAgent, to: 'claude-bridge', task: task.slice(0, 100) }, 'delegation:bridge:start');
+
+  db.prepare(`
+    INSERT INTO delegation_log (id, user_id, goal_id, step_id, from_agent, to_agent, task_description, status, started_at, created_at)
+    VALUES (?, ?, NULL, NULL, ?, 'claude-bridge', ?, 'in_progress', datetime('now'), datetime('now'))
+  `).run(delegationId, userId, fromAgent, task);
+
+  emitDelegation(userId, fromAgent, 'edith' as AnyAgentId, `[Bridge] ${task}`);
+
+  try {
+    const prompt = context
+      ? `Context: ${context}\n\nTask: ${task}`
+      : task;
+
+    const res = await fetch(CLAUDE_BRIDGE_URL + '/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, cwd: '/root/GeekSpace2.0', timeout: CLAUDE_BRIDGE_TIMEOUT }),
+      signal: AbortSignal.timeout(CLAUDE_BRIDGE_TIMEOUT + 5000),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Bridge returned ${res.status}: ${await res.text()}`);
+    }
+
+    const data = await res.json() as { result?: string; output?: string; error?: string };
+    const result = data.result || data.output || JSON.stringify(data);
+    const durationMs = Date.now() - startTime;
+
+    db.prepare("UPDATE delegation_log SET status = 'completed', result = ?, completed_at = datetime('now') WHERE id = ?")
+      .run(result.slice(0, 2000), delegationId);
+
+    logger.info({ delegationId, durationMs, success: true }, 'delegation:bridge:complete');
+
+    return {
+      id: delegationId,
+      fromAgent,
+      toAgent: 'edith' as AnyAgentId,
+      task,
+      result,
+      success: true,
+      durationMs,
+      narration: 'Escalated to Claude for deep analysis.',
+    };
+  } catch (err) {
+    const durationMs = Date.now() - startTime;
+    const errorMsg = err instanceof Error ? err.message : String(err);
+
+    db.prepare("UPDATE delegation_log SET status = 'failed', result = ?, completed_at = datetime('now') WHERE id = ?")
+      .run(errorMsg.slice(0, 1000), delegationId);
+
+    logger.error({ err, delegationId }, 'delegation:bridge:failed');
+
+    return {
+      id: delegationId,
+      fromAgent,
+      toAgent: 'edith' as AnyAgentId,
+      task,
+      result: errorMsg,
+      success: false,
+      durationMs,
+    };
+  }
+}
+
 // ── Helpers ─────────────────────────────────────────────────
 
 interface DelegationLogEntry {

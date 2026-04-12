@@ -30,6 +30,7 @@ import notificationsRouter from './notifications.js';
 import confirmRouter from './confirm.js';
 import feedbackRouter from './feedback.js';
 import inferredGoalsRouter from './inferred-goals.js';
+import mcpRouter from './mcp-server.js';
 
 export const agentRouter = Router();
 
@@ -46,5 +47,6 @@ agentRouter.use(notificationsRouter);
 agentRouter.use('/confirm', confirmRouter);
 agentRouter.use('/feedback', feedbackRouter);
 agentRouter.use('/inferred-goals', inferredGoalsRouter);
+agentRouter.use('/mcp', mcpRouter);
 
 export default agentRouter;

@@ -64,8 +64,10 @@ export const config = {
     : optional('JWT_SECRET', 'geekspace-dev-secret-CHANGE-IN-PRODUCTION'),
   jwtExpiresIn: optional('JWT_EXPIRES_IN', '15m'),
 
-  // CORS — comma-separated origins
-  corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4173')
+  // CORS — comma-separated origins.
+  // Default is the production domains. For local development, set CORS_ORIGINS in .env:
+  //   CORS_ORIGINS=http://localhost:5173,http://localhost:4173
+  corsOrigins: optional('CORS_ORIGINS', 'https://ai.agentin.chat,https://staging.agentin.chat')
     .split(',')
     .map((s) => s.trim()),
 

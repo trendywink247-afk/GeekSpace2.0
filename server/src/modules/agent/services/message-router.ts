@@ -1837,6 +1837,30 @@ export async function handleIncomingMessage(msg: NormalizedMessage): Promise<voi
     }
   }
 
+  // 11c. For WhatsApp: send generated images natively via the Business Cloud API.
+  //      If the API call fails (unconfigured or network error), fall back to sending
+  //      the image URL as a plain text message so the user always receives something.
+  if (msg.channel === 'whatsapp') {
+    for (const ar of actionResults) {
+      if ((ar.tool === 'generate_image' || ar.tool === 'take_screenshot') && ar.success && ar.imageUrl) {
+        const absoluteUrl = ar.imageUrl.startsWith('http')
+          ? ar.imageUrl
+          : `${config.apiUrl}${ar.imageUrl}`;
+        const { sendWhatsAppImage, sendWhatsAppMessage } = await import('../../../services/whatsapp.js');
+        const sent = await sendWhatsAppImage(msg.externalId, absoluteUrl).catch((e: unknown) => {
+          logger.warn({ err: (e as Error).message, to: msg.externalId }, 'Failed to send WhatsApp image');
+          return false;
+        });
+        if (!sent) {
+          // Fallback: send the image URL as a text message
+          await sendWhatsAppMessage(msg.externalId, `Here's your image: ${absoluteUrl}`).catch((e: unknown) =>
+            logger.warn({ err: (e as Error).message, to: msg.externalId }, 'Failed to send WhatsApp image URL fallback'),
+          );
+        }
+      }
+    }
+  }
+
   logger.info({
     requestId,
     channel: msg.channel,
