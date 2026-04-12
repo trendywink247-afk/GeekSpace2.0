@@ -26,6 +26,7 @@ export default defineConfig({
       'dist',
       'server',
       'e2e',
+      'src/dashboard/pages/office/__tests__/**', // Run via vitest.office.config.ts
     ],
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 15000,
