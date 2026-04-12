@@ -11,6 +11,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **Agentic v2**: conversation threading, human-in-the-loop `ConfirmActionCard` for sensitive tool calls, file upload pipeline (PDF / image / text) into chat, thumbs-up/down feedback loop feeding cognitive memory, and an Agent Theater UI streaming live ReAct steps and delegations (`df77d5a`).
 - **Agentic v3**: world model, uncertainty tracking, temporal anchors, inference, learning, recovery, trust, and vision subsystems in the agent module (`82fe95a`). New DB tables `world_models` and `temporal_anchors` (`640c2d3`).
+- **MCP server** with 10 registered tools + Claude Bridge escalation path (`fd5fe41a`, `1f1e7b75`).
+- **Stripe day pass** — one-time checkout sessions for premium access (`1f1e7b75`).
+- **Chat feedback** — thumbs up/down on floating chat panel responses (`38ffc5a8`).
+- **HITL deep reasoning** — human-in-the-loop confirmations wired into the deep reasoning loop (`fcc5f2f6`).
+- **WhatsApp image sending** — image attachment support for the WhatsApp integration channel (`828c2376`).
+- **Prometheus alerting** — alert rules file + Alertmanager config routing to Telegram (`71ae3249`).
+- **ChatSidebar** wired to real conversation threads instead of mock data (`d8b4eea0`).
+- **Nightly AI audit** — Cronicle job that refreshes `.pi/FULL_AUDIT.md` automatically (`1f1e7b75`).
 - **Prometheus `/api/metrics`** endpoint with full request / LLM / SSE instrumentation (`3ac06ee`). Grafana dashboards wired at `monitor.geekspace.space`.
 - **Backup verification drills** plus Cloudflare runbook and Prometheus → Telegram alert routing via Alertmanager (`2297978`).
 - **E2E Playwright suite in CI**, load-test baseline, security scans, and litestream documentation for SQLite off-box replication (`3e28ba8`).
@@ -23,6 +31,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Frontend design skills + ui-ux-pro-max intelligence installed (`e2188cb`, `4fa9d53`).
 
 ### Changed
+- **Bundle splitting** — index chunk down 76%, ConvertTool down 99%, blocknote down 44% (`35c19a17`).
+- **CI deploy scripts hardened** — staging and production deploys now abort stuck merge/rebase state and use `git reset --hard origin/main` instead of `git pull` to handle squash-merge divergence (`805fc96b`).
+- **Modularized API services** — extracted webhook routes and service modules for cleaner separation (`a8ee6668`).
+- **Migrated to `createBrowserRouter`** — data router mode for React Router 7 (`06c7f616`).
+- **CI parallelized** — pipeline time reduced from 12min to 3min (`60727a5d`).
 - **LLM routing is now intent-based** rather than a flat waterfall: simple/automation hits Groq Llama 3.3 70B first (~0.2s, free), complex/coding hits local Ollama `gemma4` first; both fall through to OpenRouter-free as a safety net (`ddb0e84`). PicoClaw (`qwen2.5-coder:3b`) remains the local triage sidecar. Ollama now runs `gemma4` — legacy `qwen3` models removed (`725f900`).
 - **All 24 large dashboard pages decomposed into sub-components** (`087af4e`, `23fc2d6`); all 39/40 dashboard pages redesigned with the new design intelligence (`109bab4`, `e1268d4`).
 - **ChatPage refactor**: split into 7 modules, fixed mobile layout, added test IDs, added `useChatStream` hook, markdown rendering, conversation sidebar, 15s stream fallback to cloud, 30s timeout, tight message bubbles (`e7077d3`, `cef9df6`, `d03ade6`, `8cde073`, `0ce89ab`, `5cc3a23`).
@@ -31,6 +44,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `AGENTS.md` rewritten as a master orchestrator brief (v2) with a fresh `.pi/FULL_AUDIT.md` (`bb060a4`).
 
 ### Fixed
+- **Stripe webhook** now properly grants credits; fixed habits schema drift (`9e16d346`).
+- **CORS** locked to production domains (no wildcard), `.env.example` added for onboarding, WAL-safe backup script (`3b2c4af5`).
+- **Infra** — split `/srv/` into prod/staging directories, fixed TTS/STT sidecar configs (`4a1c88ef`).
+- **Vitest** — restored setup file, fixed worktree path resolution, re-excluded office tests requiring live deps (`55f095cc`, `ea7c6a9f`).
+- **Office integration tests** — scaffolded test suite for the office module (`c8b239bf`).
 - Missing `world_models` and `temporal_anchors` tables (`640c2d3`).
 - Flaky animation test in `ChatPage`/`SpriteTeaser` ref cleanup (`3ac06ee`, `ca0399a`).
 - 18 lint errors across decomposed sub-components; all lint errors from AI security middleware, Design System merge, and staging build failures (`23fc2d6`, `a4b50bd`, `ccb011a`, `8821164`, `64e8426`, `ecf3a80`).

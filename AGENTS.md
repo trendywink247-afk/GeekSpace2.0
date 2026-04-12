@@ -93,15 +93,22 @@ Embeddings       → nomic-embed-text (local)
 ### 4.1 Backend — 18 Modules
 All in `server/src/modules/`. Key module: **agent** (42 files) — LLM routing, ReAct loops, goals, delegation, proactive engine.
 
-### 4.2 Recent Changes (Agentic v2)
+### 4.2 Recent Changes (Agentic v2 → v3)
 | Feature | Key Files |
 |---------|-----------|
 | Conversation Threading | `agent/services/conversation-threads.ts`, `memory/services/memory.ts` |
 | Human-in-the-Loop | `agent/services/confirm-action.ts`, `agent/services/react-loop.ts` |
+| HITL in Deep Reasoning | `agent/services/deep-reasoning.ts` (confirmations wired into 10-iter loop) |
 | File Upload | `agent/middleware/file-upload.ts`, `agent/services/file-processor.ts` |
 | Feedback System | `agent/services/feedback-service.ts`, `memory/services/cognitive-memory.ts` |
+| Chat Feedback UI | `src/components/` (thumbs up/down on floating chat panel) |
 | Agent Theater | `src/components/AgentTheaterPanel.tsx` |
+| MCP Server (10 tools) | `agent/routes/mcp-server.ts` + Claude Bridge escalation |
+| World Model + Temporal Anchors | `agent/services/world-model.ts`, DB: `world_models`, `temporal_anchors` |
 | LLM Routing | `agent/services/llm.ts` (simple→Groq, complex→Ollama) |
+| Stripe Day Pass | `billing/` (one-time checkout sessions) |
+| WhatsApp Images | `integrations/services/whatsapp.ts` |
+| Prometheus Alerting | `infra/alerts.yml`, `infra/alertmanager.yml` → Telegram |
 
 ### 4.3 Frontend — 41 Dashboard Pages
 React 19 + Vite 7 + Tailwind 3.4 + Zustand + Radix UI + Framer Motion.

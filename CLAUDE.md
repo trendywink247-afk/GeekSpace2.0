@@ -64,21 +64,27 @@ Entry: `src/App.tsx` → `src/dashboard/DashboardRouter.tsx` (lazy-loaded; 41 da
 
 **UI libraries:** Radix UI (20+ components), Framer Motion, Recharts, Chart.js, Three.js + React Three Fiber, BlockNote (rich text editor), React Hook Form + Zod validation, Sonner (toasts), SweetAlert2, Vaul (drawer)
 
-## Agentic Experience (v3.3 + Agentic v2)
+## Agentic Experience (v3.4 + Agentic v3)
 
-The agent module (`server/src/modules/agent/`) is the core — 42 files covering LLM routing, ReAct loops, goals, delegation, proactive engine, notifications, and the Agentic v2 additions below.
+The agent module (`server/src/modules/agent/`) is the core — 42+ files covering LLM routing, ReAct loops, goals, delegation, proactive engine, notifications, MCP server, and the Agentic v2/v3 additions below.
 
-### Agentic v2 (April 2026)
+### Agentic v2/v3 (April 2026)
 
 | Feature | Key files |
 |---------|-----------|
 | Conversation threading | `agent/services/conversation-threads.ts`, `memory/services/memory.ts` |
 | Human-in-the-loop confirmations | `agent/services/confirm-action.ts`, `agent/services/react-loop.ts`, `src/components/ConfirmActionCard.tsx` |
+| HITL in deep reasoning | `agent/services/deep-reasoning.ts` (confirmations in 10-iteration loop) |
 | File upload to chat | `agent/middleware/file-upload.ts`, `agent/services/file-processor.ts` |
 | Feedback + cognitive memory | `agent/services/feedback-service.ts`, `memory/services/cognitive-memory.ts` |
+| Chat feedback UI | Thumbs up/down on floating chat panel |
 | Agent Theater (live ReAct viewer) | `src/components/AgentTheaterPanel.tsx` |
+| MCP server (10 tools) | `agent/routes/mcp-server.ts` + Claude Bridge escalation |
 | World model + temporal anchors (v3) | `agent/services/world-model.ts`, DB tables `world_models`, `temporal_anchors` |
 | Agentic v3 (uncertainty, inference, learning, recovery, trust, vision) | `agent/services/` — see commit `82fe95a` |
+| Stripe day pass | `billing/` — one-time checkout sessions |
+| WhatsApp image sending | `integrations/services/whatsapp.ts` |
+| Prometheus alerting | `infra/alerts.yml`, `infra/alertmanager.yml` → Telegram |
 
 ### Goal System
 - `services/goal-service.ts` — CRUD + AI planning + autonomous step execution
@@ -239,6 +245,7 @@ This modifies `.claudeignore` to hide other modules. Restart Claude Code after r
 - `server/src/modules/agent/services/deep-reasoning.ts` — Deep reasoning (10 iterations)
 - `server/src/modules/agent/services/goal-service.ts` — Goal system core
 - `server/src/modules/agent/services/delegation-pipeline.ts` — Agent-to-agent delegation
+- `server/src/modules/agent/routes/mcp-server.ts` — MCP protocol server (10 tools)
 - `server/src/modules/agent/services/message-router.ts` — Unified channel message handling
 - `server/src/modules/agent/services/proactive-goals.ts` — Background goal scheduler
 
@@ -309,8 +316,8 @@ E2E Playwright specs also run in CI (added April 2026, commit `3e28ba8`) alongsi
 
 1. **Static Checks** — lint changed files only (`--max-warnings=0`), typecheck root + server, build frontend + server, validate OpenAPI spec, audit deps
 2. **Unit Tests** — server tests, then frontend tests (needs static checks)
-3. **Deploy Staging** — auto on merge to main. SSHs to VPS, pulls main, rebuilds `staging` container, health-checks `:3002`
-4. **Deploy Production** — manual dispatch only (`deploy_target: production`). Builds with `GIT_SHA`, tags previous image for rollback, deploys `geekspace` container, syncs static files to `/srv/` for Caddy, health-checks `:3001`, auto-rollback on failure
+3. **Deploy Staging** — auto on merge to main. SSHs to VPS, aborts stuck merge/rebase, resets to `origin/main`, builds frontend, rebuilds `staging` container, health-checks `:3002`
+4. **Deploy Production** — manual dispatch only (`deploy_target: production`). Aborts stuck merge/rebase, checks for dirty tree, resets to `origin/main`, builds with `GIT_SHA`, tags previous image for rollback, deploys `geekspace` container, syncs static files to `/srv/` for Caddy, health-checks `:3001`, auto-rollback on failure
 5. **Promote Branches** — after successful prod deploy, force-pushes main → `staging` and `live-production` branches
 
 ### Branch Model
