@@ -2,7 +2,7 @@ import { Router } from 'express';
 import express from 'express';
 import crypto from 'crypto';
 import { requireAuth, type AuthRequest } from '../../middleware/auth.js';
-import { createCheckoutSession, handleWebhook, getStatus } from './services/stripe.js';
+import { createCheckoutSession, createDayPassCheckoutSession, handleWebhook, getStatus, hasActiveDayPass } from './services/stripe.js';
 import { createRazorpayOrder, verifyRazorpaySignature, razorpayEnabled } from './services/razorpay.js';
 import { config } from '../../config.js';
 import { validateBody, billingUpgradeSchema } from '../../middleware/validate.js';
@@ -94,33 +94,33 @@ billingRouter.get('/usage', requireAuth, (req: AuthRequest, res) => {
 });
 
 // POST /api/billing/day-pass — 24hr access for free users
-// FIX P1-5: Require Stripe payment when billing is configured; dev-only grant otherwise
+// When Stripe is configured, create a Checkout Session for $2.99; dev-only free grant otherwise.
 billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
-  // When Stripe is enabled, day-pass requires a real payment intent — not yet implemented
-  if (config.stripeEnabled) {
-    res.status(503).json({
-      error: 'Day pass via Stripe is not yet available. Please upgrade to a paid plan.',
-      upgradeEndpoint: '/api/billing/checkout',
-    });
-    return;
-  }
-
   const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(req.userId!) as { plan: string } | undefined;
   if (sub?.plan !== 'free') {
     res.status(400).json({ error: 'Day pass is only available on the free plan. Upgrade for full access.' });
     return;
   }
 
-  // Check for active day pass
-  const activePas = db.prepare(
-    "SELECT id FROM day_passes WHERE user_id = ? AND expires_at > datetime('now')"
-  ).get(req.userId!) as { id: string } | undefined;
-  if (activePas) {
+  // Block duplicate purchases while a pass is already active
+  if (hasActiveDayPass(req.userId!)) {
     res.status(400).json({ error: 'You already have an active day pass.' });
     return;
   }
 
-  // Grant the pass (dev/demo mode only — Stripe blocks this in production)
+  // When Stripe is configured, redirect through a real Checkout Session
+  if (config.stripeEnabled) {
+    try {
+      const url = await createDayPassCheckoutSession(req.userId!);
+      res.json({ checkoutUrl: url });
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, 'Stripe day pass checkout session creation failed');
+      res.status(500).json({ error: 'Failed to create day pass checkout session' });
+    }
+    return;
+  }
+
+  // Dev/demo mode — grant the pass directly without payment
   const id = uuid();
   db.prepare(`
     INSERT INTO day_passes (id, user_id, expires_at, credits_granted)

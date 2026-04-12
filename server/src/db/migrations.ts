@@ -1951,4 +1951,13 @@ try {
   `);
 } catch { /* exists */ }
 
+// Day pass Stripe idempotency — track which checkout session granted the pass
+try {
+  db.exec(`ALTER TABLE day_passes ADD COLUMN stripe_checkout_session_id TEXT DEFAULT NULL`);
+} catch { /* column already exists — ignore */ }
+
+try {
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_day_passes_stripe_session ON day_passes(stripe_checkout_session_id) WHERE stripe_checkout_session_id IS NOT NULL`);
+} catch { /* index already exists — ignore */ }
+
 }

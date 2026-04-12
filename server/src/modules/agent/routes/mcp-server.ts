@@ -98,6 +98,82 @@ const TOOLS = [
       required: ['title'],
     },
   },
+  {
+    name: 'agentin.automations.list',
+    description: 'List automations for the authenticated user, optionally filtered by status',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['active', 'paused', 'disabled'],
+          description: 'Filter by automation status. Omit to return all automations.',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of automations to return (default 10, max 50)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'agentin.automations.create',
+    description: 'Create a new automation rule for the authenticated user',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Automation name' },
+        trigger_type: { type: 'string', description: 'Trigger type (e.g. schedule, webhook, event)' },
+        trigger_config: { type: 'object', description: 'Trigger configuration object' },
+        action_type: { type: 'string', description: 'Action type (e.g. send_message, call_webhook)' },
+        action_config: { type: 'object', description: 'Action configuration object' },
+      },
+      required: ['name', 'trigger_type', 'action_type'],
+    },
+  },
+  {
+    name: 'agentin.chat.send',
+    description: 'Log a user message to the conversation history and return a log receipt',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Message text to log' },
+        conversationId: {
+          type: 'string',
+          description: 'Optional conversation thread ID. A new UUID is generated if omitted.',
+        },
+      },
+      required: ['message'],
+    },
+  },
+  {
+    name: 'agentin.activity.recent',
+    description: 'Retrieve recent activity log entries for the authenticated user',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Maximum number of entries to return (default 20, max 100)',
+        },
+        type: {
+          type: 'string',
+          description: 'Filter by action type (exact match against the action column)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'agentin.user.profile',
+    description: 'Return the authenticated user\'s profile and subscription information',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+  },
 ] as const;
 
 // ── MCP content helpers ─────────────────────────────────────
@@ -281,6 +357,151 @@ router.post('/tools/call', requireAuth, (req: AuthRequest, res) => {
         ).get(id) as Record<string, unknown>;
 
         res.json(mcpSuccess({ goal }));
+        return;
+      }
+
+      // ── agentin.automations.list ─────────────────────────
+      case 'agentin.automations.list': {
+        const rawLimit = args.limit;
+        const limit = Math.max(1, Math.min(
+          typeof rawLimit === 'number' ? rawLimit : 10,
+          50,
+        ));
+
+        const status = args.status as string | undefined;
+        const allowedStatuses = ['active', 'paused', 'disabled'];
+
+        let automations: Record<string, unknown>[];
+        if (status) {
+          if (!allowedStatuses.includes(status)) {
+            res.json(mcpError(`status must be one of: ${allowedStatuses.join(', ')}`));
+            return;
+          }
+          // automations table uses enabled INTEGER (1=active, 0=disabled/paused)
+          const enabledFlag = status === 'active' ? 1 : 0;
+          automations = db.prepare(
+            'SELECT * FROM automations WHERE user_id = ? AND enabled = ? ORDER BY created_at DESC LIMIT ?'
+          ).all(userId, enabledFlag, limit) as Record<string, unknown>[];
+        } else {
+          automations = db.prepare(
+            'SELECT * FROM automations WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+          ).all(userId, limit) as Record<string, unknown>[];
+        }
+
+        res.json(mcpSuccess({ automations, count: automations.length }));
+        return;
+      }
+
+      // ── agentin.automations.create ────────────────────────
+      case 'agentin.automations.create': {
+        const name = args.name as string | undefined;
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+          res.json(mcpError('name is required'));
+          return;
+        }
+
+        const triggerType = args.trigger_type as string | undefined;
+        if (!triggerType || typeof triggerType !== 'string' || triggerType.trim().length === 0) {
+          res.json(mcpError('trigger_type is required'));
+          return;
+        }
+
+        const actionType = args.action_type as string | undefined;
+        if (!actionType || typeof actionType !== 'string' || actionType.trim().length === 0) {
+          res.json(mcpError('action_type is required'));
+          return;
+        }
+
+        const triggerConfig = typeof args.trigger_config === 'object' && args.trigger_config !== null
+          ? JSON.stringify(args.trigger_config)
+          : '{}';
+        const actionConfig = typeof args.action_config === 'object' && args.action_config !== null
+          ? JSON.stringify(args.action_config)
+          : '{}';
+
+        const id = uuid();
+        const now = new Date().toISOString();
+
+        db.prepare(
+          'INSERT INTO automations (id, user_id, name, trigger_type, trigger_config, action_type, action_config, enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, userId, name.trim(), triggerType.trim(), triggerConfig, actionType.trim(), actionConfig, 1, now);
+
+        const automation = db.prepare(
+          'SELECT * FROM automations WHERE id = ?'
+        ).get(id) as Record<string, unknown>;
+
+        res.json(mcpSuccess({ automation }));
+        return;
+      }
+
+      // ── agentin.chat.send ─────────────────────────────────
+      case 'agentin.chat.send': {
+        const message = args.message as string | undefined;
+        if (!message || typeof message !== 'string' || message.trim().length === 0) {
+          res.json(mcpError('message is required'));
+          return;
+        }
+
+        const conversationId = typeof args.conversationId === 'string' && args.conversationId.trim().length > 0
+          ? args.conversationId.trim()
+          : uuid();
+
+        const messageId = uuid();
+        const now = new Date().toISOString();
+
+        db.prepare(
+          'INSERT INTO conversation_log (id, user_id, role, content, conversation_id, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(messageId, userId, 'user', message.trim(), conversationId, now);
+
+        res.json(mcpSuccess({ logged: true, conversationId, messageId }));
+        return;
+      }
+
+      // ── agentin.activity.recent ───────────────────────────
+      case 'agentin.activity.recent': {
+        const rawLimit = args.limit;
+        const limit = Math.max(1, Math.min(
+          typeof rawLimit === 'number' ? rawLimit : 20,
+          100,
+        ));
+
+        const actionType = args.type as string | undefined;
+
+        let entries: Record<string, unknown>[];
+        if (actionType && typeof actionType === 'string' && actionType.trim().length > 0) {
+          entries = db.prepare(
+            'SELECT * FROM activity_log WHERE user_id = ? AND action = ? ORDER BY created_at DESC LIMIT ?'
+          ).all(userId, actionType.trim(), limit) as Record<string, unknown>[];
+        } else {
+          entries = db.prepare(
+            'SELECT * FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+          ).all(userId, limit) as Record<string, unknown>[];
+        }
+
+        res.json(mcpSuccess({ entries, count: entries.length }));
+        return;
+      }
+
+      // ── agentin.user.profile ──────────────────────────────
+      case 'agentin.user.profile': {
+        const user = db.prepare(
+          'SELECT id, username, email, name, plan, credits, created_at FROM users WHERE id = ?'
+        ).get(userId) as Record<string, unknown> | undefined;
+
+        if (!user) {
+          res.json(mcpError('User not found'));
+          return;
+        }
+
+        // Fetch credits_remaining from subscriptions if available
+        const subscription = db.prepare(
+          'SELECT plan, status, credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?'
+        ).get(userId) as Record<string, unknown> | undefined;
+
+        res.json(mcpSuccess({
+          profile: user,
+          subscription: subscription ?? null,
+        }));
         return;
       }
 
