@@ -1,102 +1,88 @@
 groups:
-  - name: geekspace-alerts
+  - name: agentin-alerts
     interval: 30s
     rules:
-      # High CPU usage alert
-      - alert: HighCPUUsage
-        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 5m
-        labels:
-          severity: warning
-          service: node-exporter
-        annotations:
-          summary: "High CPU usage detected on {{ $labels.instance }}"
-          description: "CPU usage is above 80% for more than 5 minutes. Current value: {{ $value }}%"
-
-      # High memory usage alert
       - alert: HighMemoryUsage
-        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        expr: (1 - (machine_memory_bytes - container_memory_usage_bytes{name=""}) / machine_memory_bytes) * 100 > 85
         for: 5m
         labels:
           severity: warning
-          service: node-exporter
         annotations:
-          summary: "High memory usage detected on {{ $labels.instance }}"
-          description: "Memory usage is above 85% for more than 5 minutes. Current value: {{ $value }}%"
+          summary: "High memory usage ({{ $value }}%)"
 
-      # Low disk space alert
-      - alert: LowDiskSpace
-        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 80
-        for: 5m
-        labels:
-          severity: critical
-          service: node-exporter
-        annotations:
-          summary: "Low disk space on {{ $labels.instance }}:{{ $labels.device }}"
-          description: "Disk usage is above 80% (less than 20% free). Current usage: {{ $value }}%"
-
-      # Container down/unhealthy alert
       - alert: ContainerDown
-        expr: up{job=~"cadvisor|geekspace-app|geekspace-staging"} == 0
-        for: 1m
+        expr: up{job="cadvisor"} == 0
+        for: 2m
         labels:
           severity: critical
-          service: docker
         annotations:
-          summary: "Container is down: {{ $labels.job }}"
-          description: "Container {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+          summary: "Container monitoring (cAdvisor) is down"
 
-      # Node exporter down alert
-      - alert: NodeExporterDown
-        expr: up{job="node-exporter"} == 0
-        for: 1m
-        labels:
-          severity: critical
-          service: monitoring
-        annotations:
-          summary: "Node Exporter is down"
-          description: "Node Exporter on {{ $labels.instance }} has been down for more than 1 minute"
-
-      # Prometheus down alert
-      - alert: PrometheusDown
-        expr: up{job="prometheus"} == 0
-        for: 1m
-        labels:
-          severity: critical
-          service: monitoring
-        annotations:
-          summary: "Prometheus is down"
-          description: "Prometheus on {{ $labels.instance }} has been down for more than 1 minute"
-
-      # SSL certificate expiry alert (if cert_exporter is used)
-      - alert: SSLCertificateExpiringSoon
-        expr: (ssl_certificate_expiry_seconds - time()) / 86400 < 7
-        for: 1h
-        labels:
-          severity: warning
-          service: ssl
-        annotations:
-          summary: "SSL certificate expiring soon: {{ $labels.domain }}"
-          description: "SSL certificate for {{ $labels.domain }} expires in less than 7 days ({{ $value | humanizeDuration }})"
-
-      # Docker container high CPU usage
-      - alert: DockerContainerHighCPU
-        expr: (rate(container_cpu_usage_seconds_total{container!=""}[5m]) * 100) > 80
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name=~"geekspace-app|geekspace-staging|ollama.*"}[5m]) * 100 > 80
         for: 5m
         labels:
           severity: warning
-          service: docker
         annotations:
-          summary: "Container high CPU usage: {{ $labels.name }}"
-          description: "Container {{ $labels.name }} is using more than 80% CPU for 5 minutes"
+          summary: "Container {{ $labels.name }} CPU above 80%"
 
-      # Docker container high memory usage
-      - alert: DockerContainerHighMemory
-        expr: (container_memory_usage_bytes{container!=""} / container_spec_memory_limit_bytes{container!=""}) * 100 > 85
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name=~"geekspace-app|geekspace-staging"} / container_spec_memory_limit_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} memory above 90% of limit"
+
+  - name: agentin-app-alerts
+    interval: 30s
+    rules:
+      # High 5xx error rate from the app
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate on {{ $labels.job }} ({{ $value | humanize }}/s)"
+          description: "Job {{ $labels.job }} is returning 5xx errors at {{ $value | humanize }} req/s. Investigate app logs."
+
+      # P95 latency above 2 seconds
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency above 2s on {{ $labels.job }} ({{ $value | humanizeDuration }})"
+          description: "95th-percentile response time for {{ $labels.job }} has exceeded 2 seconds."
+
+      # Any scraped target is down (geekspace-app, geekspace-staging, node-exporter, etc.)
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Scrape target {{ $labels.instance }} (job={{ $labels.job }}) is down"
+          description: "Prometheus cannot reach {{ $labels.instance }}. Check the container/service."
+
+      # Process-level resident memory above 1 GB (app container)
+      - alert: AppHighMemoryRSS
+        expr: process_resident_memory_bytes{job=~"geekspace-app|geekspace-staging"} > 1e9
         for: 5m
         labels:
           severity: warning
-          service: docker
         annotations:
-          summary: "Container high memory usage: {{ $labels.name }}"
-          description: "Container {{ $labels.name }} is using more than 85% of its memory limit"
+          summary: "App process RSS above 1 GB on {{ $labels.job }} ({{ $value | humanize1024 }}B)"
+          description: "The Node.js process in {{ $labels.job }} is holding more than 1 GB of resident memory."
+
+      # Root filesystem free space below 15%
+      - alert: DiskSpaceLow
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.15
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space on / is below 15% ({{ $value | humanizePercentage }} free)"
+          description: "Available disk space on {{ $labels.instance }} root filesystem has dropped below 15%. Free up space immediately."
