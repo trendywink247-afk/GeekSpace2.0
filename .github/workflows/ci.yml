@@ -388,12 +388,15 @@ jobs:
             cd ~/GeekSpace2.0
 
             echo "=== Cleaning local changes ==="
-            git stash --include-untracked || true
+            git merge --abort 2>/dev/null || true
+            git rebase --abort 2>/dev/null || true
+            git checkout -f main
+            git reset --hard origin/main
+            git clean -fd
 
             echo "=== Pulling latest main ==="
             git fetch origin main
-            git checkout main
-            git pull origin main
+            git reset --hard origin/main
 
             echo "=== Building frontend bundle into dist/ ==="
             # 2026-04-06: Caddy serves the SPA from /srv on the host,
@@ -458,9 +461,10 @@ jobs:
             cd ~/GeekSpace2.0
 
             echo "=== Checking for dirty working tree ==="
-            # Fail loudly instead of silently stashing — if there are local edits
-            # on the deploy host someone is probably debugging and we don't want
-            # to throw their work away.
+            # Abort any stuck merge/rebase first
+            git merge --abort 2>/dev/null || true
+            git rebase --abort 2>/dev/null || true
+            # Fail loudly if there are local edits — someone is probably debugging
             if ! git diff --quiet || ! git diff --cached --quiet; then
               echo "ERROR: deploy host working tree is dirty. Refusing to deploy."
               git status --short
@@ -469,8 +473,8 @@ jobs:
 
             echo "=== Pulling latest main ==="
             git fetch origin main
-            git checkout main
-            git pull origin main
+            git checkout -f main
+            git reset --hard origin/main
             GIT_SHA=$(git rev-parse --short HEAD)
             GIT_SHA_FULL=$(git rev-parse HEAD)
             echo "Deploying commit: $GIT_SHA"
