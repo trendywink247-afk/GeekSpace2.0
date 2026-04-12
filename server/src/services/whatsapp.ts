@@ -5,6 +5,7 @@
 // ============================================================
 export {
   sendWhatsAppMessage,
+  sendWhatsAppImage,
   verifyWhatsAppWebhook,
   generateWhatsAppLinkToken,
   generateWhatsAppQRSession,

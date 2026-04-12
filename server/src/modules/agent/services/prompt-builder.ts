@@ -213,8 +213,8 @@ export function buildActionChannelSuffix(finalReply: string, actionResults: Acti
       continue;
     }
     if (ar.tool === 'generate_image' && ar.imageUrl) {
-      // Image is sent as a native Telegram photo (see step 11b); skip raw URL in text.
-      // For WhatsApp: sendWhatsAppImage is not yet implemented — no text fallback to avoid raw paths.
+      // Image is sent as a native Telegram photo (see step 11b) or WhatsApp image (see step 11c).
+      // Skip raw URL in text — media is delivered inline by the channel-specific sender.
       continue;
     }
     if (ar.tool === 'generate_video' && ar.videoUrl) {
