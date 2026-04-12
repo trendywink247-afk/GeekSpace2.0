@@ -20,7 +20,6 @@ export default defineConfig({
       'src/**/__tests__/**/*.test.{ts,tsx}',
       'src/**/*.test.{ts,tsx}',
       'tests/**/*.test.{ts,tsx}',
-      '/root/GeekSpace2.0/.claude/worktrees/agent-a0682731/src/**/__tests__/**/*.test.{ts,tsx}',
     ],
     exclude: [
       'node_modules',
@@ -28,7 +27,7 @@ export default defineConfig({
       'server',
       'e2e',
     ],
-    setupFiles: ['/root/GeekSpace2.0/.claude/worktrees/agent-a0682731/vitest.setup.ts'],
+    setupFiles: ['./vitest.setup.ts'],
     testTimeout: 15000,
     coverage: {
       provider: 'v8',
