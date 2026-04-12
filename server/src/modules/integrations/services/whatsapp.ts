@@ -62,6 +62,63 @@ export async function sendWhatsAppMessage(
   }
 }
 
+/**
+ * Send an image to a WhatsApp recipient via Business Cloud API.
+ *
+ * Uses the `image` message type with a public URL. The WhatsApp API will
+ * fetch and deliver the image inline in the conversation.
+ *
+ * @param to       - Recipient phone number (digits only — non-digits are stripped)
+ * @param imageUrl - Publicly accessible URL of the image to send
+ * @param caption  - Optional caption shown below the image (max 1024 chars)
+ * @returns `true` on success, `false` when not configured or on send failure
+ */
+export async function sendWhatsAppImage(
+  to: string,
+  imageUrl: string,
+  caption?: string,
+): Promise<boolean> {
+  if (!config.whatsappToken || !config.whatsappBusinessId) {
+    logger.warn({ to }, 'WhatsApp image not sent: WHATSAPP_TOKEN/WHATSAPP_BUSINESS_ID not configured');
+    return false;
+  }
+
+  try {
+    const url = `https://graph.facebook.com/v18.0/${config.whatsappBusinessId}/messages`;
+    const body: Record<string, unknown> = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: to.replace(/\D/g, ''),
+      type: 'image',
+      image: {
+        link: imageUrl,
+        ...(caption ? { caption: caption.slice(0, 1024) } : {}),
+      },
+    };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.whatsappToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const error = await res.text().catch(() => '');
+      logger.error({ error, to, imageUrl }, 'WhatsApp image send failed');
+      return false;
+    }
+
+    logger.info({ to }, 'WhatsApp image sent');
+    return true;
+  } catch (err) {
+    logger.error({ err, to }, 'WhatsApp image send error');
+    return false;
+  }
+}
+
 // ── Webhook verification ─────────────────────────────────────
 
 export function verifyWhatsAppWebhook(signature: string, body: string): boolean {
