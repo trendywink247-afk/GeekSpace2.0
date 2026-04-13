@@ -407,8 +407,9 @@ jobs:
             # See commit 0742e04b for the debug session that found this.
             npm ci
             npx vite build
-            echo "=== Syncing dist/ -> /srv (Caddy static root) ==="
-            rsync -a --delete dist/ /srv/
+            echo "=== Syncing dist/ -> /srv/staging (Caddy static root) ==="
+            mkdir -p /srv/staging
+            rsync -a --delete dist/ /srv/staging/
 
             echo "=== Building & deploying staging container ==="
             DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
@@ -492,8 +493,9 @@ jobs:
             npm ci
             npx vite build
 
-            echo "=== Syncing dist/ -> /srv (Caddy static root, with --delete) ==="
-            rsync -a --delete dist/ /srv/
+            echo "=== Syncing dist/ -> /srv/prod (Caddy static root, with --delete) ==="
+            mkdir -p /srv/prod
+            rsync -a --delete dist/ /srv/prod/
 
             echo "=== Building production container (BuildKit cache) ==="
             DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
