@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS user_contact_preferences (
   user_id TEXT PRIMARY KEY,
   availability_mode TEXT DEFAULT 'auto_reply_on' CHECK (availability_mode IN ('auto_reply_on', 'auto_reply_off')),
   share_availability_level TEXT DEFAULT 'preferences_only' CHECK (share_availability_level IN ('none', 'coarse', 'preferences_only')),
-  default_response_template TEXT DEFAULT 'I\'m currently unavailable. I\'ll respond when I can.',
+  default_response_template TEXT DEFAULT 'I''m currently unavailable. I''ll respond when I can.',
   quiet_hours_start INTEGER, -- 0-23, NULL = no quiet hours
   quiet_hours_end INTEGER, -- 0-23, NULL = no quiet hours
   working_hours_start INTEGER DEFAULT 9,
