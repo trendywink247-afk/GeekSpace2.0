@@ -560,6 +560,13 @@ export async function initProactiveEngine(): Promise<void> {
         scheduleRecurringDaily(user.id, 'morning_brief', 8, tz);
         scheduleRecurringDaily(user.id, 'overdue_alert', 10, tz);
         scheduleRecurringDaily(user.id, 'habit_nudge', 21, tz);
+        // Weekly report: next Sunday 7pm user-local. Handler re-schedules itself.
+        const nowUserLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+        const daysUntilSunday = (7 - nowUserLocal.getDay()) % 7;
+        const nextSunday = new Date(nowUserLocal);
+        nextSunday.setDate(nextSunday.getDate() + (daysUntilSunday === 0 && nowUserLocal.getHours() >= 19 ? 7 : daysUntilSunday));
+        nextSunday.setHours(19, 0, 0, 0);
+        scheduleJob(user.id, 'weekly_report', nextSunday.getTime(), {}, { dedupeKey: `weekly_report:${user.id}:${nextSunday.toISOString().slice(0, 10)}` });
       }
       logger.info({ userCount: users.length }, 'Seeded recurring durable jobs');
     } catch (err) {
