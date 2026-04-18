@@ -6,34 +6,62 @@
 // is fully idempotent — safe to run multiple times.
 // ============================================================
 
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { db } from './index.js';
+import type Database from 'better-sqlite3';
 import { logger } from '../logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
-/**
- * Ensure the _migrations tracking table exists.
- */
-function ensureMigrationsTable(): void {
+function sha256(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function ensureMigrationsTable(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS _migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
-      applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+      applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+      checksum TEXT
     )
   `);
+  // Idempotently add checksum column for DBs created before this column existed
+  try {
+    db.exec(`ALTER TABLE _migrations ADD COLUMN checksum TEXT`);
+  } catch { /* column already exists */ }
 }
 
-/**
- * Get the set of already-applied migration names.
- */
-function getAppliedMigrations(): Set<string> {
+function getAppliedMigrations(db: Database.Database): Set<string> {
   const rows = db.prepare('SELECT name FROM _migrations').all() as Array<{ name: string }>;
   return new Set(rows.map(r => r.name));
+}
+
+function isPopulatedDb(db: Database.Database): boolean {
+  const tableExists = db.prepare(
+    `SELECT name FROM sqlite_master WHERE type='table' AND name='users'`
+  ).get();
+  if (!tableExists) return false;
+  const row = db.prepare('SELECT COUNT(*) as n FROM users').get() as { n: number };
+  return row.n > 0;
+}
+
+function seedExistingMigrations(db: Database.Database, files: string[]): void {
+  const insertStmt = db.prepare(
+    `INSERT OR IGNORE INTO _migrations (name, applied_at, checksum) VALUES (?, datetime('now'), ?)`
+  );
+  const seedAll = db.transaction(() => {
+    for (const file of files) {
+      const filePath = path.join(MIGRATIONS_DIR, file);
+      const sql = fs.readFileSync(filePath, 'utf-8');
+      insertStmt.run(file, sha256(sql));
+    }
+  });
+  seedAll();
+  logger.info({ count: files.length }, 'migrate: seeded existing DB with migration history — no re-run');
 }
 
 /**
@@ -41,10 +69,14 @@ function getAppliedMigrations(): Set<string> {
  * Each migration runs inside a transaction so it either fully
  * applies or fully rolls back.
  *
+ * Cutover detection: if the DB is already populated (users table
+ * has rows) but has no _migrations entries, seeds the tracking
+ * table without re-running the SQL — safe upgrade path.
+ *
  * @returns The list of newly applied migration names.
  */
-export function runMigrations(): string[] {
-  ensureMigrationsTable();
+export function runMigrations(db: Database.Database): string[] {
+  ensureMigrationsTable(db);
 
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     logger.warn({ dir: MIGRATIONS_DIR }, 'migrate: migrations directory not found');
@@ -53,9 +85,16 @@ export function runMigrations(): string[] {
 
   const files = fs.readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
-    .sort(); // lexicographic — 000_init.sql, 001_foo.sql, etc.
+    .sort();
 
-  const applied = getAppliedMigrations();
+  const applied = getAppliedMigrations(db);
+
+  // Cutover: populated DB with no migration history — seed without re-running
+  if (applied.size === 0 && isPopulatedDb(db)) {
+    seedExistingMigrations(db, files);
+    return [];
+  }
+
   const newlyApplied: string[] = [];
 
   for (const file of files) {
@@ -69,9 +108,10 @@ export function runMigrations(): string[] {
       continue;
     }
 
+    const checksum = sha256(sql);
     const runOne = db.transaction(() => {
       db.exec(sql);
-      db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);
+      db.prepare('INSERT INTO _migrations (name, checksum) VALUES (?, ?)').run(file, checksum);
     });
 
     try {
@@ -99,11 +139,16 @@ const isMainModule = process.argv[1] &&
   path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
 
 if (isMainModule) {
+  const { default: BetterSqlite3 } = await import('better-sqlite3');
+  const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/geekspace.db');
+  const cliDb = new BetterSqlite3(dbPath);
   try {
-    const applied = runMigrations();
+    const applied = runMigrations(cliDb);
     console.log(`Applied ${applied.length} migration(s):`, applied);
+    cliDb.close();
     process.exit(0);
   } catch {
+    cliDb.close();
     process.exit(1);
   }
 }
