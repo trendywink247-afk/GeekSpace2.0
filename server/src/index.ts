@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { db } from './db/index.js';
 
-import { initAutomationsEngine, initWeeklyReportScheduler } from './services/automations-engine.js';
+import { initAutomationsEngine } from './services/automations-engine.js';
 import { initCleanupCron } from './services/cleanup.js';
 import { initMemoryTables, startMemorySyncScheduler, startWeeklySummaryScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
@@ -128,7 +128,6 @@ const httpServer = app.listen(config.port, () => {
     safeStart('model-sync', startModelSyncScheduler);
     safeStart('artifact-cleanup', startArtifactCleanupScheduler);
     safeStart('db-cleanup-cron', initCleanupCron);
-    safeStart('weekly-report-scheduler', initWeeklyReportScheduler);
     safeStart('proactive-engine', initProactiveEngine);
     safeStart('proactive-goals', initProactiveGoalEngine);
     safeStart('agent-observer', initAgentObserver);

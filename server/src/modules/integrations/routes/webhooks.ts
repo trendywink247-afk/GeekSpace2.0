@@ -44,6 +44,7 @@ import { db } from '../../../db/index.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 import { handleEscalationReply } from '../../../services/escalation.js';
 import { getPersonaResponse } from '../../../services/persona-engine.js';
+import { seedProactiveUserJobs } from '../../../services/proactive-engine.js';
 import { buildSnoozeMenuCard, buildCompletedText, buildFocusCard, buildNoteCard } from '../../../services/telegram-cards.js';
 
 // Extend Express Request to include requestId for pipeline tracing
@@ -1436,6 +1437,7 @@ async function handleTelegramCommand(
         await sendTelegramMessage(chatId, 'Proactive messages turned OFF. You can turn them back on with /proactive on');
       } else if (toggle === 'on') {
         db.prepare("UPDATE users SET proactive_enabled = 1 WHERE id = ?").run(link.user_id);
+        void seedProactiveUserJobs(link.user_id);
         await sendTelegramMessage(chatId, 'Proactive messages turned ON. You\'ll get daily briefings at 8am and weekly reports on Sundays.');
       } else {
         const user = db.prepare('SELECT proactive_enabled FROM users WHERE id = ?').get(link.user_id) as { proactive_enabled: number } | undefined;

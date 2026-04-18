@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
-import { getProactiveLog } from '../services/proactive-engine.js';
+import { getProactiveLog, seedProactiveUserJobs } from '../services/proactive-engine.js';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { v4 as uuid } from 'uuid';
@@ -53,6 +53,11 @@ proactiveRouter.patch('/toggle', requireAuth, (req: AuthRequest, res) => {
   try {
     db.prepare('UPDATE users SET proactive_enabled = ? WHERE id = ?').run(enabled ? 1 : 0, userId);
     logger.info({ userId, enabled }, 'Proactive messages toggle updated');
+    if (enabled) {
+      // Re-seed recurring jobs so users who toggle on after boot still receive
+      // weekly reports and daily briefings without waiting for a server restart.
+      void seedProactiveUserJobs(userId);
+    }
     res.json({ enabled });
   } catch (err) {
     logger.error({ err, userId }, 'Failed to update proactive toggle');
