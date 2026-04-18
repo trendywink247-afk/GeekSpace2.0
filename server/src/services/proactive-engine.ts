@@ -1,12 +1,20 @@
 // Proactive AI Engine -- Phase 90
 // ============================================================
 
+import { DateTime } from 'luxon';
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
 import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
 import { eventBus } from './event-bus.js';
 import { getUpcomingFestivals } from './festival-calendar.js';
+
+function nextSundayAt7pm(tz: string): DateTime {
+  const nowLocal = DateTime.now().setZone(tz);
+  let target = nowLocal.set({ weekday: 7, hour: 19, minute: 0, second: 0, millisecond: 0 });
+  if (target <= nowLocal) target = target.plus({ weeks: 1 });
+  return target;
+}
 
 export type ProactiveMessageType = 'daily_briefing' | 'overdue_alert' | 'idle_check_in' | 'weekly_report' | 'streak_milestone' | 'expense_spike';
 
@@ -474,10 +482,10 @@ export async function initProactiveEngine(): Promise<void> {
       if (!isTypeEnabled(job.userId, 'weekly_report') || isThrottled(job.userId)) return;
       await weeklyReport(job.userId);
       await weeklyExpenseDigest(job.userId);
-      // Reschedule for next Sunday 7pm
-      const _tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
-      const nextSunday = Date.now() + 7 * 86_400_000;
-      scheduleJob(job.userId, 'weekly_report', nextSunday, {}, { dedupeKey: `weekly_report:${job.userId}:${new Date(nextSunday).toISOString().slice(0, 10)}` });
+      // Reschedule for next Sunday 7pm user-local (not server-local).
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      const next = nextSundayAt7pm(tz);
+      scheduleJob(job.userId, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${job.userId}:${next.toISODate()}` });
     });
 
     registerHandler('page_monitor', async (job) => {
@@ -561,12 +569,8 @@ export async function initProactiveEngine(): Promise<void> {
         scheduleRecurringDaily(user.id, 'overdue_alert', 10, tz);
         scheduleRecurringDaily(user.id, 'habit_nudge', 21, tz);
         // Weekly report: next Sunday 7pm user-local. Handler re-schedules itself.
-        const nowUserLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
-        const daysUntilSunday = (7 - nowUserLocal.getDay()) % 7;
-        const nextSunday = new Date(nowUserLocal);
-        nextSunday.setDate(nextSunday.getDate() + (daysUntilSunday === 0 && nowUserLocal.getHours() >= 19 ? 7 : daysUntilSunday));
-        nextSunday.setHours(19, 0, 0, 0);
-        scheduleJob(user.id, 'weekly_report', nextSunday.getTime(), {}, { dedupeKey: `weekly_report:${user.id}:${nextSunday.toISOString().slice(0, 10)}` });
+        const next = nextSundayAt7pm(tz);
+        scheduleJob(user.id, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${user.id}:${next.toISODate()}` });
       }
       logger.info({ userCount: users.length }, 'Seeded recurring durable jobs');
     } catch (err) {
