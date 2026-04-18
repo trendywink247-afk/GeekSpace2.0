@@ -290,6 +290,8 @@ existing `DEPLOY_HOST` / `DEPLOY_SSH_KEY` secrets.
 - Inputs:
   - `action` — closed choice list. Current whitelist:
     - `docker-builder-prune` — runs `docker builder prune -af` and logs before/after `df -h /` + `docker system df`
+    - `ssh-keys-audit` — read-only inventory of `/root/.ssh/authorized_keys` (fingerprints + comments, no private material). Output is pasted into `docs/SSH-ACCESS.md` under **Human Key Inventory** via a follow-up PR. See `docs/SSH-ACCESS.md` for the access model.
+    - `rotate-jwt-encryption-preview` — dry-run validator for a future real rotation action. Verifies `/root/.agentin-secrets` mode/size, lists the variable names it contains (names only, never values), generates candidate `JWT_SECRET` / `ENCRYPTION_KEY` lengths, and confirms the backup directory is writable. Makes no changes. Used to rehearse the pipe before the actual rotation dispatch.
   - `reason` — free-text audit note (shown in the run log, not passed to the shell)
 
 ### How to trigger

@@ -32,6 +32,8 @@ on:
         type: choice
         options:
           - docker-builder-prune
+          - ssh-keys-audit
+          - rotate-jwt-encryption-preview
       reason:
         description: 'Why you are running this (for the run log / audit trail)'
         required: true
@@ -104,6 +106,72 @@ jobs:
                 echo
                 echo "--- df -h / (after) ---"
                 df -h /
+                ;;
+              ssh-keys-audit)
+                # Read-only inventory of /root/.ssh/authorized_keys. Emits
+                # key type, SHA256 fingerprint, bit length, and comment for
+                # each active line. Prints file mode + mtime. Does NOT emit
+                # the base64 key material. Output is pasted into
+                # docs/SSH-ACCESS.md under "Human Key Inventory" via PR.
+                AUTH_KEYS=/root/.ssh/authorized_keys
+                echo "--- authorized_keys metadata ---"
+                ls -la "$AUTH_KEYS" || { echo "ERROR: $AUTH_KEYS missing" >&2; exit 1; }
+                stat -c 'mode=%a owner=%U:%G mtime=%y' "$AUTH_KEYS"
+                echo
+                echo "--- line count (incl. blanks/comments) ---"
+                wc -l "$AUTH_KEYS"
+                echo
+                echo "--- active entries (ssh-keygen -lf) ---"
+                # ssh-keygen -lf on the file prints one fingerprint per key
+                # line and ignores blank/comment lines. Safe: no private
+                # material, just type + fingerprint + comment.
+                ssh-keygen -lf "$AUTH_KEYS"
+                echo
+                echo "--- raw comment field per line (for owner reconciliation) ---"
+                # Last whitespace-delimited field of each non-empty,
+                # non-comment line. Operator cross-references with key
+                # holder identities offline.
+                awk 'NF && $1 !~ /^#/ { print NR": "$NF }' "$AUTH_KEYS"
+                ;;
+              rotate-jwt-encryption-preview)
+                # Dry-run validator for the future rotate-jwt-encryption
+                # action. Confirms the pipe works end-to-end without
+                # touching any live secret. Generates candidate values,
+                # verifies /root/.agentin-secrets is present and mode 600,
+                # verifies a backup path is writable, and reports the
+                # current key names present. Makes NO changes.
+                SECRETS_FILE=/root/.agentin-secrets
+                echo "--- preflight ---"
+                if [ ! -f "$SECRETS_FILE" ]; then
+                  echo "ERROR: $SECRETS_FILE missing" >&2
+                  exit 1
+                fi
+                stat -c 'mode=%a owner=%U:%G size=%s mtime=%y' "$SECRETS_FILE"
+                MODE=$(stat -c '%a' "$SECRETS_FILE")
+                if [ "$MODE" != "600" ]; then
+                  echo "WARN: expected mode 600, got $MODE" >&2
+                fi
+                echo
+                echo "--- keys currently present (names only, no values) ---"
+                # Print only the variable names, never the values.
+                awk -F= 'NF && $1 !~ /^#/ { print $1 }' "$SECRETS_FILE" | sort -u
+                echo
+                echo "--- candidate JWT_SECRET (length check only, not written) ---"
+                CANDIDATE_JWT=$(openssl rand -hex 64)
+                echo "length=${#CANDIDATE_JWT} expected=128"
+                echo
+                echo "--- candidate ENCRYPTION_KEY (length check only, not written) ---"
+                CANDIDATE_ENC=$(openssl rand -hex 32)
+                echo "length=${#CANDIDATE_ENC} expected=64"
+                echo
+                echo "--- backup path writability ---"
+                BACKUP_DIR=/root/secret-backups
+                mkdir -p "$BACKUP_DIR"
+                chmod 700 "$BACKUP_DIR"
+                TMP_PROBE="$BACKUP_DIR/.probe-$(date -u +%s)"
+                : > "$TMP_PROBE" && rm -f "$TMP_PROBE" && echo "ok: $BACKUP_DIR writable"
+                echo
+                echo "NOTE: preview only — no secret was written, no service was restarted."
                 ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
