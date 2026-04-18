@@ -22,7 +22,7 @@ name: CI/CD Pipeline
 #   * Playwright browsers are cached.
 #   * Docs-only PRs (*.md, etc.) skip CI entirely via paths-ignore.
 #   * Two known-broken security sub-steps (OpenAPI spec lint, npm audit)
-#     keep step-level continue-on-error until AGE-23 / AGE-24 land.
+#     keep step-level continue-on-error until AGE-34 / AGE-35 land.
 # ---------------------------------------------------------------------------
 
 on:
@@ -299,10 +299,10 @@ jobs:
   # AGE-22 audit (26 CI runs):
   #   - Validate Caddyfile  → 100% pass (skipped when file unchanged). GATING.
   #   - Validate OpenAPI    → 100% FAIL (spec has 18 errors). Leave step-level
-  #                           continue-on-error until the spec is fixed (AGE-23).
+  #                           continue-on-error until the spec is fixed (AGE-34).
   #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
   #                           protobufjs vuln. Step-level continue-on-error kept
-  #                           until AGE-24 removes `|| true` and fixes the dep.
+  #                           until AGE-35 removes `|| true` and fixes the dep.
   #   - gitleaks            → 100% pass. GATING.
   #   - Semgrep             → 100% pass. GATING.
   # ============================================
