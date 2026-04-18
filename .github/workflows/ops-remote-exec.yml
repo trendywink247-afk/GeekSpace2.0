@@ -7,7 +7,10 @@ run-name: "Ops: ${{ inputs.action }} on production VPS"
 #
 # How it works:
 #   * workflow_dispatch only — no push/PR/schedule triggers
-#   * Requires the workflow to be dispatched from the `main` branch
+#   * Gated by the `production-ops` GitHub Environment, which is configured
+#     in repo settings with required reviewers. Every dispatch pauses for
+#     human approval before the job runs, regardless of which ref triggered
+#     it. DEPLOY_HOST / DEPLOY_SSH_KEY are scoped to this environment.
 #   * `action` input is a closed choice list; each case maps to a fixed shell
 #     snippet executed over SSH via the existing DEPLOY_HOST / DEPLOY_SSH_KEY
 #     secrets (reused from deploy.yml)
@@ -45,11 +48,13 @@ jobs:
   remote-exec:
     name: Remote Exec (${{ inputs.action }})
     runs-on: ubuntu-latest
-    # Hard-gate: workflow_dispatch already defaults to the default branch, but
-    # pin it explicitly so a stray dispatch from another ref fails loud.
-    if: github.ref == 'refs/heads/main'
+    # Hard-gate: production-ops is a GitHub Environment with required
+    # reviewers (configured in repo Settings → Environments). The job
+    # pauses until a reviewer approves, and DEPLOY_HOST / DEPLOY_SSH_KEY
+    # are scoped to this environment so a forked/branch workflow file
+    # cannot read them without approval.
     environment:
-      name: production
+      name: production-ops
       url: https://ai.agentin.chat
     steps:
       - name: Record dispatch metadata
