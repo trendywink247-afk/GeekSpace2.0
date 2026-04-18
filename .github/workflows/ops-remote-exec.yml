@@ -1,0 +1,117 @@
+name: "Ops: Remote Exec"
+run-name: "Ops: ${{ inputs.action }} on production VPS"
+
+# ---------------------------------------------------------------------------
+# Sanctioned path for running approved ops commands on the production VPS
+# without provisioning per-agent SSH credentials.
+#
+# How it works:
+#   * workflow_dispatch only — no push/PR/schedule triggers
+#   * Gated by the `production-ops` GitHub Environment, which is configured
+#     in repo settings with required reviewers. Every dispatch pauses for
+#     human approval before the job runs, regardless of which ref triggered
+#     it. DEPLOY_HOST / DEPLOY_SSH_KEY are scoped to this environment.
+#   * `action` input is a closed choice list; each case maps to a fixed shell
+#     snippet executed over SSH via the existing DEPLOY_HOST / DEPLOY_SSH_KEY
+#     secrets (reused from deploy.yml)
+#   * Full stdout/stderr is echoed to the run log for audit
+#
+# Adding a new action:
+#   1. Add it to the `action` input `options` list below
+#   2. Add a matching `case` arm to the script — keep the commands fully
+#      literal (no user-supplied strings interpolated into shell)
+#   3. Land via PR so the whitelist change gets normal code review
+# ---------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Whitelisted ops action to run on the VPS'
+        required: true
+        type: choice
+        options:
+          - docker-builder-prune
+      reason:
+        description: 'Why you are running this (for the run log / audit trail)'
+        required: true
+        type: string
+
+concurrency:
+  group: ops-remote-exec
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  remote-exec:
+    name: Remote Exec (${{ inputs.action }})
+    runs-on: ubuntu-latest
+    # Hard-gate: production-ops is a GitHub Environment with required
+    # reviewers (configured in repo Settings → Environments). The job
+    # pauses until a reviewer approves, and DEPLOY_HOST / DEPLOY_SSH_KEY
+    # are scoped to this environment so a forked/branch workflow file
+    # cannot read them without approval.
+    environment:
+      name: production-ops
+      url: https://ai.agentin.chat
+    steps:
+      - name: Record dispatch metadata
+        env:
+          OPS_ACTION: ${{ inputs.action }}
+          OPS_REASON: ${{ inputs.reason }}
+          OPS_ACTOR: ${{ github.actor }}
+          OPS_REF: ${{ github.ref }}
+          OPS_RUN_ID: ${{ github.run_id }}
+        run: |
+          echo "=== Ops dispatch ==="
+          echo "action:  $OPS_ACTION"
+          echo "reason:  $OPS_REASON"
+          echo "actor:   $OPS_ACTOR"
+          echo "ref:     $OPS_REF"
+          echo "run:     $OPS_RUN_ID"
+
+      - name: Execute remote action
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 15m
+          envs: OPS_ACTION
+          script: |
+            set -euo pipefail
+            ACTION="${OPS_ACTION:-}"
+            echo "=== Remote host: $(hostname) ==="
+            echo "=== Action:      $ACTION ==="
+            echo "=== Started:     $(date -u +%FT%TZ) ==="
+            echo
+
+            case "$ACTION" in
+              docker-builder-prune)
+                echo "--- df -h / (before) ---"
+                df -h /
+                echo
+                echo "--- docker system df (before) ---"
+                docker system df || true
+                echo
+                echo "--- docker builder prune -af ---"
+                docker builder prune -af
+                echo
+                echo "--- docker system df (after) ---"
+                docker system df || true
+                echo
+                echo "--- df -h / (after) ---"
+                df -h /
+                ;;
+              *)
+                echo "ERROR: unknown or unlisted action: $ACTION" >&2
+                exit 1
+                ;;
+            esac
+
+            echo
+            echo "=== Finished:    $(date -u +%FT%TZ) ==="
+        env:
+          OPS_ACTION: ${{ inputs.action }}
