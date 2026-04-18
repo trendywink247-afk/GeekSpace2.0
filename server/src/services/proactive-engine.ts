@@ -3,7 +3,6 @@
 
 import { db } from '../db/index.js';
 import { logger } from '../logger.js';
-import { runMemoryDecay } from '../modules/memory/services/cognitive-memory.js';
 import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
 import { eventBus } from './event-bus.js';
@@ -52,30 +51,6 @@ function isProactiveEnabled(userId: string): boolean {
     return true;
   } catch {
     return true;
-  }
-}
-
-// GAP-10: Check if current time is within user's quiet hours
-function isQuietHours(userId: string, tz: string): boolean {
-  try {
-    const config = db.prepare('SELECT quiet_start, quiet_end FROM agent_configs WHERE user_id = ?').get(userId) as { quiet_start: string | null; quiet_end: string | null } | undefined;
-    if (!config?.quiet_start || !config?.quiet_end) return false;
-    const [startH, startM] = config.quiet_start.split(':').map(Number);
-    const [endH, endM] = config.quiet_end.split(':').map(Number);
-    const nowStr = new Date().toLocaleString('en-US', { timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false });
-    const parts = nowStr.split(':');
-    const nowH = parseInt(parts[0], 10);
-    const nowM = parseInt(parts[1], 10);
-    const nowMinutes = nowH * 60 + nowM;
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    // Handle overnight range (e.g., 22:00 to 07:00)
-    if (startMinutes <= endMinutes) {
-      return nowMinutes >= startMinutes && nowMinutes < endMinutes;
-    }
-    return nowMinutes >= startMinutes || nowMinutes < endMinutes;
-  } catch {
-    return false;
   }
 }
 
@@ -290,115 +265,6 @@ export function getProactiveLog(userId: string, limit = 20): unknown[] {
   }
 }
 
-let proactiveTimer: ReturnType<typeof setInterval> | null = null;
-
-function getUserHour(timezone: string): number {
-  return parseInt(
-    new Date().toLocaleString('en-US', { timeZone: timezone, hour: 'numeric', hour12: false }),
-    10
-  );
-}
-
-function _getUserMinute(timezone: string): number {
-  return parseInt(
-    new Date().toLocaleString('en-US', { timeZone: timezone, minute: 'numeric' }),
-    10
-  );
-}
-
-function getUserDateStr(timezone: string): string {
-  const d = new Date();
-  const year = d.toLocaleString('en-US', { timeZone: timezone, year: 'numeric' });
-  const month = d.toLocaleString('en-US', { timeZone: timezone, month: '2-digit' });
-  const day = d.toLocaleString('en-US', { timeZone: timezone, day: '2-digit' });
-  return `${year}-${month}-${day}`;
-}
-
-async function runProactiveChecks(): Promise<void> {
-  // Reminder previews run every 30 min — timezone-independent
-  // Use UTC minute for the global tick check (not tied to any single timezone)
-  const globalMinute = new Date().getUTCMinutes();
-  if (globalMinute === 0 || globalMinute === 30) {
-    await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview failed'));
-  }
-
-  if (globalMinute !== 0) return;
-
-  let users: Array<{ id: string; timezone?: string }> = [];
-  try {
-    users = db.prepare('SELECT id, timezone FROM users WHERE proactive_enabled != 0').all() as Array<{ id: string; timezone?: string }>;
-  } catch {
-    users = db.prepare('SELECT id, timezone FROM users').all() as Array<{ id: string; timezone?: string }>;
-  }
-
-  for (const user of users) {
-    try {
-      if (isThrottled(user.id)) continue;
-
-      const tz = user.timezone || 'Asia/Kolkata';
-
-      // GAP-10: skip proactive messages during quiet hours
-      if (isQuietHours(user.id, tz)) continue;
-
-      const hour = getUserHour(tz);
-      const todayStr = getUserDateStr(tz);
-      const dayStart = new Date(todayStr + 'T00:00:00Z').getTime();
-
-      // Run memory decay once per day per user (at 3am their time)
-      if (hour === 3) {
-        try { runMemoryDecay(user.id); } catch { /* non-fatal */ }
-      }
-
-      // Daily briefing at 8am user-local
-      if (hour === 8) {
-        const alreadySent = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'daily_briefing' AND sent_at >= ?"
-        ).get(user.id, dayStart) as { id: number } | undefined;
-        if (!alreadySent) await dailyBriefing(user.id);
-      }
-
-      // Overdue alert at 10am user-local
-      if (hour === 10) {
-        const alreadySent = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'overdue_alert' AND sent_at >= ?"
-        ).get(user.id, dayStart) as { id: number } | undefined;
-        if (!alreadySent) await overdueAlert(user.id);
-      }
-
-      // Idle check-in at 8am user-local
-      if (hour === 8) {
-        const alreadySentIdle = db.prepare(
-          "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'idle_check_in' AND sent_at >= ?"
-        ).get(user.id, dayStart) as { id: number } | undefined;
-        if (!alreadySentIdle) await idleCheckIn(user.id);
-      }
-
-      // Habit nudge at 11am user-local
-      if (hour === 11) {
-        await sendHabitNudges().catch(err => logger.warn({ err }, 'Habit nudge failed'));
-      }
-
-      // Weekly report on Sunday at 7pm user-local
-      if (hour === 19) {
-        const userDate = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
-        if (userDate.getDay() === 0) {
-          const weekStart = Date.now() - 7 * 86_400_000;
-          const alreadySentWeekly = db.prepare(
-            "SELECT id FROM proactive_messages WHERE user_id = ? AND type = 'weekly_report' AND sent_at >= ?"
-          ).get(user.id, weekStart) as { id: number } | undefined;
-          if (!alreadySentWeekly) {
-            await weeklyReport(user.id);
-            await weeklyExpenseDigest(user.id);
-          }
-        }
-      }
-    } catch (err) {
-      logger.warn({ err, userId: user.id }, 'Proactive check failed for user');
-    }
-  }
-}
-
-
 export async function weeklyReport(userId: string): Promise<string | null> {
   if (!isTypeEnabled(userId, 'weekly_report')) return null;
   try {
@@ -478,49 +344,6 @@ export async function weeklyExpenseDigest(userId: string): Promise<string | null
   }
 }
 
-// ── Reminder 30-min preview ──────────────────────────────────
-
-async function sendReminderPreviews(): Promise<void> {
-  const { cacheGet, cacheSet } = await import('./cache.js');
-  const { sendTelegramNotification, escapeTelegramHtml: escHtml } = await import('./telegram.js');
-  const now = Date.now();
-  const windowStart = now + 25 * 60 * 1000;   // 25 min from now
-  const windowEnd   = now + 35 * 60 * 1000;   // 35 min from now
-
-  const users = db.prepare(`
-    SELECT DISTINCT u.id, cl.external_id as chat_id
-    FROM users u
-    JOIN channel_links cl ON cl.user_id = u.id
-    WHERE cl.channel = 'telegram' AND cl.is_verified = 1
-  `).all() as Array<{id:string; chat_id:string}>;
-
-  for (const user of users) {
-    const upcoming = db.prepare(`
-      SELECT id, text, scheduled_for FROM reminders
-      WHERE user_id = ? AND completed = 0
-      AND scheduled_for BETWEEN ? AND ?
-      AND (preview_sent IS NULL OR preview_sent < ?)
-    `).all(user.id, windowStart, windowEnd, now - 300_000) as Array<{id:number; text:string; scheduled_for:number}>;
-
-    for (const r of upcoming) {
-      // Redis dedup: don't preview same reminder twice
-      const dedupKey = `preview:${r.id}`;
-      const already = await cacheGet(dedupKey).catch(() => null);
-      if (already) continue;
-
-      const minutesLeft = Math.round((r.scheduled_for - now) / 60_000);
-      await sendTelegramNotification(user.chat_id,
-        `📌 <b>Heads up!</b> "${escHtml(r.text)}" is due in ~${minutesLeft} minutes`
-      ).catch(() => {});
-
-      try {
-        db.prepare('UPDATE reminders SET preview_sent = ? WHERE id = ?').run(now, r.id);
-        await cacheSet(dedupKey, '1', 3600);
-      } catch { /* non-fatal */ }
-    }
-  }
-}
-
 // ── Habit idle nudge ─────────────────────────────────────────
 
 async function sendHabitNudges(): Promise<void> {
@@ -580,11 +403,11 @@ async function sendHabitNudges(): Promise<void> {
   }
 }
 
+let proactiveEngineStarted = false;
+
 export async function initProactiveEngine(): Promise<void> {
-  if (proactiveTimer) return;
-  proactiveTimer = setInterval(() => {
-    void runProactiveChecks();
-  }, 60_000);
+  if (proactiveEngineStarted) return;
+  proactiveEngineStarted = true;
 
   // Event-driven proactive messages
   eventBus.on('streak.milestone', async ({ userId, habitName, streak }) => {
@@ -743,8 +566,8 @@ export async function initProactiveEngine(): Promise<void> {
       logger.warn({ err }, 'Failed to seed durable jobs (non-fatal)');
     }
   } catch (err) {
-    logger.warn({ err }, 'Durable scheduler init failed (falling back to setInterval only)');
+    logger.warn({ err }, 'Durable scheduler init failed');
   }
 
-  logger.info('Proactive engine started (setInterval + durable scheduler — per-user timezone)');
+  logger.info('Proactive engine started (durable scheduler — per-user timezone)');
 }

@@ -471,9 +471,9 @@ describe('110.7 IST hardcode removed from message-router', () => {
     expect(src).toContain('DateTime');
   });
 
-  it('proactive-engine.ts uses per-user timezone (getUserHour) instead of IST hardcoding', () => {
+  it('proactive-engine.ts seeds durable scheduler with per-user timezone', () => {
     const src = readSrc('services', 'proactive-engine.ts');
-    expect(src).toContain('getUserHour');
+    expect(src).toContain('scheduleRecurringDaily');
     expect(src).toContain('Asia/Kolkata'); // default timezone
   });
 

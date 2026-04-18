@@ -5,11 +5,8 @@ import { isPicoClawAvailable, queryPicoClaw } from './picoclaw.js';
 import { routeChat, type ChatMessage } from './llm.js';
 import { sendBriefingEmail } from './email.js';
 
-// DEPRECATED: The scheduler in this file is no longer started.
-// proactive-engine.ts handles all scheduled briefings.
-// createBriefing() is kept as a utility for on-demand /api/briefings/trigger calls.
-
-let schedulerInterval: ReturnType<typeof setInterval> | null = null;
+// createBriefing() is an on-demand utility for /api/briefings/trigger calls.
+// Scheduled briefings are handled by proactive-engine.ts via the durable scheduler.
 
 interface BriefingData {
   pendingReminders: number;
@@ -169,41 +166,3 @@ export function getRecentBriefings(userId: string, limit = 10): unknown[] {
   }
 }
 
-function checkAndSendBriefings(): void {
-  const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const todayStr = now.toISOString().slice(0, 10);
-
-  try {
-    const users = db.prepare(`
-      SELECT ac.user_id, ac.briefing_time FROM agent_configs ac
-      WHERE ac.briefing_time = ?
-      AND NOT EXISTS (
-        SELECT 1 FROM briefings b
-        WHERE b.user_id = ac.user_id AND b.created_at >= ? || 'T00:00:00'
-      )
-    `).all(currentTime, todayStr) as Array<{ user_id: string; briefing_time: string }>;
-
-    for (const user of users) {
-      createBriefing(user.user_id).catch(err => {
-        logger.warn({ userId: user.user_id, error: (err as Error).message }, 'Failed to create daily briefing');
-      });
-    }
-  } catch (err) {
-    // briefing_time column or briefings table might not exist yet
-    logger.debug({ error: (err as Error).message }, 'Briefing scheduler check skipped');
-  }
-}
-
-export function startBriefingScheduler(): void {
-  if (schedulerInterval) return;
-  schedulerInterval = setInterval(checkAndSendBriefings, 60_000);
-  logger.info('Daily briefing scheduler started (60s interval)');
-}
-
-export function stopBriefingScheduler(): void {
-  if (schedulerInterval) {
-    clearInterval(schedulerInterval);
-    schedulerInterval = null;
-  }
-}
