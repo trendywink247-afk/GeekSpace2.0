@@ -479,13 +479,19 @@ export async function initProactiveEngine(): Promise<void> {
     });
 
     registerHandler('weekly_report', async (job) => {
-      if (!isTypeEnabled(job.userId, 'weekly_report') || isThrottled(job.userId)) return;
-      await weeklyReport(job.userId);
-      await weeklyExpenseDigest(job.userId);
-      // Reschedule for next Sunday 7pm user-local (not server-local).
+      // Always reschedule, even if the user is currently disabled/throttled — if the
+      // reschedule is gated on enabled state, toggling proactive off strands the
+      // weekly job forever (next tick never fires, next seed only at server restart).
       const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
       const next = nextSundayAt7pm(tz);
-      scheduleJob(job.userId, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${job.userId}:${next.toISODate()}` });
+      try {
+        if (isTypeEnabled(job.userId, 'weekly_report') && !isThrottled(job.userId)) {
+          await weeklyReport(job.userId);
+          await weeklyExpenseDigest(job.userId);
+        }
+      } finally {
+        scheduleJob(job.userId, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${job.userId}:${next.toISODate()}` });
+      }
     });
 
     registerHandler('page_monitor', async (job) => {
@@ -581,4 +587,22 @@ export async function initProactiveEngine(): Promise<void> {
   }
 
   logger.info('Proactive engine started (durable scheduler — per-user timezone)');
+}
+
+// Re-seed the recurring proactive jobs for a single user. Call when proactive is
+// toggled on via the HTTP or Telegram endpoints so users who were disabled at boot
+// (or who had their weekly job stranded) start receiving again without a restart.
+export async function seedProactiveUserJobs(userId: string): Promise<void> {
+  try {
+    const { scheduleRecurringDaily, scheduleJob } = await import('./durable-scheduler.js');
+    const row = db.prepare('SELECT timezone FROM users WHERE id = ?').get(userId) as { timezone?: string } | undefined;
+    const tz = row?.timezone || 'Asia/Kolkata';
+    scheduleRecurringDaily(userId, 'morning_brief', 8, tz);
+    scheduleRecurringDaily(userId, 'overdue_alert', 10, tz);
+    scheduleRecurringDaily(userId, 'habit_nudge', 21, tz);
+    const next = nextSundayAt7pm(tz);
+    scheduleJob(userId, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${userId}:${next.toISODate()}` });
+  } catch (err) {
+    logger.warn({ err, userId }, 'Failed to seed proactive jobs for user (non-fatal)');
+  }
 }
