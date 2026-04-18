@@ -64,7 +64,7 @@ router.get('/conversations', requireAuth, (req: AuthRequest, res) => {
  * Exports conversation history as a downloadable file.
  * @query days - Rolling window in days (0 = all time, default 0).
  * @query format - 'json' (default) or 'md' (Markdown with role headers).
- * @returns File attachment: `conversations.json` or `geekspace-chat.md`.
+ * @returns File attachment: `conversations.json` or `agentin-chat.md`.
  */
 router.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
   try {
@@ -82,14 +82,14 @@ router.get('/conversations/export', requireAuth, (req: AuthRequest, res) => {
     if (format === 'md') {
       // Render as Markdown — oldest first, role headers, blank line between turns
       const sorted = [...conversations].reverse();
-      const lines: string[] = ['# GeekSpace Chat Export\n'];
+      const lines: string[] = ['# Agentin Chat Export\n'];
       for (const c of sorted) {
         const role = c.role === 'user' ? '**You**' : '**Assistant**';
         const ts = c.created_at ? `  \n_${c.created_at}_` : '';
         lines.push(`### ${role}${ts}\n\n${c.content}\n`);
       }
       const md = lines.join('\n---\n\n');
-      res.setHeader('Content-Disposition', 'attachment; filename="geekspace-chat.md"');
+      res.setHeader('Content-Disposition', 'attachment; filename="agentin-chat.md"');
       res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
       res.send(md);
       return;

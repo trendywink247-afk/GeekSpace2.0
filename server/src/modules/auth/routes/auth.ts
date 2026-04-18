@@ -134,7 +134,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     }
 
     // Log activity
-    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to GeekSpace!', 'user-plus')`).run(uuid(), id);
+    db.prepare(`INSERT INTO activity_log (id, user_id, action, details, icon) VALUES (?, ?, 'Signed up', 'Welcome to Agentin!', 'user-plus')`).run(uuid(), id);
     logSecurityEvent('signup', req.ip || '', { email, username });
     logger.info({ event: 'auth_signup', userId: id, username, ip: req.ip }, 'New user signup');
   });

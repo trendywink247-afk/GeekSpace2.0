@@ -16,7 +16,7 @@
  */
 
 // ============================================================
-// GeekSpace Database -- SQLite via better-sqlite3
+// Agentin Database -- SQLite via better-sqlite3
 // ============================================================
 
 import Database from 'better-sqlite3';

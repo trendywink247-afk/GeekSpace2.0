@@ -1,5 +1,5 @@
 // ============================================================
-// GeekSpace LLM Router — Phase 112: Dynamic Free-Tier + Kimi Per-User Cap
+// Agentin LLM Router — Phase 112: Dynamic Free-Tier + Kimi Per-User Cap
 //
 // Tier 0 (PicoClaw):     simple/code-micro intent → qwen2.5-coder:3b (88ms, $0)
 // automation intent:     OpenRouter-free first (Qwen3 235B MoE >> qwen3:8b for tool calling)
@@ -615,7 +615,7 @@ async function callOpenRouterWithModel(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${config.openrouterApiKey}`,
       'HTTP-Referer': config.publicUrl,
-      'X-Title': 'GeekSpace AI OS',
+      'X-Title': 'Agentin',
     },
     body: JSON.stringify({
       model,
@@ -664,7 +664,7 @@ async function callOpenRouterFree(messages: ChatMessage[], userId?: string): Pro
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': config.publicUrl,
-        'X-Title': 'GeekSpace AI OS',
+        'X-Title': 'Agentin',
       },
       body: JSON.stringify({
         model,

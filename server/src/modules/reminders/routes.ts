@@ -504,7 +504,7 @@ remindersRouter.get('/export.ics', requireAuth, (req: AuthRequest, res) => {
       : null;
     const lines = [
       'BEGIN:VEVENT',
-      foldLine(`UID:${r.id}@geekspace`),
+      foldLine(`UID:${r.id}@agentin`),
       `DTSTAMP:${now}`,
       `DTSTART:${dtstart}`,
       `DTEND:${dtend}`,
@@ -519,7 +519,7 @@ remindersRouter.get('/export.ics', requireAuth, (req: AuthRequest, res) => {
   const cal = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//GeekSpace//Reminders//EN',
+    'PRODID:-//Agentin//Reminders//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     ...events,

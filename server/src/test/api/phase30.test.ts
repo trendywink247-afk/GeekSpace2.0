@@ -40,7 +40,7 @@ describe('Phase 30 — Markdown export & snooze_count', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/markdown/);
-    expect(res.headers['content-disposition']).toMatch(/geekspace-chat\.md/);
+    expect(res.headers['content-disposition']).toMatch(/agentin-chat\.md/);
   });
 
   test('GET /conversations/export?format=md body starts with markdown heading', async () => {

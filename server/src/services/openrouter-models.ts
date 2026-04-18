@@ -54,7 +54,7 @@ export async function fetchFreeModels(): Promise<string[]> {
       headers: {
         'Authorization': `Bearer ${config.openrouterFreeApiKey || config.openrouterApiKey}`,
         'HTTP-Referer': config.publicUrl,
-        'X-Title': 'GeekSpace AI OS',
+        'X-Title': 'Agentin',
       },
       signal: AbortSignal.timeout(15000),
     });

@@ -1211,11 +1211,11 @@ export function serveAdminDashboard(_req: Request, res: Response): void {
   // Fallback: file not found — serve minimal redirect to login
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.status(200).send(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>GeekSpace Admin</title>
+<html><head><meta charset="UTF-8"><title>Agentin Admin</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{background:#05050A;color:#F4F6FF;font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh}
 .c{background:#0B0B10;border:1px solid #7B61FF40;border-radius:12px;padding:40px;width:360px}h1{font-size:1.5rem;margin-bottom:8px}
 p{color:#A7ACB8;font-size:.875rem;margin-bottom:24px}input{width:100%;padding:10px 14px;background:#05050A;border:1px solid #7B61FF40;border-radius:8px;color:#F4F6FF;font-size:.875rem;margin-bottom:12px}
 input:focus{outline:none;border-color:#7B61FF}button{width:100%;padding:10px;background:#7B61FF;border:none;border-radius:8px;color:#fff;font-size:.875rem;font-weight:600;cursor:pointer}
 button:hover{background:#6B51EF}.e{color:#FF6161;font-size:.8rem;margin-top:8px;display:none}</style></head>
-<body><div class="c"><h1>GeekSpace Admin</h1><p>Admin dashboard file not found. Check deployment.</p></div></body></html>`);
+<body><div class="c"><h1>Agentin Admin</h1><p>Admin dashboard file not found. Check deployment.</p></div></body></html>`);
 }

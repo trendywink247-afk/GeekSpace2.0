@@ -141,7 +141,7 @@ export async function syncFreeModels(): Promise<void> {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': config.publicUrl,
-        'X-Title': 'GeekSpace',
+        'X-Title': 'Agentin',
       },
       signal: AbortSignal.timeout(30000),
     });
