@@ -279,6 +279,53 @@ Staging uses `.env.staging` with isolated Redis and database volumes.
 
 ---
 
+## Sanctioned Remote Ops (`ops-remote-exec.yml`)
+
+Agents and board users don't have direct SSH to the VPS. For approved
+maintenance commands there is a workflow-dispatch-only path that reuses the
+existing `DEPLOY_HOST` / `DEPLOY_SSH_KEY` secrets.
+
+- Workflow: `.github/workflows/ops-remote-exec.yml`
+- Trigger: **Actions → "Ops: Remote Exec" → Run workflow** (dispatch from `main` only)
+- Inputs:
+  - `action` — closed choice list. Current whitelist:
+    - `docker-builder-prune` — runs `docker builder prune -af` and logs before/after `df -h /` + `docker system df`
+  - `reason` — free-text audit note (shown in the run log, not passed to the shell)
+
+### How to trigger
+
+GitHub UI:
+
+1. Open the repo → Actions → **Ops: Remote Exec**
+2. Click **Run workflow**, keep branch on `main`
+3. Pick an `action`, fill in `reason`, click **Run workflow**
+4. Read the run log for stdout/stderr — paste the relevant section on the ticket
+   that requested the action for an audit trail
+
+GitHub CLI (equivalent):
+
+```bash
+gh workflow run ops-remote-exec.yml \
+  --ref main \
+  -f action=docker-builder-prune \
+  -f reason="AGE-5: reclaim docker build cache"
+```
+
+### Adding a new action
+
+1. Append the action name to the `action` input's `options:` list.
+2. Add a matching `case` arm in the SSH script. Keep every command literal —
+   do not interpolate user-supplied strings into the remote shell.
+3. Land the change via PR so the whitelist expansion gets normal code review.
+
+### What this is NOT
+
+- Not a way to get an interactive shell on the VPS
+- Not a credential-provisioning path for agent containers
+- Not a replacement for the regular deploy/rollback workflows
+
+---
+
 ## Reverse Proxy (Caddy)
 
 Caddy runs as a standalone binary (not in Docker) and handles:
