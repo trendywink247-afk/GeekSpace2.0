@@ -22,8 +22,8 @@ import {
 } from './constants';
 import type { AgentId, SpecialistId } from './types';
 import type { OfficeData } from './use-office-data';
-import { createTask, TASK_TYPE_LABELS } from './taskQueue';
-import type { TaskType } from './taskQueue';
+import { createTask, TASK_TYPE_LABELS } from './task-queue';
+import type { TaskType } from './task-queue';
 import { agentService } from '@/services/api';
 
 const CORE_AGENT_IDS = new Set(['weebo', 'edith', 'jarvis']);

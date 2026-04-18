@@ -147,9 +147,9 @@ const DELEGATION_REACTION_PHRASES: Record<string, string[]> = {
 };
 
 import { renderFrame, loadOfficeAssets, emitTrailParticles, initAmbientParticles } from './OfficeCanvasRenderer';
-import { SMART_OBJECTS } from './smartObjects';
+import { SMART_OBJECTS } from './smart-objects';
 import { SpeechBubbleLayer } from './SpeechBubbleLayer';
-import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive, trackAgentTool } from './agentBehavior';
+import { tickBehaviors, initBehavior, cancelIdleBehavior, resetAllBehaviors, notifyAgentActive, trackAgentTool } from './agent-behavior';
 import {
   isBlocked, nearestWalkable, validateTarget, validateSpawnPosition, findFullPath, getWalkableNeighbors,
 } from './navigation';

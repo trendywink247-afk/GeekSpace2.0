@@ -11,7 +11,7 @@ import {
   loadCollisionFromImage,
   isAuthoredMapLoaded,
   getAuthoredMap,
-} from '@/dashboard/pages/office/collisionLoader';
+} from '@/dashboard/pages/office/collision-loader';
 
 describe('CollisionLoader', () => {
   beforeEach(() => {

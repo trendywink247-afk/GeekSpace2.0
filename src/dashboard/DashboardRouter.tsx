@@ -28,7 +28,7 @@ const PlannerPage = lazyRetry(() => import('./pages/PlannerPage').then(m => ({ d
 const SocialMediaPage = lazyRetry(() => import('./pages/SocialMediaPage').then(m => ({ default: m.SocialMediaPage })));
 const CapabilitiesPage = lazyRetry(() => import('./pages/CapabilitiesPage').then(m => ({ default: m.CapabilitiesPage })));
 const ActivityPage = lazyRetry(() => import('./pages/ActivityPage').then(m => ({ default: m.ActivityPage })));
-const AISpecialistPage = lazyRetry(() => import('./pages/AISpecialistPage').then(m => ({ default: m.AISpecialistPage })));
+const AISpecialistPage = lazyRetry(() => import('./pages/AiSpecialistPage').then(m => ({ default: m.AISpecialistPage })));
 const ProactivePage = lazyRetry(() => import('./pages/ProactivePage').then(m => ({ default: m.ProactivePage })));
 const InboxPage = lazyRetry(() => import('./pages/InboxPage').then(m => ({ default: m.InboxPage })));
 const GmailPage = lazyRetry(() => import('./pages/GmailPage').then(m => ({ default: m.GmailPage })));

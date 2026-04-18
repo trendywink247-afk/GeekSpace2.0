@@ -3,7 +3,7 @@ export { SkillsTab } from './SkillsTab';
 export { ProjectsTab } from './ProjectsTab';
 export { MilestonesTab } from './MilestonesTab';
 export { SocialTab } from './SocialTab';
-export { AITab } from './AITab';
+export { AITab } from './AiTab';
 export { SuggestionsTab } from './SuggestionsTab';
 export type { PortfolioSuggestion } from './SuggestionsTab';
 export { AnalyticsTab } from './AnalyticsTab';

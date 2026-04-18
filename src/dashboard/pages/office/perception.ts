@@ -2,10 +2,10 @@
 // Lightweight local perception for each agent.
 
 import type { CanvasAgent, AgentId } from './types';
-import type { RoomZone } from './roomZones';
-import type { SmartObject, InteractionPoint } from './smartObjects';
-import { getRoomAt } from './roomZones';
-import { getObjectsInRoom, SMART_OBJECTS } from './smartObjects';
+import type { RoomZone } from './room-zones';
+import type { SmartObject, InteractionPoint } from './smart-objects';
+import { getRoomAt } from './room-zones';
+import { getObjectsInRoom, SMART_OBJECTS } from './smart-objects';
 import { isPointOccupied } from './occupancy';
 import { isWalkable } from './navigation';
 

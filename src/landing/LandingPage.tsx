@@ -10,11 +10,11 @@ import { PromptTemplatesSection } from './sections/PromptTemplatesSection';
 import { SocialProofSection } from './sections/SocialProofSection';
 import { InfraSection } from './sections/InfraSection';
 import { ConstellationSection } from './sections/ConstellationSection';
-import { TelegramCTASection } from './sections/TelegramCTASection';
+import { TelegramCTASection } from './sections/TelegramCtaSection';
 import { PricingPreviewSection } from './sections/PricingPreviewSection';
 import { ContactSection } from './sections/ContactSection';
 import { FooterSection } from './sections/FooterSection';
-import { StickyMobileCTA } from '@/components/StickyMobileCTA';
+import { StickyMobileCTA } from '@/components/StickyMobileCta';
 
 export function LandingPage() {
   const navigate = useNavigate();

@@ -8,7 +8,7 @@ import {
   loadCollisionFromImage,
   isAuthoredMapLoaded,
   getAuthoredMap,
-} from '../collisionLoader';
+} from '../collision-loader';
 import { COLS, ROWS, CELL } from '../constants';
 
 describe('collisionLoader — Alpha Channel Parsing', () => {

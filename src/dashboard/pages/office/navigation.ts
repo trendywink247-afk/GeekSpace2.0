@@ -5,7 +5,7 @@
 import { COLLISION_MAP, CELL, COLS, ROWS } from './constants';
 
 // Re-export room lookup for convenience
-export { getRoomAt } from './roomZones';
+export { getRoomAt } from './room-zones';
 
 // ── Core validation ──────────────────────────────────────────────────────────
 

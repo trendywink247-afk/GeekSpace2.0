@@ -13,7 +13,7 @@ import {
   getReservationCount,
   findAvailablePoint,
 } from '../occupancy';
-import type { InteractionPoint } from '../smartObjects';
+import type { InteractionPoint } from '../smart-objects';
 
 describe('occupancy', () => {
   beforeEach(() => {
