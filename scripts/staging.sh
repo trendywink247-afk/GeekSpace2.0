@@ -64,8 +64,9 @@ if [ "$MODE" = "canonical" ]; then
   # hours old). This was the root cause of "the fix didn't work" being
   # repeated multiple times during the 2026-04-06 nav-bug debug session.
   npx vite build
-  echo ">> Syncing ./dist -> /srv (Caddy static root) ..."
-  rsync -a --delete dist/ /srv/
+  echo ">> Syncing ./dist -> /srv/staging (Caddy static root) ..."
+  mkdir -p /srv/staging
+  rsync -a --delete dist/ /srv/staging/
 
   echo ">> Building + starting staging container from root docker-compose.yml..."
   DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
