@@ -1,30 +1,28 @@
 name: CI/CD Pipeline
 
 # ---------------------------------------------------------------------------
-# 2026-04-06 — Pipeline rewritten for parallelism.
+# 2026-04-18 — AGE-22: E2E + security-scans are now merge-gating.
 #
-# Old layout (12 min wall clock, all serial):
-#   static-checks (2m) -> unit-tests (3m) -> e2e-tests (7m) -> Summary
-#
-# New layout: every required check runs in parallel from a fresh checkout.
-# The merge-blocking `Summary` check completes in ~3 min instead of 12 min.
+# Previous layout treated E2E and security-scans as informational
+# (continue-on-error + excluded from Summary `needs:`). An audit of the last
+# 26 CI runs showed both were 100% green; the continue-on-error flag was
+# masking real failures in broken sub-gates (OpenAPI spec lint, npm audit).
+# See AGE-22 for the full classification.
 #
 #   ┌─ lint-and-typecheck   (1-2m) ─┐
 #   ├─ build-frontend       (1-2m) ─┤
-#   ├─ build-server         (1m)   ─┼─→ Summary
-#   ├─ unit-tests-frontend  (1-2m) ─┤
-#   └─ unit-tests-server    (1-2m) ─┘
-#
-#   Async (parallel, NOT in Summary needs, so they don't block merges):
-#     ├─ e2e-tests          (5-6m, continue-on-error)
-#     └─ security-scans     (3-4m, continue-on-error)
+#   ├─ build-server         (1m)   ─┤
+#   ├─ unit-tests-frontend  (1-2m) ─┼─→ Summary  (merge-gating)
+#   ├─ unit-tests-server    (1-2m) ─┤
+#   ├─ e2e-tests            (5-6m) ─┤
+#   └─ security-scans       (3-4m) ─┘
 #
 # Notes:
-#   * E2E + security run on every PR but never gate merges.
+#   * Summary now waits on E2E + security, so the critical path is ~6 min.
 #   * Playwright browsers are cached.
 #   * Docs-only PRs (*.md, etc.) skip CI entirely via paths-ignore.
-#   * Each job pays its own `npm ci` cost; setup-node@v6 caches ~/.npm so
-#     installs are ~30s instead of ~2 min on cache hits.
+#   * Two known-broken security sub-steps (OpenAPI spec lint, npm audit)
+#     keep step-level continue-on-error until AGE-23 / AGE-24 land.
 # ---------------------------------------------------------------------------
 
 on:
@@ -218,13 +216,12 @@ jobs:
         run: npm --prefix server run test
 
   # ============================================
-  # E2E Tests (Playwright) — runs in parallel, NEVER blocks merges
+  # E2E Tests (Playwright) — gating since AGE-22 (stable, 26/26 green).
   # ============================================
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true  # never gates merge — informational only
     steps:
       - uses: actions/checkout@v6
 
@@ -297,15 +294,22 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # Security & supply-chain scans — async, never blocks merges
-  # All steps were already `continue-on-error: true` in the old pipeline;
-  # they were just slowing the critical path down.
+  # Security & supply-chain scans.
+  #
+  # AGE-22 audit (26 CI runs):
+  #   - Validate Caddyfile  → 100% pass (skipped when file unchanged). GATING.
+  #   - Validate OpenAPI    → 100% FAIL (spec has 18 errors). Leave step-level
+  #                           continue-on-error until the spec is fixed (AGE-23).
+  #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
+  #                           protobufjs vuln. Step-level continue-on-error kept
+  #                           until AGE-24 removes `|| true` and fixes the dep.
+  #   - gitleaks            → 100% pass. GATING.
+  #   - Semgrep             → 100% pass. GATING.
   # ============================================
   security-scans:
     name: Security Scans
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
         with:
@@ -347,12 +351,10 @@ jobs:
 
       - name: Security scan (gitleaks — secrets in commits)
         uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Semgrep SAST scan
-        continue-on-error: true
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
@@ -556,27 +558,37 @@ jobs:
   # ============================================
   # Summary — required status check for branch protection.
   #
-  # CRITICAL: only depends on jobs that ACTUALLY block merges.
-  # E2E and security-scans are intentionally NOT in `needs:` so they can
-  # run async without delaying auto-merge.
+  # AGE-22: E2E and security-scans now gate merges. Previously they ran with
+  # `continue-on-error: true` and were excluded from `needs:`, which meant a
+  # failing E2E or security job was indistinguishable from a passing one.
+  # Over the last 26 CI runs both were green; any regression from here on is
+  # a real regression and should block the merge.
   # ============================================
   summary:
     name: Summary
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, build-frontend, build-server, unit-tests-frontend, unit-tests-server]
+    needs:
+      - lint-and-typecheck
+      - build-frontend
+      - build-server
+      - unit-tests-frontend
+      - unit-tests-server
+      - e2e-tests
+      - security-scans
     if: always()
     steps:
       - name: Check results
         run: |
           FAILED=0
-          for job in lint-and-typecheck build-frontend build-server unit-tests-frontend unit-tests-server; do
-            result_var="${job}_result"
+          for job in lint-and-typecheck build-frontend build-server unit-tests-frontend unit-tests-server e2e-tests security-scans; do
             case "$job" in
               lint-and-typecheck) result="${{ needs.lint-and-typecheck.result }}" ;;
               build-frontend) result="${{ needs.build-frontend.result }}" ;;
               build-server) result="${{ needs.build-server.result }}" ;;
               unit-tests-frontend) result="${{ needs.unit-tests-frontend.result }}" ;;
               unit-tests-server) result="${{ needs.unit-tests-server.result }}" ;;
+              e2e-tests) result="${{ needs.e2e-tests.result }}" ;;
+              security-scans) result="${{ needs.security-scans.result }}" ;;
             esac
             if [ "$result" != "success" ]; then
               echo "❌ $job: $result"
@@ -603,8 +615,8 @@ jobs:
             echo "| Build Server          | ${{ needs.build-server.result }} |"
             echo "| Unit Tests (Frontend) | ${{ needs.unit-tests-frontend.result }} |"
             echo "| Unit Tests (Server)   | ${{ needs.unit-tests-server.result }} |"
-            echo ""
-            echo "_E2E and security scans run in parallel and are informational only — they do not block merges._"
+            echo "| E2E Tests             | ${{ needs.e2e-tests.result }} |"
+            echo "| Security Scans        | ${{ needs.security-scans.result }} |"
           } >> $GITHUB_STEP_SUMMARY
 
   # ============================================
