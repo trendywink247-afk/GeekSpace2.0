@@ -1,5 +1,5 @@
 // ============================================================
-// Prometheus metrics middleware for GeekSpace 2.0
+// Prometheus metrics middleware for Agentin
 //
 // Exposes text-format metrics at GET /api/metrics (no auth —
 // Prometheus scrapes from a private Docker network).

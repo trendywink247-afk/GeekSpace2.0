@@ -2,7 +2,7 @@
  * Channel dispatcher — resolves users from external channels and sends responses.
  *
  * Extracted from message-router.ts. Exports:
- * - resolveUserFromChannel() — look up GeekSpace user from channel link
+ * - resolveUserFromChannel() — look up Agentin user from channel link
  * - sendChannelResponse() — dispatch reply back to originating channel
  * - sendUnlinkedResponse() — send account linking instructions
  *
@@ -72,8 +72,8 @@ export async function sendChannelResponse(response: ChannelResponse): Promise<vo
 
 export async function sendUnlinkedResponse(channel: string, externalId: string): Promise<void> {
   const linkMessage = channel === 'telegram'
-    ? 'Hi! To use me, link your GeekSpace account first.\n\nUse /link <your-email> or go to your GeekSpace dashboard → Connections → Telegram.'
-    : 'Hi! To use me, please link your account at your GeekSpace dashboard (Connections page).';
+    ? 'Hi! To use me, link your Agentin account first.\n\nUse /link <your-email> or go to your Agentin dashboard → Connections → Telegram.'
+    : 'Hi! To use me, please link your account at your Agentin dashboard (Connections page).';
 
   await sendChannelResponse({
     channel,

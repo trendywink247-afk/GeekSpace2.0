@@ -335,7 +335,7 @@ describe("102.7 getTopics", () => {
   it("extracts topic from user_memories key main_project becomes main project", async () => {
     const freshUser = createTestUser("phase102-topics2-" + Date.now() + "@example.com");
     const now = Date.now();
-    db.prepare("INSERT INTO user_memories (user_id, key, value, source, confidence, last_used, created_at, updated_at) VALUES (?, 'main_project', 'GeekSpace', 'chat', 0.9, ?, ?, ?)").run(freshUser.id, now, now, now);
+    db.prepare("INSERT INTO user_memories (user_id, key, value, source, confidence, last_used, created_at, updated_at) VALUES (?, 'main_project', 'Agentin', 'chat', 0.9, ?, ?, ?)").run(freshUser.id, now, now, now);
     const topics = await getTopics(freshUser.id);
     const found = topics.find(t => t.topic === "main project");
     expect(found).toBeDefined();

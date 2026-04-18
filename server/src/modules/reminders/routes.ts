@@ -519,7 +519,7 @@ remindersRouter.get('/export.ics', requireAuth, (req: AuthRequest, res) => {
   const cal = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//GeekSpace//Reminders//EN',
+    'PRODID:-//Agentin//Reminders//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     ...events,

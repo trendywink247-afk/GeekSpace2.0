@@ -223,7 +223,7 @@ export function applySchema(db: Database.Database): void {
   CREATE INDEX IF NOT EXISTS idx_agent_configs_user ON agent_configs(user_id);
   CREATE INDEX IF NOT EXISTS idx_usage_events_user_date ON usage_events(user_id, created_at);
 
-  -- Channel links: map Telegram/WhatsApp external IDs to GeekSpace users
+  -- Channel links: map Telegram/WhatsApp external IDs to Agentin users
   CREATE TABLE IF NOT EXISTS channel_links (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

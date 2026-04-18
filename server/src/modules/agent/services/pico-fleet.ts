@@ -922,7 +922,7 @@ export function parseReminderTime(text: string, userTimezone = 'Asia/Kolkata'): 
 
 // ---- Kimi Task Planner ----
 
-const PLANNER_SYSTEM_PROMPT = `You are a task planner for GeekSpace. The user wants to automate something.
+const PLANNER_SYSTEM_PROMPT = `You are a task planner for Agentin. The user wants to automate something.
 Break their request into 1-5 concrete tasks.
 
 ALLOWED task_type values (ONLY these):

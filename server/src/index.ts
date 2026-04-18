@@ -184,7 +184,7 @@ const httpServer = app.listen(config.port, () => {
       meilisearch: config.meilisearchUrl,
       qdrant: config.qdrantUrl,
       version: APP_VERSION,
-    }, 'GeekSpace subsystem startup complete');
+    }, 'Agentin subsystem startup complete');
 
     // 49.9: Log DB row counts for key tables on startup — quick sanity check in operator logs
     try {

@@ -598,7 +598,7 @@ async function sendWeeklyUsageReport(userId: string, chatId: string): Promise<vo
     ).get(userId, weekAgo) as { cnt: number }).cnt;
 
     const report = [
-      `<b>📊 Your Weekly GeekSpace Report</b>`,
+      `<b>📊 Your Weekly Agentin Report</b>`,
       ``,
       `<b>Week ending:</b> ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`,
       ``,

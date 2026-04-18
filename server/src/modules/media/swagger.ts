@@ -239,7 +239,7 @@
  *             properties:
  *               text:
  *                 type: string
- *                 example: "Hello, welcome to GeekSpace!"
+ *                 example: "Hello, welcome to Agentin!"
  *               voice:
  *                 type: string
  *                 description: Voice ID for synthesis
