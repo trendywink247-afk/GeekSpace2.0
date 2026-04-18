@@ -47,25 +47,19 @@ describe('90.1 proactive-engine.ts exports', () => {
     expect(src).toContain('initProactiveEngine');
   });
 
-  it('engine uses 60-second interval', () => {
+  it('schedules daily briefing via durable scheduler at 8am user-local', () => {
     const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('60_000');
+    expect(src).toContain("scheduleRecurringDaily(user.id, 'morning_brief', 8, tz)");
+  });
+
+  it('schedules overdue alert via durable scheduler at 10am user-local', () => {
+    const src = readFile('server/src/services/proactive-engine.ts');
+    expect(src).toContain("scheduleRecurringDaily(user.id, 'overdue_alert', 10, tz)");
   });
 
   it('uses per-user timezone with Asia/Kolkata default', () => {
     const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('getUserHour');
     expect(src).toContain("Asia/Kolkata");
-  });
-
-  it('daily briefing fires at IST hour 8', () => {
-    const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('hour === 8');
-  });
-
-  it('overdue alert fires at IST hour 10', () => {
-    const src = readFile('server/src/services/proactive-engine.ts');
-    expect(src).toContain('hour === 10');
   });
 
   it('idle check-in requires 3 days of inactivity', () => {
