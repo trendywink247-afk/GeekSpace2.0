@@ -13,7 +13,7 @@ import { v4 as uuid } from 'uuid';
 export type ScheduledJobType =
   | 'morning_brief' | 'overdue_alert' | 'idle_checkin'
   | 'habit_nudge' | 'weekly_report' | 'reminder_preview'
-  | 'streak_celebration' | 'expense_alert'
+  | 'streak_celebration' | 'expense_alert' | 'memory_decay'
   | 'page_monitor' | 'pre_meeting_brief' | 'custom';
 
 export interface ScheduledJob {
