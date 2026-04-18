@@ -12,9 +12,9 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'GeekSpace API',
+      title: 'Agentin API',
       version: '3.1.0',
-      description: 'GeekSpace 2.0 modular API — auto-generated from module swagger annotations',
+      description: 'Agentin modular API — auto-generated from module swagger annotations',
     },
     servers: [
       { url: '/api/v1', description: 'Versioned API base path (canonical)' },
@@ -74,7 +74,7 @@ export const swaggerSpec = swaggerJsdoc(options);
 export function setupSwagger(app: Application): void {
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'GeekSpace API Docs',
+    customSiteTitle: 'Agentin API Docs',
   }));
 
   // Raw JSON spec for tooling / code generation

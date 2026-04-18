@@ -651,9 +651,9 @@ portfolioRouter.get('/:username', async (req, res) => {
       'SELECT p.headline, p.about, p.avatar, p.meta_description, u.name FROM portfolios p JOIN users u ON u.id = p.user_id WHERE p.username = ?'
     ).get(username) as { headline: string; about: string; avatar: string; meta_description: string | null; name: string } | undefined;
     if (!row) { res.status(404).send('<html><body>Portfolio not found</body></html>'); return; }
-    const title = `${row.name || username} — GeekSpace Portfolio`;
+    const title = `${row.name || username} — Agentin Portfolio`;
     // 59.9: Prefer explicit meta_description over auto-generated fallback
-    const description = row.meta_description || row.headline || row.about?.slice(0, 160) || 'View this portfolio on GeekSpace.';
+    const description = row.meta_description || row.headline || row.about?.slice(0, 160) || 'View this portfolio on Agentin.';
     const imageUrl = row.avatar && !row.avatar.match(/^[A-Z]{1,2}$/)
       ? row.avatar
       : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || username)}&background=00F0FF&color=05050A&size=256`;

@@ -49,7 +49,7 @@ const testState: TestState = {
 
 // Deterministic mock responses based on message content
 const MOCK_RESPONSES: Record<string, string> = {
-  default: `Hello! I'm GeekSpace, your AI assistant. I received your message and this is a test response.`,
+  default: `Hello! I'm Agentin, your AI assistant. I received your message and this is a test response.`,
 
   reminder: `I'll set a reminder for you. <<<ACTION {"tool":"set_reminder","params":{"text":"Check email","due_time":"2026-02-20T10:00:00Z"}} ACTION>>>`,
 
@@ -69,7 +69,7 @@ This function takes a name and returns a greeting.`,
 
   complex: `This is a complex question that requires detailed analysis. In test mode, I'll provide a concise summary of the key points you should consider.`,
 
-  hello: `Hello there! Welcome to GeekSpace. How can I help you today?`,
+  hello: `Hello there! Welcome to Agentin. How can I help you today?`,
 
   help: `I can help you with:
 - Setting reminders

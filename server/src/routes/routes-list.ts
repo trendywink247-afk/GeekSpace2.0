@@ -6,7 +6,7 @@ export const routesListRouter = Router();
 routesListRouter.get('/', (_req, res) => {
   res.json({
     version: '3.0.0',
-    description: 'GeekSpace 2.0 API route reference',
+    description: 'Agentin API route reference',
     routes: [
       // --- Auth ---
       { method: 'POST', path: '/api/auth/login', auth: false, description: 'Email/password login → JWT' },
