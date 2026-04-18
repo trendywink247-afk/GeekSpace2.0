@@ -20,7 +20,7 @@
  * ```
  */
 
-import type { RoomType } from './roomZones';
+import type { RoomType } from './room-zones';
 
 /**
  * A single point where an agent can stand to interact with a smart object.

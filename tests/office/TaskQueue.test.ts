@@ -18,7 +18,7 @@ import {
   TASK_ROUTING,
   type AgentTask,
   type TaskType,
-} from '@/dashboard/pages/office/taskQueue';
+} from '@/dashboard/pages/office/task-queue';
 
 describe('TaskQueue', () => {
   beforeEach(() => {

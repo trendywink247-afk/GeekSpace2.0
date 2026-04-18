@@ -14,7 +14,7 @@ import { AgentDesignWizard } from '@/components/AgentDesignWizard';
 import { CommandPalette } from '@/components/CommandPalette';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { QuickActionsWidget } from '@/components/QuickActionsWidget';
-import { PWAInstallPrompt, OfflineIndicator } from '@/components/PWAInstallPrompt';
+import { PWAInstallPrompt, OfflineIndicator } from '@/components/PwaInstallPrompt';
 import { DashboardTour } from '@/components/DashboardTour';
 
 import { AgentSetupWizard } from '@/components/OnboardingWizard';

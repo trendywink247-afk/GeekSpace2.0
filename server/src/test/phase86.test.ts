@@ -248,7 +248,7 @@ describe('G: JSON Formatter component', () => {
   });
 
   it('AISpecialistPage.tsx exists and imports JsonFormatterPage', () => {
-    const p = path.join(root, 'src/dashboard/pages/AISpecialistPage.tsx');
+    const p = path.join(root, 'src/dashboard/pages/AiSpecialistPage.tsx');
     expect(fs.existsSync(p)).toBe(true);
     const content = fs.readFileSync(p, 'utf-8');
     expect(content).toContain('JsonFormatterPage');

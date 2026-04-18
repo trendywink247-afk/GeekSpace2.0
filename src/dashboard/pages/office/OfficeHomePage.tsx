@@ -7,7 +7,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Monitor, Bell, CheckCircle2, Calendar, BarChart3, Clock, Send, Flame, ChevronRight, Users, ChevronsUp, MessageSquare } from 'lucide-react';
 import OfficeStage from './OfficeStage';
-import { SpotlightHUD } from './SpotlightHUD';
+import { SpotlightHUD } from './SpotlightHud';
 import { AgentProfileFlyout } from './AgentProfileFlyout';
 import { InsightToast } from './InsightToast';
 import { useOfficeData } from './use-office-data';
@@ -25,7 +25,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import SmartSidebar from './SmartSidebar';
 import { GoalsTab } from './GoalsTab';
 import { DigestModal } from './DigestModal';
-import { generateSuggestions } from './proactiveSuggestions';
+import { generateSuggestions } from './proactive-suggestions';
 import { BlurFade } from '@/components/magicui/blur-fade';
 import { DashboardPageWrapper } from '@/components/agentin/DashboardPageWrapper';
 

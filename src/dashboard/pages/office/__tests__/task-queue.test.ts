@@ -15,7 +15,7 @@ import {
   TASK_ROUTING,
   TASK_TYPE_LABELS,
   type AgentTask,
-} from '../taskQueue';
+} from '../task-queue';
 
 describe('taskQueue', () => {
   beforeEach(() => {

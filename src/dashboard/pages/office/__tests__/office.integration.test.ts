@@ -10,8 +10,8 @@ import type { CanvasAgent } from '../types';
 import { perceive } from '../perception';
 import { isWalkable, validateTarget } from '../navigation';
 import { reservePoint, releasePoint, releaseAll } from '../occupancy';
-import { getRoomAt } from '../roomZones';
-import { getAllTasks, createTask, startTask, completeTask, clearAllTasks } from '../taskQueue';
+import { getRoomAt } from '../room-zones';
+import { getAllTasks, createTask, startTask, completeTask, clearAllTasks } from '../task-queue';
 
 /** Create a minimal valid CanvasAgent for testing */
 function makeAgent(
@@ -366,7 +366,7 @@ describe('Office Integration Tests', () => {
       }));
       localStorage.setItem('gs_token', 'mock-token');
 
-      const { generateSuggestions } = await import('../proactiveSuggestions');
+      const { generateSuggestions } = await import('../proactive-suggestions');
       const suggestions = await generateSuggestions();
       expect(Array.isArray(suggestions)).toBe(true);
 
@@ -379,7 +379,7 @@ describe('Office Integration Tests', () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
       localStorage.setItem('gs_token', 'mock-token');
 
-      const { generateSuggestions } = await import('../proactiveSuggestions');
+      const { generateSuggestions } = await import('../proactive-suggestions');
       // Should not throw and should return empty array or fallback
       const suggestions = await generateSuggestions();
       expect(suggestions).toBeDefined();
@@ -398,7 +398,7 @@ describe('Office Integration Tests', () => {
       const fetchSpy = vi.fn();
       vi.stubGlobal('fetch', fetchSpy);
 
-      const { generateSuggestions } = await import('../proactiveSuggestions');
+      const { generateSuggestions } = await import('../proactive-suggestions');
       const suggestions = await generateSuggestions();
 
       // safeFetch returns null without token, so no fetch calls made
@@ -419,7 +419,7 @@ describe('Office Integration Tests', () => {
       }));
       localStorage.setItem('gs_token', 'mock-token');
 
-      const { generateSuggestions } = await import('../proactiveSuggestions');
+      const { generateSuggestions } = await import('../proactive-suggestions');
       const suggestions = await generateSuggestions();
 
       if (suggestions.length > 0) {

@@ -1,4 +1,4 @@
-// src/dashboard/pages/office/agentBehavior.ts
+// src/dashboard/pages/office/agent-behavior.ts
 // Pure TypeScript module -- manages idle agent behaviors (wandering, socializing,
 // fidgeting, group meetings). Called every canvas tick (200ms) by OfficeStage.
 // Zero AI cost. Perception-driven rule-based intent system with facing direction.
@@ -12,10 +12,10 @@ import {
 } from './navigation';
 import { perceive } from './perception';
 import type { AgentPerception } from './perception';
-import type { InteractionPoint } from './smartObjects';
-import { SMART_OBJECTS } from './smartObjects';
+import type { InteractionPoint } from './smart-objects';
+import { SMART_OBJECTS } from './smart-objects';
 import { reservePoint, releasePoint, releaseAll } from './occupancy';
-import { getRoomAt } from './roomZones';
+import { getRoomAt } from './room-zones';
 
 // ── Startup validation: verify all interaction points are walkable ──────────
 // Non-fatal safety check — interaction points must be on walkable tiles or agents

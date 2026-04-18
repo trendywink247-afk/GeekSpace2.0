@@ -13,7 +13,7 @@ import {
   startSocializing,
   stopSocializing,
   type BehaviorState,
-} from '../agentBehavior';
+} from '../agent-behavior';
 import type { CanvasAgent, AgentId } from '../types';
 
 describe('agentBehavior', () => {

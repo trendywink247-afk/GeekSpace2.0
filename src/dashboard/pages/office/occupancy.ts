@@ -2,7 +2,7 @@
 // Reservation system for interaction points.
 // Tracks which interaction points are reserved by which agent.
 
-import type { InteractionPoint } from './smartObjects';
+import type { InteractionPoint } from './smart-objects';
 
 // key="x,y" -> agentId
 const reservations = new Map<string, string>();

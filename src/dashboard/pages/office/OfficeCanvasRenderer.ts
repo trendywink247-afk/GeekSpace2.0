@@ -15,11 +15,11 @@ import {
   C,
   CORE_DESK_POSITIONS, SPECIALIST_POSITIONS,
 } from './constants';
-import { ROOMS } from './roomZones';
-import { SMART_OBJECTS } from './smartObjects';
+import { ROOMS } from './room-zones';
+import { SMART_OBJECTS } from './smart-objects';
 import { isPointOccupied } from './occupancy';
 import { getAgentSprites, drawSpriteFrame } from './sprites';
-import { getAgentBehaviorMode, getAgentPose } from './agentBehavior';
+import { getAgentBehaviorMode, getAgentPose } from './agent-behavior';
 import type { CanvasEffectState } from './CanvasEffects';
 
 // ---------------------------------------------------------------------------
