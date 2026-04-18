@@ -504,7 +504,7 @@ remindersRouter.get('/export.ics', requireAuth, (req: AuthRequest, res) => {
       : null;
     const lines = [
       'BEGIN:VEVENT',
-      foldLine(`UID:${r.id}@agentin`),
+      foldLine(`UID:${r.id}@geekspace`),
       `DTSTAMP:${now}`,
       `DTSTART:${dtstart}`,
       `DTEND:${dtend}`,
