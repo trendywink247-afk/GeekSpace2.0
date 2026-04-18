@@ -27,6 +27,11 @@ export default defineConfig({
         functions: 10,
         branches: 60,
         statements: 15,
+        // Per-file minimum for the LLM router (AGE-28)
+        'src/modules/agent/services/llm.ts': {
+          lines: 60,
+          functions: 50,
+        },
       },
     },
   },
