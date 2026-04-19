@@ -54,7 +54,8 @@
     "zod": "^4.3.6"
   },
   "overrides": {
-    "@opentelemetry/resources": "^2.6.1"
+    "@opentelemetry/resources": "^2.6.1",
+    "protobufjs": "^7.5.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
