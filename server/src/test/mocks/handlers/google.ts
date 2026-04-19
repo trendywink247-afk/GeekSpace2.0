@@ -7,9 +7,12 @@ export const TEST_GOOGLE_USER = {
   picture: 'https://example.com/photo.jpg',
 };
 
+// The actual token URL used by passport-google-oauth20.
+export const GOOGLE_TOKEN_URL = 'https://www.googleapis.com/oauth2/v4/token';
+
 export const googleHandlers = [
-  // OAuth token exchange
-  http.post('https://oauth2.googleapis.com/token', () => {
+  // OAuth token exchange — passport-google-oauth20 posts to /oauth2/v4/token
+  http.post(GOOGLE_TOKEN_URL, () => {
     return HttpResponse.json({
       access_token: 'mock-google-access-token',
       refresh_token: 'mock-google-refresh-token',
