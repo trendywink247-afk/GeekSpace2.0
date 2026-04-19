@@ -374,7 +374,9 @@ jobs:
   deploy-staging:
     name: "Deploy Staging"
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, build-frontend, build-server, unit-tests-frontend, unit-tests-server]
+    # `summary` transitively depends on E2E + security-scans, so this keeps
+    # deploys from racing the new gates (AGE-22).
+    needs: [summary]
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'staging-only')
@@ -447,7 +449,9 @@ jobs:
   deploy-production:
     name: "Deploy Production"
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, build-frontend, build-server, unit-tests-frontend, unit-tests-server]
+    # `summary` transitively depends on E2E + security-scans, so this keeps
+    # deploys from racing the new gates (AGE-22).
+    needs: [summary]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production'
     timeout-minutes: 10
     concurrency:
