@@ -35,6 +35,9 @@ on:
           - ssh-keys-audit
           - rotate-jwt-encryption-preview
           - remove-ssh-key
+          - litestream-install
+          - litestream-status
+          - litestream-restore-drill
       reason:
         description: 'Why you are running this (for the run log / audit trail)'
         required: true
@@ -89,7 +92,13 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 15m
-          envs: OPS_ACTION,OPS_KEY_IDENTIFIER
+          # Forward OPS_ACTION + OPS_KEY_IDENTIFIER + R2 env vars to the
+          # remote session. R2_* are empty for non-litestream actions and
+          # OPS_KEY_IDENTIFIER is empty for non-remove-ssh-key actions; each
+          # case reads only what it needs. R2_BUCKET is conditionally
+          # forwarded only when the secret is set so an unset secret preserves
+          # install-litestream.sh's default bucket (AGE-15 P2).
+          envs: OPS_ACTION,OPS_KEY_IDENTIFIER,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY${{ secrets.R2_BUCKET != '' && ',R2_BUCKET' || '' }}
           script: |
             set -euo pipefail
             ACTION="${OPS_ACTION:-}"
@@ -341,6 +350,75 @@ jobs:
                 echo
                 echo "NOTE: original file preserved at $BACKUP (mode 600). Remove manually via a follow-up dispatch or sanctioned ops action once the removal is confirmed."
                 ;;
+              litestream-install)
+                if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_SECRET_ACCESS_KEY:-}" ]; then
+                  echo "ERROR: R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY must be set as repo secrets in the production-ops environment." >&2
+                  exit 1
+                fi
+                echo "--- Refreshing repo to current origin/main ---"
+                cd ~/GeekSpace2.0
+                git fetch --quiet origin main
+                git reset --hard origin/main
+                echo
+                echo "--- Running ops/litestream/install-litestream.sh ---"
+                bash ops/litestream/install-litestream.sh
+                echo
+                echo "--- Post-install status ---"
+                systemctl --no-pager --full status litestream.service || true
+                ;;
+              litestream-status)
+                echo "--- systemctl status litestream.service ---"
+                systemctl --no-pager --full status litestream.service || true
+                echo
+                echo "--- litestream databases ---"
+                litestream databases -config /etc/litestream.yml || true
+                echo
+                echo "--- litestream snapshots ---"
+                litestream snapshots -config /etc/litestream.yml /var/lib/docker/volumes/geekspace20_geekspace-data/_data/geekspace.db || true
+                echo
+                echo "--- journalctl -u litestream.service --since -10m ---"
+                journalctl -u litestream.service --since '-10 minutes' --no-pager || true
+                ;;
+              litestream-restore-drill)
+                if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_SECRET_ACCESS_KEY:-}" ]; then
+                  echo "ERROR: R2_* secrets must be set in the production-ops environment." >&2
+                  exit 1
+                fi
+                DRILL_DIR="/tmp/litestream-drill-$(date -u +%Y%m%dT%H%M%SZ)"
+                mkdir -p "$DRILL_DIR"
+                DEST="${DRILL_DIR}/geekspace.db"
+                echo "--- Restoring latest snapshot to ${DEST} (never touches live DB) ---"
+                # Litestream reads env-substituted /etc/litestream.yml, so the
+                # same config file drives restore.
+                litestream restore -config /etc/litestream.yml -o "$DEST" \
+                  /var/lib/docker/volumes/geekspace20_geekspace-data/_data/geekspace.db
+                echo
+                echo "--- Restored file size ---"
+                ls -lh "$DEST"
+                echo
+                echo "--- PRAGMA integrity_check ---"
+                # Validate the check actually returned "ok" — otherwise the
+                # drill silently "passes" on a corrupted restore (AGE-15 P1).
+                INTEGRITY_RESULT="$(sqlite3 "$DEST" 'PRAGMA integrity_check;')"
+                echo "$INTEGRITY_RESULT"
+                if [ "$INTEGRITY_RESULT" != "ok" ]; then
+                  echo "ERROR: integrity_check did not return 'ok' — restore drill FAILED" >&2
+                  rm -rf "$DRILL_DIR"
+                  exit 1
+                fi
+                echo
+                echo "--- SELECT COUNT(*) FROM users (smoke row count) ---"
+                # No `|| true` — a restored DB without the users table is a
+                # corrupt restore and should fail the drill loudly (AGE-15 P1).
+                sqlite3 "$DEST" 'SELECT COUNT(*) FROM users;'
+                echo
+                if command -v at >/dev/null 2>&1 && echo "rm -rf '$DRILL_DIR'" | at now + 1 hour 2>/dev/null; then
+                  echo "--- Cleanup: ${DRILL_DIR} scheduled for rm via at in 1h ---"
+                else
+                  echo "--- Cleanup: removing ${DRILL_DIR} immediately (at unavailable or scheduling failed) ---"
+                  rm -rf "$DRILL_DIR"
+                fi
+                ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
                 exit 1
@@ -352,3 +430,7 @@ jobs:
         env:
           OPS_ACTION: ${{ inputs.action }}
           OPS_KEY_IDENTIFIER: ${{ inputs.key_identifier }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}

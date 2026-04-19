@@ -1,0 +1,23 @@
+# Litestream configuration for the production VPS.
+#
+# Installed to /etc/litestream.yml by ops/litestream/install-litestream.sh
+# (invoked via the litestream-install arm of .github/workflows/ops-remote-exec.yml).
+#
+# Secret values live in /etc/default/litestream (mode 0600) and are loaded
+# by the systemd unit. Litestream substitutes ${VAR} at process start.
+# See docs/LITESTREAM.md for the full runbook.
+
+dbs:
+  - path: /var/lib/docker/volumes/geekspace20_geekspace-data/_data/geekspace.db
+    replicas:
+      - name: r2
+        type: s3
+        bucket: ${R2_BUCKET}
+        path: litestream/geekspace
+        endpoint: https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}
+        region: auto
+        retention: 72h
+        snapshot-interval: 6h
+        sync-interval: 1s
