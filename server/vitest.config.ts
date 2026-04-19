@@ -14,6 +14,7 @@ export default defineConfig({
     },
     include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/db/__tests__/*.test.ts'],
     exclude: ['src/__tests__/**'],
+    setupFiles: ['src/test/mocks/setup.ts'],
     testTimeout: 30000,  // LLM calls can be slow; 30s global timeout prevents false flakiness
     pool: 'forks', // Use forks for isolation between test files
     poolOptions: {
