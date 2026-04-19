@@ -126,11 +126,6 @@ if (oldKeyHex === newKeyHex) {
 const oldKeys = deriveKeys(oldKeyHex);
 const newKeys = deriveKeys(newKeyHex);
 
-// Read candidates: current-salt OLD, legacy-salt OLD, current-salt NEW.
-// We never try legacy-salt NEW on purpose — the new key is freshly minted
-// and has never been used under the legacy salt.
-const decryptCandidates = [oldKeys.primary, oldKeys.legacy, newKeys.primary];
-
 console.log('=== reencrypt-api-keys ===');
 console.log(`db:                    ${dbPath}`);
 console.log(`dry-run:               ${dryRun}`);
