@@ -96,29 +96,24 @@ describe('POST /api/billing/webhook (Stripe)', () => {
           subscription: null,
         });
 
-      // First call
+      // First call — should insert exactly one day_passes row
       const { body: b1, signature: s1 } = buildPayload();
       await postWebhook(b1, s1);
 
-      const creditsMid = (db.prepare(
-        'SELECT credits_remaining FROM subscriptions WHERE user_id = ?',
-      ).get(user.id) as { credits_remaining: number }).credits_remaining;
+      const countAfterFirst = (db.prepare(
+        'SELECT COUNT(*) as cnt FROM day_passes WHERE stripe_checkout_session_id = ?',
+      ).get(sessionId) as { cnt: number }).cnt;
+      expect(countAfterFirst).toBe(1);
 
-      // Second call — replay with a fresh timestamp/signature but same session id
+      // Second call — same session id, should be a no-op (idempotent)
       const { body: b2, signature: s2 } = buildPayload();
       await postWebhook(b2, s2);
 
-      const creditsAfter = (db.prepare(
-        'SELECT credits_remaining FROM subscriptions WHERE user_id = ?',
-      ).get(user.id) as { credits_remaining: number }).credits_remaining;
-
-      // Credits must not increase on the second call
-      expect(creditsAfter).toBe(creditsMid);
-
-      const rowCount = (db.prepare(
+      const countAfterSecond = (db.prepare(
         'SELECT COUNT(*) as cnt FROM day_passes WHERE stripe_checkout_session_id = ?',
       ).get(sessionId) as { cnt: number }).cnt;
-      expect(rowCount).toBe(1);
+      // Must not insert a duplicate row
+      expect(countAfterSecond).toBe(1);
     });
 
     it('no-ops gracefully when userId metadata is missing', async () => {

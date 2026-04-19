@@ -162,8 +162,8 @@ export function createApp(): express.Application {
   // ---- Body parsing ----
   // Webhook routes need raw Buffers for HMAC signature verification — mount raw parsers
   // BEFORE the global express.json() so the body isn't consumed and parsed to a JS object first.
-  app.use('/api/billing/webhook', express.raw({ type: '*/*' }));
-  app.use('/api/billing/razorpay/webhook', express.raw({ type: '*/*' }));
+  app.use('/api/billing/webhook', express.raw({ type: '*/*', limit: config.maxRequestBodyBytes }));
+  app.use('/api/billing/razorpay/webhook', express.raw({ type: '*/*', limit: config.maxRequestBodyBytes }));
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
 
   // P2-4: Content-Type enforcement for API mutation endpoints
