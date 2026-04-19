@@ -34,10 +34,16 @@ on:
           - docker-builder-prune
           - ssh-keys-audit
           - rotate-jwt-encryption-preview
+          - remove-ssh-key
       reason:
         description: 'Why you are running this (for the run log / audit trail)'
         required: true
         type: string
+      key_identifier:
+        description: 'remove-ssh-key only: SHA256 fingerprint (preferred) or exact key comment to remove from /root/.ssh/authorized_keys. Ignored by other actions.'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: ops-remote-exec
@@ -63,16 +69,18 @@ jobs:
         env:
           OPS_ACTION: ${{ inputs.action }}
           OPS_REASON: ${{ inputs.reason }}
+          OPS_KEY_IDENTIFIER: ${{ inputs.key_identifier }}
           OPS_ACTOR: ${{ github.actor }}
           OPS_REF: ${{ github.ref }}
           OPS_RUN_ID: ${{ github.run_id }}
         run: |
           echo "=== Ops dispatch ==="
-          echo "action:  $OPS_ACTION"
-          echo "reason:  $OPS_REASON"
-          echo "actor:   $OPS_ACTOR"
-          echo "ref:     $OPS_REF"
-          echo "run:     $OPS_RUN_ID"
+          echo "action:       $OPS_ACTION"
+          echo "reason:       $OPS_REASON"
+          echo "key_ident:    ${OPS_KEY_IDENTIFIER:-<none>}"
+          echo "actor:        $OPS_ACTOR"
+          echo "ref:          $OPS_REF"
+          echo "run:          $OPS_RUN_ID"
 
       - name: Execute remote action
         uses: appleboy/ssh-action@v1
@@ -81,7 +89,7 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 15m
-          envs: OPS_ACTION
+          envs: OPS_ACTION,OPS_KEY_IDENTIFIER
           script: |
             set -euo pipefail
             ACTION="${OPS_ACTION:-}"
@@ -206,6 +214,133 @@ jobs:
                 echo
                 echo "NOTE: preview only — no secret was written, no service was restarted, no directory was created."
                 ;;
+              remove-ssh-key)
+                # Destructive: removes a single line from /root/.ssh/authorized_keys.
+                # Matches by SHA256 fingerprint (preferred) or exact key comment.
+                # Safeguards:
+                #   - refuses if key_identifier is empty
+                #   - refuses on zero matches (no silent no-op)
+                #   - refuses on >1 matches (ambiguous)
+                #   - writes a timestamped backup before mutation
+                #   - prints a before/after diff with the base64 key blob redacted
+                #   - preserves mode 600 on the file
+                IDENT="${OPS_KEY_IDENTIFIER:-}"
+                if [ -z "$IDENT" ]; then
+                  echo "ERROR: key_identifier input is required for remove-ssh-key" >&2
+                  exit 1
+                fi
+                AUTH_KEYS=/root/.ssh/authorized_keys
+                if [ ! -f "$AUTH_KEYS" ]; then
+                  echo "ERROR: $AUTH_KEYS missing" >&2
+                  exit 1
+                fi
+
+                echo "--- target identifier ---"
+                echo "$IDENT"
+                echo
+
+                # Redactor: blanks out the base64 key blob so the audit log
+                # never carries the raw material.
+                REDACT_AWK='{
+                  for (i = 1; i <= NF; i++) {
+                    if (length($i) > 40 && $i ~ /^[A-Za-z0-9+\/=]+$/) { $i = "<redacted-key>" }
+                  }
+                  print
+                }'
+
+                # Pass 1: match by SHA256 fingerprint. Per-line so a malformed
+                # line never drags the whole pass with it.
+                MATCH_LINES=""
+                LINE_NO=0
+                while IFS= read -r line || [ -n "$line" ]; do
+                  LINE_NO=$((LINE_NO + 1))
+                  case "$line" in
+                    ''|\#*) continue ;;
+                  esac
+                  FP=$(printf '%s\n' "$line" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
+                  if [ -n "$FP" ] && [ "$FP" = "$IDENT" ]; then
+                    MATCH_LINES="$MATCH_LINES $LINE_NO"
+                  fi
+                done < "$AUTH_KEYS"
+
+                # Pass 2: fall back to exact key-comment match (post-key-blob
+                # field) only if fingerprint pass found nothing.
+                if [ -z "$MATCH_LINES" ]; then
+                  LINE_NO=0
+                  while IFS= read -r line || [ -n "$line" ]; do
+                    LINE_NO=$((LINE_NO + 1))
+                    case "$line" in
+                      ''|\#*) continue ;;
+                    esac
+                    COMMENT=$(printf '%s\n' "$line" | awk '{
+                      ki = 0
+                      for (i = 1; i <= NF; i++) {
+                        if (length($i) > 40 && $i ~ /^[A-Za-z0-9+\/=]+$/) { ki = i; break }
+                      }
+                      if (ki == 0) next
+                      out = ""
+                      for (j = ki + 1; j <= NF; j++) {
+                        out = (out == "" ? $j : out" "$j)
+                      }
+                      print out
+                    }')
+                    if [ -n "$COMMENT" ] && [ "$COMMENT" = "$IDENT" ]; then
+                      MATCH_LINES="$MATCH_LINES $LINE_NO"
+                    fi
+                  done < "$AUTH_KEYS"
+                fi
+
+                MATCH_LINES=$(echo $MATCH_LINES | xargs)
+                if [ -z "$MATCH_LINES" ]; then
+                  echo "ERROR: no key matched identifier '$IDENT' (tried SHA256 fingerprint, then exact key comment)" >&2
+                  exit 1
+                fi
+                COUNT=$(echo "$MATCH_LINES" | wc -w)
+                if [ "$COUNT" -gt 1 ]; then
+                  echo "ERROR: identifier '$IDENT' matched multiple lines ($MATCH_LINES) — refusing to remove an ambiguous set" >&2
+                  exit 1
+                fi
+
+                TARGET_LINE="$MATCH_LINES"
+                echo "--- matched line: $TARGET_LINE ---"
+                echo
+
+                STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+                BACKUP="${AUTH_KEYS}.bak.${STAMP}"
+                cp -p "$AUTH_KEYS" "$BACKUP"
+                chmod 600 "$BACKUP"
+                echo "--- backup: $BACKUP ---"
+                stat -c 'mode=%a owner=%U:%G size=%s' "$BACKUP"
+                echo
+
+                echo "--- before (line count) ---"
+                wc -l "$AUTH_KEYS"
+                echo "--- removing (redacted) ---"
+                sed -n "${TARGET_LINE}p" "$AUTH_KEYS" | awk "$REDACT_AWK"
+                echo
+
+                sed -i "${TARGET_LINE}d" "$AUTH_KEYS"
+                chmod 600 "$AUTH_KEYS"
+
+                echo "--- after (line count) ---"
+                wc -l "$AUTH_KEYS"
+                stat -c 'mode=%a owner=%U:%G mtime=%y' "$AUTH_KEYS"
+                echo
+
+                echo "--- diff (redacted) ---"
+                # Use temp files instead of bash process substitution so this
+                # arm also runs under plain sh if the remote login shell
+                # defaults away from bash.
+                REDACTED_BEFORE=$(mktemp)
+                REDACTED_AFTER=$(mktemp)
+                chmod 600 "$REDACTED_BEFORE" "$REDACTED_AFTER"
+                awk "$REDACT_AWK" "$BACKUP" > "$REDACTED_BEFORE"
+                awk "$REDACT_AWK" "$AUTH_KEYS" > "$REDACTED_AFTER"
+                diff "$REDACTED_BEFORE" "$REDACTED_AFTER" || true
+                rm -f "$REDACTED_BEFORE" "$REDACTED_AFTER"
+                echo
+                echo "NOTE: original file preserved at $BACKUP (mode 600). Remove manually via a follow-up dispatch or sanctioned ops action once the removal is confirmed."
+                ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
                 exit 1
@@ -216,3 +351,4 @@ jobs:
             echo "=== Finished:    $(date -u +%FT%TZ) ==="
         env:
           OPS_ACTION: ${{ inputs.action }}
+          OPS_KEY_IDENTIFIER: ${{ inputs.key_identifier }}

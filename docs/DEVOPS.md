@@ -292,7 +292,9 @@ existing `DEPLOY_HOST` / `DEPLOY_SSH_KEY` secrets.
     - `docker-builder-prune` — runs `docker builder prune -af` and logs before/after `df -h /` + `docker system df`
     - `ssh-keys-audit` — read-only inventory of `/root/.ssh/authorized_keys` (fingerprints + comments, no private material). Output is pasted into `docs/SSH-ACCESS.md` under **Human Key Inventory** via a follow-up PR. See `docs/SSH-ACCESS.md` for the access model.
     - `rotate-jwt-encryption-preview` — dry-run validator for a future real rotation action. Verifies `/root/.agentin-secrets` mode/size, lists the variable names it contains (names only, never values), generates candidate `JWT_SECRET` / `ENCRYPTION_KEY` lengths, and confirms the backup directory is writable. Makes no changes. Used to rehearse the pipe before the actual rotation dispatch.
+    - `remove-ssh-key` — destructive removal of a single line from `/root/.ssh/authorized_keys`. Requires `key_identifier` (SHA256 fingerprint preferred, exact key comment as fallback). Refuses empty/missing identifier, zero matches, or ambiguous (>1) matches. Writes a timestamped backup (`authorized_keys.bak.<UTC>`), removes the matched line, preserves mode 600, and prints a before/after diff with the base64 key blob redacted. Paired with `ssh-keys-audit` to enforce the "unattributed keys removed within one business day" policy in `docs/SSH-ACCESS.md`.
   - `reason` — free-text audit note (shown in the run log, not passed to the shell)
+  - `key_identifier` — required by `remove-ssh-key` only; SHA256 fingerprint (e.g. `SHA256:abc…`) or exact key comment. Ignored by the other actions.
 
 ### How to trigger
 
