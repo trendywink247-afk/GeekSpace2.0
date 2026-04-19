@@ -1,0 +1,18 @@
+[Unit]
+Description=Litestream continuous SQLite replication to R2
+Documentation=https://litestream.io/
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/litestream
+ExecStart=/usr/bin/litestream replicate -config /etc/litestream.yml
+Restart=always
+RestartSec=5
+# Litestream writes to /var/lib/docker/... via the DB path; root needed.
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
