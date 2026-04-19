@@ -31,6 +31,7 @@ import { getCurrentFreeModel, switchToNextFreeModel, getUserPreferredFreeModel }
 import { recordTokenUsage, shouldDegradeRouting, isOverDailyBudget } from '../../../services/token-budget.js';
 import { cacheGet, cacheSet } from '../../../services/cache.js';
 import { isAgentFloAvailable, recordRoutingFeedback } from './agentflo-bridge.js';
+import { db } from '../../../db/index.js';
 
 // ---- Types ----
 
@@ -778,26 +779,52 @@ export function resetBudgetWarnThrottle(): void {
   _lastBudgetWarnAt = 0;
 }
 
-// Throws on Redis error (callers decide whether to fail-open or fail-closed).
+// Redis-first read; on Redis error falls back to SQLite ledger.
+// Throws only if both Redis and SQLite are unavailable (callers fail-closed on throw).
 async function getKimiMonthlySpendUnits(): Promise<number> {
-  const key = KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
-  const val = await cacheGet(key);
-  return val ? parseInt(val, 10) || 0 : 0;
-}
-
-async function recordKimiSpend(tokensIn: number, tokensOut: number): Promise<void> {
-  const units = computeKimiSpendUnits(tokensIn, tokensOut);
-  const key = KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
+  const month = new Date().toISOString().slice(0, 7);
+  const key = KIMI_BUDGET_KEY_PREFIX + month;
   try {
-    const current = await getKimiMonthlySpendUnits();
-    await cacheSet(key, String(current + units), 31 * 24 * 60 * 60);
-    logger.debug({ units, total: current + units, budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:spend_recorded');
+    const val = await cacheGet(key);
+    return val ? parseInt(val, 10) || 0 : 0;
   } catch {
-    // Non-fatal — spend recording failures don't block responses
+    logger.info({ month }, 'kimi:sqlite_fallback_read');
+    const row = db.prepare('SELECT units FROM kimi_spend_ledger WHERE month = ?').get(month) as { units: number } | undefined;
+    return row ? row.units : 0;
   }
 }
 
-// Fail-closed: Redis error → false (do not allow Kimi call).
+// Dual-write: SQLite synchronous (always), Redis best-effort.
+export async function recordKimiSpend(tokensIn: number, tokensOut: number): Promise<void> {
+  const units = computeKimiSpendUnits(tokensIn, tokensOut);
+  const month = new Date().toISOString().slice(0, 7);
+
+  // SQLite — synchronous, always runs
+  try {
+    db.prepare(`
+      INSERT INTO kimi_spend_ledger (month, units, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(month) DO UPDATE SET
+        units = units + excluded.units,
+        updated_at = excluded.updated_at
+    `).run(month, units, Date.now());
+  } catch (err) {
+    logger.warn({ error: String(err) }, 'kimi:sqlite_write_failed');
+  }
+
+  // Redis — best-effort
+  const key = KIMI_BUDGET_KEY_PREFIX + month;
+  try {
+    const val = await cacheGet(key);
+    const prev = val ? parseInt(val, 10) || 0 : 0;
+    await cacheSet(key, String(prev + units), 31 * 24 * 60 * 60);
+    logger.debug({ units, total: prev + units, budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:spend_recorded');
+  } catch {
+    // Non-fatal — SQLite has already recorded the spend
+  }
+}
+
+// Fail-closed: both Redis and SQLite unavailable → false (do not allow Kimi call).
 export async function isKimiWithinBudget(): Promise<boolean> {
   try {
     const spend = await getKimiMonthlySpendUnits();
@@ -1044,8 +1071,6 @@ async function tryFallbackChain(
 }
 
 // ---- Credit Cost ----
-
-import { db } from '../../../db/index.js';
 
 const FLAT_CREDIT_COSTS: Partial<Record<Provider, number>> = {
   ollama:            1,

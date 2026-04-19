@@ -7,6 +7,13 @@ const { mockCacheGet, mockCacheSet } = vi.hoisted(() => ({
   mockCacheSet: vi.fn<() => Promise<void>>(async () => {}),
 }));
 
+const { mockDbGet, mockDbRun, mockDbPrepare } = vi.hoisted(() => {
+  const mockDbGet = vi.fn(() => null as unknown);
+  const mockDbRun = vi.fn();
+  const mockDbPrepare = vi.fn(() => ({ run: mockDbRun, get: mockDbGet, all: vi.fn(() => []) }));
+  return { mockDbGet, mockDbRun, mockDbPrepare };
+});
+
 // ── Module mocks ─────────────────────────────────────────────
 
 vi.mock('../../../config.js', () => ({
@@ -77,9 +84,7 @@ vi.mock('../services/agentflo-bridge.js', () => ({
 }));
 
 vi.mock('../../../db/index.js', () => ({
-  db: {
-    prepare: vi.fn(() => ({ run: vi.fn(), get: vi.fn(() => null), all: vi.fn(() => []) })),
-  },
+  db: { prepare: mockDbPrepare },
 }));
 
 vi.mock('../../../logger.js', () => ({
@@ -93,6 +98,7 @@ import {
   isKimiUserWithinDailyLimit,
   isTogetherWithinDailyBudget,
   resetBudgetWarnThrottle,
+  recordKimiSpend,
   clearOllamaCache,
   clearLLMCache,
   clearRoutingTraces,
@@ -127,6 +133,9 @@ describe('isKimiWithinBudget', () => {
   beforeEach(() => {
     mockCacheGet.mockReset();
     mockCacheSet.mockReset();
+    mockDbGet.mockReset();
+    mockDbRun.mockReset();
+    mockDbPrepare.mockClear();
   });
 
   it('returns true when no spend recorded (null key)', async () => {
@@ -149,16 +158,42 @@ describe('isKimiWithinBudget', () => {
     expect(await isKimiWithinBudget()).toBe(false);
   });
 
-  it('returns false (fail-closed) when Redis throws', async () => {
+  it('falls back to SQLite and allows call when Redis throws but ledger has low spend', async () => {
     mockCacheGet.mockRejectedValue(new Error('ECONNREFUSED'));
+    mockDbGet.mockReturnValue({ units: 1000 }); // well under 50_000
+    expect(await isKimiWithinBudget()).toBe(true);
+  });
+
+  it('enforces budget via SQLite when Redis throws and ledger is at cap', async () => {
+    mockCacheGet.mockRejectedValue(new Error('ECONNREFUSED'));
+    mockDbGet.mockReturnValue({ units: 50000 }); // at cap
     expect(await isKimiWithinBudget()).toBe(false);
   });
 
-  it('logs a warn with code budget_check_unavailable when Redis throws', async () => {
+  it('returns false (fail-closed) when both Redis and SQLite are unavailable', async () => {
+    mockCacheGet.mockRejectedValue(new Error('Redis down'));
+    mockDbPrepare.mockImplementation(() => { throw new Error('no such table'); });
+    expect(await isKimiWithinBudget()).toBe(false);
+  });
+
+  it('logs info for SQLite fallback when Redis throws', async () => {
+    const infoSpy = vi.mocked(logger.info);
+    infoSpy.mockClear();
+    mockCacheGet.mockRejectedValue(new Error('Redis down'));
+    mockDbGet.mockReturnValue(null);
+    await isKimiWithinBudget();
+    expect(infoSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ month: expect.stringMatching(/^\d{4}-\d{2}$/) }),
+      'kimi:sqlite_fallback_read',
+    );
+  });
+
+  it('logs a warn with code budget_check_unavailable when both Redis and SQLite fail', async () => {
     resetBudgetWarnThrottle();
     const warnSpy = vi.mocked(logger.warn);
     warnSpy.mockClear();
     mockCacheGet.mockRejectedValue(new Error('Redis down'));
+    mockDbPrepare.mockImplementation(() => { throw new Error('schema missing'); });
     await isKimiWithinBudget();
     expect(warnSpy).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'budget_check_unavailable', context: 'kimi_monthly' }),
@@ -258,6 +293,44 @@ describe('isTogetherWithinDailyBudget', () => {
   });
 });
 
+// ── recordKimiSpend — SQLite dual-write ─────────────────────
+
+describe('recordKimiSpend — dual-write', () => {
+  beforeEach(() => {
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockDbGet.mockReset();
+    mockDbRun.mockReset();
+    mockDbPrepare.mockImplementation(() => ({ run: mockDbRun, get: mockDbGet, all: vi.fn(() => []) }));
+  });
+
+  it('writes to SQLite synchronously even when Redis is healthy', async () => {
+    mockCacheGet.mockResolvedValue('1000');
+    mockCacheSet.mockResolvedValue(undefined);
+    await recordKimiSpend(100_000, 50_000);
+    expect(mockDbRun).toHaveBeenCalledWith(
+      expect.stringMatching(/^\d{4}-\d{2}$/), // month
+      expect.any(Number),                       // units delta
+      expect.any(Number),                       // updated_at timestamp
+    );
+  });
+
+  it('still writes to SQLite when Redis write throws', async () => {
+    mockCacheGet.mockRejectedValue(new Error('Redis down'));
+    await recordKimiSpend(100_000, 50_000);
+    expect(mockDbRun).toHaveBeenCalledOnce();
+  });
+
+  it('records correct unit delta to SQLite', async () => {
+    mockCacheGet.mockResolvedValue(null);
+    mockCacheSet.mockResolvedValue(undefined);
+    // 100k input at $0.50/M + 50k output at $2.50/M → units = ceil((100_000*5 + 50_000*25)/1000) = ceil(1750) = 1750
+    await recordKimiSpend(100_000, 50_000);
+    const [, units] = mockDbRun.mock.calls[0] as [string, number, number];
+    expect(units).toBe(1750);
+  });
+});
+
 // ── Router fallback when Redis is unavailable ───────────────
 
 describe('routeChat — Redis-down budget guard falls back to Groq', () => {
@@ -267,6 +340,10 @@ describe('routeChat — Redis-down budget guard falls back to Groq', () => {
     clearRoutingTraces();
     mockCacheGet.mockReset();
     mockCacheSet.mockReset();
+    mockDbGet.mockReset();
+    mockDbRun.mockReset();
+    // SQLite ledger returns over-budget so Kimi is still skipped when Redis is down
+    mockDbPrepare.mockImplementation(() => ({ run: mockDbRun, get: vi.fn(() => ({ units: 99999 })), all: vi.fn(() => []) }));
   });
 
   afterEach(() => {

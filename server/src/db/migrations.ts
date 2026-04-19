@@ -1960,4 +1960,15 @@ try {
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_day_passes_stripe_session ON day_passes(stripe_checkout_session_id) WHERE stripe_checkout_session_id IS NOT NULL`);
 } catch { /* index already exists — ignore */ }
 
+// Kimi K2 durable spend ledger — SQLite fallback when Redis is unavailable (AGE-36)
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS kimi_spend_ledger (
+      month TEXT PRIMARY KEY,
+      units INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+} catch { /* exists */ }
+
 }
