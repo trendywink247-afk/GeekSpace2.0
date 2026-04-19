@@ -1524,6 +1524,7 @@ router.post('/command', requireAuth, validateBody(commandSchema), async (req: Au
     const safeReminderText = reminderText
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — reminderText is HTML-entity-escaped above (& < > " ') before interpolation
     res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${safeReminderText}`, isError: false });
     return;
   }
