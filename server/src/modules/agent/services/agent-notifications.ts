@@ -26,7 +26,7 @@ import type { AnyAgentId } from '../types/goals.js';
 export type NotificationType =
   | 'goal_progress' | 'goal_completed' | 'step_completed' | 'step_failed'
   | 'delegation_complete' | 'agent_insight' | 'anomaly' | 'checkin'
-  | 'suggestion' | 'celebration';
+  | 'suggestion' | 'celebration' | 'reminder_preview';
 
 export interface AgentNotification {
   id: string;

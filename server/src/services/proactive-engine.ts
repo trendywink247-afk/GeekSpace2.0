@@ -8,6 +8,7 @@ import { getTodayEvents } from './calendar-sync.js';
 import { textToSpeech, sendTelegramVoice } from './voice.js';
 import { eventBus } from './event-bus.js';
 import { getUpcomingFestivals } from './festival-calendar.js';
+import { runMemoryDecay } from '../modules/memory/services/cognitive-memory.js';
 
 function nextSundayAt7pm(tz: string): DateTime {
   const nowLocal = DateTime.now().setZone(tz);
@@ -352,6 +353,61 @@ export async function weeklyExpenseDigest(userId: string): Promise<string | null
   }
 }
 
+// ── Reminder 30-min preview ──────────────────────────────────
+
+async function sendReminderPreviews(): Promise<void> {
+  const { cacheGet, cacheSet } = await import('./cache.js');
+  const { sendAgentNotification } = await import('../modules/agent/services/agent-notifications.js');
+  const now = Date.now();
+  const windowStart = now + 25 * 60 * 1000;   // 25 min from now
+  const windowEnd = now + 35 * 60 * 1000;     // 35 min from now
+
+  // Users with a verified telegram link. sendAgentNotification also works for
+  // SSE-only users, but scoping to telegram-linked users preserves the existing
+  // deployment's scheduler load and matches where the 30-min window is useful.
+  const users = db.prepare(`
+    SELECT DISTINCT u.id
+    FROM users u
+    JOIN channel_links cl ON cl.user_id = u.id
+    WHERE cl.channel = 'telegram' AND cl.is_verified = 1
+  `).all() as Array<{ id: string }>;
+
+  for (const user of users) {
+    const upcoming = db.prepare(`
+      SELECT id, text, scheduled_for FROM reminders
+      WHERE user_id = ? AND completed = 0
+      AND scheduled_for BETWEEN ? AND ?
+      AND (preview_sent IS NULL OR preview_sent < ?)
+    `).all(user.id, windowStart, windowEnd, now - 300_000) as Array<{ id: string; text: string; scheduled_for: number }>;
+
+    for (const r of upcoming) {
+      const dedupKey = `preview:${r.id}`;
+      const already = await cacheGet(dedupKey).catch(() => null);
+      if (already) continue;
+
+      const minutesLeft = Math.round((r.scheduled_for - now) / 60_000);
+      // Route through sendAgentNotification so the send honors notif_agents
+      // preference + quiet hours (direct sendTelegramNotification bypasses
+      // both). Throwing only happens on the DB insert, not on Telegram
+      // delivery — good enough to gate preview_sent on.
+      const sent = await sendAgentNotification(
+        user.id,
+        'cal',
+        'reminder_preview',
+        'Reminder',
+        `"${r.text}" is due in ~${minutesLeft} minutes`,
+      ).then(() => true).catch(() => false);
+
+      if (!sent) continue;
+
+      try {
+        db.prepare('UPDATE reminders SET preview_sent = ? WHERE id = ?').run(now, r.id);
+        await cacheSet(dedupKey, '1', 3600);
+      } catch { /* non-fatal */ }
+    }
+  }
+}
+
 // ── Habit idle nudge ─────────────────────────────────────────
 
 async function sendHabitNudges(): Promise<void> {
@@ -494,6 +550,38 @@ export async function initProactiveEngine(): Promise<void> {
       }
     });
 
+    registerHandler('idle_checkin', async (job) => {
+      try {
+        if (!isTypeEnabled(job.userId, 'idle_check_in') || isThrottled(job.userId)) return;
+        await idleCheckIn(job.userId);
+      } finally {
+        // Always reschedule — early-returns on throttle/disable must not stop the daily cadence.
+        const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+        scheduleRecurringDaily(job.userId, 'idle_checkin', 8, tz);
+      }
+    });
+
+    registerHandler('memory_decay', async (job) => {
+      if (!isProactiveEnabled(job.userId)) {
+        // Still reschedule so the job resumes if the user re-enables proactive messages.
+        const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+        scheduleRecurringDaily(job.userId, 'memory_decay', 3, tz);
+        return;
+      }
+      try { runMemoryDecay(job.userId); } catch (err) { logger.warn({ err, userId: job.userId }, 'Memory decay failed'); }
+      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+      scheduleRecurringDaily(job.userId, 'memory_decay', 3, tz);
+    });
+
+    registerHandler('reminder_preview', async (job) => {
+      await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview sweep failed'));
+      // Reschedule 30 min out. Timezone-independent because reminders store absolute timestamps.
+      // Include occurrence timestamp so the next row has a distinct id — otherwise INSERT OR REPLACE
+      // collides with the currently-running job and the post-handler markDone() would nuke it.
+      const next = Date.now() + 30 * 60_000;
+      scheduleJob(job.userId, 'reminder_preview', next, {}, { dedupeKey: `reminder_preview:${job.userId}:${new Date(next).toISOString()}` });
+    });
+
     registerHandler('page_monitor', async (job) => {
       const monId = job.payload.monitorId as string;
       if (!monId) return;
@@ -574,10 +662,15 @@ export async function initProactiveEngine(): Promise<void> {
         scheduleRecurringDaily(user.id, 'morning_brief', 8, tz);
         scheduleRecurringDaily(user.id, 'overdue_alert', 10, tz);
         scheduleRecurringDaily(user.id, 'habit_nudge', 21, tz);
+        scheduleRecurringDaily(user.id, 'idle_checkin', 8, tz);
+        scheduleRecurringDaily(user.id, 'memory_decay', 3, tz);
         // Weekly report: next Sunday 7pm user-local. Handler re-schedules itself.
         const next = nextSundayAt7pm(tz);
         scheduleJob(user.id, 'weekly_report', next.toMillis(), {}, { dedupeKey: `weekly_report:${user.id}:${next.toISODate()}` });
       }
+      // Reminder preview sweep is global (not per-user): fire every 30 min.
+      // Single dedupe key prevents fan-out; handler re-schedules itself.
+      scheduleJob('__system__', 'reminder_preview', Date.now() + 30 * 60_000, {}, { dedupeKey: 'reminder_preview:__system__' });
       logger.info({ userCount: users.length }, 'Seeded recurring durable jobs');
     } catch (err) {
       logger.warn({ err }, 'Failed to seed durable jobs (non-fatal)');
