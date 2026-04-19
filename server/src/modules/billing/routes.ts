@@ -11,6 +11,8 @@ import { PLAN_DEFINITIONS } from '../../db/index.js';
 import { v4 as uuid } from 'uuid';
 import { cacheGet, cacheSet } from '../../services/cache.js';
 import { logger } from '../../logger.js';
+import { withAgentinError } from '../../middleware/error-handler.js';
+import { ValidationError, ServiceUnavailableError } from '../../errors/index.js';
 
 export const billingRouter = Router();
 
@@ -95,28 +97,21 @@ billingRouter.get('/usage', requireAuth, (req: AuthRequest, res) => {
 
 // POST /api/billing/day-pass — 24hr access for free users
 // When Stripe is configured, create a Checkout Session for $2.99; dev-only free grant otherwise.
-billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
+billingRouter.post('/day-pass', requireAuth, withAgentinError(async (req: AuthRequest, res) => {
   const sub = db.prepare('SELECT plan FROM subscriptions WHERE user_id = ?').get(req.userId!) as { plan: string } | undefined;
   if (sub?.plan !== 'free') {
-    res.status(400).json({ error: 'Day pass is only available on the free plan. Upgrade for full access.' });
-    return;
+    throw new ValidationError('Day pass is only available on the free plan. Upgrade for full access.');
   }
 
   // Block duplicate purchases while a pass is already active
   if (hasActiveDayPass(req.userId!)) {
-    res.status(400).json({ error: 'You already have an active day pass.' });
-    return;
+    throw new ValidationError('You already have an active day pass.');
   }
 
   // When Stripe is configured, redirect through a real Checkout Session
   if (config.stripeEnabled) {
-    try {
-      const url = await createDayPassCheckoutSession(req.userId!);
-      res.json({ checkoutUrl: url });
-    } catch (err) {
-      logger.error({ err, userId: req.userId }, 'Stripe day pass checkout session creation failed');
-      res.status(500).json({ error: 'Failed to create day pass checkout session' });
-    }
+    const url = await createDayPassCheckoutSession(req.userId!);
+    res.json({ checkoutUrl: url });
     return;
   }
 
@@ -134,7 +129,7 @@ billingRouter.post('/day-pass', requireAuth, async (req: AuthRequest, res) => {
 
   const inserted = db.prepare('SELECT expires_at FROM day_passes WHERE id = ?').get(id) as { expires_at: string };
   res.json({ message: 'Day pass activated! You have 24 hours of Weebo access.', expiresAt: inserted.expires_at });
-});
+}));
 
 // GET /api/billing/day-pass — check if user has active day pass
 billingRouter.get('/day-pass', requireAuth, (req: AuthRequest, res) => {
@@ -158,24 +153,18 @@ billingRouter.get('/events', requireAuth, (req: AuthRequest, res) => {
 });
 
 // POST /api/billing/checkout — create Stripe Checkout session
-billingRouter.post('/checkout', requireAuth, async (req: AuthRequest, res) => {
+billingRouter.post('/checkout', requireAuth, withAgentinError(async (req: AuthRequest, res) => {
   const { plan } = req.body as { plan?: string };
   const PAID_PLANS = ['pilot', 'intro', 'halfyear', 'yearly'];
   if (!plan || !PAID_PLANS.includes(plan)) {
-    res.status(400).json({ error: `Plan must be one of: ${PAID_PLANS.join(', ')}` });
-    return;
+    throw new ValidationError(`Plan must be one of: ${PAID_PLANS.join(', ')}`);
   }
   if (!config.stripeEnabled) {
-    res.status(503).json({ error: 'Stripe billing is not configured on this server.' });
-    return;
+    throw new ServiceUnavailableError('Stripe billing is not configured on this server.');
   }
-  try {
-    const url = await createCheckoutSession(req.userId!, plan);
-    res.json({ url });
-  } catch {
-    res.status(500).json({ error: 'Checkout failed' });
-  }
-});
+  const url = await createCheckoutSession(req.userId!, plan);
+  res.json({ url });
+}));
 
 // POST /api/billing/webhook — Stripe webhook (raw body for signature verification)
 billingRouter.post(

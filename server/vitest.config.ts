@@ -20,7 +20,7 @@ export default defineConfig({
       GITHUB_CLIENT_ID: 'test-github-client-id',
       GITHUB_CLIENT_SECRET: 'test-github-client-secret',
     },
-    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/db/__tests__/*.test.ts'],
+    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/db/__tests__/*.test.ts', 'src/middleware/__tests__/*.test.ts'],
     exclude: ['src/__tests__/**'],
     setupFiles: ['src/test/mocks/setup.ts'],
     testTimeout: 30000,  // LLM calls can be slow; 30s global timeout prevents false flakiness
