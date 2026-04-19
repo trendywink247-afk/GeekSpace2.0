@@ -23,7 +23,7 @@ export const healthRouter = Router();
 // Read version once at module load — package.json sits at the server package root.
 const PACKAGE_VERSION: string = (() => {
   try {
-    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../package.json');
+    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../package.json');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string };
     return typeof pkg.version === 'string' ? pkg.version : 'unknown';
   } catch {

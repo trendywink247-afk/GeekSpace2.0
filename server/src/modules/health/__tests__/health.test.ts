@@ -1,8 +1,16 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import request from 'supertest';
 import { createApp } from '../../../app.js';
 import { resetDatabase } from '../../../test/setup.js';
 import { config } from '../../../config.js';
+
+const SERVER_PKG_VERSION = (() => {
+  const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../package.json');
+  return (JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string }).version;
+})();
 
 const TEST_ADMIN_TOKEN = 'test-admin-token-health';
 config.adminToken = TEST_ADMIN_TOKEN;
@@ -50,6 +58,8 @@ describe('Health Module', () => {
       expect(typeof res.body.version).toBe('string');
       expect(typeof res.body.commit).toBe('string');
       expect(res.body.nodeVersion).toBe(process.version);
+      // Must read from server/package.json (not repo root) — see PR #298 codex review.
+      expect(res.body.version).toBe(SERVER_PKG_VERSION);
     });
 
     it('should not require authentication', async () => {
