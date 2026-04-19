@@ -357,17 +357,20 @@ export async function weeklyExpenseDigest(userId: string): Promise<string | null
 
 async function sendReminderPreviews(): Promise<void> {
   const { cacheGet, cacheSet } = await import('./cache.js');
-  const { sendTelegramNotification, escapeTelegramHtml: escHtml } = await import('./telegram.js');
+  const { sendAgentNotification } = await import('../modules/agent/services/agent-notifications.js');
   const now = Date.now();
   const windowStart = now + 25 * 60 * 1000;   // 25 min from now
   const windowEnd = now + 35 * 60 * 1000;     // 35 min from now
 
+  // Users with a verified telegram link. sendAgentNotification also works for
+  // SSE-only users, but scoping to telegram-linked users preserves the existing
+  // deployment's scheduler load and matches where the 30-min window is useful.
   const users = db.prepare(`
-    SELECT DISTINCT u.id, cl.external_id as chat_id
+    SELECT DISTINCT u.id
     FROM users u
     JOIN channel_links cl ON cl.user_id = u.id
     WHERE cl.channel = 'telegram' AND cl.is_verified = 1
-  `).all() as Array<{ id: string; chat_id: string }>;
+  `).all() as Array<{ id: string }>;
 
   for (const user of users) {
     const upcoming = db.prepare(`
@@ -383,12 +386,19 @@ async function sendReminderPreviews(): Promise<void> {
       if (already) continue;
 
       const minutesLeft = Math.round((r.scheduled_for - now) / 60_000);
-      const sendResult = await sendTelegramNotification(
-        user.chat_id,
-        `📌 <b>Heads up!</b> "${escHtml(r.text)}" is due in ~${minutesLeft} minutes`,
-      ).catch(() => ({ success: false as const }));
+      // Route through sendAgentNotification so the send honors notif_agents
+      // preference + quiet hours (direct sendTelegramNotification bypasses
+      // both). Throwing only happens on the DB insert, not on Telegram
+      // delivery — good enough to gate preview_sent on.
+      const sent = await sendAgentNotification(
+        user.id,
+        'cal',
+        'reminder_preview',
+        'Reminder',
+        `"${r.text}" is due in ~${minutesLeft} minutes`,
+      ).then(() => true).catch(() => false);
 
-      if (!sendResult.success) continue;
+      if (!sent) continue;
 
       try {
         db.prepare('UPDATE reminders SET preview_sent = ? WHERE id = ?').run(now, r.id);
