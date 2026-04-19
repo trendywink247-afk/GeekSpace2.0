@@ -56,12 +56,15 @@ function seedExistingMigrations(db: Database.Database, files: string[]): void {
   const seedAll = db.transaction(() => {
     for (const file of files) {
       const filePath = path.join(MIGRATIONS_DIR, file);
-      const sql = fs.readFileSync(filePath, 'utf-8');
+      const sql = fs.readFileSync(filePath, 'utf-8').trim();
+      // Run the SQL — all statements use IF NOT EXISTS so this is idempotent on pre-existing DBs.
+      // This ensures any migration files added after the runner was introduced actually get applied.
+      db.exec(sql);
       insertStmt.run(file, sha256(sql));
     }
   });
   seedAll();
-  logger.info({ count: files.length }, 'migrate: seeded existing DB with migration history — no re-run');
+  logger.info({ count: files.length }, 'migrate: cutover — ran all migrations idempotently and seeded history');
 }
 
 /**

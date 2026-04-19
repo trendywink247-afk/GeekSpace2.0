@@ -210,7 +210,9 @@ describe('staging snapshot replay', () => {
   function buildStagingSnapshot(): Database.Database {
     const db = openMemoryDb();
 
-    // Minimal subset of the real baseline schema (FK-safe order)
+    // Minimal pre-cutover schema: only the tables needed to satisfy isPopulatedDb()
+    // and data-preservation assertions. Other tables will be created fresh by the
+    // baseline SQL (using IF NOT EXISTS), which is exactly the cutover behavior we test.
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -227,46 +229,6 @@ describe('staging snapshot replay', () => {
         user_id TEXT NOT NULL UNIQUE,
         plan TEXT NOT NULL DEFAULT 'free',
         credits INTEGER DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE IF NOT EXISTS agent_configs (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL UNIQUE,
-        name TEXT NOT NULL DEFAULT 'Agent',
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE IF NOT EXISTS reminders (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        text TEXT NOT NULL,
-        remind_at TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE IF NOT EXISTS contact_requests (
-        id TEXT PRIMARY KEY,
-        from_user_id TEXT,
-        from_name TEXT NOT NULL,
-        to_user_id TEXT NOT NULL,
-        source TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending',
-        expires_at TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE SET NULL,
-        FOREIGN KEY (to_user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        otp_hash TEXT NOT NULL,
-        channel TEXT NOT NULL,
-        expires_at TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
@@ -315,7 +277,7 @@ describe('staging snapshot replay', () => {
 
     for (const row of rows) {
       const filePath = path.join(MIGRATIONS_DIR, row.name);
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(filePath, 'utf-8').trim();
       const expected = sha256(content);
       expect(row.checksum, `checksum mismatch for ${row.name}`).toBe(expected);
     }

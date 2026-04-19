@@ -54,7 +54,8 @@ export function agentinErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const requestId = req.requestId ?? (req.headers['x-request-id'] as string | undefined) ?? 'unknown';
+  const rawRequestId = req.requestId ?? (req.headers['x-request-id'] as string | undefined);
+  const requestId = rawRequestId && /^[A-Za-z0-9._-]{1,64}$/.test(rawRequestId) ? rawRequestId : 'unknown';
 
   if (err instanceof AgentinError) {
     logger.warn(

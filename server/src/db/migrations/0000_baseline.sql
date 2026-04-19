@@ -789,7 +789,7 @@ CREATE TABLE IF NOT EXISTS agent_memory (
   confidence REAL DEFAULT 1.0,
   source TEXT DEFAULT 'observed',
   access_count INTEGER DEFAULT 0,
-  agent_namespace TEXT DEFAULT NULL,
+  agent_namespace TEXT DEFAULT 'shared',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
   UNIQUE(user_id, category, key)
@@ -1493,7 +1493,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON activity_log(user_id, c
 -- idx_reminders_scheduler omitted: column remind_at does not exist in this schema
 CREATE INDEX IF NOT EXISTS idx_reminders_datetime ON reminders(user_id, datetime);
 CREATE INDEX IF NOT EXISTS idx_activity_log_user_created ON activity_log(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON generated_outputs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON conversations(user_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_automations_user_active ON automations(user_id, enabled);
 CREATE INDEX IF NOT EXISTS idx_automations_trigger ON automations(trigger_type, enabled);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_to_user ON contact_requests(to_user_id);
