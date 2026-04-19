@@ -762,14 +762,27 @@ function computeKimiSpendUnits(tokensIn: number, tokensOut: number): number {
   return Math.ceil((tokensIn * 5 + tokensOut * 25) / 1000);
 }
 
+// Dedupe budget-check-unavailable warnings: at most one warn per minute per context.
+let _lastBudgetWarnAt = 0;
+function warnBudgetCheckUnavailable(context: string, err: unknown): void {
+  const now = Date.now();
+  if (now - _lastBudgetWarnAt > 60_000) {
+    _lastBudgetWarnAt = now;
+    logger.warn({ context, error: String(err), code: 'budget_check_unavailable' },
+      'budget_check_unavailable: Redis error — failing closed on provider');
+  }
+}
+
+/** Reset the warn-throttle timer. Exposed for test isolation only. */
+export function resetBudgetWarnThrottle(): void {
+  _lastBudgetWarnAt = 0;
+}
+
+// Throws on Redis error (callers decide whether to fail-open or fail-closed).
 async function getKimiMonthlySpendUnits(): Promise<number> {
   const key = KIMI_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 7);
-  try {
-    const val = await cacheGet(key);
-    return val ? parseInt(val, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
+  const val = await cacheGet(key);
+  return val ? parseInt(val, 10) || 0 : 0;
 }
 
 async function recordKimiSpend(tokensIn: number, tokensOut: number): Promise<void> {
@@ -780,27 +793,30 @@ async function recordKimiSpend(tokensIn: number, tokensOut: number): Promise<voi
     await cacheSet(key, String(current + units), 31 * 24 * 60 * 60);
     logger.debug({ units, total: current + units, budget: KIMI_MONTHLY_BUDGET_UNITS }, 'kimi:spend_recorded');
   } catch {
-    // Non-fatal
+    // Non-fatal — spend recording failures don't block responses
   }
 }
 
-async function isKimiWithinBudget(): Promise<boolean> {
-  const spend = await getKimiMonthlySpendUnits();
-  return spend < KIMI_MONTHLY_BUDGET_UNITS;
+// Fail-closed: Redis error → false (do not allow Kimi call).
+export async function isKimiWithinBudget(): Promise<boolean> {
+  try {
+    const spend = await getKimiMonthlySpendUnits();
+    return spend < KIMI_MONTHLY_BUDGET_UNITS;
+  } catch (err) {
+    warnBudgetCheckUnavailable('kimi_monthly', err);
+    return false;
+  }
 }
 
 // Per-user daily Kimi call limit — prevents one power user from exhausting the shared $5/month pool
 const KIMI_USER_DAILY_LIMIT = 3;
 const KIMI_USER_KEY_PREFIX = 'kimi:user:calls:';
 
+// Throws on Redis error (callers decide whether to fail-open or fail-closed).
 async function getKimiUserDailyCount(userId: string): Promise<number> {
   const key = KIMI_USER_KEY_PREFIX + new Date().toISOString().slice(0, 10) + ':' + userId;
-  try {
-    const val = await cacheGet(key);
-    return val ? parseInt(val, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
+  const val = await cacheGet(key);
+  return val ? parseInt(val, 10) || 0 : 0;
 }
 
 async function recordKimiUserCall(userId: string): Promise<void> {
@@ -813,10 +829,16 @@ async function recordKimiUserCall(userId: string): Promise<void> {
   }
 }
 
-async function isKimiUserWithinDailyLimit(userId: string | undefined): Promise<boolean> {
+// Fail-closed: Redis error → false (do not allow Kimi call). Guest users (no userId) still pass.
+export async function isKimiUserWithinDailyLimit(userId: string | undefined): Promise<boolean> {
   if (!userId) return true; // guest — allow
-  const count = await getKimiUserDailyCount(userId);
-  return count < KIMI_USER_DAILY_LIMIT;
+  try {
+    const count = await getKimiUserDailyCount(userId);
+    return count < KIMI_USER_DAILY_LIMIT;
+  } catch (err) {
+    warnBudgetCheckUnavailable('kimi_user_daily', err);
+    return false;
+  }
 }
 
 // ---- Together AI Daily Budget (shared across T3 + T4) ----
@@ -835,14 +857,11 @@ function computeTogetherSpendCents(model: string, tokensIn: number, tokensOut: n
   return Math.ceil((tokensIn * 0.027 + tokensOut * 0.085) / 1000);
 }
 
+// Throws on Redis error (callers decide whether to fail-open or fail-closed).
 async function getTogetherDailySpendCents(): Promise<number> {
   const key = TOGETHER_BUDGET_KEY_PREFIX + new Date().toISOString().slice(0, 10);
-  try {
-    const val = await cacheGet(key);
-    return val ? parseInt(val, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
+  const val = await cacheGet(key);
+  return val ? parseInt(val, 10) || 0 : 0;
 }
 
 async function recordTogetherSpend(model: string, tokensIn: number, tokensOut: number): Promise<void> {
@@ -857,9 +876,15 @@ async function recordTogetherSpend(model: string, tokensIn: number, tokensOut: n
   }
 }
 
-async function isTogetherWithinDailyBudget(): Promise<boolean> {
-  const spend = await getTogetherDailySpendCents();
-  return spend < config.togetherDailyBudgetCents;
+// Fail-closed: Redis error → false (do not allow Together call).
+export async function isTogetherWithinDailyBudget(): Promise<boolean> {
+  try {
+    const spend = await getTogetherDailySpendCents();
+    return spend < config.togetherDailyBudgetCents;
+  } catch (err) {
+    warnBudgetCheckUnavailable('together_daily', err);
+    return false;
+  }
 }
 
 // ---- Together AI Callers ----
