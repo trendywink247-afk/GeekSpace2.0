@@ -11,6 +11,20 @@
  * flip `/root/.agentin-secrets` → `ENCRYPTION_KEY` to the new value, then
  * restart the app.
  *
+ * Transactional semantics (strict by default):
+ *   On any row where the ciphertext cannot be opened by the OLD key, the
+ *   NEW key, or the legacy-salt derivation of the OLD key, the transaction
+ *   rolls back and the script exits non-zero. The ops script MUST be able
+ *   to trust "success" to mean "every row is now encrypted under NEW"
+ *   before flipping the env file, otherwise the runtime would later fail
+ *   to decrypt a row that was half-re-encrypted.
+ *
+ *   Set `ALLOW_UNDECRYPTABLE=1` to opt into tolerate-mode: undecryptable
+ *   rows are logged + skipped, re-encrypted rows commit as normal. Use
+ *   this only when the operator has already reconciled the orphaned rows
+ *   out-of-band (and knows the runtime could not have decrypted them
+ *   before rotation either, so leaving them is no-worse-than-before).
+ *
  * Usage (on the VPS, from a root shell inside `ops/rotate-app-secrets.sh`):
  *
  *   OLD_ENCRYPTION_KEY=<hex64> ENCRYPTION_KEY=<hex64> \
@@ -18,9 +32,9 @@
  *     node --experimental-strip-types server/scripts/reencrypt-api-keys.ts
  *
  * Flags (env):
- *   DRY_RUN=1          — decrypt + re-encrypt in memory, never write
- *   STRICT=1           — fail on any row that neither the old nor the new key can decrypt
- *                       (default: warn and leave the row alone so a partial run is resumable)
+ *   DRY_RUN=1                  — run the full pass in a transaction that
+ *                                always rolls back, so nothing is written
+ *   ALLOW_UNDECRYPTABLE=1      — tolerate orphaned rows (see above)
  */
 
 import Database from 'better-sqlite3';
@@ -31,12 +45,25 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
-function deriveKey(encryptionKey: string): Buffer {
-  const salt = createHash('sha256').update(encryptionKey).digest();
-  return scryptSync(encryptionKey, salt, KEY_LENGTH);
+// Must match server/src/utils/encryption.ts exactly. Rows encrypted before
+// the salt migration still decrypt via this derivation at runtime, so the
+// rotation must do the same or it will misclassify valid rows as orphaned.
+const LEGACY_SALT = 'geekspace-api-key-encryption';
+
+interface DerivedKeys {
+  primary: Buffer;
+  legacy: Buffer;
 }
 
-function tryDecrypt(ciphertext: string, key: Buffer): string | null {
+function deriveKeys(encryptionKey: string): DerivedKeys {
+  const primarySalt = createHash('sha256').update(encryptionKey).digest();
+  return {
+    primary: scryptSync(encryptionKey, primarySalt, KEY_LENGTH),
+    legacy: scryptSync(encryptionKey, LEGACY_SALT, KEY_LENGTH),
+  };
+}
+
+function tryDecryptWith(ciphertext: string, key: Buffer): string | null {
   try {
     const packed = Buffer.from(ciphertext, 'base64');
     if (packed.length < IV_LENGTH + AUTH_TAG_LENGTH) return null;
@@ -49,6 +76,14 @@ function tryDecrypt(ciphertext: string, key: Buffer): string | null {
   } catch {
     return null;
   }
+}
+
+function tryDecryptAny(ciphertext: string, keys: Buffer[]): string | null {
+  for (const key of keys) {
+    const pt = tryDecryptWith(ciphertext, key);
+    if (pt !== null) return pt;
+  }
+  return null;
 }
 
 function encrypt(plaintext: string, key: Buffer): string {
@@ -81,20 +116,25 @@ if (!dbPath) {
 }
 
 const dryRun = process.env.DRY_RUN === '1';
-const strict = process.env.STRICT === '1';
+const allowUndecryptable = process.env.ALLOW_UNDECRYPTABLE === '1';
 
 if (oldKeyHex === newKeyHex) {
   console.error('ERROR: OLD_ENCRYPTION_KEY and ENCRYPTION_KEY are identical — nothing to rotate.');
   process.exit(2);
 }
 
-const oldKey = deriveKey(oldKeyHex);
-const newKey = deriveKey(newKeyHex);
+const oldKeys = deriveKeys(oldKeyHex);
+const newKeys = deriveKeys(newKeyHex);
+
+// Read candidates: current-salt OLD, legacy-salt OLD, current-salt NEW.
+// We never try legacy-salt NEW on purpose — the new key is freshly minted
+// and has never been used under the legacy salt.
+const decryptCandidates = [oldKeys.primary, oldKeys.legacy, newKeys.primary];
 
 console.log('=== reencrypt-api-keys ===');
-console.log(`db:        ${dbPath}`);
-console.log(`dry-run:   ${dryRun}`);
-console.log(`strict:    ${strict}`);
+console.log(`db:                    ${dbPath}`);
+console.log(`dry-run:               ${dryRun}`);
+console.log(`allow-undecryptable:   ${allowUndecryptable}`);
 
 const db = new Database(dbPath);
 db.pragma('foreign_keys = ON');
@@ -103,45 +143,66 @@ const rows = db
   .prepare<[], { id: string; key_encrypted: string }>('SELECT id, key_encrypted FROM api_keys')
   .all();
 
-console.log(`rows:      ${rows.length}`);
+console.log(`rows:                  ${rows.length}`);
 
 let reencrypted = 0;
 let alreadyNew = 0;
-let undecryptable = 0;
+const undecryptableIds: string[] = [];
 
 const update = db.prepare('UPDATE api_keys SET key_encrypted = ? WHERE id = ?');
 
+class DryRunRollback extends Error {
+  constructor() {
+    super('dry-run rollback sentinel');
+    this.name = 'DryRunRollback';
+  }
+}
+
 const work = db.transaction(() => {
   for (const row of rows) {
-    const withOld = tryDecrypt(row.key_encrypted, oldKey);
-    if (withOld !== null) {
-      const next = encrypt(withOld, newKey);
-      if (!dryRun) update.run(next, row.id);
-      reencrypted++;
-      continue;
-    }
-
-    const withNew = tryDecrypt(row.key_encrypted, newKey);
-    if (withNew !== null) {
+    // Fast path: already encrypted under the new key (idempotent resume).
+    if (tryDecryptWith(row.key_encrypted, newKeys.primary) !== null) {
       alreadyNew++;
       continue;
     }
 
-    undecryptable++;
-    const msg = `UNDECRYPTABLE row id=${row.id} — neither OLD nor NEW key opens this ciphertext`;
-    if (strict) {
-      throw new Error(msg);
+    // Decrypt via current-salt OLD or legacy-salt OLD.
+    const plaintext = tryDecryptAny(row.key_encrypted, [oldKeys.primary, oldKeys.legacy]);
+    if (plaintext !== null) {
+      update.run(encrypt(plaintext, newKeys.primary), row.id);
+      reencrypted++;
+      continue;
     }
-    console.warn(`WARN: ${msg} (leaving untouched)`);
+
+    undecryptableIds.push(row.id);
+    if (!allowUndecryptable) {
+      // Strict default: fail the whole transaction. Writes roll back so the
+      // env flip afterwards cannot race a partially-rotated DB.
+      throw new Error(
+        `UNDECRYPTABLE row id=${row.id} — ciphertext does not open under current-OLD, legacy-OLD, or current-NEW. ` +
+          `Re-run with ALLOW_UNDECRYPTABLE=1 only after reconciling orphaned rows.`,
+      );
+    }
+    console.warn(`WARN: leaving undecryptable row id=${row.id} untouched`);
+  }
+
+  if (dryRun) {
+    throw new DryRunRollback();
   }
 });
 
+let committed = true;
 try {
   work();
 } catch (err) {
-  console.error('FATAL:', err instanceof Error ? err.message : err);
-  db.close();
-  process.exit(1);
+  committed = false;
+  if (err instanceof DryRunRollback) {
+    // Expected — dry-run always rolls back.
+  } else {
+    console.error('FATAL:', err instanceof Error ? err.message : err);
+    db.close();
+    process.exit(1);
+  }
 }
 
 db.close();
@@ -149,9 +210,14 @@ db.close();
 console.log('=== summary ===');
 console.log(`reencrypted:     ${reencrypted}`);
 console.log(`already-new:     ${alreadyNew}`);
-console.log(`undecryptable:   ${undecryptable}`);
-console.log(dryRun ? 'DRY RUN — no writes committed' : 'writes committed');
-
-if (undecryptable > 0 && !strict) {
-  process.exit(3);
+console.log(`undecryptable:   ${undecryptableIds.length}`);
+if (undecryptableIds.length > 0) {
+  console.log(`undecryptable-ids: ${undecryptableIds.join(',')}`);
+}
+if (dryRun) {
+  console.log('DRY RUN — transaction rolled back, no writes committed');
+} else if (committed) {
+  console.log('writes committed');
+} else {
+  console.log('writes rolled back');
 }

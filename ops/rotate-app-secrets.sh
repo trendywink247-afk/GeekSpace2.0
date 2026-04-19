@@ -30,8 +30,9 @@
 # Exit codes:
 #   0  success
 #   2  bad invocation / preflight failure
-#   3  reencrypt script reported undecryptable rows (not fatal by default —
-#      operator decides whether to proceed)
+#   3  reencrypt script failed (transactionally rolled back; env file was not
+#      touched, so the service keeps running under the OLD key — safe to
+#      retry after reconciling orphaned rows)
 #   4  container restart or health-check failed
 # =============================================================================
 
@@ -171,13 +172,9 @@ if [ "$REENCRYPT" -eq 1 ]; then
       node --experimental-strip-types "$REENCRYPT_SCRIPT"
     RC=$?
     set -e
-    if [ "$RC" -eq 3 ]; then
-      log "WARN: reencrypt reported undecryptable rows — aborting before flipping env"
-      log "      restore-from: $BACKUP_PATH"
-      exit 3
-    fi
     if [ "$RC" -ne 0 ]; then
-      log "ERROR: reencrypt script failed (rc=$RC) — aborting before flipping env"
+      log "ERROR: reencrypt script failed (rc=$RC) — transaction rolled back, env file NOT touched"
+      log "      the service keeps running under the OLD key; backup preserved at $BACKUP_PATH"
       exit 3
     fi
   fi
