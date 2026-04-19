@@ -32,6 +32,8 @@ on:
         type: choice
         options:
           - docker-builder-prune
+          - ssh-keys-audit
+          - rotate-jwt-encryption-preview
       reason:
         description: 'Why you are running this (for the run log / audit trail)'
         required: true
@@ -104,6 +106,105 @@ jobs:
                 echo
                 echo "--- df -h / (after) ---"
                 df -h /
+                ;;
+              ssh-keys-audit)
+                # Read-only inventory of /root/.ssh/authorized_keys. Emits
+                # key type, SHA256 fingerprint, bit length, and comment for
+                # each active line. Prints file mode + mtime. Does NOT emit
+                # the base64 key material. Output is pasted into
+                # docs/SSH-ACCESS.md under "Human Key Inventory" via PR.
+                AUTH_KEYS=/root/.ssh/authorized_keys
+                echo "--- authorized_keys metadata ---"
+                ls -la "$AUTH_KEYS" || { echo "ERROR: $AUTH_KEYS missing" >&2; exit 1; }
+                stat -c 'mode=%a owner=%U:%G mtime=%y' "$AUTH_KEYS"
+                echo
+                echo "--- line count (incl. blanks/comments) ---"
+                wc -l "$AUTH_KEYS"
+                echo
+                echo "--- active entries (ssh-keygen -lf) ---"
+                # ssh-keygen -lf on the file prints one fingerprint per key
+                # line and ignores blank/comment lines. Safe: no private
+                # material, just type + fingerprint + comment. If any line
+                # is malformed (legacy/corrupt), ssh-keygen exits non-zero
+                # and set -e would abort the whole arm — tolerate that so
+                # the raw-comment pass below still surfaces skipped lines.
+                ssh-keygen -lf "$AUTH_KEYS" || echo "note: ssh-keygen exited non-zero — at least one line may be malformed; see raw-comment pass below"
+                echo
+                echo "--- comment field per line (for owner reconciliation) ---"
+                # Everything after the base64 key blob. Handles multi-word
+                # comments (e.g. "alice@laptop primary laptop") and lines
+                # that start with options (command=, from=, environment=).
+                # Strategy: locate the field that looks like a base64 key
+                # blob (long, only base64 chars) and print everything after
+                # it verbatim.
+                awk 'NF && $1 !~ /^#/ {
+                  key_i = 0
+                  for (i = 1; i <= NF; i++) {
+                    if (length($i) > 40 && $i ~ /^[A-Za-z0-9+\/=]+$/) { key_i = i; break }
+                  }
+                  if (key_i == 0) { print NR": [no key blob detected] "$0; next }
+                  comment = ""
+                  for (j = key_i + 1; j <= NF; j++) {
+                    comment = (comment == "" ? $j : comment" "$j)
+                  }
+                  print NR": "comment
+                }' "$AUTH_KEYS"
+                ;;
+              rotate-jwt-encryption-preview)
+                # Dry-run validator for the future rotate-jwt-encryption
+                # action. Confirms the pipe works end-to-end without
+                # touching any live secret. Generates candidate values,
+                # verifies /root/.agentin-secrets is present and mode 600,
+                # verifies a backup path is writable, and reports the
+                # current key names present. Makes NO changes.
+                SECRETS_FILE=/root/.agentin-secrets
+                echo "--- preflight ---"
+                if [ ! -f "$SECRETS_FILE" ]; then
+                  echo "ERROR: $SECRETS_FILE missing" >&2
+                  exit 1
+                fi
+                stat -c 'mode=%a owner=%U:%G size=%s mtime=%y' "$SECRETS_FILE"
+                MODE=$(stat -c '%a' "$SECRETS_FILE")
+                if [ "$MODE" != "600" ]; then
+                  echo "WARN: expected mode 600, got $MODE" >&2
+                fi
+                echo
+                echo "--- keys currently present (names only, no values) ---"
+                # Print only the variable names, never the values.
+                awk -F= 'NF && $1 !~ /^#/ { print $1 }' "$SECRETS_FILE" | sort -u
+                echo
+                echo "--- candidate JWT_SECRET (length check only, not written) ---"
+                CANDIDATE_JWT=$(openssl rand -hex 64)
+                echo "length=${#CANDIDATE_JWT} expected=128"
+                echo
+                echo "--- candidate ENCRYPTION_KEY (length check only, not written) ---"
+                CANDIDATE_ENC=$(openssl rand -hex 32)
+                echo "length=${#CANDIDATE_ENC} expected=64"
+                echo
+                echo "--- backup path check (read-only) ---"
+                # Do NOT create or re-permission the backup dir from the
+                # preview — an operator may manage /root/secret-backups
+                # with specific ACLs/mode, and a silent mkdir+chmod would
+                # change behavior behind their back. Only report current
+                # state. The real rotate-jwt-encryption action is the
+                # place that creates/chmods the backup dir if missing.
+                BACKUP_DIR=/root/secret-backups
+                if [ -e "$BACKUP_DIR" ]; then
+                  if [ -d "$BACKUP_DIR" ]; then
+                    stat -c "exists: dir mode=%a owner=%U:%G" "$BACKUP_DIR"
+                    if [ -w "$BACKUP_DIR" ]; then
+                      echo "ok: $BACKUP_DIR is writable by the current user (root)"
+                    else
+                      echo "WARN: $BACKUP_DIR exists but is not writable by the current user" >&2
+                    fi
+                  else
+                    echo "ERROR: $BACKUP_DIR exists but is not a directory" >&2
+                  fi
+                else
+                  echo "note: $BACKUP_DIR does not exist yet; rotate-jwt-encryption will create it with mode 700"
+                fi
+                echo
+                echo "NOTE: preview only — no secret was written, no service was restarted, no directory was created."
                 ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
