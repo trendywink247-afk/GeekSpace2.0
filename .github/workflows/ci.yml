@@ -298,8 +298,10 @@ jobs:
   #
   # AGE-22 audit (26 CI runs):
   #   - Validate Caddyfile  → 100% pass (skipped when file unchanged). GATING.
-  #   - Validate OpenAPI    → 100% FAIL (spec has 18 errors). Leave step-level
-  #                           continue-on-error until the spec is fixed (AGE-34).
+  #   - Validate OpenAPI    → spec fixed under AGE-34 (18 nullable errors
+  #                           rewritten as 3.1 type unions). Step-level
+  #                           continue-on-error removed; lint is now a hard
+  #                           step under this job.
   #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
   #                           protobufjs vuln. Step-level continue-on-error kept
   #                           until AGE-35 removes `|| true` and fixes the dep.
@@ -341,20 +343,25 @@ jobs:
 
       - name: Validate OpenAPI spec
         run: npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components
-        continue-on-error: true
 
+      # if: always() on the remaining scans so an OpenAPI lint failure (now a
+      # hard step under AGE-34) does not short-circuit the other security
+      # results for that commit. Each scan still reports its own pass/fail.
       - name: Audit dependencies
+        if: always()
         continue-on-error: true
         run: |
           npm audit --audit-level=critical || true
           npm --prefix server audit --audit-level=critical || true
 
       - name: Security scan (gitleaks — secrets in commits)
+        if: always()
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Semgrep SAST scan
+        if: always()
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
