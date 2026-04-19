@@ -21,8 +21,9 @@ name: CI/CD Pipeline
 #   * Summary now waits on E2E + security, so the critical path is ~6 min.
 #   * Playwright browsers are cached.
 #   * Docs-only PRs (*.md, etc.) skip CI entirely via paths-ignore.
-#   * Two known-broken security sub-steps (OpenAPI spec lint, npm audit)
-#     keep step-level continue-on-error until AGE-34 / AGE-35 land.
+#   * AGE-34 fixed the OpenAPI spec (nullable → 3.1 unions); AGE-35 made
+#     `npm audit` a real hard gate (dropped `|| true`, resolved root +
+#     server protobufjs CVE). No step-level continue-on-error remains.
 # ---------------------------------------------------------------------------
 
 on:
@@ -302,9 +303,8 @@ jobs:
   #                           rewritten as 3.1 type unions). Step-level
   #                           continue-on-error removed; lint is now a hard
   #                           step under this job.
-  #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
-  #                           protobufjs vuln. Step-level continue-on-error kept
-  #                           until AGE-35 removes `|| true` and fixes the dep.
+  #   - Audit dependencies  → hard gate under AGE-35 (`|| true` removed, root
+  #                           + server protobufjs CVE resolved to 7.5.5).
   #   - gitleaks            → 100% pass. GATING.
   #   - Semgrep             → 100% pass. GATING.
   # ============================================
@@ -349,10 +349,9 @@ jobs:
       # results for that commit. Each scan still reports its own pass/fail.
       - name: Audit dependencies
         if: always()
-        continue-on-error: true
         run: |
-          npm audit --audit-level=critical || true
-          npm --prefix server audit --audit-level=critical || true
+          npm audit --audit-level=critical
+          npm --prefix server audit --audit-level=critical
 
       - name: Security scan (gitleaks — secrets in commits)
         if: always()
@@ -376,7 +375,9 @@ jobs:
   deploy-staging:
     name: "Deploy Staging"
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, build-frontend, build-server, unit-tests-frontend, unit-tests-server]
+    # `summary` transitively depends on E2E + security-scans, so this keeps
+    # deploys from racing the new gates (AGE-22).
+    needs: [summary]
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'staging-only')
@@ -449,7 +450,9 @@ jobs:
   deploy-production:
     name: "Deploy Production"
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, build-frontend, build-server, unit-tests-frontend, unit-tests-server]
+    # `summary` transitively depends on E2E + security-scans, so this keeps
+    # deploys from racing the new gates (AGE-22).
+    needs: [summary]
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'production'
     timeout-minutes: 10
     concurrency:
