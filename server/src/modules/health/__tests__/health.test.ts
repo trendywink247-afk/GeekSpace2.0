@@ -1,8 +1,16 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import request from 'supertest';
 import { createApp } from '../../../app.js';
 import { resetDatabase } from '../../../test/setup.js';
 import { config } from '../../../config.js';
+
+const SERVER_PKG_VERSION = (() => {
+  const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../package.json');
+  return (JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string }).version;
+})();
 
 const TEST_ADMIN_TOKEN = 'test-admin-token-health';
 config.adminToken = TEST_ADMIN_TOKEN;
@@ -33,6 +41,52 @@ describe('Health Module', () => {
         .expect(200);
 
       expect(res.body.status).toBeDefined();
+    });
+  });
+
+  // ---- GET /api/health/version (public) ----
+  describe('GET /api/health/version', () => {
+    it('should return 200 with version, commit, and nodeVersion fields', async () => {
+      const res = await request(app)
+        .get('/api/health/version')
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('version');
+      expect(res.body).toHaveProperty('commit');
+      expect(res.body).toHaveProperty('nodeVersion');
+      expect(typeof res.body.version).toBe('string');
+      expect(typeof res.body.commit).toBe('string');
+      expect(res.body.nodeVersion).toBe(process.version);
+      // Must read from server/package.json (not repo root) — see PR #298 codex review.
+      expect(res.body.version).toBe(SERVER_PKG_VERSION);
+    });
+
+    it('should not require authentication', async () => {
+      await request(app).get('/api/health/version').expect(200);
+    });
+
+    it('should report commit "unknown" when GIT_SHA is unset', async () => {
+      const previous = process.env.GIT_SHA;
+      delete process.env.GIT_SHA;
+      try {
+        const res = await request(app).get('/api/health/version').expect(200);
+        expect(res.body.commit).toBe('unknown');
+      } finally {
+        if (previous !== undefined) process.env.GIT_SHA = previous;
+      }
+    });
+
+    it('should reflect GIT_SHA when set', async () => {
+      const previous = process.env.GIT_SHA;
+      process.env.GIT_SHA = 'abc1234';
+      try {
+        const res = await request(app).get('/api/health/version').expect(200);
+        expect(res.body.commit).toBe('abc1234');
+      } finally {
+        if (previous === undefined) delete process.env.GIT_SHA;
+        else process.env.GIT_SHA = previous;
+      }
     });
   });
 
