@@ -11,6 +11,10 @@ export default defineConfig({
     env: {
       TEST_MODE: 'true',
       NODE_ENV: 'test',
+      STRIPE_SECRET_KEY: 'sk_test_dummy_for_tests_only',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test_secret_for_tests_only',
+      RAZORPAY_KEY_ID: 'rzp_test_key_id_for_tests',
+      RAZORPAY_KEY_SECRET: 'rzp_test_secret_for_tests',
     },
     include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/db/__tests__/*.test.ts'],
     exclude: ['src/__tests__/**'],
@@ -38,6 +42,8 @@ export default defineConfig({
           functions: 50,
         },
       },
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/__tests__/**', 'src/test/**'],
     },
   },
 });
