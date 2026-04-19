@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    // Ensure msw/node resolves to its Node.js-compatible entry (module-sync = sync ESM require)
+    conditions: ['node', 'module-sync', 'module', 'import', 'default'],
+  },
   test: {
     globals: true,
     environment: 'node',
@@ -9,7 +13,6 @@ export default defineConfig({
     },
     include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts'],
     exclude: ['src/__tests__/**'],
-    setupFiles: [],
     testTimeout: 30000,  // LLM calls can be slow; 30s global timeout prevents false flakiness
     pool: 'forks', // Use forks for isolation between test files
     poolOptions: {
@@ -27,6 +30,11 @@ export default defineConfig({
         functions: 10,
         branches: 60,
         statements: 15,
+        // Per-file minimum for the LLM router (AGE-28)
+        'src/modules/agent/services/llm.ts': {
+          lines: 60,
+          functions: 50,
+        },
       },
     },
   },
