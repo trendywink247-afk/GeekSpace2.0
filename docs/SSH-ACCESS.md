@@ -8,10 +8,10 @@
 
 ## Why this file exists
 
-Opened against infra audit findings C4 + H6 ([AGE-13 infra-audit](/AGE/issues/AGE-13#document-infra-audit)):
+Opened against infra audit findings C4 + H6 (tracked in Paperclip issue `AGE-13` — `infra-audit` document):
 
 - **C4 (critical):** no written record of VPS SSH access — who has root/sudo, what keys are installed, when they last rotated.
-- **H6 (high):** `.pi/FULL_AUDIT.md` (2026-04-06) flagged `JWT_SECRET`, `ENCRYPTION_KEY`, and all third-party API keys for rotation. Never confirmed done at the time of this file's creation ([AGE-18](/AGE/issues/AGE-18)).
+- **H6 (high):** `.pi/FULL_AUDIT.md` (2026-04-06) flagged `JWT_SECRET`, `ENCRYPTION_KEY`, and all third-party API keys for rotation. Never confirmed done at the time of this file's creation (Paperclip issue `AGE-18`).
 
 ## Access model
 
@@ -86,12 +86,14 @@ Append-only. One line per rotation event.
 
 `ENCRYPTION_KEY` is the seed for the AES-256-GCM key used by `server/src/utils/encryption.ts` to encrypt `api_keys.key_encrypted` rows. Rotating the env var without re-encrypting existing rows makes them undecryptable.
 
+> **Env contract note for the follow-up implementer.** The current `server/src/utils/encryption.ts` derives its AES key from the single `config.encryptionKey` value (plus a legacy-salt fallback that only helps for the very first historical rotation). It does **not** read `OLD_ENCRYPTION_KEY` today. When the re-encryption script lands (tracked in Paperclip issue `AGE-25`) it must either: (a) read `OLD_ENCRYPTION_KEY` + `ENCRYPTION_KEY` directly and bypass the shared config loader, or (b) extend `encryption.ts` with a dual-key read path keyed by `OLD_ENCRYPTION_KEY`. In either case, **do not swap `config.encryptionKey` / write the new value to `/root/.agentin-secrets` before the re-encryption pass completes** — doing so bricks every `api_keys.key_encrypted` row, which is the exact failure this document is meant to prevent.
+
 Rotation sequence:
 
 1. Put the app into read-only mode for the maintenance window (or block `POST /api/users/me/api-keys` for the duration).
 2. Generate the new `ENCRYPTION_KEY`.
 3. Run `server/scripts/reencrypt-api-keys.ts` with the **old** value exposed as `OLD_ENCRYPTION_KEY` and the **new** value as `ENCRYPTION_KEY`. The script re-encrypts every row under transaction.
-4. Write the new value to `/root/.agentin-secrets`.
+4. Only after step 3 completes green, write the new value to `/root/.agentin-secrets` (replacing the old one).
 5. Restart the app container.
 6. Smoke-test a stored API key round-trip.
 7. Log in this file.
@@ -103,4 +105,4 @@ No step of this sequence may run ad-hoc from an interactive shell. Both the re-e
 - [`docs/DEVOPS.md`](DEVOPS.md) — deploy and ops-remote-exec procedures
 - [`docs/ENV_VARS.md`](ENV_VARS.md) — environment variable reference
 - [`.github/workflows/ops-remote-exec.yml`](../.github/workflows/ops-remote-exec.yml) — sanctioned action whitelist
-- [AGE-18](/AGE/issues/AGE-18) — tracking issue
+- Paperclip issues: `AGE-18` (tracking), `AGE-24` (SSH inventory run), `AGE-25` (coordinated rotation)

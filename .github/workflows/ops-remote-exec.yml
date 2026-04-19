@@ -124,14 +124,31 @@ jobs:
                 echo "--- active entries (ssh-keygen -lf) ---"
                 # ssh-keygen -lf on the file prints one fingerprint per key
                 # line and ignores blank/comment lines. Safe: no private
-                # material, just type + fingerprint + comment.
-                ssh-keygen -lf "$AUTH_KEYS"
+                # material, just type + fingerprint + comment. If any line
+                # is malformed (legacy/corrupt), ssh-keygen exits non-zero
+                # and set -e would abort the whole arm — tolerate that so
+                # the raw-comment pass below still surfaces skipped lines.
+                ssh-keygen -lf "$AUTH_KEYS" || echo "note: ssh-keygen exited non-zero — at least one line may be malformed; see raw-comment pass below"
                 echo
-                echo "--- raw comment field per line (for owner reconciliation) ---"
-                # Last whitespace-delimited field of each non-empty,
-                # non-comment line. Operator cross-references with key
-                # holder identities offline.
-                awk 'NF && $1 !~ /^#/ { print NR": "$NF }' "$AUTH_KEYS"
+                echo "--- comment field per line (for owner reconciliation) ---"
+                # Everything after the base64 key blob. Handles multi-word
+                # comments (e.g. "alice@laptop primary laptop") and lines
+                # that start with options (command=, from=, environment=).
+                # Strategy: locate the field that looks like a base64 key
+                # blob (long, only base64 chars) and print everything after
+                # it verbatim.
+                awk 'NF && $1 !~ /^#/ {
+                  key_i = 0
+                  for (i = 1; i <= NF; i++) {
+                    if (length($i) > 40 && $i ~ /^[A-Za-z0-9+\/=]+$/) { key_i = i; break }
+                  }
+                  if (key_i == 0) { print NR": [no key blob detected] "$0; next }
+                  comment = ""
+                  for (j = key_i + 1; j <= NF; j++) {
+                    comment = (comment == "" ? $j : comment" "$j)
+                  }
+                  print NR": "comment
+                }' "$AUTH_KEYS"
                 ;;
               rotate-jwt-encryption-preview)
                 # Dry-run validator for the future rotate-jwt-encryption
@@ -164,14 +181,30 @@ jobs:
                 CANDIDATE_ENC=$(openssl rand -hex 32)
                 echo "length=${#CANDIDATE_ENC} expected=64"
                 echo
-                echo "--- backup path writability ---"
+                echo "--- backup path check (read-only) ---"
+                # Do NOT create or re-permission the backup dir from the
+                # preview — an operator may manage /root/secret-backups
+                # with specific ACLs/mode, and a silent mkdir+chmod would
+                # change behavior behind their back. Only report current
+                # state. The real rotate-jwt-encryption action is the
+                # place that creates/chmods the backup dir if missing.
                 BACKUP_DIR=/root/secret-backups
-                mkdir -p "$BACKUP_DIR"
-                chmod 700 "$BACKUP_DIR"
-                TMP_PROBE="$BACKUP_DIR/.probe-$(date -u +%s)"
-                : > "$TMP_PROBE" && rm -f "$TMP_PROBE" && echo "ok: $BACKUP_DIR writable"
+                if [ -e "$BACKUP_DIR" ]; then
+                  if [ -d "$BACKUP_DIR" ]; then
+                    stat -c "exists: dir mode=%a owner=%U:%G" "$BACKUP_DIR"
+                    if [ -w "$BACKUP_DIR" ]; then
+                      echo "ok: $BACKUP_DIR is writable by the current user (root)"
+                    else
+                      echo "WARN: $BACKUP_DIR exists but is not writable by the current user" >&2
+                    fi
+                  else
+                    echo "ERROR: $BACKUP_DIR exists but is not a directory" >&2
+                  fi
+                else
+                  echo "note: $BACKUP_DIR does not exist yet; rotate-jwt-encryption will create it with mode 700"
+                fi
                 echo
-                echo "NOTE: preview only — no secret was written, no service was restarted."
+                echo "NOTE: preview only — no secret was written, no service was restarted, no directory was created."
                 ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
