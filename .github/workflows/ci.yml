@@ -368,7 +368,7 @@ jobs:
       # plus a rationale). New findings block the job.
       - name: Semgrep SAST scan
         if: always()
-        uses: returntocorp/semgrep-action@v1
+        uses: semgrep/semgrep-action@v1
         with:
           config: >-
             p/security-audit
