@@ -38,6 +38,8 @@ on:
           - litestream-install
           - litestream-status
           - litestream-restore-drill
+          - rotate-jwt-encryption
+          - rotate-jwt-encryption-rollback
       reason:
         description: 'Why you are running this (for the run log / audit trail)'
         required: true
@@ -418,6 +420,49 @@ jobs:
                   echo "--- Cleanup: removing ${DRILL_DIR} immediately (at unavailable or scheduling failed) ---"
                   rm -rf "$DRILL_DIR"
                 fi
+                ;;
+              rotate-jwt-encryption)
+                # REAL rotation. Delegates to ops/rotate-app-secrets.sh checked
+                # into the repo at /root/GeekSpace2.0. The VPS copy is kept in
+                # sync by the staging/production deploy paths (they reset to
+                # origin/main before building). We refuse to run against a
+                # dirty tree so the whitelist commit matches what executes.
+                REPO_DIR=/root/GeekSpace2.0
+                SCRIPT="$REPO_DIR/ops/rotate-app-secrets.sh"
+                if [ ! -x "$SCRIPT" ]; then
+                  echo "ERROR: $SCRIPT missing or not executable" >&2
+                  exit 1
+                fi
+                echo "--- repo head ---"
+                git -C "$REPO_DIR" rev-parse --short HEAD
+                if ! git -C "$REPO_DIR" diff --quiet HEAD --; then
+                  echo "ERROR: $REPO_DIR working tree is dirty — refusing to rotate" >&2
+                  exit 1
+                fi
+                echo
+                echo "--- rotate-app-secrets.sh --re-encrypt ---"
+                "$SCRIPT" --re-encrypt
+                ;;
+              rotate-jwt-encryption-rollback)
+                # Restore the most recent backup under /root/secret-backups/.
+                # Used when a post-rotation smoke test fails and we need to
+                # revert immediately. Does NOT reverse the api_keys
+                # re-encryption — that rollback requires a separate re-run of
+                # reencrypt-api-keys with OLD=new, NEW=old.
+                REPO_DIR=/root/GeekSpace2.0
+                SCRIPT="$REPO_DIR/ops/rotate-app-secrets.sh"
+                BACKUP_DIR=/root/secret-backups
+                if [ ! -x "$SCRIPT" ]; then
+                  echo "ERROR: $SCRIPT missing or not executable" >&2
+                  exit 1
+                fi
+                LATEST=$(ls -1t "$BACKUP_DIR"/agentin-secrets.*.bak 2>/dev/null | head -n1)
+                if [ -z "$LATEST" ]; then
+                  echo "ERROR: no backups in $BACKUP_DIR" >&2
+                  exit 1
+                fi
+                echo "--- restoring from $LATEST ---"
+                "$SCRIPT" --rollback "$LATEST"
                 ;;
               *)
                 echo "ERROR: unknown or unlisted action: $ACTION" >&2
