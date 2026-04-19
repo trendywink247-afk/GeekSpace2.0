@@ -410,10 +410,10 @@ jobs:
                 # corrupt restore and should fail the drill loudly (AGE-15 P1).
                 sqlite3 "$DEST" 'SELECT COUNT(*) FROM users;'
                 echo
-                echo "--- Cleanup: keeping ${DRILL_DIR} for 1h via at, or rm -rf if at is unavailable ---"
-                if command -v at >/dev/null 2>&1; then
-                  echo "rm -rf '$DRILL_DIR'" | at now + 1 hour 2>/dev/null || rm -rf "$DRILL_DIR"
+                if command -v at >/dev/null 2>&1 && echo "rm -rf '$DRILL_DIR'" | at now + 1 hour 2>/dev/null; then
+                  echo "--- Cleanup: ${DRILL_DIR} scheduled for rm via at in 1h ---"
                 else
+                  echo "--- Cleanup: removing ${DRILL_DIR} immediately (at unavailable or scheduling failed) ---"
                   rm -rf "$DRILL_DIR"
                 fi
                 ;;

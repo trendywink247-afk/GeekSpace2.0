@@ -14,6 +14,7 @@
 # Optional:
 #   R2_BUCKET                   (default: geekspace-backups)
 #   LITESTREAM_VERSION          (default: 0.3.13)
+#   LITESTREAM_SHA256           (default: known-good SHA for the pinned version)
 #
 # Not intended to be run by hand — the sanctioned path is the
 # litestream-install arm of .github/workflows/ops-remote-exec.yml.
@@ -25,6 +26,14 @@ set -euo pipefail
 LITESTREAM_VERSION="${LITESTREAM_VERSION:-0.3.13}"
 R2_BUCKET="${R2_BUCKET:-geekspace-backups}"
 SRC_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+# Pinned SHA256 for each known-good Litestream .deb release. When bumping
+# LITESTREAM_VERSION, add the new entry and (ideally) leave the old one for a
+# release or two so rollbacks don't need a code change. Override via the
+# LITESTREAM_SHA256 env var when testing a new upstream release.
+declare -A LITESTREAM_SHA256_BY_VERSION=(
+  [0.3.13]=9b05043523c1fb1c4f9800623adf0015683da7fdd55e19b9fe5d28f63fae96b4
+)
 
 require_var() {
   local name="$1"
@@ -50,8 +59,15 @@ if [ "$INSTALLED_VERSION" = "$LITESTREAM_VERSION" ]; then
 else
   DEB_URL="https://github.com/benbjohnson/litestream/releases/download/v${LITESTREAM_VERSION}/litestream-v${LITESTREAM_VERSION}-linux-amd64.deb"
   DEB_PATH="/tmp/litestream-v${LITESTREAM_VERSION}.deb"
+  EXPECTED_SHA="${LITESTREAM_SHA256:-${LITESTREAM_SHA256_BY_VERSION[$LITESTREAM_VERSION]:-}}"
+  if [ -z "$EXPECTED_SHA" ]; then
+    echo "ERROR: no pinned SHA256 for litestream ${LITESTREAM_VERSION}. Add it to LITESTREAM_SHA256_BY_VERSION or pass LITESTREAM_SHA256 explicitly." >&2
+    exit 1
+  fi
   echo "Downloading ${DEB_URL}"
   curl -fsSL "$DEB_URL" -o "$DEB_PATH"
+  echo "--- Verifying SHA256 (expected ${EXPECTED_SHA}) ---"
+  echo "${EXPECTED_SHA}  ${DEB_PATH}" | sha256sum -c -
   dpkg -i "$DEB_PATH"
   rm -f "$DEB_PATH"
 fi
