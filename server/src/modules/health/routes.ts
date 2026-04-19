@@ -4,6 +4,9 @@
 // Probes run in background every 30s (parallel) — not on every request.
 // ============================================================
 
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { getMetricsSnapshot, incrementSSEConnections, decrementSSEConnections } from '../../middleware/metrics.js';
@@ -16,6 +19,25 @@ import { picoClawProbe } from '../../services/picoclaw.js';
 import { logger } from '../../logger.js';
 
 export const healthRouter = Router();
+
+// Read version once at module load — package.json sits at the server package root.
+const PACKAGE_VERSION: string = (() => {
+  try {
+    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string };
+    return typeof pkg.version === 'string' ? pkg.version : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+})();
+
+healthRouter.get('/version', (_req: Request, res: Response) => {
+  res.json({
+    version: PACKAGE_VERSION,
+    commit: process.env.GIT_SHA ?? 'unknown',
+    nodeVersion: process.version,
+  });
+});
 
 // ---- Cached component probe result ----
 // Probes run every 30s in background via startHealthProbeCache().
