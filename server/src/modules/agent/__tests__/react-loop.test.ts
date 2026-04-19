@@ -86,7 +86,7 @@ const USER_MSG = [{ role: 'user' as const, content: 'What is 2+2?' }];
 
 describe('runReactLoop — happy path, no tool use', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('returns final text when LLM produces no action blocks', async () => {
@@ -114,7 +114,7 @@ describe('runReactLoop — happy path, no tool use', () => {
 
 describe('runReactLoop — two-iteration loop with one tool call', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('executes a tool, feeds observation back, and returns the final answer', async () => {
@@ -151,7 +151,7 @@ describe('runReactLoop — two-iteration loop with one tool call', () => {
 
 describe('runReactLoop — tool failure becomes observation', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('records tool error as TOOL ERROR observation and continues the loop', async () => {
@@ -184,7 +184,7 @@ describe('runReactLoop — tool failure becomes observation', () => {
 
 describe('runReactLoop — malformed tool JSON does not crash', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('handles parse errors from action-parser gracefully', async () => {
@@ -205,7 +205,7 @@ describe('runReactLoop — malformed tool JSON does not crash', () => {
 
 describe('runReactLoop — iteration cap (5)', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('bails out after 5 iterations when tool calls never stop', async () => {
@@ -228,7 +228,7 @@ describe('runReactLoop — iteration cap (5)', () => {
 
 describe('runReactLoop — HITL confirmation gate', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('rejects a tool and injects rejection observation when user declines', async () => {
@@ -291,7 +291,7 @@ describe('runReactLoop — HITL confirmation gate', () => {
 
 describe('runReactLoop — deferred actions', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('defers generate_code actions without executing them', async () => {

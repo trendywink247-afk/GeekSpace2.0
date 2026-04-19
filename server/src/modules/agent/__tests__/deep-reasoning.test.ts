@@ -96,7 +96,7 @@ const LONG_MSG = [
 
 describe('runDeepReasoning — simple happy path (no planning)', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('returns immediately when LLM produces no action blocks', async () => {
@@ -124,7 +124,7 @@ describe('runDeepReasoning — simple happy path (no planning)', () => {
 
 describe('runDeepReasoning — plan-then-execute happy path (≥3 steps)', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('triggers planning phase for long messages and executes a 3-step plan', async () => {
@@ -171,7 +171,7 @@ describe('runDeepReasoning — plan-then-execute happy path (≥3 steps)', () =>
 
 describe('runDeepReasoning — HITL confirmation gate', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('executes a tool inline (deep-reasoning has no HITL pause — that lives in react-loop)', async () => {
@@ -194,7 +194,7 @@ describe('runDeepReasoning — HITL confirmation gate', () => {
 
 describe('runDeepReasoning — mid-loop delegation detection', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('hands off to a specialist agent when delegation is detected at iteration 1', async () => {
@@ -269,7 +269,7 @@ describe('runDeepReasoning — mid-loop delegation detection', () => {
 
 describe('runDeepReasoning — iteration cap (10)', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('bails out after maxIterations when tool calls never terminate', async () => {
@@ -304,7 +304,7 @@ describe('runDeepReasoning — iteration cap (10)', () => {
 
 describe('runDeepReasoning — self-reflection', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('stores reflections when reflection fires at the threshold iteration', async () => {
