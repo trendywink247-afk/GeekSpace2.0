@@ -306,11 +306,11 @@ jobs:
   #   - Audit dependencies  → hard gate under AGE-35 (`|| true` removed, root
   #                           + server protobufjs CVE resolved to 7.5.5).
   #   - gitleaks            → 100% pass. GATING.
-  #   - Semgrep             → 27 pre-existing blocking findings on main.
-  #                           Downgraded to ADVISORY (continue-on-error) until
-  #                           AGE-39 cleanup lands. Tracking issue is the
-  #                           authoritative fix path; do NOT re-enable gating
-  #                           here until all 27 findings are triaged.
+  #   - Semgrep             → 100% pass. GATING. (AGE-39 cleared the 26
+  #                           pre-existing findings — each either fixed or
+  #                           suppressed with a per-finding `// nosemgrep:
+  #                           <rule-id> — <reason>` annotation. New findings
+  #                           block the job.)
   # ============================================
   security-scans:
     name: Security Scans
