@@ -344,18 +344,24 @@ jobs:
       - name: Validate OpenAPI spec
         run: npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components
 
+      # if: always() on the remaining scans so an OpenAPI lint failure (now a
+      # hard step under AGE-34) does not short-circuit the other security
+      # results for that commit. Each scan still reports its own pass/fail.
       - name: Audit dependencies
+        if: always()
         continue-on-error: true
         run: |
           npm audit --audit-level=critical || true
           npm --prefix server audit --audit-level=critical || true
 
       - name: Security scan (gitleaks — secrets in commits)
+        if: always()
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Semgrep SAST scan
+        if: always()
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
