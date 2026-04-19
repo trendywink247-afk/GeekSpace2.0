@@ -375,7 +375,7 @@ async function sendReminderPreviews(): Promise<void> {
       WHERE user_id = ? AND completed = 0
       AND scheduled_for BETWEEN ? AND ?
       AND (preview_sent IS NULL OR preview_sent < ?)
-    `).all(user.id, windowStart, windowEnd, now - 300_000) as Array<{ id: number; text: string; scheduled_for: number }>;
+    `).all(user.id, windowStart, windowEnd, now - 300_000) as Array<{ id: string; text: string; scheduled_for: number }>;
 
     for (const r of upcoming) {
       const dedupKey = `preview:${r.id}`;
@@ -383,9 +383,12 @@ async function sendReminderPreviews(): Promise<void> {
       if (already) continue;
 
       const minutesLeft = Math.round((r.scheduled_for - now) / 60_000);
-      await sendTelegramNotification(user.chat_id,
-        `📌 <b>Heads up!</b> "${escHtml(r.text)}" is due in ~${minutesLeft} minutes`
-      ).catch(() => {});
+      const sendResult = await sendTelegramNotification(
+        user.chat_id,
+        `📌 <b>Heads up!</b> "${escHtml(r.text)}" is due in ~${minutesLeft} minutes`,
+      ).catch(() => ({ success: false as const }));
+
+      if (!sendResult.success) continue;
 
       try {
         db.prepare('UPDATE reminders SET preview_sent = ? WHERE id = ?').run(now, r.id);
@@ -538,10 +541,14 @@ export async function initProactiveEngine(): Promise<void> {
     });
 
     registerHandler('idle_checkin', async (job) => {
-      if (!isTypeEnabled(job.userId, 'idle_check_in') || isThrottled(job.userId)) return;
-      await idleCheckIn(job.userId);
-      const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
-      scheduleRecurringDaily(job.userId, 'idle_checkin', 8, tz);
+      try {
+        if (!isTypeEnabled(job.userId, 'idle_check_in') || isThrottled(job.userId)) return;
+        await idleCheckIn(job.userId);
+      } finally {
+        // Always reschedule — early-returns on throttle/disable must not stop the daily cadence.
+        const tz = (db.prepare('SELECT timezone FROM users WHERE id = ?').get(job.userId) as { timezone?: string })?.timezone || 'Asia/Kolkata';
+        scheduleRecurringDaily(job.userId, 'idle_checkin', 8, tz);
+      }
     });
 
     registerHandler('memory_decay', async (job) => {
@@ -559,8 +566,10 @@ export async function initProactiveEngine(): Promise<void> {
     registerHandler('reminder_preview', async (job) => {
       await sendReminderPreviews().catch(err => logger.warn({ err }, 'Reminder preview sweep failed'));
       // Reschedule 30 min out. Timezone-independent because reminders store absolute timestamps.
+      // Include occurrence timestamp so the next row has a distinct id — otherwise INSERT OR REPLACE
+      // collides with the currently-running job and the post-handler markDone() would nuke it.
       const next = Date.now() + 30 * 60_000;
-      scheduleJob(job.userId, 'reminder_preview', next, {}, { dedupeKey: `reminder_preview:${job.userId}` });
+      scheduleJob(job.userId, 'reminder_preview', next, {}, { dedupeKey: `reminder_preview:${job.userId}:${new Date(next).toISOString()}` });
     });
 
     registerHandler('page_monitor', async (job) => {
