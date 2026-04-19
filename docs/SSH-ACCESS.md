@@ -32,7 +32,7 @@ Populated from the `ssh-keys-audit` action in `ops-remote-exec.yml`. Each entry 
 
 **Status** values: `active`, `pending-audit`, `quarantined`, `removed`.
 
-**Unattributed keys** (present in `authorized_keys` but no known owner) must be moved to `quarantined` status and removed within one business day of discovery. Removal is executed through a dedicated `remove-ssh-key` whitelist action, never ad-hoc SSH.
+**Unattributed keys** (present in `authorized_keys` but no known owner) must be moved to `quarantined` status and removed within one business day of discovery. The current whitelist (`docker-builder-prune`, `ssh-keys-audit`, `rotate-jwt-encryption-preview`) does not yet expose a removal action — until a dedicated `remove-ssh-key` arm is added to `.github/workflows/ops-remote-exec.yml` (tracked separately), removal requires a PR that adds that arm and a board-approved `workflow_dispatch`. Never ad-hoc SSH.
 
 ## Service Keys
 
