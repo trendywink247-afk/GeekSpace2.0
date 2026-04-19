@@ -39,6 +39,7 @@
 
 import Database from 'better-sqlite3';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from 'node:crypto';
+import * as path from 'node:path';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -112,6 +113,10 @@ const newKeyHex = requireEnv('ENCRYPTION_KEY');
 const dbPath = process.env.DB_PATH;
 if (!dbPath) {
   console.error('ERROR: DB_PATH is required (absolute path to the SQLite file)');
+  process.exit(2);
+}
+if (!path.isAbsolute(dbPath)) {
+  console.error(`ERROR: DB_PATH must be absolute. Got: ${dbPath}`);
   process.exit(2);
 }
 

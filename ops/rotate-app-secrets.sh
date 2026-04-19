@@ -209,8 +209,16 @@ if [ "$DRY_RUN" -eq 1 ]; then
   log "dry-run: would docker restart $APP_CONTAINER"
 else
   docker restart "$APP_CONTAINER" >/dev/null || { log "ERROR: docker restart failed"; exit 4; }
-  sleep 5
-  curl -fsS "$HEALTH_URL" >/dev/null || { log "ERROR: health check failed"; exit 4; }
+  # Node cold-start can take 10-20s; retry up to ~40s.
+  i=0
+  until curl -fsS "$HEALTH_URL" >/dev/null 2>&1; do
+    i=$((i + 1))
+    if [ "$i" -ge 20 ]; then
+      log "ERROR: health check timeout after ~40s"
+      exit 4
+    fi
+    sleep 2
+  done
 fi
 
 log "rotation complete"
