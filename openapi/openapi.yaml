@@ -809,8 +809,7 @@ paths:
                 type: object
                 properties:
                   satisfactionRate:
-                    type: integer
-                    nullable: true
+                    type: [integer, "null"]
                   totalMessages:
                     type: integer
                   positive:
@@ -981,9 +980,8 @@ paths:
                   active:
                     type: boolean
                   expiresAt:
-                    type: string
+                    type: [string, "null"]
                     format: date-time
-                    nullable: true
     post:
       tags: [billing]
       operationId: activateDayPass
@@ -1750,9 +1748,8 @@ paths:
                         curated:
                           type: boolean
                   lastUpdated:
-                    type: string
+                    type: [string, "null"]
                     format: date-time
-                    nullable: true
 
   /models/changelog:
     get:
@@ -2337,22 +2334,17 @@ components:
         name:
           type: string
         avatar:
-          type: string
-          nullable: true
+          type: [string, "null"]
         bio:
           type: string
         location:
-          type: string
-          nullable: true
+          type: [string, "null"]
         website:
-          type: string
-          nullable: true
+          type: [string, "null"]
         role:
-          type: string
-          nullable: true
+          type: [string, "null"]
         company:
-          type: string
-          nullable: true
+          type: [string, "null"]
         tags:
           type: array
           items:
@@ -2595,17 +2587,13 @@ components:
         content:
           type: string
         provider:
-          type: string
-          nullable: true
+          type: [string, "null"]
         model:
-          type: string
-          nullable: true
+          type: [string, "null"]
         summary:
-          type: string
-          nullable: true
+          type: [string, "null"]
         tags:
-          type: string
-          nullable: true
+          type: [string, "null"]
         starred:
           type: boolean
         createdAt:
@@ -2634,8 +2622,7 @@ components:
         recurring:
           type: string
         recurrence:
-          type: string
-          nullable: true
+          type: [string, "null"]
         completed:
           type: boolean
         priority:
@@ -2670,8 +2657,7 @@ components:
           type: string
           enum: ["", daily, weekly, monthly]
         recurrence:
-          type: string
-          nullable: true
+          type: [string, "null"]
         priority:
           type: string
           enum: [low, normal, high, urgent]
@@ -2793,12 +2779,10 @@ components:
           type: string
           enum: [pending, processing, done, failed]
         result:
-          type: object
-          nullable: true
+          type: [object, "null"]
           description: Present only when status is "done"
         error:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Present only when status is "failed"
         createdAt:
           type: string
@@ -2837,11 +2821,9 @@ components:
             text:
               type: string
             voice:
-              type: object
-              nullable: true
+              type: [object, "null"]
         callback_query:
-          type: object
-          nullable: true
+          type: [object, "null"]
           properties:
             id:
               type: string

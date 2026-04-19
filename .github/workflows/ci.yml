@@ -298,8 +298,10 @@ jobs:
   #
   # AGE-22 audit (26 CI runs):
   #   - Validate Caddyfile  → 100% pass (skipped when file unchanged). GATING.
-  #   - Validate OpenAPI    → 100% FAIL (spec has 18 errors). Leave step-level
-  #                           continue-on-error until the spec is fixed (AGE-34).
+  #   - Validate OpenAPI    → spec fixed under AGE-34 (18 nullable errors
+  #                           rewritten as 3.1 type unions). Step-level
+  #                           continue-on-error removed; lint is now a hard
+  #                           step under this job.
   #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
   #                           protobufjs vuln. Step-level continue-on-error kept
   #                           until AGE-35 removes `|| true` and fixes the dep.
@@ -341,7 +343,6 @@ jobs:
 
       - name: Validate OpenAPI spec
         run: npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components
-        continue-on-error: true
 
       - name: Audit dependencies
         continue-on-error: true
