@@ -1,0 +1,18 @@
+[Unit]
+Description=Paperclip server watchdog — restart paperclip if down > 5 min
+Documentation=https://github.com/trendywink247-afk/GeekSpace2.0/blob/main/docs/VPS-RECOVERY.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/root/GeekSpace2.0/ops/systemd/paperclip-watchdog.sh
+Restart=always
+RestartSec=30
+User=root
+Group=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
