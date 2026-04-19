@@ -1,4 +1,20 @@
 groups:
+  - name: agentin-deploy-alerts
+    interval: 60s
+    rules:
+      # AGE-45: Alert when staging deploy duration exceeds 300 s.
+      # Source: deploy_staging.prom written by ci.yml deploy-staging step via
+      # node_exporter textfile collector at /var/lib/prometheus/textfile_collector/.
+      # Requires node_exporter with --collector.textfile.directory configured.
+      - alert: DeployStagingSlow
+        expr: deploy_staging_last_duration_seconds > 300
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Staging deploy took {{ $value | humanizeDuration }} (threshold: 5 min)"
+          description: "The last staging deployment took longer than 300 seconds. Check CI logs for bottlenecks."
+
   - name: agentin-alerts
     interval: 30s
     rules:
