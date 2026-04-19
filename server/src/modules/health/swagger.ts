@@ -32,6 +32,31 @@
  *                   additionalProperties:
  *                     type: string
  *
+ * /health/version:
+ *   get:
+ *     tags: [Health]
+ *     summary: Build version probe
+ *     description: Returns the running build's package version, deployed git SHA, and Node.js runtime version. No authentication required.
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Version info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [version, commit, nodeVersion]
+ *               properties:
+ *                 version:
+ *                   type: string
+ *                   description: Server package version from package.json
+ *                 commit:
+ *                   type: string
+ *                   description: Git SHA from GIT_SHA env var, or "unknown" when unset
+ *                 nodeVersion:
+ *                   type: string
+ *                   description: Node.js runtime version (process.version)
+ *
  * /health/detailed:
  *   get:
  *     tags: [Health]
