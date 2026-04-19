@@ -8,9 +8,8 @@
  * 2. Opens (or creates) the SQLite file at `DB_PATH`.
  * 3. Applies performance pragmas (WAL, cache, mmap, busy_timeout, FK).
  * 4. Runs `ANALYZE` to refresh query-planner statistics.
- * 5. Creates core tables via `schema.ts`.
- * 6. Applies incremental migrations via `migrations.ts`.
- * 7. Optionally seeds demo data via `seed.ts`.
+ * 5. Runs all pending migrations via `migrate.ts`.
+ * 6. Optionally seeds demo data via `seed.ts`.
  *
  * **Exported:** the `db` instance and `seedDemoData()`.
  */
@@ -23,8 +22,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { applySchema } from './schema.js';
-import { applyMigrations } from './migrations.js';
+import { runMigrations } from './migrate.js';
 import { seedDemoData, runSeedIfNeeded } from './seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,9 +45,8 @@ db.pragma('foreign_keys = ON');
 // 49.8: Run ANALYZE on startup to keep query plans fresh.
 db.exec('ANALYZE');
 
-// ── Schema + Migrations ────────────────────────────────────
-applySchema(db);
-await applyMigrations(db);
+// ── Migrations ─────────────────────────────────────────────
+runMigrations(db);
 
 // ── Seed demo data ─────────────────────────────────────────
 runSeedIfNeeded(db);
