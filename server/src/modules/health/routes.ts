@@ -85,6 +85,7 @@ async function runProbes(): Promise<ComponentStatus> {
     // SearXNG
     (async () => {
       try {
+        // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request — internal Docker network hostname (geekspace-net); no TLS terminator on sidecar containers
         const r = await fetch('http://geekspace-searxng:8080/healthz', { signal: AbortSignal.timeout(3000) });
         return r.ok;
       } catch { return false; }
@@ -92,6 +93,7 @@ async function runProbes(): Promise<ComponentStatus> {
     // Meilisearch
     (async () => {
       try {
+        // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request — internal Docker network hostname (geekspace-net); no TLS terminator on sidecar containers
         const r = await fetch('http://geekspace-meilisearch:7700/health', { signal: AbortSignal.timeout(3000) });
         return r.ok;
       } catch { return false; }
@@ -99,6 +101,7 @@ async function runProbes(): Promise<ComponentStatus> {
     // Qdrant
     (async () => {
       try {
+        // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request — internal Docker network hostname (geekspace-net); no TLS terminator on sidecar containers
         const r = await fetch('http://geekspace-qdrant:6333/healthz', { signal: AbortSignal.timeout(3000) });
         return r.ok || r.status === 200;
       } catch { return false; }
@@ -106,6 +109,7 @@ async function runProbes(): Promise<ComponentStatus> {
     // Browser Agent
     (async () => {
       try {
+        // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request — internal Docker network hostname (geekspace-net); shared secret header instead of TLS
         const r = await fetch('http://geekspace-browser:3010/health', {
           headers: { 'X-Browser-Secret': process.env.BROWSER_SECRET || 'agentin-browser-2026' },
           signal: AbortSignal.timeout(3000),

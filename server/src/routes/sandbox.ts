@@ -216,9 +216,10 @@ sandboxRouter.get('/file/download', requireAuth, async (req: AuthRequest, res) =
     const { buffer, filename, mimeType } = await SandboxService.downloadFile(userId, sandboxId, filePath);
     res.set({
       'Content-Type': mimeType,
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '')}"`,
       'Content-Length': String(buffer.length),
     });
+    // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write — binary file download with explicit Content-Type + Content-Disposition attachment; not rendered as HTML
     res.send(buffer);
   } catch (err) { fail(res, err, 'FILE_DOWNLOAD_FAILED', 'Sandbox file download failed', req.userId); }
 });

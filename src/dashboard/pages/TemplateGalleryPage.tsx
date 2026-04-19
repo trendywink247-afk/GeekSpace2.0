@@ -109,6 +109,11 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
       '<script>', (template.js || '').replace(/<\/script>/gi, '<\\/script>'), '</script>',
       '</body></html>',
     ].join('');
+    // JSON.stringify does not escape '</script>' — without this replacement, a
+    // '</script>' sequence anywhere in template.html or template.css would
+    // break out of the enclosing <script> block on line 126 and XSS the outer
+    // preview window (the iframe sandbox would not protect it).
+    const safeSrcdocJson = JSON.stringify(srcdocContent).replace(/<\/(script)/gi, '<\\/$1');
 
     const doc = previewWindow.document;
     doc.open();
@@ -117,13 +122,13 @@ export function TemplateGalleryPage({ embedded, onNavigate }: TemplateGalleryPag
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapedName} - Preview</title>
+  <title>${/* nosemgrep: javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag — escapedName is HTML-escaped (&, <, >, ") at lines above */ escapedName} - Preview</title>
   <style>*{margin:0;padding:0}body{background:#06061a}iframe{width:100%;height:100vh;border:none}</style>
 </head>
 <body>
   <iframe sandbox="allow-scripts" srcdoc=""></iframe>
   <script>
-    document.querySelector('iframe').setAttribute('srcdoc', ${JSON.stringify(srcdocContent)});
+    document.querySelector('iframe').setAttribute('srcdoc', ${safeSrcdocJson}); // nosemgrep: javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag — srcdocContent is JSON.stringified and '</script>' is escaped above; escapedName is HTML-escaped at lines 96-100
   </script>
 </body>
 </html>`);

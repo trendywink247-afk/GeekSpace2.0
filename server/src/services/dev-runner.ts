@@ -71,6 +71,7 @@ export function runAllowlistedCommand(key: string): Promise<RunResult> {
   const start = Date.now();
 
   return new Promise((resolve) => {
+    // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process — command is COMMAND_ALLOWLIST[key] (hardcoded value), not user input; key is validated by isAllowedCommand above
     const child = exec(command, {
       cwd: '/repo',
       env: getSafeEnv(),

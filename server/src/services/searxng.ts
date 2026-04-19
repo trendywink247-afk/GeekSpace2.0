@@ -104,6 +104,7 @@ export async function isSearxngAvailable(): Promise<boolean> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
 
+    // nosemgrep: typescript.react.security.react-insecure-request.react-insecure-request — SEARXNG_BASE is an internal Docker network hostname (geekspace-searxng); no TLS terminator on sidecar containers
     const res = await fetch(`${SEARXNG_BASE}/healthz`, {
       signal: controller.signal,
     });
