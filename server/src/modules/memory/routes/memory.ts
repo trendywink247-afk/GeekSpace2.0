@@ -1,6 +1,7 @@
-import { Router } from 'express';
+import { Router, type NextFunction } from 'express';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { logger } from '../../../logger.js';
+import { ValidationError } from '../../../errors/index.js';
 import {
   getUserMemories,
   upsertUserMemory,
@@ -11,14 +12,14 @@ import {
 export const memoryRouter = Router();
 
 // GET /api/memory — list all memories for current user
-memoryRouter.get("/", requireAuth, (req: AuthRequest, res) => {
+memoryRouter.get("/", requireAuth, (req: AuthRequest, res, next: NextFunction) => {
   const userId = req.userId!;
   try {
     const memories = getUserMemories(userId);
     res.json({ memories });
   } catch (err) {
     logger.error({ err, userId }, "Failed to list user memories");
-    res.status(500).json({ error: "Failed to load memories" });
+    next(err);
   }
 });
 
@@ -36,7 +37,7 @@ memoryRouter.get("/context", requireAuth, (req: AuthRequest, res) => {
 });
 
 // POST /api/memory — create or update { key, value, source? }
-memoryRouter.post("/", requireAuth, (req: AuthRequest, res) => {
+memoryRouter.post("/", requireAuth, (req: AuthRequest, res, next: NextFunction) => {
   const userId = req.userId!;
   const { key, value, source, confidence } = req.body as {
     key?: string;
@@ -46,19 +47,19 @@ memoryRouter.post("/", requireAuth, (req: AuthRequest, res) => {
   };
 
   if (!key || typeof key !== "string" || key.trim().length === 0) {
-    res.status(400).json({ error: "key is required" });
+    next(new ValidationError("key is required"));
     return;
   }
   if (value === undefined || value === null) {
-    res.status(400).json({ error: "value is required" });
+    next(new ValidationError("value is required"));
     return;
   }
   if (key.length > 100) {
-    res.status(400).json({ error: "key must be 100 characters or fewer" });
+    next(new ValidationError("key must be 100 characters or fewer"));
     return;
   }
   if (String(value).length > 2000) {
-    res.status(400).json({ error: "value must be 2000 characters or fewer" });
+    next(new ValidationError("value must be 2000 characters or fewer"));
     return;
   }
 
@@ -73,7 +74,7 @@ memoryRouter.post("/", requireAuth, (req: AuthRequest, res) => {
     res.status(201).json({ memory });
   } catch (err) {
     logger.error({ err, userId, key }, "Failed to upsert user memory");
-    res.status(500).json({ error: "Failed to save memory" });
+    next(err);
   }
 });
 

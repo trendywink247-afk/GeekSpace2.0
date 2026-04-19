@@ -1,5 +1,5 @@
 // Extracted from agent.ts — Sprint 3 decomposition
-import { Router } from 'express';
+import { Router, type NextFunction } from 'express';
 import { v4 as uuid } from 'uuid';
 import { requireAuth, type AuthRequest } from '../../../middleware/auth.js';
 import { validateBody, chatSchema, commandSchema } from '../../../middleware/validate.js';
@@ -37,6 +37,8 @@ import { routeDelegation, canDelegate, decrementDelegation } from '../../../serv
 import { emitDelegation, emitCommSent, emitCommReceived } from '../../../services/activity-stream.js';
 import { getOrCreateConversation, updateConversationMeta, autoTitleConversation } from '../services/conversation-threads.js';
 import { processUploadedFile, buildFileContext } from '../services/file-processor.js';
+import { withAgentinError } from '../../../middleware/error-handler.js';
+import { ValidationError, PaymentRequiredError, NotFoundError } from '../../../errors/index.js';
 import { isAmbiguous, generateHypotheses, formatHypothesesForPrompt } from '../services/hypothesis-service.js';
 
 const router = Router();
@@ -242,12 +244,11 @@ ${closingInstruction}`;
 
 // ---- AI Content Generation (for onboarding magic) ----
 
-router.post('/generate-content', requireAuth, async (req: AuthRequest, res) => {
-  try {
-    const { type, tags, name } = req.body as { type: string; tags: string[]; name?: string };
-    if (!type || !tags || tags.length === 0) {
-      return res.status(400).json({ error: 'type and at least 1 tag required' });
-    }
+router.post('/generate-content', requireAuth, withAgentinError(async (req: AuthRequest, res) => {
+  const { type, tags, name } = req.body as { type: string; tags: string[]; name?: string };
+  if (!type || !tags || tags.length === 0) {
+    throw new ValidationError('type and at least 1 tag required');
+  }
 
     const prompts: Record<string, string> = {
       headline: `Generate a short professional headline (under 12 words) for someone named "${name || 'a developer'}" who specializes in: ${tags.join(', ')}. Return ONLY the headline text, no quotes, no explanation.`,
@@ -268,47 +269,40 @@ Name: ${name || 'a developer'}
 Skills/interests: ${Array.isArray(tags) ? tags.join(', ') : tags || 'software development'}`,
     };
 
-    const systemPrompt = prompts[type];
-    if (!systemPrompt) {
-      return res.status(400).json({ error: 'type must be headline, bio, about, skills, bio-batch, or portfolio-batch' });
-    }
+  const systemPrompt = prompts[type];
+  if (!systemPrompt) {
+    throw new ValidationError('type must be headline, bio, about, skills, bio-batch, or portfolio-batch');
+  }
 
-    // Check subscription credits
-    const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(req.userId!) as { credits_remaining: number; billing_cycle_end: string } | undefined;
-    if (sub && sub.credits_remaining <= 0) {
-      res.status(402).json({
-        error: `You've used all your credits for this month. They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`,
-      });
+  // Check subscription credits
+  const sub = db.prepare('SELECT credits_remaining, billing_cycle_end FROM subscriptions WHERE user_id = ?').get(req.userId!) as { credits_remaining: number; billing_cycle_end: string } | undefined;
+  if (sub && sub.credits_remaining <= 0) {
+    throw new PaymentRequiredError(`You've used all your credits for this month. They reset on ${sub.billing_cycle_end.split('T')[0]}. Upgrade your plan for more.`);
+  }
+
+  const result = await routeChat(
+    [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
+    { forceProvider: 'edith' as Provider, userId: req.userId! }
+  );
+
+  // Deduct actual credit cost
+  deductSubscriptionCredits(req.userId!, result.creditCost);
+
+  // Batch types return structured JSON
+  if (type.endsWith('-batch')) {
+    try {
+      const jsonText = result.reply.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
+      const parsed = JSON.parse(jsonText);
+      res.json({ content: result.reply, parsed });
+      return;
+    } catch {
+      res.status(500).json({ error: 'AI returned invalid JSON. Please try again.' });
       return;
     }
-
-    const result = await routeChat(
-      [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Generate it now.' }],
-      { forceProvider: 'edith' as Provider, userId: req.userId! }
-    );
-
-    // Deduct actual credit cost
-    deductSubscriptionCredits(req.userId!, result.creditCost);
-
-    // Batch types return structured JSON
-    if (type.endsWith('-batch')) {
-      try {
-        const jsonText = result.reply.trim().replace(/^```(?:json)?\n?|\n?```$/g, '');
-        const parsed = JSON.parse(jsonText);
-        res.json({ content: result.reply, parsed });
-        return;
-      } catch {
-        res.status(500).json({ error: 'AI returned invalid JSON. Please try again.' });
-        return;
-      }
-    }
-
-    res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
-  } catch (err: unknown) {
-    logger.error('generate-content error: %s', err instanceof Error ? err.message : String(err));
-    res.status(500).json({ error: 'AI generation failed. Try again.' });
   }
-});
+
+  res.json({ content: result.reply.trim().replace(/^["']|["']$/g, '') });
+}));
 
 // ---- AI-Generated Background Gradient ----
 
@@ -1183,13 +1177,13 @@ You are assisting via the Agentin terminal. Be concise. No markdown headers. Pla
 });
 
 // ---- Get Generated Artifact ----
-router.get('/artifact/:id', requireAuth, (req: AuthRequest, res) => {
+router.get('/artifact/:id', requireAuth, (req: AuthRequest, res, next: NextFunction) => {
   const artifact = db.prepare(
     'SELECT * FROM generated_artifacts WHERE id = ? AND user_id = ?'
   ).get(req.params.id, req.userId!) as Record<string, unknown> | undefined;
 
   if (!artifact) {
-    res.status(404).json({ error: 'Artifact not found' });
+    next(new NotFoundError('Artifact not found'));
     return;
   }
 

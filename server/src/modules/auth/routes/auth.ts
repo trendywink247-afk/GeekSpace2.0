@@ -13,6 +13,8 @@ import { requestPasswordReset, verifyResetOTP, resetPassword } from '../services
 import { logger } from '../../../logger.js';
 import { isLoginBlocked, recordFailedLogin, clearLoginAttempts } from '../services/login-guard.js';
 import { issueRefreshToken, rotateRefreshToken } from '../services/refresh-token.js';
+import { withAgentinError } from '../../../middleware/error-handler.js';
+import { ConflictError, UnauthorizedError } from '../../../errors/index.js';
 
 export const authRouter = Router();
 
@@ -51,7 +53,7 @@ function maskIp(ip: string): string {
   return ip;
 }
 
-authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
+authRouter.post('/signup', validateBody(signupSchema), withAgentinError(async (req, res) => {
   const { email, password, username, name, invite_code } = req.body as {
     email: string; password: string; username: string; name?: string; invite_code?: string;
   };
@@ -76,8 +78,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) {
-    res.status(409).json({ error: 'Email or username already taken' });
-    return;
+    throw new ConflictError('Email or username already taken');
   }
 
   const id = uuid();
@@ -143,8 +144,7 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     doSignup();
   } catch (err: unknown) {
     if ((err as Error).message?.includes('UNIQUE constraint')) {
-      res.status(409).json({ error: 'Email or username already taken' });
-      return;
+      throw new ConflictError('Email or username already taken');
     }
     throw err;
   }
@@ -171,9 +171,9 @@ authRouter.post('/signup', validateBody(signupSchema), async (req, res) => {
     },
     token,
   });
-});
+}));
 
-authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
+authRouter.post('/login', validateBody(loginSchema), withAgentinError(async (req, res) => {
   const { email, password } = req.body;
 
   // 92.2: Brute-force protection — per-IP rate limit (5 attempts / 15min)
@@ -197,8 +197,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
     recordFailedLogin(ip);
     logSecurityEvent('login_failure', req.ip || '', { email });
     logger.warn({ event: 'auth_login_failed', email, ip: req.ip, reason: 'invalid_credentials' }, 'Login failed');
-    res.status(401).json({ error: 'Invalid credentials' });
-    return;
+    throw new UnauthorizedError('Invalid credentials');
   }
 
   const token = signToken(user.id as string);
@@ -233,7 +232,7 @@ authRouter.post('/login', validateBody(loginSchema), async (req, res) => {
     token,
     refreshToken,
   });
-});
+}));
 
 authRouter.post('/demo', (req, res) => {
   // Seed demo data only in non-production or test mode (seedDemoData has its own real-user guard)
