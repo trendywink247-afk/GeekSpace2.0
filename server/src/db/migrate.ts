@@ -78,16 +78,25 @@ function seedExistingMigrations(db: Database.Database, files: string[]): void {
 export function runMigrations(db: Database.Database): string[] {
   ensureMigrationsTable(db);
 
+  const applied = getAppliedMigrations(db);
+
   if (!fs.existsSync(MIGRATIONS_DIR)) {
-    logger.warn({ dir: MIGRATIONS_DIR }, 'migrate: migrations directory not found');
+    if (applied.size === 0) {
+      // No migrations tracked AND no migrations directory = missing build artifact.
+      // Silent no-op here would leave the DB schema-less and crash at first query.
+      throw new Error(
+        `migrate: migrations directory not found at ${MIGRATIONS_DIR}. ` +
+        `If running from dist/, ensure the build step copies src/db/migrations/ → dist/db/migrations/.`
+      );
+    }
+    // Migrations already applied (e.g. re-run after accidental dir deletion) — log and skip
+    logger.warn({ dir: MIGRATIONS_DIR }, 'migrate: migrations directory not found but _migrations is populated — skipping');
     return [];
   }
 
   const files = fs.readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
     .sort();
-
-  const applied = getAppliedMigrations(db);
 
   // Cutover: populated DB with no migration history — seed without re-running
   if (applied.size === 0 && isPopulatedDb(db)) {
