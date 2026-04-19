@@ -21,8 +21,9 @@ name: CI/CD Pipeline
 #   * Summary now waits on E2E + security, so the critical path is ~6 min.
 #   * Playwright browsers are cached.
 #   * Docs-only PRs (*.md, etc.) skip CI entirely via paths-ignore.
-#   * Two known-broken security sub-steps (OpenAPI spec lint, npm audit)
-#     keep step-level continue-on-error until AGE-34 / AGE-35 land.
+#   * AGE-34 fixed the OpenAPI spec (nullable → 3.1 unions); AGE-35 made
+#     `npm audit` a real hard gate (dropped `|| true`, resolved root +
+#     server protobufjs CVE). No step-level continue-on-error remains.
 # ---------------------------------------------------------------------------
 
 on:
