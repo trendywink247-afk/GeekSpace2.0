@@ -104,4 +104,5 @@ def tts():
 
 if __name__ == '__main__':
     logger.info('Starting Kokoro TTS server on port 5101')
+    # nosemgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host — sidecar runs inside a Docker container on the internal geekspace-net network; 0.0.0.0 is required to bind inside the container and is never exposed publicly (reverse-proxied via Caddy)
     app.run(host='0.0.0.0', port=5101)

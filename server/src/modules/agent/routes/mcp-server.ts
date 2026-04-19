@@ -294,6 +294,7 @@ router.post('/tools/call', requireAuth, (req: AuthRequest, res) => {
 
         const entries = db.prepare(
           'SELECT * FROM memory_entries WHERE user_id = ? AND content LIKE ? ORDER BY created_at DESC LIMIT ?'
+          // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — false positive: query is bound as a SQLite parameter via better-sqlite3 '?' placeholder, not interpolated into SQL (SQL string is a static literal)
         ).all(userId, `%${query.trim()}%`, limit) as Record<string, unknown>[];
 
         res.json(mcpSuccess({ entries, count: entries.length, query: query.trim() }));

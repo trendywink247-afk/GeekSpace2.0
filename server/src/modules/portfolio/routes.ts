@@ -660,28 +660,26 @@ portfolioRouter.get('/:username', async (req, res) => {
     const pageUrl = `${config.publicUrl}/p/${username}`;
     const safeTitle = htmlEncode(title);
     const safeDescription = htmlEncode(description);
+    const safeImageUrl = htmlEncode(imageUrl);
+    const safePageUrl = htmlEncode(pageUrl);
+    // All interpolated values are htmlEncode()-escaped before reaching this template.
+    const crawlerHtml =
+      // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — all concatenated values (safeTitle/safeDescription/safeImageUrl/safePageUrl) are htmlEncode()-escaped above
+      '<!DOCTYPE html><html><head><meta charset="utf-8" />' +
+      '<title>' + safeTitle + '</title>' +
+      '<meta name="description" content="' + safeDescription + '" />' +
+      '<meta property="og:title" content="' + safeTitle + '" />' +
+      '<meta property="og:description" content="' + safeDescription + '" />' +
+      '<meta property="og:image" content="' + safeImageUrl + '" />' +
+      '<meta property="og:url" content="' + safePageUrl + '" />' +
+      '<meta property="og:type" content="profile" />' +
+      '<meta name="twitter:card" content="summary_large_image" />' +
+      '<meta name="twitter:title" content="' + safeTitle + '" />' +
+      '<meta name="twitter:description" content="' + safeDescription + '" />' +
+      '<meta name="twitter:image" content="' + safeImageUrl + '" />' +
+      '</head><body><h1>' + safeTitle + '</h1><p>' + safeDescription + '</p></body></html>';
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>${safeTitle}</title>
-  <meta name="description" content="${safeDescription}" />
-  <meta property="og:title" content="${safeTitle}" />
-  <meta property="og:description" content="${safeDescription}" />
-  <meta property="og:image" content="${htmlEncode(imageUrl)}" />
-  <meta property="og:url" content="${htmlEncode(pageUrl)}" />
-  <meta property="og:type" content="profile" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${safeTitle}" />
-  <meta name="twitter:description" content="${safeDescription}" />
-  <meta name="twitter:image" content="${htmlEncode(imageUrl)}" />
-</head>
-<body>
-  <h1>${safeTitle}</h1>
-  <p>${safeDescription}</p>
-</body>
-</html>`);
+    res.send(crawlerHtml);
     return;
   }
 

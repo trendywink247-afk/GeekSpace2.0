@@ -1735,6 +1735,7 @@ webhooksRouter.post('/prometheus-alert', async (req, res) => {
       const name = alert.labels.alertname || 'Alert';
       const summary = alert.annotations.summary || '';
       const description = alert.annotations.description || '';
+      // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — all user-controlled values (name/summary/description) escaped via escapeTelegramHtml; status is constrained to 'firing'|'resolved'; icon is a static emoji
       const msg = `${icon} <b>${escapeTelegramHtml(name)}</b> [${alert.status.toUpperCase()}]\n\n${escapeTelegramHtml(summary)}${description ? '\n\n' + escapeTelegramHtml(description) : ''}`;
 
       for (const admin of admins) {

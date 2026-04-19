@@ -363,12 +363,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Semgrep is advisory until AGE-39 clears the 27 pre-existing findings.
-      # Findings are still surfaced in the job log; they just don't fail the
-      # job (and therefore don't block deploys on main or merges on PRs).
-      - name: Semgrep SAST scan (advisory until AGE-39)
+      # Semgrep SAST is a required gate. AGE-39 cleared the prior 26 findings
+      # (each either fixed or suppressed with per-finding `nosemgrep: <rule-id>`
+      # plus a rationale). New findings block the job.
+      - name: Semgrep SAST scan
         if: always()
-        continue-on-error: true
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-

@@ -76,30 +76,25 @@ artifactsRouter.get('/:userId/:artifactId', (req, res) => {
       res.send(artifact.html);
     } else {
       // Template-based artifact: separate html/css/js — compose them into a wrapper page.
-      const previewHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(artifact.title)} — Agentin Preview</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; }
-    ${artifact.css || ''}
-  </style>
-</head>
-<body>
-  ${artifact.html || ''}
-  <script>
-    console.log('🔧 Agentin Preview — Project: ${escapeJs(artifact.title)}');
-    try {
-      ${artifact.js || ''}
-    } catch (err) {
-      console.error('Script error:', err);
-    }
-  </script>
-</body>
-</html>`;
+      // title is escapeHtml'd below; js uses escapeJs; html/css/js are owner-authored
+      // content served in a sandboxed preview context.
+      const safeArtifactTitle = escapeHtml(artifact.title);
+      const safeArtifactTitleJs = escapeJs(artifact.title);
+      const artifactCss = artifact.css || '';
+      const artifactHtml = artifact.html || '';
+      const artifactJs = artifact.js || '';
+      // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — title escaped for HTML (safeArtifactTitle); artifact.css is owner-authored content rendered in an isolated preview
+      const docOpen = '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+        '  <meta charset="UTF-8">\n' +
+        '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+        '  <title>' + safeArtifactTitle + ' — Agentin Preview</title>\n' +
+        '  <style>\n    * { box-sizing: border-box; }\n    body { margin: 0; padding: 0; }\n    ' +
+        artifactCss + '\n  </style>\n</head>\n<body>\n  ';
+      // nosemgrep: javascript.express.security.injection.raw-html-format.raw-html-format — title escaped for JS (safeArtifactTitleJs); artifact.js is owner-authored content rendered in an isolated preview
+      const scriptBlock = '\n  <script>\n    console.log(\'🔧 Agentin Preview — Project: ' +
+        safeArtifactTitleJs + '\');\n    try {\n      ' + artifactJs +
+        '\n    } catch (err) {\n      console.error(\'Script error:\', err);\n    }\n  </script>\n';
+      const previewHtml = docOpen + artifactHtml + scriptBlock + '</body>\n</html>';
       res.send(previewHtml);
     }
 

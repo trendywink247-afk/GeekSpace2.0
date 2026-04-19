@@ -1521,7 +1521,10 @@ router.post('/command', requireAuth, validateBody(commandSchema), async (req: Au
     const remId = uuid();
     const scheduledFor = Date.now() + 3600_000; // Default 1 hour from now
     db.prepare("INSERT INTO reminders (id, user_id, text, channel, category, created_by, scheduled_for) VALUES (?, ?, ?, 'push', 'general', 'terminal', ?)").run(remId, userId, reminderText, scheduledFor);
-    res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${reminderText}`, isError: false });
+    const safeReminderText = reminderText
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    res.json({ output: `<span style="color:#61FF7B">Reminder created:</span> ${safeReminderText}`, isError: false });
     return;
   }
 
