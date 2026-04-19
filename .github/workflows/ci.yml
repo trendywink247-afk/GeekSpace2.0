@@ -302,9 +302,8 @@ jobs:
   #                           rewritten as 3.1 type unions). Step-level
   #                           continue-on-error removed; lint is now a hard
   #                           step under this job.
-  #   - Audit dependencies  → pretend-gate (`|| true`). Server has 1 critical
-  #                           protobufjs vuln. Step-level continue-on-error kept
-  #                           until AGE-35 removes `|| true` and fixes the dep.
+  #   - Audit dependencies  → hard gate under AGE-35 (`|| true` removed, root
+  #                           + server protobufjs CVE resolved to 7.5.5).
   #   - gitleaks            → 100% pass. GATING.
   #   - Semgrep             → 100% pass. GATING.
   # ============================================
@@ -349,10 +348,9 @@ jobs:
       # results for that commit. Each scan still reports its own pass/fail.
       - name: Audit dependencies
         if: always()
-        continue-on-error: true
         run: |
-          npm audit --audit-level=critical || true
-          npm --prefix server audit --audit-level=critical || true
+          npm audit --audit-level=critical
+          npm --prefix server audit --audit-level=critical
 
       - name: Security scan (gitleaks — secrets in commits)
         if: always()
