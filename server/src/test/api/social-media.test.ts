@@ -5,16 +5,10 @@ import { createApp } from '../../app.js';
 import { createTestUser, resetDatabase, makeAuthHeader } from '../setup.js';
 import { config } from '../../config.js';
 import { db } from '../../db/index.js';
-import { initSocialMediaTables } from '../../services/social-media.js';
 
 (config as Record<string, unknown>).isTestMode = true;
 
 const app = createApp();
-
-// Initialize social media tables once before all tests
-beforeAll(() => {
-  initSocialMediaTables();
-});
 
 describe('Social Media API', () => {
   let authHeader: string;
