@@ -25,10 +25,14 @@ The Paperclip orchestration platform runs as its own Docker Compose project, sep
 | **Config** | `/paperclip/instances/default/config.json` — deployment mode, DB URL, storage provider, secrets provider, server bind |
 | **Env vars** | `DATABASE_URL`, `PORT=3100`, `SERVE_UI=true`, `PAPERCLIP_DEPLOYMENT_MODE=authenticated`, `PAPERCLIP_DEPLOYMENT_EXPOSURE=private`, `PAPERCLIP_PUBLIC_URL`, `BETTER_AUTH_SECRET` |
 
-```bash
-# Inspect live mounts (run on VPS host):
-docker inspect docker-server-1 --format '{{json .Mounts}}'
-# TODO: verify — capture output and update this file
+```
+# Verified mount list from /host-snapshots/mounts.txt (snapshot 2026-04-20T20:00:07Z):
+/docker-server-1  docker-server
+  paperclip-data volume      → /paperclip
+  /etc/caddy/Caddyfile       → /host/Caddyfile
+  /etc/docker/daemon.json    → /host/docker-daemon.json
+  /etc/systemd/system        → /host/systemd
+  /root/ops-snapshots        → /host-snapshots
 ```
 
 ### 1.2 `docker-db-1` — Postgres 17
@@ -43,26 +47,13 @@ docker inspect docker-server-1 --format '{{json .Mounts}}'
 | **Key schemas** | `issues`, `heartbeat_runs`, `agents`, `companies`, `approvals`, `routines`, `routine_triggers`, `company_secrets` (encrypted), `attachments` |
 
 ```bash
-# Live schema inspection (run on VPS host):
+# Live schema inspection (run on VPS host — operator-only, no agent psql access):
 docker exec docker-db-1 psql -U paperclip -d paperclip -c '\dt'
-# TODO: verify — capture output and update this file
 ```
 
-### 1.3 `docker-redis-1` — Redis
+### 1.3 `docker-redis-1` — Does Not Exist
 
-<!-- TODO: verify — not captured in the known docker-compose.yml; inferred from the VPS recovery runbook reference -->
-
-| Field | Value |
-|-------|-------|
-| **Image** | `redis` (version TODO: verify) |
-| **Host port** | internal only (TODO: verify) |
-| **Role** | Paperclip job queue and ephemeral cache. Separate from GeekSpace's `geekspace-redis`. |
-
-```bash
-# Confirm container exists and inspect:
-docker inspect docker-redis-1 --format '{{json .Mounts}}'
-# TODO: verify
-```
+> **Correction (snapshot 2026-04-20T20:00:07Z):** `docker-redis-1` is **not a running container**. Live `docker ps` shows no Redis container in the Paperclip compose project. The earlier inference from a VPS recovery runbook reference was incorrect. Paperclip runs without a separate Redis container — the Paperclip server likely uses in-process queuing or the Postgres database for job state. The Paperclip stack is **2 containers**: `docker-server-1` + `docker-db-1` only.
 
 ---
 
@@ -207,10 +198,9 @@ WHERE status = 'running'
 ```
 
 ```bash
-# Run against live DB:
+# Run against live DB (operator-only — no agent psql access from container):
 docker exec docker-db-1 psql -U paperclip -d paperclip -c \
   "SELECT id, agent_id, status, wake_reason, created_at FROM heartbeat_runs ORDER BY created_at DESC LIMIT 5;"
-# TODO: verify — capture output and update this file
 ```
 
 ---
@@ -252,8 +242,8 @@ The `reference_agentin_bot` memory note (Paperclip company memory) records the c
 
 | Finding | Severity | Issue context |
 |---------|----------|---------------|
-| `docker-redis-1` details unconfirmed — not in captured compose file | Low | TODO: `docker inspect docker-redis-1` on host |
-| Live `heartbeat_runs` query not captured (no psql from this container) | Low | TODO: run the DB trace queries in §4.1 on host |
+| ~~`docker-redis-1` details unconfirmed~~ | ~~Low~~ | **Resolved (AGE-70):** Container does not exist. Paperclip stack = 2 containers only. |
+| Live `heartbeat_runs` query not captured (no psql access from agent container) | Low | Operator-only — run the DB trace queries in §4.1 on the VPS host directly |
 | Reaper threshold / cron interval not confirmed from source | Medium | [AGE-54](/AGE/issues/AGE-54), [AGE-62](/AGE/issues/AGE-62), [AGE-63](/AGE/issues/AGE-63) — review reaper implementation for exact threshold |
 | Agent PAT lacks `Actions:write` — all agents affected | Medium | [AGE-52](/AGE/issues/AGE-52) — AGE-43 bot PAT rollout pending |
 | Pusher identity still `trendywink247-afk` → branch protection requires board review | Low | PR #311 caveat — resolved when bot pushes end-to-end |
