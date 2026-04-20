@@ -1,8 +1,22 @@
 # GeekSpace 2.0 — Architecture Overview
 
-> Quick architectural reference. For deep dives see [`docs/SOLUTION_ARCHITECTURE.md`](docs/SOLUTION_ARCHITECTURE.md), [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md), and [`AGENTS.md`](AGENTS.md).
+> Umbrella TOC for the operation. Sections 1–8 below are the quick-reference; the `docs/arch-*.md` sub-documents are the audit-grade deep-dives ([AGE-64](/AGE/issues/AGE-64)). For solution internals see [`docs/SOLUTION_ARCHITECTURE.md`](docs/SOLUTION_ARCHITECTURE.md) and [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md); for multi-agent operations see [`AGENTS.md`](AGENTS.md).
 
-**Last updated:** 2026-04-06
+**Last updated:** 2026-04-20
+
+---
+
+## 0. Deep-dive sub-documents (AGE-64 audit)
+
+| # | Scope | Document | Ticket |
+|---|---|---|---|
+| §1 | VPS host + every container, ports, memory, Caddy routing | [`docs/arch-containers.md`](docs/arch-containers.md) | [AGE-66](/AGE/issues/AGE-66) |
+| §2 | Repository layout, module map, key files | [`docs/arch-repo.md`](docs/arch-repo.md) | [AGE-67](/AGE/issues/AGE-67) |
+| §3 | CI/CD pipeline (GitHub Actions, deploy, rollback) | [`docs/arch-ci.md`](docs/arch-ci.md) | [AGE-67](/AGE/issues/AGE-67) |
+| §4 | Paperclip orchestrator — tasks, runs, agent IDs, DB schema | [`docs/arch-paperclip.md`](docs/arch-paperclip.md) | [AGE-66](/AGE/issues/AGE-66) |
+| §5 | Agents — roster, instructions bundles, memory pattern | [`docs/arch-agents.md`](docs/arch-agents.md) | [AGE-68](/AGE/issues/AGE-68) |
+
+Each sub-document carries a `<!-- snapshot: YYYY-MM-DDT... -->` marker; refresh by re-running the capture commands noted inline when the host drifts.
 
 ---
 
@@ -35,7 +49,7 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Total: 22 running containers across 4 stacks.**
+**Total: 22 running containers across 4 stacks.** Full inventory with ports, memory, restart policies, and Caddy upstream map: [`docs/arch-containers.md`](docs/arch-containers.md). Orchestrator-side (Paperclip tasks, runs, agents, DB schema): [`docs/arch-paperclip.md`](docs/arch-paperclip.md).
 
 ---
 
@@ -62,6 +76,8 @@
 - **The `agent` module** (~42 files) is the heart: ReAct loop, 7-tier LLM router, goals, delegation, proactive engine, Agent Theater
 - **Database:** `server/data/geekspace.db` (SQLite). Schema lives in `server/src/db/index.ts`. Migrations are idempotent, run at startup.
 - **Middleware:** `auth`, `validate`, `errors`, `error-handler`, `metrics`, `ai-security`
+
+Full repo layout + module-by-module map: [`docs/arch-repo.md`](docs/arch-repo.md).
 
 ### Data (`server/data/`)
 - SQLite primary (synchronous I/O — DO NOT `await` DB calls)
@@ -125,6 +141,8 @@ Details: `docs/adr/ADR-001-llm-waterfall-phase111.md`.
 - **Deploy:** tagged release → Docker build → rolling restart via `scripts/staging.sh` / production deploy
 - **Load test baseline:** `scripts/load-test.sh` documented in `scripts/LOAD-TEST-BASELINE.md`
 
+End-to-end pipeline walkthrough (workflow files, gates, rollback path): [`docs/arch-ci.md`](docs/arch-ci.md).
+
 ---
 
 ## 7. Conventions
@@ -155,3 +173,8 @@ See [`docs/NAMING_CONVENTIONS.md`](docs/NAMING_CONVENTIONS.md) for the full nami
 | Understand API surface | [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) |
 | Operate the multi-agent fleet | [`AGENTS.md`](AGENTS.md) |
 | Work with Claude Code | [`CLAUDE.md`](CLAUDE.md) |
+| Audit the container fleet | [`docs/arch-containers.md`](docs/arch-containers.md) |
+| Audit the repo structure | [`docs/arch-repo.md`](docs/arch-repo.md) |
+| Audit the CI/CD pipeline | [`docs/arch-ci.md`](docs/arch-ci.md) |
+| Audit the Paperclip orchestrator | [`docs/arch-paperclip.md`](docs/arch-paperclip.md) |
+| Audit the agent roster and memory | [`docs/arch-agents.md`](docs/arch-agents.md) |
