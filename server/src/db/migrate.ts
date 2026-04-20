@@ -35,9 +35,12 @@ function ensureMigrationsTable(db: Database.Database): void {
   } catch { /* column already exists */ }
 }
 
-function getAppliedMigrations(db: Database.Database): Set<string> {
-  const rows = db.prepare('SELECT name FROM _migrations').all() as Array<{ name: string }>;
-  return new Set(rows.map(r => r.name));
+function getAppliedMigrations(db: Database.Database): Map<string, string | null> {
+  const rows = db.prepare('SELECT name, checksum FROM _migrations').all() as Array<{
+    name: string;
+    checksum: string | null;
+  }>;
+  return new Map(rows.map(r => [r.name, r.checksum]));
 }
 
 function isPopulatedDb(db: Database.Database): boolean {
@@ -57,14 +60,11 @@ function seedExistingMigrations(db: Database.Database, files: string[]): void {
     for (const file of files) {
       const filePath = path.join(MIGRATIONS_DIR, file);
       const sql = fs.readFileSync(filePath, 'utf-8').trim();
-      // Run the SQL — all statements use IF NOT EXISTS so this is idempotent on pre-existing DBs.
-      // This ensures any migration files added after the runner was introduced actually get applied.
-      db.exec(sql);
       insertStmt.run(file, sha256(sql));
     }
   });
   seedAll();
-  logger.info({ count: files.length }, 'migrate: cutover — ran all migrations idempotently and seeded history');
+  logger.info({ count: files.length }, 'migrate: cutover — seeded migration history without executing SQL (populated DB)');
 }
 
 /**
@@ -110,8 +110,6 @@ export function runMigrations(db: Database.Database): string[] {
   const newlyApplied: string[] = [];
 
   for (const file of files) {
-    if (applied.has(file)) continue;
-
     const filePath = path.join(MIGRATIONS_DIR, file);
     const sql = fs.readFileSync(filePath, 'utf-8').trim();
 
@@ -121,6 +119,21 @@ export function runMigrations(db: Database.Database): string[] {
     }
 
     const checksum = sha256(sql);
+
+    // Already applied? Verify checksum still matches before skipping.
+    // A `null` stored checksum means this row was seeded from a legacy DB
+    // before checksums were tracked — allow it.
+    if (applied.has(file)) {
+      const stored = applied.get(file);
+      if (stored != null && stored !== checksum) {
+        throw new Error(
+          `migrate: checksum mismatch for already-applied migration ${file} — ` +
+          `stored=${stored}, current=${checksum}. Migration SQL changed after apply.`
+        );
+      }
+      continue;
+    }
+
     const runOne = db.transaction(() => {
       db.exec(sql);
       db.prepare('INSERT INTO _migrations (name, checksum) VALUES (?, ?)').run(file, checksum);
