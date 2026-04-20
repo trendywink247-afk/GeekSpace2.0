@@ -102,3 +102,29 @@ export class PaymentRequiredError extends AgentinError {
     this.name = 'PaymentRequiredError';
   }
 }
+
+/**
+ * HTTP 409 -- the request conflicts with current state (e.g. duplicate email,
+ * already-active resource, optimistic concurrency mismatch).
+ *
+ * @param message - Human-readable detail (default: `"Conflict"`).
+ */
+export class ConflictError extends AgentinError {
+  constructor(message = 'Conflict') {
+    super(message, 'CONFLICT', 409);
+    this.name = 'ConflictError';
+  }
+}
+
+/**
+ * HTTP 503 -- a required external service (Stripe, Razorpay, etc.) is not
+ * configured or is temporarily unavailable.
+ *
+ * @param message - Human-readable detail (default: `"Service unavailable"`).
+ */
+export class ServiceUnavailableError extends AgentinError {
+  constructor(message = 'Service unavailable') {
+    super(message, 'SERVICE_UNAVAILABLE', 503);
+    this.name = 'ServiceUnavailableError';
+  }
+}

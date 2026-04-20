@@ -10,9 +10,19 @@ export default defineConfig({
     environment: 'node',
     env: {
       TEST_MODE: 'true',
+      NODE_ENV: 'test',
+      STRIPE_SECRET_KEY: 'sk_test_dummy_for_tests_only',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test_secret_for_tests_only',
+      RAZORPAY_KEY_ID: 'rzp_test_key_id_for_tests',
+      RAZORPAY_KEY_SECRET: 'rzp_test_secret_for_tests',
+      GOOGLE_CLIENT_ID: 'test-google-client-id',
+      GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
+      GITHUB_CLIENT_ID: 'test-github-client-id',
+      GITHUB_CLIENT_SECRET: 'test-github-client-secret',
     },
-    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts'],
+    include: ['src/test/**/*.test.ts', 'src/modules/**/__tests__/*.test.ts', 'src/db/__tests__/*.test.ts', 'src/middleware/__tests__/*.test.ts'],
     exclude: ['src/__tests__/**'],
+    setupFiles: ['src/test/mocks/setup.ts'],
     testTimeout: 30000,  // LLM calls can be slow; 30s global timeout prevents false flakiness
     pool: 'forks', // Use forks for isolation between test files
     poolOptions: {
@@ -35,7 +45,15 @@ export default defineConfig({
           lines: 60,
           functions: 50,
         },
+        'src/modules/auth/**': {
+          lines: 60,
+          functions: 50,
+          branches: 60,
+          statements: 60,
+        },
       },
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/__tests__/**', 'src/test/**'],
     },
   },
 });

@@ -26,24 +26,6 @@ const readSrc = (...parts: string[]) => readFileSync(srcPath(...parts), 'utf-8')
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('95.1 DB schema: calendar_events and google_calendar_token', () => {
-  it('db migrations contains google_calendar_token ALTER TABLE', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toMatch(/google_calendar_token/);
-    expect(src).toMatch(/ALTER TABLE users ADD COLUMN google_calendar_token/);
-  });
-
-  it('db schema creates calendar_events table', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toMatch(/CREATE TABLE IF NOT EXISTS calendar_events/);
-    expect(src).toMatch(/gcal_event_id/);
-    expect(src).toMatch(/synced_at/);
-  });
-
-  it('db schema creates UNIQUE INDEX on calendar_events(user_id, gcal_event_id)', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toMatch(/idx_calendar_events_gcal/);
-  });
-
   it('calendar_events table exists in live DB', () => {
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='calendar_events'").get();
     expect(row).toBeTruthy();

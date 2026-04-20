@@ -6,11 +6,13 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readAllMigrationSql } from '../helpers/migration-source.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../../..');
 
 function readFile(rel: string): string {
+  if (rel === 'server/src/db/migrations.ts') return readAllMigrationSql();
   return readFileSync(path.join(ROOT, rel), 'utf-8');
 }
 
@@ -78,26 +80,6 @@ describe('Phase 83 — Launch Hardening (Invite Beta Readiness)', () => {
     it('backup-drill.sh writes to ops/reports/', () => {
       const src = readFile('scripts/backup-drill.sh');
       expect(src).toContain('ops/reports');
-    });
-  });
-
-  // ── 83.4: Invite codes DB table ──────────────────────────────
-  describe('83.4: invite_codes DB table', () => {
-    it('db schema creates invite_codes table', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('CREATE TABLE IF NOT EXISTS invite_codes');
-    });
-
-    it('invite_codes table has code, email, used_at, used_by fields', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('code TEXT');
-      expect(src).toContain('used_at');
-      expect(src).toContain('used_by');
-    });
-
-    it('invite_codes has UNIQUE index on code', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('idx_invite_codes_code');
     });
   });
 

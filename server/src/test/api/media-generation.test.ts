@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 // Mock fs/promises BEFORE importing the module that uses it
 vi.mock('fs/promises', () => ({
@@ -24,16 +24,24 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
 }));
 
-// Mock fetch globally
+// Mock fetch. MSW's setupFiles installs its own globalThis.fetch via a
+// beforeAll hook, which runs AFTER test-file top-level code — so a top-level
+// vi.stubGlobal would be overwritten. Re-apply the stub in beforeEach so it
+// wins on every test.
 const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
 
-// Import AFTER mocking
+// Import AFTER declaring the mock (module uses fetch at call time, not import time)
 const { generateImage } = await import('../../services/media-generation.js');
 
 describe('generateImage fallback chain', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
+  });
+
+  afterAll(() => {
+    // Restore real fetch so later suites (e.g. MSW-backed) aren't intercepted by our stub.
+    vi.unstubAllGlobals();
   });
 
   it('returns Pollinations URL when Pollinations HEAD check succeeds', async () => {

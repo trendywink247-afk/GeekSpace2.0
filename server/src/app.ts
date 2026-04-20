@@ -15,7 +15,7 @@ import { randomUUID, createHash, timingSafeEqual } from 'crypto';
 
 import { config } from './config.js';
 import { logger, requestLogger } from './logger.js';
-import { errorHandler } from './middleware/errors.js';
+import { agentinErrorHandler } from './middleware/error-handler.js';
 import { db } from './db/index.js';
 
 // Domain modules
@@ -160,6 +160,10 @@ export function createApp(): express.Application {
   });
 
   // ---- Body parsing ----
+  // Webhook routes need raw Buffers for HMAC signature verification — mount raw parsers
+  // BEFORE the global express.json() so the body isn't consumed and parsed to a JS object first.
+  app.use('/api/billing/webhook', express.raw({ type: '*/*', limit: config.maxRequestBodyBytes }));
+  app.use('/api/billing/razorpay/webhook', express.raw({ type: '*/*', limit: config.maxRequestBodyBytes }));
   app.use(express.json({ limit: `${config.maxRequestBodyBytes}` }));
 
   // P2-4: Content-Type enforcement for API mutation endpoints
@@ -647,8 +651,10 @@ export function createApp(): express.Application {
   // ---- Swagger API docs ----
   setupSwagger(app);
 
-  // ---- Global error handler (MUST be last) ----
-  app.use(errorHandler);
+  // ---- Global error handler (MUST be last) — wired at app.ts:654 ----
+  // Handles AgentinError subclasses, legacy AppError, body-parser 4xx, and unknown 500s.
+  // Response shape: { error, code, requestId }
+  app.use(agentinErrorHandler);
 
   return app;
 }

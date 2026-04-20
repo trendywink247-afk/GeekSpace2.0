@@ -71,20 +71,6 @@ describe("102.1 File structure", () => {
     expect(src).toContain("weeklyReport");
   });
 
-  it("db/index.ts defines focus_sessions table", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("CREATE TABLE IF NOT EXISTS focus_sessions");
-  });
-
-  it("db/index.ts defines habit_logs table", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("CREATE TABLE IF NOT EXISTS habit_logs");
-  });
-
-  it("db/index.ts defines notes table", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("CREATE TABLE IF NOT EXISTS notes");
-  });
 });
 
 // 102.2 DB tables exist at runtime

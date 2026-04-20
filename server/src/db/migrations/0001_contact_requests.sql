@@ -40,15 +40,16 @@ CREATE TABLE IF NOT EXISTS user_contact_preferences (
   user_id TEXT PRIMARY KEY,
   availability_mode TEXT DEFAULT 'auto_reply_on' CHECK (availability_mode IN ('auto_reply_on', 'auto_reply_off')),
   share_availability_level TEXT DEFAULT 'preferences_only' CHECK (share_availability_level IN ('none', 'coarse', 'preferences_only')),
-  default_response_template TEXT DEFAULT 'I\'m currently unavailable. I\'ll respond when I can.',
+  default_response_template TEXT DEFAULT 'I''m currently unavailable. I''ll respond when I can.',
   quiet_hours_start INTEGER, -- 0-23, NULL = no quiet hours
   quiet_hours_end INTEGER, -- 0-23, NULL = no quiet hours
   working_hours_start INTEGER DEFAULT 9,
   working_hours_end INTEGER DEFAULT 18,
   allow_guest_contacts INTEGER DEFAULT 1, -- boolean
   require_mutual_connection INTEGER DEFAULT 0, -- boolean
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  
+
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

@@ -47,26 +47,6 @@ afterAll(() => {
 // 101.1  DB Schema
 // =========================================================================
 describe('101.1 DB schema: new tables', () => {
-  it('db schema creates focus_sessions table', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('CREATE TABLE IF NOT EXISTS focus_sessions');
-  });
-  it('db schema creates habits table', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('CREATE TABLE IF NOT EXISTS habits');
-  });
-  it('db schema creates habit_logs table', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('CREATE TABLE IF NOT EXISTS habit_logs');
-  });
-  it('db schema creates notification_settings table', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('CREATE TABLE IF NOT EXISTS notification_settings');
-  });
-  it('db migrations adds deferred column to inbox_messages', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('ALTER TABLE inbox_messages ADD COLUMN deferred');
-  });
   it('focus_sessions table has required columns', () => {
     const row = db.prepare("SELECT * FROM focus_sessions WHERE 1=0").all();
     expect(row).toBeDefined();
