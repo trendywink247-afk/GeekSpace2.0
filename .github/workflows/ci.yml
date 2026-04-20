@@ -20,7 +20,11 @@ name: CI/CD Pipeline
 # Notes:
 #   * Summary now waits on E2E + security, so the critical path is ~6 min.
 #   * Playwright browsers are cached.
-#   * Docs-only PRs (*.md, etc.) skip CI entirely via paths-ignore.
+#   * AGE-72 removed `paths-ignore` from the `pull_request` trigger so
+#     docs-only PRs now run the full pipeline (required status check
+#     `Summary` must resolve on every PR or branch protection blocks
+#     forever). `push` keeps `paths-ignore` to avoid re-deploying staging
+#     for docs-only merges.
 #   * AGE-34 fixed the OpenAPI spec (nullable → 3.1 unions); AGE-35 made
 #     `npm audit` a real hard gate (dropped `|| true`, resolved root +
 #     server protobufjs CVE). No step-level continue-on-error remains.
@@ -29,6 +33,9 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main]
+    # Docs-only pushes to main should not re-deploy staging (wastes CI
+    # minutes and interrupts QA). Docs PRs still run full CI via the
+    # pull_request trigger below, which is what satisfies branch protection.
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -36,11 +43,6 @@ on:
       - 'LICENSE'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '.gitignore'
-      - 'LICENSE'
   workflow_dispatch:
     inputs:
       deploy_target:
