@@ -3,6 +3,8 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > Master orchestrator brief lives in [`AGENTS.md`](AGENTS.md) — read it for execution model, sub-agent roster, hard rules, and session bootstrap. This file is the deeper architecture reference.
+>
+> **Onboarding checklist** — before editing: skim [`ARCHITECTURE.md`](ARCHITECTURE.md) (umbrella TOC) and the five AGE-64 deep-dives it links: [`docs/arch-containers.md`](docs/arch-containers.md) (VPS fleet), [`docs/arch-repo.md`](docs/arch-repo.md) (repo layout), [`docs/arch-ci.md`](docs/arch-ci.md) (pipeline), [`docs/arch-paperclip.md`](docs/arch-paperclip.md) (orchestrator), [`docs/arch-agents.md`](docs/arch-agents.md) (agent roster + memory).
 
 ## Architecture
 
