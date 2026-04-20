@@ -45,7 +45,7 @@ overlay         387G  116G   272G   30%  / (container overlay view)
 ### Network
 
 - **Public egress IP:** `72.61.253.224`
-- Primary interface on the host: `eth0` (Hostinger VPS NIC; exact interface config requires `ip a` on the host — `TODO: verify`)
+- Primary interface on the host: `eth0` (Hostinger VPS NIC; confirmed UP — `72.61.253.224/24`, IPv6 `2a02:4780:12:5853::1/48`) <!-- snapshot: 2026-04-20T20:00:07Z -->
 - Container-internal address seen by this agent: `172.28.0.3/16`
 
 ---
@@ -54,28 +54,21 @@ overlay         387G  116G   272G   30%  / (container overlay view)
 
 <!-- snapshot: 2026-04-20T00:20:00Z -->
 
-> **Live verification required.** This agent runs inside a container without Docker socket access. The table below is derived from `docker-compose.yml`, `docker-compose.logging.yml`, and referenced external stacks. Run on the VPS host to confirm:
->
-> ```bash
-> docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
-> docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
-> ```
->
-> **TODO: verify** live container count and actual resource usage by running the above commands on the host.
+> **Verified against host snapshot.** Live `docker ps` and `docker stats` output captured by the host ops-snapshot script and mounted at `/host-snapshots/containers.txt` and `/host-snapshots/stats.txt`. <!-- snapshot: 2026-04-20T20:00:07Z -->
 
 ### 2.1 Container Count Reconciliation
 
 | Source | Count | Notes |
 |--------|-------|-------|
-| `CLAUDE.md` (last edited ≈ Apr 2026) | 22 | Groups: GeekSpace 10, Monitoring 5, External 4, Utility 3. Lists Ollama as one of the 4 "external" — but Ollama runs under systemd, not Docker (see §2.4). |
+| `CLAUDE.md` (last edited ≈ Apr 2026) | 22 | Groups: GeekSpace 10, Monitoring 5, External 4, Utility 3. Miscounts: Ollama is Docker (not systemd); TTS sidecars missing; Paperclip stack not included. |
 | `.pi/FULL_AUDIT.md` (2026-04-06) | 23 | Monitoring counted as 6 (adds Alertmanager explicitly). |
 | Issue AGE-66 acceptance target | 27 | Target expected by the CTO when this task was filed. |
-| Compose-file count (this document) | **28** | Derived from all compose files. Excludes: n8n (profile-gated), GeekOS (disabled/commented), Ollama (systemd). Includes: 3 TTS sidecars (kokoro, piper, whisper) not named in `CLAUDE.md` group counts; 3 Paperclip containers. |
+| **Live `docker ps` (snapshot 2026-04-20T20:00:07Z)** | **27** | Authoritative. Paperclip stack = 2 containers (no `docker-redis-1`). Ollama = Docker, not systemd. `agent-zero` not running. |
 
-**Reconciliation verdict:**
+**Reconciliation verdict:** <!-- snapshot: 2026-04-20T20:00:07Z -->
 
-- `CLAUDE.md`'s "22" undercounts the TTS sidecars (3), Alertmanager (1), and Paperclip containers (3), and over-counts by treating Ollama as a Docker container (−1). Net: 22 − 1 (Ollama) + 3 (TTS) + 1 (Alertmanager) + 3 (Paperclip) = **28**.
-- The "27" acceptance target likely pre-dated the Paperclip stack addition or excluded one container compared to this audit's count. **TODO: verify** with `docker ps` on the host.
+- Live `docker ps` confirms **27 running containers**: GeekSpace 13, Monitoring 6, External AI+Automation 3 (`ollama-qtzz-ollama-1`, `claude-bridge`, `cronicle-ngym-cronicle-1`), Utility 3, Paperclip 2 (`docker-server-1`, `docker-db-1`).
+- Earlier compose-file count of 28 over-counted because `docker-redis-1` (Paperclip Redis) does not exist as a Docker container — Paperclip uses no separate Redis container. The "27" acceptance target was exactly right.
 
 ### 2.2 GeekSpace Stack — `docker-compose.yml`
 
@@ -109,30 +102,30 @@ Prometheus, Alertmanager, and cAdvisor are managed separately (not in this repo'
 | `geekspace-loki` | `grafana/loki:3.0.0` | Log aggregation (`:3100` internal only) | internal | 256 MiB | `unless-stopped` |
 | `geekspace-grafana` | `grafana/grafana:11.0.0` | Dashboards and visualization | `127.0.0.1:3000→3000` | 256 MiB | `unless-stopped` |
 | `geekspace-promtail` | `grafana/promtail:3.0.0` | Log shipper → Loki | internal | 128 MiB | `unless-stopped` |
-| `prometheus` | `prom/prometheus` (external) | Metrics scraper — scrapes `/api/metrics`, cAdvisor | **TODO: verify** | — | `unless-stopped` |
-| `alertmanager` | `prom/alertmanager` (external) | Prometheus alert routing → Telegram | `:9093` (internal) | — | `unless-stopped` |
-| `cadvisor` | `gcr.io/cadvisor/cadvisor` (external) | Container resource metrics → Prometheus | **TODO: verify** | — | `unless-stopped` |
+| `prometheus` | `prom/prometheus:latest` (external) | Metrics scraper — scrapes `/api/metrics`, cAdvisor | `127.0.0.1:9090→9090` <!-- snapshot: 2026-04-20T20:00:07Z --> | — | `unless-stopped` |
+| `alertmanager` | `prom/alertmanager:latest` (external) | Prometheus alert routing → Telegram | `127.0.0.1:9093→9093` <!-- snapshot: 2026-04-20T20:00:07Z --> | — | `unless-stopped` |
+| `cadvisor` | `gcr.io/cadvisor/cadvisor:latest` (external) | Container resource metrics → Prometheus | `127.0.0.1:8081→8080` <!-- snapshot: 2026-04-20T20:00:07Z --> | — | `unless-stopped` |
 
 **Monitoring stack total: 6 containers.**
 
 ### 2.4 External AI + Automation
 
-| Container / Service | Type | Role | Host Port | Notes |
-|--------------------|------|------|-----------|-------|
-| `ollama-qtzz-ollama-1` | **systemd service** | Local LLM host — gemma4:e4b + nomic-embed-text | `:11434` | Managed by `ollama.service` (systemd), NOT a Docker container. GeekSpace reaches it via `geekspace-shared` network. |
-| `agent-zero` | Docker (external compose) | Browser-accessible AI agent for ad-hoc VPS tasks | `127.0.0.1:32769→?` | Full VPS access. Exposed at `agent.agentin.chat` via Caddy. |
-| `edith-bridge` / `claude-bridge` | Docker (external compose) | HTTP wrapper around Claude Code CLI. `POST /run {prompt,cwd,timeout}` | `:8787` | Used by Cronicle for nightly automation. Referenced in `.env` as `EDITH_GATEWAY_URL`. |
-| `cronicle` | Docker (`ops/cronicle/docker-compose.yml`) | Web job scheduler — 4 defined jobs (see §4) | `:3012` | Has GeekSpace mounted at `/host/GeekSpace2.0:ro`. Mounts `/var/run/docker.sock`. |
+| Container | Image | Role | Host Port | Notes |
+|-----------|-------|------|-----------|-------|
+| `ollama-qtzz-ollama-1` | `ollama/ollama:latest` | Local LLM host — gemma4:e4b + nomic-embed-text | `127.0.0.1:11434→11434` | **Docker container**, NOT a systemd service. `ollama.service` is not running. GeekSpace reaches it via `geekspace-shared` network. <!-- snapshot: 2026-04-20T20:00:07Z --> |
+| `agent-zero` | (external compose) | Browser-accessible AI agent for ad-hoc VPS tasks | `127.0.0.1:32769→?` | **Not running** per live snapshot. Exposed at `agent.agentin.chat` via Caddy when up. <!-- snapshot: 2026-04-20T20:00:07Z --> |
+| `claude-bridge` | `claude-bridge` | HTTP wrapper around Claude Code CLI. `POST /run {prompt,cwd,timeout}` | `127.0.0.1:8787→8787` | Used by Cronicle for nightly automation. Referenced in `.env` as `EDITH_GATEWAY_URL`. <!-- snapshot: 2026-04-20T20:00:07Z --> |
+| `cronicle-ngym-cronicle-1` | `soulteary/cronicle:0.9` | Web job scheduler — 4 defined jobs (see §4) | `127.0.0.1:3012→3012` | Has GeekSpace mounted at `/host/GeekSpace2.0:ro`. Mounts `/var/run/docker.sock`. <!-- snapshot: 2026-04-20T20:00:07Z --> |
 
-**External Docker containers: 3.** (Ollama is systemd, not Docker.)
+**External AI + Automation Docker containers: 3 running** (`ollama-qtzz-ollama-1`, `claude-bridge`, `cronicle-ngym-cronicle-1`). `agent-zero` not running at snapshot time.
 
 ### 2.5 Utility Stack
 
-| Container | Image | Role | Notes |
-|-----------|-------|------|-------|
-| `crawl4ai` | `crawl4ai/crawl4ai` (external) | Web scraping for agent research | **TODO: verify** image + ports |
-| `healthchecks` | `healthchecks/healthchecks` (external) | Cron monitoring / dead-man's switch | **TODO: verify** |
-| `healthchecks-postgres` | `postgres` (external) | Postgres backend for healthchecks container | **TODO: verify** |
+| Container | Image | Role | Host Port | Notes |
+|-----------|-------|------|-----------|-------|
+| `crawl4ai-ykgs-crawl4ai-1` | `unclecode/crawl4ai:latest` | Web scraping for agent research | `127.0.0.1:11235→11235` | <!-- snapshot: 2026-04-20T20:00:07Z --> |
+| `healthchecks-kraj-healthchecks-1` | `healthchecks/healthchecks:v3.8` | Cron monitoring / dead-man's switch | `127.0.0.1:63730→8000` | <!-- snapshot: 2026-04-20T20:00:07Z --> |
+| `healthchecks-kraj-postgres-1` | `postgres:17-alpine` | Postgres backend for healthchecks container | internal only | <!-- snapshot: 2026-04-20T20:00:07Z --> |
 
 **Utility stack total: 3 containers.**
 
@@ -140,24 +133,23 @@ Prometheus, Alertmanager, and cAdvisor are managed separately (not in this repo'
 
 See `docs/arch-paperclip.md` for detailed coverage. Summary:
 
-| Container | Image / Role | Volume mounts |
-|-----------|-------------|---------------|
-| `docker-server-1` | Paperclip server (Node.js) — API at `:3100`, serves UI | `/paperclip` (paperclip-data volume) |
-| `docker-db-1` | `postgres:17-alpine` — Paperclip primary datastore | `/var/lib/postgresql/data` (pgdata volume) |
-| `docker-redis-1` | Redis — Paperclip job queue + cache | **TODO: verify** (not in captured compose) |
+| Container | Image | Role | Volume mounts | Host Port |
+|-----------|-------|------|---------------|-----------|
+| `docker-server-1` | `docker-server` (built locally) | Paperclip server (Node.js) — API at `:3200` (internal), serves UI | `paperclip-data:/paperclip`; bind mounts: `/etc/caddy/Caddyfile→/host/Caddyfile`, `/etc/docker/daemon.json→/host/docker-daemon.json`, `/etc/systemd/system→/host/systemd`, `/root/ops-snapshots→/host-snapshots` <!-- snapshot: 2026-04-20T20:00:07Z --> | `127.0.0.1:3200→3100` |
+| `docker-db-1` | `postgres:17-alpine` | Paperclip primary datastore | `pgdata:/var/lib/postgresql/data` | internal only (5432) |
 
-**Paperclip stack total: 3 containers.**
+**Paperclip stack total: 2 containers.** (`docker-redis-1` does **not** exist — confirmed by live `docker ps` snapshot 2026-04-20T20:00:07Z. Paperclip uses no separate Redis container.)
 
 ### Summary Table
 
-| Stack | Containers |
-|-------|-----------|
-| GeekSpace (main compose) | 13 |
-| Monitoring | 6 |
-| External AI + Automation (Docker only; Ollama = systemd) | 3 |
-| Utility | 3 |
-| Paperclip | 3 |
-| **Total** | **28** |
+| Stack | Containers | Notes |
+|-------|-----------|-------|
+| GeekSpace (main compose) | 13 | |
+| Monitoring | 6 | |
+| External AI + Automation | 3 | Ollama is Docker (not systemd); `agent-zero` not running at snapshot time |
+| Utility | 3 | |
+| Paperclip | 2 | No `docker-redis-1` |
+| **Total** | **27** | Confirmed by live `docker ps` <!-- snapshot: 2026-04-20T20:00:07Z --> |
 
 ---
 
@@ -165,7 +157,7 @@ See `docs/arch-paperclip.md` for detailed coverage. Summary:
 
 <!-- snapshot: 2026-04-20T00:20:00Z — source: caddy/Caddyfile -->
 
-Caddy runs on the host (or a dedicated container — **TODO: verify** `systemctl status caddy` or `docker ps | grep caddy`). TLS is managed automatically via Let's Encrypt (`email admin@agentin.chat`).
+Caddy runs as a **systemd service** on the host (`caddy.service` confirmed active/running; not a Docker container). <!-- snapshot: 2026-04-20T20:00:07Z --> TLS is managed automatically via Let's Encrypt (`email admin@agentin.chat`).
 
 | Public Hostname | Upstream | Notes |
 |-----------------|----------|-------|
@@ -200,15 +192,17 @@ CSP is set by Caddy (`common_headers`). Helmet CSP is disabled in the Express ap
 
 ### 4.1 systemd Services
 
-**TODO: verify** live status with `systemctl list-units --type=service --state=running` on the VPS host.
+Live `systemctl list-units --type=service --state=running` captured in `/host-snapshots/systemd-running.txt` (snapshot 2026-04-20T20:00:07Z). <!-- snapshot: 2026-04-20T20:00:07Z -->
 
 | Unit file | Container / Process | Purpose | On-reboot behavior |
 |-----------|--------------------|---------|--------------------|
 | `geekspace-autostart.service` | `docker compose up -d --remove-orphans` in `/root/GeekSpace2.0` | Auto-starts full GeekSpace stack (main compose) after `docker.service` is ready. `RemainAfterExit=yes` | `WantedBy=multi-user.target` — starts every boot |
 | `paperclip-watchdog.service` | `ops/systemd/paperclip-watchdog.sh` (bash loop) | Polls `http://localhost:3033/health` every 30s. If unreachable for >5 min, runs `docker restart docker-server-1`. | Starts with `multi-user.target`; `Restart=always` so the watcher itself auto-recovers |
-| `ollama.service` | Ollama binary (systemd-managed) | Hosts gemma4:e4b (complex/coding LLM) and nomic-embed-text (embeddings) at `:11434`. Managed by Hostinger systemd, not by this repo. | **TODO: verify** `ExecStart` and `After=` directives |
+| `caddy.service` | Caddy binary (systemd-managed) | Reverse proxy — TLS termination, routing, static file serving. Confirmed active/running at snapshot time. | Standard systemd unit; not in this repo. |
 | `litestream.service` | Litestream binary | Continuously replicates `/var/lib/docker/volumes/geekspace20_geekspace-data/_data/geekspace.db` → Cloudflare R2 (`sync-interval: 1s`, `snapshot-interval: 6h`, `retention: 72h`). Config: `/etc/litestream.yml` (installed from `ops/litestream/litestream.yml`). | Auto-starts; secrets injected from `/etc/default/litestream` (mode 0600) |
 | `agentin-openclaw-alias.service` + `.timer` | `agentin-openclaw-alias-fix.sh` | Ensures the OpenClaw container has the required network alias. One-shot, triggered by timer. | Runs after `docker.service` |
+
+> **Note on Ollama:** `ollama.service` is **not** in systemd-running.txt — Ollama runs as Docker container `ollama-qtzz-ollama-1` (`ollama/ollama:latest`), not via systemd. See §2.4. <!-- snapshot: 2026-04-20T20:00:07Z -->
 
 ### 4.2 Cronicle Jobs
 
@@ -277,10 +271,9 @@ See `docs/SSH-ACCESS.md` for the full access model and human key inventory.
 
 > Per task scope: no fixes here. Follow-up issues filed under [AGE-64](/AGE/issues/AGE-64).
 
-| Finding | Severity | Suggested follow-up |
-|---------|----------|---------------------|
-| Live `docker ps` / `docker stats` not captured (no Docker socket in agent container) | Low | Run `docker ps --format` + `docker stats --no-stream` on host and update this file |
-| TTS containers (kokoro, piper, whisper) absent from `CLAUDE.md` group counts | Low | Update `CLAUDE.md` §3.1 when container count is verified |
-| Ollama miscounted as Docker container in `CLAUDE.md` | Low | Clarify in `CLAUDE.md` that Ollama is a systemd service, not a Docker container |
-| Caddy host mode (systemd vs Docker) unconfirmed | Low | `systemctl status caddy` or `docker ps \| grep caddy` on the host |
-| `healthchecks`, `crawl4ai`, `healthchecks-postgres` image tags unconfirmed | Low | `docker inspect` on the host |
+| Finding | Severity | Status |
+|---------|----------|--------|
+| TTS containers (kokoro, piper, whisper) absent from `CLAUDE.md` group counts | Low | Open — `CLAUDE.md` count still says 22; follow-up to update CLAUDE.md |
+| Ollama miscounted in `CLAUDE.md` (says systemd; actually Docker `ollama-qtzz-ollama-1`) | Low | Open — follow-up to update CLAUDE.md |
+| `agent-zero` not running at snapshot time (2026-04-20T20:00:07Z) | Low | Open — may be intermittently down; confirm before removing Caddy route |
+| Live `heartbeat_runs` psql query not captured (no psql access from agent container) | Low | Open — needs operator to run on VPS host |
