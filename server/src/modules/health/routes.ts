@@ -32,9 +32,12 @@ const PACKAGE_VERSION: string = (() => {
 })();
 
 healthRouter.get('/version', (_req: Request, res: Response) => {
+  // AGE-71: prefer GIT_COMMIT (injected via --build-arg in both staging and prod
+  // docker builds); fall back to legacy GIT_SHA env var, then 'unknown'.
+  const commit = process.env.GIT_COMMIT ?? process.env.GIT_SHA ?? 'unknown';
   res.json({
     version: PACKAGE_VERSION,
-    commit: process.env.GIT_SHA ?? 'unknown',
+    commit,
     nodeVersion: process.version,
   });
 });
