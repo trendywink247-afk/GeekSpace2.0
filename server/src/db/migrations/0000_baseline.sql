@@ -1395,6 +1395,7 @@ CREATE TABLE IF NOT EXISTS user_contact_preferences (
   working_hours_end INTEGER DEFAULT 18,
   allow_guest_contacts INTEGER DEFAULT 1,
   require_mutual_connection INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
