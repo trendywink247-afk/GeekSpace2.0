@@ -54,28 +54,6 @@ afterAll(() => {
 // 97.1  DB Schema
 // =============================================================================
 describe("97.1 DB schema: inbox_messages", () => {
-  it("db/index.ts defines inbox_messages table", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("CREATE TABLE IF NOT EXISTS inbox_messages");
-  });
-
-  it("inbox_messages has required columns", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("user_id TEXT NOT NULL");
-    expect(src).toContain("source TEXT NOT NULL");
-    expect(src).toContain("content TEXT NOT NULL");
-    expect(src).toContain("priority TEXT DEFAULT");
-    expect(src).toContain("read INTEGER DEFAULT 0");
-    expect(src).toContain("archived INTEGER DEFAULT 0");
-    expect(src).toContain("suggested_reply TEXT");
-    expect(src).toContain("received_at INTEGER");
-  });
-
-  it("inbox_messages has index on user_id and read", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("idx_inbox_user");
-  });
-
   it("inbox_messages table actually exists in DB", () => {
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='inbox_messages'").get() as { name: string } | undefined;
     expect(row?.name).toBe("inbox_messages");

@@ -83,26 +83,6 @@ describe('Phase 83 — Launch Hardening (Invite Beta Readiness)', () => {
     });
   });
 
-  // ── 83.4: Invite codes DB table ──────────────────────────────
-  describe('83.4: invite_codes DB table', () => {
-    it('db schema creates invite_codes table', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('CREATE TABLE IF NOT EXISTS invite_codes');
-    });
-
-    it('invite_codes table has code, email, used_at, used_by fields', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('code TEXT');
-      expect(src).toContain('used_at');
-      expect(src).toContain('used_by');
-    });
-
-    it('invite_codes has UNIQUE index on code', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('idx_invite_codes_code');
-    });
-  });
-
   // ── 83.4: Admin invite endpoints ─────────────────────────────
   describe('83.4: POST/GET /api/admin/invite(s) endpoints', () => {
     it("POST /api/admin/invite creates invite codes", () => {

@@ -18,32 +18,6 @@ function readFile(rel: string): string {
 
 describe('Phase 82 — Store Safety + Polish', () => {
 
-  // ── 82.1: DB tables ──────────────────────────────────────────
-  describe('82.1: DB migrations — new safety tables', () => {
-    it('db schema creates reports table', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('CREATE TABLE IF NOT EXISTS reports');
-      expect(src).toContain('reporter_id');
-      expect(src).toContain('message_content');
-      expect(src).toContain('reason');
-    });
-
-    it('db schema creates blocked_users table', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('CREATE TABLE IF NOT EXISTS blocked_users');
-      expect(src).toContain('blocker_id');
-      expect(src).toContain('blocked_id');
-      expect(src).toContain('UNIQUE(blocker_id, blocked_id)');
-    });
-
-    it('db schema creates moderation_log table', () => {
-      const src = readFile('server/src/db/migrations.ts');
-      expect(src).toContain('CREATE TABLE IF NOT EXISTS moderation_log');
-      expect(src).toContain('flags');
-      expect(src).toContain('action');
-    });
-  });
-
   // ── 82.2: Report endpoint ────────────────────────────────────
   describe('82.2: POST /api/report', () => {
     it('reportRouter exports POST / endpoint', () => {

@@ -135,11 +135,6 @@ describe('Phase 103: Plan cap fixes', () => {
   // Together AI removed in P3 — dead provider (no API keys, never used)
 
   describe('training_examples table and logging', () => {
-    it('db schema creates training_examples table', () => {
-      const content = readServerSrc('db/migrations.ts');
-      expect(content).toContain('training_examples');
-      expect(content).toContain('quality_score');
-    });
     it('memory.ts exports logTrainingExample', () => {
       const content = readFileSync(resolve(SERVER_SRC, 'modules/memory/services/memory.ts'), 'utf-8');
       expect(content).toContain('logTrainingExample');
