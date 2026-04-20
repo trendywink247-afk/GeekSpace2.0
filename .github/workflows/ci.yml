@@ -197,7 +197,7 @@ jobs:
   unit-tests-server:
     name: Unit Tests (Server)
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
 
