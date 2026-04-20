@@ -18,11 +18,13 @@
 
 **Paths-ignore** (CI skips entirely if only these change):
 
-```
+```text
 **/*.md   docs/**   .gitignore   LICENSE
 ```
 
 This means documentation PRs (including `docs/arch-repo.md` and `docs/arch-ci.md`) bypass CI completely. Intentional: docs don't affect runtime correctness.
+
+> **AGE-72 update (2026-04-20)**: `paths-ignore` was removed — see [PR #324](https://github.com/trendywink247-afk/GeekSpace2.0/pull/324). Branch protection requires the `Summary` check on every PR; skipping the workflow for docs-only PRs left them permanently `BLOCKED`. Docs PRs now run the full pipeline (~6 min) so `Summary` reports success.
 
 **Concurrency**: `group: ci-${{ github.ref }}`, `cancel-in-progress: true` — a new push to a branch cancels the prior in-flight run for that branch.
 
@@ -30,7 +32,7 @@ This means documentation PRs (including `docs/arch-repo.md` and `docs/arch-ci.md
 
 ### Job graph
 
-```
+```text
 ┌─ lint-and-typecheck   (timeout: 8m)  ─┐
 ├─ build-frontend       (timeout: 8m)  ─┤
 ├─ build-server         (timeout: 6m)  ─┤
@@ -100,7 +102,7 @@ Four sub-steps, each individually noted:
 |------|---------------|--------------|
 | **Validate Caddyfile** | Downloads Caddy v2.8.4 binary, runs `caddy validate --config caddy/Caddyfile --adapter caddyfile`. Only runs if `caddy/Caddyfile` changed. | GATING. 100% pass rate (26/26 runs). |
 | **Validate OpenAPI spec** | `npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components`. | GATING. Fixed under [AGE-34](/AGE/issues/AGE-34) (18 nullable errors rewritten as OpenAPI 3.1 type unions). |
-| **Audit dependencies** | `npm audit --audit-level=critical` (root + server). | GATING. `|| true` removed under [AGE-35](/AGE/issues/AGE-35) after protobufjs CVE resolved to 7.5.5. |
+| **Audit dependencies** | `npm audit --audit-level=critical` (root + server). | GATING. `\|\| true` removed under [AGE-35](/AGE/issues/AGE-35) after protobufjs CVE resolved to 7.5.5. |
 | **gitleaks** | `gitleaks/gitleaks-action@v2` — scans commit history for leaked secrets. | GATING. 100% pass (26/26). |
 | **Semgrep SAST** | `returntocorp/semgrep-action@v1` with rulesets `p/security-audit p/typescript p/nodejs p/react`. New findings block the job. | GATING since [AGE-39](/AGE/issues/AGE-39), which cleared all 26 pre-existing findings (each fixed or suppressed with a `// nosemgrep: <rule-id> — <reason>` annotation). |
 
@@ -151,7 +153,7 @@ SSH workflow (same host, `command_timeout: 8m`):
 
 Sends a Telegram message with the failing commit SHA and Actions run URL:
 
-```
+```text
 🔴 CI failed on main
 Commit: <sha>
 Run: <run_url>
@@ -239,7 +241,7 @@ Auto-merges Dependabot PRs that pass CI. Minor and patch updates are auto-approv
 
 ### Development flow
 
-```
+```text
 feature branch  →  PR to main  →  CI all-green  →  Squash-merge to main
                                                           │
                                                    Auto: staging deploy

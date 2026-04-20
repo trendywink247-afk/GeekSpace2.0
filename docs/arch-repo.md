@@ -10,7 +10,7 @@
 
 Tree to depth 2. Each entry notes its running artifact or build output.
 
-```
+```text
 GeekSpace2.0/
 ├── admin-dashboard/       # Mission Control: single static HTML served at /admin
 ├── browser-agent/         # Browser automation sidecar (Playwright-based, port 3010)
@@ -138,7 +138,7 @@ User profile CRUD (`/api/users/me`), password change, usage-event recording (LLM
 
 ### Frontend (`npm run build` from repo root)
 
-```
+```text
 tsc -b          # TypeScript compile (strict, noEmit=false, bundler resolution)
   └─ outputs type-checked JS into tsconfig build graph
 vite build      # Vite 7 bundles React app → dist/
@@ -150,7 +150,7 @@ The frontend is **not** served from inside the Docker container at runtime. Cadd
 
 ### Server (`npm run build` from `server/`)
 
-```
+```text
 tsc             # TypeScript ES-module compile
   └─ input:  server/src/**/*.ts
   └─ output: server/dist/**/*.js  (ES modules, .js extensions preserved)
@@ -212,14 +212,19 @@ This application has **no direct dependency on Postgres**. A `geekspace-postgres
 
 ## 5. API Surface
 
-All routes are mounted under the `/api/` prefix. Auth tiers:
+Most API endpoints are mounted under the `/api/` prefix. Notable exceptions:
+
+- `/preview/*` — the `content` module serves raw artifact previews (HTML/CSS/JS) directly.
+- `/admin` — single static admin dashboard HTML (see `admin-dashboard/`).
+
+Auth tiers:
 
 - **Public** — no token required
 - **`requireAuth`** — valid JWT (`Authorization: Bearer <token>`) required; sets `req.userId`
 - **`requireAdminToken`** — admin password header or `ADMIN_TOKEN` env required
 - **`optionalAuth`** — JWT parsed if present, request proceeds either way
 
-The full machine-readable route list is available at runtime from `/api/routes` (admin-gated) and in `openapi/openapi.yaml`.
+The full machine-readable route list is available at runtime from `/api/routes` (admin-gated) and in `openapi/openapi.yaml`. Root `CLAUDE.md` is the authoritative architecture reference.
 
 ### Route prefix summary
 
