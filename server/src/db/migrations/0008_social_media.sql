@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS content_plans (
   topic TEXT NOT NULL DEFAULT '',
   niche TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'draft',
-  social_account_id TEXT,
+  social_account_id TEXT REFERENCES social_accounts(id) ON DELETE SET NULL,
   start_date TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );

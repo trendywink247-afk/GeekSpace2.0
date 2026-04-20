@@ -12,7 +12,6 @@ import { db } from './db/index.js';
 import { initAutomationsEngine } from './services/automations-engine.js';
 import { initCleanupCron } from './services/cleanup.js';
 import { startMemorySyncScheduler, startWeeklySummaryScheduler } from './services/memory.js';
-import { initWorkflowTables } from './services/workflow-engine.js';
 import { initTelegramBot } from './services/telegram.js';
 import { ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
 import { seedDefaultTemplates } from './routes/templates.js';
@@ -86,8 +85,6 @@ const httpServer = app.listen(config.port, () => {
     ollamaUrl: config.ollamaBaseUrl,
   }, `Agentin API v${APP_VERSION} running on :${config.port}`);
 
-  // Schema is managed by runMigrations() (called in db/index.ts on import)
-  initWorkflowTables();
   ensureDefaultAgents();
   seedDefaultTemplates();
 

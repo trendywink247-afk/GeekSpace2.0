@@ -8,14 +8,11 @@ CREATE TABLE IF NOT EXISTS sandbox_sessions (
   user_id TEXT NOT NULL,
   container_id TEXT NOT NULL,
   tier TEXT NOT NULL,
-  memory_limit_mb INTEGER,
-  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  memory_mb INTEGER NOT NULL,
+  started_at TEXT DEFAULT (datetime('now')),
   ended_at TEXT,
-  total_exec_count INTEGER DEFAULT 0,
-  total_exec_time_ms INTEGER DEFAULT 0,
-  peak_memory_mb REAL DEFAULT 0,
-  destroyed_reason TEXT,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  duration_seconds INTEGER,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_sandbox_sessions_user ON sandbox_sessions(user_id);
@@ -27,5 +24,6 @@ CREATE TABLE IF NOT EXISTS sandbox_usage (
   session_count INTEGER DEFAULT 0,
   total_exec_count INTEGER DEFAULT 0,
   total_exec_time_ms INTEGER DEFAULT 0,
-  PRIMARY KEY (user_id, date)
+  PRIMARY KEY (user_id, date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

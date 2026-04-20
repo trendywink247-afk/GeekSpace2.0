@@ -426,32 +426,12 @@ export async function executeManualTrigger(automationId: string, userId: string)
 /**
  * Initialise the automations engine on server startup.
  *
- * Creates the `automation_logs` table if it does not exist, registers
- * all active cron/time triggers as in-memory intervals, starts the
+ * Registers all active cron/time triggers as in-memory intervals, starts the
  * health monitor polling loop, and starts the overdue-reminder
  * escalation checker (30-minute interval).
- *
- * Safe to call multiple times (idempotent table creation and interval guards).
+ * Schema (automation_logs, last_status, overdue_escalated_at) is managed by migrations.
  */
 export function initAutomationsEngine() {
-  // Create execution log table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS automation_logs (
-      id TEXT PRIMARY KEY,
-      automation_id TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'success',
-      output TEXT DEFAULT '',
-      duration_ms INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-    CREATE INDEX IF NOT EXISTS idx_automation_logs_automation ON automation_logs(automation_id);
-    CREATE INDEX IF NOT EXISTS idx_automation_logs_user ON automation_logs(user_id, created_at);
-  `);
-
-  // Add last_status column if missing
-  try { db.exec("ALTER TABLE automations ADD COLUMN last_status TEXT DEFAULT ''"); } catch { /* exists */ }
-
   // Register all active cron triggers
   const cronAutomations = db.prepare(
     "SELECT * FROM automations WHERE trigger_type = 'time' AND enabled = 1"
@@ -479,8 +459,6 @@ let overdueEscalationTimer: ReturnType<typeof setInterval> | null = null;
 function startOverdueReminderEscalation() {
   if (overdueEscalationTimer) return;
 
-  // Add column if missing
-  try { db.exec("ALTER TABLE reminders ADD COLUMN overdue_escalated_at TEXT DEFAULT NULL"); } catch { /* exists */ }
 
   const runCheck = async () => {
     const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString();

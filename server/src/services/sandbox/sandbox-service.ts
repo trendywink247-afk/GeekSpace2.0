@@ -56,14 +56,6 @@ const TIERS: Record<string, TierCfg> = {
 const IMAGE = 'geekspace-sandbox:latest', NET = 'geekspace-sandbox-net';
 const CPU_QUOTA = 50_000, REAPER_MS = 60_000, EXEC_TIMEOUT = 30_000;
 
-// ── DB schema ───────────────────────────────────────────────
-
-db.exec(`CREATE TABLE IF NOT EXISTS sandbox_sessions (
-  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, container_id TEXT NOT NULL,
-  tier TEXT NOT NULL, memory_mb INTEGER NOT NULL,
-  started_at TEXT DEFAULT (datetime('now')), ended_at TEXT, duration_seconds INTEGER
-)`);
-
 // ── Helpers ─────────────────────────────────────────────────
 
 const toBytes = (n: number) => n * 1024 * 1024;

@@ -98,7 +98,7 @@ CREATE TABLE agent_memory (
   access_count INTEGER DEFAULT 0,
   agent_namespace TEXT DEFAULT 'shared',
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')), last_accessed_at TEXT,
   UNIQUE(user_id, category, key)
 );
 
@@ -207,6 +207,18 @@ CREATE TABLE blocked_users (
   blocked_id TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now')),
   UNIQUE(blocker_id, blocked_id)
+);
+
+CREATE TABLE bridge_events (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  route TEXT NOT NULL,
+  complexity TEXT NOT NULL,
+  agents_used TEXT NOT NULL DEFAULT '[]',
+  workflow_id TEXT,
+  latency_ms INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE briefings (
@@ -340,7 +352,7 @@ CREATE TABLE content_plans (
   topic TEXT NOT NULL DEFAULT '',
   niche TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'draft',
-  social_account_id TEXT,
+  social_account_id TEXT REFERENCES social_accounts(id) ON DELETE SET NULL,
   start_date TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
@@ -1084,14 +1096,11 @@ CREATE TABLE sandbox_sessions (
   user_id TEXT NOT NULL,
   container_id TEXT NOT NULL,
   tier TEXT NOT NULL,
-  memory_limit_mb INTEGER,
-  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  memory_mb INTEGER NOT NULL,
+  started_at TEXT DEFAULT (datetime('now')),
   ended_at TEXT,
-  total_exec_count INTEGER DEFAULT 0,
-  total_exec_time_ms INTEGER DEFAULT 0,
-  peak_memory_mb REAL DEFAULT 0,
-  destroyed_reason TEXT,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  duration_seconds INTEGER,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE sandbox_usage (
@@ -1100,7 +1109,21 @@ CREATE TABLE sandbox_usage (
   session_count INTEGER DEFAULT 0,
   total_exec_count INTEGER DEFAULT 0,
   total_exec_time_ms INTEGER DEFAULT 0,
-  PRIMARY KEY (user_id, date)
+  PRIMARY KEY (user_id, date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE scheduled_jobs (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  payload TEXT NOT NULL DEFAULT '{}',
+  run_at INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  max_attempts INTEGER NOT NULL DEFAULT 3,
+  created_at INTEGER NOT NULL,
+  last_error TEXT
 );
 
 CREATE TABLE security_events (
@@ -1567,6 +1590,30 @@ CREATE TABLE webhook_dead_letters (
   failed_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 );
 
+CREATE TABLE workflow_steps (
+  id TEXT PRIMARY KEY,
+  workflow_id TEXT NOT NULL,
+  step_order INTEGER NOT NULL DEFAULT 0,
+  agent_role TEXT NOT NULL,
+  input TEXT NOT NULL DEFAULT '',
+  output TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now')),
+  completed_at TEXT,
+  FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
+);
+
+CREATE TABLE workflows (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  task TEXT NOT NULL,
+  complexity TEXT NOT NULL DEFAULT 'moderate',
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT DEFAULT (datetime('now')),
+  completed_at TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE workspace_artifacts (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -1612,10 +1659,6 @@ CREATE INDEX idx_activity_log_user_date ON activity_log(user_id, created_at);
 
 CREATE INDEX idx_agent_configs_user ON agent_configs(user_id);
 
-CREATE INDEX idx_agent_memory_category ON agent_memory(user_id, category);
-
-CREATE INDEX idx_agent_memory_user ON agent_memory(user_id);
-
 CREATE INDEX idx_agent_messages_conversation ON agent_messages(from_user_id, to_user_id);
 
 CREATE INDEX idx_agent_messages_to ON agent_messages(to_user_id, created_at);
@@ -1648,6 +1691,8 @@ CREATE INDEX idx_automations_user ON automations(user_id);
 
 CREATE INDEX idx_automations_user_active ON automations(user_id, enabled);
 
+CREATE INDEX idx_bridge_events_user ON bridge_events(user_id, created_at);
+
 CREATE INDEX idx_briefings_user ON briefings(user_id, created_at);
 
 CREATE INDEX idx_channel_links_ext ON channel_links(channel, external_id);
@@ -1667,8 +1712,6 @@ CREATE INDEX idx_content_plan_items_plan ON content_plan_items(plan_id);
 CREATE INDEX idx_content_plan_items_scheduled ON content_plan_items(scheduled_at);
 
 CREATE INDEX idx_content_plans_user ON content_plans(user_id);
-
-CREATE INDEX idx_conversation_log_user ON conversation_log(user_id, created_at);
 
 CREATE INDEX idx_conversations_user_updated ON conversations(user_id, updated_at DESC);
 
@@ -1758,6 +1801,10 @@ CREATE INDEX idx_sandbox_sessions_active ON sandbox_sessions(ended_at) WHERE end
 
 CREATE INDEX idx_sandbox_sessions_user ON sandbox_sessions(user_id);
 
+CREATE INDEX idx_schedjobs_run ON scheduled_jobs(status, run_at);
+
+CREATE INDEX idx_schedjobs_user ON scheduled_jobs(user_id, type);
+
 CREATE INDEX idx_security_events_created ON security_events(created_at);
 
 CREATE INDEX idx_security_events_event ON security_events(event);
@@ -1825,3 +1872,9 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_username ON users(username);
 
 CREATE INDEX idx_video_jobs_user ON video_jobs(user_id, created_at);
+
+CREATE INDEX idx_workflow_steps_workflow ON workflow_steps(workflow_id);
+
+CREATE INDEX idx_workflows_status ON workflows(status);
+
+CREATE INDEX idx_workflows_user ON workflows(user_id);

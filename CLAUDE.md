@@ -173,6 +173,8 @@ Schema changes are managed through numbered SQL migration files in `server/src/d
 
 **Convention:** name files `NNNN_<module>_<purpose>.sql` (e.g. `0011_auth_device_tokens.sql`). Use `CREATE TABLE IF NOT EXISTS` throughout so files are safe to re-run.
 
+**Adding columns to existing tables:** use `ALTER TABLE … ADD COLUMN` in a new numbered migration file — do not modify an already-applied migration (the runner enforces checksum integrity). SQLite does not support `ADD COLUMN IF NOT EXISTS`, so guard is unnecessary: the runner's `_migrations` tracking table ensures each file runs exactly once. SQLite also cannot add FK constraints retroactively via `ALTER TABLE`; adding a new column FK requires the rename→create→copy→drop table dance.
+
 **Convergence test:** `server/src/db/__tests__/migrations-converge.test.ts` opens a fresh in-memory DB, runs all migrations, and diffs the result against `server/src/db/__tests__/fixtures/schema.snapshot.sql`. If you add or change a migration, regenerate the snapshot before committing:
 
 ```bash
