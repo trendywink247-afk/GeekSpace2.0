@@ -198,6 +198,7 @@ CREATE TABLE IF NOT EXISTS automations (
   enabled INTEGER DEFAULT 1,
   run_count INTEGER DEFAULT 0,
   last_run TEXT DEFAULT '',
+  last_status TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -448,12 +449,15 @@ CREATE TABLE IF NOT EXISTS generated_outputs (
 
 CREATE TABLE IF NOT EXISTS automation_logs (
   id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  automation_id TEXT,
-  event TEXT NOT NULL,
-  details TEXT,
+  automation_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'success',
+  output TEXT DEFAULT '',
+  duration_ms INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
+CREATE INDEX IF NOT EXISTS idx_automation_logs_automation ON automation_logs(automation_id);
+CREATE INDEX IF NOT EXISTS idx_automation_logs_user ON automation_logs(user_id, created_at);
 
 CREATE TABLE IF NOT EXISTS agent_messages (
   id TEXT PRIMARY KEY,
