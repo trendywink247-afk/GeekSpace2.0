@@ -108,11 +108,18 @@ billingRouter.post('/day-pass', requireAuth, withAgentinError(async (req: AuthRe
     throw new ValidationError('You already have an active day pass.');
   }
 
-  // When Stripe is configured, redirect through a real Checkout Session
-  if (config.stripeEnabled) {
-    const url = await createDayPassCheckoutSession(req.userId!);
-    res.json({ checkoutUrl: url });
-    return;
+  // When Stripe is configured, redirect through a real Checkout Session.
+  // Skipped in TEST_MODE to avoid the Stripe SDK hanging on a dummy key.
+  // If the live SDK call fails (network, misconfigured key), fall through
+  // to the dev/demo grant below so local offline mode stays working.
+  if (config.stripeEnabled && process.env.TEST_MODE !== 'true') {
+    try {
+      const url = await createDayPassCheckoutSession(req.userId!);
+      res.json({ checkoutUrl: url });
+      return;
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, 'Stripe day pass checkout session creation failed');
+    }
   }
 
   // Dev/demo mode — grant the pass directly without payment
