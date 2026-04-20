@@ -824,6 +824,23 @@ CREATE VIRTUAL TABLE IF NOT EXISTS conversation_fts USING fts5(
   content_rowid='rowid'
 );
 
+CREATE TRIGGER IF NOT EXISTS conversation_log_ai AFTER INSERT ON conversation_log BEGIN
+  INSERT INTO conversation_fts(rowid, content, user_id, created_at)
+  VALUES (new.rowid, new.content, new.user_id, new.created_at);
+END;
+
+CREATE TRIGGER IF NOT EXISTS conversation_log_ad AFTER DELETE ON conversation_log BEGIN
+  INSERT INTO conversation_fts(conversation_fts, rowid, content, user_id, created_at)
+  VALUES ('delete', old.rowid, old.content, old.user_id, old.created_at);
+END;
+
+CREATE TRIGGER IF NOT EXISTS conversation_log_au AFTER UPDATE ON conversation_log BEGIN
+  INSERT INTO conversation_fts(conversation_fts, rowid, content, user_id, created_at)
+  VALUES ('delete', old.rowid, old.content, old.user_id, old.created_at);
+  INSERT INTO conversation_fts(rowid, content, user_id, created_at)
+  VALUES (new.rowid, new.content, new.user_id, new.created_at);
+END;
+
 CREATE TABLE IF NOT EXISTS reports (
   id TEXT PRIMARY KEY,
   reporter_id TEXT NOT NULL,
@@ -1419,7 +1436,8 @@ CREATE TABLE IF NOT EXISTS contact_rate_limits (
   request_count INTEGER DEFAULT 0,
   window_start TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(identifier, identifier_type)
 );
 
 -- ── Indexes ────────────────────────────────────────────────

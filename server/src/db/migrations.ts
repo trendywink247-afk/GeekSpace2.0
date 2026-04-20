@@ -11,7 +11,7 @@ import type Database from 'better-sqlite3';
 /**
  * @deprecated Replaced by runMigrations() from migrate.ts. Throws on call.
  */
-export async function applyMigrations(_db: Database.Database): Promise<void> {
+export function applyMigrations(_db: Database.Database): never {
   throw new Error(
     'applyMigrations() is deprecated — use runMigrations() from migrate.ts instead'
   );
