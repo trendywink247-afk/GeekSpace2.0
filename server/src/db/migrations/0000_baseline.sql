@@ -944,11 +944,13 @@ CREATE TABLE IF NOT EXISTS habits (
 
 CREATE TABLE IF NOT EXISTS habit_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  habit_id INTEGER NOT NULL,
+  habit_id INTEGER NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL,
   logged_at INTEGER NOT NULL DEFAULT (unixepoch('now') * 1000),
   note TEXT
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_log_day ON habit_logs(habit_id, date(logged_at/1000, 'unixepoch'));
+CREATE INDEX IF NOT EXISTS idx_habit_logs_user ON habit_logs(user_id, logged_at DESC);
 
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

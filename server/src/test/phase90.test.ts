@@ -82,11 +82,6 @@ describe('90.2 initProactiveEngine registered in server', () => {
   });
 });
 
-// ---- 90.3: DB schema ---------------------------------------------------
-
-describe('90.3 DB schema: proactive_messages + proactive_enabled', () => {
-});
-
 // ---- 90.4: Route: GET /api/proactive/log --------------------------------
 
 describe('90.4 Route GET /api/proactive/log', () => {
