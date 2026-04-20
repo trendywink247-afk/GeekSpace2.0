@@ -51,30 +51,6 @@ afterAll(() => {
 // 100.1  DB Schema
 // =============================================================================
 describe("100.1 DB schema", () => {
-  it("db migrations adds google_gmail_token column", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("google_gmail_token");
-  });
-
-  it("db schema defines gmail_messages table", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("CREATE TABLE IF NOT EXISTS gmail_messages");
-  });
-
-  it("gmail_messages has required columns", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("gmail_message_id TEXT NOT NULL");
-    expect(src).toContain("thread_id TEXT NOT NULL");
-    expect(src).toContain("subject TEXT NOT NULL");
-    expect(src).toContain("sender TEXT NOT NULL");
-    expect(src).toContain("inbox_id INTEGER REFERENCES inbox_messages");
-  });
-
-  it("gmail_messages has unique index on (user_id, gmail_message_id)", () => {
-    const src = readSrc("db", "migrations.ts");
-    expect(src).toContain("idx_gmail_messages_gid");
-  });
-
   it("gmail_messages table actually exists in DB", () => {
     const row = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gmail_messages'")

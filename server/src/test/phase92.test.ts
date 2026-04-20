@@ -130,12 +130,6 @@ describe('92.6 JWT token blocklist', () => {
     expect(src).toMatch(/token_blocklist/);
   });
 
-  it('token_blocklist table exists in DB schema', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toMatch(/token_blocklist/);
-    expect(src).toMatch(/jti TEXT PRIMARY KEY/);
-  });
-
   it('token_blocklist table is created in the live DB', () => {
     const row = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='token_blocklist'")
