@@ -11,7 +11,6 @@ export { default as searchRouter } from './routes/search.js';
 
 // Re-export services — memory core
 export {
-  initMemoryTables,
   upsertMemory,
   getMemories,
   getRelevantMemories,

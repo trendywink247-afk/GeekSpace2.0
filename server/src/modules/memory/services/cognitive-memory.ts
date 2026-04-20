@@ -432,35 +432,3 @@ function getTimeUntil(timestamp: number, now: number): string {
   return `in ${Math.floor(hours / 24)}d`;
 }
 
-// ── DB Migration ─────────────────────────────────────────────
-
-/**
- * Add cognitive memory columns and session_summaries table.
- * Safe to call multiple times (uses IF NOT EXISTS / try-catch for ALTER).
- */
-export function initCognitiveMemoryTables(): void {
-  // Add last_accessed_at to agent_memory
-  try {
-    db.exec("ALTER TABLE agent_memory ADD COLUMN last_accessed_at TEXT");
-    logger.info('cognitive-memory: added last_accessed_at to agent_memory');
-  } catch { /* column already exists */ }
-
-  // Session summaries table for cross-session continuity
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS session_summaries (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      conversation_id TEXT,
-      summary TEXT NOT NULL,
-      accomplished TEXT,
-      pending_items TEXT,
-      new_facts TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_session_summaries_user
-      ON session_summaries(user_id, created_at);
-  `);
-
-  logger.info('cognitive-memory: tables initialized');
-}
