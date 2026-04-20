@@ -98,7 +98,8 @@ describe('POST /api/billing/webhook (Stripe)', () => {
 
       // First call — should insert exactly one day_passes row
       const { body: b1, signature: s1 } = buildPayload();
-      await postWebhook(b1, s1);
+      const first = await postWebhook(b1, s1);
+      expect(first.status).toBe(200);
 
       const countAfterFirst = (db.prepare(
         'SELECT COUNT(*) as cnt FROM day_passes WHERE stripe_checkout_session_id = ?',
@@ -107,7 +108,8 @@ describe('POST /api/billing/webhook (Stripe)', () => {
 
       // Second call — same session id, should be a no-op (idempotent)
       const { body: b2, signature: s2 } = buildPayload();
-      await postWebhook(b2, s2);
+      const second = await postWebhook(b2, s2);
+      expect(second.status).toBe(200);
 
       const countAfterSecond = (db.prepare(
         'SELECT COUNT(*) as cnt FROM day_passes WHERE stripe_checkout_session_id = ?',
@@ -198,7 +200,8 @@ describe('POST /api/billing/webhook (Stripe)', () => {
         billing_cycle_anchor: null,
       });
 
-      await postWebhook(body, signature);
+      const res = await postWebhook(body, signature);
+      expect(res.status).toBe(200);
 
       const row = db.prepare(
         'SELECT subscription_status FROM users WHERE id = ?',

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 // Mock fs/promises BEFORE importing the module that uses it
 vi.mock('fs/promises', () => ({
@@ -37,6 +37,11 @@ describe('generateImage fallback chain', () => {
   beforeEach(() => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
+  });
+
+  afterAll(() => {
+    // Restore real fetch so later suites (e.g. MSW-backed) aren't intercepted by our stub.
+    vi.unstubAllGlobals();
   });
 
   it('returns Pollinations URL when Pollinations HEAD check succeeds', async () => {

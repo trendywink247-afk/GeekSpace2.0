@@ -160,14 +160,16 @@ describe('POST /api/billing/razorpay/webhook', () => {
       const paymentData = makePaymentData(user.id, 'pilot');
 
       const { body: b1, signature: s1 } = buildRazorpayWebhookPayload('payment.captured', paymentData);
-      await postWebhook(b1, s1);
+      const first = await postWebhook(b1, s1);
+      expect(first.status).toBe(200);
 
       const creditsMid = (db.prepare(
         'SELECT credits_remaining FROM subscriptions WHERE user_id = ?',
       ).get(user.id) as { credits_remaining: number }).credits_remaining;
 
       const { body: b2, signature: s2 } = buildRazorpayWebhookPayload('payment.captured', paymentData);
-      await postWebhook(b2, s2);
+      const second = await postWebhook(b2, s2);
+      expect(second.status).toBe(200);
 
       const creditsAfter = (db.prepare(
         'SELECT credits_remaining FROM subscriptions WHERE user_id = ?',

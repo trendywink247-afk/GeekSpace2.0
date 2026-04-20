@@ -178,6 +178,7 @@ export function cleanupTestUser(userId: string): void {
       'pico_agents',
       'agent_configs',
       'subscriptions',
+      'day_passes',
       'features',
       'portfolios',
       'integrations',
