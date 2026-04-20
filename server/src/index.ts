@@ -11,10 +11,11 @@ import { db } from './db/index.js';
 
 import { initAutomationsEngine } from './services/automations-engine.js';
 import { initCleanupCron } from './services/cleanup.js';
-import { startMemorySyncScheduler, startWeeklySummaryScheduler } from './services/memory.js';
+import { initMemoryTables, startMemorySyncScheduler, startWeeklySummaryScheduler } from './services/memory.js';
 import { initWorkflowTables } from './services/workflow-engine.js';
 import { initTelegramBot } from './services/telegram.js';
-import { ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
+import { initPicoFleetTables, ensureDefaultAgents, startPicoWorker } from './services/pico-fleet.js';
+import { initSocialMediaTables } from './services/social-media.js';
 import { seedDefaultTemplates } from './routes/templates.js';
 import { healthModule } from './modules/health/index.js';
 import { remindersModule } from './modules/reminders/index.js';
@@ -26,6 +27,7 @@ import { startOllamaKeepalive } from './services/llm.js';
 import { startGmailSyncScheduler } from './services/gmail-sync.js';
 import { initProactiveGoalEngine } from './modules/agent/services/proactive-goals.js';
 import { initAgentObserver } from './modules/agent/services/agent-observer.js';
+import { initCognitiveMemoryTables } from './modules/memory/services/cognitive-memory.js';
 import { startSessionSummaryScheduler } from './modules/memory/services/session-summary.js';
 import { initAgentFloBridge, shutdownAgentFloBridge } from './modules/agent/services/agentflo-bridge.js';
 
@@ -86,8 +88,12 @@ const httpServer = app.listen(config.port, () => {
     ollamaUrl: config.ollamaBaseUrl,
   }, `Agentin API v${APP_VERSION} running on :${config.port}`);
 
-  // Schema is managed by runMigrations() (called in db/index.ts on import)
+  // Idempotent table migrations — safe to run in every cluster worker
+  initMemoryTables();
+  initCognitiveMemoryTables();
   initWorkflowTables();
+  initPicoFleetTables();
+  initSocialMediaTables();
   ensureDefaultAgents();
   seedDefaultTemplates();
 

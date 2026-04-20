@@ -7,11 +7,13 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../app.js';
 import { createTestUser, resetDatabase, makeAuthHeader } from '../setup.js';
+import { initMemoryTables } from '../../services/memory.js';
 
 const app = createApp();
 
 describe('Phase 8-10 Endpoint Coverage', () => {
   beforeAll(() => {
+    initMemoryTables(); // ensure conversation_log table exists
     resetDatabase();
   });
 

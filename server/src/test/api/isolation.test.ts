@@ -10,7 +10,8 @@ import { createApp } from '../../app.js';
 import { resetDatabase, createTestUser, makeAuthHeader } from '../setup.js';
 import { db } from '../../db/index.js';
 import { v4 as uuid } from 'uuid';
-import { ensureDefaultAgents } from '../../services/pico-fleet.js';
+import { initPicoFleetTables, ensureDefaultAgents } from '../../services/pico-fleet.js';
+import { initMemoryTables } from '../../services/memory.js';
 
 const app = createApp();
 
@@ -20,6 +21,9 @@ describe('Multi-User Data Isolation', () => {
 
   beforeAll(() => {
     resetDatabase();
+    initPicoFleetTables();
+    initMemoryTables();
+
     const a = createTestUser('userA@test.com');
     const b = createTestUser('userB@test.com');
 

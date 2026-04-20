@@ -169,20 +169,6 @@ Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama).
 
 SQLite via better-sqlite3 (synchronous). Schema centralized in `server/src/db/index.ts`.
 
-### Migration System
-
-Schema changes are managed through numbered SQL migration files in `server/src/db/migrations/`. The runner (`server/src/db/migrate.ts`) applies files in lexicographic order and tracks each in the `_migrations` table (filename + SHA-256 checksum + applied_at). Migrations are idempotent: re-running on a warm DB applies nothing new.
-
-**Convention:** name files `NNNN_<module>_<purpose>.sql` (e.g. `0011_auth_device_tokens.sql`). Use `CREATE TABLE IF NOT EXISTS` throughout so files are safe to re-run.
-
-**Convergence test:** `server/src/db/__tests__/migrations-converge.test.ts` opens a fresh in-memory DB, runs all migrations, and diffs the result against `server/src/db/__tests__/fixtures/schema.snapshot.sql`. If you add or change a migration, regenerate the snapshot before committing:
-
-```bash
-cd server && npm run db:snapshot
-```
-
-The convergence test runs automatically in `cd server && npm test` (the existing `Unit Tests (Server)` CI job).
-
 ### Core Tables
 - `users` — Accounts (email, username, password_hash, plan, credits, onboarding, prefs)
 - `agent_configs` — Agent personality (voice, system_prompt, model, creativity)

@@ -4,6 +4,7 @@
  * @module services/memory
  */
 export {
+  initMemoryTables,
   upsertMemory,
   getMemories,
   getRelevantMemories,

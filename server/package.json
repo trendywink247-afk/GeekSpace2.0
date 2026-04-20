@@ -11,8 +11,7 @@
     "test": "TEST_MODE=true vitest run",
     "test:watch": "TEST_MODE=true vitest",
     "test:coverage": "TEST_MODE=true vitest run --coverage",
-    "migrate": "tsx src/db/migrate.ts",
-    "db:snapshot": "JWT_SECRET=snapshot-dev ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 tsx src/db/snapshot.ts"
+    "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

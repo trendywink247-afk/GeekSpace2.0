@@ -25,6 +25,23 @@ import {
 
 export const customBotRouter = Router();
 
+// ---- Schema (idempotent) ----
+// Runs once on import — adds the custom_bot_tokens table if missing.
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS custom_bot_tokens (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    token_encrypted TEXT NOT NULL,
+    bot_name TEXT NOT NULL DEFAULT '',
+    bot_username TEXT NOT NULL DEFAULT '',
+    messages_handled INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_custom_bot_user ON custom_bot_tokens(user_id);
+`);
+
 // ---- Helpers ----
 
 /** Call a Telegram Bot API method using the given token. */

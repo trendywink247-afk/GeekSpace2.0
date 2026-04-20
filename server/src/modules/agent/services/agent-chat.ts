@@ -3,6 +3,20 @@ import { v4 as uuid } from 'uuid';
 import { sendTelegramNotification, escapeTelegramHtml } from '../../../services/telegram.js';
 import { logger } from '../../../logger.js';
 
+export function initAgentChatTables(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_messages (
+      id TEXT PRIMARY KEY,
+      from_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      to_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_agent_messages_to ON agent_messages(to_user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_agent_messages_conversation ON agent_messages(from_user_id, to_user_id);
+  `);
+}
 
 export async function sendAgentMessage(fromUserId: string, toUsername: string, content: string): Promise<boolean> {
   const recipient = db.prepare('SELECT id, agent_chat_enabled FROM users WHERE username = ?').get(toUsername) as {

@@ -15,7 +15,7 @@ export { picoRouter } from './routes/pico.js';
 // Re-export services from local module paths
 export { handleIncomingMessage, buildPersonalityInstructions } from './services/message-router.js';
 export { routeChat, classifyIntent, pickProvider } from './services/llm.js';
-export { getUserAgents, createAgent, startPicoWorker, ensureDefaultAgents } from './services/pico-fleet.js';
+export { getUserAgents, createAgent, startPicoWorker, initPicoFleetTables, ensureDefaultAgents } from './services/pico-fleet.js';
 export { runReactLoop } from './services/react-loop.js';
 export { executeAction } from './services/action-executor.js';
 
