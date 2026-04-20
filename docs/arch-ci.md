@@ -104,7 +104,7 @@ Four sub-steps, each individually noted:
 | **Validate OpenAPI spec** | `npx @redocly/cli lint openapi/openapi.yaml --skip-rule no-unused-components`. | GATING. Fixed under [AGE-34](/AGE/issues/AGE-34) (18 nullable errors rewritten as OpenAPI 3.1 type unions). |
 | **Audit dependencies** | `npm audit --audit-level=critical` (root + server). | GATING. `\|\| true` removed under [AGE-35](/AGE/issues/AGE-35) after protobufjs CVE resolved to 7.5.5. |
 | **gitleaks** | `gitleaks/gitleaks-action@v2` — scans commit history for leaked secrets. | GATING. 100% pass (26/26). |
-| **Semgrep SAST** | `returntocorp/semgrep-action@v1` with rulesets `p/security-audit p/typescript p/nodejs p/react`. New findings block the job. | GATING since [AGE-39](/AGE/issues/AGE-39), which cleared all 26 pre-existing findings (each fixed or suppressed with a `// nosemgrep: <rule-id> — <reason>` annotation). |
+| **Semgrep SAST** | `semgrep/semgrep-action@v1` with rulesets `p/security-audit p/typescript p/nodejs p/react`. New findings block the job. | GATING since [AGE-39](/AGE/issues/AGE-39), which cleared all 26 pre-existing findings (each fixed or suppressed with a `// nosemgrep: <rule-id> — <reason>` annotation). |
 
 The remaining four steps use `if: always()` so an OpenAPI lint failure does not short-circuit the other scans.
 
@@ -182,7 +182,7 @@ Manual dispatch. Accepts `commit_sha` (required) and `skip_staging` (bool, defau
 
 #### `.github/workflows/lint-full.yml` — Nightly Full Lint
 
-Runs at `02:30 UTC` (03:00 AM UTC — nightly) and on `workflow_dispatch`. Lints the entire repo (not just changed files). **Non-blocking** — failures do not gate merges. Used to track and gradually pay down lint debt across the full codebase.
+Runs at `02:30 UTC` nightly and on `workflow_dispatch`. Lints the entire repo (not just changed files). **Non-blocking** — failures do not gate merges. Used to track and gradually pay down lint debt across the full codebase.
 
 #### `.github/workflows/ops-remote-exec.yml` — Ops Remote Exec
 
