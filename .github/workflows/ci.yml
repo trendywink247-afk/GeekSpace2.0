@@ -428,8 +428,11 @@ jobs:
             rsync -a --delete dist/ /srv/staging/
 
             echo "=== Building & deploying staging container ==="
+            # AGE-71: pass GIT_COMMIT build-arg so /api/health/version returns the
+            # real SHA instead of 'unknown', allowing the smoke test below to pass.
             DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 \
-              docker compose up -d --build staging
+              docker compose build --build-arg GIT_COMMIT=$GIT_SHA staging
+            docker compose up -d staging
 
             echo "=== Health check (staging :3002) ==="
             for i in $(seq 1 30); do

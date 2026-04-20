@@ -80,6 +80,11 @@ ENV DB_PATH=/app/data/geekspace.db
 ARG GIT_SHA=unknown
 ENV GIT_SHA=${GIT_SHA}
 
+# AGE-71: GIT_COMMIT baked in at build time for smoke-test verification.
+# Pass via --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) during docker build.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 EXPOSE 3001
 
 # Longer start-period for PM2 cluster (2 workers starting up)
