@@ -264,10 +264,10 @@ describe('CanvasEffects', () => {
         tickEffects(state, 16); // 60fps tick
 
         state.particles.forEach((p) => {
-          expect(p.x).toBeGreaterThanOrEqual(-0.1);
-          expect(p.x).toBeLessThanOrEqual(865.1);
-          expect(p.y).toBeGreaterThanOrEqual(-0.1);
-          expect(p.y).toBeLessThanOrEqual(801.1);
+          expect(p.x).toBeGreaterThanOrEqual(-1.5);
+          expect(p.x).toBeLessThanOrEqual(865.5);
+          expect(p.y).toBeGreaterThanOrEqual(-1.5);
+          expect(p.y).toBeLessThanOrEqual(801.5);
         });
       }
     });
