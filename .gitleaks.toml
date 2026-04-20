@@ -1,0 +1,36 @@
+# Gitleaks config — extends default ruleset, adds allowlist for historical
+# findings that have already been rotated. New leaks still fail the build.
+#
+# To add a new entry: get the fingerprint from the failing CI job
+# (format: <commit>:<file>:<rule>:<line>) and append it below with a brief
+# note on why it's safe to allowlist.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Historical findings already rotated — see commit notes"
+regexTarget = "match"
+
+# Pre-2026-04-20 findings — keys rotated, kept in allowlist so docs PRs
+# don't get blocked re-scanning git history with --all.
+commits = [
+  # AGE-66/67/68 — 18 historical findings surfaced 2026-04-20
+  "b82365e8fc20993853bd6f9b4b355373ac0a0c99",  # .env.example example placeholder
+  "a6d4771df898935d3dc80dc84077be886658d974",  # docs/REPO_WORKFLOW.md sample
+  "3d633e3b8bda774512e34931d2b503bc4e1ca9dd",  # docs/REPO_WORKFLOW.md sample
+  "3bb1f38ee748a074a33625c30ba1fe3aafd6c13d",  # custom-bot.ts example token
+  "2fe996b78c86159ab3c1d35cd38c0a37569d84f5",  # custom-bot.ts example token
+  "4fd1d095b3f34613de08f2f83551f4495103881b",  # superpowers plan doc
+  "6002d1a648167a1b1cb3e55f48f34ecfd7165a24",  # ops/aliya-sim-state.json + CAPABILITIES_AUDIT.md
+  "9f1c882129d2c6ad978d12a4d5caa10a12f3d253",  # api-keys.test.ts fixtures
+  "9f13030c3b24f58147a445130ef8cb416ef80c53",  # phase74 plan doc
+  "b7d23b8c89d51050b084e0322db4723bab9c64ae",  # apminsightnode.json
+  "c4794d95945ab4dd4a3c3c3f2c9c75eb73b618d9",  # CRITICAL_FLOWS_AUDIT.md
+  "f54ac93690a22f7a256f686dbb3098446eef7cd9",  # apminsightnode.json
+]
+
+paths = [
+  '''(.*?)server/src/test/api/api-keys\.test\.ts$''',
+  '''(.*?)apminsightnode\.json$''',
+]
