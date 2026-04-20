@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS users (
   google_gmail_token TEXT DEFAULT NULL,
   google_calendar_token TEXT DEFAULT NULL,
   calendar_auto_reminders INTEGER DEFAULT 1,
-  timezone TEXT DEFAULT 'UTC',
+  timezone TEXT DEFAULT 'Asia/Kolkata',
   google_id TEXT DEFAULT NULL,
   github_id TEXT DEFAULT NULL,
   github_username TEXT DEFAULT NULL,
@@ -1505,3 +1505,8 @@ CREATE INDEX IF NOT EXISTS idx_contact_requests_status ON contact_requests(statu
 CREATE INDEX IF NOT EXISTS idx_contact_requests_expires ON contact_requests(expires_at);
 CREATE INDEX IF NOT EXISTS idx_contact_audit_request ON contact_request_audit(request_id);
 CREATE INDEX IF NOT EXISTS idx_rate_limits_identifier ON contact_rate_limits(identifier);
+CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_log_action ON activity_log(action);
+CREATE INDEX IF NOT EXISTS idx_suggestions_user_deleted ON suggestions(user_id, deleted_at);
+CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
+CREATE INDEX IF NOT EXISTS idx_inbox_user ON inbox_messages(user_id, read, received_at DESC);

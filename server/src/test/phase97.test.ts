@@ -11,6 +11,7 @@ import request from "supertest";
 import { createApp } from "../app.js";
 import { db } from "../db/index.js";
 import { generateTestToken, createTestUser } from "./setup.js";
+import { readAllMigrationSql } from "./helpers/migration-source.js";
 import {
   addInboxMessage,
   getInbox,
@@ -26,6 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../../..");
 
 function readSrc(...parts: string[]): string {
+  if (parts.length === 2 && parts[0] === "db" && parts[1] === "migrations.ts") return readAllMigrationSql();
   return readFileSync(path.join(ROOT, "server/src", ...parts), "utf-8");
 }
 function fileExists(rel: string): boolean {

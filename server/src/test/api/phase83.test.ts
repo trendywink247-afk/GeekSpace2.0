@@ -6,11 +6,13 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readAllMigrationSql } from '../helpers/migration-source.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../../..');
 
 function readFile(rel: string): string {
+  if (rel === 'server/src/db/migrations.ts') return readAllMigrationSql();
   return readFileSync(path.join(ROOT, rel), 'utf-8');
 }
 

@@ -60,11 +60,6 @@ afterAll(() => {
 // ── 110.1  Timezone column and endpoint ─────────────────────────────────────
 
 describe('110.1 Timezone column and endpoint', () => {
-  it('db migrations adds timezone column to users table via ALTER TABLE', () => {
-    const src = readSrc('db', 'migrations.ts');
-    expect(src).toContain('ALTER TABLE users ADD COLUMN timezone');
-  });
-
   it('users table timezone column exists in live DB schema', () => {
     const cols = db.pragma('table_info(users)') as Array<{ name: string }>;
     const hasTimezone = cols.some(c => c.name === 'timezone');

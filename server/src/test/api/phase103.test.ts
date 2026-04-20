@@ -1,8 +1,14 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
+import { readAllMigrationSql } from '../helpers/migration-source.js';
 
 const SERVER_SRC = resolve(__dirname, '../../');
+
+function readServerSrc(rel: string): string {
+  if (rel === 'db/migrations.ts') return readAllMigrationSql();
+  return readFileSync(resolve(SERVER_SRC, rel), 'utf-8');
+}
 
 describe('Phase 103: Plan cap fixes', () => {
   describe('image.ts async route caps', () => {
@@ -130,7 +136,7 @@ describe('Phase 103: Plan cap fixes', () => {
 
   describe('training_examples table and logging', () => {
     it('db schema creates training_examples table', () => {
-      const content = readFileSync(resolve(SERVER_SRC, 'db/migrations.ts'), 'utf-8');
+      const content = readServerSrc('db/migrations.ts');
       expect(content).toContain('training_examples');
       expect(content).toContain('quality_score');
     });
