@@ -1,4 +1,11 @@
+import os from 'node:os';
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+
+// Per-process unique DB file so parallel CI jobs and local runs don't collide
+// or inherit stale state from each other. Resolved at config-evaluation time
+// so it's set before any test module imports the DB layer.
+const VITEST_DB_PATH = path.join(os.tmpdir(), `geekspace-vitest-${process.pid}-${Date.now()}.db`);
 
 export default defineConfig({
   resolve: {
@@ -11,7 +18,7 @@ export default defineConfig({
     env: {
       TEST_MODE: 'true',
       NODE_ENV: 'test',
-      DB_PATH: '/tmp/geekspace-vitest.db',
+      DB_PATH: VITEST_DB_PATH,
       STRIPE_SECRET_KEY: 'sk_test_dummy_for_tests_only',
       STRIPE_WEBHOOK_SECRET: 'whsec_test_secret_for_tests_only',
       RAZORPAY_KEY_ID: 'rzp_test_key_id_for_tests',
