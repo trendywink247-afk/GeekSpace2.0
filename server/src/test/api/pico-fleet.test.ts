@@ -6,7 +6,7 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 import { resetDatabase, createTestUser, makeAuthHeader } from '../setup.js';
 import { db } from '../../db/index.js';
-import { initPicoFleetTables, ensureDefaultAgents, validateExternalUrl } from '../../services/pico-fleet.js';
+import { ensureDefaultAgents, validateExternalUrl } from '../../services/pico-fleet.js';
 
 const app = createApp();
 
@@ -15,8 +15,6 @@ describe('Pico Fleet', () => {
 
   beforeAll(() => {
     resetDatabase();
-    initPicoFleetTables();
-
     const u = createTestUser('fleet@test.com');
     user = { id: u.id, token: makeAuthHeader(u.id) };
     ensureDefaultAgents();

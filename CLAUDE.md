@@ -167,6 +167,22 @@ Networks: `geekspace-net` (internal), `geekspace-shared` (external Ollama).
 
 SQLite via better-sqlite3 (synchronous). Schema centralized in `server/src/db/index.ts`.
 
+### Migration System
+
+Schema changes are managed through numbered SQL migration files in `server/src/db/migrations/`. The runner (`server/src/db/migrate.ts`) applies files in lexicographic order and tracks each in the `_migrations` table (filename + SHA-256 checksum + applied_at). Migrations are idempotent: re-running on a warm DB applies nothing new.
+
+**Convention:** name files `NNNN_<module>_<purpose>.sql` (e.g. `0011_auth_device_tokens.sql`). For new tables use `CREATE TABLE IF NOT EXISTS`. For existing tables use idempotent `ALTER TABLE … ADD COLUMN` (or the rename→create→copy→drop dance for structural changes) — do not add a `CREATE TABLE IF NOT EXISTS` that silently no-ops on an already-created table.
+
+**Adding columns to existing tables:** use `ALTER TABLE … ADD COLUMN` in a new numbered migration file — do not modify an already-applied migration (the runner enforces checksum integrity). SQLite does not support `ADD COLUMN IF NOT EXISTS`, so guard is unnecessary: the runner's `_migrations` tracking table ensures each file runs exactly once. SQLite also cannot add FK constraints retroactively via `ALTER TABLE`; adding a new column FK requires the rename→create→copy→drop table dance.
+
+**Convergence test:** `server/src/db/__tests__/migrations-converge.test.ts` opens a fresh in-memory DB, runs all migrations, and diffs the result against `server/src/db/__tests__/fixtures/schema.snapshot.sql`. If you add or change a migration, regenerate the snapshot before committing:
+
+```bash
+cd server && npm run db:snapshot
+```
+
+The convergence test runs automatically in `cd server && npm test` (the existing `Unit Tests (Server)` CI job).
+
 ### Core Tables
 - `users` — Accounts (email, username, password_hash, plan, credits, onboarding, prefs)
 - `agent_configs` — Agent personality (voice, system_prompt, model, creativity)

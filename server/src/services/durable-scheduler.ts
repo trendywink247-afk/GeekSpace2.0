@@ -29,28 +29,6 @@ export interface ScheduledJob {
   lastError?: string;
 }
 
-// ── Schema (called on startup) ───────────────────────────────
-
-export function initSchedulerTable(): void {
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS scheduled_jobs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      type TEXT NOT NULL,
-      payload TEXT NOT NULL DEFAULT '{}',
-      run_at INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending',
-      attempts INTEGER NOT NULL DEFAULT 0,
-      max_attempts INTEGER NOT NULL DEFAULT 3,
-      created_at INTEGER NOT NULL,
-      last_error TEXT
-    )
-  `).run();
-  try { db.prepare('CREATE INDEX IF NOT EXISTS idx_schedjobs_run ON scheduled_jobs(status, run_at)').run(); } catch { /* exists */ }
-  try { db.prepare('CREATE INDEX IF NOT EXISTS idx_schedjobs_user ON scheduled_jobs(user_id, type)').run(); } catch { /* exists */ }
-  logger.info('Durable scheduler table initialized');
-}
-
 // ── Schedule a job ───────────────────────────────────────────
 
 export function scheduleJob(
@@ -211,7 +189,6 @@ async function processJobs(): Promise<void> {
 
 export function startJobRunner(intervalMs = 30_000): void {
   if (runnerInterval) return;
-  initSchedulerTable();
 
   // Recover stuck 'running' jobs from previous crash
   db.prepare("UPDATE scheduled_jobs SET status = 'pending' WHERE status = 'running'").run();

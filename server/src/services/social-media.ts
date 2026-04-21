@@ -7,7 +7,6 @@ export {
   type SocialAccount,
   type ContentPlan,
   type ContentPlanItem,
-  initSocialMediaTables,
   getUserSocialAccounts,
   createSocialAccount,
   updateSocialAccount,

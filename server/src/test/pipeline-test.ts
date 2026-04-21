@@ -12,8 +12,7 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../db/index.js';
 import { handleIncomingMessage, type NormalizedMessage } from '../services/message-router.js';
-import { initMemoryTables } from '../services/memory.js';
-import { initPicoFleetTables, startPicoWorker } from '../services/pico-fleet.js';
+import { startPicoWorker } from '../services/pico-fleet.js';
 import { logger } from '../logger.js';
 
 // Test configuration
@@ -312,9 +311,7 @@ async function runTests(): Promise<void> {
   logger.info('║     CONNECTIONS PIPELINE TEST HARNESS                      ║');
   logger.info('╚════════════════════════════════════════════════════════════╝');
 
-  // Initialize tables
-  initMemoryTables();
-  initPicoFleetTables();
+  // Tables are created by runMigrations() on db import
   startPicoWorker();
 
   const allResults: { name: string; results: TestResult[] }[] = [];
