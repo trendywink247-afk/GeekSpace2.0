@@ -11,6 +11,7 @@ export default defineConfig({
     env: {
       TEST_MODE: 'true',
       NODE_ENV: 'test',
+      DB_PATH: '/tmp/geekspace-vitest.db',
       STRIPE_SECRET_KEY: 'sk_test_dummy_for_tests_only',
       STRIPE_WEBHOOK_SECRET: 'whsec_test_secret_for_tests_only',
       RAZORPAY_KEY_ID: 'rzp_test_key_id_for_tests',

@@ -171,7 +171,7 @@ SQLite via better-sqlite3 (synchronous). Schema centralized in `server/src/db/in
 
 Schema changes are managed through numbered SQL migration files in `server/src/db/migrations/`. The runner (`server/src/db/migrate.ts`) applies files in lexicographic order and tracks each in the `_migrations` table (filename + SHA-256 checksum + applied_at). Migrations are idempotent: re-running on a warm DB applies nothing new.
 
-**Convention:** name files `NNNN_<module>_<purpose>.sql` (e.g. `0011_auth_device_tokens.sql`). Use `CREATE TABLE IF NOT EXISTS` throughout so files are safe to re-run.
+**Convention:** name files `NNNN_<module>_<purpose>.sql` (e.g. `0011_auth_device_tokens.sql`). For new tables use `CREATE TABLE IF NOT EXISTS`. For existing tables use idempotent `ALTER TABLE … ADD COLUMN` (or the rename→create→copy→drop dance for structural changes) — do not add a `CREATE TABLE IF NOT EXISTS` that silently no-ops on an already-created table.
 
 **Adding columns to existing tables:** use `ALTER TABLE … ADD COLUMN` in a new numbered migration file — do not modify an already-applied migration (the runner enforces checksum integrity). SQLite does not support `ADD COLUMN IF NOT EXISTS`, so guard is unnecessary: the runner's `_migrations` tracking table ensures each file runs exactly once. SQLite also cannot add FK constraints retroactively via `ALTER TABLE`; adding a new column FK requires the rename→create→copy→drop table dance.
 
